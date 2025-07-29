@@ -194,6 +194,10 @@
   .text-text-muted {
     color: var(--text-muted) !important;
   }
+  
+  .bg-warning {
+    background-color: hsl(45, 93%, 58%) !important;
+  }
 
   /* Navigation styling */
   .nav-floating {
