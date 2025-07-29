@@ -38,20 +38,20 @@ export default function Navigation() {
   return (
     <>
       {/* Main Navigation */}
-      <nav className="fixed top-6 left-6 right-6 z-50 glass rounded-2xl px-6 py-4">
+      <nav className="fixed top-4 left-4 right-4 z-50 glass rounded-xl px-4 py-3 max-w-7xl mx-auto">
         <div className="flex items-center justify-between">
           {/* Left Side - Logo & Menu */}
-          <div className="flex items-center space-x-8">
-            <Logo size="lg" />
+          <div className="flex items-center space-x-6">
+            <Logo size="md" />
             
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
+            <div className="hidden md:flex items-center space-x-4">
               {navigation.map((item) => (
                 <Link key={item.name} href={item.href}>
                   <span
-                    className={`transition-colors font-medium cursor-pointer ${
+                    className={`transition-colors font-medium cursor-pointer px-3 py-2 rounded-lg hover:bg-white/10 ${
                       isActive(item.href)
-                        ? "text-accent-blue"
+                        ? "text-accent-blue bg-accent-blue/10"
                         : "text-text-secondary hover:text-white"
                     }`}
                   >
@@ -63,7 +63,7 @@ export default function Navigation() {
           </div>
 
           {/* Right Side - Search, Account, Cart */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {/* Desktop Search */}
             <div className="hidden lg:block">
               <SearchBar
@@ -77,11 +77,11 @@ export default function Navigation() {
             {/* Mobile Search Toggle */}
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               className="lg:hidden glass hover:bg-white/10"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
-              <Search size={20} />
+              <Search size={18} />
             </Button>
 
             {/* Account */}
@@ -130,13 +130,12 @@ export default function Navigation() {
             ) : (
               <Link href="/auth">
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`glass hover:bg-white/10 ${
-                    isActive("/auth") ? "text-accent-blue" : "text-text-secondary"
-                  }`}
+                  variant="outline"
+                  size="sm"
+                  className="glass hover:bg-white/10 border-accent-blue/30 text-accent-blue hover:text-white font-medium"
                 >
-                  <LogIn size={20} />
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In
                 </Button>
               </Link>
             )}
