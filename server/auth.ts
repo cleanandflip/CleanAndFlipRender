@@ -46,7 +46,10 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: new PostgresSessionStore({
       conString: process.env.DATABASE_URL,
-      createTableIfMissing: true,
+      createTableIfMissing: false, // Don't recreate existing tables
+      schemaName: 'public',
+      tableName: 'session',
+      errorLog: console.error
     }),
     cookie: {
       secure: process.env.NODE_ENV === "production",
@@ -67,7 +70,10 @@ export function setupAuth(app: Express) {
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false, { message: "Invalid username or password" });
         }
-        return done(null, user);
+        return done(null, {
+          ...user,
+          role: user.role || 'user'
+        });
       } catch (error) {
         return done(error);
       }
@@ -78,7 +84,10 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: string, done) => {
     try {
       const user = await storage.getUser(id);
-      done(null, user);
+      done(null, user ? {
+        ...user,
+        role: user.role || 'user'
+      } : null);
     } catch (error) {
       done(error);
     }
@@ -120,7 +129,11 @@ export function setupAuth(app: Express) {
         isAdmin: role === "admin" || role === "developer",
       });
 
-      req.login(user, (err) => {
+      const userForSession = {
+        ...user,
+        role: user.role || 'user'
+      };
+      req.login(userForSession, (err) => {
         if (err) return next(err);
         res.status(201).json({
           id: user.id,
@@ -128,7 +141,7 @@ export function setupAuth(app: Express) {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          role: user.role,
+          role: user.role || 'user',
           isAdmin: user.isAdmin,
         });
       });
@@ -147,7 +160,11 @@ export function setupAuth(app: Express) {
       if (!user) {
         return res.status(401).json({ message: info?.message || "Invalid credentials" });
       }
-      req.login(user, (loginErr) => {
+      const userForSession = {
+        ...user,
+        role: user.role || 'user'
+      };
+      req.login(userForSession, (loginErr) => {
         if (loginErr) {
           return res.status(500).json({ message: "Login failed" });
         }
@@ -157,7 +174,7 @@ export function setupAuth(app: Express) {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          role: user.role,
+          role: user.role || 'user',
           isAdmin: user.isAdmin,
         });
       });
@@ -207,7 +224,7 @@ export function requireRole(roles: string[]) {
     }
 
     const user = req.user as User;
-    if (!roles.includes(user.role)) {
+    if (!roles.includes(user.role || 'user')) {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 

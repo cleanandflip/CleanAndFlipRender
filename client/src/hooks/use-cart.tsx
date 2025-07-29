@@ -26,7 +26,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch cart items
   const { data: cartItems = [], isLoading } = useQuery<(CartItem & { product: Product })[]>({
-    queryKey: ["/api/cart", { userId: TEMP_USER_ID }],
+    queryKey: ["/api/cart"],
+    queryFn: async () => {
+      const response = await fetch(`/api/cart?userId=${TEMP_USER_ID}`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch cart');
+      }
+      return response.json();
+    },
   });
 
   // Add to cart mutation
