@@ -13,153 +13,155 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="min-h-screen flex items-center justify-center pt-24 pb-12 px-6">
+      {/* Hero Section - Full Screen */}
+      <section className="min-h-screen flex items-center justify-center pt-20 pb-12 px-6">
         <div className="max-w-6xl mx-auto text-center">
           {/* Main Heading */}
-          <div className="spacing-element mb-8">
-            <h1 className="font-bebas text-6xl md:text-8xl mb-4 tracking-wider text-white">
-              THE WEIGHTLIFTING<br />
+          <div className="mb-12">
+            <h1 className="font-bebas text-6xl md:text-8xl mb-6 tracking-wider leading-tight">
+              <span className="text-white">THE WEIGHTLIFTING</span><br />
               <span className="text-accent-blue">EQUIPMENT EXCHANGE</span>
             </h1>
-            <p className="text-xl md:text-2xl text-text-secondary max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-text-secondary max-w-3xl mx-auto mb-12">
               Turn your unused gear into cash. Buy quality equipment you can trust.
             </p>
           </div>
 
-          {/* Two Paths */}
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
+          {/* Two Paths - Enhanced Design */}
+          <div className="grid md:grid-cols-2 gap-8 mb-16">
             {/* Selling Path */}
-            <GlassCard className="p-8 text-center glass-hover">
-              <div className="spacing-element mb-6">
-                <DollarSign className="text-4xl text-success mb-4 mx-auto" size={48} />
-                <h2 className="font-bebas text-3xl mb-2">SELLING?</h2>
-                <p className="text-text-secondary">Cash for your equipment</p>
+            <GlassCard className="p-10 text-center glass-hover hover:scale-105 transition-all duration-300">
+              <div className="mb-8">
+                <DollarSign className="text-success mb-6 mx-auto" size={64} />
+                <h2 className="font-bebas text-4xl mb-3 text-white">SELLING?</h2>
+                <p className="text-text-secondary text-lg">Cash for your equipment</p>
               </div>
               <Link href="/sell-to-us">
-                <a className="inline-block bg-success hover:bg-green-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
+                <button className="w-full bg-success hover:bg-green-600 text-white font-bold px-8 py-4 rounded-lg transition-colors text-lg">
                   Get Cash Offer
-                </a>
+                </button>
               </Link>
             </GlassCard>
 
             {/* Buying Path */}
-            <GlassCard className="p-8 text-center glass-hover">
-              <div className="spacing-element mb-6">
-                <Dumbbell className="text-4xl text-accent-blue mb-4 mx-auto" size={48} />
-                <h2 className="font-bebas text-3xl mb-2">BUYING?</h2>
-                <p className="text-text-secondary">Verified quality gear</p>
+            <GlassCard className="p-10 text-center glass-hover hover:scale-105 transition-all duration-300">
+              <div className="mb-8">
+                <Dumbbell className="text-accent-blue mb-6 mx-auto" size={64} />
+                <h2 className="font-bebas text-4xl mb-3 text-white">BUYING?</h2>
+                <p className="text-text-secondary text-lg">Verified quality gear</p>
               </div>
               <Link href="/products">
-                <a className="inline-block bg-accent-blue hover:bg-blue-500 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
+                <button className="w-full bg-accent-blue hover:bg-blue-500 text-white font-bold px-8 py-4 rounded-lg transition-colors text-lg">
                   Shop Equipment
-                </a>
+                </button>
               </Link>
             </GlassCard>
           </div>
 
-          {/* Trust Bar */}
-          <GlassCard className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div className="trust-indicator">
-                <div className="text-2xl font-bold text-accent-blue">452</div>
-                <div className="text-sm text-text-muted">Transactions</div>
-              </div>
-              <div className="trust-indicator">
-                <div className="text-2xl font-bold text-success">Asheville</div>
-                <div className="text-sm text-text-muted">Local</div>
-              </div>
-              <div className="trust-indicator">
-                <div className="text-2xl font-bold text-warning">Same Day</div>
-                <div className="text-sm text-text-muted">Cash</div>
-              </div>
-              <div className="trust-indicator">
-                <div className="text-2xl font-bold text-white">100%</div>
-                <div className="text-sm text-text-muted">Inspected</div>
-              </div>
+          {/* Trust Bar - Enhanced */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            <div className="flex flex-col items-center p-4 glass rounded-lg">
+              <TrendingUp className="text-accent-blue mb-2" size={24} />
+              <span className="font-bold text-lg text-white">452</span>
+              <span className="text-text-muted text-sm">Transactions</span>
             </div>
-          </GlassCard>
+            <div className="flex flex-col items-center p-4 glass rounded-lg">
+              <Users className="text-accent-blue mb-2" size={24} />
+              <span className="font-bold text-lg text-white">Asheville</span>
+              <span className="text-text-muted text-sm">Local</span>
+            </div>
+            <div className="flex flex-col items-center p-4 glass rounded-lg">
+              <Clock className="text-accent-blue mb-2" size={24} />
+              <span className="font-bold text-lg text-white">Same Day</span>
+              <span className="text-text-muted text-sm">Cash</span>
+            </div>
+            <div className="flex flex-col items-center p-4 glass rounded-lg">
+              <CheckCircle className="text-success mb-2" size={24} />
+              <span className="font-bold text-lg text-white">Inspected</span>
+              <span className="text-text-muted text-sm">Every Item</span>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="min-h-screen flex items-center py-12 px-6 spacing-section">
+      {/* How It Works Section - Full Screen */}
+      <section className="min-h-screen flex items-center py-12 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Side - Process */}
-            <div className="space-y-8">
-              <h2 className="font-bebas text-5xl mb-8">SIMPLE PROCESS</h2>
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left Side - Simple Process */}
+            <div className="space-y-12">
+              <h2 className="font-bebas text-5xl mb-12 text-white tracking-wider">SIMPLE PROCESS</h2>
 
               {/* Sellers Process */}
-              <div className="bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 backdrop-filter backdrop-blur-lg border border-emerald-700/30 rounded-2xl p-8">
-                <h3 className="font-bebas text-2xl text-emerald-400 mb-6 tracking-wider">SELL YOUR EQUIPMENT</h3>
-                <div className="space-y-5">
+              <GlassCard className="p-8">
+                <h3 className="font-bebas text-3xl text-success mb-8 tracking-wider">SELL YOUR EQUIPMENT</h3>
+                <div className="space-y-6">
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-black font-bold text-lg">1</div>
+                    <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center text-white font-bold text-lg">1</div>
                     <span className="text-white text-lg">Submit photos online</span>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-black font-bold text-lg">2</div>
+                    <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center text-white font-bold text-lg">2</div>
                     <span className="text-white text-lg">Get cash offer in 48hrs</span>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-black font-bold text-lg">3</div>
+                    <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center text-white font-bold text-lg">3</div>
                     <span className="text-white text-lg">We pick up & pay cash</span>
                   </div>
                 </div>
                 <Link href="/sell-to-us">
-                  <span className="inline-block mt-6 text-emerald-400 hover:text-emerald-300 font-semibold text-lg cursor-pointer">
+                  <button className="w-full mt-8 bg-success hover:bg-green-600 text-white font-bold px-6 py-3 rounded-lg transition-colors">
                     Start Selling →
-                  </span>
+                  </button>
                 </Link>
-              </div>
+              </GlassCard>
 
               {/* Buyers Process */}
-              <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 backdrop-filter backdrop-blur-lg border border-blue-700/30 rounded-2xl p-8">
-                <h3 className="font-bebas text-2xl text-blue-400 mb-6 tracking-wider">BUY QUALITY GEAR</h3>
-                <div className="space-y-5">
+              <GlassCard className="p-8">
+                <h3 className="font-bebas text-3xl text-accent-blue mb-8 tracking-wider">BUY QUALITY GEAR</h3>
+                <div className="space-y-6">
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">1</div>
+                    <div className="w-12 h-12 bg-accent-blue rounded-full flex items-center justify-center text-white font-bold text-lg">1</div>
                     <span className="text-white text-lg">Browse verified equipment</span>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">2</div>
+                    <div className="w-12 h-12 bg-accent-blue rounded-full flex items-center justify-center text-white font-bold text-lg">2</div>
                     <span className="text-white text-lg">Secure checkout</span>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">3</div>
+                    <div className="w-12 h-12 bg-accent-blue rounded-full flex items-center justify-center text-white font-bold text-lg">3</div>
                     <span className="text-white text-lg">Fast delivery or pickup</span>
                   </div>
                 </div>
                 <Link href="/products">
-                  <span className="inline-block mt-6 text-blue-400 hover:text-blue-300 font-semibold text-lg cursor-pointer">
+                  <button className="w-full mt-8 bg-accent-blue hover:bg-blue-500 text-white font-bold px-6 py-3 rounded-lg transition-colors">
                     Start Shopping →
-                  </span>
+                  </button>
                 </Link>
-              </div>
+              </GlassCard>
             </div>
 
             {/* Right Side - Latest Activity */}
-            <div className="space-y-6">
-              <h3 className="font-bebas text-3xl text-white tracking-wider">LATEST ACTIVITY</h3>
+            <div className="space-y-8">
+              <h3 className="font-bebas text-4xl text-white tracking-wider">LATEST ACTIVITY</h3>
 
-              {/* Stats */}
-              <div className="bg-gradient-to-br from-slate-800/40 to-slate-700/20 backdrop-filter backdrop-blur-lg border border-slate-600/30 rounded-2xl p-8">
+              {/* Live Stats */}
+              <GlassCard className="p-8">
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-300 text-lg">Items Available</span>
-                    <span className="font-bold text-blue-400 text-2xl">234</span>
+                    <span className="text-text-secondary text-lg">Items Available</span>
+                    <span className="font-bold text-accent-blue text-2xl">234</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-300 text-lg">Sold This Week</span>
-                    <span className="font-bold text-emerald-400 text-2xl">18</span>
+                    <span className="text-text-secondary text-lg">Sold This Week</span>
+                    <span className="font-bold text-success text-2xl">18</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-300 text-lg">People Shopping</span>
-                    <span className="font-bold text-amber-400 text-2xl">12</span>
+                    <span className="text-text-secondary text-lg">People Shopping</span>
+                    <span className="font-bold text-warning text-2xl">12</span>
                   </div>
                 </div>
-              </div>
+              </GlassCard>
 
               {/* Featured Items */}
               {featuredProducts && featuredProducts.length > 0 && (
