@@ -64,7 +64,7 @@ function DashboardContent() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-bebas text-4xl md:text-6xl mb-2">
-            WELCOME BACK, {mockUser.firstName?.toUpperCase()}
+            WELCOME BACK, {user?.firstName?.toUpperCase() || user?.username?.toUpperCase() || 'USER'}
           </h1>
           <p className="text-text-secondary">
             Manage your orders, submissions, and account settings
@@ -141,8 +141,8 @@ function DashboardContent() {
                         <div>
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="font-semibold">Order #{order.id.slice(-8)}</h3>
-                            <Badge className={`${getStatusColor(order.status)} text-white`}>
-                              {order.status.replace('_', ' ').toUpperCase()}
+                            <Badge className={`${getStatusColor(order.status || 'pending')} text-white`}>
+                              {(order.status || 'pending').replace('_', ' ').toUpperCase()}
                             </Badge>
                           </div>
                           <p className="text-sm text-text-secondary">
@@ -198,8 +198,8 @@ function DashboardContent() {
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="font-semibold">{submission.name}</h3>
-                            <Badge className={`${getSubmissionStatusColor(submission.status)} text-white`}>
-                              {submission.status.replace('_', ' ').toUpperCase()}
+                            <Badge className={`${getSubmissionStatusColor(submission.status || 'pending')} text-white`}>
+                              {(submission.status || 'pending').replace('_', ' ').toUpperCase()}
                             </Badge>
                           </div>
                           <p className="text-sm text-text-secondary mb-1">
@@ -302,19 +302,19 @@ function DashboardContent() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">First Name</label>
-                      <div className="glass rounded-lg px-3 py-2">{mockUser.firstName}</div>
+                      <div className="glass rounded-lg px-3 py-2">{user?.firstName || 'Not provided'}</div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Last Name</label>
-                      <div className="glass rounded-lg px-3 py-2">{mockUser.lastName}</div>
+                      <div className="glass rounded-lg px-3 py-2">{user?.lastName || 'Not provided'}</div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Email</label>
-                      <div className="glass rounded-lg px-3 py-2">{mockUser.email}</div>
+                      <div className="glass rounded-lg px-3 py-2">{user?.email || 'Not provided'}</div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Phone</label>
-                      <div className="glass rounded-lg px-3 py-2">{mockUser.phone}</div>
+                      <div className="glass rounded-lg px-3 py-2">{user?.phone || 'Not provided'}</div>
                     </div>
                   </div>
                 </div>
