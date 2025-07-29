@@ -40,9 +40,9 @@ export default function Footer() {
             <div className="space-y-2">
               {shopLinks.map((link) => (
                 <Link key={link.name} href={link.href}>
-                  <a className="block text-text-secondary hover:text-white transition-colors text-sm">
+                  <span className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer">
                     {link.name}
-                  </a>
+                  </span>
                 </Link>
               ))}
             </div>
@@ -54,9 +54,9 @@ export default function Footer() {
             <div className="space-y-2">
               {companyLinks.map((link) => (
                 <Link key={link.name} href={link.href}>
-                  <a className="block text-text-secondary hover:text-white transition-colors text-sm">
+                  <span className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer">
                     {link.name}
-                  </a>
+                  </span>
                 </Link>
               ))}
             </div>
@@ -68,9 +68,9 @@ export default function Footer() {
             <div className="space-y-2">
               {policyLinks.map((link) => (
                 <Link key={link.name} href={link.href}>
-                  <a className="block text-text-secondary hover:text-white transition-colors text-sm">
+                  <span className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer">
                     {link.name}
-                  </a>
+                  </span>
                 </Link>
               ))}
             </div>

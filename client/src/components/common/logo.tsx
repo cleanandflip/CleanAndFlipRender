@@ -45,9 +45,7 @@ export default function Logo({ className = "", size = 'md', clickable = true }: 
 
   return (
     <Link href="/">
-      <a>
-        <LogoContent />
-      </a>
+      <LogoContent />
     </Link>
   );
 }

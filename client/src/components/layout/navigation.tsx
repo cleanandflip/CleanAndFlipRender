@@ -33,9 +33,7 @@ export default function Navigation() {
         <div className="flex items-center justify-between">
           {/* Left Side - Logo & Menu */}
           <div className="flex items-center space-x-8">
-            <Link href="/">
-              <Logo size="lg" />
-            </Link>
+            <Logo size="lg" />
             
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
