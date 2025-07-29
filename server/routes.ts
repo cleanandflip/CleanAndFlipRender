@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   insertProductSchema,
   insertCartItemSchema,
@@ -16,11 +17,25 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-06-30.basil",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // Categories
   app.get("/api/categories", async (req, res) => {
     try {
@@ -100,13 +115,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cart operations
-  app.get("/api/cart", async (req, res) => {
+  app.get("/api/cart", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.query.userId as string;
-      if (!userId) {
-        return res.status(400).json({ message: "User ID required" });
-      }
-      
+      const userId = req.user.claims.sub;
       const cartItems = await storage.getCartItems(userId);
       res.json(cartItems);
     } catch (error) {
@@ -115,9 +126,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/cart", async (req, res) => {
+  app.post("/api/cart", isAuthenticated, async (req: any, res) => {
     try {
-      const validatedData = insertCartItemSchema.parse(req.body);
+      const userId = req.user.claims.sub;
+      const validatedData = insertCartItemSchema.parse({
+        ...req.body,
+        userId
+      });
       const cartItem = await storage.addToCart(validatedData);
       res.json(cartItem);
     } catch (error) {
@@ -148,9 +163,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Orders
-  app.get("/api/orders", async (req, res) => {
+  app.get("/api/orders", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.query.userId as string;
+      const userId = req.user.claims.sub;
       const limit = req.query.limit ? Number(req.query.limit) : 50;
       const offset = req.query.offset ? Number(req.query.offset) : 0;
       
@@ -212,13 +227,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Wishlist
-  app.get("/api/wishlist", async (req, res) => {
+  app.get("/api/wishlist", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.query.userId as string;
-      if (!userId) {
-        return res.status(400).json({ message: "User ID required" });
-      }
-      
+      const userId = req.user.claims.sub;
       const wishlistItems = await storage.getWishlist(userId);
       res.json(wishlistItems);
     } catch (error) {
@@ -227,9 +238,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/wishlist", async (req, res) => {
+  app.post("/api/wishlist", isAuthenticated, async (req: any, res) => {
     try {
-      const validatedData = insertWishlistSchema.parse(req.body);
+      const userId = req.user.claims.sub;
+      const validatedData = insertWishlistSchema.parse({
+        ...req.body,
+        userId
+      });
       const wishlistItem = await storage.addToWishlist(validatedData);
       res.json(wishlistItem);
     } catch (error) {
@@ -238,14 +253,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/wishlist", async (req, res) => {
+  app.delete("/api/wishlist", isAuthenticated, async (req: any, res) => {
     try {
-      const { userId, productId } = req.query;
-      if (!userId || !productId) {
-        return res.status(400).json({ message: "User ID and Product ID required" });
+      const userId = req.user.claims.sub;
+      const { productId } = req.query;
+      if (!productId) {
+        return res.status(400).json({ message: "Product ID required" });
       }
       
-      await storage.removeFromWishlist(userId as string, productId as string);
+      await storage.removeFromWishlist(userId, productId as string);
       res.json({ message: "Item removed from wishlist" });
     } catch (error) {
       console.error("Error removing from wishlist:", error);
