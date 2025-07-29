@@ -2,16 +2,25 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import Logo from "@/components/common/logo";
 import SearchBar from "@/components/products/search-bar";
 import { useCart } from "@/hooks/use-cart";
-import { Menu, Search, ShoppingCart, User, X } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus } from "lucide-react";
 
 export default function Navigation() {
   const [location] = useLocation();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cartCount } = useCart();
+  const { user, logoutMutation } = useAuth();
 
   const navigation = [
     { name: "Shop", href: "/products" },
@@ -76,17 +85,61 @@ export default function Navigation() {
             </Button>
 
             {/* Account */}
-            <Link href="/dashboard">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`glass hover:bg-white/10 ${
-                  isActive("/dashboard") ? "text-accent-blue" : "text-text-secondary"
-                }`}
-              >
-                <User size={20} />
-              </Button>
-            </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`glass hover:bg-white/10 ${
+                      isActive("/dashboard") ? "text-accent-blue" : "text-text-secondary"
+                    }`}
+                  >
+                    <User size={20} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-slate-800 border-slate-700">
+                  <DropdownMenuItem className="text-slate-300">
+                    <User className="mr-2 h-4 w-4" />
+                    {user.username}
+                    {user.role === "developer" && (
+                      <span className="ml-auto text-xs bg-purple-600 px-2 py-1 rounded">DEV</span>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-slate-700" />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard" className="cursor-pointer text-slate-300 hover:text-white">
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/orders" className="cursor-pointer text-slate-300 hover:text-white">
+                      Orders
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-slate-700" />
+                  <DropdownMenuItem 
+                    onClick={() => logoutMutation.mutate()} 
+                    className="text-red-400 hover:text-red-300 cursor-pointer"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/auth">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`glass hover:bg-white/10 ${
+                    isActive("/auth") ? "text-accent-blue" : "text-text-secondary"
+                  }`}
+                >
+                  <LogIn size={20} />
+                </Button>
+              </Link>
+            )}
 
             {/* Cart */}
             <Link href="/cart">

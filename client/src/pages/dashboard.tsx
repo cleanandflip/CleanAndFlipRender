@@ -16,31 +16,23 @@ import {
   Truck,
   Star
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 import type { Order, EquipmentSubmission, Wishlist, Product } from "@shared/schema";
 
-// Mock user data - replace with actual auth
-const mockUser = {
-  id: "temp-user-id",
-  firstName: "John",
-  lastName: "Doe",
-  email: "john.doe@example.com",
-  phone: "(555) 123-4567",
-};
-
-export default function Dashboard() {
+function DashboardContent() {
+  const { user } = useAuth();
+  
   const { data: orders = [] } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
-    queryParams: { userId: mockUser.id },
   });
 
   const { data: submissions = [] } = useQuery<EquipmentSubmission[]>({
     queryKey: ["/api/submissions"],
-    queryParams: { userId: mockUser.id },
   });
 
   const { data: wishlist = [] } = useQuery<(Wishlist & { product: Product })[]>({
     queryKey: ["/api/wishlist"],
-    queryParams: { userId: mockUser.id },
   });
 
   const getStatusColor = (status: string) => {
@@ -376,5 +368,13 @@ export default function Dashboard() {
         </Tabs>
       </div>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

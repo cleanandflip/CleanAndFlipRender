@@ -36,10 +36,11 @@ export const userRoleEnum = pgEnum("user_role", [
 // Users table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  username: varchar("username").unique().notNull(),
+  email: varchar("email").unique().notNull(),
+  password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
   phone: varchar("phone"),
   role: userRoleEnum("role").default("user"),
   isAdmin: boolean("is_admin").default(false),
@@ -327,7 +328,6 @@ export const insertWishlistSchema = createInsertSchema(wishlist).omit({
 
 // Types
 export type User = typeof users.$inferSelect;
-export type UpsertUser = typeof users.$inferInsert;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type Category = typeof categories.$inferSelect;

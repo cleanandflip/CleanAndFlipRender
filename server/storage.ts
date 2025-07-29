@@ -9,7 +9,7 @@ import {
   equipmentSubmissions,
   wishlist,
   type User,
-  type UpsertUser,
+  type InsertUser,
   type Product,
   type InsertProduct,
   type Category,
@@ -33,7 +33,9 @@ import { eq, desc, asc, and, or, like, gte, lte, inArray, sql } from "drizzle-or
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   updateUserStripeInfo(id: string, customerId: string, subscriptionId?: string): Promise<User>;
 
   // Category operations
@@ -75,11 +77,12 @@ export interface IStorage {
   deleteAddress(id: string): Promise<void>;
 
   // Order operations
-  getOrders(userId?: string, limit?: number, offset?: number): Promise<Order[]>;
-  getOrder(id: string): Promise<(Order & { items: (OrderItem & { product: Product })[] }) | undefined>;
+  getUserOrders(userId: string): Promise<Order[]>;
+  getOrder(id: string): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
-  createOrderItems(items: InsertOrderItem[]): Promise<OrderItem[]>;
   updateOrderStatus(id: string, status: string): Promise<Order>;
+  getOrderItems(orderId: string): Promise<(OrderItem & { product: Product })[]>;
+  createOrderItems(orderItems: InsertOrderItem[]): Promise<OrderItem[]>;
 
   // Equipment submission operations
   getSubmissions(userId?: string): Promise<EquipmentSubmission[]>;
@@ -88,7 +91,7 @@ export interface IStorage {
   updateSubmission(id: string, submission: Partial<InsertEquipmentSubmission>): Promise<EquipmentSubmission>;
 
   // Wishlist operations
-  getWishlist(userId: string): Promise<(Wishlist & { product: Product })[]>;
+  getWishlistItems(userId: string): Promise<(Wishlist & { product: Product })[]>;
   addToWishlist(wishlistItem: InsertWishlist): Promise<Wishlist>;
   removeFromWishlist(userId: string, productId: string): Promise<void>;
 }
@@ -100,17 +103,20 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
+      .values(insertUser)
       .returning();
     return user;
   }
@@ -130,7 +136,7 @@ export class DatabaseStorage implements IStorage {
 
   // Category operations
   async getCategories(): Promise<Category[]> {
-    return await db.select().from(categories).orderBy(categories.name);
+    return await db.select().from(categories).orderBy(asc(categories.name));
   }
 
   async createCategory(category: InsertCategory): Promise<Category> {
@@ -152,23 +158,14 @@ export class DatabaseStorage implements IStorage {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }): Promise<{ products: Product[]; total: number }> {
-    let query = db.select().from(products);
-    let countQuery = db.select({ count: sql`count(*)` }).from(products);
-
     const conditions = [];
 
     if (filters?.category) {
-      const categoryCondition = eq(products.categoryId, filters.category);
-      conditions.push(categoryCondition);
+      conditions.push(eq(products.categoryId, filters.category));
     }
 
     if (filters?.search) {
-      const searchCondition = or(
-        like(products.name, `%${filters.search}%`),
-        like(products.description, `%${filters.search}%`),
-        like(products.brand, `%${filters.search}%`)
-      );
-      conditions.push(searchCondition);
+      conditions.push(like(products.name, `%${filters.search}%`));
     }
 
     if (filters?.minPrice) {
@@ -189,54 +186,49 @@ export class DatabaseStorage implements IStorage {
 
     if (filters?.status) {
       conditions.push(eq(products.status, filters.status as any));
-    } else {
-      conditions.push(eq(products.status, 'active'));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-      countQuery = countQuery.where(and(...conditions));
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Build count query
+    const countQueryBuilder = db.select({ count: sql<number>`count(*)` }).from(products);
+    const countQuery = whereClause ? countQueryBuilder.where(whereClause) : countQueryBuilder;
+
+    // Build main query
+    let queryBuilder = db.select().from(products);
+    if (whereClause) {
+      queryBuilder = queryBuilder.where(whereClause);
     }
 
     // Sorting
-    if (filters?.sortBy) {
-      const sortOrder = filters.sortOrder === 'desc' ? desc : asc;
-      switch (filters.sortBy) {
-        case 'price':
-          query = query.orderBy(sortOrder(products.price));
-          break;
-        case 'name':
-          query = query.orderBy(sortOrder(products.name));
-          break;
-        case 'createdAt':
-          query = query.orderBy(sortOrder(products.createdAt));
-          break;
-        case 'views':
-          query = query.orderBy(sortOrder(products.views));
-          break;
-        default:
-          query = query.orderBy(desc(products.createdAt));
-      }
+    if (filters?.sortBy === 'price') {
+      queryBuilder = filters.sortOrder === 'desc' 
+        ? queryBuilder.orderBy(desc(products.price))
+        : queryBuilder.orderBy(asc(products.price));
+    } else if (filters?.sortBy === 'name') {
+      queryBuilder = filters.sortOrder === 'desc' 
+        ? queryBuilder.orderBy(desc(products.name))
+        : queryBuilder.orderBy(asc(products.name));
     } else {
-      query = query.orderBy(desc(products.createdAt));
+      queryBuilder = queryBuilder.orderBy(desc(products.createdAt));
     }
 
     // Pagination
     if (filters?.limit) {
-      query = query.limit(filters.limit);
+      queryBuilder = queryBuilder.limit(filters.limit);
     }
     if (filters?.offset) {
-      query = query.offset(filters.offset);
+      queryBuilder = queryBuilder.offset(filters.offset);
     }
 
-    const [productsResult, countResult] = await Promise.all([
-      query,
-      countQuery,
+    const [productResults, countResults] = await Promise.all([
+      queryBuilder,
+      countQuery
     ]);
 
     return {
-      products: productsResult,
-      total: Number(countResult[0].count),
+      products: productResults,
+      total: countResults[0]?.count || 0
     };
   }
 
@@ -250,13 +242,16 @@ export class DatabaseStorage implements IStorage {
     return newProduct;
   }
 
-  async updateProduct(id: string, productData: Partial<InsertProduct>): Promise<Product> {
-    const [product] = await db
+  async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product> {
+    const [updatedProduct] = await db
       .update(products)
-      .set({ ...productData, updatedAt: new Date() })
+      .set({
+        ...product,
+        updatedAt: new Date(),
+      })
       .where(eq(products.id, id))
       .returning();
-    return product;
+    return updatedProduct;
   }
 
   async deleteProduct(id: string): Promise<void> {
@@ -266,15 +261,17 @@ export class DatabaseStorage implements IStorage {
   async incrementProductViews(id: string): Promise<void> {
     await db
       .update(products)
-      .set({ views: sql`${products.views} + 1` })
+      .set({
+        views: sql`${products.views} + 1`,
+      })
       .where(eq(products.id, id));
   }
 
-  async getFeaturedProducts(limit = 8): Promise<Product[]> {
+  async getFeaturedProducts(limit: number = 6): Promise<Product[]> {
     return await db
       .select()
       .from(products)
-      .where(and(eq(products.featured, true), eq(products.status, 'active')))
+      .where(eq(products.featured, true))
       .orderBy(desc(products.createdAt))
       .limit(limit);
   }
@@ -282,39 +279,39 @@ export class DatabaseStorage implements IStorage {
   // Cart operations
   async getCartItems(userId: string): Promise<(CartItem & { product: Product })[]> {
     return await db
-      .select()
+      .select({
+        id: cartItems.id,
+        userId: cartItems.userId,
+        productId: cartItems.productId,
+        quantity: cartItems.quantity,
+        createdAt: cartItems.createdAt,
+        product: products,
+      })
       .from(cartItems)
-      .leftJoin(products, eq(cartItems.productId, products.id))
-      .where(eq(cartItems.userId, userId))
-      .then(rows => 
-        rows.map(row => ({
-          ...row.cart_items,
-          product: row.products!,
-        }))
-      );
+      .innerJoin(products, eq(cartItems.productId, products.id))
+      .where(eq(cartItems.userId, userId));
   }
 
   async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
     // Check if item already exists in cart
-    const [existing] = await db
+    const [existingItem] = await db
       .select()
       .from(cartItems)
-      .where(and(
-        eq(cartItems.userId, cartItem.userId),
-        eq(cartItems.productId, cartItem.productId)
-      ));
+      .where(
+        and(
+          eq(cartItems.userId, cartItem.userId!),
+          eq(cartItems.productId, cartItem.productId!)
+        )
+      );
 
-    if (existing) {
+    if (existingItem) {
       // Update quantity
-      const [updated] = await db
+      const [updatedItem] = await db
         .update(cartItems)
-        .set({ 
-          quantity: existing.quantity + cartItem.quantity,
-          updatedAt: new Date()
-        })
-        .where(eq(cartItems.id, existing.id))
+        .set({ quantity: existingItem.quantity + (cartItem.quantity || 1) })
+        .where(eq(cartItems.id, existingItem.id))
         .returning();
-      return updated;
+      return updatedItem;
     } else {
       // Create new cart item
       const [newItem] = await db.insert(cartItems).values(cartItem).returning();
@@ -323,12 +320,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCartItem(id: string, quantity: number): Promise<CartItem> {
-    const [item] = await db
+    const [updatedItem] = await db
       .update(cartItems)
-      .set({ quantity, updatedAt: new Date() })
+      .set({ quantity })
       .where(eq(cartItems.id, id))
       .returning();
-    return item;
+    return updatedItem;
   }
 
   async removeFromCart(id: string): Promise<void> {
@@ -349,13 +346,13 @@ export class DatabaseStorage implements IStorage {
     return newAddress;
   }
 
-  async updateAddress(id: string, addressData: Partial<InsertAddress>): Promise<Address> {
-    const [address] = await db
+  async updateAddress(id: string, address: Partial<InsertAddress>): Promise<Address> {
+    const [updatedAddress] = await db
       .update(addresses)
-      .set(addressData)
+      .set(address)
       .where(eq(addresses.id, id))
       .returning();
-    return address;
+    return updatedAddress;
   }
 
   async deleteAddress(id: string): Promise<void> {
@@ -363,37 +360,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Order operations
-  async getOrders(userId?: string, limit = 50, offset = 0): Promise<Order[]> {
-    let query = db.select().from(orders);
-    
-    if (userId) {
-      query = query.where(eq(orders.userId, userId));
-    }
-    
-    return await query
-      .orderBy(desc(orders.createdAt))
-      .limit(limit)
-      .offset(offset);
+  async getUserOrders(userId: string): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.userId, userId))
+      .orderBy(desc(orders.createdAt));
   }
 
-  async getOrder(id: string): Promise<(Order & { items: (OrderItem & { product: Product })[] }) | undefined> {
+  async getOrder(id: string): Promise<Order | undefined> {
     const [order] = await db.select().from(orders).where(eq(orders.id, id));
-    
-    if (!order) return undefined;
-
-    const items = await db
-      .select()
-      .from(orderItems)
-      .leftJoin(products, eq(orderItems.productId, products.id))
-      .where(eq(orderItems.orderId, id))
-      .then(rows =>
-        rows.map(row => ({
-          ...row.order_items,
-          product: row.products!,
-        }))
-      );
-
-    return { ...order, items };
+    return order;
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
@@ -401,17 +378,35 @@ export class DatabaseStorage implements IStorage {
     return newOrder;
   }
 
-  async createOrderItems(items: InsertOrderItem[]): Promise<OrderItem[]> {
-    return await db.insert(orderItems).values(items).returning();
-  }
-
   async updateOrderStatus(id: string, status: string): Promise<Order> {
-    const [order] = await db
+    const [updatedOrder] = await db
       .update(orders)
-      .set({ status: status as any, updatedAt: new Date() })
+      .set({ 
+        status: status as any,
+        updatedAt: new Date() 
+      })
       .where(eq(orders.id, id))
       .returning();
-    return order;
+    return updatedOrder;
+  }
+
+  async getOrderItems(orderId: string): Promise<(OrderItem & { product: Product })[]> {
+    return await db
+      .select({
+        id: orderItems.id,
+        orderId: orderItems.orderId,
+        productId: orderItems.productId,
+        quantity: orderItems.quantity,
+        price: orderItems.price,
+        product: products,
+      })
+      .from(orderItems)
+      .innerJoin(products, eq(orderItems.productId, products.id))
+      .where(eq(orderItems.orderId, orderId));
+  }
+
+  async createOrderItems(items: InsertOrderItem[]): Promise<OrderItem[]> {
+    return await db.insert(orderItems).values(items).returning();
   }
 
   // Equipment submission operations
@@ -442,30 +437,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSubmission(
-    id: string,
-    submissionData: Partial<InsertEquipmentSubmission>
+    id: string, 
+    submission: Partial<InsertEquipmentSubmission>
   ): Promise<EquipmentSubmission> {
-    const [submission] = await db
+    const [updatedSubmission] = await db
       .update(equipmentSubmissions)
-      .set({ ...submissionData, updatedAt: new Date() })
+      .set({
+        ...submission,
+        updatedAt: new Date(),
+      })
       .where(eq(equipmentSubmissions.id, id))
       .returning();
-    return submission;
+    return updatedSubmission;
   }
 
   // Wishlist operations
-  async getWishlist(userId: string): Promise<(Wishlist & { product: Product })[]> {
+  async getWishlistItems(userId: string): Promise<(Wishlist & { product: Product })[]> {
     return await db
-      .select()
+      .select({
+        id: wishlist.id,
+        userId: wishlist.userId,
+        productId: wishlist.productId,
+        createdAt: wishlist.createdAt,
+        product: products,
+      })
       .from(wishlist)
-      .leftJoin(products, eq(wishlist.productId, products.id))
-      .where(eq(wishlist.userId, userId))
-      .then(rows =>
-        rows.map(row => ({
-          ...row.wishlist,
-          product: row.products!,
-        }))
-      );
+      .innerJoin(products, eq(wishlist.productId, products.id))
+      .where(eq(wishlist.userId, userId));
   }
 
   async addToWishlist(wishlistItem: InsertWishlist): Promise<Wishlist> {
@@ -476,7 +474,12 @@ export class DatabaseStorage implements IStorage {
   async removeFromWishlist(userId: string, productId: string): Promise<void> {
     await db
       .delete(wishlist)
-      .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)));
+      .where(
+        and(
+          eq(wishlist.userId, userId),
+          eq(wishlist.productId, productId)
+        )
+      );
   }
 }
 
