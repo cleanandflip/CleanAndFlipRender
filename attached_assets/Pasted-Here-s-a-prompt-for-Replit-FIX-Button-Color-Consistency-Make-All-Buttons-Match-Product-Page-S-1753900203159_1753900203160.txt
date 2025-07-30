@@ -1,0 +1,149 @@
+Here's a prompt for Replit:
+
+FIX: Button Color Consistency - Make All Buttons Match Product Page Style
+Issues:
+
+Green "In Cart" button doesn't match the style of blue "Add to Cart" button
+Product cards have dark/black buttons instead of light blue
+Wishlist buttons don't match between pages
+
+USE THESE EXACT COLORS FROM PRODUCT PAGE:
+
+Add to Cart: bg-blue-500 (light blue)
+In Cart: bg-green-600 (green)
+Both should have same padding, rounded corners, hover effects
+
+1. FIX PRODUCT CARD BUTTONS:
+javascript// ProductCard.jsx - Match exact product page styling
+const ProductCard = ({ product }) => {
+  const { isInCart, addToCart, removeFromCart } = useCart();
+  const inCart = isInCart(product.id);
+  
+  return (
+    <div className="bg-gray-800/50 rounded-lg overflow-hidden">
+      {/* Only 1 left badge */}
+      {product.stock === 1 && (
+        <span className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs z-10">
+          Only 1 left
+        </span>
+      )}
+      
+      {/* Wishlist button - EXACT SAME as product page */}
+      <button className="absolute top-2 right-2 w-8 h-8 bg-gray-700/80 hover:bg-gray-600 rounded-full flex items-center justify-center z-10 transition-all">
+        <Heart className="w-4 h-4 text-white" />
+      </button>
+      
+      <Link href={`/products/${product.id}`}>
+        {/* Product content */}
+      </Link>
+      
+      {/* EXACT SAME BUTTON STYLING AS PRODUCT PAGE */}
+      <div className="p-4">
+        {inCart ? (
+          <button 
+            onClick={() => router.push('/cart')}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+          >
+            <Check className="w-4 h-4" />
+            In Cart - View
+          </button>
+        ) : (
+          <button 
+            onClick={() => addToCart(product.id)}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Add to Cart
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+2. UNIFIED BUTTON COMPONENT:
+javascript// components/ui/CartButton.jsx - Use everywhere
+export const CartButton = ({ productId, variant = 'card' }) => {
+  const { isInCart, addToCart } = useCart();
+  const router = useRouter();
+  const inCart = isInCart(productId);
+  
+  // Same styling for both card and product page
+  const baseClasses = "w-full py-2.5 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2";
+  
+  if (inCart) {
+    return (
+      <button 
+        onClick={() => router.push('/cart')}
+        className={`${baseClasses} bg-green-600 hover:bg-green-700 text-white`}
+      >
+        <Check className="w-4 h-4" />
+        In Cart - View
+      </button>
+    );
+  }
+  
+  return (
+    <button 
+      onClick={() => addToCart(productId)}
+      className={`${baseClasses} bg-blue-500 hover:bg-blue-600 text-white`}
+    >
+      <ShoppingCart className="w-4 h-4" />
+      Add to Cart
+    </button>
+  );
+};
+3. UNIFIED WISHLIST BUTTON:
+javascript// components/ui/WishlistButton.jsx - Exact same everywhere
+export const WishlistButton = ({ productId, size = 'default' }) => {
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  
+  const sizeMap = {
+    small: 'w-8 h-8',   // For cards
+    default: 'w-10 h-10' // For product page
+  };
+  
+  return (
+    <button 
+      onClick={handleToggle}
+      className={`${sizeMap[size]} bg-gray-700/80 hover:bg-gray-600 rounded-full flex items-center justify-center transition-all
+        ${isWishlisted ? 'bg-red-500 hover:bg-red-600' : ''}`}
+    >
+      <Heart 
+        className={size === 'small' ? 'w-4 h-4' : 'w-5 h-5'} 
+        fill={isWishlisted ? 'white' : 'none'}
+        color="white"
+      />
+    </button>
+  );
+};
+4. REMOVE ALL DARK/BLACK BUTTONS:
+javascript// Search and replace in entire codebase:
+// OLD: bg-gray-900, bg-black, bg-gray-800 (for buttons)
+// NEW: bg-blue-500 (for add to cart)
+
+// Make sure NO button has these classes:
+- bg-black
+- bg-gray-900 
+- bg-gray-950
+- bg-slate-800 (for buttons)
+5. PRODUCT PAGE BUTTONS (keep as reference):
+javascript// This is the style to match everywhere:
+<button className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2">
+  <ShoppingCart className="w-4 h-4" />
+  Add to Cart
+</button>
+
+// When in cart:
+<button className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2">
+  <Check className="w-4 h-4" />
+  In Cart - View
+</button>
+KEY CHANGES:
+
+✅ ALL "Add to Cart" buttons are bg-blue-500 (light blue)
+✅ ALL "In Cart" buttons are bg-green-600 (green)
+✅ Same padding, borders, hover effects everywhere
+✅ Wishlist buttons consistent gray color
+✅ NO MORE dark/black buttons anywhere
+
+Every button should look exactly like the product page buttons!

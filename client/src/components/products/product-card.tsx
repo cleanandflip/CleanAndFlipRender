@@ -131,7 +131,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                     productId={product.id}
                     stock={product.stockQuantity}
                     size="sm"
-                    className="bg-accent-blue hover:bg-blue-500"
+                    className=""
                   />
                 </div>
               </div>
@@ -176,7 +176,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
         <WishlistButton 
           productId={product.id}
           size="small"
-          className="w-10 h-10 bg-white/20 backdrop-blur rounded-full hover:bg-white/30 hover:scale-110 transition-all duration-200 active:animate-ping-once"
+          className="w-10 h-10 bg-gray-700/80 hover:bg-gray-600 rounded-full transition-all duration-200"
           showTooltip={false}
         />
       </div>
@@ -230,7 +230,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           productId={product.id}
           stock={product.stockQuantity}
           size="sm"
-          className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-gray-700 hover:border-gray-600 hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium"
+          className="w-full"
         />
       </div>
     </div>
