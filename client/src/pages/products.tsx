@@ -55,6 +55,9 @@ export default function Products() {
         offset: currentPage * itemsPerPage,
       },
     ],
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always refetch when component mounts
+    staleTime: 2 * 60 * 1000, // 2 minutes stale time for product listings
   });
 
   const handleFilterChange = (newFilters: ProductFilters) => {

@@ -9,6 +9,9 @@ import type { Product } from "@shared/schema";
 export default function Home() {
   const { data: featuredProducts } = useQuery<Product[]>({
     queryKey: ["/api/products/featured"],
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always refetch when component mounts
+    staleTime: 2 * 60 * 1000, // 2 minutes stale time for featured products
   });
 
   return (

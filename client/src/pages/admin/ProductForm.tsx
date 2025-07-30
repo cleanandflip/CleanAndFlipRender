@@ -191,8 +191,20 @@ export function ProductForm() {
     },
     onSuccess: () => {
       toast({ title: "Success", description: isEdit ? 'Product updated successfully!' : 'Product created successfully!' });
+      
+      // Comprehensive cache invalidation for all product-related queries
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] });
+      
+      // Invalidate specific product if editing
+      if (isEdit && id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/products/${id}`] });
+      }
+      
+      // Force refetch all product queries immediately
+      queryClient.refetchQueries({ queryKey: ['/api/products'] });
+      
       navigate('/admin');
     },
     onError: (error) => {

@@ -41,6 +41,9 @@ export default function ProductDetail() {
   const { data: product, isLoading, error } = useQuery<Product>({
     queryKey: [`/api/products/${id}`],
     enabled: !!id && typeof id === 'string' && id !== '[object Object]',
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always refetch when component mounts
+    staleTime: 2 * 60 * 1000, // 2 minutes stale time for individual products
   });
 
   const addToWishlistMutation = useMutation({

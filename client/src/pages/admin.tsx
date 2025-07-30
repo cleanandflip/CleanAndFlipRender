@@ -85,7 +85,15 @@ function ProductManagement() {
       return response.json();
     },
     onSuccess: () => {
+      // Comprehensive cache invalidation for product deletion
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/featured"] });
+      
+      // Force immediate refetch of all product queries
+      queryClient.refetchQueries({ queryKey: ["/api/products"] });
+      queryClient.refetchQueries({ queryKey: ["/api/products/featured"] });
+      
       toast({ description: "Product deleted successfully" });
     },
     onError: (error) => {
@@ -102,7 +110,14 @@ function ProductManagement() {
       return apiRequest('PUT', `/api/admin/products/${productId}/stock`, { status });
     },
     onSuccess: () => {
+      // Comprehensive cache invalidation for stock updates
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/featured"] });
+      
+      // Force immediate refetch
+      queryClient.refetchQueries({ queryKey: ["/api/products"] });
+      
       toast({ description: "Stock status updated" });
     }
   });

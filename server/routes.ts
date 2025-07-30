@@ -68,6 +68,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sortOrder: sortOrder as 'asc' | 'desc'
       };
 
+      // Set cache headers to prevent aggressive caching
+      res.set({
+        'Cache-Control': 'public, max-age=120, must-revalidate', // 2 minutes cache
+        'ETag': `W/"products-${Date.now()}"` // Weak ETag for cache validation
+      });
+      
       const result = await storage.getProducts(filters);
       res.json(result);
     } catch (error) {
@@ -78,6 +84,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/products/featured", async (req, res) => {
     try {
+      // Set cache headers to prevent aggressive caching
+      res.set({
+        'Cache-Control': 'public, max-age=120, must-revalidate', // 2 minutes cache
+        'ETag': `W/"featured-${Date.now()}"` // Weak ETag for cache validation
+      });
+      
       const limit = req.query.limit ? Number(req.query.limit) : 8;
       const products = await storage.getFeaturedProducts(limit);
       res.json(products);
@@ -89,6 +101,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/products/:id", async (req, res) => {
     try {
+      // Set cache headers to prevent aggressive caching
+      res.set({
+        'Cache-Control': 'public, max-age=120, must-revalidate', // 2 minutes cache
+        'ETag': `W/"product-${req.params.id}-${Date.now()}"` // Weak ETag for cache validation
+      });
+      
       const product = await storage.getProduct(req.params.id);
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
