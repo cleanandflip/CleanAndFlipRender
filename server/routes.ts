@@ -356,54 +356,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin routes
+  // Admin routes - use passport authentication
   const requireAdmin = async (req: any, res: any, next: any) => {
-    console.log('Admin middleware - Session:', req.session?.userId);
+    console.log('Admin middleware - Is authenticated:', req.isAuthenticated?.());
+    console.log('Admin middleware - User from passport:', req.user);
+    console.log('Admin middleware - Session passport:', req.session?.passport);
     
-    if (!req.session?.userId) {
-      console.log('No session userId found');
+    // Check if user is authenticated via passport
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      console.log('User not authenticated via passport');
       return res.status(401).json({ error: "Authentication required" });
     }
     
-    try {
-      const user = await storage.getUser(req.session.userId);
-      console.log('Found user:', user?.email, 'role:', user?.role, 'isAdmin:', user?.isAdmin);
-      
-      if (!user) {
-        console.log('User not found');
-        return res.status(403).json({ error: "User not found" });
-      }
-      
-      if (!user.isAdmin && user.role !== 'developer') {
-        console.log('User lacks admin privileges');
-        return res.status(403).json({ error: "Admin access required" });
-      }
-      
-      req.user = user;
-      next();
-    } catch (error) {
-      console.error("Error checking admin access:", error);
-      return res.status(500).json({ error: "Internal server error" });
+    const user = req.user;
+    if (!user) {
+      console.log('No user object in request');
+      return res.status(401).json({ error: "Authentication required" });
     }
+    
+    console.log('Admin check - User:', user.email, 'role:', user.role, 'isAdmin:', user.isAdmin);
+    
+    // Check if user has admin privileges
+    if (!user.isAdmin && user.role !== 'developer') {
+      console.log('User lacks admin privileges:', user.role, user.isAdmin);
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    
+    console.log('Admin access granted for:', user.email);
+    next();
   };
 
   app.get("/api/admin/stats", requireAdmin, async (req, res) => {
     try {
       const stats = await storage.getAdminStats();
-      res.json(stats);
+      console.log('Admin stats result:', stats);
+      res.json({
+        totalProducts: stats.totalProducts || 0,
+        totalUsers: stats.totalUsers || 0,
+        totalOrders: stats.totalOrders || 0,
+        totalRevenue: stats.totalRevenue || 0,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.error("Error fetching admin stats:", error);
-      res.status(500).json({ message: "Failed to fetch admin stats" });
+      res.status(500).json({ error: "Failed to fetch admin stats" });
     }
   });
 
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      res.json(users);
+      console.log('Admin users result:', users.length, 'users found');
+      res.json(users.map(user => ({
+        id: user.id,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        isAdmin: user.isAdmin
+      })));
     } catch (error) {
       console.error("Error fetching users:", error);
-      res.status(500).json({ message: "Failed to fetch users" });
+      res.status(500).json({ error: "Failed to fetch users" });
     }
   });
 
