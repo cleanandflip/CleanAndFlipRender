@@ -648,7 +648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin wishlist analytics
+  // Admin wishlist analytics - Basic
   app.get("/api/admin/wishlist-analytics", requireAdmin, async (req, res) => {
     try {
       const analytics = await storage.getWishlistAnalytics();
@@ -656,6 +656,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching wishlist analytics:", error);
       res.status(500).json({ message: "Failed to fetch wishlist analytics" });
+    }
+  });
+
+  // Enhanced wishlist analytics with comprehensive insights
+  app.get("/api/admin/wishlist-analytics/detailed", requireAdmin, async (req, res) => {
+    try {
+      const { timeRange = '30d' } = req.query;
+      const analytics = await storage.getDetailedWishlistAnalytics(timeRange as string);
+      
+      // Generate actionable insights
+      const insights = generateWishlistInsights(analytics);
+      
+      res.json({
+        stats: analytics.stats,
+        trendData: analytics.trendData,
+        topProducts: analytics.topProducts,
+        topUsers: analytics.topUsers,
+        insights
+      });
+    } catch (error) {
+      console.error("Error fetching detailed wishlist analytics:", error);
+      res.status(500).json({ message: "Failed to fetch detailed wishlist analytics" });
+    }
+  });
+
+  // Export wishlist analytics data
+  app.get("/api/admin/wishlist-analytics/export", requireAdmin, async (req, res) => {
+    try {
+      const { format = 'csv' } = req.query;
+      const data = await storage.getWishlistExportData();
+      
+      if (format === 'csv') {
+        const csv = convertToCSV(data);
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=wishlist-analytics.csv');
+        res.send(csv);
+      } else {
+        res.json(data);
+      }
+    } catch (error) {
+      console.error("Error exporting wishlist data:", error);
+      res.status(500).json({ message: "Failed to export wishlist data" });
     }
   });
 
@@ -1165,4 +1207,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Helper function to generate actionable insights
+function generateWishlistInsights(analytics: any) {
+  const insights = [];
+  
+  // High-demand products
+  const highDemand = analytics.topProducts?.filter((p: any) => p.wishlistCount > 5) || [];
+  if (highDemand.length > 0) {
+    insights.push({
+      title: `${highDemand.length} products in high demand`,
+      description: 'Consider restocking or featuring these items prominently',
+      action: 'View products',
+      type: 'opportunity'
+    });
+  }
+  
+  // Low conversion products
+  const lowConversion = analytics.topProducts?.filter((p: any) => 
+    p.wishlistCount > 3 && p.conversionRate < 10
+  ) || [];
+  if (lowConversion.length > 0) {
+    insights.push({
+      title: 'Products with low conversion',
+      description: `${lowConversion.length} wishlisted items rarely purchased`,
+      action: 'Review pricing',
+      type: 'warning'
+    });
+  }
+  
+  // User engagement insights
+  if (analytics.stats?.avgDaysInWishlist > 30) {
+    insights.push({
+      title: 'Long wishlist duration',
+      description: 'Items stay in wishlists for over a month on average',
+      action: 'Send reminder emails',
+      type: 'info'
+    });
+  }
+  
+  // Power user opportunities
+  if (analytics.stats?.powerUsers > 0) {
+    insights.push({
+      title: `${analytics.stats.powerUsers} power users identified`,
+      description: 'Users with 10+ wishlist items - potential for VIP program',
+      action: 'Create segments',
+      type: 'opportunity'
+    });
+  }
+  
+  return insights;
+}
+
+// Helper function to convert data to CSV format
+function convertToCSV(data: any[]) {
+  if (!data.length) return '';
+  
+  const headers = Object.keys(data[0]);
+  const csvContent = [
+    headers.join(','),
+    ...data.map(row => 
+      headers.map(header => {
+        const value = row[header] || '';
+        return typeof value === 'string' && value.includes(',') 
+          ? `"${value}"` 
+          : value;
+      }).join(',')
+    )
+  ].join('\n');
+  
+  return csvContent;
 }

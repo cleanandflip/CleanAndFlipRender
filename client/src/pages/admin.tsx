@@ -34,6 +34,7 @@ import { apiRequest, broadcastProductUpdate } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLiveData } from "@/hooks/use-live-data";
 import WishlistAnalytics from "@/components/admin/wishlist-analytics";
+import EnhancedWishlistAnalytics from "@/components/admin/enhanced-wishlist-analytics";
 import CategoryManagement from "@/components/admin/category-management";
 import type { Product, User, Order } from "@shared/schema";
 
@@ -649,7 +650,7 @@ function AdminDashboard() {
             </TabsContent>
 
             <TabsContent value="wishlist">
-              <WishlistAnalytics />
+              <EnhancedWishlistAnalytics />
             </TabsContent>
 
             <TabsContent value="users">
