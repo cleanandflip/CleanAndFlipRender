@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/use-cart';
 import { ShoppingCart } from 'lucide-react';
@@ -83,7 +84,7 @@ export function AddToCartButton({
     >
       {loading ? (
         <>
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+          <LoadingSpinner size="small" color="white" className="mr-2" />
           Adding...
         </>
       ) : isOutOfStock ? (

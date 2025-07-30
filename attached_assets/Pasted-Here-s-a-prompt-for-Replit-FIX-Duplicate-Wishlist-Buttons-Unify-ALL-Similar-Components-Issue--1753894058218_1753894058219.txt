@@ -1,0 +1,278 @@
+Here's a prompt for Replit:
+
+FIX: Duplicate Wishlist Buttons & Unify ALL Similar Components
+Issue:
+
+Different wishlist buttons on /products (hover) vs individual product pages
+Product page wishlist button doesn't animate or turn red when active
+Multiple duplicate components throughout codebase causing inconsistent behavior
+
+COMPREHENSIVE SOLUTION: Unify ALL Reusable Components
+1. Create Unified WishlistButton Component:
+javascript// components/ui/WishlistButton.jsx
+import { useState, useEffect } from 'react';
+import { Heart } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+
+export const WishlistButton = ({ 
+  productId, 
+  size = 'default', // 'small' for product cards, 'default' for product page
+  className = '',
+  showTooltip = true 
+}) => {
+  const { user, token } = useAuth();
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  
+  // Check wishlist status on mount
+  useEffect(() => {
+    if (user && productId) {
+      checkWishlistStatus();
+    }
+  }, [user, productId]);
+  
+  const checkWishlistStatus = async () => {
+    try {
+      const response = await fetch('/api/wishlist/check', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ productId })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsWishlisted(data.isWishlisted);
+      }
+    } catch (error) {
+      console.error('Error checking wishlist:', error);
+    }
+  };
+  
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault(); // Prevent navigation if inside a link
+    e.stopPropagation(); // Prevent card click
+    
+    if (!user) {
+      setShowLoginPrompt(true);
+      setTimeout(() => setShowLoginPrompt(false), 3000);
+      return;
+    }
+    
+    if (loading) return;
+    
+    setLoading(true);
+    
+    try {
+      const method = isWishlisted ? 'DELETE' : 'POST';
+      const response = await fetch('/api/wishlist', {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ productId })
+      });
+      
+      if (response.ok) {
+        setIsWishlisted(!isWishlisted);
+        
+        // Dispatch event for other components
+        window.dispatchEvent(new CustomEvent('wishlistUpdated', {
+          detail: { productId, action: isWishlisted ? 'remove' : 'add' }
+        }));
+      }
+    } catch (error) {
+      console.error('Wishlist error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const sizeClasses = {
+    small: 'w-8 h-8',
+    default: 'w-10 h-10'
+  };
+  
+  const iconSize = size === 'small' ? 16 : 20;
+  
+  return (
+    <div className="relative">
+      <button
+        onClick={handleWishlistToggle}
+        disabled={loading}
+        className={`
+          ${sizeClasses[size]}
+          rounded-full flex items-center justify-center
+          transition-all duration-300 transform
+          ${isWishlisted 
+            ? 'bg-red-500 text-white scale-110 shadow-lg' 
+            : 'bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white hover:shadow-md hover:scale-110'
+          }
+          ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          ${className}
+        `}
+        aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+      >
+        <Heart 
+          size={iconSize}
+          className={`transition-all duration-300 ${isWishlisted ? 'fill-current' : ''}`}
+          fill={isWishlisted ? 'currentColor' : 'none'}
+        />
+      </button>
+      
+      {/* Tooltip */}
+      {showTooltip && !showLoginPrompt && (
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 
+                        opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+          <div className="bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+            {isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+          </div>
+        </div>
+      )}
+      
+      {/* Login prompt */}
+      {showLoginPrompt && (
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2">
+          <div className="bg-black text-white text-xs px-3 py-2 rounded whitespace-nowrap">
+            Please log in to save items
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+2. Update ALL Components to Use Unified Versions:
+SEARCH AND REPLACE ALL DUPLICATE INSTANCES:
+javascript// Find all wishlist button implementations and replace with:
+import { WishlistButton } from '@/components/ui/WishlistButton';
+
+// In ProductCard:
+<WishlistButton productId={product.id} size="small" className="absolute top-2 right-2" />
+
+// In ProductPage:
+<WishlistButton productId={product.id} size="default" />
+
+// In WishlistPage items:
+<WishlistButton productId={item.productId} size="small" />
+3. UNIFY OTHER DUPLICATE COMPONENTS:
+AddToCartButton Component:
+javascript// components/ui/AddToCartButton.jsx
+export const AddToCartButton = ({ 
+  productId, 
+  stock, 
+  variant = 'default', // 'default', 'small', 'icon'
+  className = '' 
+}) => {
+  // Unified add to cart logic
+  // Same pattern as WishlistButton
+};
+ProductPrice Component:
+javascript// components/ui/ProductPrice.jsx
+export const ProductPrice = ({ 
+  price, 
+  originalPrice, 
+  size = 'default' // 'small', 'default', 'large'
+}) => {
+  const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  
+  return (
+    <div className="flex items-center gap-2">
+      <span className={`font-bold ${size === 'large' ? 'text-2xl' : size === 'small' ? 'text-sm' : 'text-lg'}`}>
+        ${price}
+      </span>
+      {originalPrice && originalPrice > price && (
+        <>
+          <span className={`line-through text-gray-500 ${size === 'small' ? 'text-xs' : 'text-sm'}`}>
+            ${originalPrice}
+          </span>
+          <span className="text-red-500 text-sm">-{discount}%</span>
+        </>
+      )}
+    </div>
+  );
+};
+StockIndicator Component:
+javascript// components/ui/StockIndicator.jsx
+export const StockIndicator = ({ stock, showNumber = false }) => {
+  if (stock === 0) {
+    return <span className="text-red-600 font-medium">Out of Stock</span>;
+  }
+  
+  if (stock <= 3) {
+    return <span className="text-orange-600 font-medium">Only {stock} left!</span>;
+  }
+  
+  if (showNumber) {
+    return <span className="text-green-600">{stock} in stock</span>;
+  }
+  
+  return <span className="text-green-600">In Stock</span>;
+};
+LoadingSpinner Component:
+javascript// components/ui/LoadingSpinner.jsx
+export const LoadingSpinner = ({ size = 'default', className = '' }) => {
+  const sizeClasses = {
+    small: 'w-4 h-4',
+    default: 'w-8 h-8',
+    large: 'w-12 h-12'
+  };
+  
+  return (
+    <div className={`${sizeClasses[size]} ${className} animate-spin rounded-full border-2 border-gray-300 border-t-black`} />
+  );
+};
+4. AUDIT & REPLACE ALL DUPLICATES:
+bash# Search for duplicate implementations:
+# Look for patterns like:
+- Multiple "Add to Cart" implementations
+- Different wishlist/heart icons
+- Various price display formats
+- Inconsistent loading states
+- Different stock indicators
+- Multiple product card designs
+- Various image gallery implementations
+5. CREATE COMPONENT INDEX FILE:
+javascript// components/ui/index.js
+export { WishlistButton } from './WishlistButton';
+export { AddToCartButton } from './AddToCartButton';
+export { ProductPrice } from './ProductPrice';
+export { StockIndicator } from './StockIndicator';
+export { LoadingSpinner } from './LoadingSpinner';
+export { ProductCard } from './ProductCard';
+export { ImageGallery } from './ImageGallery';
+export { QuantitySelector } from './QuantitySelector';
+
+// Import all at once in pages:
+import { WishlistButton, AddToCartButton, ProductPrice } from '@/components/ui';
+6. ENSURE CONSISTENCY ACROSS:
+
+Home page featured products
+Products listing page
+Individual product pages
+Cart page
+Wishlist page
+Search results
+Admin product previews
+
+7. DELETE ALL DUPLICATE CODE:
+javascript// Remove:
+- Inline wishlist implementations
+- Multiple add-to-cart variations
+- Hardcoded price displays
+- Custom loading animations
+- Inconsistent stock checks
+BENEFITS:
+
+Single source of truth for each component
+Consistent animations and behavior everywhere
+Easier maintenance and updates
+Better performance (less code duplication)
+Unified user experience
+
+Test each page after replacement to ensure all functionality works correctly!

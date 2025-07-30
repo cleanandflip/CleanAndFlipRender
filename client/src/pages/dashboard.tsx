@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { WishlistButton } from "@/components/ui";
 import GlassCard from "@/components/common/glass-card";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -134,41 +135,7 @@ function DashboardContent() {
     return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
   }, [refetchWishlist]);
 
-  // Remove from wishlist mutation
-  const removeFromWishlistMutation = useMutation({
-    mutationFn: async (productId: string) => {
-      const response = await fetch(`/api/wishlist?productId=${productId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to remove from wishlist');
-      }
-      
-      return response.json();
-    },
-    onSuccess: (_, productId) => {
-      toast({
-        title: "Removed from Wishlist",
-        description: "Item has been removed from your wishlist.",
-      });
-      // Trigger global wishlist update event
-      window.dispatchEvent(new CustomEvent('wishlistUpdated', { 
-        detail: { productId, action: 'remove' } 
-      }));
-      // Refetch wishlist
-      refetchWishlist();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to remove from wishlist. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+  // Wishlist removal is now handled by the unified WishlistButton component
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -199,7 +166,7 @@ function DashboardContent() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-bebas text-4xl md:text-6xl mb-2">
-            WELCOME BACK, {user?.firstName?.toUpperCase() || user?.username?.toUpperCase() || 'USER'}
+            WELCOME BACK, {user?.firstName?.toUpperCase() || 'USER'}
           </h1>
           <p className="text-text-secondary">
             Manage your orders, submissions, and account settings
@@ -404,15 +371,13 @@ function DashboardContent() {
                           className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
                         />
                       </Link>
-                      <Button
-                        onClick={() => removeFromWishlistMutation.mutate(item.product.id)}
-                        variant="outline"
-                        size="sm"
-                        className="absolute top-2 right-2 bg-white/90 hover:bg-white border-gray-300 w-8 h-8 p-0"
-                        disabled={removeFromWishlistMutation.isPending}
-                      >
-                        <X size={16} className="text-gray-600" />
-                      </Button>
+                      <div className="absolute top-2 right-2">
+                        <WishlistButton 
+                          productId={item.product.id}
+                          size="small"
+                          showTooltip={false}
+                        />
+                      </div>
                       <div className="p-4">
                         <h3 className="font-semibold mb-2 text-white">{item.product.name}</h3>
                         <p className="text-accent-blue font-bold mb-3">${item.product.price}</p>

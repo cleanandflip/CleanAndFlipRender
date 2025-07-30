@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WishlistButton, ProductPrice, StockIndicator, AddToCartButton } from "@/components/ui";
 import GlassCard from "@/components/common/glass-card";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
@@ -25,11 +26,6 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, viewMode = 'grid', compact = false }: ProductCardProps) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const { addToCart } = useCart();
-  const { toast } = useToast();
-  const { user } = useAuth();
-
   const getConditionColor = (condition: string) => {
     switch (condition) {
       case 'new': return 'bg-green-500';
@@ -41,167 +37,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
     }
   };
 
-  const getStockStatus = () => {
-    if (!product.stockQuantity || product.stockQuantity === 0) {
-      return { text: "Out of Stock", color: "text-gray-400", dot: "bg-gray-400" };
-    } else if (product.stockQuantity <= 3) {
-      return { text: `${product.stockQuantity} left`, color: "text-orange-400", dot: "bg-orange-400" };
-    } else {
-      return { text: "In Stock", color: "text-green-400", dot: "bg-green-400" };
-    }
-  };
-
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!product.stockQuantity || product.stockQuantity === 0) {
-      toast({
-        title: "Out of Stock",
-        description: "This item is currently out of stock.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    addToCart({
-      productId: product.id,
-      quantity: 1,
-    });
-
-    toast({
-      title: "Added to Cart",
-      description: `${product.name} has been added to your cart.`,
-    });
-  };
-
-  // Check wishlist status on component mount
-  useEffect(() => {
-    const checkWishlistStatus = async () => {
-      if (!user) {
-        setIsWishlisted(false);
-        return;
-      }
-      
-      try {
-        const response = await fetch('/api/wishlist/check', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ productId: product.id })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setIsWishlisted(data.isWishlisted || false);
-        }
-      } catch (error) {
-        console.error('Error checking wishlist status:', error);
-      }
-    };
-    
-    checkWishlistStatus();
-  }, [product.id, user]);
-
-  // Wishlist mutations
-  const addToWishlistMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) {
-        throw new Error('Please log in to add items to your wishlist');
-      }
-      const response = await fetch('/api/wishlist', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ productId: product.id })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add to wishlist');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      setIsWishlisted(true);
-      toast({
-        title: "Added to Wishlist",
-        description: `${product.name} has been added to your wishlist.`,
-      });
-      // Trigger global wishlist update event
-      window.dispatchEvent(new CustomEvent('wishlistUpdated', { 
-        detail: { productId: product.id, action: 'add' } 
-      }));
-    },
-    onError: (error: any) => {
-      toast({
-        title: user ? "Error" : "Login Required",
-        description: error.message || "Failed to add to wishlist. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const removeFromWishlistMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(`/api/wishlist?productId=${product.id}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to remove from wishlist');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      setIsWishlisted(false);
-      toast({
-        title: "Removed from Wishlist",
-        description: `${product.name} has been removed from your wishlist.`,
-      });
-      // Trigger global wishlist update event
-      window.dispatchEvent(new CustomEvent('wishlistUpdated', { 
-        detail: { productId: product.id, action: 'remove' } 
-      }));
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to remove from wishlist. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleWishlistToggle = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please log in to add items to your wishlist.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (isWishlisted) {
-      removeFromWishlistMutation.mutate();
-    } else {
-      addToWishlistMutation.mutate();
-    }
-  };
-
-  const stockStatus = getStockStatus();
+  // All logic now handled by unified components
   const mainImage = product.images?.[0];
   const hasImage = mainImage && mainImage.length > 0;
 
@@ -275,12 +111,10 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                   <Badge className={`${getConditionColor(product.condition)} text-white text-xs`}>
                     {product.condition.replace('_', ' ').toUpperCase()}
                   </Badge>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${stockStatus.dot}`}></div>
-                    <span className={`text-xs ${stockStatus.color}`}>
-                      {stockStatus.text}
-                    </span>
-                  </div>
+                  <StockIndicator 
+                    stock={product.stockQuantity}
+                    size="small"
+                  />
                 </div>
 
                 {product.description && (
@@ -291,31 +125,25 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
               </div>
 
               <div className="text-right ml-4">
-                <div className="text-2xl font-bold text-accent-blue mb-2">
-                  ${product.price}
-                </div>
+                <ProductPrice 
+                  price={product.price}
+                  size="large"
+                  className="mb-2"
+                />
                 
                 <div className="flex items-center gap-2">
-                  <Button
-                    onClick={handleWishlistToggle}
-                    variant="outline"
-                    size="sm"
+                  <WishlistButton 
+                    productId={product.id}
+                    size="small"
                     className="glass border-glass-border"
-                  >
-                    <Heart 
-                      size={16} 
-                      className={isWishlisted ? "text-red-400 fill-current" : "text-gray-400"} 
-                    />
-                  </Button>
+                  />
                   
-                  <Button
-                    onClick={handleAddToCart}
-                    disabled={!product.stockQuantity || product.stockQuantity === 0}
+                  <AddToCartButton
+                    productId={product.id}
+                    stock={product.stockQuantity}
+                    size="sm"
                     className="bg-accent-blue hover:bg-blue-500"
-                  >
-                    <ShoppingCart size={16} className="mr-2" />
-                    Add to Cart
-                  </Button>
+                  />
                 </div>
               </div>
             </div>
@@ -366,25 +194,20 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           {/* Overlay with actions */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
             <div className="flex gap-2">
-              <Button
-                onClick={handleWishlistToggle}
-                variant="outline"
-                size="sm"
+              <WishlistButton 
+                productId={product.id}
+                size="small"
                 className="glass border-glass-border"
-              >
-                <Heart 
-                  size={16} 
-                  className={isWishlisted ? "text-red-400 fill-current" : "text-white"} 
-                />
-              </Button>
+                showTooltip={false}
+              />
               
-              <Button
-                onClick={handleAddToCart}
-                disabled={!product.stockQuantity || product.stockQuantity === 0}
-                className="bg-accent-blue hover:bg-blue-500"
-              >
-                <ShoppingCart size={16} />
-              </Button>
+              <AddToCartButton
+                productId={product.id}
+                stock={product.stockQuantity}
+                size="sm"
+                variant="outline"
+                className="glass border-glass-border text-white hover:bg-white/20"
+              />
             </div>
           </div>
 
@@ -400,11 +223,11 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
 
           {/* Stock Status */}
           <div className="absolute top-3 right-3">
-            <div className="flex items-center gap-1 glass px-2 py-1 rounded">
-              <div className={`w-1.5 h-1.5 rounded-full ${stockStatus.dot}`}></div>
-              <span className={`text-xs ${stockStatus.color}`}>
-                {stockStatus.text}
-              </span>
+            <div className="glass px-2 py-1 rounded">
+              <StockIndicator 
+                stock={product.stockQuantity}
+                size="small"
+              />
             </div>
           </div>
         </div>
@@ -426,9 +249,10 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           </div>
           
           <div className="text-right ml-2">
-            <div className="text-xl font-bold text-accent-blue">
-              ${product.price}
-            </div>
+            <ProductPrice 
+              price={product.price}
+              size="default"
+            />
           </div>
         </div>
 
@@ -451,15 +275,25 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           </p>
         )}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between text-xs text-text-muted">
-          <div className="flex items-center gap-1">
-            <Eye size={12} />
-            <span>{product.views || 0}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Truck size={12} />
-            <span>Fast shipping</span>
+        {/* Actions */}
+        <div className="flex items-center justify-between gap-2 mt-auto">
+          <StockIndicator 
+            stock={product.stockQuantity}
+            size="small"
+          />
+          
+          <div className="flex items-center gap-2">
+            <WishlistButton 
+              productId={product.id}
+              size="small"
+            />
+            
+            <AddToCartButton
+              productId={product.id}
+              stock={product.stockQuantity}
+              size="sm"
+              className="bg-accent-blue hover:bg-blue-500"
+            />
           </div>
         </div>
       </div>
