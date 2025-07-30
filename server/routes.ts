@@ -418,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/wishlist", requireAuth, async (req, res) => {
     try {
-      const { productId } = req.query;
+      const { productId } = req.body; // Read from body instead of query
       const userId = req.userId; // Now set by requireAuth middleware
       
       console.log('Remove from wishlist - userId:', userId, 'productId:', productId);
@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Product ID required" });
       }
       
-      await storage.removeFromWishlist(userId, productId as string);
+      await storage.removeFromWishlist(userId, productId);
       res.json({ message: "Item removed from wishlist" });
     } catch (error) {
       console.error("Error removing from wishlist:", error);

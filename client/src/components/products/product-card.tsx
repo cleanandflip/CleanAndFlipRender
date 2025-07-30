@@ -191,24 +191,15 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             </div>
           )}
           
-          {/* Overlay with actions */}
+          {/* Quick add hover overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <div className="flex gap-2">
-              <WishlistButton 
-                productId={product.id}
-                size="small"
-                className="glass border-glass-border"
-                showTooltip={false}
-              />
-              
-              <AddToCartButton
-                productId={product.id}
-                stock={product.stockQuantity}
-                size="sm"
-                variant="outline"
-                className="glass border-glass-border text-white hover:bg-white/20"
-              />
-            </div>
+            <AddToCartButton
+              productId={product.id}
+              stock={product.stockQuantity}
+              size="sm"
+              variant="outline"
+              className="glass border-glass-border text-white hover:bg-white/20"
+            />
           </div>
 
           {/* Featured Badge */}
@@ -276,25 +267,18 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-between gap-2 mt-auto">
-          <StockIndicator 
-            stock={product.stockQuantity}
+        <div className="flex items-center justify-between gap-2">
+          <WishlistButton 
+            productId={product.id}
             size="small"
           />
           
-          <div className="flex items-center gap-2">
-            <WishlistButton 
-              productId={product.id}
-              size="small"
-            />
-            
-            <AddToCartButton
-              productId={product.id}
-              stock={product.stockQuantity}
-              size="sm"
-              className="bg-accent-blue hover:bg-blue-500"
-            />
-          </div>
+          <AddToCartButton
+            productId={product.id}
+            stock={product.stockQuantity}
+            size="sm"
+            className="bg-accent-blue hover:bg-blue-500 flex-1 ml-2"
+          />
         </div>
       </div>
     </GlassCard>
