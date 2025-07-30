@@ -1,0 +1,123 @@
+Here's a prompt for Replit to fix case sensitivity issues:
+
+Remove Case Sensitivity Where Inappropriate
+Several fields in the application are case-sensitive when they shouldn't be. Please fix all of these:
+1. Email Fields - CRITICAL
+Emails should NEVER be case-sensitive:
+javascript// WRONG - Case sensitive
+if (email === storedEmail)
+
+// CORRECT - Case insensitive
+if (email.toLowerCase() === storedEmail.toLowerCase())
+
+// When storing emails in database:
+const normalizedEmail = email.toLowerCase().trim();
+
+// When searching/comparing:
+WHERE LOWER(email) = LOWER($1)
+Fix in these locations:
+
+User registration (store as lowercase)
+Login authentication (compare as lowercase)
+Email verification (compare as lowercase)
+Password reset (search as lowercase)
+Any email uniqueness checks
+
+2. Address Fields
+Addresses should accept any case:
+javascript// City/State/ZIP validation
+// WRONG:
+if (cityStateZip === "Asheville, NC 28806")
+
+// CORRECT:
+const [city, stateZip] = cityStateZip.split(',').map(s => s.trim());
+const state = stateZip?.substring(0, 2).toUpperCase();
+const zip = stateZip?.match(/\d{5}/)?.[0];
+
+// Accept variations like:
+// "asheville, nc 28806"
+// "Asheville, NC 28806"
+// "ASHEVILLE, NC 28806"
+3. State Abbreviations
+Accept both cases for states:
+javascript// Normalize state codes
+const normalizedState = state.toUpperCase().trim();
+const validStates = ['NC', 'SC', 'GA', 'TN', 'VA']; // etc
+
+if (validStates.includes(normalizedState)) {
+  // Valid
+}
+4. Search Functionality
+Product searches should be case-insensitive:
+javascript// WRONG:
+products.filter(p => p.name.includes(searchTerm))
+
+// CORRECT:
+products.filter(p => 
+  p.name.toLowerCase().includes(searchTerm.toLowerCase())
+)
+
+// In SQL:
+WHERE LOWER(name) LIKE LOWER($1)
+5. ZIP Code Areas
+When checking local delivery zones:
+javascript// Extract just the numbers (not case-sensitive by nature)
+const zipCode = address.match(/\d{5}/)?.[0];
+const validZips = ['28801', '28802', '28803', '28804', '28805', '28806'];
+6. Database Queries to Update
+sql-- For PostgreSQL, use ILIKE for case-insensitive:
+SELECT * FROM users WHERE email ILIKE $1;
+
+-- Or use LOWER():
+SELECT * FROM users WHERE LOWER(email) = LOWER($1);
+
+-- For searching:
+SELECT * FROM products WHERE LOWER(name) LIKE LOWER('%' || $1 || '%');
+7. Form Validations
+Remove strict case requirements:
+javascript// Phone numbers - remove any case formatting
+const cleanPhone = phone.replace(/\D/g, '');
+
+// Names - allow any case
+// Don't force "John Smith" - allow "john smith" or "JOHN SMITH"
+
+// Brand names in products - case insensitive search
+const brands = ['Rogue', 'Rep Fitness', 'Titan'];
+const userBrand = formData.brand;
+const matchedBrand = brands.find(b => 
+  b.toLowerCase() === userBrand.toLowerCase()
+);
+8. Areas to Check and Fix:
+
+ Login form - email case insensitive
+ Registration form - email stored as lowercase
+ Address validation - accept any case
+ Search bar - case insensitive search
+ Product filters - brand names case insensitive
+ City/State validation - normalize before comparing
+ Any string comparisons in authentication
+ API endpoints that accept email parameters
+ Database unique constraints on emails
+
+Implementation Strategy:
+
+Add a utility function for email normalization:
+
+javascriptexport const normalizeEmail = (email) => {
+  return email?.toLowerCase().trim() || '';
+};
+
+Add address normalization:
+
+javascriptexport const normalizeAddress = (address) => {
+  return {
+    city: address.city?.trim(),
+    state: address.state?.toUpperCase().trim(),
+    zip: address.zip?.match(/\d{5}/)?.[0]
+  };
+};
+
+Update all database queries to use case-insensitive comparisons
+Test with various case combinations
+
+Please implement these fixes throughout the entire application to ensure a better user experience.

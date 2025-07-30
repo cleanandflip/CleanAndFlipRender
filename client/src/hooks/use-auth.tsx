@@ -50,7 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
+      // Normalize email for case-insensitive login
+      const normalizedCredentials = {
+        ...credentials,
+        email: credentials.email.toLowerCase().trim()
+      };
+      const res = await apiRequest("POST", "/api/login", normalizedCredentials);
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
@@ -71,7 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: RegisterData) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
+      // Normalize email for case-insensitive registration
+      const normalizedCredentials = {
+        ...credentials,
+        email: credentials.email.toLowerCase().trim()
+      };
+      const res = await apiRequest("POST", "/api/register", normalizedCredentials);
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {

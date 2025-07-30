@@ -28,7 +28,8 @@ import {
   type InsertWishlist,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, asc, and, or, like, gte, lte, inArray, sql } from "drizzle-orm";
+import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike } from "drizzle-orm";
+import { normalizeEmail, normalizeSearchTerm, normalizeBrand } from "@shared/utils";
 
 export interface IStorage {
   // User operations
@@ -105,14 +106,21 @@ export class DatabaseStorage implements IStorage {
 
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const normalizedEmail = normalizeEmail(email);
+    const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
     return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    // Normalize email before storing
+    const userToInsert = {
+      ...insertUser,
+      email: normalizeEmail(insertUser.email)
+    };
+    
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values(userToInsert)
       .returning();
     return user;
   }
@@ -161,7 +169,8 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters?.search) {
-      conditions.push(like(products.name, `%${filters.search}%`));
+      const normalizedSearch = normalizeSearchTerm(filters.search);
+      conditions.push(sql`LOWER(${products.name}) LIKE ${`%${normalizedSearch}%`}`);
     }
 
     if (filters?.minPrice) {
@@ -177,7 +186,8 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters?.brand) {
-      conditions.push(eq(products.brand, filters.brand));
+      const normalizedBrand = normalizeBrand(filters.brand);
+      conditions.push(sql`LOWER(${products.brand}) = ${normalizedBrand}`);
     }
 
     if (filters?.status) {
@@ -281,6 +291,7 @@ export class DatabaseStorage implements IStorage {
         productId: cartItems.productId,
         quantity: cartItems.quantity,
         createdAt: cartItems.createdAt,
+        updatedAt: cartItems.updatedAt,
         product: products,
       })
       .from(cartItems)
@@ -394,6 +405,7 @@ export class DatabaseStorage implements IStorage {
         productId: orderItems.productId,
         quantity: orderItems.quantity,
         price: orderItems.price,
+        createdAt: orderItems.createdAt,
         product: products,
       })
       .from(orderItems)

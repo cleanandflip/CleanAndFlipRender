@@ -157,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = req.query.limit ? Number(req.query.limit) : 50;
       const offset = req.query.offset ? Number(req.query.offset) : 0;
       
-      const orders = await storage.getOrders(userId, limit, offset);
+      const orders = await storage.getUserOrders(userId);
       res.json(orders);
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -222,7 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User ID required" });
       }
       
-      const wishlistItems = await storage.getWishlist(userId);
+      const wishlistItems = await storage.getWishlistItems(userId);
       res.json(wishlistItems);
     } catch (error) {
       console.error("Error fetching wishlist:", error);
