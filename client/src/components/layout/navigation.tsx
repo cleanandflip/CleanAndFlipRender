@@ -130,9 +130,8 @@ export default function Navigation() {
             ) : (
               <Link href="/auth">
                 <Button
-                  variant="outline"
                   size="sm"
-                  className="glass hover:bg-white/10 border-accent-blue/30 text-accent-blue hover:text-white font-medium"
+                  className="bg-accent-blue hover:bg-blue-500 text-white font-medium"
                 >
                   <LogIn className="mr-2 h-4 w-4" />
                   Sign In

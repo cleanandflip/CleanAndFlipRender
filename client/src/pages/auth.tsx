@@ -56,14 +56,14 @@ export default function AuthPage() {
       {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
         <div className="w-full max-w-2xl">
-          <div className="text-center mb-12">
-            <Logo size="lg" className="mx-auto mb-8" />
-            <h1 className="font-bebas text-5xl text-white tracking-wider mb-6">JOIN THE MARKETPLACE</h1>
+          <div className="text-center mb-8">
+            <Logo size="lg" className="mx-auto mb-6" />
+            <h1 className="font-bebas text-5xl text-white tracking-wider mb-4">JOIN THE MARKETPLACE</h1>
             <p className="text-text-secondary text-xl leading-relaxed max-w-lg mx-auto">Turn unused gear into cash, buy quality equipment you can trust</p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-10 glass h-14 text-lg">
+            <TabsList className="grid w-full grid-cols-2 mb-8 glass h-14 text-lg">
               <TabsTrigger 
                 value="login" 
                 className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200 text-lg"
