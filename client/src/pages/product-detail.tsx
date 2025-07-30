@@ -343,15 +343,18 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3">
+              {/* Cart Button - Full Width */}
+              <div className="mt-6">
                 <AddToCartButton
                   productId={product.id}
                   stock={product.stockQuantity}
                   quantity={quantity}
-                  className="flex-1"
+                  className=""
                 />
-                
+              </div>
+              
+              {/* Wishlist and Share buttons below */}
+              <div className="flex gap-3 mt-4">
                 <WishlistButton
                   productId={product.id}
                   className="glass border-glass-border"
