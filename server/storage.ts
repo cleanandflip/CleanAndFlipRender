@@ -210,13 +210,14 @@ export class DatabaseStorage implements IStorage {
     const conditions = [];
 
     // Handle category filtering - support both ID and slug
-    if (filters?.categoryId) {
-      // Direct category ID match
+    if (filters?.categoryId && filters.categoryId !== 'null' && filters.categoryId !== 'all') {
+      console.log('Storage: Filtering by categoryId:', filters.categoryId);
       conditions.push(eq(products.categoryId, filters.categoryId));
     } else if (filters?.categorySlug || filters?.category) {
       // Find category by slug first, then filter by ID
       const categorySlugOrName = filters.categorySlug || filters.category;
-      if (categorySlugOrName && categorySlugOrName !== 'all') {
+      if (categorySlugOrName && categorySlugOrName !== 'all' && categorySlugOrName !== 'null') {
+        console.log('Storage: Filtering by category slug:', categorySlugOrName);
         const categoryData = await db
           .select({ id: categories.id })
           .from(categories)
@@ -229,7 +230,10 @@ export class DatabaseStorage implements IStorage {
           .limit(1);
           
         if (categoryData[0]) {
+          console.log('Storage: Found category ID for slug:', categoryData[0].id);
           conditions.push(eq(products.categoryId, categoryData[0].id));
+        } else {
+          console.log('Storage: No category found for slug:', categorySlugOrName);
         }
       }
     }

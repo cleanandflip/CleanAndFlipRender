@@ -12,11 +12,16 @@ import type { Category } from "@shared/schema";
 interface FilterSidebarProps {
   filters: {
     category?: string;
+    categoryId?: string;
+    categorySlug?: string;
     search?: string;
     minPrice?: number;
     maxPrice?: number;
-    condition?: string;
-    brand?: string;
+    priceMin?: number;
+    priceMax?: number;
+    condition?: string[] | string;
+    brand?: string[] | string;
+    tags?: string[] | string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   };
@@ -29,6 +34,13 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
 
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+    queryFn: async () => {
+      const response = await fetch('/api/categories?active=true');
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
+      return response.json();
+    }
   });
 
   // Equipment conditions
@@ -187,8 +199,16 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                     type="radio"
                     name="category"
                     value=""
-                    checked={!localFilters.category}
-                    onChange={() => handleFilterChange('category', undefined)}
+                    checked={!localFilters.category && !localFilters.categoryId}
+                    onChange={() => {
+                      console.log('Filter: Selecting All Categories via radio');
+                      const newFilters = { ...localFilters };
+                      delete newFilters.category;
+                      delete newFilters.categoryId; 
+                      delete newFilters.categorySlug;
+                      setLocalFilters(newFilters);
+                      onFiltersChange(newFilters);
+                    }}
                     className="w-4 h-4 text-accent-blue bg-transparent border-gray-600 focus:ring-accent-blue"
                   />
                   <span className="text-sm">All Categories</span>
@@ -199,11 +219,26 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                       type="radio"
                       name="category"
                       value={category.id}
-                      checked={localFilters.category === category.id}
-                      onChange={(e) => handleFilterChange('category', e.target.value)}
+                      checked={localFilters.categoryId === category.id || localFilters.category === category.slug}
+                      onChange={() => {
+                        console.log('Filter: Selecting category via radio:', category.name, 'ID:', category.id);
+                        const newFilters = {
+                          ...localFilters,
+                          categoryId: category.id,
+                          categorySlug: category.slug,
+                          category: category.slug
+                        };
+                        setLocalFilters(newFilters);
+                        onFiltersChange(newFilters);
+                      }}
                       className="w-4 h-4 text-accent-blue bg-transparent border-gray-600 focus:ring-accent-blue"
                     />
-                    <span className="text-sm">{category.name}</span>
+                    <span className="text-sm">
+                      {category.name}
+                      <span className="text-xs opacity-70 ml-2">
+                        ({category.productCount || 0})
+                      </span>
+                    </span>
                   </label>
                 ))}
               </div>

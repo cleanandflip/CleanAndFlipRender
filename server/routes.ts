@@ -77,6 +77,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sortOrder: sortOrder as 'asc' | 'desc'
       };
 
+      console.log('Products API - Received filters:', filters);
+
       // Set aggressive no-cache headers for live inventory accuracy
       res.set({
         'Cache-Control': 'no-cache, no-store, must-revalidate',
