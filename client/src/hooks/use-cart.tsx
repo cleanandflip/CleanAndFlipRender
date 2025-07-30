@@ -21,19 +21,54 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch cart items (no temp user ID needed)
-  const { data: cartItems = [], isLoading } = useQuery<(CartItem & { product: Product })[]>({
+  // Fetch cart items - Always fresh data, no caching
+  const { data: cartItems = [], isLoading, refetch } = useQuery<(CartItem & { product: Product })[]>({
     queryKey: ["/api/cart"],
     queryFn: async () => {
       const response = await fetch("/api/cart", {
         credentials: "include",
+        // Force fresh data with cache-busting headers
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
       if (!response.ok) {
         throw new Error('Failed to fetch cart');
       }
       return response.json();
     },
+    staleTime: 0, // Always fetch fresh
+    cacheTime: 0, // No client-side caching
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
+  
+  // Listen for product update events to refresh cart
+  useEffect(() => {
+    const handleProductUpdate = () => {
+      // Invalidate and refetch cart when products change
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      refetch();
+    };
+    
+    const handleStorageChange = () => {
+      // Refetch cart on storage changes
+      refetch();
+    };
+    
+    // Listen for global product update events
+    window.addEventListener('productUpdated', handleProductUpdate);
+    window.addEventListener('storageChanged', handleStorageChange);
+    window.addEventListener('productDeleted', handleProductUpdate);
+    
+    return () => {
+      window.removeEventListener('productUpdated', handleProductUpdate);
+      window.removeEventListener('storageChanged', handleStorageChange);
+      window.removeEventListener('productDeleted', handleProductUpdate);
+    };
+  }, [queryClient, refetch]);
 
   // Add to cart mutation
   const addToCartMutation = useMutation({

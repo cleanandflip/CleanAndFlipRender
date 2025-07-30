@@ -357,7 +357,7 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  // Cart operations
+  // Cart operations - Always fetch fresh product data
   async getCartItems(userId?: string, sessionId?: string): Promise<(CartItem & { product: Product })[]> {
     let whereCondition;
     
@@ -369,20 +369,32 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
     
-    return await db
-      .select({
-        id: cartItems.id,
-        userId: cartItems.userId,
-        sessionId: cartItems.sessionId,
-        productId: cartItems.productId,
-        quantity: cartItems.quantity,
-        createdAt: cartItems.createdAt,
-        updatedAt: cartItems.updatedAt,
-        product: products,
-      })
+    // Get cart items first
+    const cartItemsData = await db
+      .select()
       .from(cartItems)
-      .innerJoin(products, eq(cartItems.productId, products.id))
       .where(whereCondition);
+    
+    // Then fetch fresh product data for each item
+    const cartWithProducts = await Promise.all(
+      cartItemsData.map(async (item) => {
+        const freshProduct = await this.getProduct(item.productId);
+        
+        // If product deleted or not available, remove from cart
+        if (!freshProduct || freshProduct.status !== 'active') {
+          await this.removeFromCart(item.id);
+          return null;
+        }
+        
+        return {
+          ...item,
+          product: freshProduct
+        };
+      })
+    );
+    
+    // Filter out null items (deleted products)
+    return cartWithProducts.filter(item => item !== null) as (CartItem & { product: Product })[];
   }
 
   // Get existing cart item for smart cart logic (prevents duplicates)

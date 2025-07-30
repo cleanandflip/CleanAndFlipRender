@@ -139,13 +139,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cart operations
+  // Cart operations - Always fetch fresh product data
   app.get("/api/cart", async (req, res) => {
     try {
       const userId = (req.session as any)?.userId;
       const sessionId = req.sessionID;
       
       console.log("Get cart - userId:", userId, "sessionId:", sessionId);
+      
+      // Set cache-busting headers to prevent any caching
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'ETag': `"cart-${Date.now()}"`
+      });
       
       // Don't use temp-user-id, use actual session or user
       const cartItems = await storage.getCartItems(
@@ -253,6 +261,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error removing from cart:", error);
       res.status(500).json({ message: "Failed to remove from cart" });
+    }
+  });
+
+  // Cart validation endpoint - cleans up invalid cart items
+  app.post("/api/cart/validate", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      const sessionId = req.sessionID;
+      
+      const cartItems = await storage.getCartItems(
+        userId && userId !== 'temp-user-id' ? userId : undefined,
+        sessionId
+      );
+      
+      const updates = [];
+      
+      for (const item of cartItems) {
+        const product = await storage.getProduct(item.productId);
+        
+        // Remove if product deleted or inactive
+        if (!product || product.status !== 'active') {
+          await storage.removeFromCart(item.id);
+          updates.push({ action: 'removed', itemId: item.id, reason: 'Product unavailable' });
+          continue;
+        }
+        
+        // Adjust quantity if stock changed
+        if (item.quantity > (product.stockQuantity || 0)) {
+          const newQuantity = Math.max(0, product.stockQuantity || 0);
+          if (newQuantity === 0) {
+            await storage.removeFromCart(item.id);
+            updates.push({ action: 'removed', itemId: item.id, reason: 'Out of stock' });
+          } else {
+            await storage.updateCartItem(item.id, newQuantity);
+            updates.push({ 
+              action: 'adjusted', 
+              itemId: item.id, 
+              newQuantity: newQuantity,
+              reason: 'Stock limit adjusted'
+            });
+          }
+        }
+      }
+      
+      res.json({ updates });
+    } catch (error) {
+      console.error("Error validating cart:", error);
+      res.status(500).json({ message: "Failed to validate cart" });
     }
   });
 

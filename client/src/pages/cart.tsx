@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import GlassCard from "@/components/common/glass-card";
@@ -7,6 +8,42 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 
 export default function Cart() {
   const { cartItems, updateQuantity, removeFromCart, cartTotal, cartCount, isLoading } = useCart();
+  
+  // Validate cart on mount and listen for product updates
+  useEffect(() => {
+    validateCart();
+    
+    const handleProductUpdate = () => {
+      // Validate cart when products change
+      validateCart();
+    };
+    
+    window.addEventListener('productUpdated', handleProductUpdate);
+    window.addEventListener('productDeleted', handleProductUpdate);
+    
+    return () => {
+      window.removeEventListener('productUpdated', handleProductUpdate);
+      window.removeEventListener('productDeleted', handleProductUpdate);
+    };
+  }, []);
+  
+  const validateCart = async () => {
+    try {
+      await fetch('/api/cart/validate', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      // Cart will auto-refresh due to real-time sync
+    } catch (error) {
+      console.error('Cart validation error:', error);
+    }
+  };
+  
+  // Force fresh images with cache-busting
+  const getImageUrl = (url: string | null | undefined) => {
+    if (!url) return null;
+    return `${url}?t=${Date.now()}`;
+  };
 
   if (isLoading) {
     return (
@@ -73,12 +110,13 @@ export default function Cart() {
               {cartItems.map((item) => (
                 <div key={item.id} className="p-6">
                   <div className="flex gap-6">
-                    {/* Product Image */}
+                    {/* Product Image - Always Fresh */}
                     <div className="flex-shrink-0">
                       <img
-                        src={item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"}
+                        src={getImageUrl(item.product.images?.[0]) || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"}
                         alt={item.product.name}
                         className="w-24 h-24 object-cover rounded-lg"
+                        key={`${item.product.id}-${Date.now()}`} // Force reload on updates
                       />
                     </div>
 
