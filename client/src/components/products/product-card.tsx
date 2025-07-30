@@ -162,27 +162,27 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
   // Grid view (default)
   return (
     <Link href={`/products/${product.id}`}>
-      <div className="group relative bg-gray-800/30 rounded-lg overflow-hidden hover:shadow-xl transition-all cursor-pointer">
+      <div className="group relative bg-gray-800/30 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-[1.02] active:scale-[0.98]">
         {/* Only show critical stock badge */}
         {product.stockQuantity === 1 && (
-          <div className="absolute top-3 left-3 z-10">
-            <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
+          <div className="absolute top-3 left-3 z-10 animate-ping-once">
+            <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium animate-bounce-subtle">
               Only 1 left
             </span>
           </div>
         )}
         
         {/* Clean Image */}
-        <div className="aspect-square relative bg-gray-900/30">
+        <div className="aspect-square relative bg-gray-900/30 overflow-hidden">
           {hasImage ? (
             <img 
               src={mainImage}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
           ) : (
             <div className="flex items-center justify-center h-full">
-              <div className="text-4xl mb-2">📦</div>
+              <div className="text-4xl mb-2 transition-transform duration-300 group-hover:scale-110">📦</div>
             </div>
           )}
         </div>
@@ -190,41 +190,41 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
         {/* Minimal Info Section */}
         <div className="p-4">
           {/* Title */}
-          <h3 className="font-medium text-white mb-1 line-clamp-1">
+          <h3 className="font-medium text-white mb-1 line-clamp-1 transition-colors duration-200 group-hover:text-blue-300">
             {product.name}
           </h3>
           
           {/* Brand */}
           {product.brand && (
-            <p className="text-gray-500 text-sm mb-3">
+            <p className="text-gray-500 text-sm mb-3 transition-colors duration-200 group-hover:text-gray-400">
               {product.brand}
             </p>
           )}
           
           {/* Price Only */}
-          <p className="text-2xl font-bold text-white">
+          <p className="text-2xl font-bold text-white transition-colors duration-200 group-hover:text-blue-300">
             ${product.price}
           </p>
         </div>
         
         {/* Hover Actions - Subtle */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
-          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto backdrop-blur-sm">
+          <div className="transform translate-y-8 group-hover:translate-y-0 transition-all duration-300 animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <AddToCartButton
               productId={product.id}
               stock={product.stockQuantity}
               size="sm"
-              className="bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-gray-100 pointer-events-auto"
+              className="bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-200 pointer-events-auto shadow-lg"
             />
           </div>
         </div>
         
         {/* Subtle Wishlist - Icon Only */}
-        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto" onClick={(e) => e.stopPropagation()}>
           <WishlistButton 
             productId={product.id}
             size="small"
-            className="w-8 h-8 bg-white/10 backdrop-blur rounded-full pointer-events-auto"
+            className="w-8 h-8 bg-white/10 backdrop-blur rounded-full pointer-events-auto hover:bg-white/20 hover:scale-110 active:scale-95 transition-all duration-200 hover:animate-heart-ping"
             showTooltip={false}
           />
         </div>
