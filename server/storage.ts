@@ -566,11 +566,63 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProduct(productId: string): Promise<void> {
     try {
-      // First, remove the product from any cart items (foreign key constraint)
-      await db.delete(cartItems).where(eq(cartItems.productId, productId));
+      console.log(`Starting deletion of product: ${productId}`);
       
-      // Then delete the product itself
-      await db.delete(products).where(eq(products.id, productId));
+      // First check if product exists
+      const [existingProduct] = await db
+        .select()
+        .from(products)
+        .where(eq(products.id, productId));
+      
+      if (!existingProduct) {
+        console.log(`Product ${productId} not found in database`);
+        throw new Error('Product not found');
+      }
+      
+      console.log(`Found product to delete: ${existingProduct.name}`);
+      
+      // Remove from cart items first (foreign key constraint)
+      const deletedCartItems = await db
+        .delete(cartItems)
+        .where(eq(cartItems.productId, productId))
+        .returning();
+      
+      console.log(`Removed ${deletedCartItems.length} cart items referencing product`);
+      
+      // Remove from wishlist
+      const deletedWishlistItems = await db
+        .delete(wishlist)
+        .where(eq(wishlist.productId, productId))
+        .returning();
+      
+      console.log(`Removed ${deletedWishlistItems.length} wishlist items referencing product`);
+      
+      // Delete the product itself
+      const deletedProducts = await db
+        .delete(products)
+        .where(eq(products.id, productId))
+        .returning();
+      
+      if (deletedProducts.length === 0) {
+        console.error(`Failed to delete product ${productId} - no rows affected`);
+        throw new Error('Product deletion failed - no rows affected');
+      }
+      
+      console.log(`Successfully deleted product: ${deletedProducts[0].name} (${productId})`);
+      
+      // Verify deletion
+      const [verifyProduct] = await db
+        .select()
+        .from(products)
+        .where(eq(products.id, productId));
+      
+      if (verifyProduct) {
+        console.error(`Product ${productId} still exists after deletion!`);
+        throw new Error('Product deletion verification failed');
+      }
+      
+      console.log(`Deletion verified - product ${productId} successfully removed from database`);
+      
     } catch (error) {
       console.error('Error deleting product:', error);
       throw error;
