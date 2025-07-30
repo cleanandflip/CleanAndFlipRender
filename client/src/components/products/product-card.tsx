@@ -26,6 +26,8 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, viewMode = 'grid', compact = false }: ProductCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  
   const getConditionColor = (condition: string) => {
     switch (condition) {
       case 'new': return 'bg-green-500';
@@ -37,7 +39,6 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
     }
   };
 
-  // All logic now handled by unified components
   const mainImage = product.images?.[0];
   const hasImage = mainImage && mainImage.length > 0;
 
@@ -170,117 +171,104 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
     );
   }
 
-  // Grid view (default)
+  // Grid view - Clean, spacious design
   return (
-    <GlassCard className="overflow-hidden glass-hover group">
-      {/* Image Container */}
-      <Link href={`/products/${product.id}`}>
-        <div className="relative overflow-hidden cursor-pointer">
+    <div 
+      className="group relative bg-gray-900 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Single Badge Area - Top Left */}
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+        {product.featured && (
+          <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+            <Star size={12} className="inline mr-1" />
+            Featured
+          </span>
+        )}
+        {product.stockQuantity === 1 && (
+          <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+            Only 1 left!
+          </span>
+        )}
+      </div>
+      
+      {/* Clean Wishlist Button - Top Right */}
+      <div className="absolute top-4 right-4 z-10">
+        <WishlistButton 
+          productId={product.id} 
+          size="small"
+          showTooltip={false}
+        />
+      </div>
+      
+      <Link href={`/products/${product.id}`} className="block">
+        {/* Image Container - More Space */}
+        <div className="aspect-[4/3] relative overflow-hidden bg-gray-800">
           {hasImage ? (
-            <img
-              src={mainImage}
+            <img 
+              src={mainImage} 
               alt={product.name}
-              className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-full object-contain p-6 transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-48 bg-glass-bg flex items-center justify-center">
-              <div className="text-center text-text-muted">
-                <div className="text-4xl mb-3">📦</div>
-                <div className="text-sm">No Image Available</div>
-              </div>
+            <div className="flex flex-col items-center justify-center h-full p-8">
+              <div className="text-6xl mb-4 opacity-40">📦</div>
+              <p className="text-gray-500 text-sm font-medium">No Image Available</p>
+              <p className="text-gray-600 text-xs mt-1">Product photo coming soon</p>
             </div>
           )}
           
-          {/* Quick add hover overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <AddToCartButton
+          {/* Hover Overlay - Clean Add to Cart */}
+          <div className={`absolute inset-0 bg-black/60 flex items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+            <AddToCartButton 
               productId={product.id}
               stock={product.stockQuantity}
               size="sm"
-              variant="outline"
-              className="glass border-glass-border text-white hover:bg-white/20"
+              className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl"
             />
           </div>
-
-          {/* Featured Badge */}
-          {product.featured && (
-            <div className="absolute top-3 left-3">
-              <Badge className="bg-warning text-black">
-                <Star size={12} className="mr-1" />
-                Featured
-              </Badge>
-            </div>
-          )}
-
-          {/* Stock Status */}
-          <div className="absolute top-3 right-3">
-            <div className="glass px-2 py-1 rounded">
-              <StockIndicator 
-                stock={product.stockQuantity}
-                size="small"
-              />
-            </div>
-          </div>
         </div>
-      </Link>
-
-      {/* Content */}
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1 min-w-0">
-            <Link href={`/products/${product.id}`}>
-              <h3 className="font-semibold hover:text-accent-blue transition-colors cursor-pointer line-clamp-2">
-                {product.name}
-              </h3>
-            </Link>
-            
+        
+        {/* Product Info - Spacious */}
+        <div className="p-6 space-y-4">
+          {/* Title & Brand */}
+          <div>
+            <h3 className="font-semibold text-white text-lg leading-tight mb-1 group-hover:text-blue-400 transition-colors">
+              {product.name}
+            </h3>
             {product.brand && (
-              <p className="text-text-muted text-sm">{product.brand}</p>
+              <p className="text-gray-400 text-sm">{product.brand}</p>
             )}
           </div>
           
-          <div className="text-right ml-2">
-            <ProductPrice 
-              price={product.price}
-              size="default"
-            />
+          {/* Price & Condition Row */}
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold text-blue-400">
+              ${product.price}
+            </span>
+            {product.condition && (
+              <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-medium">
+                {product.condition.replace('_', ' ').toUpperCase()}
+              </span>
+            )}
           </div>
-        </div>
-
-        {/* Badges */}
-        <div className="flex items-center gap-2 mb-3">
-          <Badge className={`${getConditionColor(product.condition)} text-white text-xs`}>
-            {product.condition.replace('_', ' ').toUpperCase()}
-          </Badge>
+          
+          {/* Single Key Spec */}
           {product.weight && (
-            <Badge variant="outline" className="glass border-glass-border text-xs">
-              {product.weight} lbs
-            </Badge>
+            <p className="text-gray-500 text-sm">
+              <span className="text-gray-400">Weight:</span> {product.weight} lbs
+            </p>
+          )}
+          
+          {/* Description */}
+          {product.description && (
+            <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed">
+              {product.description}
+            </p>
           )}
         </div>
-
-        {/* Description */}
-        {product.description && (
-          <p className="text-text-secondary text-sm line-clamp-2 mb-3">
-            {product.description}
-          </p>
-        )}
-
-        {/* Actions */}
-        <div className="flex items-center justify-between gap-2">
-          <WishlistButton 
-            productId={product.id}
-            size="small"
-          />
-          
-          <AddToCartButton
-            productId={product.id}
-            stock={product.stockQuantity}
-            size="sm"
-            className="bg-accent-blue hover:bg-blue-500 flex-1 ml-2"
-          />
-        </div>
-      </div>
-    </GlassCard>
+      </Link>
+    </div>
   );
 }
