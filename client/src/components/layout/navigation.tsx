@@ -63,7 +63,7 @@ export default function Navigation() {
           </div>
 
           {/* Right Side - Actions */}
-          <div className="flex items-center space-x-3 flex-shrink-0">
+          <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
             {/* Desktop Search */}
             <div className="hidden lg:block">
               <SearchBar
@@ -78,7 +78,7 @@ export default function Navigation() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden glass hover:bg-white/20 p-2 transition-colors"
+              className="lg:hidden glass hover:bg-white/20 p-2 transition-colors w-10 h-10 flex-shrink-0 text-text-secondary hover:text-white"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
               <Search size={18} />
@@ -91,40 +91,66 @@ export default function Navigation() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`glass hover:bg-white/20 p-2 transition-colors ${
-                      isActive("/dashboard") ? "text-accent-blue" : "text-text-secondary"
-                    }`}
+                    className="glass hover:bg-white/20 p-2 transition-colors text-text-secondary hover:text-white w-10 h-10 flex-shrink-0"
                   >
                     <User size={18} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-52 bg-slate-800 border-slate-700 shadow-xl">
-                  <DropdownMenuItem className="text-slate-300 px-3 py-2">
-                    <User className="mr-2 h-4 w-4" />
-                    {user.firstName || user.email}
-                    {user.isAdmin && (
-                      <span className="ml-auto text-xs bg-blue-600 px-2 py-1 rounded">ADMIN</span>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-slate-700" />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="cursor-pointer text-slate-300 hover:text-white px-3 py-2">
-                      Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/orders" className="cursor-pointer text-slate-300 hover:text-white px-3 py-2">
-                      Orders
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-slate-700" />
-                  <DropdownMenuItem 
-                    onClick={() => logoutMutation.mutate()} 
-                    className="text-red-400 hover:text-red-300 cursor-pointer px-3 py-2"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </DropdownMenuItem>
+                <DropdownMenuContent 
+                  className="w-64 glass border-glass-border shadow-2xl backdrop-blur-xl"
+                  align="end"
+                  sideOffset={8}
+                >
+                  {/* User Info Header */}
+                  <div className="px-4 py-3 border-b border-glass-border">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-accent-blue/20 rounded-full flex items-center justify-center">
+                        <User size={18} className="text-accent-blue" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">
+                          {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
+                        </p>
+                        <p className="text-xs text-text-secondary truncate">
+                          {user.firstName ? user.email : 'Clean & Flip Member'}
+                        </p>
+                      </div>
+                      {user.isAdmin && (
+                        <span className="text-xs bg-accent-blue px-2 py-1 rounded text-white font-medium">
+                          ADMIN
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Navigation Links */}
+                  <div className="py-2">
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                        <User className="mr-3 h-4 w-4" />
+                        My Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/orders" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                        <ShoppingCart className="mr-3 h-4 w-4" />
+                        Order History
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+
+                  <DropdownMenuSeparator className="bg-glass-border" />
+                  
+                  {/* Logout */}
+                  <div className="py-2">
+                    <DropdownMenuItem 
+                      onClick={() => logoutMutation.mutate()} 
+                      className="flex items-center px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="mr-3 h-4 w-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
@@ -144,8 +170,8 @@ export default function Navigation() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`glass hover:bg-white/20 relative p-2 transition-colors ${
-                  isActive("/cart") ? "text-accent-blue" : "text-text-secondary"
+                className={`glass hover:bg-white/20 relative p-2 transition-colors w-10 h-10 flex-shrink-0 ${
+                  isActive("/cart") ? "text-accent-blue" : "text-text-secondary hover:text-white"
                 }`}
               >
                 <ShoppingCart size={18} />
@@ -163,7 +189,7 @@ export default function Navigation() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="lg:hidden glass hover:bg-white/20 p-2 transition-colors"
+                  className="lg:hidden glass hover:bg-white/20 p-2 transition-colors w-10 h-10 flex-shrink-0 text-text-secondary hover:text-white"
                 >
                   <Menu size={18} />
                 </Button>
