@@ -357,11 +357,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes
-  const requireAdmin = (req: any, res: any, next: any) => {
+  const requireAdmin = async (req: any, res: any, next: any) => {
     if (!req.session?.userId) {
       return res.status(401).json({ error: "Authentication required" });
     }
-    next();
+    
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user || (!user.isAdmin && user.role !== 'developer')) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      req.user = user;
+      next();
+    } catch (error) {
+      console.error("Error checking admin access:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
   };
 
   app.get("/api/admin/stats", requireAdmin, async (req, res) => {

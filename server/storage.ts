@@ -94,6 +94,21 @@ export interface IStorage {
   getWishlistItems(userId: string): Promise<(Wishlist & { product: Product })[]>;
   addToWishlist(wishlistItem: InsertWishlist): Promise<Wishlist>;
   removeFromWishlist(userId: string, productId: string): Promise<void>;
+
+  // Admin operations
+  getAdminStats(): Promise<{
+    totalProducts: number;
+    totalUsers: number;
+    totalOrders: number;
+    totalRevenue: number;
+  }>;
+  getAllUsers(): Promise<User[]>;
+  updateUserRole(userId: string, role: string): Promise<void>;
+  updateProductStock(productId: string, status: string): Promise<void>;
+  exportProductsToCSV(): Promise<string>;
+  exportUsersToCSV(): Promise<string>;
+  exportOrdersToCSV(): Promise<string>;
+  healthCheck(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -771,6 +786,95 @@ export class DatabaseStorage implements IStorage {
           eq(wishlist.productId, productId)
         )
       );
+  }
+
+  // Admin operations
+  async getAdminStats(): Promise<{
+    totalProducts: number;
+    totalUsers: number;
+    totalOrders: number;
+    totalRevenue: number;
+  }> {
+    const [productCount] = await db.select({ count: sql<number>`count(*)` }).from(products);
+    const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
+    const [orderCount] = await db.select({ count: sql<number>`count(*)` }).from(orders);
+    const [revenueSum] = await db
+      .select({ sum: sql<number>`COALESCE(sum(${orders.totalAmount}), 0)` })
+      .from(orders)
+      .where(eq(orders.status, 'completed'));
+
+    return {
+      totalProducts: productCount.count,
+      totalUsers: userCount.count,
+      totalOrders: orderCount.count,
+      totalRevenue: revenueSum.sum
+    };
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async updateUserRole(userId: string, role: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ role, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async updateProductStock(productId: string, status: string): Promise<void> {
+    await db
+      .update(products)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(products.id, productId));
+  }
+
+  async exportProductsToCSV(): Promise<string> {
+    const allProducts = await db.select().from(products);
+    const headers = ['ID', 'Name', 'Price', 'Category', 'Brand', 'Condition', 'Status', 'Created'];
+    const rows = allProducts.map(p => [
+      p.id,
+      `"${p.name}"`,
+      p.price,
+      p.categoryId,
+      p.brand || '',
+      p.condition || '',
+      p.status || '',
+      p.createdAt?.toISOString() || ''
+    ]);
+    return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  }
+
+  async exportUsersToCSV(): Promise<string> {
+    const allUsers = await db.select().from(users);
+    const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Created'];
+    const rows = allUsers.map(u => [
+      u.id,
+      u.email,
+      `"${u.firstName || ''}"`,
+      `"${u.lastName || ''}"`,
+      u.role || 'user',
+      u.createdAt?.toISOString() || ''
+    ]);
+    return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  }
+
+  async exportOrdersToCSV(): Promise<string> {
+    const allOrders = await db.select().from(orders);
+    const headers = ['ID', 'User ID', 'Total', 'Status', 'Payment Status', 'Created'];
+    const rows = allOrders.map(o => [
+      o.id,
+      o.userId,
+      o.totalAmount,
+      o.status || '',
+      o.paymentStatus || '',
+      o.createdAt?.toISOString() || ''
+    ]);
+    return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  }
+
+  async healthCheck(): Promise<void> {
+    await db.select({ count: sql<number>`1` }).from(users).limit(1);
   }
 }
 

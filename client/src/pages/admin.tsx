@@ -71,9 +71,7 @@ function ProductManagement() {
 
   const deleteProductMutation = useMutation({
     mutationFn: async (productId: string) => {
-      return apiRequest(`/api/admin/products/${productId}`, {
-        method: 'DELETE'
-      });
+      return apiRequest('DELETE', `/api/admin/products/${productId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
@@ -89,10 +87,7 @@ function ProductManagement() {
 
   const updateStockMutation = useMutation({
     mutationFn: async ({ productId, status }: { productId: string; status: string }) => {
-      return apiRequest(`/api/admin/products/${productId}/stock`, {
-        method: 'PUT',
-        body: JSON.stringify({ status })
-      });
+      return apiRequest('PUT', `/api/admin/products/${productId}/stock`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
@@ -153,10 +148,10 @@ function ProductManagement() {
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>${product.price}</TableCell>
                 <TableCell>{product.categoryId}</TableCell>
-                <TableCell>{product.inventoryCount || 0}</TableCell>
+                <TableCell>{product.quantity || 0}</TableCell>
                 <TableCell>
-                  <Badge variant={(product.inventoryCount || 0) > 0 ? "default" : "destructive"}>
-                    {(product.inventoryCount || 0) > 0 ? "In Stock" : "Out of Stock"}
+                  <Badge variant={(product.quantity || 0) > 0 ? "default" : "destructive"}>
+                    {(product.quantity || 0) > 0 ? "In Stock" : "Out of Stock"}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -375,8 +370,8 @@ function SystemSettings() {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>Status:</span>
-              <Badge className={dbStatus?.status === 'Connected' ? "bg-green-500" : "bg-red-500"}>
-                {dbStatus?.status || 'Unknown'}
+              <Badge className={(dbStatus as any)?.status === 'Connected' ? "bg-green-500" : "bg-red-500"}>
+                {(dbStatus as any)?.status || 'Unknown'}
               </Badge>
             </div>
             <div className="flex justify-between">
@@ -385,7 +380,7 @@ function SystemSettings() {
             </div>
             <div className="flex justify-between">
               <span>Connection Pool:</span>
-              <span>{dbStatus?.pool || 'Unknown'}</span>
+              <span>{(dbStatus as any)?.pool || 'Unknown'}</span>
             </div>
           </div>
         </GlassCard>
@@ -398,17 +393,17 @@ function SystemSettings() {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>Server:</span>
-              <Badge className={systemHealth?.status === 'Healthy' ? "bg-green-500" : "bg-red-500"}>
-                {systemHealth?.status || 'Unknown'}
+              <Badge className={(systemHealth as any)?.status === 'Healthy' ? "bg-green-500" : "bg-red-500"}>
+                {(systemHealth as any)?.status || 'Unknown'}
               </Badge>
             </div>
             <div className="flex justify-between">
               <span>Memory Usage:</span>
-              <span>{systemHealth?.memoryPercent || 0}%</span>
+              <span>{(systemHealth as any)?.memoryPercent || 0}%</span>
             </div>
             <div className="flex justify-between">
               <span>Uptime:</span>
-              <span>{formatUptime(systemHealth?.uptime || 0)}</span>
+              <span>{formatUptime((systemHealth as any)?.uptime || 0)}</span>
             </div>
           </div>
         </GlassCard>
