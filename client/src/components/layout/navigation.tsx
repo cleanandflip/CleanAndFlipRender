@@ -38,19 +38,19 @@ export default function Navigation() {
   return (
     <>
       {/* Main Navigation - Cleaner Layout */}
-      <nav className="fixed top-4 left-4 right-4 z-50 glass rounded-xl px-8 py-4 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between w-full">
+      <nav className="fixed top-4 left-4 right-4 z-50 glass rounded-xl px-6 py-3 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between w-full gap-4">
           {/* Left Side - Logo */}
-          <div className="flex items-center flex-shrink-0 min-w-0">
+          <div className="flex items-center flex-shrink-0">
             <Logo size="md" />
           </div>
 
           {/* Center - Navigation Menu */}
-          <div className="hidden xl:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
+          <div className="hidden lg:flex items-center space-x-6">
             {navigation.map((item) => (
               <Link key={item.name} href={item.href}>
                 <span
-                  className={`transition-all duration-200 font-medium cursor-pointer px-4 py-2 rounded-lg hover:bg-white/10 text-base whitespace-nowrap ${
+                  className={`transition-all duration-200 font-medium cursor-pointer px-3 py-2 rounded-lg hover:bg-white/10 text-base whitespace-nowrap ${
                     isActive(item.href)
                       ? "text-accent-blue bg-accent-blue/10"
                       : "text-text-secondary hover:text-white"
@@ -63,9 +63,9 @@ export default function Navigation() {
           </div>
 
           {/* Right Side - Actions */}
-          <div className="flex items-center space-x-2 flex-shrink-0 min-w-0">
+          <div className="flex items-center space-x-3 flex-shrink-0">
             {/* Desktop Search */}
-            <div className="hidden xl:block mr-2">
+            <div className="hidden lg:block">
               <SearchBar
                 placeholder="Search equipment..."
                 onSearch={(query) => {
@@ -78,7 +78,7 @@ export default function Navigation() {
             <Button
               variant="ghost"
               size="icon"
-              className="xl:hidden glass hover:bg-white/20 p-2 transition-colors"
+              className="lg:hidden glass hover:bg-white/20 p-2 transition-colors"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
               <Search size={18} />
@@ -163,7 +163,7 @@ export default function Navigation() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="xl:hidden glass hover:bg-white/20 p-2 transition-colors"
+                  className="lg:hidden glass hover:bg-white/20 p-2 transition-colors"
                 >
                   <Menu size={18} />
                 </Button>

@@ -33,7 +33,7 @@ export default function Logo({ className = "", size = 'md', clickable = true, te
           <img 
             src="/clean-flip-logo-new.png" 
             alt="Clean & Flip" 
-            className={currentSize?.logo || sizes.lg.logo}
+            className={`${currentSize?.logo || sizes.lg.logo} brightness-0 invert`}
             style={{ minHeight: '128px', minWidth: '128px' }}
           />
         </div>
@@ -46,7 +46,7 @@ export default function Logo({ className = "", size = 'md', clickable = true, te
         <img 
           src="/clean-flip-logo-new.png" 
           alt="Clean & Flip Logo" 
-          className={currentSize?.logo || sizes.md.logo}
+          className={`${currentSize?.logo || sizes.md.logo} brightness-0 invert`}
           style={{ minHeight: size === 'lg' ? '128px' : size === 'md' ? '64px' : '48px', minWidth: size === 'lg' ? '128px' : size === 'md' ? '64px' : '48px' }}
         />
         <span className={`font-bebas ${currentSize?.container || sizes.md.container} text-white tracking-wider`}>
