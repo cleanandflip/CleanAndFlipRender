@@ -2,8 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
 import connectPg from "connect-pg-simple";
@@ -21,19 +20,52 @@ declare global {
   }
 }
 
-const scryptAsync = promisify(scrypt);
+const SALT_ROUNDS = 12; // Industry standard
 
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+async function hashPassword(password: string): Promise<string> {
+  return await bcrypt.hash(password, SALT_ROUNDS);
 }
 
-async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+  return await bcrypt.compare(supplied, stored);
+}
+
+// Password validation function
+function validatePassword(password: string): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (password.length < 8) {
+    errors.push("Password must be at least 8 characters");
+  }
+  if (!/[A-Z]/.test(password)) {
+    errors.push("Include at least one uppercase letter");
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push("Include at least one lowercase letter");
+  }
+  if (!/\d/.test(password)) {
+    errors.push("Include at least one number");
+  }
+  if (!/[!@#$%^&*]/.test(password)) {
+    errors.push("Include at least one special character (!@#$%^&*)");
+  }
+  
+  return { isValid: errors.length === 0, errors };
+}
+
+// City, State ZIP validation
+function validateCityStateZip(cityStateZip: string): boolean {
+  const cityStateZipRegex = /^[A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5}$/;
+  return cityStateZipRegex.test(cityStateZip);
+}
+
+// Check if ZIP is in local service area (Asheville, NC area)
+function checkIfLocalZip(zip: string): boolean {
+  const localZips = [
+    "28801", "28802", "28803", "28804", "28805", "28806", "28807", "28808", 
+    "28810", "28813", "28814", "28815", "28816", "28817", "28818"
+  ];
+  return localZips.includes(zip);
 }
 
 export function setupAuth(app: Express) {
@@ -95,12 +127,45 @@ export function setupAuth(app: Express) {
   // Register endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { email, password, firstName, lastName, phone } = req.body;
+      const { email, password, confirmPassword, firstName, lastName, address, cityStateZip, phone } = req.body;
 
-      // Check if user already exists
+      // Validate required fields
+      if (!email || !password || !confirmPassword || !firstName || !lastName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // Validate password confirmation
+      if (password !== confirmPassword) {
+        return res.status(400).json({ message: "Passwords do not match" });
+      }
+
+      // Validate password strength
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        return res.status(400).json({ 
+          message: "Password does not meet requirements",
+          errors: passwordValidation.errors
+        });
+      }
+
+      // Validate city, state, ZIP format
+      if (cityStateZip && !validateCityStateZip(cityStateZip)) {
+        return res.status(400).json({ 
+          message: "Please enter city, state ZIP in format: City, ST 12345"
+        });
+      }
+
+      // Check if user already exists (don't reveal if email exists for security)
       const existingEmail = await storage.getUserByEmail(email);
       if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
+        return res.status(400).json({ message: "Registration failed. Please try again." });
+      }
+
+      // Determine if user is local customer
+      let isLocalCustomer = false;
+      if (cityStateZip) {
+        const zip = cityStateZip.split(' ').pop();
+        isLocalCustomer = checkIfLocalZip(zip || '');
       }
 
       // Determine role based on criteria
@@ -115,11 +180,14 @@ export function setupAuth(app: Express) {
       const user = await storage.createUser({
         email,
         password: await hashPassword(password),
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
+        firstName,
+        lastName,
+        address: address || undefined,
+        cityStateZip: cityStateZip || undefined,
         phone: phone || undefined,
         role,
         isAdmin: role === "admin" || role === "developer",
+        isLocalCustomer,
       });
 
       const userForSession = {
@@ -135,6 +203,7 @@ export function setupAuth(app: Express) {
           lastName: user.lastName,
           role: user.role || 'user',
           isAdmin: user.isAdmin,
+          isLocalCustomer: user.isLocalCustomer,
         });
       });
     } catch (error) {

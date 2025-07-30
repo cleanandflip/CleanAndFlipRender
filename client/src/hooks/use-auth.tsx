@@ -25,8 +25,11 @@ type LoginData = {
 type RegisterData = {
   email: string;
   password: string;
-  firstName?: string;
-  lastName?: string;
+  confirmPassword: string;
+  firstName: string;
+  lastName: string;
+  address?: string;
+  cityStateZip?: string;
   phone?: string;
 };
 

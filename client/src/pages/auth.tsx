@@ -8,11 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Dumbbell, Users, Shield, CheckCircle, TrendingUp } from "lucide-react";
 import GlassCard from "@/components/common/glass-card";
 import Logo from "@/components/common/logo";
+import { PasswordInput } from "@/components/auth/password-input";
+import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
+import { SecurityNotice } from "@/components/auth/security-notice";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordsMatch, setPasswordsMatch] = useState(true);
   const formContainerRef = useRef<HTMLDivElement>(null);
   const loginFormRef = useRef<HTMLFormElement>(null);
   const registerFormRef = useRef<HTMLFormElement>(null);
@@ -52,14 +58,49 @@ export default function AuthPage() {
   const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     scrollToForm();
+    
     const formData = new FormData(e.currentTarget);
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+    
+    // Client-side password validation
+    if (password !== confirmPassword) {
+      setPasswordsMatch(false);
+      return;
+    }
+    
     registerMutation.mutate({
       email: formData.get("email") as string,
-      password: formData.get("password") as string,
+      password,
+      confirmPassword,
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
+      address: formData.get("address") as string,
+      cityStateZip: formData.get("cityStateZip") as string,
       phone: formData.get("phone") as string,
     });
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    // Check if passwords match when password changes
+    if (confirmPassword && newPassword !== confirmPassword) {
+      setPasswordsMatch(false);
+    } else {
+      setPasswordsMatch(true);
+    }
+  };
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newConfirmPassword = e.target.value;
+    setConfirmPassword(newConfirmPassword);
+    // Check if passwords match
+    if (password && password !== newConfirmPassword) {
+      setPasswordsMatch(false);
+    } else {
+      setPasswordsMatch(true);
+    }
   };
 
   if (authLoading) {
@@ -150,85 +191,168 @@ export default function AuthPage() {
 
             <TabsContent value="register" className="transition-all duration-300 ease-in-out">
               <GlassCard className="p-8">
-                <div className="mb-8">
-                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">CREATE ACCOUNT</h2>
+                <div className="mb-6">
+                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">CREATE SECURE ACCOUNT</h2>
                   <p className="text-text-secondary">
-                    Join Clean & Flip to buy and sell equipment
+                    Join Clean & Flip to buy and sell equipment securely
                   </p>
                 </div>
-                <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-6">
-                  <div className="grid grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                      <Label htmlFor="firstName" className="text-text-secondary font-medium text-lg">First Name</Label>
-                      <Input
-                        id="firstName"
-                        name="firstName"
-                        type="text"
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                        placeholder="John"
-                        onFocus={scrollToForm}
-                      />
+
+                <SecurityNotice />
+
+                <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-6 mt-8">
+                  {/* Personal Information Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                      <Users className="h-5 w-5 text-accent-blue" />
+                      Personal Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName" className="text-text-secondary font-medium">First Name *</Label>
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          type="text"
+                          required
+                          className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                          placeholder="First Name"
+                          onFocus={scrollToForm}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName" className="text-text-secondary font-medium">Last Name *</Label>
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          type="text"
+                          required
+                          className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                          placeholder="Last Name"
+                          onFocus={scrollToForm}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-4">
-                      <Label htmlFor="lastName" className="text-text-secondary font-medium text-lg">Last Name</Label>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-text-secondary font-medium">Email Address *</Label>
                       <Input
-                        id="lastName"
-                        name="lastName"
-                        type="text"
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                        placeholder="Doe"
+                        id="email"
+                        name="email"
+                        type="email"
+                        required
+                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                        placeholder="your.email@example.com"
                         onFocus={scrollToForm}
                       />
                     </div>
                   </div>
 
+                  {/* Location Section */}
                   <div className="space-y-4">
-                    <Label htmlFor="email" className="text-text-secondary font-medium text-lg">Email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                      placeholder="john@example.com"
-                      onFocus={scrollToForm}
-                    />
+                    <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-accent-blue" />
+                      Location
+                    </h3>
+                    <div className="space-y-2">
+                      <Label htmlFor="address" className="text-text-secondary font-medium">Street Address *</Label>
+                      <Input
+                        id="address"
+                        name="address"
+                        type="text"
+                        required
+                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                        placeholder="123 Main Street"
+                        onFocus={scrollToForm}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cityStateZip" className="text-text-secondary font-medium">City, State ZIP *</Label>
+                      <Input
+                        id="cityStateZip"
+                        name="cityStateZip"
+                        type="text"
+                        required
+                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                        placeholder="Asheville, NC 28806"
+                        onFocus={scrollToForm}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone" className="text-text-secondary font-medium">Phone Number <span className="text-text-muted">(Optional)</span></Label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                        placeholder="(555) 123-4567"
+                        onFocus={scrollToForm}
+                      />
+                    </div>
                   </div>
+
+                  {/* Security Section */}
                   <div className="space-y-4">
-                    <Label htmlFor="phone" className="text-text-secondary font-medium text-lg">Phone</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                      placeholder="(555) 123-4567"
-                      onFocus={scrollToForm}
-                    />
+                    <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-accent-blue" />
+                      Create Secure Password
+                    </h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-text-secondary font-medium">Password *</Label>
+                      <PasswordInput
+                        id="password"
+                        name="password"
+                        placeholder="Create a strong password"
+                        required
+                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                        value={password}
+                        onChange={handlePasswordChange}
+                        onFocus={scrollToForm}
+                      />
+                    </div>
+
+                    {password && <PasswordStrengthMeter password={password} />}
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword" className="text-text-secondary font-medium">Confirm Password *</Label>
+                      <PasswordInput
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder="Confirm your password"
+                        required
+                        className={`glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 ${
+                          !passwordsMatch ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : 
+                          confirmPassword && passwordsMatch ? 'border-green-500 focus:border-green-500 focus:ring-green-500/30' : ''
+                        }`}
+                        value={confirmPassword}
+                        onChange={handleConfirmPasswordChange}
+                        onFocus={scrollToForm}
+                      />
+                      {!passwordsMatch && confirmPassword && (
+                        <p className="text-red-400 text-sm mt-1">Passwords do not match</p>
+                      )}
+                      {passwordsMatch && confirmPassword && password && (
+                        <p className="text-green-400 text-sm mt-1 flex items-center gap-1">
+                          <CheckCircle className="h-4 w-4" />
+                          Passwords match
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-4">
-                    <Label htmlFor="password" className="text-text-secondary font-medium text-lg">Password</Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                      placeholder="Create a strong password"
-                      onFocus={scrollToForm}
-                    />
-                  </div>
+
                   <Button
                     type="submit"
-                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-16 text-xl transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl mt-8"
-                    disabled={registerMutation.isPending}
+                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-14 text-lg transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl mt-8"
+                    disabled={registerMutation.isPending || !passwordsMatch}
                   >
                     {registerMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-4 h-8 w-8 animate-spin" />
-                        Creating Account...
+                        <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                        Creating Secure Account...
                       </>
                     ) : (
-                      "Create Account"
+                      "Create Secure Account"
                     )}
                   </Button>
                 </form>
