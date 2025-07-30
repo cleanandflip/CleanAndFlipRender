@@ -29,11 +29,11 @@ export default function Logo({ className = "", size = 'md', clickable = true }: 
 
   const LogoContent = () => (
     <div className={`logo-infinity hover:opacity-80 transition-opacity ${className}`}>
-      <div className={`infinity-symbol ${currentSize.symbol}`}>
-        <div className={`plate-left ${currentSize.plate}`}></div>
-        <div className={`plate-right ${currentSize.plate}`}></div>
+      <div className={`infinity-symbol ${currentSize?.symbol || sizes.md.symbol}`}>
+        <div className={`plate-left ${currentSize?.plate || sizes.md.plate}`}></div>
+        <div className={`plate-right ${currentSize?.plate || sizes.md.plate}`}></div>
       </div>
-      <span className={`font-bebas ${currentSize.container} text-white tracking-wider`}>
+      <span className={`font-bebas ${currentSize?.container || sizes.md.container} text-white tracking-wider`}>
         CLEAN & FLIP
       </span>
     </div>

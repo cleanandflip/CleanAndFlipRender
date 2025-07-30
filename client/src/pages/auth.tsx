@@ -54,70 +54,69 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-8">
-        <div className="w-full max-w-xl">
-          <div className="text-center mb-10">
+      <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
+        <div className="w-full max-w-2xl">
+          <div className="text-center mb-12">
             <Logo size="lg" className="mx-auto mb-8" />
-            <h1 className="font-bebas text-4xl text-white tracking-wider mb-4">JOIN THE MARKETPLACE</h1>
-            <p className="text-text-secondary text-lg leading-relaxed">Turn unused gear into cash, buy quality equipment you can trust</p>
+            <h1 className="font-bebas text-5xl text-white tracking-wider mb-6">JOIN THE MARKETPLACE</h1>
+            <p className="text-text-secondary text-xl leading-relaxed max-w-lg mx-auto">Turn unused gear into cash, buy quality equipment you can trust</p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8 glass h-12">
+            <TabsList className="grid w-full grid-cols-2 mb-10 glass h-14 text-lg">
               <TabsTrigger 
                 value="login" 
-                className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200"
+                className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200 text-lg"
               >
                 Sign In
               </TabsTrigger>
               <TabsTrigger 
                 value="register" 
-                className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200"
+                className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200 text-lg"
               >
                 Sign Up
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="transition-all duration-300 ease-in-out">
-              <GlassCard className="p-10">
-                <div className="mb-8">
-                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">WELCOME BACK</h2>
-                  <p className="text-text-secondary">
+              <GlassCard className="p-12">
+                <div className="mb-10">
+                  <h2 className="font-bebas text-4xl text-white tracking-wider mb-4">WELCOME BACK</h2>
+                  <p className="text-text-secondary text-lg">
                     Sign in to your account to continue
                   </p>
                 </div>
-                <form onSubmit={handleLogin} className="space-y-8">
+                <form onSubmit={handleLogin} className="space-y-10">
                   <div className="space-y-4">
-                    <Label htmlFor="username" className="text-text-secondary font-medium text-lg">Username</Label>
+                    <Label htmlFor="username" className="text-text-secondary font-medium text-xl">Username</Label>
                     <Input
                       id="username"
                       name="username"
                       type="text"
                       required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-xl px-6 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Enter your username"
                     />
                   </div>
                   <div className="space-y-4">
-                    <Label htmlFor="password" className="text-text-secondary font-medium text-lg">Password</Label>
+                    <Label htmlFor="password" className="text-text-secondary font-medium text-xl">Password</Label>
                     <Input
                       id="password"
                       name="password"
                       type="password"
                       required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-xl px-6 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Enter your password"
                     />
                   </div>
                   <Button
                     type="submit"
-                    variant="outline"
-                    className="w-full glass hover:bg-white/10 border-accent-blue/30 text-accent-blue hover:text-white font-medium h-16 text-xl transition-all duration-200 hover:scale-[1.02]"
+                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-20 text-2xl transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl"
                     disabled={loginMutation.isPending}
                   >
                     {loginMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                        <Loader2 className="mr-4 h-8 w-8 animate-spin" />
                         Signing In...
                       </>
                     ) : (
@@ -129,88 +128,87 @@ export default function AuthPage() {
             </TabsContent>
 
             <TabsContent value="register" className="transition-all duration-300 ease-in-out">
-              <GlassCard className="p-10">
-                <div className="mb-8">
-                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">CREATE ACCOUNT</h2>
-                  <p className="text-text-secondary">
+              <GlassCard className="p-12">
+                <div className="mb-10">
+                  <h2 className="font-bebas text-4xl text-white tracking-wider mb-4">CREATE ACCOUNT</h2>
+                  <p className="text-text-secondary text-lg">
                     Join Clean & Flip to buy and sell equipment
                   </p>
                 </div>
-                <form onSubmit={handleRegister} className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="firstName" className="text-text-secondary font-medium">First Name</Label>
+                <form onSubmit={handleRegister} className="space-y-8">
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <Label htmlFor="firstName" className="text-text-secondary font-medium text-lg">First Name</Label>
                       <Input
                         id="firstName"
                         name="firstName"
                         type="text"
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                         placeholder="John"
                       />
                     </div>
-                    <div className="space-y-3">
-                      <Label htmlFor="lastName" className="text-text-secondary font-medium">Last Name</Label>
+                    <div className="space-y-4">
+                      <Label htmlFor="lastName" className="text-text-secondary font-medium text-lg">Last Name</Label>
                       <Input
                         id="lastName"
                         name="lastName"
                         type="text"
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                         placeholder="Doe"
                       />
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <Label htmlFor="username" className="text-text-secondary font-medium">Username</Label>
+                  <div className="space-y-4">
+                    <Label htmlFor="username" className="text-text-secondary font-medium text-lg">Username</Label>
                     <Input
                       id="username"
                       name="username"
                       type="text"
                       required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Choose a username"
                     />
                   </div>
-                  <div className="space-y-3">
-                    <Label htmlFor="email" className="text-text-secondary font-medium">Email</Label>
+                  <div className="space-y-4">
+                    <Label htmlFor="email" className="text-text-secondary font-medium text-lg">Email</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
                       required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="john@example.com"
                     />
                   </div>
-                  <div className="space-y-3">
-                    <Label htmlFor="phone" className="text-text-secondary font-medium">Phone</Label>
+                  <div className="space-y-4">
+                    <Label htmlFor="phone" className="text-text-secondary font-medium text-lg">Phone</Label>
                     <Input
                       id="phone"
                       name="phone"
                       type="tel"
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="(555) 123-4567"
                     />
                   </div>
-                  <div className="space-y-3">
-                    <Label htmlFor="password" className="text-text-secondary font-medium">Password</Label>
+                  <div className="space-y-4">
+                    <Label htmlFor="password" className="text-text-secondary font-medium text-lg">Password</Label>
                     <Input
                       id="password"
                       name="password"
                       type="password"
                       required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Create a strong password"
                     />
                   </div>
                   <Button
                     type="submit"
-                    variant="outline"
-                    className="w-full glass hover:bg-white/10 border-accent-blue/30 text-accent-blue hover:text-white font-medium h-16 text-xl transition-all duration-200 hover:scale-[1.02] mt-8"
+                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-20 text-2xl transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl mt-10"
                     disabled={registerMutation.isPending}
                   >
                     {registerMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                        <Loader2 className="mr-4 h-8 w-8 animate-spin" />
                         Creating Account...
                       </>
                     ) : (
@@ -225,51 +223,51 @@ export default function AuthPage() {
       </div>
 
       {/* Right Side - Hero Section */}
-      <div className="hidden lg:flex flex-1 items-center justify-center p-8">
-        <div className="max-w-md">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full glass mb-6 transition-all duration-300 hover:scale-110">
-              <Dumbbell className="h-8 w-8 text-accent-blue" />
+      <div className="hidden lg:flex flex-1 items-center justify-center p-12">
+        <div className="max-w-xl">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full glass mb-8 transition-all duration-300 hover:scale-110">
+              <Dumbbell className="h-12 w-12 text-accent-blue" />
             </div>
-            <h2 className="font-bebas text-4xl text-white tracking-wider mb-4">TRUSTED MARKETPLACE</h2>
-            <p className="text-text-secondary leading-relaxed">
+            <h2 className="font-bebas text-6xl text-white tracking-wider mb-6">TRUSTED MARKETPLACE</h2>
+            <p className="text-text-secondary text-xl leading-relaxed">
               Join hundreds of fitness enthusiasts buying and selling quality equipment with expert inspection and fair pricing.
             </p>
           </div>
 
-          <div className="space-y-6">
-            <GlassCard className="p-5 glass-hover transition-all duration-300 hover:scale-[1.02]">
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-success rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-5 w-5 text-white" />
+          <div className="space-y-8">
+            <GlassCard className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-start space-x-6">
+                <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bebas text-lg text-white tracking-wider mb-1">VERIFIED QUALITY</h3>
-                  <p className="text-text-secondary text-sm">All equipment professionally inspected and guaranteed before sale</p>
+                  <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">VERIFIED QUALITY</h3>
+                  <p className="text-text-secondary text-lg">All equipment professionally inspected and guaranteed before sale</p>
                 </div>
               </div>
             </GlassCard>
 
-            <GlassCard className="p-5 glass-hover transition-all duration-300 hover:scale-[1.02]">
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-accent-blue rounded-full flex items-center justify-center flex-shrink-0">
-                  <Shield className="h-5 w-5 text-white" />
+            <GlassCard className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-start space-x-6">
+                <div className="w-16 h-16 bg-accent-blue rounded-full flex items-center justify-center flex-shrink-0">
+                  <Shield className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bebas text-lg text-white tracking-wider mb-1">EXPERT KNOWLEDGE</h3>
-                  <p className="text-text-secondary text-sm">Weightlifting specialists with years of experience in quality equipment</p>
+                  <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">EXPERT KNOWLEDGE</h3>
+                  <p className="text-text-secondary text-lg">Weightlifting specialists with years of experience in quality equipment</p>
                 </div>
               </div>
             </GlassCard>
 
-            <GlassCard className="p-5 glass-hover transition-all duration-300 hover:scale-[1.02]">
-              <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-warning rounded-full flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="h-5 w-5 text-white" />
+            <GlassCard className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-start space-x-6">
+                <div className="w-16 h-16 bg-warning rounded-full flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bebas text-lg text-white tracking-wider mb-1">FAIR PRICING</h3>
-                  <p className="text-text-secondary text-sm">Best market value for both buyers and sellers in the fitness community</p>
+                  <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">FAIR PRICING</h3>
+                  <p className="text-text-secondary text-lg">Best market value for both buyers and sellers in the fitness community</p>
                 </div>
               </div>
             </GlassCard>
