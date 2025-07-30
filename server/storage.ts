@@ -33,6 +33,7 @@ import {
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike, isNotNull } from "drizzle-orm";
 import { normalizeEmail, normalizeSearchTerm, normalizeBrand } from "@shared/utils";
+import { randomUUID } from "crypto";
 
 export interface IStorage {
   // User operations
@@ -924,7 +925,7 @@ export class DatabaseStorage implements IStorage {
     }
     
     const wishlistItem: InsertWishlist = {
-      id: nanoid(),
+      id: randomUUID(),
       userId,
       productId,
       createdAt: new Date()
