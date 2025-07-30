@@ -261,7 +261,7 @@ export default function EnhancedWishlistAnalytics() {
           
           <div className="space-y-3">
             {analytics.topProducts.map((product, index) => (
-              <div key={product.productId} className="flex items-center gap-4 p-3 bg-gray-900/50 rounded-lg">
+              <div key={product.productId} className="flex items-center gap-4 p-3 bg-gray-800/50 rounded-lg">
                 <span className="text-2xl font-bold text-gray-500">
                   #{index + 1}
                 </span>
@@ -333,7 +333,7 @@ export default function EnhancedWishlistAnalytics() {
           <h4 className="font-medium text-white mb-3">Most Active Users</h4>
           <div className="space-y-2">
             {analytics.topUsers.map(user => (
-              <div key={user.userId} className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg">
+              <div key={user.userId} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
                 <div>
                   <p className="font-medium text-white">{user.userName}</p>
                   <p className="text-sm text-gray-400">{user.email}</p>

@@ -8,50 +8,56 @@ html {
 }
 
 :root {
-  /* Background and surfaces - Professional grays */
-  --background: hsl(210, 20%, 5%);
-  --foreground: hsl(0, 0%, 100%);
-  --muted: hsl(217, 19%, 27%);
-  --muted-foreground: hsl(215, 16%, 47%);
-  --popover: hsl(210, 20%, 5%);
-  --popover-foreground: hsl(0, 0%, 100%);
-  --card: hsl(210, 20%, 5%);
-  --card-foreground: hsl(0, 0%, 100%);
+  /* Blue-gray theme backgrounds - consistent with Clean & Flip design */
+  --background: hsl(222, 47%, 11%);        /* #1e293b - main background */
+  --foreground: hsl(210, 40%, 98%);        /* #f8fafc - text on dark */
+  --muted: hsl(215, 25%, 27%);             /* #475569 - muted elements */
+  --muted-foreground: hsl(215, 16%, 57%);  /* #94a3b8 - muted text */
+  --popover: hsl(215, 25%, 27%);           /* #475569 - popover background */
+  --popover-foreground: hsl(210, 40%, 98%);
+  --card: hsl(215, 25%, 27%);              /* #475569 - card background */
+  --card-foreground: hsl(210, 40%, 98%);
   
-  /* Borders and inputs */
-  --border: hsl(217, 19%, 27%);
-  --input: hsl(217, 19%, 27%);
+  /* Form inputs and borders - blue-gray theme */
+  --border: hsl(215, 20%, 35%);            /* #64748b - borders */
+  --input: hsl(215, 25%, 20%);             /* #334155 - input backgrounds */
   
   /* Primary colors - Clean blue accent */
-  --primary: hsl(213, 94%, 68%);
-  --primary-foreground: hsl(210, 20%, 5%);
+  --primary: hsl(213, 94%, 68%);           /* #3b82f6 - Clean & Flip blue */
+  --primary-foreground: hsl(222, 47%, 11%);
   
-  /* Secondary colors */
-  --secondary: hsl(217, 19%, 27%);
-  --secondary-foreground: hsl(0, 0%, 100%);
+  /* Secondary colors - blue-gray instead of black */
+  --secondary: hsl(215, 25%, 35%);         /* #475569 - secondary buttons */
+  --secondary-foreground: hsl(210, 40%, 98%);
   
-  /* Accent colors */
-  --accent: hsl(217, 19%, 27%);
-  --accent-foreground: hsl(0, 0%, 100%);
+  /* Accent colors - subtle blue-gray */
+  --accent: hsl(215, 25%, 20%);            /* #334155 - hover states */
+  --accent-foreground: hsl(210, 40%, 98%);
   
   /* State colors - Professional palette */
-  --destructive: hsl(0, 62%, 55%);
+  --destructive: hsl(0, 62%, 55%);         /* #ef4444 - red */
   --destructive-foreground: hsl(0, 0%, 100%);
-  --success: hsl(142, 76%, 36%);
-  --warning: hsl(38, 92%, 50%);
+  --success: hsl(142, 76%, 36%);           /* #10b981 - green */
+  --warning: hsl(38, 92%, 50%);            /* #f59e0b - yellow */
   --error: hsl(0, 62%, 55%);
   
   /* Ring and radius */
-  --ring: hsl(213, 94%, 68%);
+  --ring: hsl(213, 94%, 68%);              /* #3b82f6 - focus rings */
   --radius: 0.75rem;
   
-  /* Updated Clean & Flip theme colors */
-  --glass-bg: rgba(15, 23, 42, 0.4);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --text-primary: #FFFFFF;
-  --text-secondary: #E5E7EB;
-  --text-muted: #9CA3AF;
-  --accent-blue: #60A5FA;
+  /* Clean & Flip theme colors - updated for consistency */
+  --glass-bg: rgba(30, 41, 59, 0.4);       /* Consistent with #1e293b */
+  --glass-border: rgba(100, 116, 139, 0.2); /* Subtle blue-gray border */
+  --text-primary: #e2e8f0;                 /* Softer white */
+  --text-secondary: #cbd5e1;               /* Light blue-gray */
+  --text-muted: #94a3b8;                   /* Muted blue-gray */
+  --accent-blue: #3b82f6;                  /* Clean & Flip blue */
+  
+  /* Additional theme variables for consistency */
+  --bg-primary: hsl(222, 47%, 11%);        /* #1e293b */
+  --bg-secondary: hsl(215, 25%, 20%);      /* #334155 */
+  --bg-tertiary: hsl(215, 25%, 27%);       /* #475569 */
+  --border-color: hsl(215, 20%, 35%);      /* #64748b */
 }
 
 @layer base {

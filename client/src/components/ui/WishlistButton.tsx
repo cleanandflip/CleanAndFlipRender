@@ -139,7 +139,7 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
           transition-all duration-300 transform
           ${isWishlisted 
             ? 'bg-red-500/90 backdrop-blur-sm text-white scale-110 shadow-lg shadow-red-500/25' 
-            : 'bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white hover:shadow-md hover:scale-110'
+            : 'bg-gray-700/80 backdrop-blur-sm text-gray-300 hover:bg-gray-600 hover:shadow-md hover:scale-110'
           }
           ${loading ? 'opacity-50 cursor-not-allowed animate-pulse' : 'cursor-pointer'}
           ${className}
@@ -157,7 +157,7 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
       {showTooltip && !showLoginPrompt && (
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 
                         opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-          <div className="bg-black/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+          <div className="bg-gray-800/95 backdrop-blur-sm text-white text-xs px-2 py-1 rounded whitespace-nowrap border border-gray-600">
             {loading ? 'Updating...' : isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
           </div>
         </div>
