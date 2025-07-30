@@ -85,18 +85,18 @@ html {
     @apply transform -translate-y-0.5;
   }
 
-  /* Logo styling with glow effects */
+  /* Logo styling with enhanced glow effects */
   .logo-glow {
-    filter: invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    filter: invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
     transition: all 0.3s ease;
   }
   
   .logo-glow:hover {
-    filter: invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.5));
+    filter: invert(1) drop-shadow(0 0 16px rgba(255, 255, 255, 0.6));
   }
   
   .logo-glow-large {
-    filter: invert(1) drop-shadow(0 0 16px rgba(255, 255, 255, 0.4));
+    filter: invert(1) drop-shadow(0 0 24px rgba(255, 255, 255, 0.5));
   }
   
   .nav-brand {
@@ -109,9 +109,11 @@ html {
 
   /* Mobile responsive logo sizes */
   @media (max-width: 768px) {
-    .logo-glow,
+    .logo-glow {
+      filter: invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+    }
     .logo-glow:hover {
-      filter: invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.3));
+      filter: invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.5));
     }
   }
   

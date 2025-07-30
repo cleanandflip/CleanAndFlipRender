@@ -11,15 +11,15 @@ export default function Logo({ className = "", size = 'md', clickable = true, te
   const sizes = {
     sm: {
       container: "text-lg",
-      logo: "h-8 w-8 logo-glow", // Footer logo with glow
+      logo: "h-12 w-12 logo-glow", // Footer logo - 48px
     },
     md: {
-      container: "text-2xl",
-      logo: "h-10 w-10 logo-glow", // Navigation logo - 40px with glow
+      container: "text-2xl", 
+      logo: "h-16 w-16 logo-glow", // Navigation logo - 64px (much larger)
     },
     lg: {
       container: "text-4xl",
-      logo: "h-20 w-20 logo-glow-large", // Auth page logo - 80px with large glow
+      logo: "h-32 w-32 logo-glow-large", // Auth page logo - 128px (very prominent)
     },
   };
 
@@ -34,7 +34,7 @@ export default function Logo({ className = "", size = 'md', clickable = true, te
             src="/clean-flip-logo.png" 
             alt="Clean & Flip" 
             className={currentSize?.logo || sizes.lg.logo}
-            style={{ minHeight: '80px', minWidth: '80px' }}
+            style={{ minHeight: '128px', minWidth: '128px' }}
           />
         </div>
       );
@@ -47,7 +47,7 @@ export default function Logo({ className = "", size = 'md', clickable = true, te
           src="/clean-flip-logo.png" 
           alt="Clean & Flip Logo" 
           className={currentSize?.logo || sizes.md.logo}
-          style={{ minHeight: size === 'lg' ? '80px' : size === 'md' ? '40px' : '32px', minWidth: size === 'lg' ? '80px' : size === 'md' ? '40px' : '32px' }}
+          style={{ minHeight: size === 'lg' ? '128px' : size === 'md' ? '64px' : '48px', minWidth: size === 'lg' ? '128px' : size === 'md' ? '64px' : '48px' }}
         />
         <span className={`font-bebas ${currentSize?.container || sizes.md.container} text-white tracking-wider`}>
           CLEAN & FLIP
