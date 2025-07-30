@@ -85,17 +85,27 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
   };
 
   const stockStatus = getStockStatus();
-  const mainImage = product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300";
+  const mainImage = product.images?.[0];
+  const hasImage = mainImage && mainImage.length > 0;
 
   if (compact) {
     return (
       <Link href={`/products/${product.id}`}>
         <GlassCard className="overflow-hidden glass-hover cursor-pointer">
-          <img 
-            src={mainImage}
-            alt={product.name}
-            className="w-full h-32 object-cover"
-          />
+          {hasImage ? (
+            <img 
+              src={mainImage}
+              alt={product.name}
+              className="w-full h-32 object-cover"
+            />
+          ) : (
+            <div className="w-full h-32 bg-glass-bg flex items-center justify-center">
+              <div className="text-center text-text-muted">
+                <div className="text-2xl mb-2">📦</div>
+                <div className="text-xs">No Image</div>
+              </div>
+            </div>
+          )}
           <div className="p-3">
             <h4 className="font-semibold text-sm line-clamp-2 mb-1">{product.name}</h4>
             <p className="text-accent-blue font-bold text-sm">${product.price}</p>
@@ -112,11 +122,20 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           {/* Image */}
           <Link href={`/products/${product.id}`}>
             <div className="w-32 h-32 flex-shrink-0 overflow-hidden rounded-lg cursor-pointer group">
-              <img
-                src={mainImage}
-                alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
+              {hasImage ? (
+                <img
+                  src={mainImage}
+                  alt={product.name}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full bg-glass-bg flex items-center justify-center">
+                  <div className="text-center text-text-muted">
+                    <div className="text-3xl mb-2">📦</div>
+                    <div className="text-xs">No Image</div>
+                  </div>
+                </div>
+              )}
             </div>
           </Link>
 
@@ -212,11 +231,20 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       {/* Image Container */}
       <Link href={`/products/${product.id}`}>
         <div className="relative overflow-hidden cursor-pointer">
-          <img
-            src={mainImage}
-            alt={product.name}
-            className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-          />
+          {hasImage ? (
+            <img
+              src={mainImage}
+              alt={product.name}
+              className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-48 bg-glass-bg flex items-center justify-center">
+              <div className="text-center text-text-muted">
+                <div className="text-4xl mb-3">📦</div>
+                <div className="text-sm">No Image Available</div>
+              </div>
+            </div>
+          )}
           
           {/* Overlay with actions */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
