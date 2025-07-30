@@ -161,35 +161,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", async (req, res) => {
     try {
-      const { productId, quantity } = req.body;
+      const { productId, quantity = 1 } = req.body;
       const userId = (req.session as any)?.userId;
       const sessionId = req.sessionID;
       
       console.log("Cart request - userId:", userId, "sessionId:", sessionId);
       
-      // Ensure session is saved first for guest users
-      if (!userId || userId === 'temp-user-id') {
-        req.session.save((err) => {
-          if (err) console.error('Session save error:', err);
-        });
+      // 1. Check product availability first
+      const product = await storage.getProduct(productId);
+      if (!product) {
+        return res.status(404).json({ error: 'Product not found' });
       }
       
-      // Create cart item with proper user or session ID
-      const cartItemData = {
-        productId,
-        quantity: quantity || 1,
-        userId: userId && userId !== 'temp-user-id' ? userId : null,
-        sessionId: !userId || userId === 'temp-user-id' ? sessionId : null,
-      };
+      if ((product.stockQuantity || 0) < 1) {
+        return res.status(400).json({ error: 'Product not available' });
+      }
       
-      console.log("Cart item data:", cartItemData);
+      // 2. Check existing cart item for smart quantity handling
+      const effectiveUserId = userId && userId !== 'temp-user-id' ? userId : null;
+      const effectiveSessionId = !userId || userId === 'temp-user-id' ? sessionId : null;
       
-      const validatedData = insertCartItemSchema.parse(cartItemData);
-      const cartItem = await storage.addToCart(validatedData);
-      res.json(cartItem);
-    } catch (error) {
+      const existingItem = await storage.getCartItem(effectiveUserId, effectiveSessionId, productId);
+      
+      if (existingItem) {
+        // Update quantity instead of creating duplicate
+        const newQuantity = existingItem.quantity + quantity;
+        
+        // 3. Validate against stock
+        if (newQuantity > (product.stockQuantity || 0)) {
+          return res.status(400).json({ 
+            error: `Only ${product.stockQuantity || 0} available. You already have ${existingItem.quantity} in cart.` 
+          });
+        }
+        
+        // Update existing item
+        const updated = await storage.updateCartItem(existingItem.id, newQuantity);
+        return res.json(updated);
+      } else {
+        // 4. New item - validate quantity
+        if (quantity > (product.stockQuantity || 0)) {
+          return res.status(400).json({ 
+            error: `Only ${product.stockQuantity || 0} available` 
+          });
+        }
+        
+        // Ensure session is saved first for guest users
+        if (!effectiveUserId) {
+          req.session.save((err) => {
+            if (err) console.error('Session save error:', err);
+          });
+        }
+        
+        // Create cart item with proper user or session ID
+        const cartItemData = {
+          productId,
+          quantity,
+          userId: effectiveUserId,
+          sessionId: effectiveSessionId,
+        };
+        
+        console.log("Cart item data:", cartItemData);
+        
+        const validatedData = insertCartItemSchema.parse(cartItemData);
+        const cartItem = await storage.addToCart(validatedData);
+        return res.json(cartItem);
+      }
+    } catch (error: any) {
       console.error("Error adding to cart:", error);
-      res.status(500).json({ message: "Failed to add to cart" });
+      
+      // Send specific error message to frontend
+      const errorMessage = error?.message || "Failed to add to cart";
+      res.status(500).json({ error: errorMessage });
     }
   });
 
@@ -324,6 +366,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error checking wishlist:", error);
       res.status(500).json({ message: "Failed to check wishlist status" });
+    }
+  });
+
+  // Batch wishlist check for performance optimization - prevents spam individual requests
+  app.post("/api/wishlist/check-batch", requireAuth, async (req, res) => {
+    try {
+      const { productIds } = req.body;
+      const userId = req.userId!;
+      
+      if (!Array.isArray(productIds)) {
+        return res.status(400).json({ error: "productIds must be an array" });
+      }
+      
+      const wishlistedItems = await storage.getWishlistedProducts(userId, productIds);
+      
+      // Return object for O(1) lookup in frontend
+      const wishlistMap: Record<string, boolean> = {};
+      wishlistedItems.forEach(item => {
+        wishlistMap[item.productId] = true;
+      });
+      
+      res.json(wishlistMap);
+    } catch (error) {
+      console.error("Error checking batch wishlist:", error);
+      res.status(500).json({ error: "Failed to check wishlist" });
     }
   });
 

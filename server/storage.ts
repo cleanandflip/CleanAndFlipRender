@@ -385,41 +385,44 @@ export class DatabaseStorage implements IStorage {
       .where(whereCondition);
   }
 
-  async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
-    // Build where condition based on user or session
-    let whereConditions = [eq(cartItems.productId, cartItem.productId!)];
+  // Get existing cart item for smart cart logic (prevents duplicates)
+  async getCartItem(userId: string | null, sessionId: string | null, productId: string): Promise<CartItem | undefined> {
+    if (!userId && !sessionId) return undefined;
     
-    if (cartItem.userId) {
-      whereConditions.push(eq(cartItems.userId, cartItem.userId));
-    } else if (cartItem.sessionId) {
-      whereConditions.push(eq(cartItems.sessionId, cartItem.sessionId));
-    }
-    
-    // Check if item already exists in cart
-    const [existingItem] = await db
+    const conditions = userId 
+      ? eq(cartItems.userId, userId)
+      : and(eq(cartItems.sessionId, sessionId!), isNotNull(cartItems.sessionId));
+      
+    const existing = await db
       .select()
       .from(cartItems)
-      .where(and(...whereConditions));
-
-    if (existingItem) {
-      // Update quantity
-      const [updatedItem] = await db
-        .update(cartItems)
-        .set({ quantity: existingItem.quantity + (cartItem.quantity || 1) })
-        .where(eq(cartItems.id, existingItem.id))
-        .returning();
-      return updatedItem;
-    } else {
-      // Create new cart item - ensure we have either userId or sessionId
-      const itemToInsert = {
-        ...cartItem,
-        // Generate a session ID if none exists
-        sessionId: cartItem.sessionId || `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      };
+      .where(and(conditions, eq(cartItems.productId, productId)))
+      .limit(1);
       
-      const [newItem] = await db.insert(cartItems).values(itemToInsert).returning();
-      return newItem;
-    }
+    return existing[0];
+  }
+
+  // Batch wishlist check for performance optimization
+  async getWishlistedProducts(userId: string, productIds: string[]): Promise<Array<{ productId: string }>> {
+    return await db
+      .select({ productId: wishlist.productId })
+      .from(wishlist)
+      .where(and(
+        eq(wishlist.userId, userId),
+        inArray(wishlist.productId, productIds)
+      ));
+  }
+
+  async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
+    // Create new cart item - ensure we have either userId or sessionId
+    const itemToInsert = {
+      ...cartItem,
+      // Generate a session ID if none exists
+      sessionId: cartItem.sessionId || `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
+    
+    const [newItem] = await db.insert(cartItems).values(itemToInsert).returning();
+    return newItem;
   }
 
   async updateCartItem(id: string, quantity: number): Promise<CartItem> {
@@ -533,11 +536,11 @@ export class DatabaseStorage implements IStorage {
     const orderCount = Number(orderCountResult.count || 0);
     const conversionRate = visits > 0 ? (orderCount / visits * 100) : 0;
 
-    // Get average order value from completed orders
+    // Get average order value from delivered orders (fix enum error)
     const [avgOrderResult] = await db
       .select({ avgValue: sql<number>`coalesce(avg(${orders.total}), 0)` })
       .from(orders)
-      .where(eq(orders.status, 'completed'));
+      .where(eq(orders.status, 'delivered'));
 
     // Get top products (if any orders exist)
     const topProducts = await db

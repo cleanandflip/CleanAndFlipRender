@@ -10,6 +10,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, productEvents } from "@/lib/queryClient";
+import { AddToCartButton } from "@/components/AddToCartButton";
 import { 
   ShoppingCart, 
   Heart, 

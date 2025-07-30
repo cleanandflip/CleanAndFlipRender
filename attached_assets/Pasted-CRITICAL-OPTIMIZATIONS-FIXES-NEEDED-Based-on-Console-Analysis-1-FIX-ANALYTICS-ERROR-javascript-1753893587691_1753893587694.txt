@@ -1,0 +1,280 @@
+CRITICAL OPTIMIZATIONS & FIXES NEEDED - Based on Console Analysis
+1. FIX ANALYTICS ERROR:
+javascript// Error: invalid input value for enum order_status: "completed"
+// In storage.ts getAnalytics(), change:
+where: eq(orders.status, 'completed')
+// To match your actual enum values:
+where: eq(orders.status, 'delivered') // or whatever your enum uses
+2. CART SYSTEM OVERHAUL - Implement Standard E-commerce Logic:
+javascript// Fix add to cart endpoint - CHECK STOCK & UPDATE QUANTITY
+app.post('/api/cart', async (req, res) => {
+  const { productId, quantity = 1 } = req.body;
+  const userId = req.user?.id || null;
+  const sessionId = req.sessionID;
+  
+  try {
+    // 1. Check product availability
+    const product = await storage.getProduct(productId);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    if (product.status !== 'active' || product.stock < 1) {
+      return res.status(400).json({ error: 'Product not available' });
+    }
+    
+    // 2. Check existing cart item
+    const existingItem = await storage.getCartItem(userId, sessionId, productId);
+    
+    if (existingItem) {
+      // Update quantity instead of creating duplicate
+      const newQuantity = existingItem.quantity + quantity;
+      
+      // 3. Validate against stock
+      if (newQuantity > product.stock) {
+        return res.status(400).json({ 
+          error: `Only ${product.stock} available. You already have ${existingItem.quantity} in cart.` 
+        });
+      }
+      
+      // Update existing item
+      const updated = await storage.updateCartItem(existingItem.id, { 
+        quantity: newQuantity 
+      });
+      
+      return res.json(updated);
+    } else {
+      // 4. New item - validate quantity
+      if (quantity > product.stock) {
+        return res.status(400).json({ 
+          error: `Only ${product.stock} available` 
+        });
+      }
+      
+      // Add new item
+      const cartItem = await storage.addToCart({
+        productId,
+        quantity,
+        userId,
+        sessionId
+      });
+      
+      return res.json(cartItem);
+    }
+  } catch (error) {
+    console.error('Add to cart error:', error);
+    res.status(500).json({ error: 'Failed to add to cart' });
+  }
+});
+
+// Storage method to check existing cart item
+async getCartItem(userId: string | null, sessionId: string, productId: string) {
+  const conditions = userId 
+    ? eq(cart.userId, userId)
+    : and(eq(cart.sessionId, sessionId), isNull(cart.userId));
+    
+  const existing = await this.db
+    .select()
+    .from(cart)
+    .where(and(conditions, eq(cart.productId, productId)))
+    .limit(1);
+    
+  return existing[0];
+}
+3. OPTIMIZE WISHLIST CHECKS - Batch Loading:
+javascript// Instead of individual checks per product, batch them
+app.post('/api/wishlist/check-batch', requireAuth, async (req, res) => {
+  const { productIds } = req.body;
+  const userId = req.userId;
+  
+  const wishlistedItems = await storage.getWishlistedProducts(userId, productIds);
+  
+  // Return object for O(1) lookup
+  const wishlistMap = {};
+  wishlistedItems.forEach(item => {
+    wishlistMap[item.productId] = true;
+  });
+  
+  res.json(wishlistMap);
+});
+
+// Frontend: Check all at once
+const checkWishlistStatus = async (productIds) => {
+  const response = await fetch('/api/wishlist/check-batch', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ productIds })
+  });
+  
+  const wishlistMap = await response.json();
+  // Update all product states at once
+  setWishlistStates(wishlistMap);
+};
+4. REAL-TIME WISHLIST SYNC on Product Deletion:
+javascript// When deleting product, broadcast to connected clients
+app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
+  const productId = req.params.id;
+  
+  // Delete product and get affected users
+  const affectedUsers = await storage.deleteProductAndGetAffectedUsers(productId);
+  
+  // Broadcast product deletion event
+  io.emit('productDeleted', { productId });
+  
+  // Notify specific users their wishlist changed
+  affectedUsers.forEach(userId => {
+    io.to(`user-${userId}`).emit('wishlistUpdated', { 
+      action: 'removed', 
+      productId 
+    });
+  });
+  
+  res.json({ success: true });
+});
+
+// Storage method
+async deleteProductAndGetAffectedUsers(productId: string) {
+  // Get users who wishlisted this product
+  const affectedWishlists = await this.db
+    .select({ userId: wishlist.userId })
+    .from(wishlist)
+    .where(eq(wishlist.productId, productId));
+    
+  // Delete product (cascade will handle wishlist/cart cleanup)
+  await this.db.delete(products).where(eq(products.id, productId));
+  
+  return affectedWishlists.map(w => w.userId);
+}
+5. PREVENT SPAM CLICKING - Debounce & Loading States:
+javascript// Frontend cart button component
+const AddToCartButton = ({ productId, stock }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const handleAddToCart = useMemo(
+    () => debounce(async () => {
+      if (loading) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch('/api/cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ productId, quantity: 1 })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          setError(data.error);
+          return;
+        }
+        
+        // Success feedback
+        toast.success('Added to cart');
+        updateCartCount();
+      } catch (error) {
+        setError('Failed to add to cart');
+      } finally {
+        setLoading(false);
+      }
+    }, 500), // 500ms debounce
+    [productId, loading]
+  );
+  
+  return (
+    <button
+      onClick={handleAddToCart}
+      disabled={loading || stock === 0}
+      className={`btn ${loading ? 'opacity-50' : ''}`}
+    >
+      {loading ? 'Adding...' : stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+    </button>
+  );
+};
+6. OPTIMIZE AUTHENTICATION CHECKS:
+javascript// Cache user auth state to reduce checks
+const authCache = new Map();
+
+export const requireAuth = async (req, res, next) => {
+  const cacheKey = req.sessionID || req.headers.authorization;
+  
+  // Check cache first (5 minute TTL)
+  const cached = authCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) {
+    req.user = cached.user;
+    req.userId = cached.user.id;
+    return next();
+  }
+  
+  // Existing auth check logic...
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    // Cache the result
+    authCache.set(cacheKey, {
+      user: req.user,
+      expires: Date.now() + 5 * 60 * 1000 // 5 minutes
+    });
+    
+    req.userId = req.user.id;
+    return next();
+  }
+  
+  // ... rest of auth logic
+};
+7. STOCK VALIDATION on Checkout:
+javascript// Validate cart before checkout
+app.post('/api/checkout/validate', async (req, res) => {
+  const userId = req.user?.id;
+  const sessionId = req.sessionID;
+  
+  const cartItems = await storage.getCart(userId, sessionId);
+  const validationErrors = [];
+  
+  for (const item of cartItems) {
+    const product = await storage.getProduct(item.productId);
+    
+    if (!product || product.status !== 'active') {
+      validationErrors.push({
+        productId: item.productId,
+        error: 'Product no longer available'
+      });
+      continue;
+    }
+    
+    if (product.stock < item.quantity) {
+      validationErrors.push({
+        productId: item.productId,
+        error: `Only ${product.stock} available`,
+        availableStock: product.stock
+      });
+    }
+  }
+  
+  if (validationErrors.length > 0) {
+    return res.status(400).json({ 
+      valid: false, 
+      errors: validationErrors 
+    });
+  }
+  
+  res.json({ valid: true });
+});
+8. DATABASE INDEXES for Performance:
+sql-- Add indexes for frequent queries
+CREATE INDEX idx_wishlist_user_product ON wishlist(user_id, product_id);
+CREATE INDEX idx_cart_session ON cart(session_id) WHERE user_id IS NULL;
+CREATE INDEX idx_cart_user ON cart(user_id) WHERE user_id IS NOT NULL;
+CREATE INDEX idx_products_status_stock ON products(status, stock) WHERE status = 'active';
+Summary of Changes:
+
+✅ Fix analytics enum error
+✅ Implement proper cart logic (no duplicates, stock validation)
+✅ Batch wishlist checks for performance
+✅ Real-time sync when products are deleted
+✅ Debounce to prevent spam clicking
+✅ Cache authentication for performance
+✅ Validate stock at checkout
+✅ Add database indexes
