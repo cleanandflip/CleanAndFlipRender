@@ -31,7 +31,7 @@ export default function Logo({ className = "", size = 'md', clickable = true, te
       return (
         <div className={`flex justify-center ${className}`}>
           <img 
-            src="/clean-flip-logo.png" 
+            src="/clean-flip-logo-new.png" 
             alt="Clean & Flip" 
             className={currentSize?.logo || sizes.lg.logo}
             style={{ minHeight: '128px', minWidth: '128px' }}
@@ -44,7 +44,7 @@ export default function Logo({ className = "", size = 'md', clickable = true, te
     return (
       <div className={`flex items-center gap-3 hover:opacity-80 transition-opacity ${className}`}>
         <img 
-          src="/clean-flip-logo.png" 
+          src="/clean-flip-logo-new.png" 
           alt="Clean & Flip Logo" 
           className={currentSize?.logo || sizes.md.logo}
           style={{ minHeight: size === 'lg' ? '128px' : size === 'md' ? '64px' : '48px', minWidth: size === 'lg' ? '128px' : size === 'md' ? '64px' : '48px' }}
