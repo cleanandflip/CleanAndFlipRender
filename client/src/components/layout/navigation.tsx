@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useRouter } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -13,14 +13,22 @@ import Logo from "@/components/common/logo";
 import SearchBar from "@/components/products/search-bar";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
-import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle } from "lucide-react";
 
 export default function Navigation() {
   const [location] = useLocation();
+  const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [previousPath, setPreviousPath] = useState<string | null>(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const { cartCount } = useCart();
   const { user, logoutMutation } = useAuth();
+
+  // Track cart open state based on current location
+  useEffect(() => {
+    setIsCartOpen(location === '/cart');
+  }, [location]);
 
   const navigation = [
     { name: "Shop", href: "/products" },
@@ -35,6 +43,43 @@ export default function Navigation() {
     return false;
   };
 
+  // Smart navigation - prevents duplicate history entries
+  const handleNavigation = (href: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    
+    // Don't navigate if already on this page
+    if (location === href) {
+      return;
+    }
+    
+    router.push(href);
+  };
+
+  // Cart button toggle behavior
+  const handleCartClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (!isCartOpen) {
+      // Save current location before opening cart
+      if (location !== '/cart') {
+        setPreviousPath(location);
+        sessionStorage.setItem('cartPreviousPath', location);
+      }
+      router.push('/cart');
+    } else {
+      // Cart is open, go back to previous view
+      const savedPath = sessionStorage.getItem('cartPreviousPath') || previousPath;
+      if (savedPath && savedPath !== '/cart') {
+        router.push(savedPath);
+        sessionStorage.removeItem('cartPreviousPath');
+      } else {
+        router.push('/products'); // fallback
+      }
+    }
+  };
+
   return (
     <>
       {/* Main Navigation - Cleaner Layout */}
@@ -42,23 +87,26 @@ export default function Navigation() {
         <div className="flex items-center justify-between w-full gap-4">
           {/* Left Side - Logo */}
           <div className="flex items-center flex-shrink-0">
-            <Logo size="md" />
+            <button onClick={(e) => handleNavigation('/', e)}>
+              <Logo size="md" />
+            </button>
           </div>
 
           {/* Center - Navigation Menu */}
           <div className="hidden lg:flex items-center space-x-6">
             {navigation.map((item) => (
-              <Link key={item.name} href={item.href}>
-                <span
-                  className={`transition-all duration-200 font-medium cursor-pointer px-3 py-2 rounded-lg hover:bg-white/10 text-base whitespace-nowrap ${
-                    isActive(item.href)
-                      ? "text-accent-blue bg-accent-blue/10"
-                      : "text-text-secondary hover:text-white"
-                  }`}
-                >
-                  {item.name}
-                </span>
-              </Link>
+              <button
+                key={item.name}
+                onClick={(e) => handleNavigation(item.href, e)}
+                className={`transition-all duration-200 font-medium cursor-pointer px-3 py-2 rounded-lg hover:bg-white/10 text-base whitespace-nowrap ${
+                  isActive(item.href)
+                    ? "text-accent-blue bg-accent-blue/10 cursor-default"
+                    : "text-text-secondary hover:text-white"
+                }`}
+                disabled={isActive(item.href)}
+              >
+                {item.name}
+              </button>
             ))}
           </div>
 
@@ -69,7 +117,8 @@ export default function Navigation() {
               <SearchBar
                 placeholder="Search equipment..."
                 onSearch={(query) => {
-                  window.location.href = `/products?search=${encodeURIComponent(query)}`;
+                  const searchUrl = `/products?search=${encodeURIComponent(query)}`;
+                  handleNavigation(searchUrl);
                 }}
               />
             </div>
@@ -169,38 +218,45 @@ export default function Navigation() {
                 </DropdownMenu>
               </div>
             ) : (
-              <Link href="/auth">
-                <Button
-                  size="sm"
-                  className="bg-accent-blue hover:bg-blue-500 text-white font-medium px-5 py-2 transition-colors whitespace-nowrap"
-                >
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign In
-                </Button>
-              </Link>
+              <Button
+                size="sm"
+                onClick={(e) => handleNavigation('/auth', e)}
+                className="bg-accent-blue hover:bg-blue-500 text-white font-medium px-5 py-2 transition-colors whitespace-nowrap"
+              >
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In
+              </Button>
             )}
 
-            {/* Cart */}
-            <Link href="/cart">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`group glass relative p-2 w-10 h-10 flex-shrink-0 overflow-hidden transition-all duration-300 ${
-                  isActive("/cart") 
-                    ? "text-accent-blue border border-accent-blue/30 bg-accent-blue/10 shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
-                    : "text-text-secondary border border-transparent hover:text-accent-blue hover:bg-accent-blue/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:border-accent-blue/60"
-                }`}
-              >
-                {/* Inner glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/0 via-accent-blue/5 to-accent-blue/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <ShoppingCart size={18} className="relative z-10" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-lg z-20">
-                    {cartCount}
-                  </span>
+            {/* Cart - Toggle Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCartClick}
+              className={`group glass relative p-2 w-10 h-10 flex-shrink-0 overflow-hidden transition-all duration-300 ${
+                isCartOpen 
+                  ? "text-accent-blue border border-accent-blue/30 bg-accent-blue/10 shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
+                  : "text-text-secondary border border-transparent hover:text-accent-blue hover:bg-accent-blue/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:border-accent-blue/60"
+              }`}
+            >
+              {/* Inner glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/0 via-accent-blue/5 to-accent-blue/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              
+              {/* Toggle between cart and close icon */}
+              <div className="relative z-10 transition-transform duration-200">
+                {isCartOpen ? (
+                  <XCircle size={18} className="animate-in fade-in-0 duration-200" />
+                ) : (
+                  <ShoppingCart size={18} className="animate-in fade-in-0 duration-200" />
                 )}
-              </Button>
-            </Link>
+              </div>
+              
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-lg z-20 animate-pulse">
+                  {cartCount}
+                </span>
+              )}
+            </Button>
 
             {/* Mobile Menu */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -227,32 +283,37 @@ export default function Navigation() {
                 
                 <nav className="space-y-4">
                   {navigation.map((item) => (
-                    <Link key={item.name} href={item.href}>
-                      <a
-                        className={`block px-4 py-3 rounded-lg transition-colors ${
-                          isActive(item.href)
-                            ? "bg-accent-blue text-white"
-                            : "text-text-secondary hover:bg-white/10 hover:text-white"
-                        }`}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        {item.name}
-                      </a>
-                    </Link>
-                  ))}
-                  
-                  <Link href="/dashboard">
-                    <a
-                      className={`block px-4 py-3 rounded-lg transition-colors ${
-                        isActive("/dashboard")
-                          ? "bg-accent-blue text-white"
+                    <button
+                      key={item.name}
+                      onClick={() => {
+                        handleNavigation(item.href);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                        isActive(item.href)
+                          ? "bg-accent-blue text-white cursor-default"
                           : "text-text-secondary hover:bg-white/10 hover:text-white"
                       }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      disabled={isActive(item.href)}
                     >
-                      Dashboard
-                    </a>
-                  </Link>
+                      {item.name}
+                    </button>
+                  ))}
+                  
+                  <button
+                    onClick={() => {
+                      handleNavigation("/dashboard");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                      isActive("/dashboard")
+                        ? "bg-accent-blue text-white cursor-default"
+                        : "text-text-secondary hover:bg-white/10 hover:text-white"
+                    }`}
+                    disabled={isActive("/dashboard")}
+                  >
+                    Dashboard
+                  </button>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -265,7 +326,8 @@ export default function Navigation() {
             <SearchBar
               placeholder="Search equipment..."
               onSearch={(query) => {
-                window.location.href = `/products?search=${encodeURIComponent(query)}`;
+                const searchUrl = `/products?search=${encodeURIComponent(query)}`;
+                handleNavigation(searchUrl);
                 setIsSearchOpen(false);
               }}
             />

@@ -1,0 +1,100 @@
+Here's the updated prompt for Replit:
+
+Update Cart Button Behavior - Toggle with History + Fix Navigation History
+New Cart Button Requirements:
+
+First click → Opens cart/drawer
+Second click (when cart is open) → Returns user to previous view/page
+
+Implementation needed:
+javascript// Cart button component
+const [previousPath, setPreviousPath] = useState(null);
+const [isCartOpen, setIsCartOpen] = useState(false);
+
+const handleCartClick = () => {
+  if (!isCartOpen) {
+    // Save current location before opening cart
+    setPreviousPath(window.location.pathname);
+    // Open cart (drawer/modal/page)
+    setIsCartOpen(true);
+    router.push('/cart'); // or openCartDrawer()
+  } else {
+    // Cart is open, go back to previous view
+    if (previousPath && previousPath !== '/cart') {
+      router.push(previousPath);
+    } else {
+      router.push('/products'); // fallback
+    }
+    setIsCartOpen(false);
+  }
+};
+Alternative for drawer/modal approach:
+javascriptconst handleCartToggle = () => {
+  if (!cartOpen) {
+    // Store what user was viewing
+    sessionStorage.setItem('lastViewedPage', window.location.href);
+    openCart();
+  } else {
+    closeCart();
+    // Return focus to previous content
+    const lastPage = sessionStorage.getItem('lastViewedPage');
+    if (lastPage && window.location.href.includes('/cart')) {
+      router.push(lastPage);
+    }
+  }
+};
+CRITICAL: Fix Navigation History Stacking
+Problem: Users clicking the same page link multiple times creates duplicate history entries.
+Required Fix: Implement navigation that prevents duplicate history entries:
+javascript// For all navigation links/buttons
+const handleNavigation = (path) => {
+  // Only navigate if not already on that page
+  if (window.location.pathname !== path) {
+    router.push(path);
+  }
+  // If already on the page, do nothing (no duplicate history entry)
+};
+
+// Or use replace instead of push for same-page clicks
+const handleLinkClick = (e, href) => {
+  e.preventDefault();
+  if (window.location.pathname === href) {
+    // Already on this page - don't add to history
+    return;
+  }
+  router.push(href);
+};
+
+// Alternative: Use Next.js Link with replace
+<Link href="/products" replace={currentPath === '/products'}>
+  Products
+</Link>
+Apply this pattern to:
+
+All navigation menu items
+Logo home link
+Category filters
+Any clickable navigation elements
+
+Expected behavior:
+
+User on /products clicks "Products" 10 times → Still only one history entry
+User hits back button → Goes to previous different page in ONE click
+No history pollution from repeated same-page clicks
+
+Visual feedback needed:
+
+Change cart icon when open (e.g., shopping-cart → x-circle)
+Add subtle animation on toggle
+Maintain cart item count badge
+Disable/style differently already-active nav links
+
+Make sure:
+
+Works on both desktop and mobile
+Smooth transitions between states
+Cart state persists during navigation
+Previous page tracking works across the site
+Back button always works intuitively (one click = one unique page back)
+
+This creates a seamless shopping experience where users can quickly check their cart and return to browsing without losing their place, and navigation history remains clean.
