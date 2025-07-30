@@ -1,0 +1,147 @@
+Here's a prompt for Replit to fix these specific errors:
+
+Fix Developer Dashboard - SQL Sum() Function Error
+The logs show the authentication is working perfectly, but there's a SQL error with the sum() function. Here's how to fix it:
+1. Fix the Sum() Function Error in /server/storage.ts
+The error is at line 801 in getAdminStats. The issue is with the SQL syntax for Drizzle ORM.
+FIND this code around line 801:
+typescript// WRONG - This is causing the error
+const revenue = await db.select(sum('total')).from(orders)
+REPLACE with proper Drizzle syntax:
+typescriptimport { sql } from 'drizzle-orm';
+
+// In getAdminStats function:
+async getAdminStats() {
+  try {
+    // Get counts - these are probably working
+    const productCount = await db.select({ count: sql<number>`count(*)` })
+      .from(products);
+    
+    const userCount = await db.select({ count: sql<number>`count(*)` })
+      .from(users);
+    
+    const orderCount = await db.select({ count: sql<number>`count(*)` })
+      .from(orders);
+    
+    // FIX the revenue calculation - use sql`` template
+    const revenueResult = await db.select({ 
+      total: sql<number>`COALESCE(SUM(total), 0)` 
+    })
+    .from(orders)
+    .where(eq(orders.status, 'completed'));
+    
+    return {
+      totalProducts: Number(productCount[0]?.count || 0),
+      totalUsers: Number(userCount[0]?.count || 0),
+      totalOrders: Number(orderCount[0]?.count || 0),
+      totalRevenue: Number(revenueResult[0]?.total || 0)
+    };
+  } catch (error) {
+    console.error('Error in getAdminStats:', error);
+    throw error;
+  }
+}
+2. Alternative Fix Using Raw SQL
+If the above doesn't work, use raw SQL query:
+typescriptasync getAdminStats() {
+  try {
+    // Use raw SQL for aggregates
+    const stats = await db.execute(sql`
+      SELECT 
+        (SELECT COUNT(*) FROM products) as product_count,
+        (SELECT COUNT(*) FROM users) as user_count,
+        (SELECT COUNT(*) FROM orders) as order_count,
+        (SELECT COALESCE(SUM(total), 0) FROM orders WHERE status = 'completed') as total_revenue
+    `);
+    
+    const result = stats.rows[0];
+    
+    return {
+      totalProducts: Number(result.product_count || 0),
+      totalUsers: Number(result.user_count || 0),
+      totalOrders: Number(result.order_count || 0),
+      totalRevenue: Number(result.total_revenue || 0)
+    };
+  } catch (error) {
+    console.error('Error in getAdminStats:', error);
+    throw error;
+  }
+}
+3. Import Required Functions
+Make sure these imports are at the top of /server/storage.ts:
+typescriptimport { eq, sql, count } from 'drizzle-orm';
+import { db } from './db';
+import { products, users, orders } from './schema';
+4. Check the Orders Table Schema
+Make sure the orders table has a 'total' column. If not, the sum won't work:
+typescript// In schema file
+export const orders = pgTable('orders', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').references(() => users.id),
+  total: decimal('total', { precision: 10, scale: 2 }), // THIS MUST EXIST
+  status: text('status').default('pending'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+5. Quick Test Fix
+If you need a quick fix to see if everything else works, temporarily return static data:
+typescriptasync getAdminStats() {
+  try {
+    // Get real counts
+    const productResult = await db.execute(sql`SELECT COUNT(*) as count FROM products`);
+    const userResult = await db.execute(sql`SELECT COUNT(*) as count FROM users`);
+    
+    // For now, set revenue to 0 if sum is causing issues
+    return {
+      totalProducts: Number(productResult.rows[0]?.count || 0),
+      totalUsers: Number(userResult.rows[0]?.count || 0),
+      totalOrders: 0, // Temporary
+      totalRevenue: 0  // Temporary until sum() is fixed
+    };
+  } catch (error) {
+    console.error('Error in getAdminStats:', error);
+    throw error;
+  }
+}
+6. Verify Other Endpoints Are Working
+The logs show:
+
+✅ Authentication is working (user is admin)
+✅ Users endpoint is working (returns 3 users)
+❌ Stats endpoint fails due to sum() error
+
+7. The Complete Fix
+Replace the entire getAdminStats function with this working version:
+typescriptasync getAdminStats() {
+  const db = await this.getDb();
+  
+  try {
+    // Use raw SQL that will definitely work
+    const result = await db.execute(sql`
+      SELECT 
+        (SELECT COUNT(*)::int FROM products) as total_products,
+        (SELECT COUNT(*)::int FROM users) as total_users,
+        (SELECT COUNT(*)::int FROM orders) as total_orders,
+        (SELECT COALESCE(SUM(total)::numeric, 0) FROM orders WHERE status = 'completed') as total_revenue
+    `);
+    
+    const stats = result.rows[0];
+    
+    return {
+      totalProducts: stats.total_products || 0,
+      totalUsers: stats.total_users || 0,
+      totalOrders: stats.total_orders || 0,
+      totalRevenue: parseFloat(stats.total_revenue || '0')
+    };
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+    throw error;
+  }
+}
+This fix:
+
+Uses proper PostgreSQL syntax
+Handles NULL values with COALESCE
+Casts types correctly
+Will work with Neon PostgreSQL
+
+The dashboard should now load with real data showing actual counts from your database.
