@@ -385,8 +385,8 @@ export class DatabaseStorage implements IStorage {
     }).from(users).where(eq(users.id, userId));
     
     if (user[0]?.address && user[0]?.cityStateZip) {
-      // Parse city, state, zip from the combined field
-      const cityStateZipRegex = /^(.+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/;
+      // Parse city, state, zip from the combined field (case-insensitive)
+      const cityStateZipRegex = /^(.+),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/i;
       const match = user[0].cityStateZip.match(cityStateZipRegex);
       
       if (match) {
@@ -401,7 +401,7 @@ export class DatabaseStorage implements IStorage {
           lastName: user[0].lastName,
           street: user[0].address,
           city: city.trim(),
-          state: state,
+          state: state.toUpperCase(),
           zipCode: zipCode,
           country: 'US',
           isDefault: true,
