@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
+import { upload } from "./config/cloudinary";
 import { 
   insertProductSchema,
   insertCartItemSchema,
@@ -485,6 +486,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product management endpoints
+  
+  // Create new product with image uploads
+  app.post("/api/admin/products", requireAdmin, upload.array('images', 6), async (req, res) => {
+    try {
+      const productData = {
+        ...req.body,
+        images: (req.files as any[])?.map(file => file.path) || [], // Cloudinary URLs
+        price: parseFloat(req.body.price) || 0,
+        stockQuantity: parseInt(req.body.stockQuantity) || 0,
+        weight: parseFloat(req.body.weight) || 0,
+        isFeatured: false,
+        status: 'active'
+      };
+      
+      console.log('Creating product with data:', productData);
+      const newProduct = await storage.createProduct(productData);
+      res.json(newProduct);
+    } catch (error) {
+      console.error('Create product error:', error);
+      res.status(500).json({ error: 'Failed to create product: ' + error.message });
+    }
+  });
+
+  // Update product with image uploads
+  app.put("/api/admin/products/:id", requireAdmin, upload.array('images', 6), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const updateData = {
+        ...req.body,
+        price: parseFloat(req.body.price) || 0,
+        stockQuantity: parseInt(req.body.stockQuantity) || 0,
+        weight: parseFloat(req.body.weight) || 0
+      };
+      
+      // Add new images if uploaded
+      if (req.files && (req.files as any[]).length > 0) {
+        updateData.images = (req.files as any[]).map(file => file.path);
+      }
+      
+      console.log('Updating product with data:', updateData);
+      const updatedProduct = await storage.updateProduct(id, updateData);
+      res.json(updatedProduct);
+    } catch (error) {
+      console.error('Update product error:', error);
+      res.status(500).json({ error: 'Failed to update product: ' + error.message });
+    }
+  });
+
   app.delete("/api/admin/products/:id", requireAdmin, async (req, res) => {
     try {
       await storage.deleteProduct(req.params.id);

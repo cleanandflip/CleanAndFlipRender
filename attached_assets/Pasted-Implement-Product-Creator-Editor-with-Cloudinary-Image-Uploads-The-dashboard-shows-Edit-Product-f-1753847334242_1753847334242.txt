@@ -1,0 +1,465 @@
+Implement Product Creator & Editor with Cloudinary Image Uploads
+The dashboard shows "Edit Product feature coming soon!" - let's build it now with full functionality.
+1. Set Up Cloudinary Configuration
+First, add Cloudinary credentials to environment variables:
+javascript// In .env or Replit Secrets
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+Install Cloudinary SDK:
+bashnpm install cloudinary multer multer-storage-cloudinary
+2. Create Cloudinary Configuration
+Create /server/config/cloudinary.js:
+javascriptimport { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import multer from 'multer';
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Configure multer storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'clean-and-flip/products',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [
+      { width: 1200, height: 1200, crop: 'limit' },
+      { quality: 'auto' }
+    ]
+  }
+});
+
+export const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
+});
+
+export { cloudinary };
+3. Create Product Form Component
+Create /client/src/pages/admin/ProductForm.tsx:
+typescriptimport { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+
+interface ProductFormData {
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  stock: number;
+  weight: number;
+  condition: string;
+  brand: string;
+  images: File[];
+}
+
+export function ProductForm() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isEdit = !!id;
+  
+  const [formData, setFormData] = useState<ProductFormData>({
+    name: '',
+    description: '',
+    price: 0,
+    category: '',
+    stock: 0,
+    weight: 0,
+    condition: 'new',
+    brand: '',
+    images: []
+  });
+  
+  const [imagePreview, setImagePreview] = useState<string[]>([]);
+  
+  // Load existing product data if editing
+  const { data: product } = useQuery({
+    queryKey: ['product', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const res = await fetch(`/api/products/${id}`);
+      return res.json();
+    },
+    enabled: isEdit
+  });
+  
+  // Update form when product loads
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        category: product.category,
+        stock: product.stock,
+        weight: product.weight,
+        condition: product.condition,
+        brand: product.brand,
+        images: []
+      });
+      setImagePreview(product.images || []);
+    }
+  }, [product]);
+  
+  // Handle image selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setFormData({ ...formData, images: files });
+    
+    // Create previews
+    const previews = files.map(file => URL.createObjectURL(file));
+    setImagePreview(prev => [...prev, ...previews]);
+  };
+  
+  // Submit mutation
+  const submitMutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      const url = isEdit 
+        ? `/api/admin/products/${id}` 
+        : '/api/admin/products';
+      
+      const method = isEdit ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
+        body: data,
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Failed to save product');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success(isEdit ? 'Product updated!' : 'Product created!');
+      navigate('/admin');
+    },
+    onError: (error) => {
+      toast.error('Failed to save product');
+      console.error(error);
+    }
+  });
+  
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Create FormData for multipart upload
+    const data = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === 'images') {
+        formData.images.forEach(image => {
+          data.append('images', image);
+        });
+      } else {
+        data.append(key, value.toString());
+      }
+    });
+    
+    submitMutation.mutate(data);
+  };
+  
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-8">
+        {isEdit ? 'Edit Product' : 'Create New Product'}
+      </h1>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Info */}
+        <div className="glass-card p-6">
+          <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-2">Product Name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                className="w-full p-2 rounded glass-input"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-2">Brand</label>
+              <input
+                type="text"
+                value={formData.brand}
+                onChange={(e) => setFormData({...formData, brand: e.target.value})}
+                className="w-full p-2 rounded glass-input"
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <label className="block mb-2">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              className="w-full p-2 rounded glass-input"
+              rows={4}
+              required
+            />
+          </div>
+        </div>
+        
+        {/* Pricing & Inventory */}
+        <div className="glass-card p-6">
+          <h2 className="text-xl font-semibold mb-4">Pricing & Inventory</h2>
+          
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block mb-2">Price ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.price}
+                onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
+                className="w-full p-2 rounded glass-input"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-2">Stock Quantity</label>
+              <input
+                type="number"
+                value={formData.stock}
+                onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value)})}
+                className="w-full p-2 rounded glass-input"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-2">Weight (lbs)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={formData.weight}
+                onChange={(e) => setFormData({...formData, weight: parseFloat(e.target.value)})}
+                className="w-full p-2 rounded glass-input"
+                required
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Category & Condition */}
+        <div className="glass-card p-6">
+          <h2 className="text-xl font-semibold mb-4">Category & Condition</h2>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block mb-2">Category</label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                className="w-full p-2 rounded glass-input"
+                required
+              >
+                <option value="">Select Category</option>
+                <option value="barbells">Barbells</option>
+                <option value="plates">Plates</option>
+                <option value="dumbbells">Dumbbells</option>
+                <option value="racks">Racks</option>
+                <option value="benches">Benches</option>
+                <option value="accessories">Accessories</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block mb-2">Condition</label>
+              <select
+                value={formData.condition}
+                onChange={(e) => setFormData({...formData, condition: e.target.value})}
+                className="w-full p-2 rounded glass-input"
+                required
+              >
+                <option value="new">New</option>
+                <option value="like-new">Like New</option>
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+                <option value="fair">Fair</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        {/* Images */}
+        <div className="glass-card p-6">
+          <h2 className="text-xl font-semibold mb-4">Product Images</h2>
+          
+          <div className="mb-4">
+            <label className="block mb-2">Upload Images (Max 6)</label>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleImageChange}
+              className="w-full p-2"
+              max={6}
+            />
+          </div>
+          
+          {/* Image Previews */}
+          <div className="grid grid-cols-3 gap-4">
+            {imagePreview.map((src, index) => (
+              <div key={index} className="relative">
+                <img
+                  src={src}
+                  alt={`Preview ${index + 1}`}
+                  className="w-full h-32 object-cover rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImagePreview(prev => prev.filter((_, i) => i !== index));
+                    setFormData({
+                      ...formData,
+                      images: formData.images.filter((_, i) => i !== index)
+                    });
+                  }}
+                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded"
+                >
+                  X
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Submit Buttons */}
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            disabled={submitMutation.isPending}
+            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            {submitMutation.isPending ? 'Saving...' : (isEdit ? 'Update Product' : 'Create Product')}
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => navigate('/admin')}
+            className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+4. Create Backend API Endpoints
+Add to /server/routes.ts:
+javascriptimport { upload } from './config/cloudinary.js';
+
+// Create new product
+app.post('/api/admin/products', 
+  requireAdmin, 
+  upload.array('images', 6), 
+  async (req, res) => {
+    try {
+      const productData = {
+        ...req.body,
+        images: req.files.map(file => file.path), // Cloudinary URLs
+        price: parseFloat(req.body.price),
+        stock: parseInt(req.body.stock),
+        weight: parseFloat(req.body.weight)
+      };
+      
+      const newProduct = await db.createProduct(productData);
+      res.json(newProduct);
+    } catch (error) {
+      console.error('Create product error:', error);
+      res.status(500).json({ error: 'Failed to create product' });
+    }
+  }
+);
+
+// Update product
+app.put('/api/admin/products/:id', 
+  requireAdmin, 
+  upload.array('images', 6), 
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const updateData = {
+        ...req.body,
+        price: parseFloat(req.body.price),
+        stock: parseInt(req.body.stock),
+        weight: parseFloat(req.body.weight)
+      };
+      
+      // Add new images if uploaded
+      if (req.files && req.files.length > 0) {
+        updateData.images = req.files.map(file => file.path);
+      }
+      
+      const updated = await db.updateProduct(id, updateData);
+      res.json(updated);
+    } catch (error) {
+      console.error('Update product error:', error);
+      res.status(500).json({ error: 'Failed to update product' });
+    }
+  }
+);
+
+// Delete product image from Cloudinary
+app.delete('/api/admin/products/:id/images/:imageUrl', 
+  requireAdmin, 
+  async (req, res) => {
+    try {
+      const { imageUrl } = req.params;
+      
+      // Extract public_id from Cloudinary URL
+      const publicId = imageUrl.split('/').slice(-2).join('/').split('.')[0];
+      
+      // Delete from Cloudinary
+      await cloudinary.uploader.destroy(`clean-and-flip/products/${publicId}`);
+      
+      // Update product to remove image URL
+      // ... database update logic
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete image error:', error);
+      res.status(500).json({ error: 'Failed to delete image' });
+    }
+  }
+);
+5. Add Routes to Admin Dashboard
+Update routing to include product form:
+javascript// In your router configuration
+<Route path="/admin/products/new" element={<ProductForm />} />
+<Route path="/admin/products/edit/:id" element={<ProductForm />} />
+6. Update Dashboard Buttons
+In the admin dashboard, make the buttons work:
+javascript// Add Product button
+<Button onClick={() => navigate('/admin/products/new')}>
+  + Add Product
+</Button>
+
+// Edit button for each product
+<Button onClick={() => navigate(`/admin/products/edit/${product.id}`)}>
+  Edit
+</Button>
+Summary:
+
+Set up Cloudinary configuration with your API keys
+Create product form with image upload
+Handle multipart form data with multer
+Store image URLs from Cloudinary in database
+Allow editing existing products
+Delete old images when updating
+
+Make sure to add your actual Cloudinary credentials to the environment variables!
