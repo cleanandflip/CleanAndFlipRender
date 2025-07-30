@@ -161,74 +161,78 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
 
   // Grid view (default)
   return (
-    <Link href={`/products/${product.id}`}>
-      <div className="group relative bg-gray-800/30 rounded-lg overflow-hidden hover:shadow-xl transition-all cursor-pointer">
-        {/* Only show critical stock badge */}
-        {product.stockQuantity === 1 && (
-          <div className="absolute top-3 left-3 z-10">
-            <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
-              Only 1 left
-            </span>
-          </div>
-        )}
-        
-        {/* Clean Image */}
-        <div className="aspect-square relative bg-gray-900/30">
-          {hasImage ? (
-            <img 
-              src={mainImage}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-4xl mb-2">📦</div>
-            </div>
-          )}
+    <div className="group relative bg-gray-800/30 rounded-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 animate-fade-in">
+      {/* Only show critical stock badge */}
+      {product.stockQuantity === 1 && (
+        <div className="absolute top-3 left-3 z-20 animate-bounce-subtle">
+          <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
+            Only 1 left
+          </span>
         </div>
-        
-        {/* Minimal Info Section */}
-        <div className="p-4">
-          {/* Title */}
-          <h3 className="font-medium text-white mb-1 line-clamp-1">
-            {product.name}
-          </h3>
-          
-          {/* Brand */}
-          {product.brand && (
-            <p className="text-gray-500 text-sm mb-3">
-              {product.brand}
-            </p>
-          )}
-          
-          {/* Price Only */}
-          <p className="text-2xl font-bold text-white">
-            ${product.price}
-          </p>
-        </div>
-        
-        {/* Hover Actions - Subtle */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
-          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform" onClick={(e) => e.stopPropagation()}>
-            <AddToCartButton
-              productId={product.id}
-              stock={product.stockQuantity}
-              size="sm"
-              className="bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-gray-100 pointer-events-auto"
-            />
-          </div>
-        </div>
-        
-        {/* Subtle Wishlist - Icon Only */}
-        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-          <WishlistButton 
-            productId={product.id}
-            size="small"
-            className="w-8 h-8 bg-white/10 backdrop-blur rounded-full pointer-events-auto"
-            showTooltip={false}
-          />
-        </div>
+      )}
+      
+      {/* Wishlist Button - Always Visible */}
+      <div className="absolute top-3 right-3 z-20" onClick={(e) => e.stopPropagation()}>
+        <WishlistButton 
+          productId={product.id}
+          size="small"
+          className="w-10 h-10 bg-white/20 backdrop-blur rounded-full hover:bg-white/30 hover:scale-110 transition-all duration-200 active:animate-ping-once"
+          showTooltip={false}
+        />
       </div>
-    </Link>
+      
+      {/* Clickable area for product details */}
+      <Link href={`/products/${product.id}`}>
+        <div className="cursor-pointer">
+          {/* Clean Image */}
+          <div className="aspect-square relative bg-gray-900/30 group-hover:bg-gray-900/40 transition-colors overflow-hidden">
+            {hasImage ? (
+              <img 
+                src={mainImage}
+                alt={product.name}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-4xl mb-2 group-hover:animate-bounce-subtle">📦</div>
+              </div>
+            )}
+            
+            {/* Subtle hover overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
+          
+          {/* Product Info Section */}
+          <div className="p-4 pb-2">
+            {/* Title */}
+            <h3 className="font-medium text-white mb-1 line-clamp-1 group-hover:text-blue-300 transition-colors duration-200">
+              {product.name}
+            </h3>
+            
+            {/* Brand */}
+            {product.brand && (
+              <p className="text-gray-400 text-sm mb-3 group-hover:text-gray-300 transition-colors">
+                {product.brand}
+              </p>
+            )}
+            
+            {/* Price */}
+            <p className="text-2xl font-bold text-white mb-4 group-hover:text-blue-200 transition-colors">
+              ${product.price}
+            </p>
+          </div>
+        </div>
+      </Link>
+      
+      {/* Static Add to Cart Button */}
+      <div className="px-4 pb-4" onClick={(e) => e.stopPropagation()}>
+        <AddToCartButton
+          productId={product.id}
+          stock={product.stockQuantity}
+          size="sm"
+          className="w-full bg-gray-900 hover:bg-gray-800 text-white border border-gray-700 hover:border-gray-600 hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium"
+        />
+      </div>
+    </div>
   );
 }
