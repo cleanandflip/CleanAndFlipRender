@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,9 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
+  const formContainerRef = useRef<HTMLDivElement>(null);
+  const loginFormRef = useRef<HTMLFormElement>(null);
+  const registerFormRef = useRef<HTMLFormElement>(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -21,8 +24,24 @@ export default function AuthPage() {
     }
   }, [user, authLoading, setLocation]);
 
+  const scrollToForm = () => {
+    if (formContainerRef.current) {
+      formContainerRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    }
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setTimeout(scrollToForm, 100); // Small delay to ensure tab content renders
+  };
+
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    scrollToForm();
     const formData = new FormData(e.currentTarget);
     loginMutation.mutate({
       username: formData.get("username") as string,
@@ -32,6 +51,7 @@ export default function AuthPage() {
 
   const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    scrollToForm();
     const formData = new FormData(e.currentTarget);
     registerMutation.mutate({
       username: formData.get("username") as string,
@@ -55,14 +75,14 @@ export default function AuthPage() {
     <div className="min-h-screen flex">
       {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-2xl" ref={formContainerRef}>
           <div className="text-center mb-8">
             <Logo size="lg" className="mx-auto mb-6" />
             <h1 className="font-bebas text-5xl text-white tracking-wider mb-4">JOIN THE MARKETPLACE</h1>
             <p className="text-text-secondary text-xl leading-relaxed max-w-lg mx-auto">Turn unused gear into cash, buy quality equipment you can trust</p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8 glass h-14 text-lg">
               <TabsTrigger 
                 value="login" 
@@ -86,7 +106,7 @@ export default function AuthPage() {
                     Sign in to your account to continue
                   </p>
                 </div>
-                <form onSubmit={handleLogin} className="space-y-10">
+                <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-10">
                   <div className="space-y-4">
                     <Label htmlFor="username" className="text-text-secondary font-medium text-xl">Username</Label>
                     <Input
@@ -96,6 +116,7 @@ export default function AuthPage() {
                       required
                       className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Enter your username"
+                      onFocus={scrollToForm}
                     />
                   </div>
                   <div className="space-y-4">
@@ -107,6 +128,7 @@ export default function AuthPage() {
                       required
                       className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Enter your password"
+                      onFocus={scrollToForm}
                     />
                   </div>
                   <Button
@@ -135,7 +157,7 @@ export default function AuthPage() {
                     Join Clean & Flip to buy and sell equipment
                   </p>
                 </div>
-                <form onSubmit={handleRegister} className="space-y-8">
+                <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-8">
                   <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-4">
                       <Label htmlFor="firstName" className="text-text-secondary font-medium text-lg">First Name</Label>
@@ -145,6 +167,7 @@ export default function AuthPage() {
                         type="text"
                         className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                         placeholder="John"
+                        onFocus={scrollToForm}
                       />
                     </div>
                     <div className="space-y-4">
@@ -155,6 +178,7 @@ export default function AuthPage() {
                         type="text"
                         className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                         placeholder="Doe"
+                        onFocus={scrollToForm}
                       />
                     </div>
                   </div>
@@ -167,6 +191,7 @@ export default function AuthPage() {
                       required
                       className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Choose a username"
+                      onFocus={scrollToForm}
                     />
                   </div>
                   <div className="space-y-4">
@@ -178,6 +203,7 @@ export default function AuthPage() {
                       required
                       className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="john@example.com"
+                      onFocus={scrollToForm}
                     />
                   </div>
                   <div className="space-y-4">
@@ -188,6 +214,7 @@ export default function AuthPage() {
                       type="tel"
                       className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="(555) 123-4567"
+                      onFocus={scrollToForm}
                     />
                   </div>
                   <div className="space-y-4">
@@ -199,6 +226,7 @@ export default function AuthPage() {
                       required
                       className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Create a strong password"
+                      onFocus={scrollToForm}
                     />
                   </div>
                   <Button
