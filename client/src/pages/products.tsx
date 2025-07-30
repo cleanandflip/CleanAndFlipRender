@@ -154,25 +154,25 @@ export default function Products() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-b from-gray-900 to-gray-950 pt-32 pb-16">
-        <div className="container mx-auto px-6">
-          <h1 className="text-5xl font-bold text-white mb-4">
+    <div className="min-h-screen pt-32 px-6 pb-12">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="font-bebas text-4xl md:text-6xl mb-4">
             {filters.category && filters.category !== 'all' 
               ? filters.category.replace('-', ' & ').toUpperCase()
-              : 'Shop Equipment'
+              : 'SHOP EQUIPMENT'
             }
           </h1>
-          <p className="text-gray-400 text-xl leading-relaxed max-w-2xl">
-            Discover premium weightlifting equipment inspected and verified by our team in Asheville, NC.
+          <p className="text-text-secondary text-lg">
+            Discover premium weightlifting equipment inspected and verified by our team.
           </p>
           
           {/* Active Filters Display */}
           {activeFilterCount > 0 && (
-            <div className="mt-6">
-              <div className="flex flex-wrap gap-3 items-center">
-                <span className="text-sm text-gray-400 font-medium">Active filters:</span>
+            <div className="mt-4">
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-sm text-text-secondary">Active filters:</span>
                 
                 {/* Brand filters */}
                 {filters.brand && Array.isArray(filters.brand) && filters.brand.map(brand => (
@@ -218,44 +218,48 @@ export default function Products() {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Filters Bar - Clean & Spacious */}
-      <div className="sticky top-0 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 z-20">
-        <div className="container mx-auto px-6 py-6">
-          <div className="flex items-center justify-between gap-6">
-            {/* Search */}
+        {/* Search and Controls */}
+        <GlassCard className="p-6 mb-8">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 max-w-md">
-              <input
-                type="text"
+              <SearchBar 
+                value={filters.search || ''} 
+                onChange={handleSearchChange}
                 placeholder="Search equipment..."
-                value={filters.search || ''}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
               />
             </div>
             
-            {/* View Controls */}
-            <div className="flex items-center gap-3">
-              <button 
-                className={`p-3 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-blue-600' : 'bg-gray-800 hover:bg-gray-700'}`}
-                onClick={() => setViewMode('grid')}
-              >
-                <Grid className="w-5 h-5 text-gray-300" />
-              </button>
-              <button 
-                className={`p-3 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-blue-600' : 'bg-gray-800 hover:bg-gray-700'}`}
-                onClick={() => setViewMode('list')}
-              >
-                <List className="w-5 h-5 text-gray-300" />
-              </button>
-              <button 
-                className="flex items-center gap-2 bg-gray-800 rounded-lg px-4 py-3 hover:bg-gray-700 transition-colors"
+            <div className="flex items-center gap-4">
+              {/* View Mode Toggle */}
+              <div className="flex items-center glass rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="h-8"
+                >
+                  <Grid size={16} />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="h-8"
+                >
+                  <List size={16} />
+                </Button>
+              </div>
+
+              {/* Filter Toggle */}
+              <Button
+                variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
+                className="glass border-glass-border"
               >
-                <Filter className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-300 font-medium">Filters</span>
-              </button>
+                <Filter size={16} className="mr-2" />
+                Filters
+              </Button>
             </div>
           </div>
 
@@ -275,19 +279,8 @@ export default function Products() {
               </span>
             )}
           </div>
-        </div>
-      </div>
+        </GlassCard>
 
-      {/* Main Content Area */}
-      <div className="container mx-auto px-6 py-8">
-        <p className="text-gray-400 mb-8 text-lg">
-          {isLoading ? (
-            <div className="h-6 w-32 bg-gray-800 rounded animate-pulse" />
-          ) : (
-            `${data?.total || 0} products found`
-          )}
-        </p>
-        
         <div className="flex gap-8">
           {/* Filters Sidebar */}
           {showFilters && (
@@ -302,25 +295,19 @@ export default function Products() {
           {/* Products Grid */}
           <div className="flex-1">
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="bg-gray-900 rounded-xl overflow-hidden animate-pulse">
-                    <div className="aspect-[4/3] bg-gray-800" />
-                    <div className="p-6 space-y-4">
-                      <div className="h-6 bg-gray-800 rounded w-3/4" />
-                      <div className="h-4 bg-gray-800 rounded w-1/2" />
-                      <div className="h-8 bg-gray-800 rounded w-1/3" />
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <GlassCard key={i} className="p-4">
+                    <Skeleton className="w-full h-48 mb-4" />
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-2" />
+                    <Skeleton className="h-6 w-1/4" />
+                  </GlassCard>
                 ))}
               </div>
             ) : data && data.products.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                  {data.products.map(product => (
-                    <ProductCard key={product.id} product={product} viewMode={viewMode} />
-                  ))}
-                </div>
+                <ProductGrid products={data.products} viewMode={viewMode} />
                 
                 {/* Pagination */}
                 {totalPages > 1 && (
@@ -364,19 +351,18 @@ export default function Products() {
                 )}
               </>
             ) : (
-              <div className="bg-gray-900 rounded-xl p-16 text-center">
-                <div className="text-8xl mb-6 opacity-40">🔍</div>
-                <h3 className="text-2xl font-bold text-white mb-4">No products found</h3>
-                <p className="text-gray-400 text-lg mb-8 max-w-md mx-auto leading-relaxed">
+              <GlassCard className="p-12 text-center">
+                <h3 className="text-xl font-semibold mb-4">No products found</h3>
+                <p className="text-text-secondary mb-6">
                   Try adjusting your search terms or filters to find what you're looking for.
                 </p>
-                <button
+                <Button
                   onClick={() => handleFilterChange({})}
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+                  className="bg-accent-blue hover:bg-blue-500"
                 >
-                  Clear All Filters
-                </button>
-              </div>
+                  Clear Filters
+                </Button>
+              </GlassCard>
             )}
           </div>
         </div>
