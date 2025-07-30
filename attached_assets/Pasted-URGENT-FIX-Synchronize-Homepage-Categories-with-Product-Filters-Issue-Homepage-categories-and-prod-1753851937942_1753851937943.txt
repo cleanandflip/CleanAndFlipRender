@@ -1,0 +1,215 @@
+URGENT FIX: Synchronize Homepage Categories with Product Filters
+Issue: Homepage categories and product page category filters are disconnected - they're using different systems.
+Root Problem: Homepage categories aren't properly linked to the product filtering system.
+Required Fixes:
+1. Ensure Single Source of Truth for Categories:
+javascript// Make sure both homepage and products page use the SAME categories table/data
+// Remove any hardcoded category lists
+
+// BAD - Don't do this:
+// Homepage: const categories = ['Footwear', 'Apparel', 'Equipment'] 
+// Products: const filterCategories = ['Shoes', 'Clothing', 'Gear']
+
+// GOOD - Single source:
+// Both pages fetch from: GET /api/categories
+2. Fix Category Field Mismatch:
+javascript// Check if products are using 'category' field vs 'categoryId'
+// Ensure consistency:
+
+// If products have a text 'category' field:
+ALTER TABLE products 
+ADD COLUMN category_id uuid REFERENCES categories(id);
+
+// Migrate existing category text to category_id:
+UPDATE products p
+SET category_id = c.id
+FROM categories c
+WHERE LOWER(p.category) = LOWER(c.name)
+   OR LOWER(p.category) = LOWER(c.slug);
+3. Homepage Category Component Fix:
+javascriptconst CategoryGrid = () => {
+  const { data: categories } = useQuery({
+    queryKey: ['categories', 'active'],
+    queryFn: () => fetch('/api/categories?active=true').then(r => r.json())
+  });
+  
+  const handleCategoryClick = (category) => {
+    // Build URL with proper filters
+    const params = new URLSearchParams();
+    
+    // CRITICAL: Use category ID or slug consistently
+    params.set('categoryId', category.id); // OR use slug if that's what products use
+    
+    // Add configured filters
+    if (category.filter_config) {
+      Object.entries(category.filter_config).forEach(([key, value]) => {
+        if (Array.isArray(value) && value.length > 0) {
+          params.set(key, value.join(','));
+        } else if (value) {
+          params.set(key, value);
+        }
+      });
+    }
+    
+    return `/products?${params.toString()}`;
+  };
+  
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {categories?.map(category => (
+        <Link 
+          key={category.id}
+          href={handleCategoryClick(category)}
+          className="group relative"
+        >
+          <img src={category.image_url} alt={category.name} />
+          <h3>{category.name}</h3>
+          <p>{category.product_count} items</p>
+        </Link>
+      ))}
+    </div>
+  );
+};
+4. Products Page Filter Fix:
+javascriptconst ProductsPage = () => {
+  const searchParams = useSearchParams();
+  const categoryId = searchParams.get('categoryId');
+  const categorySlug = searchParams.get('category');
+  
+  // Fetch products with proper category filter
+  const { data: products } = useQuery({
+    queryKey: ['products', { categoryId, categorySlug, ...otherFilters }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      
+      // Handle both categoryId and category slug
+      if (categoryId) {
+        params.set('categoryId', categoryId);
+      } else if (categorySlug) {
+        params.set('categorySlug', categorySlug);
+      }
+      
+      // Add other filters
+      Object.entries(otherFilters).forEach(([key, value]) => {
+        if (value) params.set(key, value);
+      });
+      
+      return fetch(`/api/products?${params}`).then(r => r.json());
+    }
+  });
+  
+  // Show current category name
+  const { data: activeCategory } = useQuery({
+    queryKey: ['category', categoryId || categorySlug],
+    queryFn: async () => {
+      if (categoryId) {
+        return fetch(`/api/categories/${categoryId}`).then(r => r.json());
+      } else if (categorySlug) {
+        return fetch(`/api/categories/by-slug/${categorySlug}`).then(r => r.json());
+      }
+    },
+    enabled: !!(categoryId || categorySlug)
+  });
+  
+  return (
+    <div>
+      {activeCategory && (
+        <h1 className="text-2xl font-bold mb-4">{activeCategory.name}</h1>
+      )}
+      {/* Product grid */}
+    </div>
+  );
+};
+5. API Endpoint Fixes:
+javascript// Products API - handle both category systems
+app.get('/api/products', async (req, res) => {
+  const { categoryId, categorySlug, category, ...filters } = req.query;
+  
+  let query = db.select().from(products);
+  
+  // Handle category filtering properly
+  if (categoryId) {
+    // Direct category ID match
+    query = query.where(eq(products.categoryId, categoryId));
+  } else if (categorySlug || category) {
+    // Find category by slug/name first
+    const categoryData = await db
+      .select()
+      .from(categories)
+      .where(
+        or(
+          eq(categories.slug, categorySlug || category),
+          eq(categories.name, category || categorySlug)
+        )
+      )
+      .limit(1);
+      
+    if (categoryData[0]) {
+      query = query.where(eq(products.categoryId, categoryData[0].id));
+    }
+  }
+  
+  // Apply other filters
+  // ...
+  
+  const results = await query;
+  res.json(results);
+});
+6. Debug Helper - Add to Products Page:
+javascript// Temporary debug info (remove after fixing)
+if (process.env.NODE_ENV === 'development') {
+  console.log('Products Page Debug:', {
+    urlParams: Object.fromEntries(searchParams),
+    categoryId,
+    categorySlug,
+    productsCount: products?.length,
+    activeCategory: activeCategory?.name
+  });
+}
+7. Migration Script to Fix Existing Data:
+javascript// Ensure all products have proper category_id
+const fixProductCategories = async () => {
+  // Get all products with text category but no category_id
+  const productsToFix = await db
+    .select()
+    .from(products)
+    .where(and(
+      isNotNull(products.category),
+      isNull(products.categoryId)
+    ));
+    
+  for (const product of productsToFix) {
+    // Find matching category
+    const category = await db
+      .select()
+      .from(categories)
+      .where(
+        or(
+          eq(categories.name, product.category),
+          eq(categories.slug, product.category.toLowerCase().replace(/\s+/g, '-'))
+        )
+      )
+      .limit(1);
+      
+    if (category[0]) {
+      await db
+        .update(products)
+        .set({ categoryId: category[0].id })
+        .where(eq(products.id, product.id));
+    }
+  }
+};
+Quick Test:
+
+Click "Footwear" on homepage → Should show ONLY footwear products
+URL should show: /products?categoryId=xxx or /products?category=footwear
+Products page should display "Footwear" as the active category
+All footwear items should appear, nothing else
+
+The key issue is likely:
+
+Homepage uses category names/slugs
+Products use different category field or IDs
+They need to use the same system throughout
+
+Fix this mismatch and categories will work properly!

@@ -63,6 +63,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const filters = {
         category: category as string,
+        categoryId: req.query.categoryId as string,
+        categorySlug: req.query.categorySlug as string,
         search: search as string,
         minPrice: minPrice ? Number(minPrice) : undefined,
         maxPrice: maxPrice ? Number(maxPrice) : undefined,
@@ -503,9 +505,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Filter options for category configuration
   app.get("/api/admin/products/filter-options", requireAdmin, async (req, res) => {
     try {
-      // Get all unique brands from products
-      const brands = await storage.getAllProducts();
-      const uniqueBrands = [...new Set(brands.products.map(p => p.brand).filter(Boolean))].sort();
+      // Get all products to extract unique values
+      const allProducts = await db.select().from(products);
+      const uniqueBrands = [...new Set(allProducts.map(p => p.brand).filter(Boolean))].sort();
 
       const filterOptions = {
         brands: uniqueBrands,
@@ -532,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/categories", requireAdmin, upload.single('image'), async (req, res) => {
     try {
-      const { name, slug, description, is_active } = req.body;
+      const { name, slug, description, is_active, filter_config } = req.body;
       
       let imageUrl;
       if (req.file) {
@@ -549,6 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: description || null,
         imageUrl,
         isActive: is_active === 'true',
+        filterConfig: filter_config ? JSON.parse(filter_config) : {}
       };
 
       const newCategory = await storage.createCategory(categoryData);
@@ -561,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/admin/categories/:id", requireAdmin, upload.single('image'), async (req, res) => {
     try {
-      const { name, slug, description, is_active, existing_image_url } = req.body;
+      const { name, slug, description, is_active, existing_image_url, filter_config } = req.body;
       
       let imageUrl = existing_image_url;
       if (req.file) {
@@ -591,6 +594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: description || null,
         imageUrl,
         isActive: is_active === 'true',
+        filterConfig: filter_config ? JSON.parse(filter_config) : {}
       };
 
       const updatedCategory = await storage.updateCategory(req.params.id, updates);

@@ -13,11 +13,16 @@ import type { Product } from "@shared/schema";
 
 interface ProductFilters {
   category?: string;
+  categoryId?: string;
+  categorySlug?: string;
   search?: string;
   minPrice?: number;
   maxPrice?: number;
-  condition?: string;
-  brand?: string;
+  priceMin?: number;
+  priceMax?: number;
+  condition?: string[] | string;
+  brand?: string[] | string;
+  tags?: string[] | string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -36,11 +41,16 @@ export default function Products() {
     const initialFilters: ProductFilters = {};
     
     if (urlParams.get('category')) initialFilters.category = urlParams.get('category')!;
+    if (urlParams.get('categoryId')) initialFilters.categoryId = urlParams.get('categoryId')!;
+    if (urlParams.get('categorySlug')) initialFilters.categorySlug = urlParams.get('categorySlug')!;
     if (urlParams.get('search')) initialFilters.search = urlParams.get('search')!;
     if (urlParams.get('minPrice')) initialFilters.minPrice = Number(urlParams.get('minPrice'));
     if (urlParams.get('maxPrice')) initialFilters.maxPrice = Number(urlParams.get('maxPrice'));
-    if (urlParams.get('condition')) initialFilters.condition = urlParams.get('condition')!;
-    if (urlParams.get('brand')) initialFilters.brand = urlParams.get('brand')!;
+    if (urlParams.get('priceMin')) initialFilters.priceMin = Number(urlParams.get('priceMin'));
+    if (urlParams.get('priceMax')) initialFilters.priceMax = Number(urlParams.get('priceMax'));
+    if (urlParams.get('condition')) initialFilters.condition = urlParams.get('condition')!.split(',');
+    if (urlParams.get('brand')) initialFilters.brand = urlParams.get('brand')!.split(',');
+    if (urlParams.get('tags')) initialFilters.tags = urlParams.get('tags')!.split(',');
     if (urlParams.get('sortBy')) initialFilters.sortBy = urlParams.get('sortBy')!;
     if (urlParams.get('sortOrder')) initialFilters.sortOrder = urlParams.get('sortOrder') as 'asc' | 'desc';
     

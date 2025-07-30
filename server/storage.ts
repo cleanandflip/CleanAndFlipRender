@@ -194,6 +194,8 @@ export class DatabaseStorage implements IStorage {
   // Product operations
   async getProducts(filters?: {
     category?: string;
+    categoryId?: string;
+    categorySlug?: string;
     search?: string;
     minPrice?: number;
     maxPrice?: number;
@@ -207,8 +209,29 @@ export class DatabaseStorage implements IStorage {
   }): Promise<{ products: Product[]; total: number }> {
     const conditions = [];
 
-    if (filters?.category) {
-      conditions.push(eq(products.categoryId, filters.category));
+    // Handle category filtering - support both ID and slug
+    if (filters?.categoryId) {
+      // Direct category ID match
+      conditions.push(eq(products.categoryId, filters.categoryId));
+    } else if (filters?.categorySlug || filters?.category) {
+      // Find category by slug first, then filter by ID
+      const categorySlugOrName = filters.categorySlug || filters.category;
+      if (categorySlugOrName && categorySlugOrName !== 'all') {
+        const categoryData = await db
+          .select({ id: categories.id })
+          .from(categories)
+          .where(
+            or(
+              eq(categories.slug, categorySlugOrName),
+              eq(categories.name, categorySlugOrName)
+            )
+          )
+          .limit(1);
+          
+        if (categoryData[0]) {
+          conditions.push(eq(products.categoryId, categoryData[0].id));
+        }
+      }
     }
 
     if (filters?.search) {
