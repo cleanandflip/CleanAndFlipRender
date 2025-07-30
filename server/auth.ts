@@ -77,10 +77,14 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: new PostgresSessionStore({
       conString: process.env.DATABASE_URL,
-      createTableIfMissing: false, // Don't recreate existing tables
+      createTableIfMissing: true, // Allow table creation if needed
       schemaName: 'public',
       tableName: 'session',
-      errorLog: console.error
+      errorLog: (err: any) => {
+        if (err && !err.message?.includes('already exists')) {
+          console.error('Session store error:', err);
+        }
+      }
     }),
     cookie: {
       secure: process.env.NODE_ENV === "production",
