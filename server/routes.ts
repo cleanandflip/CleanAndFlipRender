@@ -384,6 +384,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Analytics endpoint
+  app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
+    try {
+      const analytics = await storage.getAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // System health endpoint
+  app.get("/api/admin/system/health", requireAdmin, async (req, res) => {
+    try {
+      const memUsage = process.memoryUsage();
+      const health = {
+        status: 'Healthy',
+        uptime: Math.floor(process.uptime()),
+        memoryPercent: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100),
+        memoryUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+        memoryTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+        timestamp: new Date().toISOString()
+      };
+      res.json(health);
+    } catch (error) {
+      console.error("Error fetching system health:", error);
+      res.status(500).json({ message: "Failed to fetch system health" });
+    }
+  });
+
+  // Database health check
+  app.get("/api/admin/system/db-check", requireAdmin, async (req, res) => {
+    try {
+      await storage.healthCheck();
+      res.json({ status: 'Connected', pool: 'Active', timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error("Database health check failed:", error);
+      res.status(500).json({ status: 'Disconnected', pool: 'Error', error: error.message });
+    }
+  });
+
+  // Product management endpoints
+  app.delete("/api/admin/products/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteProduct(req.params.id);
+      res.json({ message: "Product deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ message: "Failed to delete product" });
+    }
+  });
+
+  app.put("/api/admin/products/:id/stock", requireAdmin, async (req, res) => {
+    try {
+      const { status } = req.body;
+      await storage.updateProductStock(req.params.id, status);
+      res.json({ message: "Stock status updated" });
+    } catch (error) {
+      console.error("Error updating stock:", error);
+      res.status(500).json({ message: "Failed to update stock" });
+    }
+  });
+
+  // User role management
+  app.put("/api/admin/users/:id/role", requireAdmin, async (req, res) => {
+    try {
+      const { role } = req.body;
+      await storage.updateUserRole(req.params.id, role);
+      res.json({ message: "User role updated" });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  // Export endpoints
+  app.get("/api/admin/export/:type", requireAdmin, async (req, res) => {
+    try {
+      const { type } = req.params;
+      let csv = '';
+      
+      switch(type) {
+        case 'products':
+          csv = await storage.exportProductsToCSV();
+          break;
+        case 'users':
+          csv = await storage.exportUsersToCSV();
+          break;
+        case 'orders':
+          csv = await storage.exportOrdersToCSV();
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid export type" });
+      }
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${type}-export-${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csv);
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      res.status(500).json({ message: "Failed to export data" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

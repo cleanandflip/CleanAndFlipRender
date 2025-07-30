@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useLiveData } from "@/hooks/use-live-data";
 import type { Product, User, Order } from "@shared/schema";
 
 interface AdminStats {
@@ -57,11 +60,59 @@ function StatCard({ title, value, icon: Icon, trend }: {
 }
 
 function ProductManagement() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   const { data: productsData, isLoading } = useQuery<{ products: Product[] }>({
     queryKey: ["/api/products"],
   });
 
   const products = productsData?.products || [];
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      return apiRequest(`/api/admin/products/${productId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({ description: "Product deleted successfully" });
+    },
+    onError: () => {
+      toast({ 
+        description: "Failed to delete product",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const updateStockMutation = useMutation({
+    mutationFn: async ({ productId, status }: { productId: string; status: string }) => {
+      return apiRequest(`/api/admin/products/${productId}/stock`, {
+        method: 'PUT',
+        body: JSON.stringify({ status })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({ description: "Stock status updated" });
+    }
+  });
+
+  const handleDeleteProduct = (productId: string) => {
+    if (confirm('Are you sure you want to delete this product?')) {
+      deleteProductMutation.mutate(productId);
+    }
+  };
+
+  const handleViewProduct = (productId: string) => {
+    window.open(`/products/${productId}`, '_blank');
+  };
+
+  const handleStockUpdate = (productId: string, status: string) => {
+    updateStockMutation.mutate({ productId, status });
+  };
 
   if (isLoading) {
     return (
@@ -75,7 +126,10 @@ function ProductManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="font-bebas text-2xl">PRODUCT MANAGEMENT</h2>
-        <Button className="bg-accent-blue hover:bg-blue-500">
+        <Button 
+          className="bg-accent-blue hover:bg-blue-500"
+          onClick={() => toast({ description: "Add Product feature coming soon!" })}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Product
         </Button>
@@ -107,13 +161,25 @@ function ProductManagement() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleViewProduct(product.id)}
+                    >
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => toast({ description: "Edit Product feature coming soon!" })}
+                    >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button size="sm" variant="destructive">
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      onClick={() => handleDeleteProduct(product.id)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -266,6 +332,36 @@ function UserManagement() {
 }
 
 function SystemSettings() {
+  const { toast } = useToast();
+  const { data: systemHealth } = useQuery({
+    queryKey: ["/api/admin/system/health"],
+  });
+
+  const { data: dbStatus } = useQuery({
+    queryKey: ["/api/admin/system/db-check"],
+  });
+
+  const handleExport = async (type: string) => {
+    try {
+      const response = await fetch(`/api/admin/export/${type}`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${type}-export-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      toast({ description: `${type} data exported successfully` });
+    } catch (error) {
+      toast({ description: `Failed to export ${type} data`, variant: "destructive" });
+    }
+  };
+
+  const formatUptime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="font-bebas text-2xl">SYSTEM SETTINGS</h2>
@@ -279,7 +375,9 @@ function SystemSettings() {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>Status:</span>
-              <Badge className="bg-green-500">Connected</Badge>
+              <Badge className={dbStatus?.status === 'Connected' ? "bg-green-500" : "bg-red-500"}>
+                {dbStatus?.status || 'Unknown'}
+              </Badge>
             </div>
             <div className="flex justify-between">
               <span>Provider:</span>
@@ -287,7 +385,7 @@ function SystemSettings() {
             </div>
             <div className="flex justify-between">
               <span>Connection Pool:</span>
-              <span>Active</span>
+              <span>{dbStatus?.pool || 'Unknown'}</span>
             </div>
           </div>
         </GlassCard>
@@ -300,15 +398,17 @@ function SystemSettings() {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>Server:</span>
-              <Badge className="bg-green-500">Healthy</Badge>
+              <Badge className={systemHealth?.status === 'Healthy' ? "bg-green-500" : "bg-red-500"}>
+                {systemHealth?.status || 'Unknown'}
+              </Badge>
             </div>
             <div className="flex justify-between">
               <span>Memory Usage:</span>
-              <span>45%</span>
+              <span>{systemHealth?.memoryPercent || 0}%</span>
             </div>
             <div className="flex justify-between">
               <span>Uptime:</span>
-              <span>2h 15m</span>
+              <span>{formatUptime(systemHealth?.uptime || 0)}</span>
             </div>
           </div>
         </GlassCard>
@@ -329,13 +429,25 @@ function SystemSettings() {
             <h3 className="font-semibold">Export Data</h3>
           </div>
           <div className="space-y-2">
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => handleExport('products')}
+            >
               Export Products CSV
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => handleExport('users')}
+            >
               Export Users CSV
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => handleExport('orders')}
+            >
               Export Orders CSV
             </Button>
           </div>
