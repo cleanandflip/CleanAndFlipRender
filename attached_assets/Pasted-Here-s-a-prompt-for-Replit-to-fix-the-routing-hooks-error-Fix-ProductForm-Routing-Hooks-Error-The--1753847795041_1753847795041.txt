@@ -1,0 +1,99 @@
+Here's a prompt for Replit to fix the routing hooks error:
+
+Fix ProductForm Routing Hooks Error
+The ProductForm component is using routing hooks incorrectly. The error shows useParams is being destructured as an array when it returns an object.
+Fix the Incorrect Hook Usage:
+typescript// WRONG - Current code trying to destructure as arrays
+const [, params] = useParams();  // ❌ useParams returns an object, not array
+const [, navigate] = useLocation(); // ❌ useLocation doesn't return navigate
+
+// CORRECT - Proper usage
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+// OR if using wouter (based on your packages):
+import { useParams, useLocation } from 'wouter';
+
+export function ProductForm() {
+  // Correct usage for react-router-dom:
+  const params = useParams(); // Returns object with params
+  const id = params.id;
+  const navigate = useNavigate(); // Separate hook for navigation
+  const location = useLocation(); // Returns location object
+  
+  // OR if using wouter:
+  const [location, setLocation] = useLocation(); // wouter returns [location, navigate]
+  const params = useParams(); // Still returns object
+  const id = params.id;
+  
+  // Rest of component...
+}
+Complete Fix for wouter (which you have in packages):
+typescriptimport { useParams, useLocation } from 'wouter';
+
+export function ProductForm() {
+  // wouter's useParams returns just the params object
+  const params = useParams();
+  const id = params?.id;
+  
+  // wouter's useLocation returns [location, navigate]
+  const [location, navigate] = useLocation();
+  
+  // Example usage:
+  const handleSave = async (data) => {
+    try {
+      // Save product...
+      navigate('/admin'); // Navigate back to admin
+    } catch (error) {
+      console.error('Save failed:', error);
+    }
+  };
+  
+  // Rest of your component
+}
+If you need route parameters with wouter:
+typescript// Make sure your route is defined with the parameter
+<Route path="/admin/products/:id" component={ProductForm} />
+
+// Then in component:
+const params = useParams(); // { id: "some-id" }
+const productId = params.id;
+Alternative if params aren't working:
+typescript// You can also parse the ID from location
+const [location] = useLocation();
+const id = location.match(/\/products\/(.+)/)?.[1];
+Full corrected component structure:
+typescriptimport { useParams, useLocation } from 'wouter';
+import { useQuery, useMutation } from '@tanstack/react-query';
+
+export function ProductForm() {
+  const params = useParams();
+  const id = params?.id;
+  const [location, navigate] = useLocation();
+  
+  // Fetch product if editing
+  const { data: product, isLoading } = useQuery({
+    queryKey: ['product', id],
+    queryFn: () => id ? fetch(`/api/products/${id}`).then(r => r.json()) : null,
+    enabled: !!id
+  });
+  
+  // Save mutation
+  const saveMutation = useMutation({
+    mutationFn: async (data) => {
+      const url = id ? `/api/admin/products/${id}` : '/api/admin/products';
+      const method = id ? 'PUT' : 'POST';
+      
+      return fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+    },
+    onSuccess: () => {
+      navigate('/admin');
+    }
+  });
+  
+  // Rest of component
+}
+Please fix the routing hooks to use the correct syntax for wouter.

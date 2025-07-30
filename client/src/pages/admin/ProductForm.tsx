@@ -23,7 +23,7 @@ interface ProductFormData {
 }
 
 export function ProductForm() {
-  const [, params] = useParams();
+  const params = useParams();
   const id = params?.id;
   const [, navigate] = useLocation();
   const { toast } = useToast();
