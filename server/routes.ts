@@ -267,12 +267,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Wishlist
-  app.get("/api/wishlist", async (req, res) => {
+  // Wishlist - require authentication
+  app.get("/api/wishlist", requireAuth, async (req, res) => {
     try {
-      const userId = req.query.userId as string;
+      const userId = (req.session as any)?.userId;
+      
       if (!userId) {
-        return res.status(400).json({ message: "User ID required" });
+        return res.status(401).json({ 
+          error: 'Authentication required',
+          message: 'Please log in to view your wishlist'
+        });
       }
       
       const wishlistItems = await storage.getWishlistItems(userId);
@@ -283,25 +287,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/wishlist", async (req, res) => {
+  app.post("/api/wishlist", requireAuth, async (req, res) => {
     try {
-      const validatedData = insertWishlistSchema.parse(req.body);
-      const wishlistItem = await storage.addToWishlist(validatedData);
-      res.json(wishlistItem);
+      const { productId } = req.body;
+      const userId = (req.session as any)?.userId;
+      
+      if (!userId) {
+        return res.status(401).json({ 
+          error: 'Authentication required',
+          message: 'Please log in to add items to your wishlist'
+        });
+      }
+      
+      const validatedData = insertWishlistSchema.parse({ productId, userId });
+      const wishlistItem = await storage.addToWishlist(validatedData.userId, validatedData.productId);
+      res.json({ message: "Added to wishlist" });
     } catch (error) {
       console.error("Error adding to wishlist:", error);
       res.status(500).json({ message: "Failed to add to wishlist" });
     }
   });
 
-  app.delete("/api/wishlist", async (req, res) => {
+  app.delete("/api/wishlist", requireAuth, async (req, res) => {
     try {
-      const { userId, productId } = req.query;
-      if (!userId || !productId) {
-        return res.status(400).json({ message: "User ID and Product ID required" });
+      const { productId } = req.query;
+      const userId = (req.session as any)?.userId;
+      
+      if (!userId) {
+        return res.status(401).json({ 
+          error: 'Authentication required',
+          message: 'Please log in to manage your wishlist'
+        });
       }
       
-      await storage.removeFromWishlist(userId as string, productId as string);
+      if (!productId) {
+        return res.status(400).json({ message: "Product ID required" });
+      }
+      
+      await storage.removeFromWishlist(userId, productId as string);
       res.json({ message: "Item removed from wishlist" });
     } catch (error) {
       console.error("Error removing from wishlist:", error);
@@ -456,6 +479,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching analytics:", error);
       res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // Admin wishlist analytics
+  app.get("/api/admin/wishlist-analytics", requireAdmin, async (req, res) => {
+    try {
+      const analytics = await storage.getWishlistAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching wishlist analytics:", error);
+      res.status(500).json({ message: "Failed to fetch wishlist analytics" });
     }
   });
 

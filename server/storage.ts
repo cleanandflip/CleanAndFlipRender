@@ -932,6 +932,56 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
+  async getWishlistAnalytics(): Promise<{
+    topWishlisted: Array<{ productId: string; productName: string; count: number }>;
+    activeUsers: Array<{ userId: string; userName: string; email: string; itemCount: number }>;
+    totalWishlistItems: number;
+  }> {
+    try {
+      // Most wishlisted products
+      const topWishlisted = await db
+        .select({
+          productId: wishlist.productId,
+          productName: products.name,
+          count: sql<number>`count(*)`.as('count')
+        })
+        .from(wishlist)
+        .leftJoin(products, eq(wishlist.productId, products.id))
+        .groupBy(wishlist.productId, products.name)
+        .orderBy(desc(sql`count(*)`))
+        .limit(10);
+        
+      // Users with most wishlist items
+      const activeUsers = await db
+        .select({
+          userId: wishlist.userId,
+          userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as('userName'),
+          email: users.email,
+          itemCount: sql<number>`count(*)`.as('itemCount')
+        })
+        .from(wishlist)
+        .leftJoin(users, eq(wishlist.userId, users.id))
+        .groupBy(wishlist.userId, users.firstName, users.lastName, users.email)
+        .orderBy(desc(sql`count(*)`));
+        
+      // Total wishlist items count
+      const totalResult = await db
+        .select({ count: sql<number>`count(*)`.as('count') })
+        .from(wishlist);
+      
+      const totalWishlistItems = totalResult[0]?.count || 0;
+      
+      return { 
+        topWishlisted: topWishlisted || [], 
+        activeUsers: activeUsers || [], 
+        totalWishlistItems 
+      };
+    } catch (error) {
+      console.error('Error getting wishlist analytics:', error);
+      return { topWishlisted: [], activeUsers: [], totalWishlistItems: 0 };
+    }
+  }
+
   async updateUserRole(userId: string, role: string): Promise<void> {
     await db
       .update(users)

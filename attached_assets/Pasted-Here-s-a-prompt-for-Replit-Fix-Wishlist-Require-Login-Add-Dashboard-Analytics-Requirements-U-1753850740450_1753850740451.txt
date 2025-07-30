@@ -1,0 +1,163 @@
+Here's a prompt for Replit:
+
+Fix Wishlist - Require Login & Add Dashboard Analytics
+Requirements:
+
+Users MUST be logged in to add items to wishlist
+Admin dashboard shows wishlist analytics (which items are wishlisted by whom)
+Users can view their wishlist in their account profile
+
+Current Error Fix:
+The error occurs because 'temp-user-id' doesn't exist. We need proper authentication.
+Implementation Plan:
+1. Protect Wishlist Endpoints - Require Authentication:
+javascript// middleware/auth.ts
+export const requireAuth = async (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'Please log in to add items to your wishlist'
+    });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+// routes.ts
+app.post('/api/wishlist', requireAuth, async (req, res) => {
+  const { productId } = req.body;
+  const userId = req.userId; // From auth middleware
+  
+  await storage.addToWishlist(userId, productId);
+  res.json({ success: true });
+});
+2. Frontend - Check Auth Before Wishlist Action:
+javascript// WishlistButton component
+const handleWishlistClick = async () => {
+  if (!user) {
+    // Show login modal or redirect
+    setShowAuthModal(true);
+    setAuthMessage('Please log in to save items to your wishlist');
+    return;
+  }
+  
+  try {
+    await fetch('/api/wishlist', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ productId })
+    });
+  } catch (error) {
+    console.error('Wishlist error:', error);
+  }
+};
+3. Admin Dashboard - Wishlist Analytics:
+javascript// New API endpoint for admin
+app.get('/api/admin/wishlist-analytics', requireAdmin, async (req, res) => {
+  const analytics = await storage.getWishlistAnalytics();
+  res.json(analytics);
+});
+
+// storage.ts
+async getWishlistAnalytics() {
+  // Most wishlisted products
+  const topWishlisted = await db
+    .select({
+      productId: wishlist.productId,
+      productName: products.name,
+      count: sql`count(*)`.as('count')
+    })
+    .from(wishlist)
+    .leftJoin(products, eq(wishlist.productId, products.id))
+    .groupBy(wishlist.productId, products.name)
+    .orderBy(desc(sql`count(*)`))
+    .limit(10);
+    
+  // Users with most wishlist items
+  const activeUsers = await db
+    .select({
+      userId: wishlist.userId,
+      userName: users.name,
+      email: users.email,
+      itemCount: sql`count(*)`.as('itemCount')
+    })
+    .from(wishlist)
+    .leftJoin(users, eq(wishlist.userId, users.id))
+    .groupBy(wishlist.userId, users.name, users.email)
+    .orderBy(desc(sql`count(*)`));
+    
+  return { topWishlisted, activeUsers };
+}
+4. User Profile - View Own Wishlist:
+javascript// User profile page
+app.get('/api/users/:userId/wishlist', requireAuth, async (req, res) => {
+  // Ensure users can only view their own wishlist
+  if (req.userId !== req.params.userId) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+  
+  const wishlistItems = await storage.getUserWishlist(req.userId);
+  res.json(wishlistItems);
+});
+
+// storage.ts
+async getUserWishlist(userId: string) {
+  return await db
+    .select({
+      product: products,
+      addedAt: wishlist.createdAt
+    })
+    .from(wishlist)
+    .leftJoin(products, eq(wishlist.productId, products.id))
+    .where(eq(wishlist.userId, userId))
+    .orderBy(desc(wishlist.createdAt));
+}
+5. Admin Dashboard Component:
+jsx// WishlistAnalytics.jsx
+const WishlistAnalytics = () => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="bg-white rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-4">Most Wishlisted Items</h3>
+        {topWishlisted.map(item => (
+          <div key={item.productId} className="flex justify-between py-2">
+            <span>{item.productName}</span>
+            <span className="font-medium">{item.count} saves</span>
+          </div>
+        ))}
+      </div>
+      
+      <div className="bg-white rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-4">Active Wishlist Users</h3>
+        {activeUsers.map(user => (
+          <div key={user.userId} className="py-2">
+            <div>{user.userName}</div>
+            <div className="text-sm text-gray-600">
+              {user.email} • {user.itemCount} items
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+Summary of Changes:
+
+Remove all 'temp-user-id' references
+Add authentication middleware to wishlist endpoints
+Show login prompt when non-authenticated users try to wishlist
+Create admin analytics for wishlist data
+Add wishlist section to user profiles
+
+This creates a proper wishlist system that requires login and provides valuable data for the seller.

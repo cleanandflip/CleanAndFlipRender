@@ -24,13 +24,15 @@ import {
   DollarSign,
   ShoppingCart,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Heart
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { apiRequest, broadcastProductUpdate } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLiveData } from "@/hooks/use-live-data";
+import WishlistAnalytics from "@/components/admin/wishlist-analytics";
 import type { Product, User, Order } from "@shared/schema";
 
 interface AdminStats {
@@ -605,7 +607,7 @@ function AdminDashboard() {
 
           {/* Main Dashboard Tabs */}
           <Tabs defaultValue="products" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="products" className="flex items-center gap-2">
                 <Package className="w-4 h-4" />
                 Products
@@ -613,6 +615,10 @@ function AdminDashboard() {
               <TabsTrigger value="analytics" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
                 Analytics
+              </TabsTrigger>
+              <TabsTrigger value="wishlist" className="flex items-center gap-2">
+                <Heart className="w-4 h-4" />
+                Wishlist
               </TabsTrigger>
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -630,6 +636,10 @@ function AdminDashboard() {
 
             <TabsContent value="analytics">
               <Analytics />
+            </TabsContent>
+
+            <TabsContent value="wishlist">
+              <WishlistAnalytics />
             </TabsContent>
 
             <TabsContent value="users">

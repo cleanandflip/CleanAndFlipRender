@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import GlassCard from "@/components/common/glass-card";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, productEvents } from "@/lib/queryClient";
 import { 
   ShoppingCart, 
@@ -29,6 +30,7 @@ export default function ProductDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -76,9 +78,11 @@ export default function ProductDetail() {
 
   const addToWishlistMutation = useMutation({
     mutationFn: async () => {
+      if (!user) {
+        throw new Error('Please log in to add items to your wishlist');
+      }
       await apiRequest("POST", "/api/wishlist", {
         productId: id,
-        userId: "temp-user-id", // Replace with actual user ID
       });
     },
     onSuccess: () => {
@@ -87,14 +91,27 @@ export default function ProductDetail() {
         description: "Product has been added to your wishlist.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      const errorMessage = error.message || "Failed to add to wishlist. Please try again.";
       toast({
-        title: "Error",
-        description: "Failed to add to wishlist. Please try again.",
+        title: user ? "Error" : "Login Required",
+        description: errorMessage,
         variant: "destructive",
       });
     },
   });
+
+  const handleWishlistClick = () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to add items to your wishlist.",
+        variant: "destructive",
+      });
+      return;
+    }
+    addToWishlistMutation.mutate();
+  };
 
   if (isLoading) {
     return (
@@ -382,7 +399,7 @@ export default function ProductDetail() {
                 
                 <Button
                   variant="outline"
-                  onClick={() => addToWishlistMutation.mutate()}
+                  onClick={handleWishlistClick}
                   disabled={addToWishlistMutation.isPending}
                   className="glass border-glass-border"
                 >
