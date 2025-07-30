@@ -491,9 +491,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new product with image uploads
   app.post("/api/admin/products", requireAdmin, upload.array('images', 6), async (req, res) => {
     try {
+      // Handle images array from form data
+      let images = [];
+      if (req.body.images) {
+        images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+        images = images.filter(img => img && img.trim() !== '');
+      }
+      
+      // Add new images if uploaded via multer
+      if (req.files && (req.files as any[]).length > 0) {
+        const newImages = (req.files as any[]).map(file => file.path);
+        images = [...images, ...newImages];
+      }
+
       const productData = {
         ...req.body,
-        images: (req.files as any[])?.map(file => file.path) || [], // Cloudinary URLs
+        images,
         price: parseFloat(req.body.price) || 0,
         stockQuantity: parseInt(req.body.stockQuantity) || 0,
         weight: parseFloat(req.body.weight) || 0,
@@ -522,9 +535,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         weight: parseFloat(req.body.weight) || 0
       };
       
-      // Add new images if uploaded
+      // Handle images array from form data
+      if (req.body.images) {
+        const images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+        updateData.images = images.filter(img => img && img.trim() !== '');
+      }
+      
+      // Add new images if uploaded via multer
       if (req.files && (req.files as any[]).length > 0) {
-        updateData.images = (req.files as any[]).map(file => file.path);
+        const newImages = (req.files as any[]).map(file => file.path);
+        updateData.images = updateData.images ? [...updateData.images, ...newImages] : newImages;
       }
       
       console.log('Updating product with data:', updateData);

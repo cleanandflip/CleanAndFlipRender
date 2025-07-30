@@ -66,6 +66,7 @@ export function ProductForm() {
   // Update form when product loads
   useEffect(() => {
     if (product && isEdit) {
+      const productImages = Array.isArray(product.images) ? product.images : [];
       setFormData({
         name: product.name || '',
         description: product.description || '',
@@ -75,9 +76,9 @@ export function ProductForm() {
         weight: product.weight || 0,
         condition: product.condition || 'like_new',
         brand: product.brand || '',
-        images: []
+        images: productImages
       });
-      setImagePreview(product.images || []);
+      setImagePreview(productImages);
     }
   }, [product, isEdit]);
   
@@ -120,7 +121,13 @@ export function ProductForm() {
       });
       
       const newImageUrls = await Promise.all(uploadPromises);
-      setImagePreview(prev => [...prev, ...newImageUrls]);
+      const updatedImages = [...imagePreview, ...newImageUrls];
+      
+      setImagePreview(updatedImages);
+      setFormData(prev => ({
+        ...prev,
+        images: updatedImages
+      }));
       
       e.target.value = '';
       toast({ title: "Success", description: `${files.length} image(s) uploaded successfully!` });
@@ -133,9 +140,19 @@ export function ProductForm() {
     }
   };
   
-  // Remove image preview
+  // Remove image with proper state management
   const removeImage = (index: number) => {
-    setImagePreview(prev => prev.filter((_, i) => i !== index));
+    console.log('Removing image at index:', index);
+    console.log('Current imagePreview:', imagePreview);
+    
+    const newImages = imagePreview.filter((_, i) => i !== index);
+    console.log('New images after removal:', newImages);
+    
+    setImagePreview(newImages);
+    setFormData(prev => ({
+      ...prev,
+      images: newImages
+    }));
   };
 
   // Move image position
@@ -143,7 +160,12 @@ export function ProductForm() {
     const newImages = [...imagePreview];
     const [moved] = newImages.splice(fromIndex, 1);
     newImages.splice(toIndex, 0, moved);
+    
     setImagePreview(newImages);
+    setFormData(prev => ({
+      ...prev,
+      images: newImages
+    }));
   };
   
   // Submit mutation
@@ -195,16 +217,20 @@ export function ProductForm() {
       return;
     }
     
-    // Create FormData for submission with Cloudinary URLs
+    // Create FormData for submission with current image state
     const data = new FormData();
+    const currentImages = imagePreview.length > 0 ? imagePreview : formData.images;
+    
+    console.log('Submitting with images:', currentImages);
+    
     Object.entries(formData).forEach(([key, value]) => {
       if (key !== 'images') {
         data.append(key, value.toString());
       }
     });
     
-    // Add Cloudinary image URLs
-    imagePreview.forEach(imageUrl => {
+    // Add current image URLs
+    currentImages.forEach(imageUrl => {
       data.append('images', imageUrl);
     });
     
@@ -383,8 +409,12 @@ export function ProductForm() {
                     type="button"
                     variant="destructive"
                     size="sm"
-                    className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removeImage(index)}
+                    className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeImage(index);
+                    }}
                   >
                     <X className="w-3 h-3" />
                   </Button>
