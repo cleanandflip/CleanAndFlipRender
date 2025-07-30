@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
-import { upload } from "./config/cloudinary";
+import { upload, cloudinary } from "./config/cloudinary";
+import multer from 'multer';
 import { 
   insertProductSchema,
   insertCartItemSchema,
@@ -641,6 +642,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error exporting data:", error);
       res.status(500).json({ message: "Failed to export data" });
+    }
+  });
+
+  // Memory storage for single file uploads
+  const memoryStorage = multer.memoryStorage();
+  const memoryUpload = multer({ 
+    storage: memoryStorage,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  });
+
+  // Cloudinary upload endpoint
+  app.post("/api/upload/cloudinary", requireRole('admin'), memoryUpload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+      
+      // Convert buffer to base64
+      const b64 = Buffer.from(req.file.buffer).toString('base64');
+      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+      
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(dataURI, {
+        folder: 'clean-flip/products',
+        resource_type: 'image',
+        transformation: [
+          { width: 1200, height: 1200, crop: 'limit' },
+          { quality: 'auto:good' }
+        ]
+      });
+      
+      res.json({ 
+        url: result.secure_url,
+        publicId: result.public_id
+      });
+    } catch (error) {
+      console.error('Cloudinary upload error:', error);
+      res.status(500).json({ error: 'Upload failed' });
+    }
+  });
+
+  // Delete Cloudinary image endpoint
+  app.delete("/api/upload/cloudinary/:publicId", requireRole('admin'), async (req, res) => {
+    try {
+      const publicId = decodeURIComponent(req.params.publicId);
+      await cloudinary.uploader.destroy(publicId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Cloudinary delete error:', error);
+      res.status(500).json({ error: 'Delete failed' });
     }
   });
 

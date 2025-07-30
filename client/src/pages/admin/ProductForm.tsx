@@ -81,30 +81,69 @@ export function ProductForm() {
     }
   }, [product, isEdit]);
   
-  // Handle image selection
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Handle Cloudinary image uploads
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const maxImages = 6;
+    if (files.length === 0) return;
     
-    if (files.length > maxImages) {
+    const maxImages = 6;
+    if (imagePreview.length + files.length > maxImages) {
       toast({ title: "Too many images", description: `Maximum ${maxImages} images allowed` });
       return;
     }
     
-    setFormData({ ...formData, images: files });
+    setUploadingImage(true);
+    setUploadProgress(0);
     
-    // Create previews
-    const previews = files.map(file => URL.createObjectURL(file));
-    setImagePreview(previews);
+    try {
+      const uploadPromises = files.map(async (file, index) => {
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', file);
+        
+        const response = await fetch('/api/upload/cloudinary', {
+          method: 'POST',
+          body: formDataUpload,
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Upload failed');
+        }
+        
+        const data = await response.json();
+        setUploadProgress(((index + 1) / files.length) * 100);
+        return data.url;
+      });
+      
+      const newImageUrls = await Promise.all(uploadPromises);
+      setImagePreview(prev => [...prev, ...newImageUrls]);
+      
+      e.target.value = '';
+      toast({ title: "Success", description: `${files.length} image(s) uploaded successfully!` });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({ title: "Error", description: `Failed to upload images: ${error.message}` });
+    } finally {
+      setUploadingImage(false);
+      setUploadProgress(0);
+    }
   };
   
   // Remove image preview
   const removeImage = (index: number) => {
     setImagePreview(prev => prev.filter((_, i) => i !== index));
-    setFormData({
-      ...formData,
-      images: formData.images.filter((_, i) => i !== index)
-    });
+  };
+
+  // Move image position
+  const moveImage = (fromIndex: number, toIndex: number) => {
+    const newImages = [...imagePreview];
+    const [moved] = newImages.splice(fromIndex, 1);
+    newImages.splice(toIndex, 0, moved);
+    setImagePreview(newImages);
   };
   
   // Submit mutation
@@ -156,16 +195,17 @@ export function ProductForm() {
       return;
     }
     
-    // Create FormData for multipart upload
+    // Create FormData for submission with Cloudinary URLs
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
-      if (key === 'images') {
-        formData.images.forEach(image => {
-          data.append('images', image);
-        });
-      } else {
+      if (key !== 'images') {
         data.append(key, value.toString());
       }
+    });
+    
+    // Add Cloudinary image URLs
+    imagePreview.forEach(imageUrl => {
+      data.append('images', imageUrl);
     });
     
     submitMutation.mutate(data);
@@ -322,44 +362,93 @@ export function ProductForm() {
             <CardTitle>Product Images</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="images">Upload Images (Max 6)</Label>
-              <Input
-                id="images"
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageChange}
-                className="cursor-pointer"
-              />
-              <p className="text-sm text-muted-foreground mt-1">
-                Supported formats: JPG, PNG, WebP. Max 5MB per image.
-              </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {imagePreview.map((imageUrl, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={imageUrl}
+                    alt={`Product ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-lg border-2 border-gray-600"
+                  />
+                  
+                  {/* Primary badge */}
+                  {index === 0 && (
+                    <span className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                      Primary
+                    </span>
+                  )}
+                  
+                  {/* Remove button */}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => removeImage(index)}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                  
+                  {/* Reorder buttons */}
+                  <div className="absolute bottom-2 left-2 right-2 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                    {index > 0 && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="h-6 w-6 p-0 text-xs"
+                        onClick={() => moveImage(index, index - 1)}
+                        title="Move left"
+                      >
+                        ←
+                      </Button>
+                    )}
+                    {index < imagePreview.length - 1 && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="h-6 w-6 p-0 text-xs ml-auto"
+                        onClick={() => moveImage(index, index + 1)}
+                        title="Move right"
+                      >
+                        →
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Add Image Button */}
+              {imagePreview.length < 6 && (
+                <label className="border-2 border-dashed border-gray-600 rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer hover:border-gray-500 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                    className="hidden"
+                    disabled={uploadingImage}
+                  />
+                  {uploadingImage ? (
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                      <span className="text-sm">{Math.round(uploadProgress)}%</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 mb-2 text-gray-400" />
+                      <span className="text-sm text-gray-400">Add Images</span>
+                      <span className="text-xs text-gray-500 mt-1">Max 6 images</span>
+                    </>
+                  )}
+                </label>
+              )}
             </div>
             
-            {/* Image Previews */}
-            {imagePreview.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {imagePreview.map((src, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={src}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeImage(index)}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
+            <p className="text-sm text-muted-foreground">
+              Upload to Cloudinary. Max 6 images, 5MB each. First image is primary.
+            </p>
           </CardContent>
         </Card>
         

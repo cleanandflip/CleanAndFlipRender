@@ -19,7 +19,7 @@ const storage = new CloudinaryStorage({
       { width: 1200, height: 1200, crop: 'limit' },
       { quality: 'auto' }
     ]
-  }
+  } as any
 });
 
 export const upload = multer({ 
