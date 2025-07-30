@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation, useRouter } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -16,8 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle } from "lucide-react";
 
 export default function Navigation() {
-  const [location] = useLocation();
-  const router = useRouter();
+  const [location, setLocation] = useLocation();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [previousPath, setPreviousPath] = useState<string | null>(null);
@@ -54,7 +53,7 @@ export default function Navigation() {
       return;
     }
     
-    router.push(href);
+    setLocation(href);
   };
 
   // Cart button toggle behavior
@@ -67,15 +66,15 @@ export default function Navigation() {
         setPreviousPath(location);
         sessionStorage.setItem('cartPreviousPath', location);
       }
-      router.push('/cart');
+      setLocation('/cart');
     } else {
       // Cart is open, go back to previous view
       const savedPath = sessionStorage.getItem('cartPreviousPath') || previousPath;
       if (savedPath && savedPath !== '/cart') {
-        router.push(savedPath);
+        setLocation(savedPath);
         sessionStorage.removeItem('cartPreviousPath');
       } else {
-        router.push('/products'); // fallback
+        setLocation('/products'); // fallback
       }
     }
   };
