@@ -108,7 +108,8 @@ export default function ProductDetail() {
   }
 
   const images = product.images || [];
-  const currentImage = images[currentImageIndex] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600";
+  const currentImage = images[currentImageIndex];
+  const hasImages = images.length > 0 && currentImage && currentImage.length > 0;
 
   const handleAddToCart = () => {
     addToCart({
@@ -184,18 +185,30 @@ export default function ProductDetail() {
           <div className="space-y-4">
             {/* Main Image */}
             <GlassCard className="overflow-hidden">
-              <div className="relative group cursor-pointer" onClick={() => setShowLightbox(true)}>
-                <img
-                  src={currentImage}
-                  alt={product.name}
-                  className="w-full h-96 object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                  <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={32} />
-                </div>
+              <div className="relative group cursor-pointer" onClick={hasImages ? () => setShowLightbox(true) : undefined}>
+                {hasImages ? (
+                  <>
+                    <img
+                      src={currentImage}
+                      alt={product.name}
+                      className="w-full h-96 object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                      <ZoomIn className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={32} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-96 bg-glass-bg flex items-center justify-center">
+                    <div className="text-center text-text-muted">
+                      <div className="text-6xl mb-4">📦</div>
+                      <div className="text-xl">No Image Available</div>
+                      <div className="text-sm mt-2">This product currently has no images</div>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Navigation arrows */}
-                {images.length > 1 && (
+                {hasImages && images.length > 1 && (
                   <>
                     <button
                       onClick={(e) => {
@@ -221,7 +234,7 @@ export default function ProductDetail() {
             </GlassCard>
 
             {/* Thumbnail Gallery */}
-            {images.length > 1 && (
+            {hasImages && images.length > 1 && (
               <div className="grid grid-cols-6 gap-2">
                 {images.slice(0, 6).map((image, index) => (
                   <button
@@ -469,7 +482,7 @@ export default function ProductDetail() {
       </div>
 
       {/* Lightbox Modal */}
-      {showLightbox && (
+      {showLightbox && hasImages && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
           <div className="relative max-w-4xl max-h-full">
             <button
