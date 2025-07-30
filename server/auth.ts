@@ -408,17 +408,33 @@ export function requireAuth(req: any, res: any, next: any) {
 }
 
 // Middleware to require specific roles
-export function requireRole(roles: string[]) {
+export function requireRole(roles: string | string[]) {
   return (req: any, res: any, next: any) => {
+    console.log('RequireRole middleware - Is authenticated:', req.isAuthenticated?.());
+    console.log('RequireRole middleware - User from passport:', req.user);
+    
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
 
     const user = req.user as User;
-    if (!roles.includes(user.role || 'user')) {
+    const allowedRoles = Array.isArray(roles) ? roles : [roles];
+    
+    console.log('RequireRole check:', {
+      userRole: user.role,
+      isAdmin: user.isAdmin,
+      allowedRoles,
+      hasRole: allowedRoles.includes(user.role || 'user'),
+      isAdminUser: user.isAdmin
+    });
+    
+    // Allow if user has the required role OR if user is admin (admins can do everything)
+    if (!allowedRoles.includes(user.role || 'user') && !user.isAdmin) {
+      console.log('Permission denied - user lacks required role and is not admin');
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
+    console.log('Permission granted for user:', user.email);
     next();
   };
 }

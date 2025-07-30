@@ -913,8 +913,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
   });
 
-  // Cloudinary upload endpoint
-  app.post("/api/upload/cloudinary", requireRole('admin'), memoryUpload.single('file'), async (req, res) => {
+  // Cloudinary upload endpoint - allow admin and developer roles
+  app.post("/api/upload/cloudinary", requireRole(['admin', 'developer']), memoryUpload.single('file'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
@@ -944,8 +944,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete Cloudinary image endpoint
-  app.delete("/api/upload/cloudinary/:publicId", requireRole('admin'), async (req, res) => {
+  // Delete Cloudinary image endpoint - allow admin and developer roles
+  app.delete("/api/upload/cloudinary/:publicId", requireRole(['admin', 'developer']), async (req, res) => {
     try {
       const publicId = decodeURIComponent(req.params.publicId);
       await cloudinary.uploader.destroy(publicId);
