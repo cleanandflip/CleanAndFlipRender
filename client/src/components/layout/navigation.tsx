@@ -38,32 +38,32 @@ export default function Navigation() {
   return (
     <>
       {/* Main Navigation */}
-      <nav className="fixed top-4 left-4 right-4 z-50 glass rounded-xl px-4 py-3 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between">
-          {/* Left Side - Logo & Menu */}
-          <div className="flex items-center space-x-6">
+      <nav className="fixed top-4 left-4 right-4 z-50 glass rounded-xl px-8 py-4 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between w-full">
+          {/* Left Side - Logo */}
+          <div className="flex items-center flex-shrink-0">
             <Logo size="md" />
-            
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
-              {navigation.map((item) => (
-                <Link key={item.name} href={item.href}>
-                  <span
-                    className={`transition-colors font-medium cursor-pointer px-3 py-2 rounded-lg hover:bg-white/10 ${
-                      isActive(item.href)
-                        ? "text-accent-blue bg-accent-blue/10"
-                        : "text-text-secondary hover:text-white"
-                    }`}
-                  >
-                    {item.name}
-                  </span>
-                </Link>
-              ))}
-            </div>
+          </div>
+
+          {/* Center - Navigation Menu */}
+          <div className="hidden md:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
+            {navigation.map((item) => (
+              <Link key={item.name} href={item.href}>
+                <span
+                  className={`transition-colors font-medium cursor-pointer px-4 py-2 rounded-lg hover:bg-white/10 text-lg ${
+                    isActive(item.href)
+                      ? "text-accent-blue bg-accent-blue/10"
+                      : "text-text-secondary hover:text-white"
+                  }`}
+                >
+                  {item.name}
+                </span>
+              </Link>
+            ))}
           </div>
 
           {/* Right Side - Search, Account, Cart */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             {/* Desktop Search */}
             <div className="hidden lg:block">
               <SearchBar
@@ -77,11 +77,11 @@ export default function Navigation() {
             {/* Mobile Search Toggle */}
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               className="lg:hidden glass hover:bg-white/10"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
-              <Search size={18} />
+              <Search size={20} />
             </Button>
 
             {/* Account */}

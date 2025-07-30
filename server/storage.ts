@@ -76,7 +76,6 @@ export interface IStorage {
   deleteAddress(id: string): Promise<void>;
 
   // Order operations
-  getOrders(userId: string): Promise<Order[]>; // Fixed method name
   getUserOrders(userId: string): Promise<Order[]>;
   getOrder(id: string): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
@@ -357,16 +356,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Order operations
-  async getOrders(userId: string): Promise<Order[]> {
+  async getUserOrders(userId: string): Promise<Order[]> {
     return await db
       .select()
       .from(orders)
       .where(eq(orders.userId, userId))
       .orderBy(desc(orders.createdAt));
-  }
-
-  async getUserOrders(userId: string): Promise<Order[]> {
-    return this.getOrders(userId); // Alias for compatibility
   }
 
   async getOrder(id: string): Promise<Order | undefined> {
