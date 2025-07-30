@@ -13,7 +13,7 @@ import Logo from "@/components/common/logo";
 import SearchBar from "@/components/products/search-bar";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
-import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings } from "lucide-react";
 
 export default function Navigation() {
   const [location] = useLocation();
