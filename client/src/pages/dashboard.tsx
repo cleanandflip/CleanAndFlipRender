@@ -18,7 +18,90 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
-import type { Order, EquipmentSubmission, Wishlist, Product } from "@shared/schema";
+import type { Order, EquipmentSubmission, Wishlist, Product, Address } from "@shared/schema";
+
+function AddressesSection() {
+  const { user } = useAuth();
+  
+  const { data: addresses = [], isLoading } = useQuery<Address[]>({
+    queryKey: ["/api/addresses", { userId: user?.id }],
+    enabled: !!user?.id,
+  });
+
+  if (isLoading) {
+    return (
+      <GlassCard className="p-6">
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue mx-auto"></div>
+          <p className="text-text-secondary mt-4">Loading addresses...</p>
+        </div>
+      </GlassCard>
+    );
+  }
+
+  return (
+    <GlassCard className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-bebas text-2xl">SAVED ADDRESSES</h2>
+        <Button className="bg-accent-blue hover:bg-blue-500">
+          Add New Address
+        </Button>
+      </div>
+
+      {addresses.length === 0 ? (
+        <div className="text-center py-12">
+          <MapPin className="mx-auto mb-4 text-gray-400" size={48} />
+          <h3 className="text-xl font-semibold mb-2">No saved addresses</h3>
+          <p className="text-text-secondary mb-6">
+            Add addresses to make checkout faster.
+          </p>
+          <Button className="bg-accent-blue hover:bg-blue-500">
+            Add Address
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {addresses.map((address) => (
+            <div key={address.id} className="p-4 glass border border-glass-border rounded-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold text-white">
+                      {address.firstName} {address.lastName}
+                    </h3>
+                    {address.isDefault && (
+                      <Badge className="bg-accent-blue text-white text-xs">
+                        Default
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="text-xs">
+                      {address.type === 'shipping' ? 'Shipping' : 'Billing'}
+                    </Badge>
+                  </div>
+                  <p className="text-text-secondary text-sm leading-relaxed">
+                    {address.street}<br />
+                    {address.city}, {address.state} {address.zipCode}<br />
+                    {address.country}
+                  </p>
+                </div>
+                <div className="flex gap-2 ml-4">
+                  <Button variant="outline" size="sm" className="text-xs">
+                    Edit
+                  </Button>
+                  {!address.isDefault && (
+                    <Button variant="outline" size="sm" className="text-xs text-red-400 hover:text-red-300">
+                      Delete
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </GlassCard>
+  );
+}
 
 function DashboardContent() {
   const { user } = useAuth();
@@ -345,25 +428,7 @@ function DashboardContent() {
 
           {/* Addresses Tab */}
           <TabsContent value="addresses">
-            <GlassCard className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-bebas text-2xl">SAVED ADDRESSES</h2>
-                <Button className="bg-accent-blue hover:bg-blue-500">
-                  Add New Address
-                </Button>
-              </div>
-
-              <div className="text-center py-12">
-                <MapPin className="mx-auto mb-4 text-gray-400" size={48} />
-                <h3 className="text-xl font-semibold mb-2">No saved addresses</h3>
-                <p className="text-text-secondary mb-6">
-                  Add addresses to make checkout faster.
-                </p>
-                <Button className="bg-accent-blue hover:bg-blue-500">
-                  Add Address
-                </Button>
-              </div>
-            </GlassCard>
+            <AddressesSection />
           </TabsContent>
         </Tabs>
       </div>

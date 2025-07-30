@@ -368,7 +368,52 @@ export class DatabaseStorage implements IStorage {
 
   // Address operations
   async getUserAddresses(userId: string): Promise<Address[]> {
-    return await db.select().from(addresses).where(eq(addresses.userId, userId));
+    // First check the separate addresses table
+    const addressRecords = await db.select().from(addresses).where(eq(addresses.userId, userId));
+    
+    if (addressRecords.length > 0) {
+      return addressRecords;
+    }
+    
+    // If no separate addresses, check if user has address data in profile
+    const user = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      address: users.address,
+      cityStateZip: users.cityStateZip
+    }).from(users).where(eq(users.id, userId));
+    
+    if (user[0]?.address && user[0]?.cityStateZip) {
+      // Parse city, state, zip from the combined field
+      const cityStateZipRegex = /^(.+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/;
+      const match = user[0].cityStateZip.match(cityStateZipRegex);
+      
+      if (match) {
+        const [, city, state, zipCode] = match;
+        
+        // Create a virtual address record from user profile data
+        const virtualAddress: Address = {
+          id: `user-profile-${userId}`,
+          userId: userId,
+          type: 'shipping',
+          firstName: user[0].firstName,
+          lastName: user[0].lastName,
+          street: user[0].address,
+          city: city.trim(),
+          state: state,
+          zipCode: zipCode,
+          country: 'US',
+          isDefault: true,
+          createdAt: new Date()
+        };
+        
+        return [virtualAddress];
+      }
+    }
+    
+    // Return empty array if no addresses found
+    return [];
   }
 
   async createAddress(address: InsertAddress): Promise<Address> {

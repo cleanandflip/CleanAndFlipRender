@@ -1,0 +1,135 @@
+Fix Address Not Saving During Sign Up
+When users sign up and enter their address (street address and city/state/zip), it's not being saved to their profile. The dashboard shows "No saved addresses" even though the address was entered during registration.
+1. Check Sign Up Form Data
+Ensure the form is collecting address fields:
+javascript// In the signup form component
+const handleSignUp = async (formData) => {
+  const userData = {
+    firstName: formData.firstName,
+    lastName: formData.lastName,
+    email: formData.email,
+    password: formData.password,
+    phone: formData.phone,
+    // ENSURE THESE ARE INCLUDED:
+    address: formData.address, // Street address
+    cityStateZip: formData.cityStateZip, // City, State ZIP
+  };
+  
+  // Send to API
+  await fetch('/api/register', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+    headers: { 'Content-Type': 'application/json' }
+  });
+};
+2. Fix the API Registration Endpoint
+Check /api/register to ensure it's saving address fields:
+javascript// In the registration API handler
+app.post('/api/register', async (req, res) => {
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    phone,
+    address,        // Make sure this is destructured
+    cityStateZip    // Make sure this is destructured
+  } = req.body;
+  
+  // Create user with ALL fields
+  const newUser = await db.users.create({
+    first_name: firstName,
+    last_name: lastName,
+    email: email.toLowerCase(),
+    password_hash: hashedPassword,
+    phone: phone || null,
+    // ADD THESE FIELDS:
+    address: address,
+    city_state_zip: cityStateZip,
+    created_at: new Date()
+  });
+});
+3. Update Database Schema
+Ensure the users table has address columns:
+sql-- Check if these columns exist, if not add them:
+ALTER TABLE users 
+ADD COLUMN IF NOT EXISTS address VARCHAR(255),
+ADD COLUMN IF NOT EXISTS city_state_zip VARCHAR(100);
+4. Fix the Address Display Logic
+The addresses section might be looking in the wrong place:
+javascript// WRONG - Looking for a separate addresses table
+const addresses = await db.addresses.findByUserId(userId);
+
+// CORRECT - Get address from user profile
+const user = await db.users.findById(userId);
+const userAddress = {
+  street: user.address,
+  cityStateZip: user.city_state_zip
+};
+
+// Display logic
+if (user.address && user.city_state_zip) {
+  // Show the address
+  return (
+    <div>
+      <p>{user.address}</p>
+      <p>{user.city_state_zip}</p>
+    </div>
+  );
+} else {
+  // Show "No saved addresses"
+}
+5. Create Address Record on Sign Up
+If using a separate addresses table, create the record during registration:
+javascript// After creating the user
+if (address && cityStateZip) {
+  await db.addresses.create({
+    user_id: newUser.id,
+    street_address: address,
+    city_state_zip: cityStateZip,
+    is_default: true,
+    created_at: new Date()
+  });
+}
+6. Fix the Addresses API Endpoint
+Update /api/addresses to return the user's address:
+javascriptapp.get('/api/addresses', async (req, res) => {
+  const userId = req.session.userId;
+  
+  // Option A: Get from user table
+  const user = await db.users.findById(userId);
+  if (user.address) {
+    return res.json([{
+      id: 1,
+      street: user.address,
+      cityStateZip: user.city_state_zip,
+      isDefault: true
+    }]);
+  }
+  
+  // Option B: Get from addresses table
+  const addresses = await db.addresses.findByUserId(userId);
+  return res.json(addresses);
+});
+7. Debug Checklist:
+
+Console.log the form data before sending to API - is address included?
+Console.log the request body in the API - is address received?
+Check the database after registration - is address saved?
+Check what the addresses endpoint returns - is it querying correctly?
+
+8. Quick Test:
+After fixing, test by:
+
+Creating a new account with address
+Check database to confirm address is saved
+Go to dashboard - address should appear
+If still showing "No saved addresses", check the API response
+
+The issue is likely that either:
+
+The address fields aren't being sent from the form
+The API isn't saving them to the database
+The dashboard is looking in the wrong place for the address data
+
+Please trace through the data flow and fix where the address is being lost.
