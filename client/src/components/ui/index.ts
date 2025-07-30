@@ -5,8 +5,6 @@ export { ProductPrice } from './ProductPrice';
 export { StockIndicator } from './StockIndicator';
 export { LoadingSpinner } from './LoadingSpinner';
 export { QuantitySelector } from './QuantitySelector';
-export { default as CardSkeleton } from './CardSkeleton';
-export { AnimatedButton } from './AnimatedButton';
 
 // Re-export existing shadcn components for convenience
 export { Button } from './button';
