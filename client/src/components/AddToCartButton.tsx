@@ -121,7 +121,7 @@ export function AddToCartButton({
       disabled={isDisabled}
       variant={variant}
       size={size}
-      className={`${className} ${loading ? 'opacity-50' : ''} transition-opacity`}
+      className={`bg-blue-500 hover:bg-blue-600 text-white transition-all duration-200 ${className} ${loading ? 'opacity-50' : ''}`}
     >
       {loading ? (
         <>

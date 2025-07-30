@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import GlassCard from "@/components/common/glass-card";
-import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-import { apiRequest, productEvents } from "@/lib/queryClient";
+import { productEvents } from "@/lib/queryClient";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { WishlistButton } from "@/components/ui";
 import { 
   ShoppingCart, 
   Heart, 
@@ -29,9 +28,6 @@ import type { Product } from "@shared/schema";
 export default function ProductDetail() {
   const { id } = useParams();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { addToCart } = useCart();
-  const { user } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -77,42 +73,7 @@ export default function ProductDetail() {
     };
   }, [id, refetch]);
 
-  const addToWishlistMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) {
-        throw new Error('Please log in to add items to your wishlist');
-      }
-      await apiRequest("POST", "/api/wishlist", {
-        productId: id,
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Added to Wishlist",
-        description: "Product has been added to your wishlist.",
-      });
-    },
-    onError: (error: any) => {
-      const errorMessage = error.message || "Failed to add to wishlist. Please try again.";
-      toast({
-        title: user ? "Error" : "Login Required",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    },
-  });
 
-  const handleWishlistClick = () => {
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please log in to add items to your wishlist.",
-        variant: "destructive",
-      });
-      return;
-    }
-    addToWishlistMutation.mutate();
-  };
 
   if (isLoading) {
     return (
@@ -157,12 +118,7 @@ export default function ProductDetail() {
   const currentImage = images[currentImageIndex];
   const hasImages = images.length > 0 && currentImage && currentImage.length > 0;
 
-  const handleAddToCart = () => {
-    addToCart({
-      productId: product.id,
-      quantity,
-    });
-  };
+
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -389,23 +345,17 @@ export default function ProductDetail() {
 
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={!product.stockQuantity || product.stockQuantity === 0}
-                  className="flex-1 bg-accent-blue hover:bg-blue-500 text-white"
-                >
-                  <ShoppingCart size={20} className="mr-2" />
-                  Add to Cart
-                </Button>
+                <AddToCartButton
+                  productId={product.id}
+                  stock={product.stockQuantity}
+                  quantity={quantity}
+                  className="flex-1"
+                />
                 
-                <Button
-                  variant="outline"
-                  onClick={handleWishlistClick}
-                  disabled={addToWishlistMutation.isPending}
+                <WishlistButton
+                  productId={product.id}
                   className="glass border-glass-border"
-                >
-                  <Heart size={20} />
-                </Button>
+                />
                 
                 <Button
                   variant="outline"
