@@ -78,7 +78,7 @@ export default function Navigation() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden glass hover:bg-white/20 p-2 transition-colors w-10 h-10 flex-shrink-0 text-text-secondary hover:text-white"
+              className="lg:hidden glass p-2 w-10 h-10 flex-shrink-0 text-text-secondary border border-transparent hover:text-white hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20 transition-all duration-200"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
               <Search size={18} />
@@ -92,7 +92,7 @@ export default function Navigation() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="glass hover:bg-white/20 p-2 transition-colors text-accent-blue hover:text-white w-10 h-10 flex-shrink-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:outline-none data-[state=open]:bg-white/20 data-[state=open]:text-accent-blue border border-accent-blue/30"
+                      className="glass p-2 text-accent-blue w-10 h-10 flex-shrink-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:outline-none data-[state=open]:bg-accent-blue/20 data-[state=open]:text-accent-blue data-[state=open]:shadow-lg data-[state=open]:shadow-accent-blue/25 border border-accent-blue/30 hover:bg-accent-blue/20 hover:shadow-lg hover:shadow-accent-blue/25 hover:border-accent-blue/50 transition-all duration-200"
                     >
                       <User size={18} />
                     </Button>
@@ -174,8 +174,10 @@ export default function Navigation() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`glass hover:bg-white/20 relative p-2 transition-colors w-10 h-10 flex-shrink-0 ${
-                  isActive("/cart") ? "text-accent-blue" : "text-text-secondary hover:text-white"
+                className={`glass relative p-2 w-10 h-10 flex-shrink-0 transition-all duration-200 ${
+                  isActive("/cart") 
+                    ? "text-accent-blue border border-accent-blue/30 bg-accent-blue/10 shadow-lg shadow-accent-blue/25" 
+                    : "text-text-secondary border border-transparent hover:text-white hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20"
                 }`}
               >
                 <ShoppingCart size={18} />
@@ -193,7 +195,7 @@ export default function Navigation() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="lg:hidden glass hover:bg-white/20 p-2 transition-colors w-10 h-10 flex-shrink-0 text-text-secondary hover:text-white"
+                  className="lg:hidden glass p-2 w-10 h-10 flex-shrink-0 text-text-secondary border border-transparent hover:text-white hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20 transition-all duration-200"
                 >
                   <Menu size={18} />
                 </Button>
