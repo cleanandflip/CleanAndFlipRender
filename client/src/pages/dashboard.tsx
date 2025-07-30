@@ -170,7 +170,7 @@ function DashboardContent() {
           
           <GlassCard className="p-6 text-center">
             <Heart className="mx-auto mb-3 text-red-400" size={32} />
-            <div className="text-2xl font-bold">{wishlist.length}</div>
+            <div className="text-2xl font-bold">{wishlist?.length || 0}</div>
             <div className="text-sm text-text-muted">Wishlist Items</div>
           </GlassCard>
           
@@ -328,7 +328,7 @@ function DashboardContent() {
                 </Link>
               </div>
 
-              {wishlist.length === 0 ? (
+              {!wishlist || wishlist.length === 0 ? (
                 <div className="text-center py-12">
                   <Heart className="mx-auto mb-4 text-gray-400" size={48} />
                   <h3 className="text-xl font-semibold mb-2">Your wishlist is empty</h3>
@@ -343,7 +343,7 @@ function DashboardContent() {
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {wishlist.map((item) => (
+                  {wishlist?.map((item) => (
                     <div key={item.id} className="glass rounded-lg overflow-hidden">
                       <img
                         src={item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
