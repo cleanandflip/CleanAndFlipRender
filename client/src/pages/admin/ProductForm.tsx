@@ -204,6 +204,20 @@ export function ProductForm() {
       
       // Force refetch all product queries immediately
       queryClient.refetchQueries({ queryKey: ['/api/products'] });
+      queryClient.refetchQueries({ queryKey: ['/api/products/featured'] });
+      
+      // Dispatch global events for real-time sync across tabs/pages
+      console.log('Dispatching global product update events');
+      window.dispatchEvent(new CustomEvent('productUpdated', { 
+        detail: { 
+          productId: id,
+          action: isEdit ? 'update' : 'create',
+          timestamp: Date.now()
+        } 
+      }));
+      window.dispatchEvent(new CustomEvent('storageChanged', { 
+        detail: { type: 'product', action: isEdit ? 'update' : 'create' } 
+      }));
       
       navigate('/admin');
     },

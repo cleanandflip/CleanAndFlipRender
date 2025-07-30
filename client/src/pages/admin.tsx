@@ -94,6 +94,19 @@ function ProductManagement() {
       queryClient.refetchQueries({ queryKey: ["/api/products"] });
       queryClient.refetchQueries({ queryKey: ["/api/products/featured"] });
       
+      // Dispatch global events for real-time sync
+      console.log('Dispatching global product deletion events');
+      window.dispatchEvent(new CustomEvent('productUpdated', { 
+        detail: { 
+          productId,
+          action: 'delete',
+          timestamp: Date.now()
+        } 
+      }));
+      window.dispatchEvent(new CustomEvent('storageChanged', { 
+        detail: { type: 'product', action: 'delete' } 
+      }));
+      
       toast({ description: "Product deleted successfully" });
     },
     onError: (error) => {
@@ -117,6 +130,17 @@ function ProductManagement() {
       
       // Force immediate refetch
       queryClient.refetchQueries({ queryKey: ["/api/products"] });
+      queryClient.refetchQueries({ queryKey: ["/api/products/featured"] });
+      
+      // Dispatch global events for real-time sync
+      console.log('Dispatching global stock update events');
+      window.dispatchEvent(new CustomEvent('productUpdated', { 
+        detail: { 
+          productId,
+          action: 'stock_update',
+          timestamp: Date.now()
+        } 
+      }));
       
       toast({ description: "Stock status updated" });
     }

@@ -46,7 +46,7 @@ export default function Products() {
     setFilters(initialFilters);
   }, [location]);
 
-  const { data, isLoading, error } = useQuery<{ products: Product[]; total: number }>({
+  const { data, isLoading, error, refetch } = useQuery<{ products: Product[]; total: number }>({
     queryKey: [
       "/api/products",
       {
@@ -57,8 +57,32 @@ export default function Products() {
     ],
     refetchOnWindowFocus: true, // Refetch when user returns to tab
     refetchOnMount: true, // Always refetch when component mounts
-    staleTime: 2 * 60 * 1000, // 2 minutes stale time for product listings
+    staleTime: 0, // Always fetch fresh data for critical inventory accuracy
+    cacheTime: 0, // Don't cache - always get fresh data
+    refetchInterval: 30000, // Auto-refetch every 30 seconds for live updates
   });
+
+  // Add global event listener for real-time admin updates
+  useEffect(() => {
+    const handleProductUpdate = () => {
+      console.log('Product update event received - force refreshing products page');
+      refetch();
+    };
+
+    const handleStorageUpdate = () => {
+      console.log('Storage update event received - force refreshing products page');
+      refetch();
+    };
+
+    // Listen for global product update events
+    window.addEventListener('productUpdated', handleProductUpdate);
+    window.addEventListener('storageChanged', handleStorageUpdate);
+    
+    return () => {
+      window.removeEventListener('productUpdated', handleProductUpdate);
+      window.removeEventListener('storageChanged', handleStorageUpdate);
+    };
+  }, [refetch]);
 
   const handleFilterChange = (newFilters: ProductFilters) => {
     setFilters(newFilters);

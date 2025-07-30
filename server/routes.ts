@@ -68,9 +68,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sortOrder: sortOrder as 'asc' | 'desc'
       };
 
-      // Set cache headers to prevent aggressive caching
+      // Set aggressive no-cache headers for live inventory accuracy
       res.set({
-        'Cache-Control': 'public, max-age=120, must-revalidate', // 2 minutes cache
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         'ETag': `W/"products-${Date.now()}"` // Weak ETag for cache validation
       });
       
@@ -84,9 +86,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/products/featured", async (req, res) => {
     try {
-      // Set cache headers to prevent aggressive caching
+      // Set aggressive no-cache headers for live inventory accuracy
       res.set({
-        'Cache-Control': 'public, max-age=120, must-revalidate', // 2 minutes cache
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         'ETag': `W/"featured-${Date.now()}"` // Weak ETag for cache validation
       });
       
@@ -101,9 +105,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/products/:id", async (req, res) => {
     try {
-      // Set cache headers to prevent aggressive caching
+      // Set aggressive no-cache headers for live inventory accuracy
       res.set({
-        'Cache-Control': 'public, max-age=120, must-revalidate', // 2 minutes cache
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         'ETag': `W/"product-${req.params.id}-${Date.now()}"` // Weak ETag for cache validation
       });
       
