@@ -433,6 +433,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Activity tracking endpoint for real analytics
+  app.post("/api/track-activity", async (req, res) => {
+    try {
+      const { eventType, pageUrl, userId } = req.body;
+      const sessionId = req.sessionID || req.headers['x-session-id'] || 'anonymous';
+      
+      const activity = {
+        eventType,
+        pageUrl,
+        userId: userId || null,
+        sessionId: String(sessionId)
+      };
+      
+      await storage.trackActivity(activity);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Error tracking activity:', error.message);
+      res.status(500).json({ error: "Failed to track activity" });
+    }
+  });
+
   // System health endpoint
   app.get("/api/admin/system/health", requireAdmin, async (req, res) => {
     try {

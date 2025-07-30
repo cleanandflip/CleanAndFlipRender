@@ -191,6 +191,19 @@ export const wishlist = pgTable("wishlist", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Activity logs for real analytics tracking
+export const activityLogs = pgTable("activity_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventType: varchar("event_type").notNull(), // 'page_view', 'user_action', 'purchase'
+  userId: varchar("user_id").references(() => users.id),
+  sessionId: varchar("session_id"),
+  pageUrl: varchar("page_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_activity_logs_created").on(table.createdAt),
+  index("idx_activity_logs_type").on(table.eventType),
+]);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
@@ -198,6 +211,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   addresses: many(addresses),
   submissions: many(equipmentSubmissions),
   wishlist: many(wishlist),
+  activities: many(activityLogs),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -329,6 +343,11 @@ export const insertWishlistSchema = createInsertSchema(wishlist).omit({
   createdAt: true,
 });
 
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -356,3 +375,6 @@ export type InsertEquipmentSubmission = z.infer<typeof insertEquipmentSubmission
 
 export type Wishlist = typeof wishlist.$inferSelect;
 export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
+
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
