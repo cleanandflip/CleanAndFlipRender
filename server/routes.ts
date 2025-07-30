@@ -536,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       // Handle images array from form data - always update images field
-      if (req.body.hasOwnProperty('images')) {
+      if ('images' in req.body) {
         if (req.body.images && req.body.images.length > 0) {
           const images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
           updateData.images = images.filter(img => img && img.trim() !== '');
