@@ -53,19 +53,22 @@ function validatePassword(password: string): { isValid: boolean; errors: string[
   return { isValid: errors.length === 0, errors };
 }
 
-// City, State ZIP validation
+// City, State ZIP validation - case insensitive
 function validateCityStateZip(cityStateZip: string): boolean {
-  const cityStateZipRegex = /^[A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5}$/;
+  const cityStateZipRegex = /^[A-Za-z\s]+,\s*[A-Za-z]{2}\s*\d{5}$/i;
   return cityStateZipRegex.test(cityStateZip);
 }
 
-// Check if ZIP is in local service area (Asheville, NC area)
-function checkIfLocalZip(zip: string): boolean {
+// Check if ZIP is in local service area (Asheville, NC area) - case insensitive
+function checkIfLocalZip(cityStateZip: string): boolean {
   const localZips = [
     "28801", "28802", "28803", "28804", "28805", "28806", "28807", "28808", 
     "28810", "28813", "28814", "28815", "28816", "28817", "28818"
   ];
-  return localZips.includes(zip);
+  // Extract ZIP code from city, state ZIP format
+  const zipMatch = cityStateZip.match(/\d{5}/);
+  if (!zipMatch) return false;
+  return localZips.includes(zipMatch[0]);
 }
 
 export function setupAuth(app: Express) {
@@ -101,13 +104,14 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
       try {
-        const user = await storage.getUserByEmail(email);
+        const user = await storage.getUserByEmail(email.toLowerCase()); // Case insensitive login
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false, { message: "Invalid email or password" });
         }
         return done(null, {
           ...user,
-          role: user.role || 'user'
+          role: user.role || 'user',
+          isAdmin: user.isAdmin || false
         });
       } catch (error) {
         return done(error);
@@ -121,7 +125,8 @@ export function setupAuth(app: Express) {
       const user = await storage.getUser(id);
       done(null, user ? {
         ...user,
-        role: user.role || 'user'
+        role: user.role || 'user',
+        isAdmin: user.isAdmin || false
       } : null);
     } catch (error) {
       done(error);
@@ -159,8 +164,8 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Check if user already exists (don't reveal if email exists for security)
-      const existingEmail = await storage.getUserByEmail(email);
+      // Check if user already exists (case insensitive email)
+      const existingEmail = await storage.getUserByEmail(email.toLowerCase());
       if (existingEmail) {
         return res.status(400).json({ message: "Registration failed. Please try again." });
       }
@@ -168,8 +173,7 @@ export function setupAuth(app: Express) {
       // Determine if user is local customer
       let isLocalCustomer = false;
       if (cityStateZip) {
-        const zip = cityStateZip.split(' ').pop();
-        isLocalCustomer = checkIfLocalZip(zip || '');
+        isLocalCustomer = checkIfLocalZip(cityStateZip);
       }
 
       // Determine role based on criteria
@@ -182,7 +186,7 @@ export function setupAuth(app: Express) {
       }
 
       const user = await storage.createUser({
-        email,
+        email: email.toLowerCase(), // Store email in lowercase
         password: await hashPassword(password),
         firstName,
         lastName,
@@ -196,7 +200,8 @@ export function setupAuth(app: Express) {
 
       const userForSession = {
         ...user,
-        role: user.role || 'user'
+        role: user.role || 'user',
+        isAdmin: user.isAdmin || false
       };
       req.login(userForSession, (err) => {
         if (err) return next(err);
@@ -227,7 +232,8 @@ export function setupAuth(app: Express) {
       }
       const userForSession = {
         ...user,
-        role: user.role || 'user'
+        role: user.role || 'user',
+        isAdmin: user.isAdmin || false
       };
       req.login(userForSession, (loginErr) => {
         if (loginErr) {
@@ -235,12 +241,11 @@ export function setupAuth(app: Express) {
         }
         res.status(200).json({
           id: user.id,
-          username: user.username,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role || 'user',
-          isAdmin: user.isAdmin,
+          isAdmin: user.isAdmin || false,
         });
       });
     })(req, res, next);
@@ -263,12 +268,14 @@ export function setupAuth(app: Express) {
     const user = req.user as User;
     res.json({
       id: user.id,
-      username: user.username,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      address: user.address,
+      cityStateZip: user.cityStateZip,
       role: user.role,
-      isAdmin: user.isAdmin,
+      isAdmin: user.isAdmin || false,
+      isLocalCustomer: user.isLocalCustomer || false,
     });
   });
 }

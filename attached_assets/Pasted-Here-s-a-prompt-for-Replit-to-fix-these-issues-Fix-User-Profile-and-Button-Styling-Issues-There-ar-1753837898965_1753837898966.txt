@@ -1,0 +1,100 @@
+Here's a prompt for Replit to fix these issues:
+
+Fix User Profile and Button Styling Issues
+There are several bugs that need to be fixed:
+1. Address Not Saving on Sign Up
+When users sign up and enter their address, it's not being saved to their profile.
+Fix needed:
+
+Check the registration/signup handler
+Ensure the address fields (street address and city/state/zip) are being saved to the database
+Verify the user creation query includes address fields
+
+javascript// In the signup handler, make sure to save:
+const newUser = {
+  // ... other fields
+  address: formData.address,
+  city_state_zip: formData.cityStateZip,
+  // ... 
+}
+2. Remove Case Sensitivity from Address Fields
+Address fields should NOT be case sensitive.
+Fix needed:
+
+Remove any case-sensitive validation on address fields
+Store addresses as entered (don't force uppercase/lowercase)
+When comparing addresses (for local verification), use case-insensitive comparison
+
+javascript// BAD: Case sensitive
+if (cityStateZip === "Asheville, NC 28806") 
+
+// GOOD: Case insensitive
+if (cityStateZip.toLowerCase().includes("asheville") && 
+    cityStateZip.toUpperCase().includes("NC"))
+
+// For ZIP validation, extract numbers which aren't case-sensitive
+const zipCode = cityStateZip.match(/\d{5}/)?.[0];
+Also check these fields for case sensitivity and fix:
+
+Email (should be case-insensitive for login)
+City names
+State abbreviations (accept "nc" or "NC")
+
+3. Fix Button Color Inconsistency
+Some buttons are showing as black instead of the blue theme.
+Current issues visible:
+
+"Add Address" button in saved addresses section is black
+Buttons should be using the consistent blue theme color
+
+Fix needed:
+css/* Ensure ALL buttons use the primary button style */
+.btn-primary,
+button[type="submit"],
+.button-primary {
+  background-color: #60A5FA !important; /* Light blue */
+  color: white !important;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #3B82F6 !important; /* Darker blue on hover */
+}
+
+/* Remove any conflicting black button styles */
+.btn-black,
+.button-dark {
+  /* Delete or override these */
+}
+Check these locations:
+
+"Browse Products" button
+"Add New Address" button
+"Add Address" button
+"View All Orders" link (should this be a button?)
+Any form submit buttons
+
+4. Verify Data Flow
+Ensure the address is properly flowing from signup → database → user profile:
+javascript// 1. Signup form should include
+<input name="address" required />
+<input name="cityStateZip" required />
+
+// 2. API should save
+await db.users.create({
+  // ... other fields
+  address: req.body.address,
+  city_state_zip: req.body.cityStateZip
+})
+
+// 3. Profile should display
+const userAddress = user.address || "No address saved";
+const cityStateZip = user.city_state_zip || "";
+5. Additional Fixes
+
+Make email case-insensitive for login (store lowercase, compare lowercase)
+Ensure all form validations are user-friendly (not overly strict)
+Test that saved addresses show up after adding them
+
+Please fix these issues to ensure proper data saving and consistent styling throughout the application.

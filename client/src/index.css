@@ -122,6 +122,36 @@ html {
   .trust-indicator {
     animation: pulse 2s infinite;
   }
+
+  /* Button consistency - ensure all buttons use blue theme */
+  .btn-primary,
+  button[type="submit"],
+  .button-primary,
+  .bg-blue-600 {
+    background-color: #2563eb !important; /* Blue-600 */
+    color: white !important;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover,
+  button[type="submit"]:hover,
+  .button-primary:hover,
+  .bg-blue-600:hover {
+    background-color: #1d4ed8 !important; /* Blue-700 */
+  }
+
+  /* Remove conflicting black button styles */
+  .btn-black,
+  .button-dark {
+    background-color: #2563eb !important;
+    color: white !important;
+  }
+
+  .btn-black:hover,
+  .button-dark:hover {
+    background-color: #1d4ed8 !important;
+  }
   
   @keyframes pulse {
     0%, 100% { opacity: 1; }
