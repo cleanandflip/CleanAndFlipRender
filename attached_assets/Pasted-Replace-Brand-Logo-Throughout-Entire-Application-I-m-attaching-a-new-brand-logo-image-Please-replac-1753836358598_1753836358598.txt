@@ -1,0 +1,91 @@
+Replace Brand Logo Throughout Entire Application
+I'm attaching a new brand logo image. Please replace ALL instances of the old logo with this new one across the entire website.
+1. Navigation Bar (All Pages):
+Replace the current "CLEAN & FLIP" text/logo in the floating navigation with the new logo:
+jsx// In the navigation component
+<nav className="floating-nav">
+  <Link href="/">
+    <img 
+      src="/path-to-new-logo" 
+      alt="Clean & Flip" 
+      className="h-10 w-auto" // Adjust height as needed
+    />
+  </Link>
+  {/* Rest of nav items */}
+</nav>
+2. Auth Pages (Sign In/Sign Up):
+As mentioned before - replace the redundant branding section with just the logo:
+jsx<div className="text-center mb-8">
+  <img src="/path-to-new-logo" alt="Clean & Flip" className="h-32 mx-auto" />
+</div>
+3. Homepage Hero Section:
+Replace any logo or "CLEAN & FLIP" text in the hero with the new logo:
+jsx<div className="hero-content">
+  <img src="/path-to-new-logo" alt="Clean & Flip" className="h-40 mx-auto mb-8" />
+  {/* Rest of hero content */}
+</div>
+4. Footer:
+If there's a logo in the footer, replace it:
+jsx<footer>
+  <img src="/path-to-new-logo" alt="Clean & Flip" className="h-8 mb-4" />
+  {/* Footer content */}
+</footer>
+5. Other Locations to Check:
+
+Loading screens
+Error pages (404, 500)
+Email templates
+Invoice/receipt headers
+Dashboard headers
+Mobile menu
+Favicon (create a small version)
+Any modals or popups
+
+6. Logo Sizing Guidelines:
+css/* Navigation */
+.nav-logo { height: 40px; }
+
+/* Hero sections */
+.hero-logo { height: 160px; }
+
+/* Auth pages */
+.auth-logo { height: 120px; }
+
+/* Footer */
+.footer-logo { height: 32px; }
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .nav-logo { height: 32px; }
+  .hero-logo { height: 120px; }
+}
+7. Search and Replace:
+Search the entire codebase for:
+
+Any hardcoded "CLEAN & FLIP" text that should be the logo
+Old logo file references
+Logo components
+Brand name in image alt tags
+
+8. File Organization:
+/public/
+  /images/
+    logo.svg (or .png)          // Main logo
+    logo-white.svg              // White version if needed
+    logo-icon.svg               // Icon only version
+    favicon.ico                 // Browser tab icon
+9. Update Meta Tags:
+html<!-- Update OpenGraph image -->
+<meta property="og:image" content="/images/logo.png" />
+
+<!-- Update favicon -->
+<link rel="icon" href="/favicon.ico" />
+Result:
+
+Consistent branding across entire site
+New logo in navigation on every page
+New logo on all auth pages
+New logo in hero sections
+Professional, cohesive appearance
+
+Please ensure EVERY instance of the old branding is replaced with the new logo image I'm providing.
