@@ -92,9 +92,11 @@ export default function Navigation() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="glass p-2 text-accent-blue w-10 h-10 flex-shrink-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:outline-none data-[state=open]:bg-accent-blue/20 data-[state=open]:text-accent-blue data-[state=open]:shadow-lg data-[state=open]:shadow-accent-blue/25 border border-accent-blue/30 hover:bg-accent-blue/20 hover:shadow-lg hover:shadow-accent-blue/25 hover:border-accent-blue/50 transition-all duration-200"
+                      className="group glass p-2 text-accent-blue w-10 h-10 flex-shrink-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:outline-none border border-accent-blue/30 relative overflow-hidden transition-all duration-300 hover:border-accent-blue/60 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:bg-accent-blue/10 data-[state=open]:border-accent-blue/60 data-[state=open]:shadow-[0_0_20px_rgba(59,130,246,0.3)] data-[state=open]:bg-accent-blue/10"
                     >
-                      <User size={18} />
+                      {/* Inner glow effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/0 via-accent-blue/5 to-accent-blue/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <User size={18} className="relative z-10" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
@@ -174,15 +176,17 @@ export default function Navigation() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`glass relative p-2 w-10 h-10 flex-shrink-0 transition-all duration-200 ${
+                className={`group glass relative p-2 w-10 h-10 flex-shrink-0 overflow-hidden transition-all duration-300 ${
                   isActive("/cart") 
-                    ? "text-accent-blue border border-accent-blue/30 bg-accent-blue/10 shadow-lg shadow-accent-blue/25" 
-                    : "text-text-secondary border border-transparent hover:text-white hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20"
+                    ? "text-accent-blue border border-accent-blue/30 bg-accent-blue/10 shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
+                    : "text-text-secondary border border-transparent hover:text-white hover:bg-white/5 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:border-white/20"
                 }`}
               >
-                <ShoppingCart size={18} />
+                {/* Inner glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <ShoppingCart size={18} className="relative z-10" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-lg">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-lg z-20">
                     {cartCount}
                   </span>
                 )}
