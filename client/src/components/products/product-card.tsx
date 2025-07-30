@@ -201,21 +201,19 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             </p>
           )}
           
-          {/* Price Only */}
-          <p className="text-2xl font-bold text-white transition-colors duration-200 group-hover:text-blue-300">
-            ${product.price}
-          </p>
-        </div>
-        
-        {/* Hover Actions - Subtle */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto backdrop-blur-sm">
-          <div className="transform translate-y-8 group-hover:translate-y-0 transition-all duration-300 animate-slide-up" onClick={(e) => e.stopPropagation()}>
-            <AddToCartButton
-              productId={product.id}
-              stock={product.stockQuantity}
-              size="sm"
-              className="bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-200 pointer-events-auto shadow-lg"
-            />
+          {/* Price and Add to Cart Row */}
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-2xl font-bold text-white transition-colors duration-200 group-hover:text-blue-300">
+              ${product.price}
+            </p>
+            <div onClick={(e) => e.stopPropagation()}>
+              <AddToCartButton
+                productId={product.id}
+                stock={product.stockQuantity}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm"
+              />
+            </div>
           </div>
         </div>
         
