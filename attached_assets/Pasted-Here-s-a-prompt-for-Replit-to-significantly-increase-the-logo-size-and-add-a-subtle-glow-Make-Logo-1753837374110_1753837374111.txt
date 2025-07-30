@@ -1,0 +1,105 @@
+Here's a prompt for Replit to significantly increase the logo size and add a subtle glow:
+
+Make Logo Much Larger with Subtle Glow Effect
+The "CF" logo is barely visible. It needs to be at least 2-3x larger and have a very subtle glow to make it stand out.
+1. Navigation Bar - Make Logo 2x Larger with Glow:
+The logo should be as tall as or slightly taller than the text height:
+jsx// CURRENT: Too small (appears to be ~20px)
+// NEW: Make it prominent (40px minimum) with subtle glow
+<nav className="floating-nav">
+  <Link href="/" className="flex items-center gap-3">
+    <img 
+      src="/path-to-logo" 
+      alt="Clean & Flip Logo" 
+      className="h-10 w-10 filter invert logo-glow"  // 40px x 40px
+      style={{ minHeight: '40px', minWidth: '40px' }}
+    />
+    <span className="font-bold text-white text-lg">CLEAN & FLIP</span>
+  </Link>
+</nav>
+2. Auth Page - Make Logo 3x Larger with Glow:
+As the main focal point, it needs to be much more prominent:
+jsx// CURRENT: Too small (appears to be ~30-40px)  
+// NEW: Make it a proper focal point (80-100px)
+<div className="flex justify-center mb-8">
+  <img 
+    src="/path-to-logo" 
+    alt="Clean & Flip" 
+    className="h-20 w-20 filter invert logo-glow-large"  // 80px x 80px
+    style={{ minHeight: '80px', minWidth: '80px' }}
+  />
+</div>
+3. Add Subtle Glow CSS:
+Create a very subtle, professional glow effect:
+css/* Subtle glow for navigation logo */
+.logo-glow {
+  filter: invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+  transition: all 0.3s ease;
+}
+
+.logo-glow:hover {
+  filter: invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.5));
+}
+
+/* Larger glow for auth page logo */
+.logo-glow-large {
+  filter: invert(1) drop-shadow(0 0 16px rgba(255, 255, 255, 0.4));
+}
+
+/* Alternative: Using box-shadow for a softer glow */
+.logo-container {
+  position: relative;
+}
+
+.logo-container::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  z-index: -1;
+  filter: blur(10px);
+}
+4. Size Comparison Guide:
+Navigation Logo:
+- Current: ~20px (too small)
+- New: 40px (2x larger, matches text height)
+
+Auth Page Logo:  
+- Current: ~30-40px (too small as focal point)
+- New: 80px (2-3x larger, proper focal element)
+
+Footer Logo (if exists):
+- Current: ~16px
+- New: 32px
+5. Mobile Responsive Sizes:
+css@media (max-width: 768px) {
+  /* Slightly smaller on mobile but still prominent */
+  .nav-logo {
+    height: 32px !important;
+    width: 32px !important;
+  }
+  
+  .auth-logo {
+    height: 64px !important;
+    width: 64px !important;
+  }
+}
+6. Testing the Glow Effect:
+
+The glow should be visible but not overwhelming
+It should make the logo "pop" against the dark background
+Test on different screen brightnesses
+Ensure it doesn't look like a loading indicator
+
+Result:
+
+Logo clearly visible and properly sized (2-3x current size)
+Subtle white glow makes it stand out without being distracting
+Professional appearance that enhances the brand
+Consistent sizing and glow effect throughout the site
+
+Please implement these changes to make the logo a proper focal point with an elegant glow effect.
