@@ -209,25 +209,23 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
         
         {/* Hover Actions - Subtle */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
-          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform">
+          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform" onClick={(e) => e.stopPropagation()}>
             <AddToCartButton
               productId={product.id}
               stock={product.stockQuantity}
               size="sm"
               className="bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-gray-100 pointer-events-auto"
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
             />
           </div>
         </div>
         
         {/* Subtle Wishlist - Icon Only */}
-        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto" onClick={(e) => e.stopPropagation()}>
           <WishlistButton 
             productId={product.id}
             size="small"
             className="w-8 h-8 bg-white/10 backdrop-blur rounded-full pointer-events-auto"
             showTooltip={false}
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           />
         </div>
       </div>
