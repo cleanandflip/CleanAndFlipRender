@@ -26,17 +26,6 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, viewMode = 'grid', compact = false }: ProductCardProps) {
-  const getConditionColor = (condition: string) => {
-    switch (condition) {
-      case 'new': return 'bg-green-500';
-      case 'like_new': return 'bg-blue-500';
-      case 'good': return 'bg-yellow-500';
-      case 'fair': return 'bg-orange-500';
-      case 'needs_repair': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
   // All logic now handled by unified components
   const mainImage = product.images?.[0];
   const hasImage = mainImage && mainImage.length > 0;
@@ -108,7 +97,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                       {product.brand}
                     </Badge>
                   )}
-                  <Badge className={`${getConditionColor(product.condition)} text-white text-xs`}>
+                  <Badge variant="outline" className="glass border-glass-border text-xs">
                     {product.condition.replace('_', ' ').toUpperCase()}
                   </Badge>
                   <StockIndicator 
@@ -172,115 +161,74 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
 
   // Grid view (default)
   return (
-    <GlassCard className="overflow-hidden glass-hover group">
-      {/* Image Container */}
+    <div className="group relative bg-gray-800/30 rounded-lg overflow-hidden hover:shadow-xl transition-all">
+      {/* Only show critical stock badge */}
+      {product.stockQuantity === 1 && (
+        <div className="absolute top-3 left-3 z-10">
+          <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
+            Only 1 left
+          </span>
+        </div>
+      )}
+      
       <Link href={`/products/${product.id}`}>
-        <div className="relative overflow-hidden cursor-pointer">
+        {/* Clean Image */}
+        <div className="aspect-square relative bg-gray-900/30">
           {hasImage ? (
-            <img
+            <img 
               src={mainImage}
               alt={product.name}
-              className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-48 bg-glass-bg flex items-center justify-center">
-              <div className="text-center text-text-muted">
-                <div className="text-4xl mb-3">📦</div>
-                <div className="text-sm">No Image Available</div>
-              </div>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-4xl mb-2">📦</div>
             </div>
+          )}
+        </div>
+        
+        {/* Minimal Info Section */}
+        <div className="p-4">
+          {/* Title */}
+          <h3 className="font-medium text-white mb-1 line-clamp-1">
+            {product.name}
+          </h3>
+          
+          {/* Brand */}
+          {product.brand && (
+            <p className="text-gray-500 text-sm mb-3">
+              {product.brand}
+            </p>
           )}
           
-          {/* Quick add hover overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <AddToCartButton
-              productId={product.id}
-              stock={product.stockQuantity}
-              size="sm"
-              variant="outline"
-              className="glass border-glass-border text-white hover:bg-white/20"
-            />
-          </div>
-
-          {/* Featured Badge */}
-          {product.featured && (
-            <div className="absolute top-3 left-3">
-              <Badge className="bg-warning text-black">
-                <Star size={12} className="mr-1" />
-                Featured
-              </Badge>
-            </div>
-          )}
-
-          {/* Stock Status */}
-          <div className="absolute top-3 right-3">
-            <div className="glass px-2 py-1 rounded">
-              <StockIndicator 
-                stock={product.stockQuantity}
-                size="small"
-              />
-            </div>
-          </div>
+          {/* Price Only */}
+          <p className="text-2xl font-bold text-white">
+            ${product.price}
+          </p>
         </div>
       </Link>
-
-      {/* Content */}
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1 min-w-0">
-            <Link href={`/products/${product.id}`}>
-              <h3 className="font-semibold hover:text-accent-blue transition-colors cursor-pointer line-clamp-2">
-                {product.name}
-              </h3>
-            </Link>
-            
-            {product.brand && (
-              <p className="text-text-muted text-sm">{product.brand}</p>
-            )}
-          </div>
-          
-          <div className="text-right ml-2">
-            <ProductPrice 
-              price={product.price}
-              size="default"
-            />
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div className="flex items-center gap-2 mb-3">
-          <Badge className={`${getConditionColor(product.condition)} text-white text-xs`}>
-            {product.condition.replace('_', ' ').toUpperCase()}
-          </Badge>
-          {product.weight && (
-            <Badge variant="outline" className="glass border-glass-border text-xs">
-              {product.weight} lbs
-            </Badge>
-          )}
-        </div>
-
-        {/* Description */}
-        {product.description && (
-          <p className="text-text-secondary text-sm line-clamp-2 mb-3">
-            {product.description}
-          </p>
-        )}
-
-        {/* Actions */}
-        <div className="flex items-center justify-between gap-2">
-          <WishlistButton 
-            productId={product.id}
-            size="small"
-          />
-          
+      
+      {/* Hover Actions - Subtle */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+        <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform">
           <AddToCartButton
             productId={product.id}
             stock={product.stockQuantity}
             size="sm"
-            className="bg-accent-blue hover:bg-blue-500 flex-1 ml-2"
+            className="bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-gray-100"
           />
         </div>
       </div>
-    </GlassCard>
+      
+      {/* Subtle Wishlist - Icon Only */}
+      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        <WishlistButton 
+          productId={product.id}
+          size="small"
+          className="w-8 h-8 bg-white/10 backdrop-blur rounded-full"
+          showTooltip={false}
+        />
+      </div>
+    </div>
   );
 }
