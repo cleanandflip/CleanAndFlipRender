@@ -16,9 +16,8 @@ export default function Home() {
       {/* Hero Section - Full Screen */}
       <section className="min-h-screen flex items-center justify-center pt-20 pb-12 px-6">
         <div className="max-w-6xl mx-auto text-center">
-          {/* Logo and Main Heading */}
+          {/* Main Heading */}
           <div className="mb-12">
-            <Logo size="xl" className="mx-auto mb-8" clickable={false} />
             <h1 className="font-bebas text-6xl md:text-8xl mb-6 tracking-wider leading-tight">
               <span className="text-white">THE WEIGHTLIFTING</span><br />
               <span className="text-accent-blue">EQUIPMENT EXCHANGE</span>

@@ -1,0 +1,75 @@
+Here's a prompt for Replit to remove the unnecessary branding:
+
+Remove Redundant Branding from Auth Page
+The auth page has too much duplicate branding that takes up unnecessary space. Please clean it up.
+Remove These Elements:
+1. Remove the Circled Section:
+Delete the entire section that contains:
+
+The second "CLEAN & FLIP" logo
+"JOIN THE MARKETPLACE" heading
+"Turn unused gear into cash, buy quality equipment you can trust" text
+
+This is redundant since the logo is already in the navigation bar.
+2. Remove or Minimize Right Sidebar (on auth pages only):
+The right side section with:
+
+"TRUSTED MARKETPLACE"
+Icon sections (Verified Quality, Expert Knowledge, Fair Pricing)
+Marketing copy
+
+Options:
+
+Option A: Remove entirely on auth pages
+Option B: Show only on desktop, hide on mobile/tablet
+Option C: Replace with a simple tagline
+
+3. Simplified Auth Layout:
+jsx// Clean auth page layout
+<div className="auth-page">
+  {/* Navigation stays as is */}
+  <nav>...</nav>
+  
+  {/* Centered auth form only */}
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="auth-form-container max-w-md w-full">
+      <h2>Create Account</h2>
+      <p className="text-sm text-gray-400 mb-6">
+        Join Clean & Flip to buy and sell equipment
+      </p>
+      
+      <form>
+        {/* Form fields */}
+      </form>
+    </div>
+  </div>
+</div>
+4. Keep Only Essential Elements:
+
+Navigation bar with logo (top)
+Auth form (centered)
+Small security/legal links at bottom
+Remove ALL duplicate branding
+
+5. Mobile Considerations:
+On mobile, the auth form should:
+
+Take up full width (with padding)
+No sidebars
+No marketing content
+Just logo in nav + form
+
+6. If You Must Keep Some Branding:
+Add a single subtle line under the form:
+jsx<p className="text-center text-sm text-gray-500 mt-8">
+  The trusted marketplace for weightlifting equipment
+</p>
+Result Should Be:
+
+Clean, minimal auth page
+No duplicate logos
+No marketing sidebars on auth pages
+Form is the primary focus
+Professional and uncluttered
+
+The auth pages should be focused solely on getting users to complete registration/login without distractions.
