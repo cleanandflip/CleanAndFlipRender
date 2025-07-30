@@ -75,7 +75,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex">
       {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
-        <div className="w-full max-w-2xl" ref={formContainerRef}>
+        <div className="w-full max-w-xl" ref={formContainerRef}>
           <div className="text-center mb-8">
             <Logo size="lg" className="mx-auto mb-6" />
             <h1 className="font-bebas text-5xl text-white tracking-wider mb-4">JOIN THE MARKETPLACE</h1>
@@ -99,14 +99,14 @@ export default function AuthPage() {
             </TabsList>
 
             <TabsContent value="login" className="transition-all duration-300 ease-in-out">
-              <GlassCard className="p-12">
-                <div className="mb-10">
-                  <h2 className="font-bebas text-4xl text-white tracking-wider mb-4">WELCOME BACK</h2>
-                  <p className="text-text-secondary text-lg">
+              <GlassCard className="p-8">
+                <div className="mb-8">
+                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">WELCOME BACK</h2>
+                  <p className="text-text-secondary">
                     Sign in to your account to continue
                   </p>
                 </div>
-                <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-10">
+                <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-4">
                     <Label htmlFor="username" className="text-text-secondary font-medium text-xl">Username</Label>
                     <Input
@@ -133,7 +133,7 @@ export default function AuthPage() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-20 text-2xl transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl"
+                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-16 text-xl transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl"
                     disabled={loginMutation.isPending}
                   >
                     {loginMutation.isPending ? (
@@ -150,14 +150,14 @@ export default function AuthPage() {
             </TabsContent>
 
             <TabsContent value="register" className="transition-all duration-300 ease-in-out">
-              <GlassCard className="p-12">
-                <div className="mb-10">
-                  <h2 className="font-bebas text-4xl text-white tracking-wider mb-4">CREATE ACCOUNT</h2>
-                  <p className="text-text-secondary text-lg">
+              <GlassCard className="p-8">
+                <div className="mb-8">
+                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">CREATE ACCOUNT</h2>
+                  <p className="text-text-secondary">
                     Join Clean & Flip to buy and sell equipment
                   </p>
                 </div>
-                <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-8">
+                <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-6">
                   <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-4">
                       <Label htmlFor="firstName" className="text-text-secondary font-medium text-lg">First Name</Label>
@@ -231,7 +231,7 @@ export default function AuthPage() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-20 text-2xl transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl mt-10"
+                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-16 text-xl transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl mt-8"
                     disabled={registerMutation.isPending}
                   >
                     {registerMutation.isPending ? (
