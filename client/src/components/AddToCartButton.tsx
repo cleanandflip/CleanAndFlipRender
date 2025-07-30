@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/use-cart';
-import { ShoppingCart } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { ShoppingCart, Check } from 'lucide-react';
 
 // Debounce utility function
 function debounce<T extends (...args: any[]) => any>(
@@ -36,10 +37,18 @@ export function AddToCartButton({
 }: AddToCartButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isInCart, setIsInCart] = useState(false);
   const { toast } = useToast();
-  const { addToCart } = useCart();
+  const { addToCart, cartItems } = useCart();
+  const [, setLocation] = useLocation();
 
   const effectiveStock = stock || 0;
+
+  // Check if product is in cart
+  useEffect(() => {
+    const inCart = cartItems?.some(item => item.productId === productId);
+    setIsInCart(inCart);
+  }, [cartItems, productId]);
 
   const handleAddToCart = useMemo(
     () => debounce(async () => {
@@ -50,6 +59,7 @@ export function AddToCartButton({
       
       try {
         await addToCart({ productId, quantity });
+        setIsInCart(true);
         
         // Success feedback
         toast({
@@ -71,8 +81,39 @@ export function AddToCartButton({
     [productId, loading, quantity, addToCart, toast]
   );
 
+  const handleViewCart = () => {
+    setLocation('/cart');
+  };
+
   const isOutOfStock = effectiveStock === 0;
   const isDisabled = loading || isOutOfStock;
+
+  if (isOutOfStock) {
+    return (
+      <Button
+        variant="outline"
+        size={size}
+        disabled
+        className={`opacity-50 cursor-not-allowed ${className}`}
+      >
+        Out of Stock
+      </Button>
+    );
+  }
+
+  if (isInCart) {
+    return (
+      <Button
+        onClick={handleViewCart}
+        variant="default"
+        size={size}
+        className={`bg-green-600 hover:bg-green-700 text-white transition-all duration-200 ${className}`}
+      >
+        <Check className="w-4 h-4 mr-2" />
+        In Cart - View
+      </Button>
+    );
+  }
 
   return (
     <Button
@@ -87,8 +128,6 @@ export function AddToCartButton({
           <LoadingSpinner size="small" color="white" className="mr-2" />
           Adding...
         </>
-      ) : isOutOfStock ? (
-        'Out of Stock'
       ) : (
         <>
           <ShoppingCart className="w-4 h-4 mr-2" />

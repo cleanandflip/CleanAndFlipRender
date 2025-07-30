@@ -42,7 +42,9 @@ export default function Cart() {
   // Force fresh images with cache-busting
   const getImageUrl = (url: string | null | undefined) => {
     if (!url) return null;
-    return `${url}?t=${Date.now()}`;
+    // Add cache-busting parameter
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}t=${Date.now()}`;
   };
 
   if (isLoading) {
@@ -112,12 +114,31 @@ export default function Cart() {
                   <div className="flex gap-6">
                     {/* Product Image - Always Fresh */}
                     <div className="flex-shrink-0">
-                      <img
-                        src={getImageUrl(item.product.images?.[0]) || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"}
-                        alt={item.product.name}
-                        className="w-24 h-24 object-cover rounded-lg"
-                        key={`${item.product.id}-${Date.now()}`} // Force reload on updates
-                      />
+                      {item.product.images && item.product.images.length > 0 ? (
+                        <img
+                          src={getImageUrl(item.product.images[0])}
+                          alt={item.product.name}
+                          className="w-24 h-24 object-cover rounded-lg"
+                          key={`${item.product.id}-${Date.now()}`} // Force reload on updates
+                          onError={(e) => {
+                            // Show placeholder on error
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = `
+                                <div class="w-24 h-24 bg-gray-800 rounded-lg flex items-center justify-center">
+                                  <div class="text-2xl">📦</div>
+                                </div>
+                              `;
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="w-24 h-24 bg-gray-800 rounded-lg flex items-center justify-center">
+                          <div className="text-2xl">📦</div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Product Details */}
