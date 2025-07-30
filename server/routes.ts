@@ -358,15 +358,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin routes
   const requireAdmin = async (req: any, res: any, next: any) => {
+    console.log('Admin middleware - Session:', req.session?.userId);
+    
     if (!req.session?.userId) {
+      console.log('No session userId found');
       return res.status(401).json({ error: "Authentication required" });
     }
     
     try {
       const user = await storage.getUser(req.session.userId);
-      if (!user || (!user.isAdmin && user.role !== 'developer')) {
+      console.log('Found user:', user?.email, 'role:', user?.role, 'isAdmin:', user?.isAdmin);
+      
+      if (!user) {
+        console.log('User not found');
+        return res.status(403).json({ error: "User not found" });
+      }
+      
+      if (!user.isAdmin && user.role !== 'developer') {
+        console.log('User lacks admin privileges');
         return res.status(403).json({ error: "Admin access required" });
       }
+      
       req.user = user;
       next();
     } catch (error) {
@@ -467,6 +479,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user role:", error);
       res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  // CSV Export endpoints
+  app.get("/api/admin/export/:type", requireAdmin, async (req, res) => {
+    try {
+      const { type } = req.params;
+      let data: any[] = [];
+      let filename = '';
+      let columns: string[] = [];
+
+      switch (type) {
+        case 'products':
+          const products = await storage.getProducts();
+          data = products.products;
+          filename = `products-${Date.now()}.csv`;
+          columns = ['id', 'name', 'price', 'categoryId', 'condition', 'quantity'];
+          break;
+        case 'users':
+          const users = await storage.getAllUsers();
+          data = users;
+          filename = `users-${Date.now()}.csv`;
+          columns = ['id', 'email', 'firstName', 'lastName', 'role', 'createdAt'];
+          break;
+        case 'orders':
+          const orders = await storage.getOrders();
+          data = orders;
+          filename = `orders-${Date.now()}.csv`;
+          columns = ['id', 'userId', 'totalAmount', 'status', 'createdAt'];
+          break;
+        default:
+          return res.status(400).json({ error: 'Invalid export type' });
+      }
+
+      // Convert to CSV
+      const csvHeader = columns.join(',');
+      const csvRows = data.map(row => 
+        columns.map(col => `"${(row as any)[col] || ''}"`).join(',')
+      );
+      const csv = [csvHeader, ...csvRows].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(csv);
+    } catch (error) {
+      console.error(`Error exporting ${req.params.type}:`, error);
+      res.status(500).json({ error: `Failed to export ${req.params.type}` });
     }
   });
 

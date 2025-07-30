@@ -71,13 +71,23 @@ function ProductManagement() {
 
   const deleteProductMutation = useMutation({
     mutationFn: async (productId: string) => {
-      return apiRequest('DELETE', `/api/admin/products/${productId}`);
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Delete failed: ${response.statusText}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       toast({ description: "Product deleted successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Delete error:', error);
       toast({ 
         description: "Failed to delete product",
         variant: "destructive"
@@ -330,23 +340,45 @@ function SystemSettings() {
   const { toast } = useToast();
   const { data: systemHealth } = useQuery({
     queryKey: ["/api/admin/system/health"],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/system/health', { credentials: 'include' });
+      if (!response.ok) return null;
+      return response.json();
+    }
   });
 
   const { data: dbStatus } = useQuery({
     queryKey: ["/api/admin/system/db-check"],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/system/db-check', { credentials: 'include' });
+      if (!response.ok) return null;  
+      return response.json();
+    }
   });
 
   const handleExport = async (type: string) => {
     try {
-      const response = await fetch(`/api/admin/export/${type}`);
+      const response = await fetch(`/api/admin/export/${type}`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+      
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${type}-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
       toast({ description: `${type} data exported successfully` });
     } catch (error) {
+      console.error('Export error:', error);
       toast({ description: `Failed to export ${type} data`, variant: "destructive" });
     }
   };
@@ -453,9 +485,26 @@ function SystemSettings() {
 }
 
 function AdminDashboard() {
-  const { data: stats } = useQuery<AdminStats>({
+  const { data: stats, refetch: refetchStats } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/stats', { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error('Failed to fetch stats');
+      }
+      return response.json();
+    },
+    refetchInterval: 30000
   });
+
+  // Auto-refresh stats every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchStats();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [refetchStats]);
 
   return (
     <ProtectedRoute requireAdmin={true}>
