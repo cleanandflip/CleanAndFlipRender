@@ -14,6 +14,7 @@ import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
 import SellToUs from "@/pages/sell-to-us";
 import Dashboard from "@/pages/dashboard";
+import AdminDashboard from "@/pages/admin";
 import Orders from "@/pages/orders";
 import About from "@/pages/about";
 import Contact from "@/pages/contact";
@@ -47,6 +48,7 @@ function Router() {
           <Route path="/checkout" component={Checkout} />
           <Route path="/sell-to-us" component={SellToUs} />
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/admin" component={AdminDashboard} />
           <Route path="/orders" component={Orders} />
           <Route path="/about" component={About} />
           <Route path="/contact" component={Contact} />

@@ -400,6 +400,44 @@ export class DatabaseStorage implements IStorage {
       .where(eq(cartItems.sessionId, sessionId));
   }
 
+  // Admin functions
+  async getAdminStats(): Promise<{ 
+    totalProducts: number; 
+    totalUsers: number; 
+    totalOrders: number; 
+    totalRevenue: number; 
+  }> {
+    const [productCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products);
+    
+    const [userCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users);
+    
+    const [orderCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(orders);
+    
+    const [revenueResult] = await db
+      .select({ total: sql<number>`coalesce(sum(${orders.total}), 0)` })
+      .from(orders);
+    
+    return {
+      totalProducts: productCount.count,
+      totalUsers: userCount.count,
+      totalOrders: orderCount.count,
+      totalRevenue: parseFloat(revenueResult.total.toString()),
+    };
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .orderBy(desc(users.createdAt));
+  }
+
   // Address operations
   async getUserAddresses(userId: string): Promise<Address[]> {
     // First check the separate addresses table

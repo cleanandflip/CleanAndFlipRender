@@ -142,6 +142,15 @@ export default function Navigation() {
                         Order History
                       </Link>
                     </DropdownMenuItem>
+
+                    {(user.role === 'developer' || user.role === 'admin' || user.isAdmin) && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="flex items-center px-4 py-2 text-sm text-accent-blue hover:text-blue-300 hover:bg-accent-blue/10 transition-colors cursor-pointer">
+                          <Settings className="mr-3 h-4 w-4" />
+                          Developer Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                   </div>
 
                   <DropdownMenuSeparator className="bg-glass-border" />
