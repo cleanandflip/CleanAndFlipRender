@@ -982,6 +982,120 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Category management methods
+  async getAllCategoriesWithProductCount(): Promise<Array<{
+    id: string;
+    name: string;
+    slug: string;
+    imageUrl?: string;
+    description?: string;
+    displayOrder: number;
+    isActive: boolean;
+    productCount: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }>> {
+    const result = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+        imageUrl: categories.imageUrl,
+        description: categories.description,
+        displayOrder: categories.displayOrder,
+        isActive: categories.isActive,
+        productCount: sql<number>`count(${products.id})`.as('productCount'),
+        createdAt: categories.createdAt,
+        updatedAt: categories.updatedAt,
+      })
+      .from(categories)
+      .leftJoin(products, eq(categories.id, products.categoryId))
+      .groupBy(categories.id)
+      .orderBy(categories.displayOrder, categories.name);
+    
+    return result;
+  }
+
+  async createCategory(categoryData: {
+    name: string;
+    slug: string;
+    imageUrl?: string;
+    description?: string;
+    isActive?: boolean;
+  }): Promise<any> {
+    const [newCategory] = await db
+      .insert(categories)
+      .values({
+        ...categoryData,
+        displayOrder: 0,
+        isActive: categoryData.isActive ?? true,
+        productCount: 0,
+      })
+      .returning();
+    return newCategory;
+  }
+
+  async updateCategory(categoryId: string, updates: {
+    name?: string;
+    slug?: string;
+    imageUrl?: string;
+    description?: string;
+    isActive?: boolean;
+    displayOrder?: number;
+  }): Promise<any> {
+    const [updatedCategory] = await db
+      .update(categories)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(categories.id, categoryId))
+      .returning();
+    return updatedCategory;
+  }
+
+  async deleteCategory(categoryId: string): Promise<void> {
+    await db.delete(categories).where(eq(categories.id, categoryId));
+  }
+
+  async getActiveCategoriesForHomepage(): Promise<Array<{
+    id: string;
+    name: string;
+    slug: string;
+    imageUrl?: string;
+    productCount: number;
+  }>> {
+    const result = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+        imageUrl: categories.imageUrl,
+        productCount: sql<number>`count(${products.id})`.as('productCount'),
+      })
+      .from(categories)
+      .leftJoin(products, and(
+        eq(categories.id, products.categoryId),
+        eq(products.status, 'active')
+      ))
+      .where(eq(categories.isActive, true))
+      .groupBy(categories.id)
+      .orderBy(categories.displayOrder, categories.name);
+    
+    return result;
+  }
+
+  async reorderCategories(categoryOrder: string[]): Promise<void> {
+    const updates = categoryOrder.map((categoryId, index) => 
+      db
+        .update(categories)
+        .set({ displayOrder: index, updatedAt: new Date() })
+        .where(eq(categories.id, categoryId))
+    );
+    
+    await Promise.all(updates);
+  }
+
   async updateUserRole(userId: string, role: string): Promise<void> {
     await db
       .update(users)

@@ -5,6 +5,7 @@ import Logo from "@/components/common/logo";
 import GlassCard from "@/components/common/glass-card";
 import ProductCard from "@/components/products/product-card";
 import { DollarSign, Dumbbell, TrendingUp, Users, Clock, CheckCircle } from "lucide-react";
+import CategoryGrid from "@/components/categories/category-grid";
 import { productEvents } from "@/lib/queryClient";
 import type { Product } from "@shared/schema";
 
@@ -202,7 +203,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Categories */}
+      {/* Categories Section */}
       <section className="py-24 px-6 spacing-section">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -210,61 +211,7 @@ export default function Home() {
             <p className="text-text-secondary text-lg">Find exactly what you need for your home gym</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Barbells Category */}
-            <GlassCard className="overflow-hidden glass-hover">
-              <img 
-                src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300" 
-                alt="Barbells and Olympic Equipment" 
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-6">
-                <h3 className="font-bebas text-2xl mb-2">BARBELLS</h3>
-                <p className="text-text-secondary mb-4">Olympic bars, specialty bars, and complete sets</p>
-                <Link href="/products?category=barbells">
-                  <a className="text-accent-blue hover:text-blue-400 font-semibold">
-                    Shop Barbells →
-                  </a>
-                </Link>
-              </div>
-            </GlassCard>
-
-            {/* Plates Category */}
-            <GlassCard className="overflow-hidden glass-hover">
-              <img 
-                src="https://images.unsplash.com/photo-1434682772747-f16d3ea162c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300" 
-                alt="Weight Plates and Discs" 
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-6">
-                <h3 className="font-bebas text-2xl mb-2">PLATES</h3>
-                <p className="text-text-secondary mb-4">Olympic plates, bumper plates, and iron sets</p>
-                <Link href="/products?category=plates">
-                  <a className="text-accent-blue hover:text-blue-400 font-semibold">
-                    Shop Plates →
-                  </a>
-                </Link>
-              </div>
-            </GlassCard>
-
-            {/* Racks Category */}
-            <GlassCard className="overflow-hidden glass-hover">
-              <img 
-                src="https://images.unsplash.com/photo-1517963879433-6ad2b056d712?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300" 
-                alt="Power Racks and Squat Stands" 
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-6">
-                <h3 className="font-bebas text-2xl mb-2">RACKS</h3>
-                <p className="text-text-secondary mb-4">Power racks, squat stands, and storage</p>
-                <Link href="/products?category=racks">
-                  <a className="text-accent-blue hover:text-blue-400 font-semibold">
-                    Shop Racks →
-                  </a>
-                </Link>
-              </div>
-            </GlassCard>
-          </div>
+          <CategoryGrid />
         </div>
       </section>
     </div>

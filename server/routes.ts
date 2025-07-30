@@ -26,11 +26,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
   
-  // Categories
+  // Categories (public endpoint)
   app.get("/api/categories", async (req, res) => {
     try {
-      const categories = await storage.getCategories();
-      res.json(categories);
+      const activeOnly = req.query.active === 'true';
+      
+      if (activeOnly) {
+        const categories = await storage.getActiveCategoriesForHomepage();
+        res.json(categories);
+      } else {
+        const categories = await storage.getCategories();
+        res.json(categories);
+      }
     } catch (error) {
       console.error("Error fetching categories:", error);
       res.status(500).json({ message: "Failed to fetch categories" });
@@ -490,6 +497,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching wishlist analytics:", error);
       res.status(500).json({ message: "Failed to fetch wishlist analytics" });
+    }
+  });
+
+  // Category Management APIs
+  app.get("/api/admin/categories", requireAdmin, async (req, res) => {
+    try {
+      const categories = await storage.getAllCategoriesWithProductCount();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  app.post("/api/admin/categories", requireAdmin, upload.single('image'), async (req, res) => {
+    try {
+      const { name, slug, description, is_active } = req.body;
+      
+      let imageUrl;
+      if (req.file) {
+        const result = await cloudinary.v2.uploader.upload(req.file.path, {
+          folder: 'categories',
+          transformation: [{ width: 800, height: 600, crop: 'fill', quality: 'auto' }]
+        });
+        imageUrl = result.secure_url;
+      }
+
+      const categoryData = {
+        name,
+        slug,
+        description: description || null,
+        imageUrl,
+        isActive: is_active === 'true',
+      };
+
+      const newCategory = await storage.createCategory(categoryData);
+      res.json(newCategory);
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({ message: "Failed to create category" });
+    }
+  });
+
+  app.put("/api/admin/categories/:id", requireAdmin, upload.single('image'), async (req, res) => {
+    try {
+      const { name, slug, description, is_active, existing_image_url } = req.body;
+      
+      let imageUrl = existing_image_url;
+      if (req.file) {
+        // Upload new image
+        const result = await cloudinary.v2.uploader.upload(req.file.path, {
+          folder: 'categories',
+          transformation: [{ width: 800, height: 600, crop: 'fill', quality: 'auto' }]
+        });
+        imageUrl = result.secure_url;
+        
+        // Delete old image if it exists
+        if (existing_image_url) {
+          try {
+            const publicId = existing_image_url.split('/').pop()?.split('.')[0];
+            if (publicId) {
+              await cloudinary.v2.uploader.destroy(`categories/${publicId}`);
+            }
+          } catch (deleteError) {
+            console.warn("Failed to delete old image:", deleteError);
+          }
+        }
+      }
+
+      const updates = {
+        name,
+        slug,
+        description: description || null,
+        imageUrl,
+        isActive: is_active === 'true',
+      };
+
+      const updatedCategory = await storage.updateCategory(req.params.id, updates);
+      res.json(updatedCategory);
+    } catch (error) {
+      console.error("Error updating category:", error);
+      res.status(500).json({ message: "Failed to update category" });
+    }
+  });
+
+  app.put("/api/admin/categories/:id/toggle", requireAdmin, async (req, res) => {
+    try {
+      const { is_active } = req.body;
+      await storage.updateCategory(req.params.id, { isActive: is_active });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error toggling category status:", error);
+      res.status(500).json({ message: "Failed to toggle category status" });
+    }
+  });
+
+  app.delete("/api/admin/categories/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteCategory(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ message: "Failed to delete category" });
+    }
+  });
+
+  app.post("/api/admin/categories/reorder", requireAdmin, async (req, res) => {
+    try {
+      const { categoryOrder } = req.body;
+      await storage.reorderCategories(categoryOrder);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering categories:", error);
+      res.status(500).json({ message: "Failed to reorder categories" });
     }
   });
 

@@ -57,8 +57,13 @@ export const categories = pgTable("categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
   slug: varchar("slug").unique().notNull(),
+  imageUrl: text("image_url"),
   description: text("description"),
+  displayOrder: integer("display_order").default(0),
+  isActive: boolean("is_active").default(true),
+  productCount: integer("product_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Product condition enum
@@ -85,6 +90,7 @@ export const products = pgTable("products", {
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   categoryId: varchar("category_id").references(() => categories.id),
+  subcategory: text("subcategory"),
   brand: varchar("brand"),
   weight: integer("weight"), // in pounds
   condition: productConditionEnum("condition").notNull(),
