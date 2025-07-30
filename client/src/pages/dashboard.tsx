@@ -1,9 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import GlassCard from "@/components/common/glass-card";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Package, 
   DollarSign, 
@@ -14,7 +16,8 @@ import {
   Clock,
   CheckCircle,
   Truck,
-  Star
+  Star,
+  X
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -105,6 +108,8 @@ function AddressesSection() {
 
 function DashboardContent() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { data: orders = [] } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -114,8 +119,55 @@ function DashboardContent() {
     queryKey: ["/api/submissions"],
   });
 
-  const { data: wishlist = [] } = useQuery<(Wishlist & { product: Product })[]>({
+  const { data: wishlist = [], refetch: refetchWishlist } = useQuery<(Wishlist & { product: Product })[]>({
     queryKey: ["/api/wishlist"],
+  });
+
+  // Listen for wishlist updates from product cards
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      console.log('Dashboard: Received wishlist update event, refetching...');
+      refetchWishlist();
+    };
+    
+    window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+    return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+  }, [refetchWishlist]);
+
+  // Remove from wishlist mutation
+  const removeFromWishlistMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      const response = await fetch(`/api/wishlist?productId=${productId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to remove from wishlist');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (_, productId) => {
+      toast({
+        title: "Removed from Wishlist",
+        description: "Item has been removed from your wishlist.",
+      });
+      // Trigger global wishlist update event
+      window.dispatchEvent(new CustomEvent('wishlistUpdated', { 
+        detail: { productId, action: 'remove' } 
+      }));
+      // Refetch wishlist
+      refetchWishlist();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove from wishlist. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const getStatusColor = (status: string) => {
@@ -344,14 +396,25 @@ function DashboardContent() {
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {wishlist?.map((item) => (
-                    <div key={item.id} className="glass rounded-lg overflow-hidden">
-                      <img
-                        src={item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
-                        alt={item.product.name}
-                        className="w-full h-48 object-cover"
-                      />
+                    <div key={item.id} className="relative glass rounded-lg overflow-hidden">
+                      <Link href={`/products/${item.product.id}`}>
+                        <img
+                          src={item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
+                          alt={item.product.name}
+                          className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </Link>
+                      <Button
+                        onClick={() => removeFromWishlistMutation.mutate(item.product.id)}
+                        variant="outline"
+                        size="sm"
+                        className="absolute top-2 right-2 bg-white/90 hover:bg-white border-gray-300 w-8 h-8 p-0"
+                        disabled={removeFromWishlistMutation.isPending}
+                      >
+                        <X size={16} className="text-gray-600" />
+                      </Button>
                       <div className="p-4">
-                        <h3 className="font-semibold mb-2">{item.product.name}</h3>
+                        <h3 className="font-semibold mb-2 text-white">{item.product.name}</h3>
                         <p className="text-accent-blue font-bold mb-3">${item.product.price}</p>
                         <div className="flex gap-2">
                           <Link href={`/products/${item.product.id}`} className="flex-1">
@@ -359,9 +422,6 @@ function DashboardContent() {
                               View Product
                             </Button>
                           </Link>
-                          <Button variant="outline" size="icon" className="glass border-glass-border">
-                            <Heart className="h-4 w-4 text-red-400 fill-current" />
-                          </Button>
                         </div>
                       </div>
                     </div>

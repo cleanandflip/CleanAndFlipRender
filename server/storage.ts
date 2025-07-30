@@ -911,9 +911,37 @@ export class DatabaseStorage implements IStorage {
       .where(eq(wishlist.userId, userId));
   }
 
-  async addToWishlist(wishlistItem: InsertWishlist): Promise<Wishlist> {
+  async addToWishlist(userId: string, productId: string): Promise<Wishlist> {
+    // Check if already exists to prevent duplicates
+    const existing = await db
+      .select()
+      .from(wishlist)
+      .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)))
+      .limit(1);
+      
+    if (existing.length > 0) {
+      return existing[0]; // Return existing item
+    }
+    
+    const wishlistItem: InsertWishlist = {
+      id: nanoid(),
+      userId,
+      productId,
+      createdAt: new Date()
+    };
+    
     const [newItem] = await db.insert(wishlist).values(wishlistItem).returning();
     return newItem;
+  }
+
+  async isProductInWishlist(userId: string, productId: string): Promise<boolean> {
+    const result = await db
+      .select({ id: wishlist.id })
+      .from(wishlist)
+      .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)))
+      .limit(1);
+      
+    return result.length > 0;
   }
 
   async removeFromWishlist(userId: string, productId: string): Promise<void> {

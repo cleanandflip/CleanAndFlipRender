@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import GlassCard from "@/components/common/glass-card";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   ShoppingCart, 
   Heart, 
@@ -25,6 +28,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
   const [isWishlisted, setIsWishlisted] = useState(false);
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const getConditionColor = (condition: string) => {
     switch (condition) {
@@ -71,17 +75,130 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
     });
   };
 
+  // Check wishlist status on component mount
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      if (!user) {
+        setIsWishlisted(false);
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/wishlist/check', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ productId: product.id })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setIsWishlisted(data.isWishlisted || false);
+        }
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+      }
+    };
+    
+    checkWishlistStatus();
+  }, [product.id, user]);
+
+  // Wishlist mutations
+  const addToWishlistMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) {
+        throw new Error('Please log in to add items to your wishlist');
+      }
+      const response = await fetch('/api/wishlist', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ productId: product.id })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add to wishlist');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsWishlisted(true);
+      toast({
+        title: "Added to Wishlist",
+        description: `${product.name} has been added to your wishlist.`,
+      });
+      // Trigger global wishlist update event
+      window.dispatchEvent(new CustomEvent('wishlistUpdated', { 
+        detail: { productId: product.id, action: 'add' } 
+      }));
+    },
+    onError: (error: any) => {
+      toast({
+        title: user ? "Error" : "Login Required",
+        description: error.message || "Failed to add to wishlist. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const removeFromWishlistMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/wishlist?productId=${product.id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to remove from wishlist');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsWishlisted(false);
+      toast({
+        title: "Removed from Wishlist",
+        description: `${product.name} has been removed from your wishlist.`,
+      });
+      // Trigger global wishlist update event
+      window.dispatchEvent(new CustomEvent('wishlistUpdated', { 
+        detail: { productId: product.id, action: 'remove' } 
+      }));
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove from wishlist. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    setIsWishlisted(!isWishlisted);
-    toast({
-      title: isWishlisted ? "Removed from Wishlist" : "Added to Wishlist",
-      description: isWishlisted 
-        ? `${product.name} has been removed from your wishlist.`
-        : `${product.name} has been added to your wishlist.`,
-    });
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to add items to your wishlist.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (isWishlisted) {
+      removeFromWishlistMutation.mutate();
+    } else {
+      addToWishlistMutation.mutate();
+    }
   };
 
   const stockStatus = getStockStatus();

@@ -298,6 +298,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check if product is in wishlist
+  app.post("/api/wishlist/check", requireAuth, async (req, res) => {
+    try {
+      const { productId } = req.body;
+      const userId = (req.session as any)?.userId;
+      
+      if (!userId) {
+        return res.status(401).json({ 
+          error: 'Authentication required',
+          message: 'Please log in to check wishlist status'
+        });
+      }
+      
+      if (!productId) {
+        return res.status(400).json({ message: "Product ID required" });
+      }
+      
+      const isWishlisted = await storage.isProductInWishlist(userId, productId);
+      res.json({ isWishlisted });
+    } catch (error) {
+      console.error("Error checking wishlist:", error);
+      res.status(500).json({ message: "Failed to check wishlist status" });
+    }
+  });
+
   app.post("/api/wishlist", requireAuth, async (req, res) => {
     try {
       const { productId } = req.body;
@@ -310,8 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const validatedData = insertWishlistSchema.parse({ productId, userId });
-      const wishlistItem = await storage.addToWishlist(validatedData.userId, validatedData.productId);
+      const wishlistItem = await storage.addToWishlist(userId, productId);
       res.json({ message: "Added to wishlist" });
     } catch (error) {
       console.error("Error adding to wishlist:", error);
