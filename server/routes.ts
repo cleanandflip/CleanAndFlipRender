@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart operations
   app.get("/api/cart", async (req, res) => {
     try {
-      const userId = req.session?.userId;
+      const userId = (req.session as any)?.userId;
       const sessionId = req.sessionID;
       
       console.log("Get cart - userId:", userId, "sessionId:", sessionId);
@@ -125,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cart", async (req, res) => {
     try {
       const { productId, quantity } = req.body;
-      const userId = req.session?.userId;
+      const userId = (req.session as any)?.userId;
       const sessionId = req.sessionID;
       
       console.log("Cart request - userId:", userId, "sessionId:", sessionId);
@@ -540,7 +540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           columns = ['id', 'email', 'firstName', 'lastName', 'role', 'createdAt'];
           break;
         case 'orders':
-          const orders = await storage.getOrders();
+          const orders = await storage.getUserOrders(''); // Empty string for all orders
           data = orders;
           filename = `orders-${Date.now()}.csv`;
           columns = ['id', 'userId', 'totalAmount', 'status', 'createdAt'];

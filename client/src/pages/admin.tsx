@@ -158,10 +158,10 @@ function ProductManagement() {
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>${product.price}</TableCell>
                 <TableCell>{product.categoryId}</TableCell>
-                <TableCell>{product.quantity || 0}</TableCell>
+                <TableCell>{product.inventoryCount || 0}</TableCell>
                 <TableCell>
-                  <Badge variant={(product.quantity || 0) > 0 ? "default" : "destructive"}>
-                    {(product.quantity || 0) > 0 ? "In Stock" : "Out of Stock"}
+                  <Badge variant={(product.inventoryCount || 0) > 0 ? "default" : "destructive"}>
+                    {(product.inventoryCount || 0) > 0 ? "In Stock" : "Out of Stock"}
                   </Badge>
                 </TableCell>
                 <TableCell>
