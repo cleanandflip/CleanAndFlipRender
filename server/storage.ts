@@ -306,11 +306,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Cart operations
-  async getCartItems(userId: string): Promise<(CartItem & { product: Product })[]> {
+  async getCartItems(userId?: string, sessionId?: string): Promise<(CartItem & { product: Product })[]> {
+    let whereCondition;
+    
+    if (userId) {
+      whereCondition = eq(cartItems.userId, userId);
+    } else if (sessionId) {
+      whereCondition = eq(cartItems.sessionId, sessionId);
+    } else {
+      return [];
+    }
+    
     return await db
       .select({
         id: cartItems.id,
         userId: cartItems.userId,
+        sessionId: cartItems.sessionId,
         productId: cartItems.productId,
         quantity: cartItems.quantity,
         createdAt: cartItems.createdAt,
@@ -319,20 +330,24 @@ export class DatabaseStorage implements IStorage {
       })
       .from(cartItems)
       .innerJoin(products, eq(cartItems.productId, products.id))
-      .where(eq(cartItems.userId, userId));
+      .where(whereCondition);
   }
 
   async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
+    // Build where condition based on user or session
+    let whereConditions = [eq(cartItems.productId, cartItem.productId!)];
+    
+    if (cartItem.userId) {
+      whereConditions.push(eq(cartItems.userId, cartItem.userId));
+    } else if (cartItem.sessionId) {
+      whereConditions.push(eq(cartItems.sessionId, cartItem.sessionId));
+    }
+    
     // Check if item already exists in cart
     const [existingItem] = await db
       .select()
       .from(cartItems)
-      .where(
-        and(
-          eq(cartItems.userId, cartItem.userId!),
-          eq(cartItems.productId, cartItem.productId!)
-        )
-      );
+      .where(and(...whereConditions));
 
     if (existingItem) {
       // Update quantity
@@ -343,8 +358,14 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updatedItem;
     } else {
-      // Create new cart item
-      const [newItem] = await db.insert(cartItems).values(cartItem).returning();
+      // Create new cart item - ensure we have either userId or sessionId
+      const itemToInsert = {
+        ...cartItem,
+        // Generate a session ID if none exists
+        sessionId: cartItem.sessionId || `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+      
+      const [newItem] = await db.insert(cartItems).values(itemToInsert).returning();
       return newItem;
     }
   }
@@ -362,8 +383,21 @@ export class DatabaseStorage implements IStorage {
     await db.delete(cartItems).where(eq(cartItems.id, id));
   }
 
-  async clearCart(userId: string): Promise<void> {
-    await db.delete(cartItems).where(eq(cartItems.userId, userId));
+  async clearCart(userId?: string, sessionId?: string): Promise<void> {
+    if (userId) {
+      await db.delete(cartItems).where(eq(cartItems.userId, userId));
+    } else if (sessionId) {
+      await db.delete(cartItems).where(eq(cartItems.sessionId, sessionId));
+    }
+  }
+
+  // Merge guest cart to user cart on login
+  async mergeGuestCart(sessionId: string, userId: string): Promise<void> {
+    // Update guest cart items to belong to the user
+    await db
+      .update(cartItems)
+      .set({ userId: userId, sessionId: null })
+      .where(eq(cartItems.sessionId, sessionId));
   }
 
   // Address operations

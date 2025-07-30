@@ -1,0 +1,223 @@
+Here's a prompt for Replit to fix the cart persistence and foreign key issues:
+
+Fix Cart Persistence and Foreign Key Errors
+The cart system is failing because it's trying to use temp-user-id which doesn't exist in the users table. We need proper cart persistence for both logged-in and guest users.
+1. Fix Cart Storage Strategy
+The cart needs to work for both authenticated and guest users:
+javascript// Cart storage logic
+export async function getOrCreateCart(userId, sessionId) {
+  // For authenticated users
+  if (userId && userId !== 'temp-user-id') {
+    return { userId, isGuest: false };
+  }
+  
+  // For guest users - use session-based cart
+  return { sessionId, isGuest: true };
+}
+2. Update Cart Database Schema
+Add support for guest carts:
+sql-- Option A: Make user_id nullable for guest carts
+ALTER TABLE cart_items 
+DROP CONSTRAINT cart_items_user_id_users_id_fk,
+ALTER COLUMN user_id DROP NOT NULL,
+ADD COLUMN session_id VARCHAR(255),
+ADD CONSTRAINT cart_items_user_or_session CHECK (
+  (user_id IS NOT NULL) OR (session_id IS NOT NULL)
+);
+
+-- Add index for session lookups
+CREATE INDEX idx_cart_items_session_id ON cart_items(session_id);
+
+-- Re-add foreign key as nullable
+ALTER TABLE cart_items
+ADD CONSTRAINT cart_items_user_id_users_id_fk 
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+3. Fix Add to Cart Logic
+javascript// server/routes.ts or cart handler
+app.post('/api/cart', async (req, res) => {
+  const { productId, quantity } = req.body;
+  const userId = req.session?.userId;
+  const sessionId = req.session?.id || req.sessionID;
+  
+  try {
+    // Don't use 'temp-user-id'
+    if (userId && userId !== 'temp-user-id') {
+      // Authenticated user cart
+      await db.addToCart({
+        user_id: userId,
+        product_id: productId,
+        quantity: quantity
+      });
+    } else {
+      // Guest cart using session
+      await db.addToCart({
+        session_id: sessionId,
+        product_id: productId,
+        quantity: quantity
+      });
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Cart error:', error);
+    res.status(500).json({ message: 'Failed to add to cart' });
+  }
+});
+4. Implement Cart Persistence
+javascript// Client-side cart persistence
+class CartManager {
+  constructor() {
+    this.CART_KEY = 'clean_flip_cart';
+    this.SESSION_KEY = 'clean_flip_session';
+  }
+  
+  // Save cart to localStorage for persistence
+  saveLocalCart(items) {
+    localStorage.setItem(this.CART_KEY, JSON.stringify(items));
+  }
+  
+  // Load cart from localStorage
+  loadLocalCart() {
+    const saved = localStorage.getItem(this.CART_KEY);
+    return saved ? JSON.parse(saved) : [];
+  }
+  
+  // Sync with server
+  async syncCart() {
+    const localCart = this.loadLocalCart();
+    
+    // Send local cart to server
+    const response = await fetch('/api/cart/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: localCart })
+    });
+    
+    return response.json();
+  }
+}
+5. Fix Get Cart Logic
+javascript// Get cart for both authenticated and guest users
+app.get('/api/cart', async (req, res) => {
+  const userId = req.session?.userId;
+  const sessionId = req.session?.id || req.sessionID;
+  
+  try {
+    let cartItems;
+    
+    if (userId && userId !== 'temp-user-id') {
+      // Get authenticated user's cart
+      cartItems = await db.query(
+        'SELECT * FROM cart_items WHERE user_id = $1',
+        [userId]
+      );
+    } else {
+      // Get guest cart by session
+      cartItems = await db.query(
+        'SELECT * FROM cart_items WHERE session_id = $1',
+        [sessionId]
+      );
+    }
+    
+    res.json(cartItems.rows || []);
+  } catch (error) {
+    console.error('Get cart error:', error);
+    res.json([]); // Return empty cart on error
+  }
+});
+6. Merge Cart on Login
+When a guest user logs in, merge their cart:
+javascriptasync function mergeGuestCart(sessionId, userId) {
+  // Move guest cart items to user account
+  await db.query(`
+    UPDATE cart_items 
+    SET user_id = $1, session_id = NULL 
+    WHERE session_id = $2
+  `, [userId, sessionId]);
+}
+
+// In login handler
+app.post('/api/login', async (req, res) => {
+  // ... login logic ...
+  
+  if (loginSuccessful) {
+    // Merge guest cart if exists
+    await mergeGuestCart(req.sessionID, user.id);
+  }
+});
+7. Session Configuration
+Ensure sessions persist across refreshes:
+javascript// server/index.ts
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    sameSite: 'lax'
+  },
+  store: new PGStore({
+    pool: pgPool,
+    tableName: 'user_sessions'
+  })
+}));
+8. Client-Side Cart Hook
+javascript// useCart.js
+export function useCart() {
+  const [cart, setCart] = useState([]);
+  
+  // Load cart on mount
+  useEffect(() => {
+    // Load from localStorage first
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
+    }
+    
+    // Then sync with server
+    fetch('/api/cart')
+      .then(res => res.json())
+      .then(serverCart => {
+        setCart(serverCart);
+        localStorage.setItem('cart', JSON.stringify(serverCart));
+      });
+  }, []);
+  
+  const addToCart = async (productId, quantity = 1) => {
+    try {
+      await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, quantity })
+      });
+      
+      // Refresh cart
+      const newCart = await fetch('/api/cart').then(r => r.json());
+      setCart(newCart);
+      localStorage.setItem('cart', JSON.stringify(newCart));
+    } catch (error) {
+      console.error('Add to cart error:', error);
+    }
+  };
+  
+  return { cart, addToCart };
+}
+9. Remove All References to 'temp-user-id'
+Search and remove any code using 'temp-user-id':
+javascript// WRONG
+const userId = user?.id || 'temp-user-id';
+
+// CORRECT
+const userId = user?.id || null;
+Summary of Changes:
+
+Make cart work for both authenticated and guest users
+Use session IDs for guest carts instead of fake user IDs
+Persist cart in localStorage for instant loading
+Sync with server for source of truth
+Merge guest cart when user logs in
+Fix foreign key constraint by making user_id nullable
+
+This will fix the foreign key error and ensure carts persist across page refreshes for all users.

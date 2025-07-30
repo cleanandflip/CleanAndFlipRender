@@ -17,18 +17,15 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Mock user ID - replace with actual auth
-const TEMP_USER_ID = "temp-user-id";
-
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch cart items
+  // Fetch cart items (no temp user ID needed)
   const { data: cartItems = [], isLoading } = useQuery<(CartItem & { product: Product })[]>({
     queryKey: ["/api/cart"],
     queryFn: async () => {
-      const response = await fetch(`/api/cart?userId=${TEMP_USER_ID}`, {
+      const response = await fetch("/api/cart", {
         credentials: "include",
       });
       if (!response.ok) {
@@ -41,13 +38,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Add to cart mutation
   const addToCartMutation = useMutation({
     mutationFn: async (item: { productId: string; quantity: number }) => {
-      const cartItem: InsertCartItem = {
-        userId: TEMP_USER_ID,
+      const response = await apiRequest("POST", "/api/cart", {
         productId: item.productId,
         quantity: item.quantity,
-      };
-      
-      const response = await apiRequest("POST", "/api/cart", cartItem);
+      });
       return response.json();
     },
     onSuccess: () => {

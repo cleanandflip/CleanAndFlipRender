@@ -157,6 +157,7 @@ export const orderItems = pgTable("order_items", {
 export const cartItems = pgTable("cart_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id),
+  sessionId: varchar("session_id"),
   productId: varchar("product_id").references(() => products.id),
   quantity: integer("quantity").notNull(),
   createdAt: timestamp("created_at").defaultNow(),

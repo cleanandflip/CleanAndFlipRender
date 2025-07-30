@@ -105,12 +105,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart operations
   app.get("/api/cart", async (req, res) => {
     try {
-      const userId = req.query.userId as string;
-      if (!userId) {
-        return res.status(400).json({ message: "User ID required" });
-      }
+      const userId = req.session?.userId;
+      const sessionId = req.sessionID;
       
-      const cartItems = await storage.getCartItems(userId);
+      console.log("Get cart - userId:", userId, "sessionId:", sessionId);
+      
+      // Don't use temp-user-id, use actual session or user
+      const cartItems = await storage.getCartItems(
+        userId && userId !== 'temp-user-id' ? userId : undefined,
+        sessionId
+      );
       res.json(cartItems);
     } catch (error) {
       console.error("Error fetching cart:", error);
@@ -120,7 +124,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", async (req, res) => {
     try {
-      const validatedData = insertCartItemSchema.parse(req.body);
+      const { productId, quantity } = req.body;
+      const userId = req.session?.userId;
+      const sessionId = req.sessionID;
+      
+      console.log("Cart request - userId:", userId, "sessionId:", sessionId);
+      
+      // Ensure session is saved first for guest users
+      if (!userId || userId === 'temp-user-id') {
+        req.session.save((err) => {
+          if (err) console.error('Session save error:', err);
+        });
+      }
+      
+      // Create cart item with proper user or session ID
+      const cartItemData = {
+        productId,
+        quantity: quantity || 1,
+        userId: userId && userId !== 'temp-user-id' ? userId : null,
+        sessionId: !userId || userId === 'temp-user-id' ? sessionId : null,
+      };
+      
+      console.log("Cart item data:", cartItemData);
+      
+      const validatedData = insertCartItemSchema.parse(cartItemData);
       const cartItem = await storage.addToCart(validatedData);
       res.json(cartItem);
     } catch (error) {
