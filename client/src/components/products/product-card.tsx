@@ -161,17 +161,17 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
 
   // Grid view (default)
   return (
-    <div className="group relative bg-gray-800/30 rounded-lg overflow-hidden hover:shadow-xl transition-all">
-      {/* Only show critical stock badge */}
-      {product.stockQuantity === 1 && (
-        <div className="absolute top-3 left-3 z-10">
-          <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
-            Only 1 left
-          </span>
-        </div>
-      )}
-      
-      <Link href={`/products/${product.id}`}>
+    <Link href={`/products/${product.id}`}>
+      <div className="group relative bg-gray-800/30 rounded-lg overflow-hidden hover:shadow-xl transition-all cursor-pointer">
+        {/* Only show critical stock badge */}
+        {product.stockQuantity === 1 && (
+          <div className="absolute top-3 left-3 z-10">
+            <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
+              Only 1 left
+            </span>
+          </div>
+        )}
+        
         {/* Clean Image */}
         <div className="aspect-square relative bg-gray-900/30">
           {hasImage ? (
@@ -206,29 +206,31 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             ${product.price}
           </p>
         </div>
-      </Link>
-      
-      {/* Hover Actions - Subtle */}
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-        <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform">
-          <AddToCartButton
+        
+        {/* Hover Actions - Subtle */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
+          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform">
+            <AddToCartButton
+              productId={product.id}
+              stock={product.stockQuantity}
+              size="sm"
+              className="bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-gray-100 pointer-events-auto"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+        
+        {/* Subtle Wishlist - Icon Only */}
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+          <WishlistButton 
             productId={product.id}
-            stock={product.stockQuantity}
-            size="sm"
-            className="bg-white text-black px-6 py-2 rounded-lg font-medium hover:bg-gray-100"
+            size="small"
+            className="w-8 h-8 bg-white/10 backdrop-blur rounded-full pointer-events-auto"
+            showTooltip={false}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           />
         </div>
       </div>
-      
-      {/* Subtle Wishlist - Icon Only */}
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-        <WishlistButton 
-          productId={product.id}
-          size="small"
-          className="w-8 h-8 bg-white/10 backdrop-blur rounded-full"
-          showTooltip={false}
-        />
-      </div>
-    </div>
+    </Link>
   );
 }
