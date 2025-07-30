@@ -13,6 +13,8 @@ interface CartContextType {
   updateQuantity: (itemId: string, quantity: number) => void;
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
+  isInCart: (productId: string) => boolean;
+  removeProductFromCart: (productId: string) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -39,7 +41,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return response.json();
     },
     staleTime: 0, // Always fetch fresh
-    cacheTime: 0, // No client-side caching
+    gcTime: 0, // No client-side caching
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     refetchInterval: 30000, // Auto-refresh every 30 seconds
@@ -141,7 +143,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     mutationFn: async () => {
       // Delete all cart items for user
       await Promise.all(
-        cartItems.map(item => 
+        (cartItems || []).map((item: any) => 
           apiRequest("DELETE", `/api/cart/${item.id}`)
         )
       );
@@ -163,10 +165,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Calculate totals
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const cartTotal = cartItems.reduce((total, item) => {
+  const cartCount = cartItems?.reduce((total: number, item: any) => total + item.quantity, 0) || 0;
+  const cartTotal = cartItems?.reduce((total: number, item: any) => {
     return total + (Number(item.product.price) * item.quantity);
-  }, 0);
+  }, 0) || 0;
 
   // Helper functions
   const addToCart = (item: { productId: string; quantity: number }) => {
@@ -185,8 +187,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     clearCartMutation.mutate();
   };
 
+  // Helper function to check if product is in cart
+  const isInCart = (productId: string) => {
+    return cartItems?.some((item: any) => item.productId === productId) || false;
+  };
+
+  // Helper function to remove product from cart by productId
+  const removeProductFromCart = (productId: string) => {
+    const cartItem = cartItems?.find((item: any) => item.productId === productId);
+    if (cartItem) {
+      removeFromCart(cartItem.id);
+    }
+  };
+
   const value: CartContextType = {
-    cartItems,
+    cartItems: cartItems || [],
     cartCount,
     cartTotal,
     isLoading,
@@ -194,6 +209,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     updateQuantity,
     removeFromCart,
     clearCart,
+    isInCart,
+    removeProductFromCart,
   };
 
   return (
