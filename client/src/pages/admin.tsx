@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, broadcastProductUpdate } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLiveData } from "@/hooks/use-live-data";
 import type { Product, User, Order } from "@shared/schema";
@@ -84,28 +84,9 @@ function ProductManagement() {
       
       return response.json();
     },
-    onSuccess: () => {
-      // Comprehensive cache invalidation for product deletion
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products/featured"] });
-      
-      // Force immediate refetch of all product queries
-      queryClient.refetchQueries({ queryKey: ["/api/products"] });
-      queryClient.refetchQueries({ queryKey: ["/api/products/featured"] });
-      
-      // Dispatch global events for real-time sync
-      console.log('Dispatching global product deletion events');
-      window.dispatchEvent(new CustomEvent('productUpdated', { 
-        detail: { 
-          productId,
-          action: 'delete',
-          timestamp: Date.now()
-        } 
-      }));
-      window.dispatchEvent(new CustomEvent('storageChanged', { 
-        detail: { type: 'product', action: 'delete' } 
-      }));
+    onSuccess: (_, productId) => {
+      // Use global broadcast system for comprehensive real-time sync
+      broadcastProductUpdate(productId, 'product_delete', { deleted: true });
       
       toast({ description: "Product deleted successfully" });
     },
@@ -122,25 +103,9 @@ function ProductManagement() {
     mutationFn: async ({ productId, status }: { productId: string; status: string }) => {
       return apiRequest('PUT', `/api/admin/products/${productId}/stock`, { status });
     },
-    onSuccess: () => {
-      // Comprehensive cache invalidation for stock updates
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products/featured"] });
-      
-      // Force immediate refetch
-      queryClient.refetchQueries({ queryKey: ["/api/products"] });
-      queryClient.refetchQueries({ queryKey: ["/api/products/featured"] });
-      
-      // Dispatch global events for real-time sync
-      console.log('Dispatching global stock update events');
-      window.dispatchEvent(new CustomEvent('productUpdated', { 
-        detail: { 
-          productId,
-          action: 'stock_update',
-          timestamp: Date.now()
-        } 
-      }));
+    onSuccess: (_, { productId, status }) => {
+      // Use global broadcast system for comprehensive real-time sync
+      broadcastProductUpdate(productId, 'stock_update', { stockStatus: status });
       
       toast({ description: "Stock status updated" });
     }

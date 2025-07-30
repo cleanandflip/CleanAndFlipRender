@@ -1,18 +1,41 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import Logo from "@/components/common/logo";
 import GlassCard from "@/components/common/glass-card";
 import ProductCard from "@/components/products/product-card";
 import { DollarSign, Dumbbell, TrendingUp, Users, Clock, CheckCircle } from "lucide-react";
+import { productEvents } from "@/lib/queryClient";
 import type { Product } from "@shared/schema";
 
 export default function Home() {
-  const { data: featuredProducts } = useQuery<Product[]>({
+  const { data: featuredProducts, refetch } = useQuery<Product[]>({
     queryKey: ["/api/products/featured"],
     refetchOnWindowFocus: true, // Refetch when user returns to tab
-    refetchOnMount: true, // Always refetch when component mounts
-    staleTime: 2 * 60 * 1000, // 2 minutes stale time for featured products
+    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 0, // Always consider data stale for real-time accuracy
+    gcTime: 0, // No client-side caching to prevent stale data (v5)
+    refetchInterval: 30000, // Auto-refetch every 30 seconds for live updates
   });
+
+  // Real-time event listeners for admin updates
+  useEffect(() => {
+    const handleProductUpdate = () => {
+      console.log('Featured products page received update event - force refreshing');
+      refetch();
+    };
+
+    // Listen to both global productEvents and window events
+    productEvents.addEventListener('productUpdated', handleProductUpdate);
+    window.addEventListener('productUpdated', handleProductUpdate);
+    window.addEventListener('storageChanged', handleProductUpdate);
+    
+    return () => {
+      productEvents.removeEventListener('productUpdated', handleProductUpdate);
+      window.removeEventListener('productUpdated', handleProductUpdate);
+      window.removeEventListener('storageChanged', handleProductUpdate);
+    };
+  }, [refetch]);
 
   return (
     <div className="min-h-screen">

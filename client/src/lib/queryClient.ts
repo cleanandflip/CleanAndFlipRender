@@ -66,14 +66,18 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+// Global product events for real-time synchronization
+export const productEvents = new EventTarget();
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "returnNull" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: true, // Refetch when user comes back to window
-      staleTime: 5 * 60 * 1000, // 5 minutes instead of Infinity
-      cacheTime: 10 * 60 * 1000, // 10 minutes cache time
+      refetchInterval: 30000, // Poll every 30 seconds as failsafe
+      refetchOnWindowFocus: true, // Always refetch when user returns to tab
+      refetchOnMount: 'always', // Always refetch on component mount
+      staleTime: 0, // Always consider data stale for real-time accuracy
+      gcTime: 0, // No client-side caching to prevent stale data (v5)
       retry: false,
     },
     mutations: {
@@ -81,3 +85,36 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Global function to broadcast product updates
+export const broadcastProductUpdate = (productId: string, action: string, updates?: any) => {
+  console.log(`Broadcasting product update: ${action} for product ${productId}`);
+  
+  // Dispatch custom events for cross-component synchronization
+  productEvents.dispatchEvent(
+    new CustomEvent('productUpdated', { 
+      detail: { productId, action, updates, timestamp: Date.now() } 
+    })
+  );
+  
+  // Also dispatch on window for backward compatibility
+  window.dispatchEvent(
+    new CustomEvent('productUpdated', { 
+      detail: { productId, action, updates, timestamp: Date.now() } 
+    })
+  );
+  
+  // Immediately invalidate ALL product-related queries
+  queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+  queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] });
+  queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+  
+  // Invalidate specific product if available
+  if (productId) {
+    queryClient.invalidateQueries({ queryKey: [`/api/products/${productId}`] });
+  }
+  
+  // Force immediate refetch for critical queries
+  queryClient.refetchQueries({ queryKey: ['/api/products'] });
+  queryClient.refetchQueries({ queryKey: ['/api/products/featured'] });
+};

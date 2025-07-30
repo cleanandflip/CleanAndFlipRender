@@ -56,9 +56,9 @@ export default function Products() {
       },
     ],
     refetchOnWindowFocus: true, // Refetch when user returns to tab
-    refetchOnMount: true, // Always refetch when component mounts
+    refetchOnMount: 'always', // Always refetch when component mounts
     staleTime: 0, // Always fetch fresh data for critical inventory accuracy
-    cacheTime: 0, // Don't cache - always get fresh data
+    gcTime: 0, // Don't cache - always get fresh data (v5)
     refetchInterval: 30000, // Auto-refetch every 30 seconds for live updates
   });
 

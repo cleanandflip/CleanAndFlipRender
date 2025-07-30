@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Upload, X } from 'lucide-react';
+import { broadcastProductUpdate } from '@/lib/queryClient';
 
 interface ProductFormData {
   name: string;
@@ -189,35 +190,18 @@ export function ProductForm() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({ title: "Success", description: isEdit ? 'Product updated successfully!' : 'Product created successfully!' });
       
-      // Comprehensive cache invalidation for all product-related queries
-      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] });
-      
-      // Invalidate specific product if editing
-      if (isEdit && id) {
-        queryClient.invalidateQueries({ queryKey: [`/api/products/${id}`] });
-      }
-      
-      // Force refetch all product queries immediately
-      queryClient.refetchQueries({ queryKey: ['/api/products'] });
-      queryClient.refetchQueries({ queryKey: ['/api/products/featured'] });
-      
-      // Dispatch global events for real-time sync across tabs/pages
-      console.log('Dispatching global product update events');
-      window.dispatchEvent(new CustomEvent('productUpdated', { 
-        detail: { 
-          productId: id,
-          action: isEdit ? 'update' : 'create',
-          timestamp: Date.now()
-        } 
-      }));
-      window.dispatchEvent(new CustomEvent('storageChanged', { 
-        detail: { type: 'product', action: isEdit ? 'update' : 'create' } 
-      }));
+      // Use global broadcast system for comprehensive real-time sync
+      const productId = id || data?.id;
+      const action = isEdit ? 'product_update' : 'product_create';
+      broadcastProductUpdate(productId, action, { 
+        name: formData.name,
+        price: formData.price,
+        images: imagePreview,
+        stockQuantity: formData.stockQuantity
+      });
       
       navigate('/admin');
     },

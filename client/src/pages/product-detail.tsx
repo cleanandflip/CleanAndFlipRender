@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import GlassCard from "@/components/common/glass-card";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, productEvents } from "@/lib/queryClient";
 import { 
   ShoppingCart, 
   Heart, 
@@ -38,13 +38,41 @@ export default function ProductDetail() {
     console.error('Invalid product ID:', id, typeof id);
   }
   
-  const { data: product, isLoading, error } = useQuery<Product>({
+  const { data: product, isLoading, error, refetch } = useQuery<Product>({
     queryKey: [`/api/products/${id}`],
     enabled: !!id && typeof id === 'string' && id !== '[object Object]',
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
-    refetchOnMount: true, // Always refetch when component mounts
-    staleTime: 2 * 60 * 1000, // 2 minutes stale time for individual products
+    refetchOnWindowFocus: true, // Always refetch when user returns to tab
+    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 0, // Always consider data stale for real-time accuracy
+    gcTime: 0, // No client-side caching to prevent stale data (v5)
+    refetchInterval: 30000, // Auto-refetch every 30 seconds for live updates
+    retry: false,
   });
+
+  // Real-time event listeners for admin updates
+  useEffect(() => {
+    const handleProductUpdate = (event: any) => {
+      const { productId, action } = event.detail || {};
+      console.log(`Product detail page received ${action} event for product ${productId}`);
+      
+      // If this is the current product or a global update, refresh
+      if (!productId || productId === id) {
+        console.log('Force refreshing product detail page');
+        refetch();
+      }
+    };
+
+    // Listen to both global productEvents and window events
+    productEvents.addEventListener('productUpdated', handleProductUpdate);
+    window.addEventListener('productUpdated', handleProductUpdate);
+    window.addEventListener('storageChanged', handleProductUpdate);
+    
+    return () => {
+      productEvents.removeEventListener('productUpdated', handleProductUpdate);
+      window.removeEventListener('productUpdated', handleProductUpdate);
+      window.removeEventListener('storageChanged', handleProductUpdate);
+    };
+  }, [id, refetch]);
 
   const addToWishlistMutation = useMutation({
     mutationFn: async () => {
