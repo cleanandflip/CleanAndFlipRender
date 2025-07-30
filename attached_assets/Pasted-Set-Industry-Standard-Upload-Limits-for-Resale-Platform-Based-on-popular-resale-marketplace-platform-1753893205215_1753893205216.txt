@@ -1,0 +1,114 @@
+Set Industry-Standard Upload Limits for Resale Platform
+Based on popular resale/marketplace platforms:
+File Size Limits:
+
+eBay: 12MB per image
+Mercari: 10MB per image
+Poshmark: 10MB per image
+Depop: 10MB per image
+Facebook Marketplace: 20MB per image
+Etsy: 20MB per image
+StockX: 5MB per image (more restrictive)
+
+Number of Images:
+
+eBay: 24 images per listing
+Mercari: 12 images per listing
+Poshmark: 16 images per listing
+Depop: 10 images per listing
+Facebook Marketplace: 50 images per listing
+Etsy: 10 images per listing
+StockX: 8 images per listing
+
+Recommended Settings for Your Platform:
+javascript// Update multer configuration with industry-standard limits
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 12 * 1024 * 1024, // 12MB per image (matches eBay/most platforms)
+    files: 12 // 12 images per product (good balance)
+  },
+  fileFilter: (req, file, cb) => {
+    // Industry standard image types
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    // Note: Most platforms don't allow GIF to prevent animated images
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, PNG, and WebP images are allowed.'));
+    }
+  }
+});
+
+// Add these constraints to your database/validation:
+const productValidation = {
+  minImages: 1,        // Require at least 1 image
+  maxImages: 12,       // Maximum 12 images
+  maxFileSize: 12 * 1024 * 1024, // 12MB
+  recommendedSize: 5 * 1024 * 1024, // Recommend 5MB or less
+  minDimensions: {
+    width: 500,        // Minimum 500px width
+    height: 500        // Minimum 500px height
+  },
+  recommendedDimensions: {
+    width: 1500,       // Ideal for zoom functionality
+    height: 1500
+  }
+};
+Frontend User Guidance:
+javascript// Add helpful messages for users
+const ImageUploadGuidelines = () => (
+  <div className="text-sm text-gray-600 space-y-1">
+    <p>• Maximum 12 images per product</p>
+    <p>• Each image can be up to 12MB</p>
+    <p>• Recommended: Square images (1500x1500px)</p>
+    <p>• Minimum: 500x500px for quality</p>
+    <p>• Best formats: JPEG, PNG, WebP</p>
+    <p>• First image will be the main product photo</p>
+  </div>
+);
+Auto-Optimization Strategy:
+javascript// Cloudinary transformation for optimization
+const cloudinaryUpload = async (file) => {
+  const result = await cloudinary.uploader.upload(file.path, {
+    folder: 'products',
+    transformation: [
+      {
+        width: 2000,
+        height: 2000,
+        crop: 'limit',    // Don't upscale smaller images
+        quality: 'auto:best', // Auto quality optimization
+        fetch_format: 'auto'  // Auto format (WebP where supported)
+      }
+    ],
+    // Store original for zoom functionality
+    eager: [
+      {
+        width: 800,
+        height: 800,
+        crop: 'fill',
+        quality: 'auto'
+      }
+    ]
+  });
+  
+  return result;
+};
+Why These Limits:
+
+12MB - Large enough for high-quality photos from modern phones
+12 images - Enough to show all angles without overwhelming
+No GIFs - Prevents animated distractions, keeps site professional
+500px minimum - Ensures images aren't pixelated
+WebP support - Modern format with better compression
+
+Additional Best Practices:
+
+First image should be the best/hero shot
+Require minimum 3 images for better listings
+Auto-rotate based on EXIF data
+Generate thumbnails for faster loading
+Implement progressive image loading
+
+These limits match successful resale platforms while keeping hosting costs reasonable!

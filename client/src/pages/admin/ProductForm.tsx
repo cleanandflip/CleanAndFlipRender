@@ -86,14 +86,17 @@ export function ProductForm() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Handle Cloudinary image uploads
+  // Handle Cloudinary image uploads with industry-standard limits
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     
-    const maxImages = 6;
+    const maxImages = 12; // Industry standard - matches eBay, Mercari, etc.
     if (imagePreview.length + files.length > maxImages) {
-      toast({ title: "Too many images", description: `Maximum ${maxImages} images allowed` });
+      toast({ 
+        title: "Too many images", 
+        description: `Maximum ${maxImages} images allowed per product. You currently have ${imagePreview.length} images.`
+      });
       return;
     }
     
@@ -102,6 +105,17 @@ export function ProductForm() {
     
     try {
       const uploadPromises = files.map(async (file, index) => {
+        // Check file size on frontend (12MB limit)
+        if (file.size > 12 * 1024 * 1024) {
+          throw new Error(`File "${file.name}" is too large. Maximum size is 12MB.`);
+        }
+        
+        // Check file type on frontend
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          throw new Error(`File "${file.name}" has unsupported format. Only JPEG, PNG, and WebP are allowed.`);
+        }
+        
         const formDataUpload = new FormData();
         formDataUpload.append('file', file);
         
@@ -113,7 +127,9 @@ export function ProductForm() {
         
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'Upload failed');
+          // Use specific server error message if available
+          const errorMessage = error.message || error.error || 'Upload failed';
+          throw new Error(errorMessage);
         }
         
         const data = await response.json();
@@ -131,10 +147,19 @@ export function ProductForm() {
       }));
       
       e.target.value = '';
-      toast({ title: "Success", description: `${files.length} image(s) uploaded successfully!` });
+      toast({ 
+        title: "Success", 
+        description: `${files.length} image(s) uploaded successfully! Total: ${updatedImages.length}/${maxImages} images.`
+      });
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast({ title: "Error", description: `Failed to upload images: ${error.message}` });
+      
+      // Show specific error message from server or validation
+      toast({ 
+        title: "Upload Failed", 
+        description: error.message || 'Failed to upload images. Please try again.',
+        variant: "destructive"
+      });
     } finally {
       setUploadingImage(false);
       setUploadProgress(0);
@@ -467,7 +492,7 @@ export function ProductForm() {
               ))}
               
               {/* Add Image Button */}
-              {imagePreview.length < 6 && (
+              {imagePreview.length < 12 && (
                 <label className="border-2 border-dashed border-gray-600 rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer hover:border-gray-500 transition-colors">
                   <input
                     type="file"
@@ -486,16 +511,20 @@ export function ProductForm() {
                     <>
                       <Upload className="h-8 w-8 mb-2 text-gray-400" />
                       <span className="text-sm text-gray-400">Add Images</span>
-                      <span className="text-xs text-gray-500 mt-1">Max 6 images</span>
+                      <span className="text-xs text-gray-500 mt-1">Max 12 images</span>
                     </>
                   )}
                 </label>
               )}
             </div>
             
-            <p className="text-sm text-muted-foreground">
-              Upload to Cloudinary. Max 6 images, 5MB each. First image is primary.
-            </p>
+            <div className="text-sm text-muted-foreground space-y-1">
+              <p>• Maximum 12 images per product (industry standard)</p>
+              <p>• Each image can be up to 12MB</p>
+              <p>• Formats: JPEG, PNG, WebP</p>
+              <p>• Recommended: Square images (1500x1500px) for best quality</p>
+              <p>• First image will be the main product photo</p>
+            </div>
           </CardContent>
         </Card>
         

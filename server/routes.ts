@@ -906,41 +906,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Memory storage for single file uploads
+  // Memory storage for single file uploads with industry-standard limits
   const memoryStorage = multer.memoryStorage();
   const memoryUpload = multer({ 
     storage: memoryStorage,
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+    limits: { 
+      fileSize: 12 * 1024 * 1024, // 12MB limit (industry standard)
+      files: 12 // Maximum 12 images per product
+    },
+    fileFilter: (req, file, cb) => {
+      // Industry standard image types
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only JPEG, PNG, and WebP images are allowed.'));
+      }
+    }
   });
 
   // Cloudinary upload endpoint - allow admin and developer roles
-  app.post("/api/upload/cloudinary", requireRole(['admin', 'developer']), memoryUpload.single('file'), async (req, res) => {
+  app.post("/api/upload/cloudinary", requireRole(['admin', 'developer']), (req, res, next) => {
+    memoryUpload.single('file')(req, res, (err) => {
+      if (err) {
+        console.error('Multer upload error:', err);
+        
+        // Handle specific multer errors with user-friendly messages
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ 
+            error: 'File too large',
+            message: 'Image must be smaller than 12MB. Please compress your image or choose a smaller file.',
+            maxSize: '12MB'
+          });
+        }
+        
+        if (err.code === 'LIMIT_FILE_COUNT') {
+          return res.status(400).json({ 
+            error: 'Too many files',
+            message: 'Maximum 12 images allowed per product.',
+            maxFiles: 12
+          });
+        }
+        
+        if (err.message.includes('Only JPEG, PNG, and WebP')) {
+          return res.status(400).json({ 
+            error: 'Invalid file type',
+            message: 'Only JPEG, PNG, and WebP images are allowed.',
+            allowedTypes: ['JPEG', 'PNG', 'WebP']
+          });
+        }
+        
+        return res.status(400).json({ 
+          error: 'Upload error',
+          message: 'Failed to process uploaded file. Please try again.',
+          details: err.message
+        });
+      }
+      next();
+    });
+  }, async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
+        return res.status(400).json({ 
+          error: 'No file provided',
+          message: 'Please select an image file to upload.'
+        });
       }
+      
+      console.log('Processing upload:', {
+        filename: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      });
       
       // Convert buffer to base64
       const b64 = Buffer.from(req.file.buffer).toString('base64');
       const dataURI = `data:${req.file.mimetype};base64,${b64}`;
       
-      // Upload to Cloudinary
+      // Upload to Cloudinary with industry-standard transformations
       const result = await cloudinary.uploader.upload(dataURI, {
         folder: 'clean-flip/products',
         resource_type: 'image',
         transformation: [
-          { width: 1200, height: 1200, crop: 'limit' },
-          { quality: 'auto:good' }
+          { 
+            width: 2000, 
+            height: 2000, 
+            crop: 'limit',           // Don't upscale smaller images
+            quality: 'auto:best',    // Auto quality optimization
+            fetch_format: 'auto'     // Auto format (WebP where supported)
+          }
+        ],
+        // Generate thumbnails for faster loading
+        eager: [
+          {
+            width: 800,
+            height: 800,
+            crop: 'fill',
+            quality: 'auto'
+          }
         ]
       });
       
+      console.log('Cloudinary upload successful:', result.secure_url);
+      
       res.json({ 
         url: result.secure_url,
-        publicId: result.public_id
+        publicId: result.public_id,
+        width: result.width,
+        height: result.height,
+        format: result.format,
+        bytes: result.bytes
       });
     } catch (error) {
       console.error('Cloudinary upload error:', error);
-      res.status(500).json({ error: 'Upload failed' });
+      res.status(500).json({ 
+        error: 'Upload failed',
+        message: 'Failed to upload image to cloud storage. Please try again.',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   });
 
