@@ -1,0 +1,90 @@
+Fix Products Page API Error - [object Object] Instead of ID
+The products page is sending [object Object] instead of a product ID to the API:
+GET /api/products/[object%20Object] 404
+The Problem:
+The frontend is passing an entire object where it should be passing just the ID string.
+Find and Fix These Issues:
+1. Check Product Links/Navigation
+Find where products are being linked to and fix:
+javascript// WRONG - Passing entire product object
+<Link href={`/products/${product}`}>
+
+// CORRECT - Pass just the ID
+<Link href={`/products/${product.id}`}>
+// OR
+<Link href={`/products/${product.slug}`}>
+2. Check API Calls
+Find where the product detail API is being called:
+javascript// WRONG
+fetch(`/api/products/${product}`)
+// This converts the object to "[object Object]"
+
+// CORRECT
+fetch(`/api/products/${product.id}`)
+// OR
+fetch(`/api/products/${productId}`)
+3. Check Router Parameters
+If using React Router or Next.js routing:
+javascript// WRONG
+const { product } = useParams(); // This might be an object
+fetch(`/api/products/${product}`)
+
+// CORRECT
+const { id } = useParams(); // Get the ID specifically
+fetch(`/api/products/${id}`)
+// OR
+const params = useParams();
+fetch(`/api/products/${params.id || params.productId}`)
+4. Check Product Card Components
+Look for onClick handlers or navigation:
+javascript// WRONG
+onClick={() => navigate(`/products/${item}`)}
+
+// CORRECT  
+onClick={() => navigate(`/products/${item.id}`)}
+5. Debug by Adding Logs
+Add console logs to find where the issue is:
+javascript// Before making the API call
+console.log('Product ID:', productId, typeof productId);
+
+// If it logs an object, trace back to find where it comes from
+if (typeof productId === 'object') {
+  console.error('Product ID is an object:', productId);
+  // Use productId.id or productId.slug instead
+}
+6. Common Locations to Check:
+
+Product listing page where items link to detail pages
+Product card/tile components
+Search results that link to products
+Featured products section
+useEffect hooks that fetch product details
+Any navigate() or router.push() calls
+
+7. Temporary Fix While Finding Root Cause:
+Add a safety check in the API call:
+javascript// Safe API call
+const fetchProduct = async (productIdOrObject) => {
+  // Extract ID if object was passed
+  const id = typeof productIdOrObject === 'object' 
+    ? productIdOrObject.id || productIdOrObject.slug 
+    : productIdOrObject;
+    
+  if (!id || id === '[object Object]') {
+    console.error('Invalid product ID:', productIdOrObject);
+    return null;
+  }
+  
+  return fetch(`/api/products/${id}`);
+};
+Expected URL Format:
+The API expects URLs like:
+
+/api/products/123 (numeric ID)
+/api/products/barbell-45lb (slug)
+
+NOT:
+
+/api/products/[object Object]
+
+Please find and fix all instances where a product object is being passed instead of just the ID.

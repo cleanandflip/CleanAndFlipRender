@@ -33,9 +33,14 @@ export default function ProductDetail() {
   const [showLightbox, setShowLightbox] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
+  // Safety check to ensure id is a valid string
+  if (!id || typeof id !== 'string') {
+    console.error('Invalid product ID:', id, typeof id);
+  }
+  
   const { data: product, isLoading, error } = useQuery<Product>({
-    queryKey: ["/api/products", id],
-    enabled: !!id,
+    queryKey: [`/api/products/${id}`],
+    enabled: !!id && typeof id === 'string' && id !== '[object Object]',
   });
 
   const addToWishlistMutation = useMutation({
