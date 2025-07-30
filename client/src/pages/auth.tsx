@@ -55,15 +55,15 @@ export default function AuthPage() {
     <div className="min-h-screen flex">
       {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-8">
-        <div className="w-full max-w-lg">
-          <div className="text-center mb-8">
-            <Logo size="lg" className="mx-auto mb-6" />
-            <h1 className="font-bebas text-3xl text-white tracking-wider mb-3">JOIN THE MARKETPLACE</h1>
-            <p className="text-text-secondary text-base leading-relaxed">Turn unused gear into cash, buy quality equipment you can trust</p>
+        <div className="w-full max-w-xl">
+          <div className="text-center mb-10">
+            <Logo size="lg" className="mx-auto mb-8" />
+            <h1 className="font-bebas text-4xl text-white tracking-wider mb-4">JOIN THE MARKETPLACE</h1>
+            <p className="text-text-secondary text-lg leading-relaxed">Turn unused gear into cash, buy quality equipment you can trust</p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 glass h-11">
+            <TabsList className="grid w-full grid-cols-2 mb-8 glass h-12">
               <TabsTrigger 
                 value="login" 
                 className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200"
@@ -79,44 +79,45 @@ export default function AuthPage() {
             </TabsList>
 
             <TabsContent value="login" className="transition-all duration-300 ease-in-out">
-              <GlassCard className="p-8">
-                <div className="mb-6">
-                  <h2 className="font-bebas text-2xl text-white tracking-wider mb-2">WELCOME BACK</h2>
-                  <p className="text-text-secondary text-sm">
+              <GlassCard className="p-10">
+                <div className="mb-8">
+                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">WELCOME BACK</h2>
+                  <p className="text-text-secondary">
                     Sign in to your account to continue
                   </p>
                 </div>
-                <form onSubmit={handleLogin} className="space-y-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="username" className="text-text-secondary font-medium">Username</Label>
+                <form onSubmit={handleLogin} className="space-y-8">
+                  <div className="space-y-4">
+                    <Label htmlFor="username" className="text-text-secondary font-medium text-lg">Username</Label>
                     <Input
                       id="username"
                       name="username"
                       type="text"
                       required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 text-lg transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-xl px-6 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
                       placeholder="Enter your username"
                     />
                   </div>
-                  <div className="space-y-3">
-                    <Label htmlFor="password" className="text-text-secondary font-medium">Password</Label>
+                  <div className="space-y-4">
+                    <Label htmlFor="password" className="text-text-secondary font-medium text-lg">Password</Label>
                     <Input
                       id="password"
                       name="password"
                       type="password"
                       required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 text-lg transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-xl px-6 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
                       placeholder="Enter your password"
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="w-full glass hover:bg-accent-blue/80 border border-accent-blue/30 text-accent-blue hover:text-white font-medium h-14 text-lg transition-all duration-200 hover:scale-[1.02] hover:border-accent-blue"
+                    variant="outline"
+                    className="w-full glass hover:bg-white/10 border-accent-blue/30 text-accent-blue hover:text-white font-medium h-16 text-xl transition-all duration-200 hover:scale-[1.02]"
                     disabled={loginMutation.isPending}
                   >
                     {loginMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <Loader2 className="mr-3 h-6 w-6 animate-spin" />
                         Signing In...
                       </>
                     ) : (
@@ -128,22 +129,22 @@ export default function AuthPage() {
             </TabsContent>
 
             <TabsContent value="register" className="transition-all duration-300 ease-in-out">
-              <GlassCard className="p-8">
-                <div className="mb-6">
-                  <h2 className="font-bebas text-2xl text-white tracking-wider mb-2">CREATE ACCOUNT</h2>
-                  <p className="text-text-secondary text-sm">
+              <GlassCard className="p-10">
+                <div className="mb-8">
+                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">CREATE ACCOUNT</h2>
+                  <p className="text-text-secondary">
                     Join Clean & Flip to buy and sell equipment
                   </p>
                 </div>
-                <form onSubmit={handleRegister} className="space-y-5">
-                  <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleRegister} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <Label htmlFor="firstName" className="text-text-secondary font-medium">First Name</Label>
                       <Input
                         id="firstName"
                         name="firstName"
                         type="text"
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
                         placeholder="John"
                       />
                     </div>
@@ -153,7 +154,7 @@ export default function AuthPage() {
                         id="lastName"
                         name="lastName"
                         type="text"
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
                         placeholder="Doe"
                       />
                     </div>
@@ -165,7 +166,7 @@ export default function AuthPage() {
                       name="username"
                       type="text"
                       required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
                       placeholder="Choose a username"
                     />
                   </div>
@@ -176,7 +177,7 @@ export default function AuthPage() {
                       name="email"
                       type="email"
                       required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
                       placeholder="john@example.com"
                     />
                   </div>
@@ -186,7 +187,7 @@ export default function AuthPage() {
                       id="phone"
                       name="phone"
                       type="tel"
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
                       placeholder="(555) 123-4567"
                     />
                   </div>
@@ -197,18 +198,19 @@ export default function AuthPage() {
                       name="password"
                       type="password"
                       required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-14 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
                       placeholder="Create a strong password"
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="w-full glass hover:bg-accent-blue/80 border border-accent-blue/30 text-accent-blue hover:text-white font-medium h-14 text-lg transition-all duration-200 hover:scale-[1.02] hover:border-accent-blue mt-6"
+                    variant="outline"
+                    className="w-full glass hover:bg-white/10 border-accent-blue/30 text-accent-blue hover:text-white font-medium h-16 text-xl transition-all duration-200 hover:scale-[1.02] mt-8"
                     disabled={registerMutation.isPending}
                   >
                     {registerMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <Loader2 className="mr-3 h-6 w-6 animate-spin" />
                         Creating Account...
                       </>
                     ) : (
