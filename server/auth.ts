@@ -96,13 +96,22 @@ export function setupAuth(app: Express) {
         const user = await storage.getUserByEmail(normalizedEmail);
         if (!user) {
           console.log(`User not found for email: ${normalizedEmail}`);
-          return done(null, false, { message: "Invalid email or password" });
+          return done(null, false, { 
+            message: "No account found with this email address. Please check your email or create a new account.",
+            code: "USER_NOT_FOUND"
+          });
         }
+        
+        console.log(`User found, checking password for: ${normalizedEmail}`);
+        console.log(`User password hash exists: ${!!user.password}`);
         
         const passwordMatch = await comparePasswords(password, user.password);
         if (!passwordMatch) {
           console.log(`Invalid password for email: ${normalizedEmail}`);
-          return done(null, false, { message: "Invalid email or password" });
+          return done(null, false, { 
+            message: "Incorrect password. Please check your password and try again.",
+            code: "INVALID_PASSWORD"
+          });
         }
         
         console.log(`Successful login for email: ${normalizedEmail}`);
@@ -113,7 +122,10 @@ export function setupAuth(app: Express) {
         });
       } catch (error: any) {
         console.error('Login authentication error:', error.message);
-        return done(error);
+        return done(error, false, { 
+          message: "System error during login. Please try again.",
+          code: "SYSTEM_ERROR"
+        });
       }
     }),
   );
@@ -170,7 +182,12 @@ export function setupAuth(app: Express) {
       const existingEmail = await storage.getUserByEmail(normalizedEmail);
       if (existingEmail) {
         console.log(`Email already exists: ${normalizedEmail}`);
-        return res.status(400).json({ message: "Registration failed. Please try again." });
+        return res.status(409).json({ 
+          error: "Account already exists",
+          details: "An account with this email already exists. Please sign in instead.",
+          code: "EMAIL_EXISTS",
+          suggestion: "Try logging in with your existing account."
+        });
       }
 
       // Determine if user is local customer
@@ -230,31 +247,70 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Login endpoint
+  // Login endpoint with detailed error messages
   app.post("/api/login", (req, res, next) => {
+    const { email, password } = req.body;
+    
+    // Basic validation
+    if (!email || !password) {
+      return res.status(400).json({ 
+        error: "Missing credentials",
+        details: "Please provide both email and password."
+      });
+    }
+
     passport.authenticate("local", (err: any, user: User, info: any) => {
       if (err) {
-        return res.status(500).json({ message: "Login failed" });
+        console.error('Passport authentication error:', err);
+        return res.status(500).json({ 
+          error: "System error",
+          details: "A system error occurred during login. Please try again."
+        });
       }
+      
       if (!user) {
-        return res.status(401).json({ message: info?.message || "Invalid credentials" });
+        const errorResponse = {
+          error: "Authentication failed",
+          details: info?.message || "Invalid credentials",
+          code: info?.code || "INVALID_CREDENTIALS"
+        };
+        
+        // Add helpful suggestions based on error type
+        if (info?.code === "USER_NOT_FOUND") {
+          errorResponse.suggestion = "Try creating a new account or check your email spelling.";
+        } else if (info?.code === "INVALID_PASSWORD") {
+          errorResponse.suggestion = "Double-check your password or consider password reset.";
+        }
+        
+        return res.status(401).json(errorResponse);
       }
+      
       const userForSession = {
         ...user,
         role: user.role || 'user',
         isAdmin: user.isAdmin || false
       };
+      
       req.login(userForSession, (loginErr) => {
         if (loginErr) {
-          return res.status(500).json({ message: "Login failed" });
+          console.error('Session creation error:', loginErr);
+          return res.status(500).json({ 
+            error: "Session error",
+            details: "Login successful but session creation failed. Please try again."
+          });
         }
+        
+        console.log(`Login successful for: ${email}`);
         res.status(200).json({
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role || 'user',
-          isAdmin: user.isAdmin || false,
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role || 'user',
+            isAdmin: user.isAdmin || false,
+          }
         });
       });
     })(req, res, next);
@@ -266,6 +322,40 @@ export function setupAuth(app: Express) {
       if (err) return next(err);
       res.sendStatus(200);
     });
+  });
+
+  // Debug endpoint to check account status
+  app.post("/api/debug/check-email", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email required" });
+      }
+
+      const normalizedEmail = normalizeEmail(email);
+      const user = await storage.getUserByEmail(normalizedEmail);
+      
+      if (user) {
+        res.json({
+          exists: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            created: user.createdAt,
+            hasPassword: !!user.password
+          }
+        });
+      } else {
+        res.json({ 
+          exists: false,
+          checkedEmail: normalizedEmail
+        });
+      }
+    } catch (error: any) {
+      console.error('Debug check-email error:', error);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   // Get current user endpoint

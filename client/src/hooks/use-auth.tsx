@@ -55,8 +55,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...credentials,
         email: credentials.email.toLowerCase().trim()
       };
-      const res = await apiRequest("POST", "/api/login", normalizedCredentials);
-      return await res.json();
+      
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(normalizedCredentials),
+        credentials: "include",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(result.details || result.error || "Login failed");
+        (error as any).code = result.code;
+        (error as any).suggestion = result.suggestion;
+        throw error;
+      }
+
+      return result.user || result;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -65,10 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Logged in as ${user.email}`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      let description = error.message;
+      if (error.suggestion) {
+        description += ` ${error.suggestion}`;
+      }
       toast({
-        title: "Login failed",
-        description: error.message,
+        title: "Login Failed",
+        description,
         variant: "destructive",
       });
     },
@@ -81,8 +101,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...credentials,
         email: credentials.email.toLowerCase().trim()
       };
-      const res = await apiRequest("POST", "/api/register", normalizedCredentials);
-      return await res.json();
+      
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(normalizedCredentials),
+        credentials: "include",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        const error = new Error(result.details || result.error || "Registration failed");
+        (error as any).code = result.code;
+        (error as any).suggestion = result.suggestion;
+        throw error;
+      }
+
+      return result.user || result;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -91,10 +127,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Welcome to Clean & Flip, ${user.firstName || user.email}!`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      let description = error.message;
+      if (error.suggestion) {
+        description += ` ${error.suggestion}`;
+      }
+      
+      // Special handling for existing email
+      if (error.code === "EMAIL_EXISTS") {
+        toast({
+          title: "Account Already Exists",
+          description: error.message,
+          variant: "destructive",
+          action: (
+            <button 
+              onClick={() => window.location.hash = "#login"}
+              className="text-sm underline"
+            >
+              Go to Sign In
+            </button>
+          ),
+        });
+        return;
+      }
+      
       toast({
-        title: "Registration failed",
-        description: error.message,
+        title: "Registration Failed",
+        description,
         variant: "destructive",
       });
     },
