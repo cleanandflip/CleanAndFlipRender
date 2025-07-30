@@ -123,9 +123,17 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-md" ref={formContainerRef}>
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+    <div className="min-h-screen flex">
+      {/* Left Side - Form */}
+      <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
+        <div className="w-full max-w-xl" ref={formContainerRef}>
+          <div className="text-center mb-8">
+            <Logo size="lg" className="mx-auto mb-6" />
+            <h1 className="font-bebas text-5xl text-white tracking-wider mb-4">JOIN THE MARKETPLACE</h1>
+            <p className="text-text-secondary text-xl leading-relaxed max-w-lg mx-auto">Turn unused gear into cash, buy quality equipment you can trust</p>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8 glass h-14 text-lg">
               <TabsTrigger 
                 value="login" 
@@ -363,11 +371,59 @@ export default function AuthPage() {
               </GlassCard>
             </TabsContent>
           </Tabs>
-          
-          {/* Simple tagline */}
-          <p className="text-center text-sm text-text-muted mt-8">
-            The trusted marketplace for weightlifting equipment
-          </p>
+        </div>
+      </div>
+
+      {/* Right Side - Hero Section */}
+      <div className="hidden lg:flex flex-1 items-center justify-center p-12">
+        <div className="max-w-xl">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full glass mb-8 transition-all duration-300 hover:scale-110">
+              <Dumbbell className="h-12 w-12 text-accent-blue" />
+            </div>
+            <h2 className="font-bebas text-6xl text-white tracking-wider mb-6">TRUSTED MARKETPLACE</h2>
+            <p className="text-text-secondary text-xl leading-relaxed">
+              Join hundreds of fitness enthusiasts buying and selling quality equipment with expert inspection and fair pricing.
+            </p>
+          </div>
+
+          <div className="space-y-8">
+            <GlassCard className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-start space-x-6">
+                <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">VERIFIED QUALITY</h3>
+                  <p className="text-text-secondary text-lg">All equipment professionally inspected and guaranteed before sale</p>
+                </div>
+              </div>
+            </GlassCard>
+
+            <GlassCard className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-start space-x-6">
+                <div className="w-16 h-16 bg-accent-blue rounded-full flex items-center justify-center flex-shrink-0">
+                  <Shield className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">EXPERT KNOWLEDGE</h3>
+                  <p className="text-text-secondary text-lg">Weightlifting specialists with years of experience in quality equipment</p>
+                </div>
+              </div>
+            </GlassCard>
+
+            <GlassCard className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-start space-x-6">
+                <div className="w-16 h-16 bg-warning rounded-full flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">FAIR PRICING</h3>
+                  <p className="text-text-secondary text-lg">Best market value for both buyers and sellers in the fitness community</p>
+                </div>
+              </div>
+            </GlassCard>
+          </div>
         </div>
       </div>
     </div>
