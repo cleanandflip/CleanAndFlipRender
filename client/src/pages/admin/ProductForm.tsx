@@ -219,9 +219,11 @@ export function ProductForm() {
     
     // Create FormData for submission with current image state
     const data = new FormData();
-    const currentImages = imagePreview.length > 0 ? imagePreview : formData.images;
+    const currentImages = imagePreview;
     
     console.log('Submitting with images:', currentImages);
+    console.log('imagePreview state:', imagePreview);
+    console.log('formData.images state:', formData.images);
     
     Object.entries(formData).forEach(([key, value]) => {
       if (key !== 'images') {
@@ -229,10 +231,15 @@ export function ProductForm() {
       }
     });
     
-    // Add current image URLs
-    currentImages.forEach(imageUrl => {
-      data.append('images', imageUrl);
-    });
+    // Always add images array, even if empty
+    if (currentImages.length > 0) {
+      currentImages.forEach(imageUrl => {
+        data.append('images', imageUrl);
+      });
+    } else {
+      // Explicitly add empty images array
+      data.append('images', '');
+    }
     
     submitMutation.mutate(data);
   };

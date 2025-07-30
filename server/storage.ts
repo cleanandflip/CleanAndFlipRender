@@ -292,6 +292,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product> {
+    console.log('DatabaseStorage.updateProduct - received data:', product);
+    
     const [updatedProduct] = await db
       .update(products)
       .set({
@@ -300,6 +302,8 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(products.id, id))
       .returning();
+      
+    console.log('DatabaseStorage.updateProduct - result:', updatedProduct);
     return updatedProduct;
   }
 

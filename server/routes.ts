@@ -535,10 +535,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         weight: parseFloat(req.body.weight) || 0
       };
       
-      // Handle images array from form data
-      if (req.body.images) {
-        const images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-        updateData.images = images.filter(img => img && img.trim() !== '');
+      // Handle images array from form data - always update images field
+      if (req.body.hasOwnProperty('images')) {
+        if (req.body.images && req.body.images.length > 0) {
+          const images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+          updateData.images = images.filter(img => img && img.trim() !== '');
+        } else {
+          // Explicitly set to empty array when no images
+          updateData.images = [];
+        }
       }
       
       // Add new images if uploaded via multer
