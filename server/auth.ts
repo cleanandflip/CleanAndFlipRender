@@ -18,7 +18,6 @@ declare global {
       role: string;
       isAdmin: boolean;
     }
-    
     interface Request {
       userId?: string;
     }
