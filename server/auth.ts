@@ -91,16 +91,28 @@ export function setupAuth(app: Express) {
       try {
         // Normalize email for case-insensitive login
         const normalizedEmail = normalizeEmail(email);
+        console.log(`Login attempt for email: ${normalizedEmail}`);
+        
         const user = await storage.getUserByEmail(normalizedEmail);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        if (!user) {
+          console.log(`User not found for email: ${normalizedEmail}`);
           return done(null, false, { message: "Invalid email or password" });
         }
+        
+        const passwordMatch = await comparePasswords(password, user.password);
+        if (!passwordMatch) {
+          console.log(`Invalid password for email: ${normalizedEmail}`);
+          return done(null, false, { message: "Invalid email or password" });
+        }
+        
+        console.log(`Successful login for email: ${normalizedEmail}`);
         return done(null, {
           ...user,
           role: user.role || 'user',
           isAdmin: user.isAdmin || false
         });
-      } catch (error) {
+      } catch (error: any) {
+        console.error('Login authentication error:', error.message);
         return done(error);
       }
     }),
@@ -153,8 +165,11 @@ export function setupAuth(app: Express) {
 
       // Normalize email and check if user already exists (don't reveal if email exists for security)
       const normalizedEmail = normalizeEmail(email);
+      console.log(`Registration attempt for email: ${normalizedEmail}`);
+      
       const existingEmail = await storage.getUserByEmail(normalizedEmail);
       if (existingEmail) {
+        console.log(`Email already exists: ${normalizedEmail}`);
         return res.status(400).json({ message: "Registration failed. Please try again." });
       }
 

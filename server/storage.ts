@@ -107,8 +107,18 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const normalizedEmail = normalizeEmail(email);
-    const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
+      return user;
+    } catch (error: any) {
+      console.error('Error getting user by email:', error.message);
+      if (error.code === '57P01') {
+        // Retry once on connection termination
+        const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
+        return user;
+      }
+      throw error;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -118,11 +128,24 @@ export class DatabaseStorage implements IStorage {
       email: normalizeEmail(insertUser.email)
     };
     
-    const [user] = await db
-      .insert(users)
-      .values(userToInsert)
-      .returning();
-    return user;
+    try {
+      const [user] = await db
+        .insert(users)
+        .values(userToInsert)
+        .returning();
+      return user;
+    } catch (error: any) {
+      console.error('Error creating user:', error.message);
+      if (error.code === '57P01') {
+        // Retry once on connection termination
+        const [user] = await db
+          .insert(users)
+          .values(userToInsert)
+          .returning();
+        return user;
+      }
+      throw error;
+    }
   }
 
   async updateUserStripeInfo(id: string, customerId: string, subscriptionId?: string): Promise<User> {
