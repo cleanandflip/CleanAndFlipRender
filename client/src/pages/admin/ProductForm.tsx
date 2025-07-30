@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'wouter';
+import { useLocation, useParams } from 'wouter';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ interface ProductFormData {
 export function ProductForm() {
   const [, params] = useParams();
   const id = params?.id;
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEdit = !!id;

@@ -465,7 +465,7 @@ export class DatabaseStorage implements IStorage {
       .from(activityLogs)
       .where(
         and(
-          eq(activityLogs.action, 'page_view'),
+          eq(activityLogs.eventType, 'page_view'),
           sql`${activityLogs.createdAt} > NOW() - INTERVAL '7 days'`
         )
       );
@@ -487,7 +487,7 @@ export class DatabaseStorage implements IStorage {
       .from(activityLogs)
       .where(
         and(
-          eq(activityLogs.action, 'page_view'),
+          eq(activityLogs.eventType, 'page_view'),
           sql`${activityLogs.createdAt} > NOW() - INTERVAL '7 days'`
         )
       );

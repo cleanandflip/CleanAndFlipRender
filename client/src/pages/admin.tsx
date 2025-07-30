@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +63,7 @@ function StatCard({ title, value, icon: Icon, trend }: {
 function ProductManagement() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   
   const { data: productsData, isLoading } = useQuery<{ products: Product[] }>({
     queryKey: ["/api/products"],
@@ -133,7 +135,7 @@ function ProductManagement() {
         <h2 className="font-bebas text-2xl">PRODUCT MANAGEMENT</h2>
         <Button 
           className="bg-accent-blue hover:bg-blue-500"
-          onClick={() => toast({ description: "Add Product feature coming soon!" })}
+          onClick={() => navigate('/admin/products/new')}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Product
@@ -176,7 +178,7 @@ function ProductManagement() {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => toast({ description: "Edit Product feature coming soon!" })}
+                      onClick={() => navigate(`/admin/products/${product.id}/edit`)}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
