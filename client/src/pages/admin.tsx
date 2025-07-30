@@ -199,56 +199,107 @@ function ProductManagement() {
 }
 
 function Analytics() {
-  const { data: stats } = useQuery<AdminStats>({
-    queryKey: ["/api/admin/stats"],
+  const { data: analyticsData, isLoading } = useQuery({
+    queryKey: ["/api/admin/analytics"],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/analytics', { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics');
+      }
+      return response.json();
+    },
+    refetchInterval: 30000
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <h2 className="font-bebas text-2xl">ANALYTICS</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Page Views" value="12,543" icon={Eye} trend="+12% from last week" />
-        <StatCard title="Active Users" value="892" icon={Users} trend="+8% from last week" />
-        <StatCard title="Conversion Rate" value="3.2%" icon={TrendingUp} trend="+0.5% from last week" />
-        <StatCard title="Avg Order Value" value="$287" icon={DollarSign} trend="+15% from last week" />
+        <StatCard 
+          title="Page Views" 
+          value={analyticsData?.pageViews?.current?.toLocaleString() || "0"} 
+          icon={Eye} 
+          trend={`${analyticsData?.pageViews?.change > 0 ? '+' : ''}${analyticsData?.pageViews?.change || 0}% from last week`} 
+        />
+        <StatCard 
+          title="Active Users" 
+          value={analyticsData?.activeUsers?.current?.toLocaleString() || "0"} 
+          icon={Users} 
+          trend={`${analyticsData?.activeUsers?.change > 0 ? '+' : ''}${analyticsData?.activeUsers?.change || 0}% from last week`} 
+        />
+        <StatCard 
+          title="Conversion Rate" 
+          value={`${analyticsData?.conversionRate?.current || 0}%`} 
+          icon={TrendingUp} 
+          trend={`${analyticsData?.conversionRate?.change > 0 ? '+' : ''}${analyticsData?.conversionRate?.change || 0}% from last week`} 
+        />
+        <StatCard 
+          title="Avg Order Value" 
+          value={`$${analyticsData?.avgOrderValue?.current || 0}`} 
+          icon={DollarSign} 
+          trend={`${analyticsData?.avgOrderValue?.change > 0 ? '+' : ''}${analyticsData?.avgOrderValue?.change || 0}% from last week`} 
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GlassCard className="p-6">
-          <h3 className="font-semibold mb-4">Recent Activity</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm">New user registration</span>
-              <span className="text-xs text-text-secondary">2 min ago</span>
+          <h3 className="font-semibold text-lg mb-4">Top Products</h3>
+          {analyticsData?.topProducts?.length > 0 ? (
+            <div className="space-y-3">
+              {analyticsData.topProducts.map((product: any, index: number) => (
+                <div key={product.productId} className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{product.name}</p>
+                    <p className="text-sm text-text-secondary">Sold: {product.totalSold}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">${product.revenue}</p>
+                    <p className="text-sm text-text-secondary">#{index + 1}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Order #1234 completed</span>
-              <span className="text-xs text-text-secondary">5 min ago</span>
+          ) : (
+            <div className="text-center text-text-secondary py-8">
+              <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No product sales yet</p>
+              <p className="text-sm">Sales data will appear when orders are placed</p>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Product added to cart</span>
-              <span className="text-xs text-text-secondary">8 min ago</span>
-            </div>
-          </div>
+          )}
         </GlassCard>
 
         <GlassCard className="p-6">
-          <h3 className="font-semibold mb-4">Top Products</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Rogue Ohio Power Bar</span>
-              <span className="text-sm font-semibold">23 sold</span>
+          <h3 className="font-semibold text-lg mb-4">Recent Activity</h3>
+          {analyticsData?.recentActivity?.length > 0 ? (
+            <div className="space-y-3">
+              {analyticsData.recentActivity.map((activity: any) => (
+                <div key={activity.id} className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{activity.details}</p>
+                    <p className="text-sm text-text-secondary">
+                      {new Date(activity.timestamp).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Badge variant="secondary">{activity.type.replace('_', ' ')}</Badge>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Concept2 RowErg</span>
-              <span className="text-sm font-semibold">18 sold</span>
+          ) : (
+            <div className="text-center text-text-secondary py-8">
+              <Activity className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No recent activity</p>
+              <p className="text-sm">Activity will appear when orders are processed</p>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm">Bumper Plate Set</span>
-              <span className="text-sm font-semibold">15 sold</span>
-            </div>
-          </div>
+          )}
         </GlassCard>
       </div>
     </div>
