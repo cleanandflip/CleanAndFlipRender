@@ -1,0 +1,72 @@
+Here's a prompt for Replit to make these changes:
+
+Remove Username Field - Use Email for Authentication
+I need to simplify the authentication system by removing usernames entirely. Users should sign in with their email address only.
+Required Changes:
+1. Update Sign-Up Form (remove username field):
+
+Remove the username input field from the registration form
+Keep: First Name, Last Name, Email, Phone, Password
+Email will be the unique identifier for login
+
+2. Update Sign-In Form:
+
+Change the sign-in form to ask for Email (not username)
+Update placeholder text to "Email" instead of "Username"
+Keep password field as is
+
+3. Database Schema Updates:
+Find and update all database tables/schemas:
+sql-- If username column exists, remove it:
+ALTER TABLE users DROP COLUMN IF EXISTS username;
+
+-- Make sure email is unique and not null:
+ALTER TABLE users ALTER COLUMN email SET NOT NULL;
+ALTER TABLE users ADD CONSTRAINT users_email_unique UNIQUE (email);
+4. Update Code Files:
+In server/storage.ts:
+
+Remove all references to username
+Change getUserByUsername to getUserByEmail
+Update all queries to use email instead of username
+Remove username from INSERT statements
+Remove username from SELECT statements
+
+In server/auth.ts:
+
+Update login logic to authenticate with email
+Remove username from registration process
+Update any validation that checks for username
+
+In frontend auth components:
+
+Remove username field from forms
+Update form validation schemas
+Change any "username" labels to "email"
+Update API calls to send email instead of username
+
+In type definitions:
+
+Remove username: string from User type
+Update any interfaces that include username
+
+5. Search and Replace:
+Search entire codebase for these terms and update accordingly:
+
+username → remove or replace with email
+getUserByUsername → getUserByEmail
+Username → Email (in UI labels)
+
+6. Update Validation:
+
+Remove username validation rules
+Ensure email validation is in place
+Email should be required and unique
+
+Example of updated sign-in:
+javascript// Old way:
+const user = await getUserByUsername(username);
+
+// New way:
+const user = await getUserByEmail(email);
+Please make these changes throughout the entire application to use email-based authentication instead of username-based authentication.

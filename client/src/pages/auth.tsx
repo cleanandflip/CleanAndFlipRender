@@ -44,7 +44,7 @@ export default function AuthPage() {
     scrollToForm();
     const formData = new FormData(e.currentTarget);
     loginMutation.mutate({
-      username: formData.get("username") as string,
+      email: formData.get("email") as string,
       password: formData.get("password") as string,
     });
   };
@@ -54,7 +54,6 @@ export default function AuthPage() {
     scrollToForm();
     const formData = new FormData(e.currentTarget);
     registerMutation.mutate({
-      username: formData.get("username") as string,
       email: formData.get("email") as string,
       password: formData.get("password") as string,
       firstName: formData.get("firstName") as string,
@@ -108,14 +107,14 @@ export default function AuthPage() {
                 </div>
                 <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-4">
-                    <Label htmlFor="username" className="text-text-secondary font-medium text-xl">Username</Label>
+                    <Label htmlFor="email" className="text-text-secondary font-medium text-xl">Email</Label>
                     <Input
-                      id="username"
-                      name="username"
-                      type="text"
+                      id="email"
+                      name="email"
+                      type="email"
                       required
                       className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                      placeholder="Enter your username"
+                      placeholder="Enter your email"
                       onFocus={scrollToForm}
                     />
                   </div>
@@ -182,18 +181,7 @@ export default function AuthPage() {
                       />
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    <Label htmlFor="username" className="text-text-secondary font-medium text-lg">Username</Label>
-                    <Input
-                      id="username"
-                      name="username"
-                      type="text"
-                      required
-                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-16 text-lg px-6 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                      placeholder="Choose a username"
-                      onFocus={scrollToForm}
-                    />
-                  </div>
+
                   <div className="space-y-4">
                     <Label htmlFor="email" className="text-text-secondary font-medium text-lg">Email</Label>
                     <Input

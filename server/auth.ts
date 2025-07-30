@@ -12,7 +12,6 @@ declare global {
   namespace Express {
     interface User {
       id: string;
-      username: string;
       email: string;
       firstName?: string | null;
       lastName?: string | null;
@@ -64,11 +63,11 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
+    new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
+        const user = await storage.getUserByEmail(email);
         if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false, { message: "Invalid username or password" });
+          return done(null, false, { message: "Invalid email or password" });
         }
         return done(null, {
           ...user,
@@ -96,14 +95,9 @@ export function setupAuth(app: Express) {
   // Register endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { username, email, password, firstName, lastName, phone } = req.body;
+      const { email, password, firstName, lastName, phone } = req.body;
 
       // Check if user already exists
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-
       const existingEmail = await storage.getUserByEmail(email);
       if (existingEmail) {
         return res.status(400).json({ message: "Email already exists" });
@@ -119,7 +113,6 @@ export function setupAuth(app: Express) {
       }
 
       const user = await storage.createUser({
-        username,
         email,
         password: await hashPassword(password),
         firstName: firstName || undefined,
@@ -137,7 +130,6 @@ export function setupAuth(app: Express) {
         if (err) return next(err);
         res.status(201).json({
           id: user.id,
-          username: user.username,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
