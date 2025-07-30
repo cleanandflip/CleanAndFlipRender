@@ -11,15 +11,15 @@ export default function Logo({ className = "", size = 'md', clickable = true, te
   const sizes = {
     sm: {
       container: "text-lg",
-      logo: "h-5 w-5",
+      logo: "h-6 w-6 filter invert", // White logo for footer
     },
     md: {
       container: "text-2xl",
-      logo: "h-6 w-6",
+      logo: "h-8 w-8 filter invert", // Larger white logo for navigation
     },
     lg: {
       container: "text-4xl",
-      logo: "h-24 w-24", // Large standalone size for auth pages
+      logo: "h-16 w-16 filter invert", // Prominent white logo for auth pages
     },
   };
 

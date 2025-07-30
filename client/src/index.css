@@ -84,6 +84,19 @@ html {
     border-color: hsla(210, 40%, 98%, 0.12);
     @apply transform -translate-y-0.5;
   }
+
+  /* Logo styling for consistent appearance */
+  .logo-white {
+    filter: invert(1);
+  }
+  
+  .nav-brand {
+    @apply flex items-center gap-2;
+  }
+  
+  .nav-brand img {
+    display: block;
+  }
   
 
   
