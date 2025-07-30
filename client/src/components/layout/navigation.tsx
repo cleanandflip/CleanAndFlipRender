@@ -39,7 +39,7 @@ export default function Navigation() {
     <>
       {/* Main Navigation - Cleaner Layout */}
       <nav className="fixed top-4 left-4 right-4 z-50 glass rounded-xl px-6 py-3 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between w-full gap-4 relative">
+        <div className="flex items-center justify-between w-full gap-4">
           {/* Left Side - Logo */}
           <div className="flex items-center flex-shrink-0">
             <Logo size="md" />
@@ -63,7 +63,7 @@ export default function Navigation() {
           </div>
 
           {/* Right Side - Actions */}
-          <div className="flex items-center space-x-3 flex-shrink-0 min-w-0 relative">
+          <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
             {/* Desktop Search */}
             <div className="hidden lg:block">
               <SearchBar
@@ -87,7 +87,7 @@ export default function Navigation() {
             {/* Account */}
             {user ? (
               <div className="relative">
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
@@ -100,7 +100,7 @@ export default function Navigation() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
-                    className="w-64 glass border-glass-border shadow-2xl backdrop-blur-xl absolute right-0 top-full mt-2"
+                    className="w-64 glass border-glass-border shadow-2xl backdrop-blur-xl z-[100]"
                     align="end"
                     sideOffset={8}
                     avoidCollisions={true}
