@@ -1,0 +1,99 @@
+Here's a prompt for Replit to fix this specific issue on the products listing page:
+
+Fix Products Page - Still Sending [object Object] Instead of Proper API Call
+The /products page is trying to load a specific product with [object Object] which shouldn't happen on the listing page.
+Root Cause Analysis:
+The products listing page is trying to fetch a single product detail, which is wrong. It should be fetching a list of products.
+Find and Fix in the Products Page Component:
+1. Check the Products Listing Page (/products route):
+Look for the component that renders when visiting /products:
+javascript// WRONG - Products listing shouldn't fetch a single product
+useEffect(() => {
+  fetch(`/api/products/${someObject}`) // This is causing [object Object]
+}, []);
+
+// CORRECT - Products listing should fetch all products
+useEffect(() => {
+  fetch('/api/products') // No ID needed for listing
+    .then(res => res.json())
+    .then(data => setProducts(data));
+}, []);
+2. Check for Accidental Product Detail Fetching:
+The products page might be accidentally trying to load a product detail:
+javascript// Look for code like this in the products listing component:
+const { id } = useParams(); // This might be undefined or an object
+const [product, setProduct] = useState();
+
+useEffect(() => {
+  // This shouldn't be in the products listing page
+  if (id) {
+    fetch(`/api/products/${id}`) // id might be an object
+  }
+}, [id]);
+
+// REMOVE any single product fetching from the listing page
+3. Check the Route Configuration:
+Make sure routes are set up correctly:
+javascript// Routes should be:
+<Route path="/products" element={<ProductsListing />} /> // List page
+<Route path="/products/:id" element={<ProductDetail />} /> // Detail page
+
+// NOT:
+<Route path="/products/:product" element={<ProductsListing />} /> // Wrong
+4. Fix the Products Listing Component:
+The products listing page should look like:
+javascript// ProductsListing.jsx or similar
+function ProductsListing() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Fetch ALL products, not a single product
+    fetch('/api/products')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load products');
+        return res.json();
+      })
+      .then(data => {
+        setProducts(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []); // Empty dependency array
+
+  // Render products list...
+}
+5. Check for Mixed Up Components:
+Make sure the products listing isn't importing or using product detail logic:
+javascript// WRONG - Don't mix listing and detail logic
+import { useProductDetail } from './hooks'; // Remove from listing page
+
+// CORRECT - Keep them separate
+import { useProductsList } from './hooks'; // For listing page
+6. Debug Log to Find the Issue:
+Add this at the top of your products listing component:
+javascriptconsole.log('Products page mounted');
+console.log('Current URL:', window.location.pathname);
+console.log('Route params:', useParams()); // Should be empty on /products
+7. Check API Endpoints:
+Make sure your API has these endpoints:
+
+GET /api/products - Returns array of all products
+GET /api/products/:id - Returns single product by ID
+
+8. Quick Fix While Debugging:
+In the products page, add a guard:
+javascriptuseEffect(() => {
+  // Don't try to fetch a single product on the listing page
+  if (window.location.pathname === '/products') {
+    // Fetch all products
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(setProducts);
+  }
+}, []);
+The issue is that the /products listing page is trying to fetch a specific product instead of the products list. Find where this is happening and remove any single product fetching logic from the listing page.

@@ -24,12 +24,37 @@ export async function apiRequest(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+function buildUrl(queryKey: readonly unknown[]): string {
+  const [baseUrl, params] = queryKey;
+  
+  if (typeof baseUrl !== 'string') {
+    throw new Error('First element of queryKey must be a URL string');
+  }
+  
+  // If there are no params or params is not an object, just return the base URL
+  if (!params || typeof params !== 'object' || Array.isArray(params)) {
+    return baseUrl;
+  }
+  
+  // Build query string from params object
+  const searchParams = new URLSearchParams();
+  Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.append(key, String(value));
+    }
+  });
+  
+  const queryString = searchParams.toString();
+  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+}
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const url = buildUrl(queryKey);
+    const res = await fetch(url, {
       credentials: "include",
     });
 
