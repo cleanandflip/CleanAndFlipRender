@@ -1,0 +1,106 @@
+Here's a prompt for Replit to fix the auth form length issue:
+
+Simplify Auth Form - Move Security Information
+The registration form is too long because of all the security information. Please reorganize it to be more concise while keeping all security features.
+Required Changes:
+1. Remove From Form:
+Remove these elements from the main form area:
+
+Password strength meter
+Requirements checklist (8 characters, uppercase, etc.)
+Security badges ("256-bit Encryption", etc.)
+Long security messages
+"Your Security Matters" header
+
+2. Keep Only Essential Elements:
+The form should only contain:
+jsx// Clean form with just inputs
+<form>
+  <h2>Create Account</h2>
+  
+  {/* Name fields */}
+  <div className="grid grid-cols-2 gap-4">
+    <input placeholder="First Name" required />
+    <input placeholder="Last Name" required />
+  </div>
+  
+  {/* Contact */}
+  <input type="email" placeholder="Email" required />
+  <input type="tel" placeholder="Phone (Optional)" />
+  
+  {/* Address */}
+  <input placeholder="Street Address" required />
+  <input placeholder="City, State ZIP" required />
+  
+  {/* Password with simple helper text */}
+  <div className="password-field">
+    <input type="password" placeholder="Password" required />
+    <small>Min 8 characters, include numbers & symbols</small>
+  </div>
+  
+  <input type="password" placeholder="Confirm Password" required />
+  
+  <button type="submit">Create Account</button>
+</form>
+3. Move Security Info to Subtle Locations:
+Option 1 - Tooltip on Password Field:
+jsx// Add info icon next to password field
+<div className="password-wrapper">
+  <input type="password" placeholder="Password" />
+  <Tooltip content="Your password is encrypted with 256-bit encryption">
+    <InfoIcon size={16} />
+  </Tooltip>
+</div>
+Option 2 - Small Link Below Form:
+jsx<form>
+  {/* ... form fields ... */}
+</form>
+<p className="text-sm text-gray-400 mt-4">
+  <Lock size={12} /> Secure form • <a href="/security">Learn about our security</a>
+</p>
+Option 3 - Collapsible Section:
+jsx// Below form, collapsed by default
+<details className="mt-4">
+  <summary className="text-sm cursor-pointer">Security Information</summary>
+  <div className="mt-2 text-sm">
+    • 256-bit encryption
+    • Never stored in plain text
+    • PCI compliant
+  </div>
+</details>
+4. Real-time Validation Without Clutter:
+jsx// Use border colors and simple icons
+passwordField.className = {
+  'border-red-500': !isValid,
+  'border-green-500': isValid && password.length > 0,
+  'border-gray-300': password.length === 0
+}
+
+// Simple inline error only when needed
+{error && <span className="text-xs text-red-500">{error}</span>}
+5. Password Requirements - Show Only on Focus:
+jsx// Show requirements only when user is typing password
+{passwordFocused && !passwordValid && (
+  <div className="text-xs mt-1">
+    Need: 8+ chars, number, symbol
+  </div>
+)}
+6. Streamlined Layout:
+
+Remove all headers within the form
+Use consistent spacing (no large gaps)
+Keep form compact and scannable
+Mobile-friendly single column
+
+7. Alternative: Move to Separate Step:
+If you prefer, make it a two-step process:
+
+First page: Email and password only
+Second page: Personal details and address
+
+Final Form Height Target:
+
+Desktop: Should fit on screen without scrolling
+Mobile: Minimal scrolling, focus on one section at a time
+
+Please implement these changes to create a clean, professional registration form that doesn't overwhelm users while maintaining all security features behind the scenes.

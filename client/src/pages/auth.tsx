@@ -19,6 +19,8 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordsMatch, setPasswordsMatch] = useState(true);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [showSecurityInfo, setShowSecurityInfo] = useState(false);
   const formContainerRef = useRef<HTMLDivElement>(null);
   const loginFormRef = useRef<HTMLFormElement>(null);
   const registerFormRef = useRef<HTMLFormElement>(null);
@@ -101,6 +103,15 @@ export default function AuthPage() {
     } else {
       setPasswordsMatch(true);
     }
+  };
+
+  // Simple password validation for inline display
+  const isPasswordValid = (pwd: string) => {
+    return pwd.length >= 8 && 
+           /[A-Z]/.test(pwd) && 
+           /[a-z]/.test(pwd) && 
+           /\d/.test(pwd) && 
+           /[!@#$%^&*]/.test(pwd);
   };
 
   if (authLoading) {
@@ -192,170 +203,171 @@ export default function AuthPage() {
             <TabsContent value="register" className="transition-all duration-300 ease-in-out">
               <GlassCard className="p-8">
                 <div className="mb-6">
-                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">CREATE SECURE ACCOUNT</h2>
+                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-2">CREATE ACCOUNT</h2>
                   <p className="text-text-secondary">
-                    Join Clean & Flip to buy and sell equipment securely
+                    Join Clean & Flip to buy and sell equipment
                   </p>
                 </div>
 
-                <SecurityNotice />
-
-                <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-6 mt-8">
-                  {/* Personal Information Section */}
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-                      <Users className="h-5 w-5 text-accent-blue" />
-                      Personal Information
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName" className="text-text-secondary font-medium">First Name *</Label>
-                        <Input
-                          id="firstName"
-                          name="firstName"
-                          type="text"
-                          required
-                          className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                          placeholder="First Name"
-                          onFocus={scrollToForm}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName" className="text-text-secondary font-medium">Last Name *</Label>
-                        <Input
-                          id="lastName"
-                          name="lastName"
-                          type="text"
-                          required
-                          className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                          placeholder="Last Name"
-                          onFocus={scrollToForm}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-text-secondary font-medium">Email Address *</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        required
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                        placeholder="your.email@example.com"
-                        onFocus={scrollToForm}
-                      />
-                    </div>
+                <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-5">
+                  {/* Name fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      id="firstName"
+                      name="firstName"
+                      type="text"
+                      required
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                      placeholder="First Name"
+                      onFocus={scrollToForm}
+                    />
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      type="text"
+                      required
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                      placeholder="Last Name"
+                      onFocus={scrollToForm}
+                    />
                   </div>
-
-                  {/* Location Section */}
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-                      <Shield className="h-5 w-5 text-accent-blue" />
-                      Location
-                    </h3>
-                    <div className="space-y-2">
-                      <Label htmlFor="address" className="text-text-secondary font-medium">Street Address *</Label>
-                      <Input
-                        id="address"
-                        name="address"
-                        type="text"
-                        required
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                        placeholder="123 Main Street"
-                        onFocus={scrollToForm}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cityStateZip" className="text-text-secondary font-medium">City, State ZIP *</Label>
-                      <Input
-                        id="cityStateZip"
-                        name="cityStateZip"
-                        type="text"
-                        required
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                        placeholder="Asheville, NC 28806"
-                        onFocus={scrollToForm}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-text-secondary font-medium">Phone Number <span className="text-text-muted">(Optional)</span></Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                        placeholder="(555) 123-4567"
-                        onFocus={scrollToForm}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Security Section */}
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-                      <Shield className="h-5 w-5 text-accent-blue" />
-                      Create Secure Password
-                    </h3>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-text-secondary font-medium">Password *</Label>
+                  
+                  {/* Contact */}
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                    placeholder="Email Address"
+                    onFocus={scrollToForm}
+                  />
+                  
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                    placeholder="Phone Number (Optional)"
+                    onFocus={scrollToForm}
+                  />
+                  
+                  {/* Address */}
+                  <Input
+                    id="address"
+                    name="address"
+                    type="text"
+                    required
+                    className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                    placeholder="Street Address"
+                    onFocus={scrollToForm}
+                  />
+                  
+                  <Input
+                    id="cityStateZip"
+                    name="cityStateZip"
+                    type="text"
+                    required
+                    className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                    placeholder="City, State ZIP"
+                    onFocus={scrollToForm}
+                  />
+                  
+                  {/* Password with inline helper */}
+                  <div className="space-y-1">
+                    <div className="relative">
                       <PasswordInput
                         id="password"
                         name="password"
-                        placeholder="Create a strong password"
-                        required
-                        className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                        value={password}
-                        onChange={handlePasswordChange}
-                        onFocus={scrollToForm}
-                      />
-                    </div>
-
-                    {password && <PasswordStrengthMeter password={password} />}
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword" className="text-text-secondary font-medium">Confirm Password *</Label>
-                      <PasswordInput
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        placeholder="Confirm your password"
+                        placeholder="Password"
                         required
                         className={`glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 ${
-                          !passwordsMatch ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : 
-                          confirmPassword && passwordsMatch ? 'border-green-500 focus:border-green-500 focus:ring-green-500/30' : ''
+                          password && !isPasswordValid(password) ? 'border-red-500/50' : 
+                          password && isPasswordValid(password) ? 'border-green-500/50' : ''
                         }`}
-                        value={confirmPassword}
-                        onChange={handleConfirmPasswordChange}
-                        onFocus={scrollToForm}
+                        value={password}
+                        onChange={handlePasswordChange}
+                        onFocus={() => {
+                          setPasswordFocused(true);
+                          scrollToForm();
+                        }}
+                        onBlur={() => setPasswordFocused(false)}
                       />
-                      {!passwordsMatch && confirmPassword && (
-                        <p className="text-red-400 text-sm mt-1">Passwords do not match</p>
-                      )}
-                      {passwordsMatch && confirmPassword && password && (
-                        <p className="text-green-400 text-sm mt-1 flex items-center gap-1">
-                          <CheckCircle className="h-4 w-4" />
-                          Passwords match
-                        </p>
-                      )}
                     </div>
+                    <div className="text-xs text-text-muted">
+                      Min 8 characters, include numbers & symbols
+                    </div>
+                    {passwordFocused && password && !isPasswordValid(password) && (
+                      <div className="text-xs text-red-400">
+                        Need: uppercase, lowercase, number, special character
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <PasswordInput
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      placeholder="Confirm Password"
+                      required
+                      className={`glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 ${
+                        !passwordsMatch && confirmPassword ? 'border-red-500/50' : 
+                        passwordsMatch && confirmPassword && password ? 'border-green-500/50' : ''
+                      }`}
+                      value={confirmPassword}
+                      onChange={handleConfirmPasswordChange}
+                      onFocus={scrollToForm}
+                    />
+                    {!passwordsMatch && confirmPassword && (
+                      <div className="text-xs text-red-400">Passwords do not match</div>
+                    )}
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-14 text-lg transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl mt-8"
-                    disabled={registerMutation.isPending || !passwordsMatch}
+                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-12 text-lg transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl mt-6"
+                    disabled={registerMutation.isPending || !passwordsMatch || (!!password && !isPasswordValid(password))}
                   >
                     {registerMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                        Creating Secure Account...
+                        <Loader2 className="mr-3 h-4 w-4 animate-spin" />
+                        Creating Account...
                       </>
                     ) : (
-                      "Create Secure Account"
+                      "Create Account"
                     )}
                   </Button>
                 </form>
+
+                {/* Security info as subtle footer */}
+                <div className="mt-6 pt-4 border-t border-glass-border/50">
+                  <button
+                    type="button"
+                    onClick={() => setShowSecurityInfo(!showSecurityInfo)}
+                    className="text-sm text-text-muted hover:text-text-secondary transition-colors duration-200 flex items-center gap-2"
+                  >
+                    <Shield className="h-3 w-3" />
+                    Secure Registration • Learn about our security
+                    <span className={`transition-transform duration-200 ${showSecurityInfo ? 'rotate-180' : ''}`}>▼</span>
+                  </button>
+                  
+                  {showSecurityInfo && (
+                    <div className="mt-3 p-3 glass rounded border border-glass-border text-sm text-text-secondary space-y-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        <span>256-bit encryption protects your data</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        <span>Passwords never stored in plain text</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        <span>PCI compliant payment processing</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </GlassCard>
             </TabsContent>
           </Tabs>

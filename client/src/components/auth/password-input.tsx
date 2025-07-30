@@ -12,6 +12,7 @@ interface PasswordInputProps {
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 export function PasswordInput({
@@ -23,6 +24,7 @@ export function PasswordInput({
   value,
   onChange,
   onFocus,
+  onBlur,
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -42,6 +44,7 @@ export function PasswordInput({
         value={value}
         onChange={onChange}
         onFocus={onFocus}
+        onBlur={onBlur}
       />
       <Button
         type="button"
