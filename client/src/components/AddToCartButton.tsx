@@ -131,9 +131,9 @@ export function AddToCartButton({
           onClick={handleViewCart}
           variant="default"
           size={size}
-          className={`bg-green-600 hover:bg-green-700 text-white transition-all duration-200 ${className}`}
+          className={`w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${className}`}
         >
-          <Check className="w-4 h-4 mr-2" />
+          <Check className="w-5 h-5" />
           In Cart - View
         </Button>
         {/* Small red X remove button - appears on hover */}
@@ -155,16 +155,16 @@ export function AddToCartButton({
       disabled={isDisabled}
       variant={variant}
       size={size}
-      className={`bg-blue-500 hover:bg-blue-600 text-white transition-all duration-200 ${className} ${loading ? 'opacity-50' : ''}`}
+      className={`w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${className} ${loading ? 'opacity-50' : ''}`}
     >
       {loading ? (
         <>
-          <LoadingSpinner size="small" color="white" className="mr-2" />
+          <LoadingSpinner size="small" color="white" />
           Adding...
         </>
       ) : (
         <>
-          <ShoppingCart className="w-4 h-4 mr-2" />
+          <ShoppingCart className="w-5 h-5" />
           Add to Cart
           {quantity > 1 && ` (${quantity})`}
         </>

@@ -1,0 +1,87 @@
+FIX: "In Cart - View" Button Width Not Matching "Add to Cart" Button
+Issue: When item is added to cart, the green "In Cart - View" button is shorter than the blue "Add to Cart" button on the product page.
+Fix Required:
+javascript// Product page - Make both buttons the same width
+const ProductPage = ({ product }) => {
+  const { isInCart } = useCart();
+  const inCart = isInCart(product.id);
+  
+  return (
+    <div>
+      {/* ... product details ... */}
+      
+      {/* Cart button section - BOTH buttons must be full width */}
+      <div className="mt-6">
+        {inCart ? (
+          <button 
+            onClick={() => router.push('/cart')}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+          >
+            <Check className="w-5 h-5" />
+            In Cart - View
+          </button>
+        ) : (
+          <button 
+            onClick={() => addToCart(product.id)}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+          >
+            <ShoppingCart className="w-5 h-5" />
+            Add to Cart
+          </button>
+        )}
+      </div>
+      
+      {/* Wishlist and Share buttons below */}
+      <div className="flex gap-3 mt-4">
+        <WishlistButton productId={product.id} />
+        <ShareButton productId={product.id} />
+      </div>
+    </div>
+  );
+};
+Key Changes:
+
+Both buttons MUST have w-full class
+Both buttons MUST have same padding: py-3 px-6
+Both buttons MUST be in the same container div
+Move wishlist/share buttons to separate row below
+
+If using a shared component:
+javascript// CartButton component
+export const CartButton = ({ productId, className = '' }) => {
+  const { isInCart } = useCart();
+  const inCart = isInCart(productId);
+  
+  // Base classes include w-full
+  const baseClasses = "w-full py-3 px-6 rounded-lg font-medium transition-all flex items-center justify-center gap-2";
+  
+  if (inCart) {
+    return (
+      <button 
+        onClick={() => router.push('/cart')}
+        className={`${baseClasses} bg-green-600 hover:bg-green-700 text-white ${className}`}
+      >
+        <Check className="w-5 h-5" />
+        In Cart - View
+      </button>
+    );
+  }
+  
+  return (
+    <button 
+      onClick={() => addToCart(productId)}
+      className={`${baseClasses} bg-blue-500 hover:bg-blue-600 text-white ${className}`}
+    >
+      <ShoppingCart className="w-5 h-5" />
+      Add to Cart
+    </button>
+  );
+};
+Make sure:
+
+✅ Both buttons have w-full class
+✅ Both buttons in same parent container
+✅ No flex container making button shrink
+✅ Wishlist/share buttons not interfering with width
+
+The green button should be exactly the same width as the blue button!
