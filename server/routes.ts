@@ -281,7 +281,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Wishlist - require authentication
   app.get("/api/wishlist", requireAuth, async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.userId; // Now set by requireAuth middleware
+      
+      console.log('Get wishlist - userId:', userId);
       
       if (!userId) {
         return res.status(401).json({ 
@@ -302,7 +304,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/wishlist/check", requireAuth, async (req, res) => {
     try {
       const { productId } = req.body;
-      const userId = (req.session as any)?.userId;
+      const userId = req.userId; // Now set by requireAuth middleware
+      
+      console.log('Check wishlist - userId:', userId, 'productId:', productId);
       
       if (!userId) {
         return res.status(401).json({ 
@@ -326,7 +330,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/wishlist", requireAuth, async (req, res) => {
     try {
       const { productId } = req.body;
-      const userId = (req.session as any)?.userId;
+      const userId = req.userId; // Now set by requireAuth middleware
+      
+      console.log('Add to wishlist - userId:', userId, 'productId:', productId);
       
       if (!userId) {
         return res.status(401).json({ 
@@ -346,7 +352,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/wishlist", requireAuth, async (req, res) => {
     try {
       const { productId } = req.query;
-      const userId = (req.session as any)?.userId;
+      const userId = req.userId; // Now set by requireAuth middleware
+      
+      console.log('Remove from wishlist - userId:', userId, 'productId:', productId);
       
       if (!userId) {
         return res.status(401).json({ 

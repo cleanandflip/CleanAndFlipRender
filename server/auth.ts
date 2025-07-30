@@ -379,9 +379,31 @@ export function setupAuth(app: Express) {
 
 // Middleware to require authentication
 export function requireAuth(req: any, res: any, next: any) {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Authentication required" });
+  console.log('RequireAuth middleware - Is authenticated:', req.isAuthenticated?.());
+  console.log('RequireAuth middleware - User from passport:', req.user);
+  console.log('RequireAuth middleware - Session passport:', req.session?.passport);
+  
+  // Check if user is authenticated via passport
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    console.log('User not authenticated via passport in requireAuth');
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'Please log in to access this resource'
+    });
   }
+  
+  const user = req.user;
+  if (!user) {
+    console.log('No user object in request in requireAuth');
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'Please log in to access this resource'
+    });
+  }
+  
+  // Set userId for consistent access in route handlers
+  req.userId = user.id;
+  console.log('RequireAuth - Authentication successful for user:', user.email, 'userId:', user.id);
   next();
 }
 
