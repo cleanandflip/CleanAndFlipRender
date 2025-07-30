@@ -85,29 +85,7 @@ html {
     @apply transform -translate-y-0.5;
   }
   
-  .logo-infinity {
-    @apply relative inline-flex items-center gap-2;
-  }
-  
-  .infinity-symbol {
-    @apply relative w-12 h-6;
-  }
-  
-  .plate-left,
-  .plate-right {
-    @apply absolute w-6 h-6 rounded-full border-2;
-    border-color: hsl(210, 16%, 82%);
-  }
-  
-  .plate-left {
-    @apply left-0;
-    background: hsl(215, 20%, 65%);
-  }
-  
-  .plate-right {
-    @apply right-0;
-    background: hsl(210, 16%, 82%);
-  }
+
   
   .trust-indicator {
     animation: pulse 2s infinite;

@@ -127,11 +127,8 @@ export default function AuthPage() {
       {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
         <div className="w-full max-w-xl" ref={formContainerRef}>
-          <div className="text-center mb-8">
-            <Logo size="lg" className="mx-auto mb-6" />
-            <h1 className="font-bebas text-5xl text-white tracking-wider mb-4">JOIN THE MARKETPLACE</h1>
-            <p className="text-text-secondary text-xl leading-relaxed max-w-lg mx-auto">Turn unused gear into cash, buy quality equipment you can trust</p>
-          </div>
+          {/* Just the logo - no redundant text */}
+          <Logo size="lg" textOnly={true} className="mb-8" />
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8 glass h-14 text-lg">

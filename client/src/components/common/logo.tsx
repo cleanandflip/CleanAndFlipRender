@@ -4,40 +4,55 @@ interface LogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   clickable?: boolean;
+  textOnly?: boolean; // New prop for auth pages
 }
 
-export default function Logo({ className = "", size = 'md', clickable = true }: LogoProps) {
+export default function Logo({ className = "", size = 'md', clickable = true, textOnly = false }: LogoProps) {
   const sizes = {
     sm: {
       container: "text-lg",
-      symbol: "w-8 h-4",
-      plate: "w-4 h-4 border-2",
+      logo: "h-5 w-5",
     },
     md: {
       container: "text-2xl",
-      symbol: "w-12 h-6",
-      plate: "w-6 h-6 border-2",
+      logo: "h-6 w-6",
     },
     lg: {
       container: "text-4xl",
-      symbol: "w-16 h-8",
-      plate: "w-8 h-8 border-3",
+      logo: "h-24 w-24", // Large standalone size for auth pages
     },
   };
 
   const currentSize = sizes[size];
 
-  const LogoContent = () => (
-    <div className={`logo-infinity hover:opacity-80 transition-opacity ${className}`}>
-      <div className={`infinity-symbol ${currentSize?.symbol || sizes.md.symbol}`}>
-        <div className={`plate-left ${currentSize?.plate || sizes.md.plate}`}></div>
-        <div className={`plate-right ${currentSize?.plate || sizes.md.plate}`}></div>
+  const LogoContent = () => {
+    // For auth pages - show only the logo image
+    if (textOnly) {
+      return (
+        <div className={`flex justify-center ${className}`}>
+          <img 
+            src="/clean-flip-logo.png" 
+            alt="Clean & Flip" 
+            className={currentSize?.logo || sizes.lg.logo}
+          />
+        </div>
+      );
+    }
+
+    // For navigation and other locations - show logo + text
+    return (
+      <div className={`flex items-center gap-2 hover:opacity-80 transition-opacity ${className}`}>
+        <img 
+          src="/clean-flip-logo.png" 
+          alt="Clean & Flip Logo" 
+          className={currentSize?.logo || sizes.md.logo}
+        />
+        <span className={`font-bebas ${currentSize?.container || sizes.md.container} text-white tracking-wider`}>
+          CLEAN & FLIP
+        </span>
       </div>
-      <span className={`font-bebas ${currentSize?.container || sizes.md.container} text-white tracking-wider`}>
-        CLEAN & FLIP
-      </span>
-    </div>
-  );
+    );
+  };
 
   if (!clickable) {
     return <LogoContent />;

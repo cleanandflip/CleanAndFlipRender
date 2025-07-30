@@ -1,0 +1,72 @@
+Replace Two-Dot Icon with New Logo/Favicon - Keep "CLEAN & FLIP" Text
+I'm attaching a new logo/favicon image. Please replace ONLY the two-dot icon (●●) throughout the site, but KEEP the "CLEAN & FLIP" text everywhere.
+1. Navigation Bar (All Pages):
+Current: ●● CLEAN & FLIP
+Change to: [NEW LOGO] CLEAN & FLIP
+jsx// Update the navigation component
+<nav className="floating-nav">
+  <Link href="/" className="flex items-center gap-2">
+    <img 
+      src="/path-to-new-logo" 
+      alt="Clean & Flip Logo" 
+      className="h-6 w-6"  // Small icon size
+    />
+    <span className="font-bold text-white">CLEAN & FLIP</span>
+  </Link>
+  {/* Rest of nav items: Shop, Sell, About, Contact */}
+</nav>
+2. Auth Pages - SPECIAL CASE:
+Remove this entire section (the oval with redundant branding):
+
+The two-dot logo (●●)
+The text "CLEAN & FLIP"
+"JOIN THE MARKETPLACE" heading
+"Turn unused gear into cash..." tagline
+The entire rounded/oval container
+
+Replace with JUST the logo/favicon:
+jsx// Above the auth form, add only:
+<div className="flex justify-center mb-8">
+  <img 
+    src="/path-to-new-logo" 
+    alt="Clean & Flip" 
+    className="h-24 w-24"  // Larger standalone size
+  />
+</div>
+
+// Then the form starts (Sign In or Create Account)
+3. Throughout the Website:
+Search for ALL instances of the two-dot icon (●●) and replace with the new logo image, but ALWAYS keep the "CLEAN & FLIP" text:
+Footer example:
+jsx// If footer has: ●● CLEAN & FLIP
+// Change to:
+<div className="flex items-center gap-2">
+  <img src="/path-to-new-logo" className="h-5 w-5" />
+  <span>CLEAN & FLIP</span>
+</div>
+Any headers/titles:
+jsx// Wherever you see: ●● CLEAN & FLIP
+// It becomes: [logo image] CLEAN & FLIP
+4. What NOT to Change:
+
+Don't remove "CLEAN & FLIP" text from anywhere (except the auth page redundant section)
+Don't change the text styling or font
+Don't change navigation layout
+Keep all text exactly as is
+
+5. Favicon Updates:
+html<!-- Update browser tab icon -->
+<link rel="icon" type="image/png" href="/path-to-new-logo" />
+<link rel="apple-touch-icon" href="/path-to-new-logo" />
+6. Summary of Changes:
+Navigation Bar: ●● CLEAN & FLIP → [LOGO] CLEAN & FLIP
+Auth Pages: Remove entire oval section → Just show logo image centered
+Everywhere Else: ●● → [LOGO] (but keep "CLEAN & FLIP" text)
+Key Points:
+
+The two-dot icon (●●) is replaced with the new logo image everywhere
+"CLEAN & FLIP" text stays everywhere EXCEPT the redundant auth section
+On auth pages, remove the whole redundant branding section and show ONLY the logo image
+Maintain consistent spacing between logo and text throughout
+
+Please implement these specific changes using the logo/favicon image I'm providing.
