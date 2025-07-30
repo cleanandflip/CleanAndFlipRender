@@ -51,7 +51,7 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/products/new" component={ProductForm} />
-          <Route path="/admin/products/:id/edit" component={ProductForm} />
+          <Route path="/admin/products/edit/:id" component={ProductForm} />
           <Route path="/orders" component={Orders} />
           <Route path="/about" component={About} />
           <Route path="/contact" component={Contact} />

@@ -50,9 +50,17 @@ export function ProductForm() {
   });
 
   // Load existing product data if editing
-  const { data: product } = useQuery({
+  const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ['/api/products', id],
-    enabled: isEdit,
+    queryFn: async () => {
+      if (!id) return null;
+      const res = await fetch(`/api/products/${id}`, {
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Failed to fetch product');
+      return res.json();
+    },
+    enabled: isEdit && !!id,
   });
   
   // Update form when product loads
@@ -135,6 +143,12 @@ export function ProductForm() {
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Loading check for edit mode
+    if (isEdit && productLoading) {
+      toast({ title: "Loading", description: "Please wait while product data loads..." });
+      return;
+    }
     
     // Validate required fields
     if (!formData.name || !formData.brand || !formData.categoryId || formData.price <= 0) {
@@ -274,7 +288,7 @@ export function ProductForm() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category: any) => (
+                    {(categories as any[]).map((category: any) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
                       </SelectItem>

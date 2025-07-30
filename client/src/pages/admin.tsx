@@ -160,10 +160,10 @@ function ProductManagement() {
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>${product.price}</TableCell>
                 <TableCell>{product.categoryId}</TableCell>
-                <TableCell>{product.inventoryCount || 0}</TableCell>
+                <TableCell>{product.stockQuantity || 0}</TableCell>
                 <TableCell>
-                  <Badge variant={(product.inventoryCount || 0) > 0 ? "default" : "destructive"}>
-                    {(product.inventoryCount || 0) > 0 ? "In Stock" : "Out of Stock"}
+                  <Badge variant={(product.stockQuantity || 0) > 0 ? "default" : "destructive"}>
+                    {(product.stockQuantity || 0) > 0 ? "In Stock" : "Out of Stock"}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -178,7 +178,7 @@ function ProductManagement() {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => navigate(`/admin/products/${product.id}/edit`)}
+                      onClick={() => navigate(`/admin/products/edit/${product.id}`)}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
