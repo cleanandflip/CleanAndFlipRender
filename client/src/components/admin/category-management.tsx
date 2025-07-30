@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import GlassCard from "@/components/common/glass-card";
+import CategoryFilterConfig from "@/components/admin/category-filter-config";
 import { apiRequest, broadcastProductUpdate } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -31,6 +32,7 @@ interface Category {
   displayOrder: number;
   isActive: boolean;
   productCount: number;
+  filterConfig?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,6 +43,7 @@ interface CategoryFormData {
   description: string;
   isActive: boolean;
   imageUrl?: string;
+  filterConfig?: Record<string, any>;
 }
 
 function CategoryEditModal({ 
@@ -59,7 +62,8 @@ function CategoryEditModal({
     slug: category?.slug || "",
     description: category?.description || "",
     isActive: category?.isActive ?? true,
-    imageUrl: category?.imageUrl || ""
+    imageUrl: category?.imageUrl || "",
+    filterConfig: category?.filterConfig || {}
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(category?.imageUrl || "");
@@ -252,6 +256,12 @@ function CategoryEditModal({
             </Button>
           </div>
         </form>
+
+        {/* Category Filter Configuration */}
+        <CategoryFilterConfig 
+          category={{ ...category, filterConfig: formData.filterConfig }}
+          onUpdate={(filters) => setFormData(prev => ({ ...prev, filterConfig: filters }))}
+        />
       </DialogContent>
     </Dialog>
   );

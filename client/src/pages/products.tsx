@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import ProductGrid from "@/components/products/product-grid";
 import FilterSidebar from "@/components/products/filter-sidebar";
 import SearchBar from "@/components/products/search-bar";
+import FilterChip from "@/components/products/filter-chip";
 import GlassCard from "@/components/common/glass-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,6 +46,31 @@ export default function Products() {
     
     setFilters(initialFilters);
   }, [location]);
+
+  // Remove a specific filter
+  const removeFilter = (filterType: string, value: string) => {
+    const newFilters = { ...filters };
+    
+    if (filterType === 'brand' || filterType === 'condition' || filterType === 'tags') {
+      const currentValues = Array.isArray(newFilters[filterType]) ? newFilters[filterType] : [];
+      newFilters[filterType] = currentValues.filter(v => v !== value);
+      if (newFilters[filterType].length === 0) {
+        delete newFilters[filterType];
+      }
+    } else {
+      delete newFilters[filterType];
+    }
+    
+    setFilters(newFilters);
+    setCurrentPage(0);
+  };
+
+  // Count active filters
+  const activeFilterCount = Object.entries(filters).filter(([key, value]) => {
+    if (key === 'category' && value === 'all') return false;
+    if (Array.isArray(value)) return value.length > 0;
+    return value !== undefined && value !== null && value !== '';
+  }).length;
 
   const { data, isLoading, error, refetch } = useQuery<{ products: Product[]; total: number }>({
     queryKey: [
@@ -122,10 +148,65 @@ export default function Products() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-bebas text-4xl md:text-6xl mb-4">SHOP EQUIPMENT</h1>
+          <h1 className="font-bebas text-4xl md:text-6xl mb-4">
+            {filters.category && filters.category !== 'all' 
+              ? filters.category.replace('-', ' & ').toUpperCase()
+              : 'SHOP EQUIPMENT'
+            }
+          </h1>
           <p className="text-text-secondary text-lg">
             Discover premium weightlifting equipment inspected and verified by our team.
           </p>
+          
+          {/* Active Filters Display */}
+          {activeFilterCount > 0 && (
+            <div className="mt-4">
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-sm text-text-secondary">Active filters:</span>
+                
+                {/* Brand filters */}
+                {filters.brand && Array.isArray(filters.brand) && filters.brand.map(brand => (
+                  <FilterChip 
+                    key={`brand-${brand}`} 
+                    label={brand} 
+                    onRemove={() => removeFilter('brand', brand)} 
+                  />
+                ))}
+                
+                {/* Condition filters */}
+                {filters.condition && Array.isArray(filters.condition) && filters.condition.map(condition => (
+                  <FilterChip 
+                    key={`condition-${condition}`} 
+                    label={condition} 
+                    onRemove={() => removeFilter('condition', condition)} 
+                  />
+                ))}
+                
+                {/* Price filters */}
+                {filters.priceMin && (
+                  <FilterChip 
+                    label={`Min: $${filters.priceMin}`} 
+                    onRemove={() => removeFilter('priceMin', '')} 
+                  />
+                )}
+                {filters.priceMax && (
+                  <FilterChip 
+                    label={`Max: $${filters.priceMax}`} 
+                    onRemove={() => removeFilter('priceMax', '')} 
+                  />
+                )}
+                
+                {/* Tag filters */}
+                {filters.tags && Array.isArray(filters.tags) && filters.tags.map(tag => (
+                  <FilterChip 
+                    key={`tag-${tag}`} 
+                    label={`#${tag}`} 
+                    onRemove={() => removeFilter('tags', tag)} 
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Search and Controls */}

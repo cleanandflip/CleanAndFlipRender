@@ -1022,6 +1022,7 @@ export class DatabaseStorage implements IStorage {
     imageUrl?: string;
     description?: string;
     isActive?: boolean;
+    filterConfig?: Record<string, any>;
   }): Promise<any> {
     const [newCategory] = await db
       .insert(categories)
@@ -1042,6 +1043,7 @@ export class DatabaseStorage implements IStorage {
     description?: string;
     isActive?: boolean;
     displayOrder?: number;
+    filterConfig?: Record<string, any>;
   }): Promise<any> {
     const [updatedCategory] = await db
       .update(categories)

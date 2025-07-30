@@ -500,6 +500,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Filter options for category configuration
+  app.get("/api/admin/products/filter-options", requireAdmin, async (req, res) => {
+    try {
+      // Get all unique brands from products
+      const brands = await storage.getAllProducts();
+      const uniqueBrands = [...new Set(brands.products.map(p => p.brand).filter(Boolean))].sort();
+
+      const filterOptions = {
+        brands: uniqueBrands,
+        conditions: ['New', 'Like New', 'Excellent', 'Good', 'Fair']
+      };
+
+      res.json(filterOptions);
+    } catch (error) {
+      console.error('Error fetching filter options:', error);
+      res.status(500).json({ message: 'Failed to fetch filter options' });
+    }
+  });
+
   // Category Management APIs
   app.get("/api/admin/categories", requireAdmin, async (req, res) => {
     try {

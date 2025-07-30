@@ -1,0 +1,333 @@
+Here's a prompt for Replit:
+
+Configure Category Filters in Developer Dashboard
+Requirement: Each category needs configurable filters that auto-apply when users click that category on the homepage.
+Database Schema Update:
+sql-- Add filter configuration to categories table
+ALTER TABLE categories 
+ADD COLUMN filter_config jsonb DEFAULT '{}';
+
+-- Example filter_config structure:
+-- {
+--   "brand": ["Nike", "Adidas"],
+--   "size": ["M", "L", "XL"],
+--   "condition": ["New", "Like New"],
+--   "priceMin": 0,
+--   "priceMax": 200,
+--   "type": ["Shoes", "Apparel"],
+--   "gender": ["Men", "Unisex"]
+-- }
+1. Category Filter Configuration UI:
+javascript// In Category Edit Modal, add Filter Configuration section
+const CategoryFilterConfig = ({ category, onUpdate }) => {
+  const [filters, setFilters] = useState(category.filter_config || {});
+  
+  // Fetch available filter options from products
+  const { data: filterOptions } = useQuery({
+    queryKey: ['filterOptions'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/products/filter-options');
+      return response.json();
+      // Returns: { brands: [], sizes: [], conditions: [], types: [], etc. }
+    }
+  });
+  
+  return (
+    <div className="border rounded-lg p-4 mt-4">
+      <h3 className="font-semibold mb-3">Category Filter Configuration</h3>
+      <p className="text-sm text-gray-600 mb-4">
+        Select which filters auto-apply when users click this category
+      </p>
+      
+      {/* Brand Selection */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Brands</label>
+        <MultiSelect
+          options={filterOptions?.brands || []}
+          selected={filters.brand || []}
+          onChange={(brands) => setFilters({...filters, brand: brands})}
+          placeholder="Select brands for this category"
+        />
+      </div>
+      
+      {/* Size Selection */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Sizes</label>
+        <MultiSelect
+          options={filterOptions?.sizes || []}
+          selected={filters.size || []}
+          onChange={(sizes) => setFilters({...filters, size: sizes})}
+        />
+      </div>
+      
+      {/* Condition Selection */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Condition</label>
+        <MultiSelect
+          options={['New', 'Like New', 'Excellent', 'Good', 'Fair']}
+          selected={filters.condition || []}
+          onChange={(conditions) => setFilters({...filters, condition: conditions})}
+        />
+      </div>
+      
+      {/* Price Range */}
+      <div className="mb-4 grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-2">Min Price</label>
+          <input
+            type="number"
+            value={filters.priceMin || ''}
+            onChange={(e) => setFilters({...filters, priceMin: e.target.value})}
+            placeholder="0"
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Max Price</label>
+          <input
+            type="number"
+            value={filters.priceMax || ''}
+            onChange={(e) => setFilters({...filters, priceMax: e.target.value})}
+            placeholder="999"
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+      </div>
+      
+      {/* Product Type */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Product Type</label>
+        <MultiSelect
+          options={filterOptions?.types || []}
+          selected={filters.type || []}
+          onChange={(types) => setFilters({...filters, type: types})}
+        />
+      </div>
+      
+      {/* Custom Tags */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">Tags</label>
+        <TagInput
+          tags={filters.tags || []}
+          onChange={(tags) => setFilters({...filters, tags})}
+          placeholder="Add custom tags"
+        />
+      </div>
+      
+      <button
+        onClick={() => onUpdate(filters)}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        Save Filter Configuration
+      </button>
+    </div>
+  );
+};
+2. Update Current Categories with Appropriate Filters:
+javascript// Migration script to set filters for existing categories
+const categoryFilterMappings = {
+  'footwear': {
+    type: ['Shoes', 'Sneakers', 'Boots'],
+    brand: ['Nike', 'Adidas', 'New Balance', 'Jordan']
+  },
+  'apparel': {
+    type: ['Shirts', 'Jerseys', 'Shorts', 'Pants'],
+    size: ['S', 'M', 'L', 'XL', 'XXL']
+  },
+  'equipment': {
+    type: ['Gear', 'Accessories', 'Training Equipment'],
+    condition: ['New', 'Like New', 'Excellent']
+  },
+  'collectibles': {
+    type: ['Cards', 'Memorabilia', 'Signed Items'],
+    condition: ['New', 'Mint', 'Near Mint']
+  },
+  'sale': {
+    priceMax: 50,
+    tags: ['sale', 'clearance', 'deal']
+  }
+};
+
+// Apply to existing categories
+for (const [slug, filters] of Object.entries(categoryFilterMappings)) {
+  await db
+    .update(categories)
+    .set({ filter_config: filters })
+    .where(eq(categories.slug, slug));
+}
+3. Homepage Category Click Handler:
+javascript// Update homepage category links to include filter params
+const CategoryGrid = () => {
+  const buildCategoryUrl = (category) => {
+    const params = new URLSearchParams();
+    
+    // Always include category slug
+    params.set('category', category.slug);
+    
+    // Add all configured filters
+    const filters = category.filter_config || {};
+    
+    if (filters.brand?.length) {
+      params.set('brand', filters.brand.join(','));
+    }
+    if (filters.size?.length) {
+      params.set('size', filters.size.join(','));
+    }
+    if (filters.condition?.length) {
+      params.set('condition', filters.condition.join(','));
+    }
+    if (filters.type?.length) {
+      params.set('type', filters.type.join(','));
+    }
+    if (filters.priceMin !== undefined) {
+      params.set('priceMin', filters.priceMin);
+    }
+    if (filters.priceMax !== undefined) {
+      params.set('priceMax', filters.priceMax);
+    }
+    if (filters.tags?.length) {
+      params.set('tags', filters.tags.join(','));
+    }
+    
+    return `/products?${params.toString()}`;
+  };
+  
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {categories?.map(category => (
+        <Link 
+          key={category.id}
+          href={buildCategoryUrl(category)}
+          className="group relative"
+        >
+          {/* Category card UI */}
+        </Link>
+      ))}
+    </div>
+  );
+};
+4. Products Page - Parse and Apply Filters:
+javascript// Products page component
+const ProductsPage = () => {
+  const searchParams = useSearchParams();
+  
+  // Parse all filters from URL
+  const initialFilters = {
+    category: searchParams.get('category') || 'all',
+    brand: searchParams.get('brand')?.split(',') || [],
+    size: searchParams.get('size')?.split(',') || [],
+    condition: searchParams.get('condition')?.split(',') || [],
+    type: searchParams.get('type')?.split(',') || [],
+    priceMin: searchParams.get('priceMin') || '',
+    priceMax: searchParams.get('priceMax') || '',
+    tags: searchParams.get('tags')?.split(',') || [],
+  };
+  
+  const [filters, setFilters] = useState(initialFilters);
+  
+  // Show active filters in UI
+  const activeFilterCount = Object.values(filters)
+    .filter(v => v && (Array.isArray(v) ? v.length > 0 : v !== 'all'))
+    .length;
+  
+  return (
+    <div>
+      {/* Show category name and active filters */}
+      <div className="mb-6">
+        {filters.category !== 'all' && (
+          <h1 className="text-2xl font-bold mb-2">
+            {getCategoryName(filters.category)}
+          </h1>
+        )}
+        
+        {activeFilterCount > 1 && (
+          <div className="flex flex-wrap gap-2">
+            {filters.brand.map(brand => (
+              <FilterChip key={brand} label={brand} onRemove={() => removeFilter('brand', brand)} />
+            ))}
+            {filters.size.map(size => (
+              <FilterChip key={size} label={`Size ${size}`} onRemove={() => removeFilter('size', size)} />
+            ))}
+            {/* More filter chips */}
+          </div>
+        )}
+      </div>
+      
+      {/* Products grid with applied filters */}
+    </div>
+  );
+};
+5. API Endpoint for Filtered Products:
+javascriptapp.get('/api/products', async (req, res) => {
+  const {
+    category,
+    brand,
+    size,
+    condition,
+    type,
+    priceMin,
+    priceMax,
+    tags
+  } = req.query;
+  
+  let query = db.select().from(products);
+  
+  // Apply all filters
+  if (category && category !== 'all') {
+    const categoryData = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.slug, category))
+      .limit(1);
+      
+    if (categoryData[0]) {
+      query = query.where(eq(products.categoryId, categoryData[0].id));
+    }
+  }
+  
+  if (brand) {
+    const brands = brand.split(',');
+    query = query.where(inArray(products.brand, brands));
+  }
+  
+  if (size) {
+    const sizes = size.split(',');
+    query = query.where(inArray(products.size, sizes));
+  }
+  
+  // Apply remaining filters...
+  
+  const filteredProducts = await query;
+  res.json(filteredProducts);
+});
+6. Quick Filter Presets in Admin:
+javascript// Helpful presets for common category configurations
+const filterPresets = {
+  'Footwear': {
+    type: ['Shoes', 'Sneakers', 'Boots', 'Cleats'],
+    brand: ['Nike', 'Adidas', 'New Balance', 'Under Armour']
+  },
+  'Team Apparel': {
+    type: ['Jerseys', 'Shorts', 'Warm-ups'],
+    tags: ['team', 'official']
+  },
+  'Vintage': {
+    tags: ['vintage', 'retro', 'classic'],
+    condition: ['Good', 'Fair', 'Acceptable']
+  },
+  'New Arrivals': {
+    // Could use date-based filtering
+    daysOld: 7
+  }
+};
+Testing Requirements:
+
+ Set filters for "Footwear" category → Click it → Products page shows only shoes/sneakers
+ Set price range for "Sale" category → Click it → Only shows items under $50
+ Set brand filters for "Nike" category → Shows only Nike products
+ Multiple filter combinations work together
+ Removing a filter chip updates results immediately
+ URL parameters reflect all active filters
+ Back button maintains filter state
+
+This ensures categories are smart containers that pre-filter products based on your configuration

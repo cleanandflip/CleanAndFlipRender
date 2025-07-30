@@ -8,6 +8,7 @@ interface Category {
   slug: string;
   imageUrl?: string;
   productCount: number;
+  filterConfig?: Record<string, any>;
 }
 
 export default function CategoryGrid() {
@@ -45,12 +46,40 @@ export default function CategoryGrid() {
     );
   }
 
+  const buildCategoryUrl = (category: Category) => {
+    const params = new URLSearchParams();
+    
+    // Always include category slug
+    params.set('category', category.slug);
+    
+    // Add all configured filters from category
+    const filters = category.filterConfig || {};
+    
+    if (filters.brand?.length) {
+      params.set('brand', Array.isArray(filters.brand) ? filters.brand.join(',') : filters.brand);
+    }
+    if (filters.condition?.length) {
+      params.set('condition', Array.isArray(filters.condition) ? filters.condition.join(',') : filters.condition);
+    }
+    if (filters.priceMin !== undefined) {
+      params.set('priceMin', filters.priceMin.toString());
+    }
+    if (filters.priceMax !== undefined) {
+      params.set('priceMax', filters.priceMax.toString());
+    }
+    if (filters.tags?.length) {
+      params.set('tags', Array.isArray(filters.tags) ? filters.tags.join(',') : filters.tags);
+    }
+    
+    return `/products?${params.toString()}`;
+  };
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {categories.map(category => (
         <Link 
           key={category.id}
-          href={`/products?category=${category.slug}`}
+          href={buildCategoryUrl(category)}
           className="group relative overflow-hidden rounded-lg glass hover:scale-105 transition-transform duration-200"
         >
           <div className="aspect-square relative">

@@ -62,6 +62,7 @@ export const categories = pgTable("categories", {
   displayOrder: integer("display_order").default(0),
   isActive: boolean("is_active").default(true),
   productCount: integer("product_count").default(0),
+  filterConfig: jsonb("filter_config").default(sql`'{}'::jsonb`),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
