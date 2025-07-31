@@ -485,11 +485,22 @@ function DashboardContent() {
                   {wishlist?.map((item) => (
                     <div key={item.id} className="relative glass rounded-lg overflow-hidden">
                       <SmartLink to={`/products/${item.product.id}`}>
-                        <img
-                          src={item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
-                          alt={item.product.name}
-                          className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
-                        />
+                        <div className="w-full h-48 relative bg-gray-900/30 hover:bg-gray-900/40 transition-colors overflow-hidden">
+                          {item.product.images?.[0] ? (
+                            <img
+                              src={item.product.images[0]}
+                              alt={item.product.name}
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full">
+                              <div className="text-center text-text-muted">
+                                <div className="text-4xl mb-2">📦</div>
+                                <div className="text-sm">No Image Available</div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </SmartLink>
                       <div className="absolute top-2 right-2">
                         <WishlistButton 
