@@ -10,6 +10,7 @@ import GlassCard from "@/components/common/glass-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Filter, Grid, List } from "lucide-react";
+import { ApiError } from "@/components/error-boundary";
 import type { Product } from "@shared/schema";
 
 interface ProductFilters {
@@ -145,10 +146,11 @@ export default function Products() {
     return (
       <div className="min-h-screen pt-32 px-6">
         <div className="max-w-6xl mx-auto">
-          <GlassCard className="p-8 text-center">
-            <h1 className="text-2xl font-bold text-red-400 mb-4">Error Loading Products</h1>
-            <p className="text-text-secondary">Please try again later.</p>
-          </GlassCard>
+          <ApiError 
+            status={500} 
+            message="Failed to load products. Please try again later."
+            onRetry={() => window.location.reload()}
+          />
         </div>
       </div>
     );

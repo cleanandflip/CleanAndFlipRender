@@ -9,7 +9,7 @@ interface WishlistButtonProps {
   size?: 'small' | 'default';
   className?: string;
   showTooltip?: boolean;
-  initialWishlisted?: boolean; // NEW: Pass wishlist status to prevent API calls
+  initialWishlisted?: boolean; // NEW: Pass wishlist status to prevent API calls (undefined = fetch needed)
 }
 
 export const WishlistButton: React.FC<WishlistButtonProps> = ({ 
@@ -17,12 +17,12 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
   size = 'default',
   className = '',
   showTooltip = true,
-  initialWishlisted = false
+  initialWishlisted
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isWishlisted, setIsWishlisted] = useState(initialWishlisted);
+  const [isWishlisted, setIsWishlisted] = useState(initialWishlisted || false);
   const [loading, setLoading] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   
@@ -61,7 +61,7 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
       if (!response.ok) throw new Error('Failed to check wishlist');
       return response.json();
     },
-    enabled: !!user && !!productId && initialWishlisted === false, // Only query if no initial data
+    enabled: !!user && !!productId && initialWishlisted === undefined, // Only query if no initial data provided
     staleTime: 60000, // 1 minute
     cacheTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,
@@ -70,9 +70,9 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
     refetchOnReconnect: false,
   });
   
-  // Update local state when query data changes (only if no initial data)
+  // Update local state when query data changes (only if no initial data provided)
   useEffect(() => {
-    if (wishlistData && initialWishlisted === false) {
+    if (wishlistData && initialWishlisted === undefined) {
       setIsWishlisted(wishlistData.isWishlisted);
     }
   }, [wishlistData, initialWishlisted]);

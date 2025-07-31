@@ -126,6 +126,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                     productId={product.id}
                     size="small"
                     className="glass border-glass-border"
+                    initialWishlisted={isWishlisted}
                   />
                   
                   <AddToCartButton

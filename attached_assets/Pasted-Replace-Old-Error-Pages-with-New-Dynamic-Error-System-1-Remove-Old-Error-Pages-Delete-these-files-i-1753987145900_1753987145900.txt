@@ -1,0 +1,80 @@
+Replace Old Error Pages with New Dynamic Error System
+1. Remove Old Error Pages
+Delete these files if they exist:
+
+src/pages/not-found.tsx
+src/pages/404.tsx
+src/pages/error.tsx
+Any other static error page files
+
+2. Update Your Router Configuration
+In src/App.tsx, replace the old error handling:
+tsx// Remove old imports like:
+import { NotFound } from './pages/not-found';
+
+// Add new import:
+import { ErrorBoundary } from './components/error-boundary';
+
+// Update your router setup:
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          {/* Remove any old 404 route like: */}
+          {/* <Route path="*" element={<NotFound />} /> */}
+          
+          {/* Add errorElement to your main route: */}
+          <Route path="/" element={<Layout />} errorElement={<ErrorBoundary />}>
+            {/* Your existing routes */}
+          </Route>
+          
+          {/* Catch-all route for 404s: */}
+          <Route path="*" element={<ErrorBoundary />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+}
+3. Update API Error Handling
+Replace any old error displays in your components:
+tsx// Instead of old error handling like:
+if (error) return <div>Error: {error.message}</div>;
+
+// Use the new ApiError component:
+import { ApiError } from './components/api-error';
+
+if (error) {
+  return <ApiError 
+    status={error.response?.status || 500} 
+    message={error.message} 
+  />;
+}
+4. Remove Old Error Styles
+In your CSS files, remove any old error page styles like:
+css/* Remove these: */
+.error-page { ... }
+.not-found { ... }
+.error-404 { ... }
+5. Update Error Throwing
+In your API calls, ensure errors have proper status codes:
+tsx// In your API service files:
+if (!response.ok) {
+  throw {
+    status: response.status,
+    message: response.statusText || 'An error occurred'
+  };
+}
+6. Global Error Boundary (Optional)
+Wrap your entire app for unexpected errors:
+tsx// In src/main.tsx or index.tsx:
+import { ErrorBoundary } from './components/error-boundary';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </React.StrictMode>
+);
+This will ensure all errors (404s, API errors, runtime errors) use your new beautiful, dynamic error pages instead of the old static ones.

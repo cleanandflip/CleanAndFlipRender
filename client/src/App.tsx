@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/use-cart";
 import { AuthProvider } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
+import { ErrorBoundary } from "@/components/error-boundary";
 import Home from "@/pages/home";
 import Products from "@/pages/products";
 import ProductDetail from "@/pages/product-detail";
@@ -36,31 +37,33 @@ function ScrollToTop() {
 
 function Router() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation />
-      <CartDrawer />
-      <ScrollToTop />
-      <main className="flex-1">
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/products" component={Products} />
-          <Route path="/products/:id" component={ProductDetail} />
-          <Route path="/cart" component={Cart} />
-          <Route path="/checkout" component={Checkout} />
-          <Route path="/sell-to-us" component={SellToUs} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/admin" component={AdminDashboard} />
-          <Route path="/admin/products/new" component={ProductForm} />
-          <Route path="/admin/products/edit/:id" component={ProductForm} />
-          <Route path="/orders" component={Orders} />
-          <Route path="/about" component={About} />
-          <Route path="/contact" component={Contact} />
-          <Route path="/auth" component={AuthPage} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-      <Footer />
-    </div>
+    <ErrorBoundary>
+      <div className="min-h-screen flex flex-col">
+        <Navigation />
+        <CartDrawer />
+        <ScrollToTop />
+        <main className="flex-1">
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/products" component={Products} />
+            <Route path="/products/:id" component={ProductDetail} />
+            <Route path="/cart" component={Cart} />
+            <Route path="/checkout" component={Checkout} />
+            <Route path="/sell-to-us" component={SellToUs} />
+            <Route path="/dashboard" component={Dashboard} />
+            <Route path="/admin" component={AdminDashboard} />
+            <Route path="/admin/products/new" component={ProductForm} />
+            <Route path="/admin/products/edit/:id" component={ProductForm} />
+            <Route path="/orders" component={Orders} />
+            <Route path="/about" component={About} />
+            <Route path="/contact" component={Contact} />
+            <Route path="/auth" component={AuthPage} />
+            <Route component={NotFound} />
+          </Switch>
+        </main>
+        <Footer />
+      </div>
+    </ErrorBoundary>
   );
 }
 
