@@ -1398,13 +1398,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Authentication required" });
       }
       
-      const { askingPrice, weight, ...submissionData } = req.body;
-      
       const submission = await storage.createEquipmentSubmission({
-        ...submissionData,
+        ...req.body,
         userId,
-        askingPrice: askingPrice ? Number(askingPrice) : undefined,
-        weight: weight ? Number(weight) : undefined,
       });
       
       Logger.info(`Equipment submission created: ${submission.id}`);

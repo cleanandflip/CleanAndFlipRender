@@ -951,7 +951,7 @@ export class DatabaseStorage implements IStorage {
     return submission;
   }
 
-  async createSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
+  async createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
     const [newSubmission] = await db
       .insert(equipmentSubmissions)
       .values(submission)

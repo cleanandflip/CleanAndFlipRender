@@ -69,18 +69,21 @@ export default function SellToUs() {
   const form = useForm<SubmissionForm>({
     resolver: zodResolver(submissionSchema),
     defaultValues: {
+      name: "",
+      brand: "",
       condition: "good",
+      weight: "",
+      askingPrice: "",
+      description: "",
       images: [],
     },
   });
 
   const submitMutation = useMutation({
     mutationFn: async (data: SubmissionForm) => {
-      // Convert numeric fields to proper types and ensure data integrity
+      // Keep data as strings to match schema expectations
       const submissionData = {
         ...data,
-        askingPrice: data.askingPrice ? Number(data.askingPrice) : undefined,
-        weight: data.weight ? Number(data.weight) : undefined,
         images: uploadedImages,
       };
       
@@ -268,7 +271,7 @@ export default function SellToUs() {
                               type="number"
                               placeholder="Total weight in pounds"
                               className="glass border-glass-border"
-                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                              onChange={(e) => field.onChange(e.target.value)}
                             />
                           </FormControl>
                           <FormMessage />
@@ -289,7 +292,7 @@ export default function SellToUs() {
                             value={field.value || ""}
                             placeholder="50"
                             className="glass border-glass-border"
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                            onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
                         <p className="text-sm text-text-muted mt-1">
