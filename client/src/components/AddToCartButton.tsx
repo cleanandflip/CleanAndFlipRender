@@ -78,12 +78,10 @@ export function AddToCartButton({
       
       setLoading(true);
       try {
+        // Remove item from cart - the mutation will handle success toast
         removeProductFromCart(productId);
-        toast({
-          title: "Removed from cart",
-          description: "Item has been removed from your cart",
-        });
       } catch (error: any) {
+        // Only show error toast if removal fails
         toast({
           title: "Remove failed",
           description: error?.message || 'Failed to remove from cart',
