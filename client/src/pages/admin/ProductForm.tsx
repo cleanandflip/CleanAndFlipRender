@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PriceInput } from '@/components/ui/price-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -343,12 +344,9 @@ export function ProductForm() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="price">Price ($) *</Label>
-                <Input
+                <Label htmlFor="price">Price *</Label>
+                <PriceInput
                   id="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
                   value={formData.price}
                   onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
                   required

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PriceInput } from "@/components/ui/price-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -247,11 +248,10 @@ export default function SellToUs() {
                       <FormItem className="mt-4">
                         <FormLabel>Your Asking Price (Optional)</FormLabel>
                         <FormControl>
-                          <Input 
+                          <PriceInput 
                             {...field} 
                             value={field.value || ""}
-                            type="number"
-                            placeholder="What you'd like to get for it"
+                            placeholder="50"
                             className="glass border-glass-border"
                             onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                           />
