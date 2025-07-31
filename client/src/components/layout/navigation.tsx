@@ -103,7 +103,10 @@ export default function Navigation() {
             {navigation.map((item) => (
               <button
                 key={item.name}
-                onClick={(e) => handleNavigation(item.href, e)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNavigation(item.href, e);
+                }}
                 className={`transition-all duration-200 font-medium cursor-pointer px-3 py-2 rounded-lg hover:bg-white/10 text-base whitespace-nowrap ${
                   isActive(item.href)
                     ? "text-accent-blue bg-accent-blue/10 cursor-default"

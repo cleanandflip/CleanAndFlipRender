@@ -64,7 +64,7 @@ export default function Home() {
                 <p className="text-text-secondary text-lg">Cash for your equipment</p>
               </div>
               <Link href="/sell-to-us">
-                <button className="w-full bg-success hover:bg-green-600 text-white font-bold px-8 py-4 rounded-lg transition-colors text-lg">
+                <button className="w-full bg-success hover:bg-green-600 text-white font-bold px-8 py-4 rounded-lg transition-colors text-lg" type="button">
                   Get Cash Offer
                 </button>
               </Link>
@@ -137,7 +137,7 @@ export default function Home() {
                   </div>
                 </div>
                 <Link href="/sell-to-us">
-                  <button className="w-full mt-8 bg-success hover:bg-green-600 text-white font-bold px-6 py-3 rounded-lg transition-colors">
+                  <button className="w-full mt-8 bg-success hover:bg-green-600 text-white font-bold px-6 py-3 rounded-lg transition-colors" type="button">
                     Start Selling →
                   </button>
                 </Link>
