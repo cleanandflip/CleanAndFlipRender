@@ -6,6 +6,12 @@ import { cn } from "@/lib/utils";
 // Note: For client-side access, the environment variable needs VITE_ prefix
 const API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
 
+// Debug API key availability
+console.log('MapTiler API Key loaded:', API_KEY ? 'YES' : 'NO');
+if (!API_KEY) {
+  console.error('VITE_MAPTILER_API_KEY not found in environment variables');
+}
+
 // Rate limiting implementation for security
 const rateLimiter = new Map<string, number[]>();
 const MAX_REQUESTS_PER_MINUTE = 60;

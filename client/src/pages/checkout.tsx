@@ -295,21 +295,23 @@ export default function Checkout() {
                     {/* Address Autocomplete */}
                     <div className="mt-4">
                       <Label className="text-sm font-medium">Address</Label>
-                      <AddressAutocomplete
-                        value={selectedAddress}
-                        onChange={(address) => {
-                          setSelectedAddress(address);
-                          if (address) {
-                            form.setValue('street', address.street);
-                            form.setValue('city', address.city);
-                            form.setValue('state', address.state);
-                            form.setValue('zipCode', address.zipCode);
-                          }
-                        }}
-                        placeholder="Start typing your address..."
-                        className="glass border-glass-border text-white placeholder:text-text-muted mt-2"
-                        required
-                      />
+                      <div className="glass border-glass-border text-white placeholder:text-text-muted mt-2 rounded-lg px-3 py-2">
+                        <AddressAutocomplete
+                          value={selectedAddress}
+                          onChange={(address) => {
+                            setSelectedAddress(address);
+                            if (address) {
+                              form.setValue('street', address.street);
+                              form.setValue('city', address.city);
+                              form.setValue('state', address.state);
+                              form.setValue('zipCode', address.zipCode);
+                            }
+                          }}
+                          placeholder="Start typing your address..."
+                          className="w-full bg-transparent border-0"
+                          required
+                        />
+                      </div>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-4 mt-4">
