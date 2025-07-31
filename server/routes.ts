@@ -176,6 +176,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Brands (public endpoint with rate limiting)
+  app.get("/api/brands", apiLimiter, async (req, res) => {
+    try {
+      const brands = await storage.getBrands();
+      res.json(brands);
+    } catch (error) {
+      Logger.error("Error fetching brands", error);
+      res.status(500).json({ message: "Failed to fetch brands" });
+    }
+  });
+
   // Products (public endpoint with rate limiting)
   app.get("/api/products", apiLimiter, async (req, res) => {
     try {

@@ -43,6 +43,18 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
     }
   });
 
+  // Fetch actual brands from database
+  const { data: brandsData = [] } = useQuery<string[]>({
+    queryKey: ["/api/brands"],
+    queryFn: async () => {
+      const response = await fetch('/api/brands');
+      if (!response.ok) {
+        throw new Error('Failed to fetch brands');
+      }
+      return response.json();
+    }
+  });
+
   // Equipment conditions
   const conditions = [
     { value: "new", label: "New", color: "bg-green-500" },
@@ -52,16 +64,16 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
     { value: "needs_repair", label: "Needs Repair", color: "bg-red-500" },
   ];
 
-  // Popular brands
-  const brands = [
-    "Rogue",
+  // Use actual brands from database, fallback to popular brands if not loaded
+  const brands = brandsData.length > 0 ? brandsData : [
+    "Rogue Fitness",
     "Eleiko",
-    "Rep Fitness",
+    "Rep Fitness", 
     "American Barbell",
-    "York",
+    "York Barbell",
     "CAP Barbell",
     "PowerBlock",
-    "Ironmaster",
+    "Ironmaster", 
     "Bowflex",
     "NordicTrack"
   ];

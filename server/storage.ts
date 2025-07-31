@@ -55,6 +55,9 @@ export interface IStorage {
   // Category operations
   getCategories(): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
+  
+  // Brand operations  
+  getBrands(): Promise<string[]>;
 
   // Product operations
   getProducts(filters?: {
@@ -228,6 +231,16 @@ export class DatabaseStorage implements IStorage {
   async createCategory(category: InsertCategory): Promise<Category> {
     const [newCategory] = await db.insert(categories).values(category).returning();
     return newCategory;
+  }
+
+  async getBrands(): Promise<string[]> {
+    const result = await db
+      .selectDistinct({ brand: products.brand })
+      .from(products)
+      .where(isNotNull(products.brand))
+      .orderBy(asc(products.brand));
+    
+    return result.map(row => row.brand!).filter(Boolean);
   }
 
   // Product operations
