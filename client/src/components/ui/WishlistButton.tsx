@@ -43,7 +43,7 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
     return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate as EventListener);
   }, [productId]);
   
-  // Use React Query for caching and deduplication
+  // Use optimized wishlist hook with caching
   const { data: wishlistData } = useQuery({
     queryKey: ['wishlist', productId],
     queryFn: async () => {
@@ -60,9 +60,12 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
       return response.json();
     },
     enabled: !!user && !!productId,
-    staleTime: 30000, // 30 seconds
-    cacheTime: 60000, // 1 minute
+    staleTime: 60000, // 1 minute - much longer stale time
+    cacheTime: 300000, // 5 minutes - longer cache retention
     refetchOnWindowFocus: false,
+    refetchOnMount: false, // Critical: prevent refetch on every mount
+    refetchInterval: false, // No automatic refetching
+    refetchOnReconnect: false, // Don't refetch when reconnecting
   });
   
   // Update local state when query data changes

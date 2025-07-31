@@ -98,6 +98,7 @@ export interface IStorage {
   getWishlistItems(userId: string): Promise<(Wishlist & { product: Product })[]>;
   addToWishlist(userId: string, productId: string): Promise<Wishlist>;
   isProductInWishlist(userId: string, productId: string): Promise<boolean>;
+  getWishlistStatusBatch(userId: string, productIds: string[]): Promise<Record<string, boolean>>;
   removeFromWishlist(userId: string, productId: string): Promise<void>;
 
   // Admin operations
@@ -959,6 +960,33 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
       
     return result.length > 0;
+  }
+
+  // BATCH wishlist check to reduce API spam
+  async getWishlistStatusBatch(userId: string, productIds: string[]): Promise<Record<string, boolean>> {
+    if (!productIds.length) return {};
+    
+    const results = await db
+      .select({ productId: wishlist.productId })
+      .from(wishlist)
+      .where(and(
+        eq(wishlist.userId, userId),
+        inArray(wishlist.productId, productIds)
+      ));
+    
+    const statusMap: Record<string, boolean> = {};
+    
+    // Initialize all as false
+    for (const productId of productIds) {
+      statusMap[productId] = false;
+    }
+    
+    // Set found items as true
+    for (const result of results) {
+      statusMap[result.productId] = true;
+    }
+    
+    return statusMap;
   }
 
   async removeFromWishlist(userId: string, productId: string): Promise<void> {

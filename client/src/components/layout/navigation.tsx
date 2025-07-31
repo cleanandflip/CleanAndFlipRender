@@ -81,8 +81,8 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Main Navigation - Cleaner Layout */}
-      <nav className="fixed top-4 left-4 right-4 z-50 glass rounded-xl px-6 py-3 max-w-7xl mx-auto">
+      {/* Main Navigation - Cleaner Layout with Badge Support */}
+      <nav className="fixed top-4 left-4 right-4 z-50 glass rounded-xl px-6 py-3 max-w-7xl mx-auto overflow-visible">
         <div className="flex items-center justify-between w-full gap-4">
           {/* Left Side - Logo */}
           <div className="flex items-center flex-shrink-0">
@@ -110,7 +110,7 @@ export default function Navigation() {
           </div>
 
           {/* Right Side - Actions */}
-          <div className="flex items-center space-x-3 flex-shrink-0 min-w-0">
+          <div className="flex items-center space-x-3 flex-shrink-0 min-w-0 overflow-visible p-1">
             {/* Desktop Search */}
             <div className="hidden lg:block">
               <SearchBar
@@ -227,35 +227,37 @@ export default function Navigation() {
               </Button>
             )}
 
-            {/* Cart - Toggle Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCartClick}
-              className={`group glass relative p-2 w-10 h-10 flex-shrink-0 overflow-hidden transition-all duration-300 ${
-                isCartOpen 
-                  ? "text-accent-blue border border-accent-blue/30 bg-accent-blue/10 shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
-                  : "text-text-secondary border border-transparent hover:text-accent-blue hover:bg-accent-blue/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:border-accent-blue/60"
-              }`}
-            >
-              {/* Inner glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/0 via-accent-blue/5 to-accent-blue/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              
-              {/* Toggle between cart and close icon */}
-              <div className="relative z-10 transition-transform duration-200">
-                {isCartOpen ? (
-                  <XCircle size={18} className="animate-in fade-in-0 duration-200" />
-                ) : (
-                  <ShoppingCart size={18} className="animate-in fade-in-0 duration-200" />
+            {/* Cart - Toggle Button with Fixed Badge Overflow */}
+            <div className="relative overflow-visible p-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCartClick}
+                className={`group glass relative p-2 w-10 h-10 flex-shrink-0 transition-all duration-300 ${
+                  isCartOpen 
+                    ? "text-accent-blue border border-accent-blue/30 bg-accent-blue/10 shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
+                    : "text-text-secondary border border-transparent hover:text-accent-blue hover:bg-accent-blue/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:border-accent-blue/60"
+                }`}
+              >
+                {/* Inner glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/0 via-accent-blue/5 to-accent-blue/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                {/* Toggle between cart and close icon */}
+                <div className="relative z-10 transition-transform duration-200">
+                  {isCartOpen ? (
+                    <XCircle size={18} className="animate-in fade-in-0 duration-200" />
+                  ) : (
+                    <ShoppingCart size={18} className="animate-in fade-in-0 duration-200" />
+                  )}
+                </div>
+                
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse">
+                    {cartCount}
+                  </span>
                 )}
-              </div>
-              
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-lg z-20 animate-pulse">
-                  {cartCount}
-                </span>
-              )}
-            </Button>
+              </Button>
+            </div>
 
             {/* Mobile Menu */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>

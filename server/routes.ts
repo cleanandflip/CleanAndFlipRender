@@ -525,13 +525,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Wishlist cache for preventing spam requests
   const wishlistCache = new Map<string, { data: any; timestamp: number }>();
-  const WISHLIST_CACHE_DURATION = 5000; // 5 seconds
+  const WISHLIST_CACHE_DURATION = 10000; // 10 seconds - longer cache
   
-  // Check if product is in wishlist - WITH CACHING
+  // BATCH wishlist check endpoint to reduce API spam
+  app.post("/api/wishlist/check-batch", requireAuth, async (req, res) => {
+    try {
+      const { productIds } = req.body;
+      const userId = req.userId;
+      
+      if (!userId) {
+        return res.status(401).json({ 
+          error: 'Authentication required',
+          message: 'Please log in to check wishlist status'
+        });
+      }
+      
+      if (!productIds || !Array.isArray(productIds)) {
+        return res.status(400).json({ message: "Product IDs array required" });
+      }
+      
+      const results = {};
+      const uncachedIds = [];
+      
+      // Check cache first
+      for (const productId of productIds) {
+        const cacheKey = `${userId}-${productId}`;
+        const cached = wishlistCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < WISHLIST_CACHE_DURATION) {
+          results[productId] = cached.data.isWishlisted;
+        } else {
+          uncachedIds.push(productId);
+        }
+      }
+      
+      // Fetch uncached items in batch
+      if (uncachedIds.length > 0) {
+        const wishlistStatuses = await storage.getWishlistStatusBatch(userId, uncachedIds);
+        
+        for (const productId of uncachedIds) {
+          const isWishlisted = wishlistStatuses[productId] || false;
+          results[productId] = isWishlisted;
+          
+          // Cache individual results
+          const cacheKey = `${userId}-${productId}`;
+          wishlistCache.set(cacheKey, {
+            data: { isWishlisted },
+            timestamp: Date.now()
+          });
+        }
+      }
+      
+      res.json(results);
+    } catch (error) {
+      Logger.error("Error checking wishlist batch", error);
+      res.status(500).json({ message: "Failed to check wishlist status" });
+    }
+  });
+  
+  // Single wishlist check - HEAVILY CACHED
   app.post("/api/wishlist/check", requireAuth, async (req, res) => {
     try {
       const { productId } = req.body;
-      const userId = req.userId; // Now set by requireAuth middleware
+      const userId = req.userId;
       
       if (!userId) {
         return res.status(401).json({ 
@@ -544,7 +599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Product ID required" });
       }
       
-      // Check cache first to prevent spam
+      // Check cache first - AGGRESSIVE CACHING
       const cacheKey = `${userId}-${productId}`;
       const cached = wishlistCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < WISHLIST_CACHE_DURATION) {
