@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,6 +99,8 @@ export default function SellToUs() {
     },
     onSuccess: () => {
       setIsSubmitted(true);
+      // Scroll to top immediately when submission is successful
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       toast({
         title: "Submission Received!",
         description: "We'll review your equipment and get back to you within 48 hours.",
@@ -116,6 +118,13 @@ export default function SellToUs() {
   const onSubmit = (data: SubmissionForm) => {
     submitMutation.mutate(data);
   };
+
+  // Effect to scroll to top when submission state changes
+  useEffect(() => {
+    if (isSubmitted) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [isSubmitted]);
 
   if (isSubmitted) {
     return (
