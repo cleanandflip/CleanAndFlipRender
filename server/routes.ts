@@ -39,7 +39,6 @@ import { healthLive, healthReady } from "./config/health";
 import { initializeWebSocket, broadcastProductUpdate, broadcastCartUpdate, broadcastStockUpdate } from "./config/websocket";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
-import geocodeRouter from "./routes/geocode";
 import { displayStartupBanner } from "./utils/startup-banner";
 import { initRedis } from "./config/redis";
 import { initializeCache } from "./lib/cache";
@@ -99,9 +98,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication
   setupAuth(app);
-  
-  // Setup geocoding router
-  app.use('/api/geocode', geocodeRouter);
   
   // Initialize search indexes
   await initializeSearchIndexes();
@@ -1406,73 +1402,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       Logger.error('Cloudinary delete error:', error);
       res.status(500).json({ error: 'Delete failed' });
-    }
-  });
-
-  // Location validation routes
-  app.post("/api/location/validate", async (req, res) => {
-    try {
-      const address = req.body;
-
-      if (!address || !address.fullAddress) {
-        return res.status(400).json({
-          error: "Invalid address data provided"
-        });
-      }
-
-      // Import location utilities
-      const { isLocalCustomer, getDistanceFromAsheville } = await import("../client/src/utils/location");
-      
-      const isLocal = isLocalCustomer(address);
-      const distance = getDistanceFromAsheville(address);
-
-      Logger.info(`Address validation: ${address.fullAddress} - Local: ${isLocal}, Distance: ${distance} miles`);
-
-      res.json({
-        isLocal,
-        distance,
-        address: {
-          street: address.street,
-          city: address.city,
-          state: address.state,
-          zipCode: address.zipCode,
-          fullAddress: address.fullAddress,
-          coordinates: address.coordinates
-        }
-      });
-
-    } catch (error) {
-      Logger.error("Address validation error:", error);
-      res.status(500).json({
-        error: "Failed to validate address"
-      });
-    }
-  });
-
-  // Get distance from Asheville for a given address
-  app.post("/api/location/distance", async (req, res) => {
-    try {
-      const address = req.body;
-
-      if (!address || !address.coordinates) {
-        return res.status(400).json({
-          error: "Address with coordinates required"
-        });
-      }
-
-      const { getDistanceFromAsheville } = await import("../client/src/utils/location");
-      const distance = getDistanceFromAsheville(address);
-
-      res.json({
-        distance,
-        isLocal: distance !== null && distance <= 25
-      });
-
-    } catch (error) {
-      Logger.error("Distance calculation error:", error);
-      res.status(500).json({
-        error: "Failed to calculate distance"
-      });
     }
   });
 

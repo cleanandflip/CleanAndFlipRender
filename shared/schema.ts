@@ -40,16 +40,8 @@ export const users = pgTable("users", {
   password: varchar("password").notNull(),
   firstName: varchar("first_name").notNull(),
   lastName: varchar("last_name").notNull(),
-  // Legacy address fields (will be migrated)
   address: varchar("address"),
   cityStateZip: varchar("city_state_zip"),
-  // New structured address fields
-  street: varchar("street"),
-  city: varchar("city"),
-  state: varchar("state"),
-  zipCode: varchar("zip_code"),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
   phone: varchar("phone"), // Optional field
   role: userRoleEnum("role").default("user"),
   isAdmin: boolean("is_admin").default(false),
@@ -314,11 +306,6 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  stripeCustomerId: true,
-  stripeSubscriptionId: true,
-  // Omit coordinates as they're auto-generated from address
-  latitude: true,
-  longitude: true,
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({

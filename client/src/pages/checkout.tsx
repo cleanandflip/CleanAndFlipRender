@@ -17,8 +17,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ShoppingCart, CreditCard, Truck, Lock, ArrowLeft } from "lucide-react";
-import AddressAutocomplete from "@/components/ui/address-autocomplete";
-import { ParsedAddress } from "@/utils/location";
 
 // Load Stripe
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
@@ -107,7 +105,6 @@ export default function Checkout() {
   const [clientSecret, setClientSecret] = useState("");
   const [step, setStep] = useState(1);
   const [shippingInfo, setShippingInfo] = useState<ShippingForm | null>(null);
-  const [selectedAddress, setSelectedAddress] = useState<ParsedAddress | null>(null);
 
   const form = useForm<ShippingForm>({
     resolver: zodResolver(shippingSchema),
@@ -292,27 +289,19 @@ export default function Checkout() {
                       />
                     </div>
 
-                    {/* Address Autocomplete */}
-                    <div className="mt-4">
-                      <Label className="text-sm font-medium">Address</Label>
-                      <div className="glass border-glass-border text-white placeholder:text-text-muted mt-2 rounded-lg px-4 py-3">
-                        <AddressAutocomplete
-                          value={selectedAddress}
-                          onChange={(address) => {
-                            setSelectedAddress(address);
-                            if (address) {
-                              form.setValue('street', address.street);
-                              form.setValue('city', address.city);
-                              form.setValue('state', address.state);
-                              form.setValue('zipCode', address.zipCode);
-                            }
-                          }}
-                          placeholder="Start typing your address..."
-                          className="w-full bg-transparent border-0"
-                          required
-                        />
-                      </div>
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="street"
+                      render={({ field }) => (
+                        <FormItem className="mt-4">
+                          <FormLabel>Street Address</FormLabel>
+                          <FormControl>
+                            <Input {...field} className="glass border-glass-border" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <div className="grid md:grid-cols-3 gap-4 mt-4">
                       <FormField
@@ -322,7 +311,7 @@ export default function Checkout() {
                           <FormItem>
                             <FormLabel>City</FormLabel>
                             <FormControl>
-                              <Input {...field} className="glass border-glass-border" readOnly />
+                              <Input {...field} className="glass border-glass-border" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -336,7 +325,7 @@ export default function Checkout() {
                           <FormItem>
                             <FormLabel>State</FormLabel>
                             <FormControl>
-                              <Input {...field} className="glass border-glass-border" readOnly />
+                              <Input {...field} className="glass border-glass-border" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -350,7 +339,7 @@ export default function Checkout() {
                           <FormItem>
                             <FormLabel>ZIP Code</FormLabel>
                             <FormControl>
-                              <Input {...field} className="glass border-glass-border" readOnly />
+                              <Input {...field} className="glass border-glass-border" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
