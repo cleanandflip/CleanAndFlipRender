@@ -58,6 +58,7 @@ function Router() {
             <Route path="/about" component={About} />
             <Route path="/contact" component={Contact} />
             <Route path="/auth" component={AuthPage} />
+            {/* NotFound component is now standalone - no navigation/footer wrapper */}
             <Route component={NotFound} />
           </Switch>
         </main>

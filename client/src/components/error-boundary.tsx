@@ -41,70 +41,79 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
-          <div className="max-w-md w-full">
-            {/* Subtle animated background elements */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob"></div>
-              <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gray-600 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob animation-delay-2000"></div>
-            </div>
+        <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+          {/* Minimal header with just logo */}
+          <div className="absolute top-0 left-0 p-6 z-10">
+            <a href="/" className="flex items-center text-white hover:text-blue-400 transition-colors">
+              <span className="text-2xl font-bold font-bebas tracking-wider">CLEAN & FLIP</span>
+            </a>
+          </div>
 
-            {/* Error Content */}
-            <div className="relative">
-              {/* Icon with Animation */}
-              <div className="flex justify-center mb-8">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-red-600 rounded-full blur-2xl opacity-10 animate-pulse"></div>
-                  <div className="relative bg-gray-800/50 backdrop-blur-sm rounded-full p-6 border border-gray-700/50">
-                    <AlertTriangle className="w-16 h-16 text-red-400" />
-                  </div>
-                </div>
+          <div className="flex items-center justify-center px-4 min-h-screen">
+            <div className="max-w-md w-full">
+              {/* Subtle animated background elements */}
+              <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob"></div>
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gray-600 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob animation-delay-2000"></div>
               </div>
 
-              {/* Error Message Card */}
-              <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-800/50">
-                <h1 className="text-2xl font-bold text-white text-center mb-4">
-                  Something went wrong
-                </h1>
-                <p className="text-gray-400 text-center mb-8">
-                  An unexpected error occurred. Please try refreshing the page or return to the homepage.
+              {/* Error Content */}
+              <div className="relative">
+                {/* Icon with Animation */}
+                <div className="flex justify-center mb-8">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-red-600 rounded-full blur-2xl opacity-10 animate-pulse"></div>
+                    <div className="relative bg-gray-800/50 backdrop-blur-sm rounded-full p-6 border border-gray-700/50">
+                      <AlertTriangle className="w-16 h-16 text-red-400" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Error Message Card */}
+                <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-800/50">
+                  <h1 className="text-2xl font-bold text-white text-center mb-4">
+                    Something went wrong
+                  </h1>
+                  <p className="text-gray-400 text-center mb-8">
+                    An unexpected error occurred. Please try refreshing the page or return to the homepage.
+                  </p>
+
+                  {this.state.error && (
+                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-left">
+                      <p className="text-red-300 text-sm font-mono">
+                        {this.state.error.message}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button
+                      onClick={this.handleRetry}
+                      className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
+                    >
+                      <RefreshCw className="w-5 h-5" />
+                      Try Again
+                    </button>
+                    
+                    <button
+                      onClick={this.handleGoHome}
+                      className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-all border border-gray-700"
+                    >
+                      <Home className="w-5 h-5" />
+                      Home
+                    </button>
+                  </div>
+                </div>
+
+                {/* Additional Help Text */}
+                <p className="text-center text-gray-500 text-sm mt-8">
+                  Unexpected Error | Need help? 
+                  <a href="/contact" className="text-blue-500 hover:text-blue-400 ml-1">
+                    Contact Support
+                  </a>
                 </p>
-
-                {this.state.error && (
-                  <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-left">
-                    <p className="text-red-300 text-sm font-mono">
-                      {this.state.error.message}
-                    </p>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button
-                    onClick={this.handleRetry}
-                    className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                    Try Again
-                  </button>
-                  
-                  <button
-                    onClick={this.handleGoHome}
-                    className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-all border border-gray-700"
-                  >
-                    <Home className="w-5 h-5" />
-                    Home
-                  </button>
-                </div>
               </div>
-
-              {/* Additional Help Text */}
-              <p className="text-center text-gray-500 text-sm mt-8">
-                Unexpected Error | Need help? 
-                <a href="/contact" className="text-blue-500 hover:text-blue-400 ml-1">
-                  Contact Support
-                </a>
-              </p>
             </div>
           </div>
         </div>
@@ -163,68 +172,77 @@ export function ErrorPage({ status = 404, message, title }: ErrorPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        {/* Subtle animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gray-600 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob animation-delay-2000"></div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+      {/* Minimal header with just logo */}
+      <div className="absolute top-0 left-0 p-6 z-10">
+        <a href="/" className="flex items-center text-white hover:text-blue-400 transition-colors">
+          <span className="text-2xl font-bold font-bebas tracking-wider">CLEAN & FLIP</span>
+        </a>
+      </div>
 
-        {/* Error Content */}
-        <div className="relative">
-          {/* Icon with Animation */}
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              <div className="absolute inset-0 bg-blue-600 rounded-full blur-2xl opacity-10 animate-pulse"></div>
-              <div className="relative bg-gray-800/50 backdrop-blur-sm rounded-full p-6 border border-gray-700/50">
-                <div className="text-6xl">{icon}</div>
+      <div className="flex items-center justify-center px-4 min-h-screen">
+        <div className="max-w-md w-full">
+          {/* Subtle animated background elements */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob"></div>
+            <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gray-600 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob animation-delay-2000"></div>
+          </div>
+
+          {/* Error Content */}
+          <div className="relative">
+            {/* Icon with Animation */}
+            <div className="flex justify-center mb-8">
+              <div className="relative">
+                <div className="absolute inset-0 bg-blue-600 rounded-full blur-2xl opacity-10 animate-pulse"></div>
+                <div className="relative bg-gray-800/50 backdrop-blur-sm rounded-full p-6 border border-gray-700/50">
+                  <div className="text-6xl">{icon}</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Error Code */}
-          <div className="text-center mb-4">
-            <span className="text-6xl font-bold bg-gradient-to-r from-blue-500 to-blue-400 bg-clip-text text-transparent">
-              {status}
-            </span>
-          </div>
-
-          {/* Error Message Card */}
-          <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-800/50">
-            <h1 className="text-2xl font-bold text-white text-center mb-4">
-              {errorTitle}
-            </h1>
-            <p className="text-gray-400 text-center mb-8">
-              {errorMessage}
-            </p>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={handleGoHome}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
-              >
-                <Home className="w-5 h-5" />
-                Go Home
-              </button>
-              
-              <button
-                onClick={handleGoBack}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-all border border-gray-700"
-              >
-                Go Back
-              </button>
+            {/* Error Code */}
+            <div className="text-center mb-4">
+              <span className="text-6xl font-bold bg-gradient-to-r from-blue-500 to-blue-400 bg-clip-text text-transparent">
+                {status}
+              </span>
             </div>
-          </div>
 
-          {/* Additional Help Text */}
-          <p className="text-center text-gray-500 text-sm mt-8">
-            Error Code: {status} | Need help? 
-            <a href="/contact" className="text-blue-500 hover:text-blue-400 ml-1">
-              Contact Support
-            </a>
-          </p>
+            {/* Error Message Card */}
+            <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-800/50">
+              <h1 className="text-2xl font-bold text-white text-center mb-4">
+                {errorTitle}
+              </h1>
+              <p className="text-gray-400 text-center mb-8">
+                {errorMessage}
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={handleGoHome}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
+                >
+                  <Home className="w-5 h-5" />
+                  Go Home
+                </button>
+                
+                <button
+                  onClick={handleGoBack}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-all border border-gray-700"
+                >
+                  Go Back
+                </button>
+              </div>
+            </div>
+
+            {/* Additional Help Text */}
+            <p className="text-center text-gray-500 text-sm mt-8">
+              Error Code: {status} | Need help? 
+              <a href="/contact" className="text-blue-500 hover:text-blue-400 ml-1">
+                Contact Support
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
