@@ -196,6 +196,10 @@ function DashboardContent() {
 
   const { data: wishlist = [], refetch: refetchWishlist } = useQuery<(Wishlist & { product: Product })[]>({
     queryKey: ["/api/wishlist"],
+    staleTime: 0, // Always consider data stale for real-time accuracy
+    gcTime: 0, // No client-side caching to prevent stale data
+    refetchOnWindowFocus: true, // Always refetch when user returns to tab
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
 
   // Restore state when component mounts
