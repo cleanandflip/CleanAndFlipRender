@@ -1039,6 +1039,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Address endpoints
+  app.get("/api/addresses", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Get user's address from users table
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Format address data for frontend
+      const addresses = [];
+      if (user.street && user.city && user.state && user.zipCode) {
+        addresses.push({
+          id: user.id,
+          street: user.street,
+          city: user.city,
+          state: user.state,
+          zipCode: user.zipCode,
+          latitude: user.latitude,
+          longitude: user.longitude,
+          isLocal: user.isLocalCustomer,
+          isDefault: true
+        });
+      }
+
+      res.json(addresses);
+    } catch (error) {
+      Logger.error("Error fetching addresses", error);
+      res.status(500).json({ error: "Failed to fetch addresses" });
+    }
+  });
+
+  app.post("/api/addresses", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { street, city, state, zipCode, latitude, longitude } = req.body;
+
+      // Validate required fields
+      if (!street || !city || !state || !zipCode) {
+        return res.status(400).json({ error: "Missing required address fields" });
+      }
+
+      // Determine if local customer (Asheville area)
+      const ashevilleZips = ['28801', '28802', '28803', '28804', '28805', '28806', '28810', '28813', '28814', '28815', '28816'];
+      const isLocalCustomer = ashevilleZips.includes(zipCode);
+
+      // Update user's address in users table
+      const updatedUser = await storage.updateUserAddress(userId, {
+        street,
+        city,
+        state,
+        zipCode,
+        latitude: latitude ? String(latitude) : undefined,
+        longitude: longitude ? String(longitude) : undefined,
+        isLocalCustomer
+      });
+
+      res.json({
+        id: updatedUser.id,
+        street: updatedUser.street,
+        city: updatedUser.city,
+        state: updatedUser.state,
+        zipCode: updatedUser.zipCode,
+        latitude: updatedUser.latitude,
+        longitude: updatedUser.longitude,
+        isLocal: updatedUser.isLocalCustomer,
+        isDefault: true
+      });
+    } catch (error) {
+      Logger.error("Error saving address", error);
+      res.status(500).json({ error: "Failed to save address" });
+    }
+  });
+
   // Activity tracking endpoint for real analytics
   app.post("/api/track-activity", async (req, res) => {
     try {

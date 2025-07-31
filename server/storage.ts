@@ -33,6 +33,7 @@ import {
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike, isNotNull } from "drizzle-orm";
 import { normalizeEmail, normalizeSearchTerm, normalizeBrand } from "@shared/utils";
+import { Logger } from "./utils/logger";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -41,6 +42,15 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserStripeInfo(id: string, customerId: string, subscriptionId?: string): Promise<User>;
+  updateUserAddress(id: string, addressData: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    latitude?: string;
+    longitude?: string;
+    isLocalCustomer?: boolean;
+  }): Promise<User>;
 
   // Category operations
   getCategories(): Promise<Category[]>;
@@ -177,6 +187,32 @@ export class DatabaseStorage implements IStorage {
       .set({
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscriptionId,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserAddress(id: string, addressData: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    latitude?: string;
+    longitude?: string;
+    isLocalCustomer?: boolean;
+  }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        street: addressData.street,
+        city: addressData.city,
+        state: addressData.state,
+        zipCode: addressData.zipCode,
+        latitude: addressData.latitude,
+        longitude: addressData.longitude,
+        isLocalCustomer: addressData.isLocalCustomer,
         updatedAt: new Date(),
       })
       .where(eq(users.id, id))
