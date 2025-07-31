@@ -186,10 +186,20 @@ export const equipmentSubmissions = pgTable("equipment_submissions", {
   weight: integer("weight"),
   askingPrice: decimal("asking_price", { precision: 10, scale: 2 }),
   images: jsonb("images").$type<string[]>().default([]),
-  status: varchar("status").default("pending"), // pending, reviewed, offer_made, accepted, rejected
+  status: varchar("status").default("pending"), // pending, reviewed, offer_made, accepted, rejected, scheduled
   offerAmount: decimal("offer_amount", { precision: 10, scale: 2 }),
   notes: text("notes"),
   adminNotes: text("admin_notes"),
+  
+  // Location and contact info
+  phoneNumber: varchar("phone_number"),
+  userCity: varchar("user_city"),
+  userState: varchar("user_state"),
+  userZipCode: varchar("user_zip_code"),
+  isLocal: boolean("is_local").default(false),
+  distance: decimal("distance", { precision: 5, scale: 2 }), // Distance in miles
+  scheduledPickupDate: timestamp("scheduled_pickup_date"),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

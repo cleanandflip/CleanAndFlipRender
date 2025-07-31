@@ -129,6 +129,17 @@ export interface IStorage {
   exportOrdersToCSV(): Promise<string>;
   trackActivity(activity: InsertActivityLog): Promise<ActivityLog>;
   getAnalytics(): Promise<any>;
+  
+  // Equipment Submission operations
+  createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission>;
+  getEquipmentSubmissions(status?: string): Promise<any[]>;
+  updateEquipmentSubmission(id: string, updates: Partial<EquipmentSubmission>): Promise<void>;
+  
+  // Wishlist analytics
+  getWishlistAnalytics(): Promise<any>;
+  getDetailedWishlistAnalytics(timeRange: string): Promise<any>;
+  getWishlistExportData(): Promise<any>;
+  
   healthCheck(): Promise<void>;
 }
 
@@ -1422,6 +1433,45 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(users, eq(wishlist.userId, users.id))
       .innerJoin(products, eq(wishlist.productId, products.id))
       .orderBy(desc(wishlist.createdAt));
+  }
+
+  // Equipment Submission operations
+  async createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
+    const [created] = await db.insert(equipmentSubmissions).values(submission).returning();
+    return created;
+  }
+
+  async getEquipmentSubmissions(status?: string): Promise<any[]> {
+    let query = db
+      .select({
+        submission: equipmentSubmissions,
+        user: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        },
+      })
+      .from(equipmentSubmissions)
+      .leftJoin(users, eq(equipmentSubmissions.userId, users.id))
+      .orderBy(desc(equipmentSubmissions.createdAt));
+
+    if (status && status !== 'all') {
+      query = query.where(eq(equipmentSubmissions.status, status));
+    }
+
+    const results = await query;
+    return results.map(row => ({
+      ...row.submission,
+      user: row.user,
+    }));
+  }
+
+  async updateEquipmentSubmission(id: string, updates: Partial<EquipmentSubmission>): Promise<void> {
+    await db
+      .update(equipmentSubmissions)
+      .set(updates)
+      .where(eq(equipmentSubmissions.id, id));
   }
 }
 

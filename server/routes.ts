@@ -1381,6 +1381,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Equipment Submissions Management (for authenticated users)
+  app.post("/api/equipment-submissions", async (req, res) => {
+    try {
+      // Check authentication - support multiple auth methods
+      let userId = null;
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        userId = req.user?.id;
+      } else if (req.session?.passport?.user?.id) {
+        userId = req.session.passport.user.id;
+      } else if (req.user?.claims?.sub) {
+        userId = req.user.claims.sub;
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const { askingPrice, weight, ...submissionData } = req.body;
+      
+      const submission = await storage.createEquipmentSubmission({
+        ...submissionData,
+        userId,
+        askingPrice: askingPrice ? Number(askingPrice) : undefined,
+        weight: weight ? Number(weight) : undefined,
+      });
+      
+      Logger.info(`Equipment submission created: ${submission.id}`);
+      res.json(submission);
+    } catch (error) {
+      Logger.error("Error creating equipment submission", error);
+      res.status(500).json({ error: "Failed to create submission" });
+    }
+  });
+
+  app.get("/api/admin/submissions", requireAdmin, async (req, res) => {
+    try {
+      const { status } = req.query;
+      const submissions = await storage.getEquipmentSubmissions(status as string);
+      res.json(submissions);
+    } catch (error) {
+      Logger.error("Error fetching submissions", error);
+      res.status(500).json({ error: "Failed to fetch submissions" });
+    }
+  });
+
+  app.put("/api/admin/submissions/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      await storage.updateEquipmentSubmission(id, {
+        ...updates,
+        updatedAt: new Date(),
+      });
+      
+      Logger.info(`Equipment submission updated: ${id}`);
+      res.json({ success: true });
+    } catch (error) {
+      Logger.error("Error updating submission", error);
+      res.status(500).json({ error: "Failed to update submission" });
+    }
+  });
+
   // CSV Export endpoints
   app.get("/api/admin/export/:type", requireAdmin, async (req, res) => {
     try {

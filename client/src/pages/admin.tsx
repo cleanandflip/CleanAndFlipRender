@@ -26,7 +26,8 @@ import {
   TrendingUp,
   AlertCircle,
   Heart,
-  Grid3X3
+  Grid3X3,
+  Clipboard
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -36,6 +37,7 @@ import { useLiveData } from "@/hooks/use-live-data";
 import WishlistAnalytics from "@/components/admin/wishlist-analytics";
 import EnhancedWishlistAnalytics from "@/components/admin/enhanced-wishlist-analytics";
 import CategoryManagement from "@/components/admin/category-management";
+import SubmissionsManager from "./admin/SubmissionsManager";
 import type { Product, User, Order } from "@shared/schema";
 
 interface AdminStats {
@@ -610,7 +612,7 @@ function AdminDashboard() {
 
           {/* Main Dashboard Tabs */}
           <Tabs defaultValue="products" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="products" className="flex items-center gap-2">
                 <Package className="w-4 h-4" />
                 Products
@@ -618,6 +620,10 @@ function AdminDashboard() {
               <TabsTrigger value="categories" className="flex items-center gap-2">
                 <Grid3X3 className="w-4 h-4" />
                 Categories
+              </TabsTrigger>
+              <TabsTrigger value="submissions" className="flex items-center gap-2">
+                <Clipboard className="w-4 h-4" />
+                Submissions
               </TabsTrigger>
               <TabsTrigger value="analytics" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
@@ -643,6 +649,10 @@ function AdminDashboard() {
 
             <TabsContent value="categories">
               <CategoryManagement />
+            </TabsContent>
+
+            <TabsContent value="submissions">
+              <SubmissionsManager />
             </TabsContent>
 
             <TabsContent value="analytics">

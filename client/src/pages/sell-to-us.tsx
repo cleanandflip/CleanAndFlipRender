@@ -76,12 +76,15 @@ export default function SellToUs() {
 
   const submitMutation = useMutation({
     mutationFn: async (data: SubmissionForm) => {
-      const response = await apiRequest("POST", "/api/submissions", {
+      // Convert numeric fields to proper types and ensure data integrity
+      const submissionData = {
         ...data,
-        userId: "temp-user-id", // Replace with actual user ID
+        askingPrice: data.askingPrice ? Number(data.askingPrice) : undefined,
+        weight: data.weight ? Number(data.weight) : undefined,
         images: uploadedImages,
-      });
-      return response.json();
+      };
+      
+      return await apiRequest("POST", "/api/equipment-submissions", submissionData);
     },
     onSuccess: () => {
       setIsSubmitted(true);
