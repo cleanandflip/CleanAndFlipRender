@@ -335,7 +335,7 @@ function DashboardContent() {
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">ORDER HISTORY</h2>
-                <SmartLink to="/orders">
+                <SmartLink href="/orders">
                   <Button variant="outline" className="glass border-glass-border">
                     View All Orders
                   </Button>
@@ -349,7 +349,7 @@ function DashboardContent() {
                   <p className="text-text-secondary mb-6">
                     Start shopping to see your order history here.
                   </p>
-                  <SmartLink to="/products">
+                  <SmartLink href="/products">
                     <Button className="bg-accent-blue hover:bg-blue-500">
                       Browse Products
                     </Button>
@@ -373,7 +373,7 @@ function DashboardContent() {
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-lg">${order.total}</div>
-                          <SmartLink to={`/orders/${order.id}`}>
+                          <SmartLink href={`/orders/${order.id}`}>
                             <Button variant="outline" size="sm" className="glass border-glass-border mt-2">
                               View Details
                             </Button>
@@ -392,7 +392,7 @@ function DashboardContent() {
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">EQUIPMENT SUBMISSIONS</h2>
-                <SmartLink to="/sell-to-us">
+                <SmartLink href="/sell-to-us">
                   <Button className="bg-success hover:bg-green-600">
                     Sell More Equipment
                   </Button>
@@ -406,7 +406,7 @@ function DashboardContent() {
                   <p className="text-text-secondary mb-6">
                     Have equipment to sell? Submit it for a cash offer.
                   </p>
-                  <SmartLink to="/sell-to-us">
+                  <SmartLink href="/sell-to-us">
                     <Button className="bg-success hover:bg-green-600">
                       Sell Equipment
                     </Button>
@@ -460,7 +460,7 @@ function DashboardContent() {
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">WISHLIST</h2>
-                <SmartLink to="/products">
+                <SmartLink href="/products">
                   <Button variant="outline" className="glass border-glass-border">
                     Browse Products
                   </Button>
@@ -474,7 +474,7 @@ function DashboardContent() {
                   <p className="text-text-secondary mb-6">
                     Save items you're interested in to easily find them later.
                   </p>
-                  <SmartLink to="/products">
+                  <SmartLink href="/products">
                     <Button className="bg-accent-blue hover:bg-blue-500">
                       Start Shopping
                     </Button>
@@ -484,7 +484,7 @@ function DashboardContent() {
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {wishlist?.map((item) => (
                     <div key={item.id} className="relative glass rounded-lg overflow-hidden">
-                      <SmartLink to={`/products/${item.product.id}`}>
+                      <SmartLink href={`/products/${item.product.id}`}>
                         <div className="w-full h-48 relative bg-gray-900/30 hover:bg-gray-900/40 transition-colors overflow-hidden">
                           {item.product.images?.[0] ? (
                             <img
@@ -513,7 +513,7 @@ function DashboardContent() {
                         <h3 className="font-semibold mb-2 text-white">{item.product.name}</h3>
                         <p className="text-accent-blue font-bold mb-3">${item.product.price}</p>
                         <div className="flex gap-2">
-                          <SmartLink to={`/products/${item.product.id}`} className="flex-1">
+                          <SmartLink href={`/products/${item.product.id}`} className="flex-1">
                             <Button className="w-full bg-accent-blue hover:bg-blue-500">
                               View Product
                             </Button>
