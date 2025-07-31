@@ -38,6 +38,7 @@ export default function Navigation() {
   ];
 
   const isActive = (href: string) => {
+    if (!href || !location) return false;
     if (href === "/" && location === "/") return true;
     if (href !== "/" && location.startsWith(href)) return true;
     return false;
@@ -55,7 +56,7 @@ export default function Navigation() {
     }
     
     // Clear products state when navigating to non-product pages
-    if (href !== '/products' && !href.startsWith('/products/')) {
+    if (href && href !== '/products' && !href.startsWith('/products/')) {
       NavigationStateManager.clearState('/products');
     }
     

@@ -11,6 +11,9 @@ interface SmartLinkProps {
 
 export function SmartLink({ href, children, className, onClick, preserveState = false }: SmartLinkProps) {
   const handleClick = () => {
+    // Add null/undefined check for href
+    if (!href) return;
+    
     const currentPath = window.location.pathname;
     
     // Save current state if needed

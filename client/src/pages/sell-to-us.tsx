@@ -181,6 +181,7 @@ export default function SellToUs() {
                           <FormControl>
                             <Input 
                               {...field} 
+                              value={field.value || ""}
                               placeholder="e.g. Rogue, Eleiko, etc."
                               className="glass border-glass-border"
                             />
@@ -226,6 +227,7 @@ export default function SellToUs() {
                           <FormControl>
                             <Input 
                               {...field} 
+                              value={field.value || ""}
                               type="number"
                               placeholder="Total weight in pounds"
                               className="glass border-glass-border"
@@ -247,6 +249,7 @@ export default function SellToUs() {
                         <FormControl>
                           <Input 
                             {...field} 
+                            value={field.value || ""}
                             type="number"
                             placeholder="What you'd like to get for it"
                             className="glass border-glass-border"
@@ -270,6 +273,7 @@ export default function SellToUs() {
                         <FormControl>
                           <Textarea 
                             {...field} 
+                            value={field.value || ""}
                             placeholder="Tell us about the equipment - age, usage, any wear or damage..."
                             className="glass border-glass-border min-h-[100px]"
                           />
