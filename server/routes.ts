@@ -39,6 +39,8 @@ import { healthLive, healthReady } from "./config/health";
 import { initializeWebSocket, broadcastProductUpdate, broadcastCartUpdate, broadcastStockUpdate } from "./config/websocket";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { displayStartupBanner } from "./utils/startup-banner";
 import { initRedis } from "./config/redis";
 import { initializeCache } from "./lib/cache";
@@ -1039,19 +1041,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Address endpoints
-  app.get("/api/addresses", requireAuth, async (req, res) => {
+  // Address endpoints - Fixed schema alignment
+  app.get("/api/addresses", async (req, res) => {
     try {
-      const userId = req.user?.id;
+      // Get user from session
+      const userId = req.user?.id || req.session?.userId;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      // Get user's address from users table
+      Logger.debug(`Fetching addresses for user: ${userId}`);
+
+      // Use storage method to avoid Drizzle schema issues
       const user = await storage.getUser(userId);
+
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
+
+      Logger.debug(`User address data: ${JSON.stringify({
+        hasStreet: !!user.street,
+        hasCity: !!user.city,
+        hasState: !!user.state,
+        hasZip: !!user.zipCode
+      })}`);
 
       // Format address data for frontend
       const addresses = [];
@@ -1069,6 +1082,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      Logger.debug(`Returning ${addresses.length} addresses`);
       res.json(addresses);
     } catch (error) {
       Logger.error("Error fetching addresses", error);
@@ -1076,9 +1090,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/addresses", requireAuth, async (req, res) => {
+  app.post("/api/addresses", async (req, res) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.id || req.session?.userId;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }

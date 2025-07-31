@@ -28,7 +28,7 @@ function AddressesSection() {
   const { user } = useAuth();
   
   const { data: addresses = [], isLoading } = useQuery<Address[]>({
-    queryKey: ["/api/addresses", { userId: user?.id }],
+    queryKey: ["/api/addresses"],
     enabled: !!user?.id,
   });
 
