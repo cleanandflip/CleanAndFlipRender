@@ -1,0 +1,189 @@
+Instructions to Fix the Cancellation Error
+1. Fix the Cancellation Endpoint - Replace Storage Method with Direct Database Query
+The error shows that storage.getEquipmentSubmission doesn't exist. Replace the cancellation endpoint with direct database queries:
+
+ts
+// server/routes.ts - Fix the cancellation endpoint
+
+// Import necessary dependencies at the top of the file
+import { eq, and, desc } from 'drizzle-orm';
+import { equipmentSubmissions, users } from '../shared/schema';
+
+// Replace the broken cancellation endpoint with this corrected version
+app.post('/api/submissions/:id/cancel', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    // Direct database query instead of storage method
+    const submission = await db
+      .select()
+      .from(equipmentSubmissions)
+      .where(
+        and(
+          eq(equipmentSubmissions.id, id),
+          eq(equipmentSubmissions.userId, req.session.userId)
+        )
+      )
+      .limit(1);
+    
+    if (!submission || submission.length === 0) {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
+    
+    const currentSubmission = submission[0];
+    
+    // Check if cancellation is allowed
+    const nonCancellableStatuses = ['scheduled', 'completed', 'cancelled'];
+    if (nonCancellableStatuses.includes(currentSubmission.status)) {
+      return res.status(400).json({ 
+        error: `Cannot cancel submission with status: ${currentSubmission.status}` 
+      });
+    }
+    
+    // Update status history
+    const newHistory = [
+      ...(currentSubmission.statusHistory || []),
+      {
+        status: 'cancelled',
+        timestamp: new Date().toISOString(),
+        changedBy: 'user',
+        notes: reason || 'Cancelled by user'
+      }
+    ];
+    
+    // Update submission
+    await db
+      .update(equipmentSubmissions)
+      .set({
+        status: 'cancelled',
+        statusHistory: newHistory,
+        updatedAt: new Date(),
+        adminNotes: `User cancelled: ${reason || 'No reason provided'}`,
+        cancelledAt: new Date(),
+        cancellationReason: reason || 'Cancelled by user'
+      })
+      .where(eq(equipmentSubmissions.id, id));
+    
+    // Get user for email notification
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.session.userId))
+      .limit(1);
+    
+    // Send cancellation email if email service is configured
+    if (user[0] && user[0].email) {
+      try {
+        // Only send email if the function exists
+        if (typeof sendCancellationEmail === 'function') {
+          await sendCancellationEmail(user[0].email, currentSubmission);
+        }
+      } catch (emailError) {
+        console.error('Failed to send cancellation email:', emailError);
+        // Continue even if email fails
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Submission cancelled successfully' 
+    });
+  } catch (error) {
+    console.error('Error cancelling submission:', error);
+    res.status(500).json({ error: 'Failed to cancel submission' });
+  }
+});
+2. Also Fix the My Submissions Endpoint
+ts
+// server/routes.ts - Ensure my-submissions endpoint is correct
+
+app.get('/api/my-submissions', requireAuth, async (req, res) => {
+  try {
+    const submissions = await db
+      .select()
+      .from(equipmentSubmissions)
+      .where(eq(equipmentSubmissions.userId, req.session.userId))
+      .orderBy(desc(equipmentSubmissions.createdAt));
+    
+    res.json(submissions);
+  } catch (error) {
+    console.error('Error fetching user submissions:', error);
+    res.status(500).json({ error: 'Failed to fetch submissions' });
+  }
+});
+3. Add Missing Schema Fields if Needed
+ts
+// shared/schema.ts - Ensure these fields exist in equipmentSubmissions table
+
+export const equipmentSubmissions = pgTable('equipment_submissions', {
+  // ... existing fields ...
+  
+  // Add these if they don't exist
+  cancelledAt: timestamp('cancelled_at'),
+  cancellationReason: text('cancellation_reason'),
+  
+  // ... rest of the schema
+});
+4. Create Database Migration for Missing Fields
+sql
+-- migrations/003_add_cancellation_fields.sql
+
+ALTER TABLE equipment_submissions
+ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP,
+ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;
+5. Alternative Quick Fix Without Email
+If email service isn't set up yet, use this simpler version:
+
+ts
+// server/routes.ts - Simplified cancellation without email
+
+app.post('/api/submissions/:id/cancel', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    // Check ownership and get submission
+    const result = await db
+      .update(equipmentSubmissions)
+      .set({
+        status: 'cancelled',
+        updatedAt: new Date(),
+        adminNotes: `User cancelled: ${reason || 'No reason provided'}`
+      })
+      .where(
+        and(
+          eq(equipmentSubmissions.id, id),
+          eq(equipmentSubmissions.userId, req.session.userId),
+          // Prevent cancelling already scheduled/completed items
+          not(inArray(equipmentSubmissions.status, ['scheduled', 'completed', 'cancelled']))
+        )
+      )
+      .returning();
+    
+    if (!result || result.length === 0) {
+      return res.status(404).json({ 
+        error: 'Submission not found or cannot be cancelled' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Submission cancelled successfully' 
+    });
+  } catch (error) {
+    console.error('Error cancelling submission:', error);
+    res.status(500).json({ error: 'Failed to cancel submission' });
+  }
+});
+Instructions for Replit:
+Replace the broken endpoint - Copy the corrected cancellation endpoint code
+Remove storage dependency - Don't use storage.getEquipmentSubmission, use direct DB queries
+Import Drizzle functions - Ensure eq, and, desc are imported from 'drizzle-orm'
+Run migration - Add the missing database fields if needed
+Test the fix - Try cancelling a submission from the dashboard
+Check logs - Ensure no more "function not found" errors
+The main issue was trying to use a storage method that doesn't exist. The fix uses direct Drizzle ORM queries instead, which is the proper way to interact with the database in this codebase.
+
+
+

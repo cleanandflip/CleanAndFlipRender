@@ -50,6 +50,7 @@ import {
   cart,
   wishlist,
   activityLogs,
+  equipmentSubmissions,
   type User,
   type Product,
   type Category,
@@ -57,7 +58,7 @@ import {
   type UpdateProduct,
   type AnalyticsData
 } from "@shared/schema";
-import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray } from "drizzle-orm";
+import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not } from "drizzle-orm";
 import { displayStartupBanner } from "./utils/startup-banner";
 import { initRedis } from "./config/redis";
 import { initializeCache } from "./lib/cache";
@@ -1466,21 +1467,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's own submissions  
   app.get("/api/my-submissions", requireAuth, async (req, res) => {
     try {
-      // Check authentication - support multiple auth methods
-      let userId = null;
-      if (req.isAuthenticated && req.isAuthenticated()) {
-        userId = req.user?.id;
-      } else if (req.session?.passport?.user?.id) {
-        userId = req.session.passport.user.id;
-      } else if (req.user?.claims?.sub) {
-        userId = req.user.claims.sub;
-      }
-
+      const userId = req.session?.userId;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const submissions = await storage.getUserSubmissions(userId);
+      // Direct database query for user's submissions
+      const submissions = await db
+        .select()
+        .from(equipmentSubmissions)
+        .where(eq(equipmentSubmissions.userId, userId))
+        .orderBy(desc(equipmentSubmissions.createdAt));
+
       res.json(submissions);
     } catch (error) {
       Logger.error("Error fetching user submissions:", error);
@@ -1494,39 +1492,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { reason } = req.body;
       
-      // Check authentication - support multiple auth methods
-      let userId = null;
-      if (req.isAuthenticated && req.isAuthenticated()) {
-        userId = req.user?.id;
-      } else if (req.session?.passport?.user?.id) {
-        userId = req.session.passport.user.id;
-      } else if (req.user?.claims?.sub) {
-        userId = req.user.claims.sub;
-      }
-
+      // Get user ID from session
+      const userId = req.session?.userId;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
       
-      // Get submission and verify ownership
-      const submission = await storage.getEquipmentSubmission(id);
+      // Direct database query to get submission and verify ownership
+      const submission = await db
+        .select()
+        .from(equipmentSubmissions)
+        .where(
+          and(
+            eq(equipmentSubmissions.id, id),
+            eq(equipmentSubmissions.userId, userId)
+          )
+        )
+        .limit(1);
       
-      if (!submission || submission.userId !== userId) {
+      if (!submission || submission.length === 0) {
         return res.status(404).json({ error: 'Submission not found' });
       }
       
+      const currentSubmission = submission[0];
+      
       // Check if cancellation is allowed
       const nonCancellableStatuses = ['scheduled', 'completed', 'cancelled'];
-      if (nonCancellableStatuses.includes(submission.status)) {
+      if (nonCancellableStatuses.includes(currentSubmission.status)) {
         return res.status(400).json({ 
-          error: `Cannot cancel submission with status: ${submission.status}` 
+          error: `Cannot cancel submission with status: ${currentSubmission.status}` 
         });
       }
       
-      // Update status with history
-      const statusHistory = submission.statusHistory || [];
+      // Update status history
       const newHistory = [
-        ...statusHistory,
+        ...(currentSubmission.statusHistory || []),
         {
           status: 'cancelled',
           timestamp: new Date().toISOString(),
@@ -1535,11 +1535,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       ];
       
-      await storage.updateEquipmentSubmission(id, {
-        status: 'cancelled',
-        statusHistory: newHistory,
-        updatedAt: new Date(),
-      });
+      // Update submission using direct database query
+      await db
+        .update(equipmentSubmissions)
+        .set({
+          status: 'cancelled',
+          statusHistory: newHistory,
+          updatedAt: new Date(),
+          adminNotes: `User cancelled: ${reason || 'No reason provided'}`
+        })
+        .where(eq(equipmentSubmissions.id, id));
       
       Logger.info(`Equipment submission cancelled by user: ${id}`);
       res.json({ success: true, message: 'Submission cancelled successfully' });
