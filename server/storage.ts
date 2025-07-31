@@ -47,8 +47,8 @@ export interface IStorage {
     city?: string;
     state?: string;
     zipCode?: string;
-    latitude?: string;
-    longitude?: string;
+    latitude?: number;
+    longitude?: number;
     isLocalCustomer?: boolean;
   }): Promise<User>;
 
@@ -199,8 +199,8 @@ export class DatabaseStorage implements IStorage {
     city?: string;
     state?: string;
     zipCode?: string;
-    latitude?: string;
-    longitude?: string;
+    latitude?: number;
+    longitude?: number;
     isLocalCustomer?: boolean;
   }): Promise<User> {
     const [user] = await db
@@ -210,8 +210,8 @@ export class DatabaseStorage implements IStorage {
         city: addressData.city,
         state: addressData.state,
         zipCode: addressData.zipCode,
-        latitude: addressData.latitude,
-        longitude: addressData.longitude,
+        latitude: addressData.latitude ? String(addressData.latitude) : undefined,
+        longitude: addressData.longitude ? String(addressData.longitude) : undefined,
         isLocalCustomer: addressData.isLocalCustomer,
         updatedAt: new Date(),
       })
