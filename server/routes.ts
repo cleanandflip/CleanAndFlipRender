@@ -39,6 +39,7 @@ import { healthLive, healthReady } from "./config/health";
 import { initializeWebSocket, broadcastProductUpdate, broadcastCartUpdate, broadcastStockUpdate } from "./config/websocket";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
+import geocodeRouter from "./routes/geocode";
 import { displayStartupBanner } from "./utils/startup-banner";
 import { initRedis } from "./config/redis";
 import { initializeCache } from "./lib/cache";
@@ -98,6 +99,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication
   setupAuth(app);
+  
+  // Setup geocoding router
+  app.use('/api/geocode', geocodeRouter);
   
   // Initialize search indexes
   await initializeSearchIndexes();

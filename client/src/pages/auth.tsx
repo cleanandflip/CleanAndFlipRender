@@ -273,12 +273,12 @@ export default function AuthPage() {
                   
                   {/* Address Autocomplete */}
                   <div className="space-y-2">
-                    <div className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 rounded-lg">
+                    <div className="glass bg-transparent border-glass-border h-12 transition-all duration-200 focus-within:border-accent-blue focus-within:ring-2 focus-within:ring-accent-blue/30 rounded-lg">
                       <AddressAutocomplete
                         value={selectedAddress}
                         onChange={handleAddressSelect}
                         placeholder="Start typing your full address..."
-                        className="h-full w-full bg-transparent border-0"
+                        className="h-full w-full bg-transparent border-0 text-white placeholder:text-text-muted px-4"
                         required
                       />
                     </div>

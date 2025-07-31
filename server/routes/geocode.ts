@@ -22,16 +22,12 @@ function checkRateLimit(userId: string): boolean {
 }
 
 // Backend proxy for MapTiler API (secure approach)
-router.post('/search', requireAuth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const { query } = req.body;
-    const userId = req.user?.id;
+    const { query } = req.query;
+    const userId = req.ip || 'anonymous'; // Use IP for rate limiting for non-auth users
 
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    if (!query || query.length < 3) {
+    if (!query || typeof query !== 'string' || query.length < 3) {
       return res.status(400).json({ error: 'Query must be at least 3 characters' });
     }
 

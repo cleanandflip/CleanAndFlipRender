@@ -2,15 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronDown, MapPin, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// MapTiler API configuration with security
-// Note: For client-side access, the environment variable needs VITE_ prefix
-const API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
-
-// Debug API key availability
-console.log('MapTiler API Key loaded:', API_KEY ? 'YES' : 'NO');
-if (!API_KEY) {
-  console.error('VITE_MAPTILER_API_KEY not found in environment variables');
-}
+// Using server-side proxy for MapTiler API (more secure)
 
 // Rate limiting implementation for security
 const rateLimiter = new Map<string, number[]>();
@@ -119,12 +111,10 @@ export default function AddressAutocomplete({
           return;
         }
 
-        if (!API_KEY) {
-          throw new Error("MapTiler API key not configured");
-        }
+        // API key validation now handled on server-side
 
-        // Use client-side API directly since we have the key in environment
-        const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${API_KEY}&country=US&limit=5&types=address`;
+        // Use server-side endpoint to avoid exposing API key on client
+        const url = `/api/geocode?query=${encodeURIComponent(query)}`;
         
         const response = await fetch(url, {
           signal: abortController.signal,
@@ -318,7 +308,7 @@ export default function AddressAutocomplete({
           disabled={disabled}
           className={cn(
             "w-full px-4 py-3 pr-12 bg-transparent border-0 rounded-lg",
-            "text-white placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-transparent",
+            "text-white placeholder:text-text-muted focus:outline-none focus:ring-0 focus:border-transparent",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             className
           )}
