@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { NavigationStateManager } from "@/lib/navigation-state";
 import ProductGrid from "@/components/products/product-grid";
 import ProductList from "@/components/products/ProductList";
 import FilterSidebar from "@/components/products/filter-sidebar";
@@ -29,16 +30,29 @@ interface ProductFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
+interface ProductsPageState {
+  filters: ProductFilters;
+  currentPage: number;
+  viewMode: 'grid' | 'list';
+  scrollPosition: number;
+  showFilters: boolean;
+}
+
 export default function Products() {
   const [location] = useLocation();
-  const [filters, setFilters] = useState<ProductFilters>({});
-  const [currentPage, setCurrentPage] = useState(0);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showFilters, setShowFilters] = useState(false);
+  const scrollRestorationRef = useRef<boolean>(false);
   const itemsPerPage = 20;
 
-  // Parse URL parameters on mount
-  useEffect(() => {
+  // Initialize state with saved state if coming from product detail
+  const [filters, setFilters] = useState<ProductFilters>(() => {
+    const savedState = NavigationStateManager.getState('/products');
+    
+    // Check if we're coming from a product detail page
+    if (NavigationStateManager.isFromProductDetail() && savedState?.filters) {
+      return savedState.filters;
+    }
+    
+    // Otherwise parse URL parameters or use defaults
     const urlParams = new URLSearchParams(window.location.search);
     const initialFilters: ProductFilters = {};
     
@@ -56,8 +70,76 @@ export default function Products() {
     if (urlParams.get('sortBy')) initialFilters.sortBy = urlParams.get('sortBy')!;
     if (urlParams.get('sortOrder')) initialFilters.sortOrder = urlParams.get('sortOrder') as 'asc' | 'desc';
     
-    setFilters(initialFilters);
-  }, [location]);
+    return initialFilters;
+  });
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    const savedState = NavigationStateManager.getState('/products');
+    return (NavigationStateManager.isFromProductDetail() && savedState?.currentPage) 
+      ? savedState.currentPage 
+      : 0;
+  });
+
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    const savedState = NavigationStateManager.getState('/products');
+    return (NavigationStateManager.isFromProductDetail() && savedState?.viewMode) 
+      ? savedState.viewMode 
+      : 'grid';
+  });
+
+  const [showFilters, setShowFilters] = useState(() => {
+    const savedState = NavigationStateManager.getState('/products');
+    return (NavigationStateManager.isFromProductDetail() && savedState?.showFilters) 
+      ? savedState.showFilters 
+      : false;
+  });
+
+  // Restore scroll position after state restoration
+  useEffect(() => {
+    const savedState = NavigationStateManager.getState('/products');
+    
+    if (NavigationStateManager.isFromProductDetail() && 
+        savedState?.scrollPosition && 
+        !scrollRestorationRef.current) {
+      scrollRestorationRef.current = true;
+      
+      // Wait for content to load before scrolling
+      setTimeout(() => {
+        window.scrollTo(0, savedState.scrollPosition);
+      }, 100);
+    }
+  }, []);
+
+  // Save state before navigating away or on unmount
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const currentState: ProductsPageState = {
+        filters,
+        currentPage,
+        viewMode,
+        showFilters,
+        scrollPosition: window.scrollY
+      };
+      
+      NavigationStateManager.saveState(
+        '/products',
+        currentState,
+        location
+      );
+    };
+
+    // Save state when component unmounts
+    return () => {
+      handleBeforeUnload();
+    };
+  }, [filters, currentPage, viewMode, showFilters, location]);
+
+  // Clear state if not coming from product detail page
+  useEffect(() => {
+    if (!NavigationStateManager.isFromProductDetail()) {
+      NavigationStateManager.clearState('/products');
+    }
+  }, []);
 
   // Remove a specific filter
   const removeFilter = (filterType: string, value: string) => {
@@ -75,6 +157,19 @@ export default function Products() {
     
     setFilters(newFilters);
     setCurrentPage(0);
+    
+    // Clear saved state when filters change
+    NavigationStateManager.clearState('/products');
+  };
+
+  // Reset all filters
+  const handleResetFilters = () => {
+    setFilters({});
+    setCurrentPage(0);
+    setShowFilters(false);
+    
+    // Clear saved state
+    NavigationStateManager.clearState('/products');
   };
 
   // Count active filters
@@ -217,6 +312,16 @@ export default function Products() {
                     onRemove={() => removeFilter('tags', tag)} 
                   />
                 ))}
+                
+                {/* Reset All Filters Button */}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleResetFilters}
+                  className="bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30"
+                >
+                  Reset All
+                </Button>
               </div>
             </div>
           )}

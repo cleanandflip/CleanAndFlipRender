@@ -1,66 +1,36 @@
-import { ReactNode, MouseEvent } from 'react';
-import { useLocation } from 'wouter';
-import { useNavigationState } from '@/hooks/useNavigationState';
+import { Link } from "wouter";
+import { NavigationStateManager } from "@/lib/navigation-state";
 
 interface SmartLinkProps {
-  to: string;
-  children: ReactNode;
+  href: string;
+  children: React.ReactNode;
   className?: string;
-  preserveState?: boolean;
   onClick?: () => void;
+  preserveState?: boolean;
 }
 
-export function SmartLink({ 
-  to, 
-  children, 
-  className, 
-  preserveState = true,
-  onClick 
-}: SmartLinkProps) {
-  const [location, navigate] = useLocation();
-  const { saveState } = useNavigationState(location);
-  
-  const handleClick = (e: MouseEvent) => {
-    e.preventDefault();
-    
-    if (preserveState) {
-      // Save current state before navigating
-      saveState({
-        scrollPosition: window.scrollY,
-        activeTab: document.querySelector('[role="tab"][aria-selected="true"]')?.getAttribute('data-tab') || undefined,
-        filters: getActiveFilters(),
-        expandedItems: getExpandedItems()
-      });
+export function SmartLink({ href, children, className, onClick, preserveState = false }: SmartLinkProps) {
+  const handleClick = () => {
+    // Save current state if needed
+    if (preserveState && href.startsWith('/products/')) {
+      // This link goes to a product detail, so save products page state
+      const currentPath = window.location.pathname;
+      if (currentPath === '/products') {
+        NavigationStateManager.updatePreviousPath(currentPath);
+      }
+    } else if (!href.startsWith('/products')) {
+      // Clear products state when navigating away from products
+      NavigationStateManager.clearState('/products');
     }
     
-    // Call custom onClick if provided
-    onClick?.();
-    
-    // Navigate to new page
-    navigate(to);
+    if (onClick) {
+      onClick();
+    }
   };
-  
+
   return (
-    <a href={to} onClick={handleClick} className={className}>
+    <Link href={href} className={className} onClick={handleClick}>
       {children}
-    </a>
+    </Link>
   );
-}
-
-// Helper functions
-function getActiveFilters() {
-  const filters: any = {};
-  document.querySelectorAll('[data-filter]:checked').forEach((input: any) => {
-    filters[input.name] = input.value;
-  });
-  return filters;
-}
-
-function getExpandedItems() {
-  const expanded: string[] = [];
-  document.querySelectorAll('[data-expanded="true"]').forEach((el) => {
-    const id = el.getAttribute('data-item-id');
-    if (id) expanded.push(id);
-  });
-  return expanded;
 }

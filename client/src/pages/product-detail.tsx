@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SmartLink } from "@/components/ui/smart-link";
 import { useNavigationState } from "@/hooks/useNavigationState";
 import { useBackButton } from "@/hooks/useBackButton";
+import { NavigationStateManager } from "@/lib/navigation-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -40,8 +41,11 @@ export default function ProductDetail() {
   const { restoreState } = useNavigationState('product-detail');
   useBackButton();
   
-  // Smart back navigation handler
+  // Smart back navigation handler with state management
   const handleBackClick = () => {
+    // Update previous path to indicate we're coming from product detail
+    NavigationStateManager.updatePreviousPath(location);
+    
     // Check if we came from a previous page
     if (window.history.length > 1) {
       navigate(-1); // Go back
@@ -49,6 +53,11 @@ export default function ProductDetail() {
       navigate('/products'); // Fallback to products page
     }
   };
+
+  // Track this page as a product detail page
+  useEffect(() => {
+    NavigationStateManager.updatePreviousPath(location);
+  }, [location]);
 
   // Safety check to ensure id is a valid string
   if (!id || typeof id !== 'string') {

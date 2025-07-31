@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import SearchBar from "@/components/products/search-bar";
 import { useCart } from "@/hooks/use-cart";
@@ -42,7 +43,7 @@ export default function Navigation() {
     return false;
   };
 
-  // Smart navigation - prevents duplicate history entries
+  // Smart navigation with state management
   const handleNavigation = (href: string, e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -51,6 +52,11 @@ export default function Navigation() {
     // Don't navigate if already on this page
     if (location === href) {
       return;
+    }
+    
+    // Clear products state when navigating to non-product pages
+    if (href !== '/products' && !href.startsWith('/products/')) {
+      NavigationStateManager.clearState('/products');
     }
     
     setLocation(href);
