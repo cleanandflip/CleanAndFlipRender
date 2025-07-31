@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { triggerCacheInvalidation } from "@/hooks/useRealtimeSync";
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { apiRequest } from "@/lib/queryClient";
+import { cacheManager, getProductImageUrl } from "@/lib/cache-manager";
 import type { Order, EquipmentSubmission, Wishlist, Product, Address } from "@shared/schema";
 
 function AddressesSection() {
@@ -188,6 +190,10 @@ function DashboardContent() {
 
   const { data: wishlist = [], refetch: refetchWishlist } = useQuery<(Wishlist & { product: Product })[]>({
     queryKey: ["/api/wishlist"],
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always'
   });
 
   // Listen for wishlist updates from product cards
@@ -200,6 +206,15 @@ function DashboardContent() {
     window.addEventListener('wishlistUpdated', handleWishlistUpdate);
     return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
   }, [refetchWishlist]);
+
+  // Force refresh wishlist and product caches when dashboard loads
+  useEffect(() => {
+    if (user?.id) {
+      refetchWishlist();
+      // Also invalidate product queries to ensure fresh images
+      cacheManager.invalidateProductCaches(queryClient);
+    }
+  }, [user?.id, refetchWishlist, queryClient]);
 
   // Wishlist removal is now handled by the unified WishlistButton component
 
@@ -432,9 +447,13 @@ function DashboardContent() {
                     <div key={item.id} className="relative glass rounded-lg overflow-hidden">
                       <Link href={`/products/${item.product.id}`}>
                         <img
-                          src={item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
+                          src={getProductImageUrl(
+                            item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
+                            item.product.updatedAt
+                          )}
                           alt={item.product.name}
                           className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
+                          key={`${item.product.id}-${item.product.updatedAt}`}
                         />
                       </Link>
                       <div className="absolute top-2 right-2">

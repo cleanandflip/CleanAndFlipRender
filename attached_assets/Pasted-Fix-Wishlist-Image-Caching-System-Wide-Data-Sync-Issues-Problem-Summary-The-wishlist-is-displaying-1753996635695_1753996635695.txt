@@ -1,0 +1,282 @@
+Fix Wishlist Image Caching & System-Wide Data Sync Issues
+Problem Summary
+The wishlist is displaying outdated/cached product images and not syncing with the current product data. This indicates a broader caching/synchronization issue that needs to be addressed system-wide.
+1. Immediate Wishlist Fix
+Check these wishlist-related files:
+typescript// src/pages/dashboard.tsx - WishlistTab component
+// Add cache-busting and forced refresh
+const WishlistTab = () => {
+  const queryClient = useQueryClient();
+  
+  const { data: wishlistItems, refetch } = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: fetchWishlistItems,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always'
+  });
+
+  // Force refresh when tab becomes active
+  useEffect(() => {
+    refetch();
+    // Also invalidate product queries to ensure fresh images
+    queryClient.invalidateQueries(['products']);
+  }, []);
+2. Fix Image Caching Issues
+Update product image URLs to include cache-busting:
+typescript// Wherever product images are displayed
+const getProductImageUrl = (imageUrl: string, productId: string) => {
+  // Add timestamp or version to force refresh
+  const timestamp = new Date().getTime();
+  return `${imageUrl}?v=${timestamp}`;
+  
+  // OR use product's updatedAt timestamp
+  // return `${imageUrl}?v=${product.updatedAt}`;
+};
+
+// In the wishlist item component
+<img 
+  src={getProductImageUrl(item.product.imageUrl, item.productId)}
+  alt={item.product.name}
+  className="w-full h-48 object-cover"
+  key={`${item.productId}-${item.product.updatedAt}`} // Force re-render
+/>
+3. System-Wide Cache Audit
+Check ALL these areas for similar caching issues:
+bash# Find all useQuery instances that might need cache updates
+grep -rn "useQuery" src/ --include="*.tsx" --include="*.ts" | grep -v "node_modules"
+
+# Find all image tags that might be caching
+grep -rn "<img" src/ --include="*.tsx" | grep -v "node_modules"
+
+# Find all API endpoints that return images/media
+grep -rn "imageUrl\|image_url\|productImage" server/ --include="*.ts"
+4. Implement Global Cache Management
+Create a cache management system:
+typescript// src/lib/cache-manager.ts
+export const cacheManager = {
+  // Invalidate all product-related caches
+  invalidateProductCaches: (queryClient: QueryClient) => {
+    queryClient.invalidateQueries(['products']);
+    queryClient.invalidateQueries(['wishlist']);
+    queryClient.invalidateQueries(['cart']);
+    queryClient.invalidateQueries(['featured-products']);
+  },
+  
+  // Clear all user-specific caches on logout
+  clearUserCaches: (queryClient: QueryClient) => {
+    queryClient.removeQueries(['user']);
+    queryClient.removeQueries(['wishlist']);
+    queryClient.removeQueries(['orders']);
+    queryClient.removeQueries(['addresses']);
+    queryClient.removeQueries(['cart']);
+  },
+  
+  // Global cache reset
+  resetAllCaches: (queryClient: QueryClient) => {
+    queryClient.clear();
+    // Clear any localStorage caches
+    localStorage.removeItem('product-images-cache');
+    localStorage.removeItem('user-preferences');
+  }
+};
+5. Fix Wishlist Data Structure
+Ensure wishlist includes fresh product data:
+typescript// server/routes/wishlist.ts
+router.get('/wishlist', requireAuth, async (req, res) => {
+  try {
+    const wishlistItems = await db
+      .select({
+        id: wishlist.id,
+        userId: wishlist.userId,
+        productId: wishlist.productId,
+        createdAt: wishlist.createdAt,
+        // Join with fresh product data
+        product: {
+          id: products.id,
+          name: products.name,
+          price: products.price,
+          imageUrl: products.imageUrl,
+          status: products.status,
+          updatedAt: products.updatedAt // Include for cache busting
+        }
+      })
+      .from(wishlist)
+      .innerJoin(products, eq(wishlist.productId, products.id))
+      .where(eq(wishlist.userId, req.user.id))
+      .orderBy(desc(wishlist.createdAt));
+    
+    // Add cache headers to prevent browser caching
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
+    res.json(wishlistItems);
+  } catch (error) {
+    console.error('Wishlist fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch wishlist' });
+  }
+});
+6. Update React Query Configuration
+Set proper defaults in queryClient:
+typescript// src/lib/queryClient.ts
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      cacheTime: 1000 * 60 * 10, // 10 minutes
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      retry: 1,
+    },
+    mutations: {
+      onSuccess: () => {
+        // Invalidate related queries after mutations
+        queryClient.invalidateQueries();
+      },
+    },
+  },
+});
+
+// Special handling for user-specific data
+const userDataKeys = ['wishlist', 'cart', 'orders', 'addresses'];
+userDataKeys.forEach(key => {
+  queryClient.setQueryDefaults([key], {
+    staleTime: 0, // Always fresh
+    cacheTime: 1000 * 60 * 2, // 2 minutes only
+  });
+});
+7. Implement WebSocket for Real-time Updates
+Add real-time sync for wishlist changes:
+typescript// src/hooks/useRealtimeSync.ts
+export function useRealtimeSync() {
+  const queryClient = useQueryClient();
+  
+  useEffect(() => {
+    const ws = new WebSocket(process.env.VITE_WS_URL || 'ws://localhost:5000');
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      switch (data.type) {
+        case 'product-updated':
+          // Invalidate all queries containing this product
+          queryClient.invalidateQueries(['products']);
+          queryClient.invalidateQueries(['wishlist']);
+          queryClient.invalidateQueries(['cart']);
+          break;
+          
+        case 'wishlist-updated':
+          queryClient.invalidateQueries(['wishlist']);
+          break;
+          
+        case 'price-changed':
+          // Force refresh all product-related data
+          cacheManager.invalidateProductCaches(queryClient);
+          break;
+      }
+    };
+    
+    return () => ws.close();
+  }, [queryClient]);
+}
+8. Add Data Integrity Checks
+Create a system health check endpoint:
+typescript// server/routes/system.ts
+router.get('/system/cache-check', requireAuth, async (req, res) => {
+  const issues = [];
+  
+  // Check for orphaned wishlist items
+  const orphanedWishlist = await db
+    .select()
+    .from(wishlist)
+    .leftJoin(products, eq(wishlist.productId, products.id))
+    .where(isNull(products.id));
+    
+  if (orphanedWishlist.length > 0) {
+    issues.push({
+      type: 'orphaned-wishlist',
+      count: orphanedWishlist.length,
+      action: 'Clean up wishlist items with deleted products'
+    });
+  }
+  
+  // Check for products with outdated images
+  const outdatedImages = await db
+    .select()
+    .from(products)
+    .where(
+      or(
+        isNull(products.imageUrl),
+        eq(products.imageUrl, ''),
+        like(products.imageUrl, '%placeholder%')
+      )
+    );
+    
+  if (outdatedImages.length > 0) {
+    issues.push({
+      type: 'outdated-images',
+      count: outdatedImages.length,
+      action: 'Update product images'
+    });
+  }
+  
+  res.json({ 
+    healthy: issues.length === 0,
+    issues,
+    timestamp: new Date().toISOString()
+  });
+});
+9. Testing Checklist
+Run these tests to verify fixes:
+bash# 1. Clear all caches
+localStorage.clear()
+sessionStorage.clear()
+
+# 2. Test wishlist sync
+# - Add item to wishlist
+# - Update product image/price in admin
+# - Refresh dashboard - should show new data
+
+# 3. Test cross-tab sync
+# - Open dashboard in two tabs
+# - Add to wishlist in one tab
+# - Other tab should update
+
+# 4. Test image loading
+# - Check Network tab - images should not be served from cache
+# - Look for cache-busting parameters in image URLs
+10. Performance Optimization
+Implement smart caching strategy:
+typescript// Only cache static content, not user-specific data
+const staticDataKeys = ['categories', 'brands', 'static-content'];
+const dynamicDataKeys = ['products', 'wishlist', 'cart', 'orders'];
+
+// Different cache strategies
+staticDataKeys.forEach(key => {
+  queryClient.setQueryDefaults([key], {
+    staleTime: 1000 * 60 * 60, // 1 hour
+    cacheTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
+});
+
+dynamicDataKeys.forEach(key => {
+  queryClient.setQueryDefaults([key], {
+    staleTime: 1000 * 60, // 1 minute
+    cacheTime: 1000 * 60 * 5, // 5 minutes
+    refetchInterval: 1000 * 60 * 2, // Refetch every 2 minutes
+  });
+});
+Summary of Required Actions:
+
+Fix wishlist image caching with cache-busting parameters
+Audit entire system for similar caching issues
+Implement global cache management strategy
+Add real-time synchronization for critical data
+Create health checks for data integrity
+Optimize performance with smart caching strategies
+
+This will ensure a streamlined, scalable system with proper data synchronization across all features.

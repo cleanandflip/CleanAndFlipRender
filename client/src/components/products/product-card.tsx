@@ -9,6 +9,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
+import { getProductImageUrl } from "@/lib/cache-manager";
 import { 
   ShoppingCart, 
   Heart, 
@@ -37,9 +38,10 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
         <GlassCard className="overflow-hidden glass-hover cursor-pointer">
           {hasImage ? (
             <img 
-              src={mainImage}
+              src={getProductImageUrl(mainImage, product.updatedAt)}
               alt={product.name}
               className="w-full h-32 object-cover"
+              key={`${product.id}-${product.updatedAt}`}
             />
           ) : (
             <div className="w-full h-32 bg-glass-bg flex items-center justify-center">
@@ -67,9 +69,10 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             <div className="w-32 h-32 flex-shrink-0 overflow-hidden rounded-lg cursor-pointer group">
               {hasImage ? (
                 <img
-                  src={mainImage}
+                  src={getProductImageUrl(mainImage, product.updatedAt)}
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  key={`${product.id}-${product.updatedAt}`}
                 />
               ) : (
                 <div className="w-full h-full bg-glass-bg flex items-center justify-center">
@@ -191,9 +194,10 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           <div className="aspect-square relative bg-gray-900/30 group-hover:bg-gray-900/40 transition-colors overflow-hidden">
             {hasImage ? (
               <img 
-                src={mainImage}
+                src={getProductImageUrl(mainImage, product.updatedAt)}
                 alt={product.name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+                key={`${product.id}-${product.updatedAt}`}
               />
             ) : (
               <div className="flex items-center justify-center h-full">

@@ -523,6 +523,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Wishlist - require authentication
   app.get("/api/wishlist", requireAuth, async (req, res) => {
     try {
+      // Set cache headers to prevent stale data
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+
       const userId = req.userId; // Now set by requireAuth middleware
       
       Logger.debug(`Get wishlist - userId: ${userId}`);
@@ -1037,10 +1044,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/addresses", async (req, res) => {
     try {
       // Debug authentication state
-      Logger.info("=== /api/addresses DEBUG ===");
-      Logger.info("1. Request user:", req.user);
-      Logger.info("2. Session:", req.session);
-      Logger.info("3. Is authenticated:", req.isAuthenticated?.());
+      // Set cache headers to prevent stale data
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
       
       // Get authenticated user using comprehensive auth check
       let userId = null;
