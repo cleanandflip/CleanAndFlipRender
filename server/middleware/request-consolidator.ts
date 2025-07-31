@@ -24,7 +24,8 @@ class RequestConsolidator {
     const skipPatterns = [
       '@vite', '@fs', '@react-refresh', 'node_modules',
       '.js', '.css', '.map', 'hot-update', 'chunk-',
-      'clean-flip-logo', '.png', '.jpg', '.jpeg', '.svg'
+      'clean-flip-logo', '.png', '.jpg', '.jpeg', '.svg',
+      '/src/', 'components/', '.tsx', '.ts'
     ];
     
     return skipPatterns.some(pattern => req.url.includes(pattern));
