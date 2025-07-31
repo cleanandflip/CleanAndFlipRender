@@ -96,7 +96,8 @@ export interface IStorage {
 
   // Wishlist operations
   getWishlistItems(userId: string): Promise<(Wishlist & { product: Product })[]>;
-  addToWishlist(wishlistItem: InsertWishlist): Promise<Wishlist>;
+  addToWishlist(userId: string, productId: string): Promise<Wishlist>;
+  isProductInWishlist(userId: string, productId: string): Promise<boolean>;
   removeFromWishlist(userId: string, productId: string): Promise<void>;
 
   // Admin operations

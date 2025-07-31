@@ -4,12 +4,18 @@ import { logger } from './logger';
 let redisClient: any = null;
 let redisEnabled = false;
 let connectionAttempts = 0;
-const MAX_RETRY_ATTEMPTS = 3;
+let hasLoggedWarning = false;
+const MAX_RETRY_ATTEMPTS = 1; // Only try once to eliminate spam
+
+const ENABLE_REDIS = process.env.ENABLE_REDIS === 'true';
 
 export const initRedis = async () => {
   // Check if Redis should be disabled
-  if (process.env.DISABLE_REDIS === 'true') {
-    logger.info('🔸 Redis caching disabled by environment variable', { type: 'system' });
+  if (!ENABLE_REDIS || process.env.DISABLE_REDIS === 'true') {
+    if (!hasLoggedWarning) {
+      logger.info('🔸 Redis caching disabled by environment variable', { type: 'system' });
+      hasLoggedWarning = true;
+    }
     return null;
   }
 
@@ -22,21 +28,18 @@ export const initRedis = async () => {
     redisClient = createClient({
       url: process.env.REDIS_URL || 'redis://localhost:6379',
       socket: {
-        reconnectStrategy: (attempts) => {
-          if (attempts > MAX_RETRY_ATTEMPTS) {
-            redisEnabled = false;
-            return false; // Stop reconnecting
-          }
-          return Math.min(attempts * 100, 3000);
-        }
+        reconnectStrategy: () => false, // Disable reconnection to prevent spam
+        connectTimeout: 1000, // Quick timeout
       }
     });
 
-    redisClient.on('error', (err: any) => {
-      // Only log once, not every error
-      if (err.code === 'ECONNREFUSED' && connectionAttempts === 1) {
+    // Silent error handling - no spam
+    redisClient.on('error', () => {
+      if (!hasLoggedWarning) {
         logger.warn('⚠️  Redis unavailable - running without cache layer', { type: 'system' });
+        hasLoggedWarning = true;
       }
+      redisEnabled = false;
     });
 
     await redisClient.connect();
@@ -44,8 +47,9 @@ export const initRedis = async () => {
     logger.info('✅ Redis connected successfully', { type: 'system' });
     return redisClient;
   } catch (error) {
-    if (connectionAttempts === 1) {
+    if (!hasLoggedWarning) {
       logger.warn('⚠️  Redis not available - continuing without caching', { type: 'system' });
+      hasLoggedWarning = true;
     }
     redisEnabled = false;
     return null;

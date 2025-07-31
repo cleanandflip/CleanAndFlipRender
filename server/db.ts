@@ -39,7 +39,7 @@ pool.on('error', (err: any) => {
 });
 
 pool.on('connect', () => {
-  console.log('Database connected successfully');
+  // Database connection success handled by logger
 });
 
 // Keep-alive function to prevent connection timeouts

@@ -39,7 +39,8 @@ import { healthLive, healthReady } from "./config/health";
 import { initializeWebSocket, broadcastProductUpdate, broadcastCartUpdate, broadcastStockUpdate } from "./config/websocket";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { displayStartupBanner } from "./utils/startup-banner";
-import { initRedis, getCached, setCache, clearCache } from "./config/redis";
+import { initRedis } from "./config/redis";
+import { initializeCache } from "./lib/cache";
 import { initializeSearchIndexes, searchProducts } from "./config/search";
 import { getCachedCategories, setCachedCategories, getCachedFeaturedProducts, setCachedFeaturedProducts, getCachedProduct, setCachedProduct, clearProductCache } from "./config/cache";
 import { registerGracefulShutdown } from "./config/graceful-shutdown";
@@ -65,10 +66,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const startupTime = Date.now();
   const warnings: string[] = [];
   
-  // Initialize Redis with optimized logging
-  const redisConnected = await initRedis().then(client => !!client).catch(() => false);
-  if (!redisConnected) {
-    warnings.push('Redis caching disabled - performance may be impacted');
+  // Initialize caching system (Redis or Memory)
+  const redisClient = await initRedis().catch(() => null);
+  const redisConnected = !!redisClient;
+  initializeCache(redisClient);
+  
+  if (!redisConnected && process.env.ENABLE_REDIS === 'true') {
+    warnings.push('Redis caching disabled - using memory cache');
   }
   
   // Setup performance optimizations first
@@ -129,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Try cache first for active categories
       if (activeOnly) {
-        const cached = await getCached('categories:active');
+        const cached = await getCachedCategories();
         if (cached) {
           return res.json(cached);
         }
@@ -138,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Cache the results for 5 minutes
         if (categories) {
-          await setCache('categories:active', categories, 300);
+          await setCachedCategories(categories);
         }
         
         res.json(categories);
@@ -1362,15 +1366,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register graceful shutdown handlers
   registerGracefulShutdown(httpServer);
   
-  // Display professional startup banner
+  // Display professional startup banner with connection info
+  const endTime = Date.now() - startupTime;
   displayStartupBanner({
     port: process.env.PORT || 5000,
     db: true, // Database is connected at this point
     redis: redisConnected,
     ws: true, // WebSocket initialized
-    startupTime: Date.now() - startupTime,
+    startupTime: endTime,
     warnings,
   });
+  
+  // Log database connection success only once
+  if (!process.env.DB_CONNECTION_LOGGED) {
+    logger.info('✅ Database connected successfully', { type: 'system' });
+    process.env.DB_CONNECTION_LOGGED = 'true';
+  }
   
   return httpServer;
 }

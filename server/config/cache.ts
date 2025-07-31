@@ -1,53 +1,49 @@
-// Use the optimized Redis client from redis.ts
-import { getCacheClient, getCached, setCache, clearCache } from './redis';
+// Use the clean cache abstraction
+import { getCache } from '../lib/cache';
 
-const getRedis = () => getCacheClient();
+const cache = getCache();
 
 // Cache categories (rarely change)
 export async function getCachedCategories() {
-  return await getCached('categories:active');
+  return await cache.get('categories:active');
 }
 
 export async function setCachedCategories(categories: any[]) {
-  await setCache('categories:active', categories, 300); // 5 min cache
+  await cache.set('categories:active', categories, 300); // 5 min cache
 }
 
 // Cache featured products
 export async function getCachedFeaturedProducts() {
-  return await getCached('products:featured');
+  return await cache.get('products:featured');
 }
 
 export async function setCachedFeaturedProducts(products: any[]) {
-  await setCache('products:featured', products, 180); // 3 min cache
+  await cache.set('products:featured', products, 180); // 3 min cache
 }
 
 // Cache individual products
 export async function getCachedProduct(productId: string) {
-  return await getCached(`product:${productId}`);
+  return await cache.get(`product:${productId}`);
 }
 
 export async function setCachedProduct(productId: string, product: any) {
-  await setCache(`product:${productId}`, product, 120); // 2 min cache
+  await cache.set(`product:${productId}`, product, 120); // 2 min cache
 }
 
 // Clear product cache when product is updated
 export async function clearProductCache(productId?: string) {
   if (productId) {
-    await clearCache(`product:${productId}`);
+    await cache.del(`product:${productId}`);
   }
   // Also clear related caches
-  await clearCache('products:featured');
-  await clearCache('categories:active');
+  await cache.del('products:featured');
+  await cache.del('categories:active');
 }
 
 // Graceful shutdown
 export async function closeRedisConnection() {
-  const redisClient = getRedis();
-  if (redisClient) {
-    console.log('Closing Redis connection...');
-    await redisClient.quit();
-  }
+  // No-op for memory cache, Redis cleanup handled in initRedis
 }
 
-// Export the Redis client getter for backward compatibility
-export const redis = getRedis();
+// Export cache for backward compatibility
+export const redis = null;
