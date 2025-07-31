@@ -204,8 +204,11 @@ function DashboardContent() {
     queryKey: ["/api/orders"],
   });
 
-  const { data: submissions = [], refetch: refetchSubmissions } = useQuery<EquipmentSubmission[]>({
+  const { data: submissions = [], isLoading: submissionsLoading, refetch: refetchSubmissions } = useQuery<EquipmentSubmission[]>({
     queryKey: ["/api/my-submissions"],
+    enabled: !!user?.id,
+    retry: 2,
+    staleTime: 30000,
   });
 
   const { data: wishlist = [], refetch: refetchWishlist } = useQuery<(Wishlist & { product: Product })[]>({
@@ -353,19 +356,25 @@ function DashboardContent() {
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <GlassCard className="p-6 text-center">
             <Package className="mx-auto mb-3 text-accent-blue" size={32} />
-            <div className="text-2xl font-bold">{orders.length}</div>
+            <div className="text-2xl font-bold">{orders?.length || 0}</div>
             <div className="text-sm text-text-muted">Total Orders</div>
           </GlassCard>
           
           <GlassCard className="p-6 text-center">
             <DollarSign className="mx-auto mb-3 text-success" size={32} />
-            <div className="text-2xl font-bold">{submissions.length}</div>
+            <div className="text-2xl font-bold">
+              {submissionsLoading ? (
+                <span className="animate-pulse">...</span>
+              ) : (
+                submissions?.length || 0
+              )}
+            </div>
             <div className="text-sm text-text-muted">Submissions</div>
           </GlassCard>
           
           <GlassCard className="p-6 text-center">
             <Heart className="mx-auto mb-3 text-red-400" size={32} />
-            <div className="text-2xl font-bold">{wishlist?.length || 0}</div>
+            <div className="text-2xl font-bold">{Array.isArray(wishlist) ? wishlist.length : 0}</div>
             <div className="text-sm text-text-muted">Wishlist Items</div>
           </GlassCard>
         </div>
@@ -374,7 +383,14 @@ function DashboardContent() {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="glass w-full justify-start">
             <TabsTrigger value="orders" data-tab="orders" role="tab" aria-selected={activeTab === 'orders'}>Orders</TabsTrigger>
-            <TabsTrigger value="submissions" data-tab="submissions" role="tab" aria-selected={activeTab === 'submissions'}>Submissions</TabsTrigger>
+            <TabsTrigger value="submissions" data-tab="submissions" role="tab" aria-selected={activeTab === 'submissions'}>
+              Submissions
+              {Array.isArray(submissions) && submissions.filter(s => s.status === 'pending').length > 0 && (
+                <Badge className="ml-2" variant="secondary">
+                  {submissions.filter(s => s.status === 'pending').length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="wishlist" data-tab="wishlist" role="tab" aria-selected={activeTab === 'wishlist'}>Wishlist</TabsTrigger>
             <TabsTrigger value="profile" data-tab="profile" role="tab" aria-selected={activeTab === 'profile'}>Profile</TabsTrigger>
             <TabsTrigger value="addresses" data-tab="addresses" role="tab" aria-selected={activeTab === 'addresses'}>Addresses</TabsTrigger>
@@ -449,7 +465,15 @@ function DashboardContent() {
                 </SmartLink>
               </div>
 
-              {submissions.length === 0 ? (
+              {submissionsLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-pulse">
+                    <Package className="mx-auto mb-4 text-gray-400" size={48} />
+                    <div className="h-4 w-32 bg-gray-700 rounded mx-auto mb-2"></div>
+                    <div className="h-3 w-48 bg-gray-700 rounded mx-auto"></div>
+                  </div>
+                </div>
+              ) : (submissions?.length || 0) === 0 ? (
                 <div className="text-center py-12">
                   <DollarSign className="mx-auto mb-4 text-gray-400" size={48} />
                   <h3 className="text-xl font-semibold mb-2">No submissions yet</h3>
@@ -464,7 +488,7 @@ function DashboardContent() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {submissions.map((submission) => {
+                  {(submissions || []).map((submission) => {
                     const StatusIcon = getStatusIcon(submission.status || 'pending');
                     
                     return (

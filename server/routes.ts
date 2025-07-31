@@ -46,17 +46,12 @@ import {
   categories, 
   orders,
   orderItems,
-  submissions,
-  cart,
+  equipmentSubmissions,
   wishlist,
   activityLogs,
-  equipmentSubmissions,
   type User,
   type Product,
-  type Category,
-  type NewProduct,
-  type UpdateProduct,
-  type AnalyticsData
+  type Category
 } from "@shared/schema";
 import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not } from "drizzle-orm";
 import { displayStartupBanner } from "./utils/startup-banner";
@@ -1465,11 +1460,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user's own submissions  
-  app.get("/api/my-submissions", requireAuth, async (req, res) => {
+  app.get("/api/my-submissions", requireAuth, async (req: any, res) => {
     try {
-      const userId = req.session?.userId;
+      // Check multiple authentication sources
+      let userId = null;
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        userId = req.user?.id;
+      } else if (req.session?.passport?.user?.id) {
+        userId = req.session.passport.user.id;
+      } else if (req.user?.claims?.sub) {
+        userId = req.user.claims.sub;
+      } else if (req.session?.userId) {
+        userId = req.session.userId;
+      }
+
       if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
+        Logger.error("No userId found in authentication sources");
+        return res.json([]); // Return empty array for non-authenticated users
       }
 
       // Direct database query for user's submissions
@@ -1479,22 +1486,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(equipmentSubmissions.userId, userId))
         .orderBy(desc(equipmentSubmissions.createdAt));
 
-      res.json(submissions);
+      res.json(submissions || []);
     } catch (error) {
       Logger.error("Error fetching user submissions:", error);
-      res.status(500).json({ error: "Failed to fetch submissions" });
+      res.json([]); // Return empty array instead of error to prevent UI crashes
     }
   });
 
   // User cancels their own submission
-  app.post('/api/submissions/:id/cancel', requireAuth, async (req, res) => {
+  app.post('/api/submissions/:id/cancel', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
       const { reason } = req.body;
       
-      // Get user ID from session
-      const userId = req.session?.userId;
+      // Check multiple authentication sources
+      let userId = null;
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        userId = req.user?.id;
+      } else if (req.session?.passport?.user?.id) {
+        userId = req.session.passport.user.id;
+      } else if (req.user?.claims?.sub) {
+        userId = req.user.claims.sub;
+      } else if (req.session?.userId) {
+        userId = req.session.userId;
+      }
+
       if (!userId) {
+        Logger.error("No userId found in authentication sources for cancellation");
         return res.status(401).json({ error: "Authentication required" });
       }
       
