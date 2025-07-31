@@ -142,7 +142,7 @@ export function AddToCartButton({
       } finally {
         setLoading(false);
       }
-    }, 500), // 500ms debounce to prevent spam clicking
+    }, 100), // 100ms debounce to prevent spam clicking
     [productId, loading, quantity, addToCart, toast, user, setLocation]
   );
 

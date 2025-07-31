@@ -59,14 +59,17 @@ let redisConnectionLogged = false;
 
 // Custom format for cleaner output
 const customFormat = winston.format.printf(({ level, message, timestamp, ...metadata }) => {
+  // Convert message to string if it's an object
+  const messageStr = typeof message === 'string' ? message : JSON.stringify(message);
+  
   // Skip noisy logs
-  if (message?.includes('Redis connection error')) return '';
-  if (message?.includes('Database connected successfully') && dbConnectionLogged) return '';
-  if (message?.includes('Redis connected successfully') && redisConnectionLogged) return '';
+  if (messageStr?.includes('Redis connection error')) return '';
+  if (messageStr?.includes('Database connected successfully') && dbConnectionLogged) return '';
+  if (messageStr?.includes('Redis connected successfully') && redisConnectionLogged) return '';
   
   // Mark as logged
-  if (message?.includes('Database connected successfully')) dbConnectionLogged = true;
-  if (message?.includes('Redis connected successfully')) redisConnectionLogged = true;
+  if (messageStr?.includes('Database connected successfully')) dbConnectionLogged = true;
+  if (messageStr?.includes('Redis connected successfully')) redisConnectionLogged = true;
   
   const time = new Date(timestamp).toLocaleTimeString();
   
@@ -78,14 +81,14 @@ const customFormat = winston.format.printf(({ level, message, timestamp, ...meta
   }
   
   if (metadata.type === 'auth') {
-    return `${chalk.gray(time)} ${chalk.blue('AUTH')} ${message}`;
+    return `${chalk.gray(time)} ${chalk.blue('AUTH')} ${messageStr}`;
   }
   
   if (metadata.type === 'system') {
-    return `${chalk.gray(time)} ${level === 'info' ? '✅' : '⚠️ '} ${message}`;
+    return `${chalk.gray(time)} ${level === 'info' ? '✅' : '⚠️ '} ${messageStr}`;
   }
   
-  return `${chalk.gray(time)} ${level}: ${message}`;
+  return `${chalk.gray(time)} ${level}: ${messageStr}`;
 });
 
 export const logger = winston.createLogger({

@@ -133,7 +133,7 @@ export class DatabaseStorage implements IStorage {
       const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
       return user;
     } catch (error: any) {
-      console.error('Error getting user by email:', error.message);
+      Logger.error('Error getting user by email:', error.message);
       if (error.code === '57P01') {
         // Retry once on connection termination
         const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
@@ -157,7 +157,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return user;
     } catch (error: any) {
-      console.error('Error creating user:', error.message);
+      Logger.error('Error creating user:', error.message);
       if (error.code === '57P01') {
         // Retry once on connection termination
         const [user] = await db
@@ -213,13 +213,13 @@ export class DatabaseStorage implements IStorage {
 
     // Handle category filtering - support both ID and slug
     if (filters?.categoryId && filters.categoryId !== 'null' && filters.categoryId !== 'all') {
-      console.log('Storage: Filtering by categoryId:', filters.categoryId);
+      Logger.debug('Storage: Filtering by categoryId:', filters.categoryId);
       conditions.push(eq(products.categoryId, filters.categoryId));
     } else if (filters?.categorySlug || filters?.category) {
       // Find category by slug first, then filter by ID
       const categorySlugOrName = filters.categorySlug || filters.category;
       if (categorySlugOrName && categorySlugOrName !== 'all' && categorySlugOrName !== 'null') {
-        console.log('Storage: Filtering by category slug:', categorySlugOrName);
+        Logger.debug('Storage: Filtering by category slug:', categorySlugOrName);
         const categoryData = await db
           .select({ id: categories.id })
           .from(categories)
@@ -232,10 +232,10 @@ export class DatabaseStorage implements IStorage {
           .limit(1);
           
         if (categoryData[0]) {
-          console.log('Storage: Found category ID for slug:', categoryData[0].id);
+          Logger.debug('Storage: Found category ID for slug:', categoryData[0].id);
           conditions.push(eq(products.categoryId, categoryData[0].id));
         } else {
-          console.log('Storage: No category found for slug:', categorySlugOrName);
+          Logger.debug('Storage: No category found for slug:', categorySlugOrName);
         }
       }
     }
@@ -321,7 +321,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product> {
-    console.log('DatabaseStorage.updateProduct - received data:', product);
+    Logger.debug('DatabaseStorage.updateProduct - received data:', product);
     
     const [updatedProduct] = await db
       .update(products)
@@ -332,7 +332,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(products.id, id))
       .returning();
       
-    console.log('DatabaseStorage.updateProduct - result:', updatedProduct);
+    Logger.debug('DatabaseStorage.updateProduct - result:', updatedProduct);
     return updatedProduct;
   }
 
@@ -614,7 +614,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProduct(productId: string): Promise<void> {
     try {
-      console.log(`Starting deletion of product: ${productId}`);
+      Logger.debug(`Starting deletion of product: ${productId}`);
       
       // First check if product exists
       const [existingProduct] = await db
@@ -623,11 +623,11 @@ export class DatabaseStorage implements IStorage {
         .where(eq(products.id, productId));
       
       if (!existingProduct) {
-        console.log(`Product ${productId} not found in database`);
+        Logger.debug(`Product ${productId} not found in database`);
         throw new Error('Product not found');
       }
       
-      console.log(`Found product to delete: ${existingProduct.name}`);
+      Logger.debug(`Found product to delete: ${existingProduct.name}`);
       
       // Remove from cart items first (foreign key constraint)
       const deletedCartItems = await db
@@ -635,7 +635,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(cartItems.productId, productId))
         .returning();
       
-      console.log(`Removed ${deletedCartItems.length} cart items referencing product`);
+      Logger.debug(`Removed ${deletedCartItems.length} cart items referencing product`);
       
       // Remove from wishlist
       const deletedWishlistItems = await db
@@ -643,7 +643,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(wishlist.productId, productId))
         .returning();
       
-      console.log(`Removed ${deletedWishlistItems.length} wishlist items referencing product`);
+      Logger.debug(`Removed ${deletedWishlistItems.length} wishlist items referencing product`);
       
       // Delete the product itself
       const deletedProducts = await db
@@ -652,11 +652,11 @@ export class DatabaseStorage implements IStorage {
         .returning();
       
       if (deletedProducts.length === 0) {
-        console.error(`Failed to delete product ${productId} - no rows affected`);
+        Logger.error(`Failed to delete product ${productId} - no rows affected`);
         throw new Error('Product deletion failed - no rows affected');
       }
       
-      console.log(`Successfully deleted product: ${deletedProducts[0].name} (${productId})`);
+      Logger.debug(`Successfully deleted product: ${deletedProducts[0].name} (${productId})`);
       
       // Verify deletion
       const [verifyProduct] = await db
@@ -665,14 +665,14 @@ export class DatabaseStorage implements IStorage {
         .where(eq(products.id, productId));
       
       if (verifyProduct) {
-        console.error(`Product ${productId} still exists after deletion!`);
+        Logger.error(`Product ${productId} still exists after deletion!`);
         throw new Error('Product deletion verification failed');
       }
       
-      console.log(`Deletion verified - product ${productId} successfully removed from database`);
+      Logger.debug(`Deletion verified - product ${productId} successfully removed from database`);
       
     } catch (error) {
-      console.error('Error deleting product:', error);
+      Logger.error('Error deleting product:', error);
       throw error;
     }
   }
@@ -995,7 +995,7 @@ export class DatabaseStorage implements IStorage {
         totalRevenue: 0 // No completed orders in system yet
       };
     } catch (error) {
-      console.error('Error fetching admin stats:', error);
+      Logger.error('Error fetching admin stats:', error);
       throw error;
     }
   }
@@ -1049,7 +1049,7 @@ export class DatabaseStorage implements IStorage {
         totalWishlistItems 
       };
     } catch (error) {
-      console.error('Error getting wishlist analytics:', error);
+      Logger.error('Error getting wishlist analytics:', error);
       return { topWishlisted: [], activeUsers: [], totalWishlistItems: 0 };
     }
   }

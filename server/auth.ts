@@ -76,7 +76,7 @@ export function setupAuth(app: Express) {
       errorLog: (err: any) => {
         // Suppress "already exists" errors for index and table
         if (err && !err.message?.includes('already exists') && !err.message?.includes('IDX_session_expire')) {
-          console.error('Session store error:', err);
+          Logger.error('Session store error:', err);
         }
       }
     }),
@@ -97,35 +97,35 @@ export function setupAuth(app: Express) {
       try {
         // Normalize email for case-insensitive login
         const normalizedEmail = normalizeEmail(email);
-        console.log(`Login attempt for email: ${normalizedEmail}`);
+        Logger.debug(`Login attempt for email: ${normalizedEmail}`);
         
         const user = await storage.getUserByEmail(normalizedEmail);
         if (!user) {
-          console.log(`User not found for email: ${normalizedEmail}`);
+          Logger.debug(`User not found for email: ${normalizedEmail}`);
           return done(null, false, { 
             message: "No account found with this email address. Please check your email or create a new account."
           });
         }
         
-        console.log(`User found, checking password for: ${normalizedEmail}`);
-        console.log(`User password hash exists: ${!!user.password}`);
+        Logger.debug(`User found, checking password for: ${normalizedEmail}`);
+        Logger.debug(`User password hash exists: ${!!user.password}`);
         
         const passwordMatch = await comparePasswords(password, user.password);
         if (!passwordMatch) {
-          console.log(`Invalid password for email: ${normalizedEmail}`);
+          Logger.debug(`Invalid password for email: ${normalizedEmail}`);
           return done(null, false, { 
             message: "Incorrect password. Please check your password and try again."
           });
         }
         
-        console.log(`Successful login for email: ${normalizedEmail}`);
+        Logger.debug(`Successful login for email: ${normalizedEmail}`);
         return done(null, {
           ...user,
           role: user.role || 'user',
           isAdmin: user.isAdmin || false
         });
       } catch (error: any) {
-        console.error('Login authentication error:', error.message);
+        Logger.error('Login authentication error:', error.message);
         return done(error, false, { 
           message: "System error during login. Please try again."
         });
@@ -180,11 +180,11 @@ export function setupAuth(app: Express) {
 
       // Normalize email and check if user already exists (don't reveal if email exists for security)
       const normalizedEmail = normalizeEmail(email);
-      console.log(`Registration attempt for email: ${normalizedEmail}`);
+      Logger.debug(`Registration attempt for email: ${normalizedEmail}`);
       
       const existingEmail = await storage.getUserByEmail(normalizedEmail);
       if (existingEmail) {
-        console.log(`Email already exists: ${normalizedEmail}`);
+        Logger.debug(`Email already exists: ${normalizedEmail}`);
         return res.status(409).json({ 
           error: "Account already exists",
           details: "An account with this email already exists. Please sign in instead.",
@@ -244,7 +244,7 @@ export function setupAuth(app: Express) {
         });
       });
     } catch (error) {
-      console.error("Registration error:", error);
+      Logger.error("Registration error:", error);
       res.status(500).json({ message: "Registration failed" });
     }
   });
@@ -263,7 +263,7 @@ export function setupAuth(app: Express) {
 
     passport.authenticate("local", (err: any, user: User, info: any) => {
       if (err) {
-        console.error('Passport authentication error:', err);
+        Logger.error('Passport authentication error:', err);
         return res.status(500).json({ 
           error: "System error",
           details: "A system error occurred during login. Please try again."
@@ -295,14 +295,14 @@ export function setupAuth(app: Express) {
       
       req.login(userForSession, (loginErr) => {
         if (loginErr) {
-          console.error('Session creation error:', loginErr);
+          Logger.error('Session creation error:', loginErr);
           return res.status(500).json({ 
             error: "Session error",
             details: "Login successful but session creation failed. Please try again."
           });
         }
         
-        console.log(`Login successful for: ${email}`);
+        Logger.debug(`Login successful for: ${email}`);
         res.status(200).json({
           success: true,
           user: {
@@ -355,7 +355,7 @@ export function setupAuth(app: Express) {
         });
       }
     } catch (error: any) {
-      console.error('Debug check-email error:', error);
+      Logger.error('Debug check-email error:', error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -421,8 +421,8 @@ export function requireAuth(req: any, res: any, next: any) {
 // Middleware to require specific roles
 export function requireRole(roles: string | string[]) {
   return (req: any, res: any, next: any) => {
-    console.log('RequireRole middleware - Is authenticated:', req.isAuthenticated?.());
-    console.log('RequireRole middleware - User from passport:', req.user);
+    Logger.debug('RequireRole middleware - Is authenticated:', req.isAuthenticated?.());
+    Logger.debug('RequireRole middleware - User from passport:', req.user);
     
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
@@ -431,7 +431,7 @@ export function requireRole(roles: string | string[]) {
     const user = req.user as User;
     const allowedRoles = Array.isArray(roles) ? roles : [roles];
     
-    console.log('RequireRole check:', {
+    Logger.debug('RequireRole check:', {
       userRole: user.role,
       isAdmin: user.isAdmin,
       allowedRoles,
@@ -441,11 +441,11 @@ export function requireRole(roles: string | string[]) {
     
     // Allow if user has the required role OR if user is admin (admins can do everything)
     if (!allowedRoles.includes(user.role || 'user') && !user.isAdmin) {
-      console.log('Permission denied - user lacks required role and is not admin');
+      Logger.debug('Permission denied - user lacks required role and is not admin');
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
-    console.log('Permission granted for user:', user.email);
+    Logger.debug('Permission granted for user:', user.email);
     next();
   };
 }
