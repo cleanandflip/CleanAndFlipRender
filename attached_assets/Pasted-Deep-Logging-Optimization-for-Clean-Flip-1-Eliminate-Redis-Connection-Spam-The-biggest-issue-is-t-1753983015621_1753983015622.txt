@@ -1,0 +1,425 @@
+Deep Logging Optimization for Clean & Flip
+1. Eliminate Redis Connection Spam
+The biggest issue is the constant Redis connection errors. Let's fix this:
+typescript// server/config/redis.ts
+import { createClient } from 'redis';
+import winston from 'winston';
+
+let redisClient: any = null;
+let redisEnabled = false;
+let connectionAttempts = 0;
+const MAX_RETRY_ATTEMPTS = 3;
+
+export const initRedis = async () => {
+  // Check if Redis should be enabled
+  if (process.env.DISABLE_REDIS === 'true') {
+    winston.info('🔸 Redis caching disabled by environment variable');
+    return null;
+  }
+
+  if (connectionAttempts >= MAX_RETRY_ATTEMPTS) {
+    return null; // Stop trying after max attempts
+  }
+
+  try {
+    connectionAttempts++;
+    redisClient = createClient({
+      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      socket: {
+        reconnectStrategy: (attempts) => {
+          if (attempts > MAX_RETRY_ATTEMPTS) {
+            redisEnabled = false;
+            return false; // Stop reconnecting
+          }
+          return Math.min(attempts * 100, 3000);
+        }
+      }
+    });
+
+    redisClient.on('error', (err: any) => {
+      // Only log once, not every error
+      if (err.code === 'ECONNREFUSED' && connectionAttempts === 1) {
+        winston.warn('⚠️  Redis unavailable - running without cache layer');
+      }
+    });
+
+    await redisClient.connect();
+    redisEnabled = true;
+    winston.info('✅ Redis connected successfully');
+    return redisClient;
+  } catch (error) {
+    if (connectionAttempts === 1) {
+      winston.warn('⚠️  Redis not available - continuing without caching');
+    }
+    redisEnabled = false;
+    return null;
+  }
+};
+
+export const getCacheClient = () => redisEnabled ? redisClient : null;
+2. Centralized Logger Configuration
+Create a unified logging system:
+typescript// server/config/logger.ts
+import winston from 'winston';
+import chalk from 'chalk';
+
+const logLevels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  http: 3,
+  debug: 4,
+};
+
+const logColors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'blue',
+};
+
+winston.addColors(logColors);
+
+// Custom format for cleaner output
+const customFormat = winston.format.printf(({ level, message, timestamp, ...metadata }) => {
+  // Skip certain noisy logs
+  if (message?.includes('Redis connection error')) return '';
+  if (message?.includes('Database connected successfully') && metadata.duplicate) return '';
+  
+  const time = new Date(timestamp).toLocaleTimeString();
+  
+  // Format based on log type
+  if (metadata.type === 'request') {
+    const { method, url, status, duration, ip } = metadata;
+    const statusColor = status >= 400 ? chalk.red : status >= 300 ? chalk.yellow : chalk.green;
+    return `${chalk.gray(time)} ${chalk.cyan(method.padEnd(7))} ${url.padEnd(40)} ${statusColor(status)} ${chalk.gray(duration + 'ms')}`;
+  }
+  
+  if (metadata.type === 'auth') {
+    return `${chalk.gray(time)} ${chalk.blue('AUTH')} ${message}`;
+  }
+  
+  if (metadata.type === 'system') {
+    return `${chalk.gray(time)} ${level === 'info' ? '✅' : '⚠️ '} ${message}`;
+  }
+  
+  return `${chalk.gray(time)} ${level}: ${message}`;
+});
+
+export const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  levels: logLevels,
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: false }), // Disable stack traces in logs
+    customFormat
+  ),
+  transports: [
+    new winston.transports.Console(),
+    // File transport for production
+    ...(process.env.NODE_ENV === 'production' ? [
+      new winston.transports.File({ 
+        filename: 'logs/error.log', 
+        level: 'error',
+        maxsize: 5242880, // 5MB
+        maxFiles: 5,
+      }),
+      new winston.transports.File({ 
+        filename: 'logs/combined.log',
+        maxsize: 10485760, // 10MB
+        maxFiles: 10,
+      })
+    ] : [])
+  ],
+});
+
+// Request logger middleware
+export const requestLogger = (req: any, res: any, next: any) => {
+  const start = Date.now();
+  
+  // Skip static files and health checks
+  if (req.url.includes('.') || req.url === '/health') {
+    return next();
+  }
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    
+    // Only log slow requests in production
+    if (process.env.NODE_ENV === 'production' && duration < 1000) {
+      return;
+    }
+    
+    logger.http('Request', {
+      type: 'request',
+      method: req.method,
+      url: req.originalUrl || req.url,
+      status: res.statusCode,
+      duration,
+      ip: req.ip,
+    });
+    
+    // Warn about slow requests
+    if (duration > 1000) {
+      logger.warn(`Slow request detected: ${req.method} ${req.url} took ${duration}ms`);
+    }
+  });
+  
+  next();
+};
+3. Simplify Authentication Logging
+Update your auth middleware to be less verbose:
+typescript// server/middleware/auth.ts
+export function requireAuth(req: any, res: any, next: any) {
+  const isAuthenticated = req.isAuthenticated?.();
+  
+  if (!isAuthenticated) {
+    logger.debug('Auth failed - no session', { 
+      type: 'auth',
+      ip: req.ip 
+    });
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'Please log in to access this resource'
+    });
+  }
+  
+  const user = req.user;
+  if (!user) {
+    logger.debug('Auth failed - no user object', { type: 'auth' });
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'Please log in to access this resource'
+    });
+  }
+  
+  // Only log essential info
+  logger.debug(`Auth success: ${user.email}`, { 
+    type: 'auth',
+    userId: user.id,
+    role: user.role 
+  });
+  
+  req.userId = user.id;
+  next();
+}
+4. Consolidate Database Connection Logging
+typescript// server/db/index.ts
+import { logger } from '../config/logger';
+
+let isConnected = false;
+
+export async function connectDatabase() {
+  if (isConnected) {
+    return; // Don't log if already connected
+  }
+  
+  try {
+    await db.connect();
+    isConnected = true;
+    logger.info('Database connected', { type: 'system' });
+  } catch (error) {
+    logger.error('Database connection failed', { 
+      type: 'system',
+      error: error.message 
+    });
+    throw error;
+  }
+}
+5. Startup Banner with System Status
+Create a clean startup banner:
+typescript// server/utils/startup-banner.ts
+import chalk from 'chalk';
+import { logger } from '../config/logger';
+
+export function displayStartupBanner(config: any) {
+  console.clear(); // Clear console for clean start
+  
+  console.log(chalk.cyan('\n================================================'));
+  console.log(chalk.cyan.bold('        🏋️  CLEAN & FLIP - SERVER READY 🏋️        '));
+  console.log(chalk.cyan('================================================\n'));
+  
+  const status = [
+    { name: 'Environment', value: process.env.NODE_ENV, status: 'info' },
+    { name: 'Port', value: config.port, status: 'info' },
+    { name: 'Database', value: config.db ? 'Connected' : 'Failed', status: config.db ? 'success' : 'error' },
+    { name: 'Redis Cache', value: config.redis ? 'Connected' : 'Disabled', status: config.redis ? 'success' : 'warning' },
+    { name: 'Session Store', value: 'PostgreSQL', status: 'success' },
+    { name: 'File Storage', value: 'Cloudinary', status: 'success' },
+    { name: 'Payment System', value: 'Stripe', status: 'success' },
+    { name: 'WebSocket', value: config.ws ? 'Active' : 'Disabled', status: config.ws ? 'success' : 'warning' },
+  ];
+  
+  status.forEach(item => {
+    const statusIcon = item.status === 'success' ? '✅' : item.status === 'error' ? '❌' : '⚠️ ';
+    const color = item.status === 'success' ? chalk.green : item.status === 'error' ? chalk.red : chalk.yellow;
+    console.log(`  ${statusIcon} ${chalk.gray(item.name.padEnd(15))} ${color(item.value)}`);
+  });
+  
+  console.log(chalk.cyan('\n================================================'));
+  console.log(chalk.gray(`  Startup completed in ${config.startupTime}ms`));
+  console.log(chalk.cyan('================================================\n'));
+  
+  if (config.warnings.length > 0) {
+    console.log(chalk.yellow('\n⚠️  Warnings:'));
+    config.warnings.forEach(warn => console.log(chalk.yellow(`  - ${warn}`)));
+    console.log('');
+  }
+}
+6. Environment-Based Log Levels
+Create different log profiles:
+typescript// server/config/log-profiles.ts
+export const logProfiles = {
+  development: {
+    requests: true,
+    auth: true,
+    database: true,
+    cache: false, // Disable Redis spam in dev
+    errors: true,
+    performance: true,
+  },
+  production: {
+    requests: false, // Only log errors and slow requests
+    auth: false, // Only log failures
+    database: false, // Only log errors
+    cache: false,
+    errors: true,
+    performance: true,
+  },
+  debug: {
+    requests: true,
+    auth: true,
+    database: true,
+    cache: true,
+    errors: true,
+    performance: true,
+  }
+};
+
+const profile = logProfiles[process.env.LOG_PROFILE || process.env.NODE_ENV || 'development'];
+
+export function shouldLog(category: string): boolean {
+  return profile[category] ?? false;
+}
+7. Update Server Index
+Implement the clean logging in your server:
+typescript// server/index.ts
+import { logger, requestLogger } from './config/logger';
+import { displayStartupBanner } from './utils/startup-banner';
+import { initRedis } from './config/redis';
+
+async function startServer() {
+  const startTime = Date.now();
+  const warnings: string[] = [];
+  
+  // Initialize services
+  const [dbConnected, redisConnected, wsConnected] = await Promise.all([
+    connectDatabase().then(() => true).catch(() => false),
+    initRedis().then(client => !!client).catch(() => false),
+    initWebSocket().then(() => true).catch(() => false),
+  ]);
+  
+  if (!dbConnected) {
+    logger.error('Failed to connect to database - exiting');
+    process.exit(1);
+  }
+  
+  if (!redisConnected) {
+    warnings.push('Redis caching disabled - performance may be impacted');
+  }
+  
+  // Apply middleware
+  app.use(requestLogger); // Use our custom request logger
+  
+  // Disable Express's default logging
+  app.set('trust proxy', true);
+  app.disable('x-powered-by');
+  
+  // Start server
+  const server = app.listen(PORT, () => {
+    displayStartupBanner({
+      port: PORT,
+      db: dbConnected,
+      redis: redisConnected,
+      ws: wsConnected,
+      startupTime: Date.now() - startTime,
+      warnings,
+    });
+  });
+  
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    logger.info('Shutting down gracefully...', { type: 'system' });
+    server.close(() => {
+      logger.info('Server closed', { type: 'system' });
+      process.exit(0);
+    });
+  });
+}
+8. API Response Logging
+Consolidate API response logging:
+typescript// server/middleware/response-logger.ts
+export function logApiResponse(req: any, res: any, data: any) {
+  if (process.env.NODE_ENV === 'production' && res.statusCode < 400) {
+    return; // Only log errors in production
+  }
+  
+  // Format data for logging (truncate large responses)
+  const logData = typeof data === 'object' 
+    ? JSON.stringify(data).substring(0, 100) + '...'
+    : data;
+    
+  logger.http('API Response', {
+    type: 'request',
+    method: req.method,
+    url: req.originalUrl,
+    status: res.statusCode,
+    preview: logData,
+  });
+}
+9. Error Handling Improvements
+typescript// server/middleware/error-handler.ts
+export function errorHandler(err: any, req: any, res: any, next: any) {
+  // Don't log full stack traces
+  const error = {
+    message: err.message,
+    code: err.code,
+    status: err.status || 500,
+  };
+  
+  logger.error('Request error', {
+    ...error,
+    url: req.url,
+    method: req.method,
+    // Only include stack in development
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
+  
+  res.status(error.status).json({
+    error: error.message,
+    ...(process.env.NODE_ENV === 'development' && { details: err }),
+  });
+}
+10. Environment Variables for Control
+Add these to your .env:
+bash# Logging Configuration
+LOG_LEVEL=info              # error, warn, info, http, debug
+LOG_PROFILE=development     # development, production, debug
+DISABLE_REDIS=true          # Disable Redis to stop connection errors
+LOG_SLOW_REQUESTS=1000      # Log requests slower than 1000ms
+LOG_FILE_ENABLED=false      # Enable file logging
+Summary of Improvements:
+
+Redis Errors: Only logs once when Redis is unavailable instead of spamming
+Duplicate Logs: Consolidated database connection messages
+Auth Verbosity: Reduced auth logging to essential information only
+Request Logging: Single, formatted request log instead of duplicates
+Clean Startup: Professional startup banner with system status
+Environment Control: Different log levels for dev/prod
+Performance: Skip logging for static files and health checks
+Error Handling: Cleaner error messages without stack traces in production
+Slow Requests: Configurable threshold for slow request warnings
+File Logging: Optional file logging for production environments
+
+This will transform your noisy logs into clean, actionable information that helps you monitor your application effectively without the clutter.

@@ -37,7 +37,9 @@ import { runPenetrationTests } from "./security/penetration-tests";
 import { setupCompression } from "./config/compression";
 import { healthLive, healthReady } from "./config/health";
 import { initializeWebSocket, broadcastProductUpdate, broadcastCartUpdate, broadcastStockUpdate } from "./config/websocket";
-import { createRequestLogger } from "./config/logger";
+import { createRequestLogger, logger, shouldLog } from "./config/logger";
+import { displayStartupBanner } from "./utils/startup-banner";
+import { initRedis, getCached, setCache, clearCache } from "./config/redis";
 import { initializeSearchIndexes, searchProducts } from "./config/search";
 import { getCachedCategories, setCachedCategories, getCachedFeaturedProducts, setCachedFeaturedProducts, getCachedProduct, setCachedProduct, clearProductCache } from "./config/cache";
 import { registerGracefulShutdown } from "./config/graceful-shutdown";
@@ -60,10 +62,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const startupTime = Date.now();
+  const warnings: string[] = [];
+  
+  // Initialize Redis with optimized logging
+  const redisConnected = await initRedis().then(client => !!client).catch(() => false);
+  if (!redisConnected) {
+    warnings.push('Redis caching disabled - performance may be impacted');
+  }
+  
   // Setup performance optimizations first
   setupCompression(app);
   
-  // Enhanced logging
+  // Enhanced logging with spam reduction
   app.use(createRequestLogger());
   
   // Setup security headers
@@ -118,16 +129,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Try cache first for active categories
       if (activeOnly) {
-        const cached = await getCachedCategories();
+        const cached = await getCached('categories:active');
         if (cached) {
           return res.json(cached);
         }
         
         const categories = await storage.getActiveCategoriesForHomepage();
         
-        // Cache the results
+        // Cache the results for 5 minutes
         if (categories) {
-          await setCachedCategories(categories);
+          await setCache('categories:active', categories, 300);
         }
         
         res.json(categories);
@@ -1351,16 +1362,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register graceful shutdown handlers
   registerGracefulShutdown(httpServer);
   
-  console.log('🚀 Performance Optimization Complete');
-  console.log('✅ Redis Caching: Categories, featured products, and individual product caching active');
-  console.log('✅ Database Connection Pooling: Optimized connection management with retry logic');
-  console.log('✅ WebSocket Real-time Updates: Cart, wishlist, and product updates broadcasting');
-  console.log('✅ Full-text Search: PostgreSQL search indexes and advanced search API');
-  console.log('✅ Response Compression: Gzip compression with smart filtering');
-  console.log('✅ Enhanced Logging: Structured logging with performance monitoring');
-  console.log('✅ Health Checks: Comprehensive system health monitoring endpoints');
-  console.log('✅ Graceful Shutdown: Proper cleanup of connections and resources');
-  console.log('🎯 All optimization fixes from analysis implemented successfully');
+  // Display professional startup banner
+  displayStartupBanner({
+    port: process.env.PORT || 5000,
+    db: true, // Database is connected at this point
+    redis: redisConnected,
+    ws: true, // WebSocket initialized
+    startupTime: Date.now() - startupTime,
+    warnings,
+  });
   
   return httpServer;
 }

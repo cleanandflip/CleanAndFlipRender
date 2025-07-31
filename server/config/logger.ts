@@ -1,104 +1,161 @@
 import winston from 'winston';
+import chalk from 'chalk';
 
-// Structured logging configuration
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+const logLevels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  http: 3,
+  debug: 4,
+};
+
+const logColors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'blue',
+};
+
+winston.addColors(logColors);
+
+// Log profiles for different environments
+const logProfiles = {
+  development: {
+    requests: true,
+    auth: true,
+    database: false, // Reduce database spam
+    cache: false, // Disable Redis spam in dev
+    errors: true,
+    performance: true,
+  },
+  production: {
+    requests: false, // Only log errors and slow requests
+    auth: false, // Only log failures
+    database: false, // Only log errors
+    cache: false,
+    errors: true,
+    performance: true,
+  },
+  debug: {
+    requests: true,
+    auth: true,
+    database: true,
+    cache: true,
+    errors: true,
+    performance: true,
+  }
+};
+
+const profile = logProfiles[process.env.LOG_PROFILE || process.env.NODE_ENV || 'development'];
+
+export function shouldLog(category: string): boolean {
+  return profile[category] ?? false;
+}
+
+// Track connection status to prevent duplicate logs
+let dbConnectionLogged = false;
+let redisConnectionLogged = false;
+
+// Custom format for cleaner output
+const customFormat = winston.format.printf(({ level, message, timestamp, ...metadata }) => {
+  // Skip noisy logs
+  if (message?.includes('Redis connection error')) return '';
+  if (message?.includes('Database connected successfully') && dbConnectionLogged) return '';
+  if (message?.includes('Redis connected successfully') && redisConnectionLogged) return '';
+  
+  // Mark as logged
+  if (message?.includes('Database connected successfully')) dbConnectionLogged = true;
+  if (message?.includes('Redis connected successfully')) redisConnectionLogged = true;
+  
+  const time = new Date(timestamp).toLocaleTimeString();
+  
+  // Format based on log type
+  if (metadata.type === 'request') {
+    const { method, url, status, duration, ip } = metadata;
+    const statusColor = status >= 400 ? chalk.red : status >= 300 ? chalk.yellow : chalk.green;
+    return `${chalk.gray(time)} ${chalk.cyan(method.padEnd(7))} ${url.padEnd(40)} ${statusColor(status)} ${chalk.gray(duration + 'ms')}`;
+  }
+  
+  if (metadata.type === 'auth') {
+    return `${chalk.gray(time)} ${chalk.blue('AUTH')} ${message}`;
+  }
+  
+  if (metadata.type === 'system') {
+    return `${chalk.gray(time)} ${level === 'info' ? '✅' : '⚠️ '} ${message}`;
+  }
+  
+  return `${chalk.gray(time)} ${level}: ${message}`;
+});
+
+export const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+  levels: logLevels,
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
+    winston.format.errors({ stack: false }), // Disable stack traces in logs
+    customFormat
   ),
-  defaultMeta: { service: 'clean-flip-api' },
   transports: [
-    new winston.transports.File({ 
-      filename: 'logs/error.log', 
-      level: 'error',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5
-    }),
-    new winston.transports.File({ 
-      filename: 'logs/combined.log',
-      maxsize: 5242880, // 5MB  
-      maxFiles: 5
-    }),
+    new winston.transports.Console(),
+    // File transport for production
+    ...(process.env.NODE_ENV === 'production' ? [
+      new winston.transports.File({ 
+        filename: 'logs/error.log', 
+        level: 'error',
+        maxsize: 5242880, // 5MB
+        maxFiles: 5,
+      }),
+      new winston.transports.File({ 
+        filename: 'logs/combined.log',
+        maxsize: 10485760, // 10MB
+        maxFiles: 10,
+      })
+    ] : [])
   ],
 });
 
-// Console logging for development
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    )
-  }));
-}
-
-// Request logging middleware
-export function createRequestLogger() {
-  return (req: any, res: any, next: any) => {
-    const start = Date.now();
-    
-    res.on('finish', () => {
-      const duration = Date.now() - start;
-      
-      logger.info({
-        type: 'request',
-        method: req.method,
-        url: req.url,
-        status: res.statusCode,
-        duration,
-        ip: req.ip,
-        userId: req.userId || 'anonymous',
-        userAgent: req.get('user-agent')?.substring(0, 100)
-      });
-      
-      // Log slow requests
-      if (duration > 1000) {
-        logger.warn({
-          type: 'slow_request',
-          method: req.method,
-          url: req.url,
-          duration,
-          ip: req.ip
-        });
-      }
-    });
-    
-    next();
-  };
-}
-
-// Security event logging
-export function logSecurityEvent(event: string, details: any) {
-  logger.warn({
-    type: 'security_event',
-    event,
-    ...details,
-    timestamp: new Date().toISOString()
-  });
-}
-
-// Performance logging
-export function logPerformanceEvent(operation: string, duration: number, metadata?: any) {
-  logger.info({
-    type: 'performance',
-    operation,
-    duration,
-    ...metadata
-  });
-}
-
-// Database query logging
-export function logDatabaseQuery(query: string, duration: number, params?: any) {
-  if (duration > 500) {
-    logger.warn({
-      type: 'slow_query',
-      query: query.substring(0, 200),
-      duration,
-      params
-    });
+// Request logger middleware
+export const requestLogger = (req: any, res: any, next: any) => {
+  const start = Date.now();
+  
+  // Skip static files, health checks, and favicon
+  if (req.url.includes('.') || req.url === '/health' || req.url === '/favicon.ico') {
+    return next();
   }
-}
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    
+    // Only log slow requests and errors in production
+    if (process.env.NODE_ENV === 'production' && duration < 1000 && res.statusCode < 400) {
+      return;
+    }
+    
+    // Skip logging successful quick requests in development
+    if (!shouldLog('requests') && res.statusCode < 400 && duration < 500) {
+      return;
+    }
+    
+    logger.http('Request', {
+      type: 'request',
+      method: req.method,
+      url: req.originalUrl || req.url,
+      status: res.statusCode,
+      duration,
+      ip: req.ip,
+    });
+    
+    // Warn about slow requests
+    if (duration > (parseInt(process.env.LOG_SLOW_REQUESTS || '1000'))) {
+      logger.warn(`Slow request detected: ${req.method} ${req.url} took ${duration}ms`);
+    }
+  });
+  
+  next();
+};
 
-export { logger };
+// Performance monitoring middleware
+export function createRequestLogger() {
+  return requestLogger;
+}
