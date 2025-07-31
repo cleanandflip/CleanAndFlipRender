@@ -39,9 +39,9 @@ export default function Home() {
   }, [refetch]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-transparent">
       {/* Hero Section - Full Screen */}
-      <section className="min-h-screen flex items-center justify-center pt-20 pb-12 px-6">
+      <section className="min-h-screen flex items-center justify-center pt-20 pb-12 px-6 bg-transparent">
         <div className="max-w-6xl mx-auto text-center">
           {/* Main Heading */}
           <div className="mb-12">
