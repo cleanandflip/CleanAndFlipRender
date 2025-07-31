@@ -101,8 +101,7 @@ export function setupAuth(app: Express) {
         if (!user) {
           console.log(`User not found for email: ${normalizedEmail}`);
           return done(null, false, { 
-            message: "No account found with this email address. Please check your email or create a new account.",
-            code: "USER_NOT_FOUND"
+            message: "No account found with this email address. Please check your email or create a new account."
           });
         }
         
@@ -113,8 +112,7 @@ export function setupAuth(app: Express) {
         if (!passwordMatch) {
           console.log(`Invalid password for email: ${normalizedEmail}`);
           return done(null, false, { 
-            message: "Incorrect password. Please check your password and try again.",
-            code: "INVALID_PASSWORD"
+            message: "Incorrect password. Please check your password and try again."
           });
         }
         
@@ -127,8 +125,7 @@ export function setupAuth(app: Express) {
       } catch (error: any) {
         console.error('Login authentication error:', error.message);
         return done(error, false, { 
-          message: "System error during login. Please try again.",
-          code: "SYSTEM_ERROR"
+          message: "System error during login. Please try again."
         });
       }
     }),
@@ -189,8 +186,7 @@ export function setupAuth(app: Express) {
         return res.status(409).json({ 
           error: "Account already exists",
           details: "An account with this email already exists. Please sign in instead.",
-          code: "EMAIL_EXISTS",
-          suggestion: "Try logging in with your existing account."
+          code: "EMAIL_EXISTS"
         });
       }
 

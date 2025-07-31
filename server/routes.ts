@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cart operations - Always fetch fresh product data
-  app.get("/api/cart", async (req, res) => {
+  app.get("/api/cart", requireAuth, async (req, res) => {
     try {
       const userId = (req.session as any)?.userId;
       const sessionId = req.sessionID;
@@ -167,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/cart", async (req, res) => {
+  app.post("/api/cart", requireAuth, async (req, res) => {
     try {
       const { productId, quantity = 1 } = req.body;
       const userId = (req.session as any)?.userId;
@@ -243,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/cart/:id", async (req, res) => {
+  app.put("/api/cart/:id", requireAuth, async (req, res) => {
     try {
       const { quantity } = req.body;
       const cartItem = await storage.updateCartItem(req.params.id, quantity);
@@ -254,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/cart/:id", async (req, res) => {
+  app.delete("/api/cart/:id", requireAuth, async (req, res) => {
     try {
       await storage.removeFromCart(req.params.id);
       res.json({ message: "Item removed from cart" });
@@ -265,7 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cart validation endpoint - cleans up invalid cart items
-  app.post("/api/cart/validate", async (req, res) => {
+  app.post("/api/cart/validate", requireAuth, async (req, res) => {
     try {
       const userId = (req.session as any)?.userId;
       const sessionId = req.sessionID;
