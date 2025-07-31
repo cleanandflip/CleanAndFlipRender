@@ -959,6 +959,14 @@ export class DatabaseStorage implements IStorage {
     return newSubmission;
   }
 
+  async getSubmissionByReference(reference: string): Promise<EquipmentSubmission | undefined> {
+    const [submission] = await db
+      .select()
+      .from(equipmentSubmissions)
+      .where(eq(equipmentSubmissions.referenceNumber, reference));
+    return submission;
+  }
+
   async updateSubmission(
     id: string, 
     submission: Partial<InsertEquipmentSubmission>

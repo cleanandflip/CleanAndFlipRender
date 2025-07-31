@@ -70,6 +70,7 @@ const EQUIPMENT_BRANDS = [
 export default function SellToUs() {
   const { toast } = useToast();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [referenceNumber, setReferenceNumber] = useState<string>("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   const form = useForm<SubmissionForm>({
@@ -97,13 +98,15 @@ export default function SellToUs() {
       
       return await apiRequest("POST", "/api/equipment-submissions", submissionData);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setIsSubmitted(true);
+      // Store reference number for display
+      setReferenceNumber(data.referenceNumber);
       // Scroll to top immediately when submission is successful
       window.scrollTo({ top: 0, behavior: 'smooth' });
       toast({
         title: "Submission Received!",
-        description: "We'll review your equipment and get back to you within 48 hours.",
+        description: `Reference: ${data.referenceNumber}`,
       });
     },
     onError: (error) => {
@@ -133,6 +136,31 @@ export default function SellToUs() {
           <GlassCard className="p-12 text-center">
             <CheckCircle className="mx-auto mb-6 text-green-400" size={64} />
             <h1 className="font-bebas text-4xl mb-4">SUBMISSION RECEIVED!</h1>
+            
+            {/* Reference Number Display */}
+            <div className="bg-gray-900/50 rounded-lg p-6 mb-6">
+              <p className="text-text-muted text-sm mb-2">Your Reference Number</p>
+              <div className="flex items-center justify-center gap-4">
+                <code className="text-2xl font-mono text-accent-blue bg-gray-800 px-4 py-2 rounded">
+                  {referenceNumber}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    navigator.clipboard.writeText(referenceNumber);
+                    toast({ title: "Reference copied!", description: "Use this to track your submission" });
+                  }}
+                  className="hover:bg-gray-700"
+                >
+                  <Clock className="w-5 h-5" />
+                </Button>
+              </div>
+              <p className="text-xs text-text-muted mt-2">
+                Save this number to track your submission
+              </p>
+            </div>
+            
             <p className="text-text-secondary text-lg mb-8">
               Thank you for choosing Clean & Flip. We've received your equipment submission 
               and our team will review it within 48 hours.

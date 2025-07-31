@@ -178,6 +178,10 @@ export const cartItems = pgTable("cart_items", {
 // Equipment submissions
 export const equipmentSubmissions = pgTable("equipment_submissions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Reference tracking
+  referenceNumber: varchar("reference_number").notNull().unique(),
+  
   userId: varchar("user_id").references(() => users.id),
   name: varchar("name").notNull(),
   description: text("description"),
@@ -186,23 +190,48 @@ export const equipmentSubmissions = pgTable("equipment_submissions", {
   weight: integer("weight"),
   askingPrice: decimal("asking_price", { precision: 10, scale: 2 }),
   images: jsonb("images").$type<string[]>().default([]),
-  status: varchar("status").default("pending"), // pending, reviewed, offer_made, accepted, rejected, scheduled
-  offerAmount: decimal("offer_amount", { precision: 10, scale: 2 }),
-  notes: text("notes"),
-  adminNotes: text("admin_notes"),
   
-  // Location and contact info
+  // Contact & Location
   phoneNumber: varchar("phone_number"),
+  email: varchar("email"),
   userCity: varchar("user_city"),
   userState: varchar("user_state"),
   userZipCode: varchar("user_zip_code"),
   isLocal: boolean("is_local").default(false),
-  distance: decimal("distance", { precision: 5, scale: 2 }), // Distance in miles
-  scheduledPickupDate: timestamp("scheduled_pickup_date"),
+  distance: decimal("distance", { precision: 5, scale: 2 }),
   
+  // Status Management (pending, under_review, accepted, declined, scheduled, completed, cancelled)
+  status: varchar("status").default("pending"),
+  statusHistory: jsonb("status_history").default([]),
+  
+  // Admin fields
+  adminNotes: text("admin_notes"),
+  internalNotes: text("internal_notes"), // Not visible to users
+  offerAmount: decimal("offer_amount", { precision: 10, scale: 2 }),
+  declineReason: text("decline_reason"),
+  notes: text("notes"),
+  
+  // Scheduling
+  scheduledPickupDate: timestamp("scheduled_pickup_date"),
+  pickupWindowStart: varchar("pickup_window_start"),
+  pickupWindowEnd: varchar("pickup_window_end"),
+  
+  // Tracking
+  viewedByAdmin: boolean("viewed_by_admin").default(false),
+  lastViewedAt: timestamp("last_viewed_at"),
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  
+  // Timestamps
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+  reviewedAt: timestamp("reviewed_at"),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("idx_reference_number").on(table.referenceNumber),
+  index("idx_status").on(table.status),
+  index("idx_user_id").on(table.userId),
+  index("idx_created_at").on(table.createdAt),
+]);
 
 // Wishlist
 export const wishlist = pgTable("wishlist", {
@@ -358,8 +387,14 @@ export const insertAddressSchema = createInsertSchema(addresses).omit({
 
 export const insertEquipmentSubmissionSchema = createInsertSchema(equipmentSubmissions).omit({
   id: true,
+  referenceNumber: true,
   createdAt: true,
   updatedAt: true,
+  statusHistory: true,
+  viewedByAdmin: true,
+  lastViewedAt: true,
+  reviewedAt: true,
+  completedAt: true,
 });
 
 export const insertWishlistSchema = createInsertSchema(wishlist).omit({
@@ -402,3 +437,11 @@ export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+
+// Type for status history tracking
+export type StatusHistoryEntry = {
+  status: string;
+  timestamp: string;
+  changedBy: string;
+  notes?: string;
+};

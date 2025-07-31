@@ -1398,16 +1398,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Authentication required" });
       }
       
+      // Import reference generator
+      const { generateUniqueReference } = await import("./utils/referenceGenerator");
+      const referenceNumber = await generateUniqueReference();
+      
       const submission = await storage.createEquipmentSubmission({
         ...req.body,
         userId,
+        referenceNumber,
       });
       
-      Logger.info(`Equipment submission created: ${submission.id}`);
-      res.json(submission);
+      Logger.info(`Equipment submission created: ${submission.id} with reference: ${referenceNumber}`);
+      res.json({ 
+        ...submission,
+        referenceNumber: submission.referenceNumber 
+      });
     } catch (error) {
       Logger.error("Error creating equipment submission", error);
       res.status(500).json({ error: "Failed to create submission" });
+    }
+  });
+
+  // Equipment submission tracking by reference number (public endpoint)
+  app.get("/api/submissions/track/:reference", async (req, res) => {
+    try {
+      const { reference } = req.params;
+      const submission = await storage.getSubmissionByReference(reference);
+      
+      if (!submission) {
+        return res.status(404).json({ error: "Submission not found" });
+      }
+      
+      // Return limited data for public tracking
+      const publicData = {
+        referenceNumber: submission.referenceNumber,
+        name: submission.name,
+        brand: submission.brand,
+        condition: submission.condition,
+        status: submission.status,
+        statusHistory: submission.statusHistory || [],
+        createdAt: submission.createdAt,
+        scheduledPickupDate: submission.scheduledPickupDate,
+        pickupWindowStart: submission.pickupWindowStart,
+        pickupWindowEnd: submission.pickupWindowEnd,
+        offerAmount: submission.offerAmount,
+        declineReason: submission.declineReason,
+      };
+      
+      res.json(publicData);
+    } catch (error) {
+      Logger.error("Error tracking submission:", error);
+      res.status(500).json({ error: "Failed to track submission" });
     }
   });
 

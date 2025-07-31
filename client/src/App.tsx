@@ -14,6 +14,7 @@ import ProductDetail from "@/pages/product-detail";
 import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
 import SellToUs from "@/pages/sell-to-us";
+import TrackSubmission from "@/pages/track-submission";
 import Dashboard from "@/pages/dashboard";
 import AdminDashboard from "@/pages/admin";
 import { ProductForm } from "@/pages/admin/ProductForm";
@@ -76,6 +77,7 @@ function Router() {
             <Route path="/cart" component={Cart} />
             <Route path="/checkout" component={Checkout} />
             <Route path="/sell-to-us" component={SellToUs} />
+            <Route path="/track-submission" component={TrackSubmission} />
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/admin" component={AdminDashboard} />
             <Route path="/admin/products/new" component={ProductForm} />
