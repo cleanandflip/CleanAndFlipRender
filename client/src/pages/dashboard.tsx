@@ -45,10 +45,7 @@ function AddressesSection() {
 
   const saveAddressMutation = useMutation({
     mutationFn: async (addressData: any) => {
-      return apiRequest("/api/addresses", {
-        method: "POST",
-        body: addressData,
-      });
+      return apiRequest("POST", "/api/addresses", addressData);
     },
     onSuccess: () => {
       toast({

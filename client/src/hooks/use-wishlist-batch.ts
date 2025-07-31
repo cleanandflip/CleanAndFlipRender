@@ -7,10 +7,7 @@ export function useWishlistBatch(productIds: string[], enabled: boolean = true) 
     queryFn: async () => {
       if (!productIds.length) return {};
       
-      const response = await apiRequest('/api/wishlist/check-batch', {
-        method: 'POST',
-        body: { productIds },
-      });
+      const response = await apiRequest('POST', '/api/wishlist/check-batch', { productIds });
       
       return response as Record<string, boolean>;
     },
