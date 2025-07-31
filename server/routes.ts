@@ -1076,7 +1076,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(users.id, userId))
         .limit(1);
       
-      // Query completed successfully
+      Logger.info("5. DB query result:", userWithAddress);
       
       if (!userWithAddress.length) {
         return res.status(404).json({ error: "User not found" });
@@ -1100,6 +1100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      Logger.info("6. Formatted addresses:", addresses);
       return res.json(addresses);
       
     } catch (error) {
