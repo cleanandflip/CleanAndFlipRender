@@ -28,9 +28,16 @@ type RegisterData = {
   confirmPassword: string;
   firstName: string;
   lastName: string;
+  // New structured address fields
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  // Legacy address fields for backward compatibility
   address?: string;
   cityStateZip?: string;
   phone?: string;
+  isLocalCustomer?: boolean;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);

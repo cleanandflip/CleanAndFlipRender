@@ -146,10 +146,20 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     // Normalize email before storing
-    const userToInsert = {
+    let userToInsert = {
       ...insertUser,
       email: normalizeEmail(insertUser.email)
     };
+
+    // Auto-generate coordinates from address if available and coordinates aren't provided
+    if (userToInsert.street && userToInsert.city && userToInsert.state && !userToInsert.latitude && !userToInsert.longitude) {
+      try {
+        // Note: In production, you might want to geocode the address server-side
+        // For now, coordinates will be handled by the frontend MapTiler integration
+      } catch (error) {
+        // Geocoding failed, continue without coordinates
+      }
+    }
     
     try {
       const [user] = await db

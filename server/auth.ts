@@ -218,12 +218,18 @@ export function setupAuth(app: Express) {
         password: await hashPassword(password),
         firstName,
         lastName,
+        // New structured address fields
+        street: (req.body as any).street || address || undefined,
+        city: (req.body as any).city || undefined,
+        state: (req.body as any).state || undefined,
+        zipCode: (req.body as any).zipCode || undefined,
+        // Legacy fields for backward compatibility
         address: address || undefined,
         cityStateZip: cityStateZip || undefined,
         phone: normalizedPhone,
         role,
         isAdmin: role === "admin" || role === "developer",
-        isLocalCustomer,
+        isLocalCustomer: (req.body as any).isLocalCustomer || isLocalCustomer,
       });
 
       const userForSession = {
@@ -271,7 +277,7 @@ export function setupAuth(app: Express) {
       }
       
       if (!user) {
-        const errorResponse = {
+        const errorResponse: any = {
           error: "Authentication failed",
           details: info?.message || "Invalid credentials",
           code: info?.code || "INVALID_CREDENTIALS"

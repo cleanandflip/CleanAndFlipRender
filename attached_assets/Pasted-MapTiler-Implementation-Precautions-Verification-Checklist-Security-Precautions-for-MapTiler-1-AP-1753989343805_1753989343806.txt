@@ -1,0 +1,181 @@
+MapTiler Implementation Precautions & Verification Checklist
+Security Precautions for MapTiler
+1. API Key Security
+typescript// ❌ NEVER do this (exposing key in frontend):
+const API_KEY = 'your_maptiler_key_here';
+
+// ✅ DO this instead:
+// Frontend: Use environment variable
+const API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
+
+// Or better: Proxy through your backend
+const response = await fetch('/api/geocode', {
+  method: 'POST',
+  body: JSON.stringify({ query })
+});
+2. Restrict API Key in MapTiler Dashboard
+
+Log into MapTiler dashboard
+Go to "API Keys" → Your key → "Restrictions"
+Set allowed domains: cleanandflip.com, *.cleanandflip.com
+Set allowed IPs if using backend proxy
+Enable only "Geocoding API" service
+
+3. Rate Limiting on Your End
+typescript// Add to your address component:
+const rateLimiter = new Map();
+const MAX_REQUESTS_PER_MINUTE = 60;
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const userRequests = rateLimiter.get(userId) || [];
+  const recentRequests = userRequests.filter(time => now - time < 60000);
+  
+  if (recentRequests.length >= MAX_REQUESTS_PER_MINUTE) {
+    return false;
+  }
+  
+  rateLimiter.set(userId, [...recentRequests, now]);
+  return true;
+}
+Verification Checklist for Replit
+Please verify the following components have been properly updated:
+1. Database Schema Verification
+sql-- Check if these columns exist in the users table:
+SELECT column_name 
+FROM information_schema.columns 
+WHERE table_name = 'users' 
+AND column_name IN ('street', 'city', 'state', 'zip_code', 'latitude', 'longitude');
+
+-- Verify old columns are migrated and removed:
+-- Old: address, cityStateZip
+-- New: street, city, state, zip_code
+2. Component Updates - Check Each File
+Registration Form (src/pages/auth.tsx):
+
+ Old address fields removed
+ AddressAutocomplete component implemented
+ Form submission sends new fields (street, city, state, zipCode)
+ Local customer detection working
+
+User Profile (src/pages/dashboard.tsx):
+
+ Address display shows new format
+ Edit address uses AddressAutocomplete
+ Updates save to new database fields
+
+Admin Dashboard (src/pages/admin.tsx or developer dashboard):
+
+ User management shows new address format
+ Can edit user addresses with autocomplete
+ Local customer badge displays correctly
+
+Checkout (src/pages/checkout.tsx):
+
+ Shipping address uses AddressAutocomplete
+ Saved addresses display correctly
+ Address validation working
+
+Sell Form (src/pages/sell-to-us.tsx):
+
+ Seller address uses AddressAutocomplete
+ Local seller detection working
+ Shows "Local pickup available" for Asheville area
+
+3. API Endpoints Verification
+Test these endpoints:
+typescript// Test 1: Registration with new address format
+POST /api/auth/register
+{
+  "email": "test@example.com",
+  "password": "Test123!",
+  "firstName": "Test",
+  "lastName": "User",
+  "street": "123 Main St",
+  "city": "Asheville",
+  "state": "NC",
+  "zipCode": "28806"
+}
+
+// Test 2: Profile update
+PUT /api/user/profile
+{
+  "street": "456 Oak Ave",
+  "city": "Asheville",
+  "state": "NC",
+  "zipCode": "28801"
+}
+
+// Test 3: Get user data
+GET /api/user
+// Should return new address fields, not old ones
+4. Local Detection Testing
+Test with these Asheville zip codes:
+
+✅ Should be local: 28801, 28802, 28803, 28804, 28805, 28806
+❌ Should NOT be local: 28901, 27514, 29601
+
+5. Error Handling
+
+ MapTiler API failures gracefully handled
+ Manual address entry fallback available
+ Offline mode doesn't break forms
+
+6. Environment Variables
+Verify .env contains:
+VITE_MAPTILER_API_KEY=your_key_here
+7. Performance Checks
+
+ Debouncing working (300ms delay)
+ No duplicate API calls
+ Results cached appropriately
+ Loading states display correctly
+
+8. Mobile Testing
+
+ Autocomplete works on mobile Safari/Chrome
+ Touch interactions work properly
+ Keyboard doesn't cover dropdown
+
+Additional Security Recommendations
+
+Add Backend Proxy (Recommended):
+
+typescript// server/routes/geocode.ts
+app.post('/api/geocode', requireAuth, async (req, res) => {
+  const { query } = req.body;
+  
+  // Rate limit check
+  if (!checkRateLimit(req.user.id)) {
+    return res.status(429).json({ error: 'Too many requests' });
+  }
+  
+  // Proxy to MapTiler
+  const response = await fetch(
+    `https://api.maptiler.com/geocoding/${query}.json?key=${process.env.MAPTILER_API_KEY}`
+  );
+  
+  res.json(await response.json());
+});
+
+Monitor Usage:
+
+
+Set up alerts at 80% of free tier (80,000 requests)
+Log unusual patterns (same user, many requests)
+Track which features use most geocoding
+
+
+Add Caching:
+
+typescriptconst addressCache = new Map();
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+
+function getCachedOrFetch(query: string) {
+  const cached = addressCache.get(query);
+  if (cached && Date.now() - cached.time < CACHE_DURATION) {
+    return cached.data;
+  }
+  // Fetch and cache...
+}
+Please run through this checklist and confirm all components are properly updated and working with the new address system!

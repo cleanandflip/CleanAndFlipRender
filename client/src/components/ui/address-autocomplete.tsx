@@ -2,6 +2,30 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronDown, MapPin, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// MapTiler API configuration with security
+const API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
+
+// Rate limiting implementation for security
+const rateLimiter = new Map<string, number[]>();
+const MAX_REQUESTS_PER_MINUTE = 60;
+
+function checkRateLimit(userId: string = 'anonymous'): boolean {
+  const now = Date.now();
+  const userRequests = rateLimiter.get(userId) || [];
+  const recentRequests = userRequests.filter(time => now - time < 60000);
+  
+  if (recentRequests.length >= MAX_REQUESTS_PER_MINUTE) {
+    return false;
+  }
+  
+  rateLimiter.set(userId, [...recentRequests, now]);
+  return true;
+}
+
+// Address result caching for performance
+const addressCache = new Map<string, { data: AddressSuggestion[], time: number }>();
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+
 export interface ParsedAddress {
   street: string;
   city: string;
@@ -73,13 +97,27 @@ export default function AddressAutocomplete({
         setIsLoading(true);
         setError(null);
 
-        const apiKey = import.meta.env.VITE_MAPTILER_API_KEY;
-        if (!apiKey) {
+        // Check rate limit
+        if (!checkRateLimit()) {
+          throw new Error("Too many requests. Please wait a moment before searching again.");
+        }
+
+        // Check cache first
+        const cached = addressCache.get(query);
+        if (cached && Date.now() - cached.time < CACHE_DURATION) {
+          setSuggestions(cached.data);
+          setIsOpen(cached.data.length > 0);
+          setSelectedIndex(-1);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!API_KEY) {
           throw new Error("MapTiler API key not configured");
         }
 
-        // MapTiler Geocoding API
-        const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${apiKey}&country=US&limit=5&types=address`;
+        // MapTiler Geocoding API with country restriction for security
+        const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${API_KEY}&country=US&limit=5&types=address`;
         
         const response = await fetch(url, {
           signal: abortController.signal,
@@ -103,6 +141,12 @@ export default function AddressAutocomplete({
           setSuggestions(formattedSuggestions);
           setIsOpen(formattedSuggestions.length > 0);
           setSelectedIndex(-1);
+          
+          // Cache the results
+          addressCache.set(query, {
+            data: formattedSuggestions,
+            time: Date.now()
+          });
         } else {
           setSuggestions([]);
           setIsOpen(false);
