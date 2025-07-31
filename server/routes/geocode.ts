@@ -42,8 +42,14 @@ router.get('/', async (req, res) => {
       return res.status(500).json({ error: 'Geocoding service unavailable' });
     }
 
-    // Proxy request to MapTiler
-    const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${API_KEY}&country=US&limit=5&types=address`;
+    // Proxy request to MapTiler with enhanced parameters
+    const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?` +
+      `key=${API_KEY}&` +
+      `country=us&` +
+      `types=address&` +
+      `autocomplete=true&` +
+      `fuzzyMatch=true&` +
+      `limit=5`;
     
     const response = await fetch(url);
     

@@ -75,6 +75,28 @@ export default function AddressAutocomplete({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Handle input changes with proper cleanup
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    setError(null);
+    
+    if (newValue.length === 0) {
+      setSuggestions([]);
+      setIsOpen(false);
+      onChange({
+        street: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        fullAddress: '',
+        coordinates: { lat: 0, lng: 0 }
+      });
+    } else {
+      setIsOpen(true);
+    }
+  };
+
   // Debounced search function
   const searchAddresses = useCallback(
     async (query: string) => {
@@ -179,40 +201,60 @@ export default function AddressAutocomplete({
     return () => clearTimeout(timeoutId);
   }, [inputValue, searchAddresses, value?.fullAddress]);
 
-  // Parse MapTiler response into our address format
+  // State abbreviation helper
+  const getStateAbbreviation = (stateName: string): string => {
+    const stateMap: { [key: string]: string } = {
+      'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+      'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+      'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+      'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+      'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+      'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+      'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+      'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+      'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+      'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
+    };
+    return stateMap[stateName] || stateName;
+  };
+
+  // Parse MapTiler response into clean address format
   const parseAddress = (suggestion: AddressSuggestion): ParsedAddress => {
     const contexts = suggestion.context || [];
     
-    // Extract components from context
-    let street = suggestion.text || "";
-    let city = "";
-    let state = "";
-    let zipCode = "";
-
-    contexts.forEach((ctx) => {
-      if (ctx.id.includes("place")) {
-        city = ctx.text;
-      } else if (ctx.id.includes("region")) {
-        state = ctx.text;
-      } else if (ctx.id.includes("postcode")) {
-        zipCode = ctx.text;
-      }
-    });
-
-    // If no street number, try to extract from place_name
-    if (!street && suggestion.place_name) {
-      const parts = suggestion.place_name.split(",");
-      if (parts.length > 0) {
-        street = parts[0].trim();
-      }
-    }
+    // Extract city name (not county) from context
+    const city = contexts.find((c: any) => 
+      c.id.includes('municipality') || c.id.includes('place')
+    )?.text || '';
+    
+    // Extract state and convert to abbreviation
+    const state = contexts.find((c: any) => 
+      c.id.includes('region')
+    )?.text || '';
+    const stateAbbr = state.length > 2 ? getStateAbbreviation(state) : state;
+    
+    // Extract ZIP code
+    const zipCode = contexts.find((c: any) => 
+      c.id.includes('postal_code')
+    )?.text || '';
+    
+    // Get street address
+    const street = suggestion.text || suggestion.place_name?.split(',')[0]?.trim() || '';
+    
+    // Format: "123 Main St, Asheville, NC 28806" (no county, no country)
+    const formattedAddress = [
+      street,
+      city,
+      stateAbbr,
+      zipCode
+    ].filter(Boolean).join(', ');
 
     return {
       street,
       city,
-      state,
+      state: stateAbbr,
       zipCode,
-      fullAddress: suggestion.place_name,
+      fullAddress: formattedAddress,
       coordinates: {
         lat: suggestion.center[1],
         lng: suggestion.center[0],
@@ -231,10 +273,18 @@ export default function AddressAutocomplete({
 
   const handleClear = () => {
     setInputValue("");
-    onChange(null);
-    setIsOpen(false);
-    setSuggestions([]);
+    setSuggestions([]); // Clear suggestions
+    setIsOpen(false); // Hide dropdown
     setError(null);
+    setSelectedIndex(-1);
+    onChange({
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      fullAddress: '',
+      coordinates: { lat: 0, lng: 0 }
+    });
     inputRef.current?.focus();
   };
 
@@ -288,15 +338,21 @@ export default function AddressAutocomplete({
     }
   }, [value]);
 
+  // Check if customer is local (Asheville, NC area)
+  const isLocalCustomer = (address: ParsedAddress): boolean => {
+    return address.city?.toLowerCase().includes('asheville') || 
+           address.zipCode?.startsWith('288');
+  };
+
   return (
-    <div className={cn("relative w-full", className)}>
+    <div className={cn("relative w-full", className)} style={{ overflow: 'visible' }}>
       <div className="relative">
         <input
           ref={inputRef}
           id={id}
           type="text"
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => {
             if (suggestions.length > 0) {
@@ -307,7 +363,7 @@ export default function AddressAutocomplete({
           required={required}
           disabled={disabled}
           className={cn(
-            "w-full px-4 py-3 pr-12 bg-transparent border-0 rounded-lg",
+            "w-full pl-3 pr-10 py-3 bg-transparent border-0 rounded-lg",
             "text-white placeholder:text-text-muted focus:outline-none focus:ring-0 focus:border-transparent",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             className
@@ -343,7 +399,12 @@ export default function AddressAutocomplete({
       {isOpen && suggestions.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl max-h-60 overflow-y-auto"
+          style={{ 
+            zIndex: 9999,
+            position: 'absolute',
+            top: '100%'
+          }}
         >
           {suggestions.map((suggestion, index) => (
             <button
@@ -364,6 +425,16 @@ export default function AddressAutocomplete({
               </div>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Local Customer Badge */}
+      {value && value.fullAddress && isLocalCustomer(value) && (
+        <div className="mt-2 text-sm text-green-400 flex items-center gap-1">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          Local customer - Eligible for pickup in Asheville
         </div>
       )}
     </div>
