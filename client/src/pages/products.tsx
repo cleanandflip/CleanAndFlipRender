@@ -89,7 +89,7 @@ export default function Products() {
 
   const [showFilters, setShowFilters] = useState(() => {
     const savedState = NavigationStateManager.getState('/products');
-    return (NavigationStateManager.isFromProductDetail() && savedState?.showFilters) 
+    return (NavigationStateManager.isFromProductDetail() && savedState?.showFilters !== undefined) 
       ? savedState.showFilters 
       : false;
   });
@@ -142,13 +142,13 @@ export default function Products() {
   }, []);
 
   // Remove a specific filter
-  const removeFilter = (filterType: string, value: string) => {
+  const removeFilter = (filterType: keyof ProductFilters, value: string) => {
     const newFilters = { ...filters };
     
     if (filterType === 'brand' || filterType === 'condition' || filterType === 'tags') {
-      const currentValues = Array.isArray(newFilters[filterType]) ? newFilters[filterType] : [];
-      newFilters[filterType] = currentValues.filter(v => v !== value);
-      if (newFilters[filterType].length === 0) {
+      const currentValues = Array.isArray(newFilters[filterType]) ? newFilters[filterType] as string[] : [];
+      newFilters[filterType] = currentValues.filter(v => v !== value) as any;
+      if ((newFilters[filterType] as string[]).length === 0) {
         delete newFilters[filterType];
       }
     } else {
@@ -344,7 +344,18 @@ export default function Products() {
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setViewMode('grid')}
+                  onClick={() => {
+                    setViewMode('grid');
+                    // Save state immediately when changing view mode
+                    const currentState = {
+                      filters,
+                      currentPage,
+                      viewMode: 'grid' as const,
+                      showFilters,
+                      scrollPosition: window.scrollY
+                    };
+                    NavigationStateManager.saveState('/products', currentState, location);
+                  }}
                   className="h-8"
                 >
                   <Grid size={16} />
@@ -352,7 +363,18 @@ export default function Products() {
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setViewMode('list')}
+                  onClick={() => {
+                    setViewMode('list');
+                    // Save state immediately when changing view mode
+                    const currentState = {
+                      filters,
+                      currentPage,
+                      viewMode: 'list' as const,
+                      showFilters,
+                      scrollPosition: window.scrollY
+                    };
+                    NavigationStateManager.saveState('/products', currentState, location);
+                  }}
                   className="h-8"
                 >
                   <List size={16} />
@@ -362,11 +384,22 @@ export default function Products() {
               {/* Filter Toggle */}
               <Button
                 variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
+                onClick={() => {
+                  setShowFilters(!showFilters);
+                  // Save state immediately when toggling filters
+                  const currentState = {
+                    filters,
+                    currentPage,
+                    viewMode,
+                    showFilters: !showFilters,
+                    scrollPosition: window.scrollY
+                  };
+                  NavigationStateManager.saveState('/products', currentState, location);
+                }}
                 className="glass border-glass-border"
               >
                 <Filter size={16} className="mr-2" />
-                Filters
+                Filters {showFilters && '✓'}
               </Button>
             </div>
           </div>
