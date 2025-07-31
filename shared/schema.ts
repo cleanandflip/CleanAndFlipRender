@@ -204,7 +204,10 @@ export const activityLogs = pgTable("activity_logs", {
   eventType: varchar("event_type").notNull(), // 'page_view', 'user_action', 'purchase'
   userId: varchar("user_id").references(() => users.id),
   sessionId: varchar("session_id"),
-  pageUrl: varchar("page_url"),
+  action: varchar("action"), // What action was performed
+  page: varchar("page"), // Which page/route
+  pageUrl: varchar("page_url"), // Full URL (added for compatibility)
+  metadata: jsonb("metadata"), // Additional data
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_activity_logs_created").on(table.createdAt),

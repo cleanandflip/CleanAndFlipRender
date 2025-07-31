@@ -23,9 +23,10 @@ interface ProductCardProps {
   product: Product;
   viewMode?: 'grid' | 'list';
   compact?: boolean;
+  isWishlisted?: boolean;
 }
 
-export default function ProductCard({ product, viewMode = 'grid', compact = false }: ProductCardProps) {
+export default function ProductCard({ product, viewMode = 'grid', compact = false, isWishlisted = false }: ProductCardProps) {
   // All logic now handled by unified components
   const mainImage = product.images?.[0];
   const hasImage = mainImage && mainImage.length > 0;
@@ -178,6 +179,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           size="small"
           className="w-10 h-10 bg-gray-700/80 hover:bg-gray-600 rounded-full transition-all duration-200"
           showTooltip={false}
+          initialWishlisted={isWishlisted}
         />
       </div>
       

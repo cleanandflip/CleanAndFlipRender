@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import ProductGrid from "@/components/products/product-grid";
+import ProductList from "@/components/products/ProductList";
 import FilterSidebar from "@/components/products/filter-sidebar";
 import SearchBar from "@/components/products/search-bar";
 import FilterChip from "@/components/products/filter-chip";
@@ -307,7 +308,7 @@ export default function Products() {
               </div>
             ) : data && data.products.length > 0 ? (
               <>
-                <ProductGrid products={data.products} viewMode={viewMode} />
+                <ProductList products={data.products} />
                 
                 {/* Pagination */}
                 {totalPages > 1 && (

@@ -576,8 +576,8 @@ export class DatabaseStorage implements IStorage {
         id: activityLogs.id,
         type: activityLogs.eventType,
         details: sql<string>`CASE 
-          WHEN ${activityLogs.eventType} = 'page_view' THEN 'Page view: ' || COALESCE(${activityLogs.pageUrl}, 'Unknown')
-          WHEN ${activityLogs.eventType} = 'user_action' THEN 'User action'
+          WHEN ${activityLogs.eventType} = 'page_view' THEN 'Page view: ' || COALESCE(${activityLogs.page}, 'Unknown')
+          WHEN ${activityLogs.eventType} = 'user_action' THEN 'User action: ' || COALESCE(${activityLogs.action}, 'Unknown')
           ELSE ${activityLogs.eventType}
         END`,
         timestamp: activityLogs.createdAt

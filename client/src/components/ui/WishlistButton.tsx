@@ -9,18 +9,20 @@ interface WishlistButtonProps {
   size?: 'small' | 'default';
   className?: string;
   showTooltip?: boolean;
+  initialWishlisted?: boolean; // NEW: Pass wishlist status to prevent API calls
 }
 
 export const WishlistButton: React.FC<WishlistButtonProps> = ({ 
   productId, 
   size = 'default',
   className = '',
-  showTooltip = true 
+  showTooltip = true,
+  initialWishlisted = false
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(initialWishlisted);
   const [loading, setLoading] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   
@@ -43,7 +45,7 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
     return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate as EventListener);
   }, [productId]);
   
-  // Use optimized wishlist hook with caching
+  // Only fetch if we don't have initial data and user is authenticated
   const { data: wishlistData } = useQuery({
     queryKey: ['wishlist', productId],
     queryFn: async () => {
@@ -59,21 +61,21 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
       if (!response.ok) throw new Error('Failed to check wishlist');
       return response.json();
     },
-    enabled: !!user && !!productId,
-    staleTime: 60000, // 1 minute - much longer stale time
-    cacheTime: 300000, // 5 minutes - longer cache retention
+    enabled: !!user && !!productId && initialWishlisted === false, // Only query if no initial data
+    staleTime: 60000, // 1 minute
+    cacheTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,
-    refetchOnMount: false, // Critical: prevent refetch on every mount
-    refetchInterval: false, // No automatic refetching
-    refetchOnReconnect: false, // Don't refetch when reconnecting
+    refetchOnMount: false,
+    refetchInterval: false,
+    refetchOnReconnect: false,
   });
   
-  // Update local state when query data changes
+  // Update local state when query data changes (only if no initial data)
   useEffect(() => {
-    if (wishlistData) {
+    if (wishlistData && initialWishlisted === false) {
       setIsWishlisted(wishlistData.isWishlisted);
     }
-  }, [wishlistData]);
+  }, [wishlistData, initialWishlisted]);
   
   const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
