@@ -91,12 +91,6 @@ export default function Products() {
     const savedState = NavigationStateManager.getState('/products');
     const isFromProductDetail = NavigationStateManager.isFromProductDetail();
     
-    console.log('ShowFilters restoration:', {
-      isFromProductDetail,
-      savedState,
-      showFiltersInState: savedState?.showFilters
-    });
-    
     if (isFromProductDetail && savedState && savedState.showFilters === true) {
       return true;
     }
@@ -398,8 +392,6 @@ export default function Products() {
                   const newShowFilters = !showFilters;
                   setShowFilters(newShowFilters);
                   
-                  console.log('Saving filter toggle state:', newShowFilters);
-                  
                   // Save state immediately when toggling filters
                   const currentState = {
                     filters,
@@ -438,14 +430,16 @@ export default function Products() {
 
         <div className="flex gap-8">
           {/* Filters Sidebar */}
-          {showFilters && (
-            <div className="w-80 flex-shrink-0">
+          <div className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
+            showFilters ? 'w-80 opacity-100' : 'w-0 opacity-0 overflow-hidden'
+          }`}>
+            <div className={`w-80 ${showFilters ? 'block' : 'hidden'}`}>
               <FilterSidebar
                 filters={filters}
                 onFiltersChange={handleFilterChange}
               />
             </div>
-          )}
+          </div>
 
           {/* Products Grid */}
           <div className="flex-1">
