@@ -26,7 +26,13 @@ import {
   MessageSquare
 } from "lucide-react";
 
-const submissionSchema = insertEquipmentSubmissionSchema.extend({
+const submissionSchema = z.object({
+  name: z.string().min(1, "Equipment name is required"),
+  brand: z.string().optional(),
+  condition: z.enum(["new", "like_new", "good", "fair", "needs_repair"]),
+  weight: z.string().optional(),
+  askingPrice: z.string().optional(),
+  description: z.string().optional(),
   images: z.array(z.string()).optional(),
 });
 
@@ -81,9 +87,11 @@ export default function SellToUs() {
 
   const submitMutation = useMutation({
     mutationFn: async (data: SubmissionForm) => {
-      // Keep data as strings to match schema expectations
+      // Convert numeric fields back to numbers for database storage
       const submissionData = {
         ...data,
+        weight: data.weight ? Number(data.weight) : undefined,
+        askingPrice: data.askingPrice ? Number(data.askingPrice) : undefined,
         images: uploadedImages,
       };
       

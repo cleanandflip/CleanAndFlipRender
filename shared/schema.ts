@@ -183,8 +183,8 @@ export const equipmentSubmissions = pgTable("equipment_submissions", {
   description: text("description"),
   brand: varchar("brand"),
   condition: productConditionEnum("condition").notNull(),
-  weight: varchar("weight"),
-  askingPrice: varchar("asking_price"),
+  weight: integer("weight"),
+  askingPrice: decimal("asking_price", { precision: 10, scale: 2 }),
   images: jsonb("images").$type<string[]>().default([]),
   status: varchar("status").default("pending"), // pending, reviewed, offer_made, accepted, rejected, scheduled
   offerAmount: decimal("offer_amount", { precision: 10, scale: 2 }),
