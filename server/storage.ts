@@ -967,6 +967,15 @@ export class DatabaseStorage implements IStorage {
     return submission;
   }
 
+  async getUserSubmissions(userId: string): Promise<EquipmentSubmission[]> {
+    const userSubmissions = await db
+      .select()
+      .from(equipmentSubmissions)
+      .where(eq(equipmentSubmissions.userId, userId))
+      .orderBy(desc(equipmentSubmissions.createdAt));
+    return userSubmissions;
+  }
+
   async updateSubmission(
     id: string, 
     submission: Partial<InsertEquipmentSubmission>

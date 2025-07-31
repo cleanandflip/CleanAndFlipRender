@@ -1463,6 +1463,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user's own submissions  
+  app.get("/api/my-submissions", requireAuth, async (req, res) => {
+    try {
+      // Check authentication - support multiple auth methods
+      let userId = null;
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        userId = req.user?.id;
+      } else if (req.session?.passport?.user?.id) {
+        userId = req.session.passport.user.id;
+      } else if (req.user?.claims?.sub) {
+        userId = req.user.claims.sub;
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const submissions = await storage.getUserSubmissions(userId);
+      res.json(submissions);
+    } catch (error) {
+      Logger.error("Error fetching user submissions:", error);
+      res.status(500).json({ error: "Failed to fetch submissions" });
+    }
+  });
+
+  // User cancels their own submission
+  app.post('/api/submissions/:id/cancel', requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body;
+      
+      // Check authentication - support multiple auth methods
+      let userId = null;
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        userId = req.user?.id;
+      } else if (req.session?.passport?.user?.id) {
+        userId = req.session.passport.user.id;
+      } else if (req.user?.claims?.sub) {
+        userId = req.user.claims.sub;
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      // Get submission and verify ownership
+      const submission = await storage.getEquipmentSubmission(id);
+      
+      if (!submission || submission.userId !== userId) {
+        return res.status(404).json({ error: 'Submission not found' });
+      }
+      
+      // Check if cancellation is allowed
+      const nonCancellableStatuses = ['scheduled', 'completed', 'cancelled'];
+      if (nonCancellableStatuses.includes(submission.status)) {
+        return res.status(400).json({ 
+          error: `Cannot cancel submission with status: ${submission.status}` 
+        });
+      }
+      
+      // Update status with history
+      const statusHistory = submission.statusHistory || [];
+      const newHistory = [
+        ...statusHistory,
+        {
+          status: 'cancelled',
+          timestamp: new Date().toISOString(),
+          changedBy: 'user',
+          notes: reason || 'Cancelled by user'
+        }
+      ];
+      
+      await storage.updateEquipmentSubmission(id, {
+        status: 'cancelled',
+        statusHistory: newHistory,
+        updatedAt: new Date(),
+      });
+      
+      Logger.info(`Equipment submission cancelled by user: ${id}`);
+      res.json({ success: true, message: 'Submission cancelled successfully' });
+    } catch (error) {
+      Logger.error("Error cancelling submission:", error);
+      res.status(500).json({ error: "Failed to cancel submission" });
+    }
+  });
+
   app.put("/api/admin/submissions/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;

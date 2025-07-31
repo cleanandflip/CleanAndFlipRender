@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { WishlistButton } from "@/components/ui";
@@ -26,7 +36,11 @@ import {
   Truck,
   X,
   Edit,
-  Plus
+  Plus,
+  Eye,
+  AlertCircle,
+  Calendar,
+  Ban
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -181,6 +195,7 @@ function DashboardContent() {
   const queryClient = useQueryClient();
   const { restoreState, saveState } = useNavigationState('dashboard');
   const [activeTab, setActiveTab] = useState('orders');
+  const [cancellingSubmission, setCancellingSubmission] = useState<any>(null);
   
   // Initialize browser back button handling
   useBackButton();
@@ -189,8 +204,8 @@ function DashboardContent() {
     queryKey: ["/api/orders"],
   });
 
-  const { data: submissions = [] } = useQuery<EquipmentSubmission[]>({
-    queryKey: ["/api/submissions"],
+  const { data: submissions = [], refetch: refetchSubmissions } = useQuery<EquipmentSubmission[]>({
+    queryKey: ["/api/my-submissions"],
   });
 
   const { data: wishlist = [], refetch: refetchWishlist } = useQuery<(Wishlist & { product: Product })[]>({
@@ -200,6 +215,48 @@ function DashboardContent() {
     refetchOnWindowFocus: true, // Always refetch when user returns to tab
     refetchOnMount: 'always', // Always refetch when component mounts
   });
+
+  const cancelSubmissionMutation = useMutation({
+    mutationFn: async (submissionId: string) => {
+      return await apiRequest("POST", `/api/submissions/${submissionId}/cancel`, {
+        reason: 'Cancelled by user'
+      });
+    },
+    onSuccess: () => {
+      refetchSubmissions();
+      toast({
+        title: "Submission cancelled",
+        description: "Your equipment submission has been cancelled successfully.",
+      });
+      setCancellingSubmission(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel submission",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Check if submission can be cancelled
+  const canCancelSubmission = (submission: any) => {
+    const nonCancellableStatuses = ['scheduled', 'completed', 'cancelled'];
+    return !nonCancellableStatuses.includes(submission.status);
+  };
+
+  const getStatusIcon = (status: string) => {
+    const icons = {
+      pending: Clock,
+      under_review: Eye,
+      accepted: CheckCircle,
+      declined: X,
+      scheduled: Calendar,
+      completed: CheckCircle,
+      cancelled: Ban
+    };
+    return icons[status as keyof typeof icons] || Package;
+  };
 
   // Restore state when component mounts
   useEffect(() => {
@@ -407,42 +464,97 @@ function DashboardContent() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {submissions.map((submission) => (
-                    <div key={submission.id} className="glass rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold">{submission.name}</h3>
-                            <Badge className={`${getSubmissionStatusColor(submission.status || 'pending')} text-white`}>
-                              {(submission.status || 'pending').replace('_', ' ').toUpperCase()}
-                            </Badge>
+                  {submissions.map((submission) => {
+                    const StatusIcon = getStatusIcon(submission.status || 'pending');
+                    
+                    return (
+                      <div key={submission.id} className="glass rounded-lg p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-lg font-semibold">
+                                {submission.equipmentName}
+                              </h3>
+                              <Badge className={`${getSubmissionStatusColor(submission.status || 'pending')} text-white`}>
+                                <StatusIcon className="w-3 h-3 mr-1" />
+                                {(submission.status || 'pending').replace('_', ' ').toUpperCase()}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-text-secondary font-mono mb-1">
+                              {submission.referenceNumber}
+                            </p>
                           </div>
-                          <p className="text-sm text-text-secondary mb-1">
-                            {submission.brand && `${submission.brand} • `}
-                            Condition: {submission.condition.replace('_', ' ')}
-                          </p>
-                          <p className="text-sm text-text-secondary">
-                            Submitted on {new Date(submission.createdAt!).toLocaleDateString()}
-                          </p>
+                          
+                          <div className="flex gap-2">
+                            <SmartLink href={`/track-submission?ref=${submission.referenceNumber}`}>
+                              <Button variant="outline" size="sm" className="glass border-glass-border">
+                                <Eye className="w-4 h-4 mr-1" />
+                                Track
+                              </Button>
+                            </SmartLink>
+                            
+                            {canCancelSubmission(submission) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCancellingSubmission(submission)}
+                                className="text-red-400 hover:text-red-300 hover:border-red-600 glass border-glass-border"
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Cancel
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          {submission.offerAmount && (
-                            <div className="font-semibold text-lg text-success mb-2">
-                              Offer: ${submission.offerAmount}
-                            </div>
-                          )}
-                          {submission.askingPrice && (
-                            <div className="text-sm text-text-muted mb-2">
-                              Asked: ${submission.askingPrice}
-                            </div>
-                          )}
-                          <Button variant="outline" size="sm" className="glass border-glass-border">
-                            View Details
-                          </Button>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p className="text-text-secondary">Brand</p>
+                            <p>{submission.brand}</p>
+                          </div>
+                          <div>
+                            <p className="text-text-secondary">Condition</p>
+                            <p className="capitalize">{submission.condition?.replace('_', ' ')}</p>
+                          </div>
+                          <div>
+                            <p className="text-text-secondary">Submitted</p>
+                            <p>{new Date(submission.createdAt!).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-text-secondary">Asking Price</p>
+                            <p className="font-medium">
+                              {submission.askingPrice ? `$${submission.askingPrice}` : 'Open to offers'}
+                            </p>
+                          </div>
                         </div>
+                        
+                        {/* Status-specific information */}
+                        {submission.status === 'accepted' && submission.offerAmount && (
+                          <div className="mt-4 p-4 bg-green-900/20 border border-green-700 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-green-400">Offer Made</p>
+                                <p className="text-2xl font-bold text-green-500">
+                                  ${submission.offerAmount}
+                                </p>
+                              </div>
+                              <AlertCircle className="w-5 h-5 text-green-400" />
+                            </div>
+                            <p className="text-sm text-text-secondary mt-2">
+                              Please check your email to accept this offer
+                            </p>
+                          </div>
+                        )}
+                        
+                        {submission.status === 'declined' && submission.declineReason && (
+                          <div className="mt-4 p-4 bg-red-900/20 border border-red-700 rounded-lg">
+                            <p className="text-sm text-red-400">Reason for decline:</p>
+                            <p className="text-sm mt-1">{submission.declineReason}</p>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </GlassCard>
@@ -581,6 +693,37 @@ function DashboardContent() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Cancellation Confirmation Dialog */}
+      <AlertDialog 
+        open={!!cancellingSubmission} 
+        onOpenChange={() => setCancellingSubmission(null)}
+      >
+        <AlertDialogContent className="glass border-glass-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Cancel Equipment Submission?</AlertDialogTitle>
+            <AlertDialogDescription className="text-text-secondary">
+              Are you sure you want to cancel your submission for{' '}
+              <strong className="text-white">{cancellingSubmission?.equipmentName}</strong>?
+              <br /><br />
+              <span className="font-mono text-sm">{cancellingSubmission?.referenceNumber}</span>
+              <br /><br />
+              This action cannot be undone. You'll need to create a new submission 
+              if you want to sell this item in the future.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="glass border-glass-border">Keep Submission</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => cancelSubmissionMutation.mutate(cancellingSubmission?.id)}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={cancelSubmissionMutation.isPending}
+            >
+              {cancelSubmissionMutation.isPending ? 'Cancelling...' : 'Yes, Cancel Submission'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
