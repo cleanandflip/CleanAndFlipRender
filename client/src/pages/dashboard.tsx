@@ -24,7 +24,6 @@ import {
   Clock,
   CheckCircle,
   Truck,
-  Star,
   X,
   Edit,
   Plus
@@ -294,7 +293,7 @@ function DashboardContent() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
           <GlassCard className="p-6 text-center">
             <Package className="mx-auto mb-3 text-accent-blue" size={32} />
             <div className="text-2xl font-bold">{orders.length}</div>
@@ -311,12 +310,6 @@ function DashboardContent() {
             <Heart className="mx-auto mb-3 text-red-400" size={32} />
             <div className="text-2xl font-bold">{wishlist?.length || 0}</div>
             <div className="text-sm text-text-muted">Wishlist Items</div>
-          </GlassCard>
-          
-          <GlassCard className="p-6 text-center">
-            <Star className="mx-auto mb-3 text-yellow-400" size={32} />
-            <div className="text-2xl font-bold">4.9</div>
-            <div className="text-sm text-text-muted">Customer Rating</div>
           </GlassCard>
         </div>
 

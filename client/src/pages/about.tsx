@@ -62,7 +62,7 @@ export default function About() {
           
           <GlassCard className="p-8">
             <h3 className="font-bebas text-2xl mb-6">BY THE NUMBERS</h3>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold text-accent-blue mb-2">452</div>
                 <div className="text-sm text-text-muted">Successful Transactions</div>
@@ -74,10 +74,6 @@ export default function About() {
               <div className="text-center">
                 <div className="text-3xl font-bold text-warning mb-2">48hrs</div>
                 <div className="text-sm text-text-muted">Average Response Time</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-red-400 mb-2">4.9</div>
-                <div className="text-sm text-text-muted">Customer Rating</div>
               </div>
             </div>
           </GlassCard>
