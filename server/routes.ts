@@ -247,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(product);
     } catch (error) {
-      console.error("Error fetching product:", error);
+      Logger.error("Error fetching product", error);
       res.status(500).json({ message: "Failed to fetch product" });
     }
   });
@@ -255,10 +255,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart operations - Always fetch fresh product data
   app.get("/api/cart", requireAuth, async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.user?.id || req.userId || (req.session as any)?.userId;
       const sessionId = req.sessionID;
       
-      console.log("Get cart - userId:", userId, "sessionId:", sessionId);
+      Logger.debug(`Get cart - userId: ${userId}, sessionId: ${sessionId}`);
       
       // Set cache-busting headers to prevent any caching
       res.set({
@@ -268,14 +268,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'ETag': `"cart-${Date.now()}"`
       });
       
-      // Don't use temp-user-id, use actual session or user
+      // Use proper userId from authenticated user
       const cartItems = await storage.getCartItems(
-        userId && userId !== 'temp-user-id' ? userId : undefined,
+        userId || undefined,
         sessionId
       );
       res.json(cartItems);
     } catch (error) {
-      console.error("Error fetching cart:", error);
+      Logger.error("Error fetching cart", error);
       res.status(500).json({ message: "Failed to fetch cart" });
     }
   });
@@ -283,10 +283,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cart", requireAuth, async (req, res) => {
     try {
       const { productId, quantity = 1 } = req.body;
-      const userId = (req.session as any)?.userId;
+      const userId = req.user?.id || req.userId || (req.session as any)?.userId;
       const sessionId = req.sessionID;
       
-      console.log("Cart request - userId:", userId, "sessionId:", sessionId);
+      Logger.debug(`Cart request - userId: ${userId}, sessionId: ${sessionId}`);
       
       // 1. Check product availability first
       const product = await storage.getProduct(productId);
@@ -374,7 +374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cartItem = await storage.updateCartItem(req.params.id, quantity);
       res.json(cartItem);
     } catch (error) {
-      console.error("Error updating cart item:", error);
+      Logger.error("Error updating cart item", error);
       res.status(500).json({ message: "Failed to update cart item" });
     }
   });
@@ -384,7 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.removeFromCart(req.params.id);
       res.json({ message: "Item removed from cart" });
     } catch (error) {
-      console.error("Error removing from cart:", error);
+      Logger.error("Error removing from cart", error);
       res.status(500).json({ message: "Failed to remove from cart" });
     }
   });
@@ -392,11 +392,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart validation endpoint - cleans up invalid cart items
   app.post("/api/cart/validate", requireAuth, async (req, res) => {
     try {
-      const userId = (req.session as any)?.userId;
+      const userId = req.user?.id || req.userId || (req.session as any)?.userId;
       const sessionId = req.sessionID;
       
       const cartItems = await storage.getCartItems(
-        userId && userId !== 'temp-user-id' ? userId : undefined,
+        userId || undefined,
         sessionId
       );
       
@@ -506,7 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.userId; // Now set by requireAuth middleware
       
-      console.log('Get wishlist - userId:', userId);
+      Logger.debug(`Get wishlist - userId: ${userId}`);
       
       if (!userId) {
         return res.status(401).json({ 
@@ -518,7 +518,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const wishlistItems = await storage.getWishlistItems(userId);
       res.json(wishlistItems);
     } catch (error) {
-      console.error("Error fetching wishlist:", error);
+      Logger.error("Error fetching wishlist", error);
       res.status(500).json({ message: "Failed to fetch wishlist" });
     }
   });
@@ -545,7 +545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isWishlisted = await storage.isProductInWishlist(userId, productId);
       res.json({ isWishlisted });
     } catch (error) {
-      console.error("Error checking wishlist:", error);
+      Logger.error("Error checking wishlist", error);
       res.status(500).json({ message: "Failed to check wishlist status" });
     }
   });
@@ -1382,24 +1382,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     process.env.DB_CONNECTION_LOGGED = 'true';
   }
   
-  // Setup consolidated request logging middleware - reduces noise
-  app.use((req, res, next) => {
-    const start = Date.now();
-    const key = `${req.method}-${req.path.split('?')[0]}`;
-    
-    res.on('finish', () => {
-      const duration = Date.now() - start;
-      
-      // Only log slow requests, errors, or important endpoints
-      if (duration > 1000 || res.statusCode >= 400) {
-        Logger.info(`${key} ${res.statusCode} ${duration}ms`);
-      } else {
-        Logger.consolidate(key, `${key} ${res.statusCode} ${duration}ms`, LogLevel.DEBUG);
-      }
-    });
-    
-    next();
-  });
+  // Setup advanced request consolidation middleware
+  const { requestConsolidator } = await import('./middleware/request-consolidator');
+  app.use(requestConsolidator.middleware());
   
   return httpServer;
 }

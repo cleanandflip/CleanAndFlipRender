@@ -1,0 +1,99 @@
+Here are the instructions to fix your logging issues:
+1. Fix the "userId undefined" Issue
+In your cart router (server/routes/cart.ts):
+
+Look for the line where you're logging Get cart - userId: ${userId}
+Change how you're extracting the userId:
+
+typescriptconst userId = req.user?.id || req.session?.userId || null;
+
+Make sure you're accessing the correct property from your authenticated user object
+The issue is likely that req.user exists but req.user.id is stored under a different property name (maybe req.user.userId or req.user._id)
+
+2. Remove Legacy Logging Systems
+In your server file:
+
+Remove or comment out any console.log() statements
+Remove the morgan middleware if you have it (app.use(morgan(...)))
+Remove any old winston logger setup
+Remove the express-winston middleware if present
+Search for and remove any logging that shows [express] in the output
+
+In your route files:
+
+Replace all console.log() with your new logger
+Remove any res.json() that includes logging (the ones showing the response data in logs)
+
+3. Consolidate GET Request Logs
+Create a request consolidation system:
+
+In your logging middleware, implement request batching:
+
+Track similar requests (same method + endpoint) within a time window
+For repeating requests, log only the first one and then a summary
+Skip logging for static assets (anything with @vite, .js, .css, etc.)
+Add a filter for hot-reload requests
+
+
+
+Add these skip patterns to your request logger:
+- Skip if URL contains: @vite, @fs, @react-refresh, node_modules, .js, .css, .map
+- Skip if URL contains: hot-update, chunk-
+4. Reduce Auth Endpoint Spam
+Implement auth caching on the frontend:
+
+Store auth state in React context/state
+Only check /api/user once on app load and after login/logout
+Use the stored state instead of repeatedly calling the endpoint
+
+Add request deduplication:
+
+For auth endpoints (/api/user, /api/cart), implement a time-based cache
+If the same endpoint is called multiple times within 5 seconds, only log the first call
+Log a summary message like "Auth endpoint /api/user called 5 times in 3s"
+
+5. Implementation Steps for Replit
+Step 1: Update your logging middleware
+
+Add request deduplication logic
+Filter out development/static asset requests
+Ensure userId is properly extracted from the session
+
+Step 2: Clean up route files
+
+Remove all console.log statements
+Remove response logging from route handlers
+Use only your centralized logger
+
+Step 3: Add batching for similar requests
+
+Create a Map to store recent requests
+Group by method + base URL (without query params)
+Flush the cache every 5 seconds with summaries
+
+Step 4: Frontend optimization
+
+Reduce unnecessary API calls
+Cache auth state in React
+Use React Query's stale time to prevent duplicate requests
+
+6. Quick Fixes You Can Do Right Now
+
+In cart.ts router, find this line:
+typescriptconsole.log('Get cart - userId:', userId, 'sessionId:', sessionId);
+Change to check the correct user property
+In server/index.ts, remove these types of logs:
+typescriptres.json(products); // This logs the entire response
+
+Add to your .env file:
+LOG_LEVEL=info
+This will hide debug logs in production
+In your React app, reduce auth checks:
+
+Check /api/user only once on mount
+Store the result in context
+Don't re-check on every route change
+
+
+
+The key is to have ONE logging system that's smart about what it logs, when it logs, and how it groups similar requests together.
