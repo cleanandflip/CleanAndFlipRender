@@ -35,7 +35,7 @@ export default function ProductList({ products, loading }: ProductListProps) {
     },
     enabled: !!user && productIds.length > 0,
     staleTime: 30000, // 30 seconds
-    cacheTime: 60000, // 1 minute
+    gcTime: 60000, // 1 minute
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });

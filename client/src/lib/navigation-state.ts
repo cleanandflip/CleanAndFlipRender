@@ -71,7 +71,7 @@ export class NavigationStateManager {
   // Check if we came from a product detail page
   static isFromProductDetail(): boolean {
     const previousPath = sessionStorage.getItem(this.PREVIOUS_PATH_KEY);
-    return previousPath ? previousPath.startsWith('/products/') : false;
+    return previousPath && typeof previousPath === 'string' ? previousPath.startsWith('/products/') : false;
   }
   
   // Update previous path
