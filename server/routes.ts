@@ -1048,11 +1048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId = req.session.userId;
       }
       
-      console.log("=== ADDRESS FETCH DEBUG ===");
-      console.log("Session ID:", req.sessionID);
-      console.log("Is authenticated:", req.isAuthenticated?.());
-      console.log("User object:", req.user);
-      console.log("Resolved userId:", userId);
+      // Authentication check
       
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
@@ -1074,7 +1070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(users.id, userId))
         .limit(1);
       
-      console.log("Database query result:", userWithAddress);
+      // Query completed successfully
       
       if (!userWithAddress.length) {
         return res.status(404).json({ error: "User not found" });
@@ -1098,7 +1094,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      console.log("Returning addresses:", addresses);
       return res.json(addresses);
       
     } catch (error) {

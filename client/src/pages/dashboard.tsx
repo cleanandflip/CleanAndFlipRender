@@ -1,12 +1,16 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { WishlistButton } from "@/components/ui";
 import GlassCard from "@/components/common/glass-card";
 import { useToast } from "@/hooks/use-toast";
+import AddressAutocomplete from "@/components/ui/address-autocomplete";
 import { 
   Package, 
   DollarSign, 
@@ -18,19 +22,60 @@ import {
   CheckCircle,
   Truck,
   Star,
-  X
+  X,
+  Edit,
+  Plus
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { apiRequest } from "@/lib/queryClient";
 import type { Order, EquipmentSubmission, Wishlist, Product, Address } from "@shared/schema";
 
 function AddressesSection() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [editingAddress, setEditingAddress] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
-  const { data: addresses = [], isLoading } = useQuery<Address[]>({
+  const { data: addresses = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/addresses"],
     enabled: !!user?.id,
   });
+
+  const saveAddressMutation = useMutation({
+    mutationFn: async (addressData: any) => {
+      return apiRequest("/api/addresses", {
+        method: "POST",
+        body: addressData,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Address updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/addresses"] });
+      setIsEditDialogOpen(false);
+      setEditingAddress(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update address",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditAddress = (address: any) => {
+    setEditingAddress(address);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleAddressSubmit = (addressData: any) => {
+    saveAddressMutation.mutate(addressData);
+  };
 
   if (isLoading) {
     return (
@@ -71,38 +116,62 @@ function AddressesSection() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-semibold text-white">
-                      {address.firstName} {address.lastName}
+                      Primary Address
                     </h3>
                     {address.isDefault && (
                       <Badge className="bg-accent-blue text-white text-xs">
                         Default
                       </Badge>
                     )}
-                    <Badge variant="outline" className="text-xs">
-                      {address.type === 'shipping' ? 'Shipping' : 'Billing'}
-                    </Badge>
+                    {address.isLocal && (
+                      <Badge className="bg-green-600 text-white text-xs flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Local Pickup
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-text-secondary text-sm leading-relaxed">
                     {address.street}<br />
-                    {address.city}, {address.state} {address.zipCode}<br />
-                    {address.country}
+                    {address.city}, {address.state} {address.zipCode}
                   </p>
+                  {address.isLocal && (
+                    <p className="text-green-400 text-sm mt-2">
+                      ✓ Local pickup available in Asheville area
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <Button variant="outline" size="sm" className="text-xs">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs"
+                    onClick={() => handleEditAddress(address)}
+                  >
+                    <Edit className="w-3 h-3 mr-1" />
                     Edit
                   </Button>
-                  {!address.isDefault && (
-                    <Button variant="outline" size="sm" className="text-xs text-red-400 hover:text-red-300">
-                      Delete
-                    </Button>
-                  )}
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Edit Address Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="glass border-glass-border">
+          <DialogHeader>
+            <DialogTitle className="text-white">Edit Address</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <AddressAutocomplete
+              onAddressSubmit={handleAddressSubmit}
+              isLoading={saveAddressMutation.isPending}
+              initialAddress={editingAddress}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </GlassCard>
   );
 }

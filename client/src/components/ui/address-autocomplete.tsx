@@ -17,22 +17,28 @@ interface ParsedAddress {
 
 interface AddressAutocompleteProps {
   value?: string;
-  onChange: (address: ParsedAddress) => void;
+  onChange?: (address: ParsedAddress) => void;
+  onAddressSubmit?: (addressData: any) => void;
   placeholder?: string;
   className?: string;
   required?: boolean;
   id?: string;
   name?: string;
+  isLoading?: boolean;
+  initialAddress?: any;
 }
 
 export default function AddressAutocomplete({
   value = '',
   onChange,
+  onAddressSubmit,
   placeholder = "Start typing your address...",
   className,
   required,
   id,
-  name
+  name,
+  isLoading = false,
+  initialAddress
 }: AddressAutocompleteProps) {
   const [input, setInput] = useState(value);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -120,9 +126,24 @@ export default function AddressAutocomplete({
     const parsed = parseAddress(result);
     setInput(parsed.fullAddress);
     setSelectedAddress(parsed);
-    onChange(parsed);
     setShowDropdown(false);
     setSuggestions([]);
+    
+    // Call the appropriate callback
+    if (onChange) {
+      onChange(parsed);
+    }
+    
+    if (onAddressSubmit) {
+      onAddressSubmit({
+        street: parsed.street,
+        city: parsed.city,
+        state: parsed.state,
+        zipCode: parsed.zipCode,
+        latitude: parsed.coordinates?.lat,
+        longitude: parsed.coordinates?.lng
+      });
+    }
   };
 
   // Clear input
@@ -131,13 +152,15 @@ export default function AddressAutocomplete({
     setSuggestions([]);
     setShowDropdown(false);
     setSelectedAddress(null);
-    onChange({
-      street: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      fullAddress: ''
-    });
+    if (onChange) {
+      onChange({
+        street: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        fullAddress: ''
+      });
+    }
   };
 
   // Handle input change
