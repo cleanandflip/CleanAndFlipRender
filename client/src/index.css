@@ -1,7 +1,7 @@
+@import "./styles/dropdown.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "./styles/dropdown.css";
 
 /* Global smooth scrolling */
 html {

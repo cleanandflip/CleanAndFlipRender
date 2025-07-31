@@ -65,14 +65,16 @@ Preferred communication style: Simple, everyday language.
 - ✅ **Professional Styling**: Dollar sign positioned with proper padding and pointer-events disabled
 - ✅ **Form Integration**: Seamless integration with existing form validation and state management
 
-### Searchable Brand Dropdown Implementation (COMPLETED)
-- ✅ **SearchableSelect Component**: Created professional searchable dropdown with custom input support
+### Unified Dropdown Theme Implementation (COMPLETED)
+- ✅ **UnifiedDropdown Component**: Created comprehensive dropdown system with glass morphism design
 - ✅ **Brand Database**: Comprehensive list of 25+ popular fitness equipment brands (Rogue, Concept2, etc.)
 - ✅ **Smart Search Functionality**: Real-time filtering with keyboard navigation and custom brand entry
-- ✅ **Sell Equipment Form**: Replaced basic text input with searchable brand dropdown
-- ✅ **Admin Product Form**: Updated product creation/editing with consistent brand selection
-- ✅ **Glass Morphism Design**: Component matches site's dark theme with proper accent colors
-- ✅ **Custom Brand Support**: Users can enter unlisted brands with "Use [custom brand]" option
+- ✅ **Consistent Design System**: All dropdowns use unified styling with backdrop blur and proper z-index
+- ✅ **Sell Equipment Form**: Updated with UnifiedDropdown for brand and condition selection
+- ✅ **Admin Product Form**: Updated product creation/editing with consistent dropdown components
+- ✅ **Enhanced Visibility**: High z-index (9999), backdrop overlay, and improved contrast
+- ✅ **Custom Scrollbar Styling**: Professional scrollbar design for better visual feedback
+- ✅ **Backward Compatibility**: Legacy SearchableSelect maintained via export alias
 
 ### Smart Navigation State Management System Implementation (COMPLETED)
 - ✅ **NavigationStateManager Class**: Session storage-based intelligent state management with 30-minute timeout protection

@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceInput } from "@/components/ui/price-input";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { UnifiedDropdown } from "@/components/ui/unified-dropdown";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -208,13 +208,14 @@ export default function SellToUs() {
                       name="brand"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Brand</FormLabel>
                           <FormControl>
-                            <SearchableSelect
+                            <UnifiedDropdown
+                              label="Brand"
                               options={EQUIPMENT_BRANDS}
                               value={field.value || ""}
                               placeholder="Search or select a brand..."
-                              onSelect={field.onChange}
+                              onChange={field.onChange}
+                              searchable={true}
                               allowCustom={true}
                             />
                           </FormControl>
@@ -230,21 +231,22 @@ export default function SellToUs() {
                       name="condition"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Condition *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="glass border-glass-border">
-                                <SelectValue placeholder="Select condition" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="new">New</SelectItem>
-                              <SelectItem value="like_new">Like New</SelectItem>
-                              <SelectItem value="good">Good</SelectItem>
-                              <SelectItem value="fair">Fair</SelectItem>
-                              <SelectItem value="needs_repair">Needs Repair</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <UnifiedDropdown
+                              label="Condition"
+                              options={[
+                                { value: "new", label: "New" },
+                                { value: "like_new", label: "Like New" },
+                                { value: "good", label: "Good" },
+                                { value: "fair", label: "Fair" },
+                                { value: "needs_repair", label: "Needs Repair" }
+                              ]}
+                              value={field.value || ""}
+                              placeholder="Select condition"
+                              onChange={field.onChange}
+                              required={true}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceInput } from '@/components/ui/price-input';
-import { SearchableSelect } from '@/components/ui/searchable-select';
+import { UnifiedDropdown } from '@/components/ui/unified-dropdown';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -342,13 +342,15 @@ export function ProductForm() {
               </div>
               
               <div>
-                <Label htmlFor="brand">Brand *</Label>
-                <SearchableSelect
+                <UnifiedDropdown
+                  label="Brand"
                   options={EQUIPMENT_BRANDS}
                   value={formData.brand}
                   placeholder="Search or select a brand..."
-                  onSelect={(brand) => setFormData({...formData, brand})}
+                  onChange={(brand) => setFormData({...formData, brand})}
+                  searchable={true}
                   allowCustom={true}
+                  required={true}
                 />
               </div>
             </div>
@@ -434,19 +436,20 @@ export function ProductForm() {
               </div>
               
               <div>
-                <Label htmlFor="condition">Condition *</Label>
-                <Select value={formData.condition} onValueChange={(value) => setFormData({...formData, condition: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="like_new">Like New</SelectItem>
-                    <SelectItem value="good">Good</SelectItem>
-                    <SelectItem value="fair">Fair</SelectItem>
-                    <SelectItem value="needs_repair">Needs Repair</SelectItem>
-                  </SelectContent>
-                </Select>
+                <UnifiedDropdown
+                  label="Condition"
+                  options={[
+                    { value: "new", label: "New" },
+                    { value: "like_new", label: "Like New" },
+                    { value: "good", label: "Good" },
+                    { value: "fair", label: "Fair" },
+                    { value: "needs_repair", label: "Needs Repair" }
+                  ]}
+                  value={formData.condition}
+                  placeholder="Select condition"
+                  onChange={(condition) => setFormData({...formData, condition})}
+                  required={true}
+                />
               </div>
             </div>
           </CardContent>
