@@ -11,7 +11,8 @@ export function performanceMonitoring(req: Request, res: Response, next: NextFun
     
     // Log slow requests (> 1 second)
     if (duration > 1000) {
-      console.warn(`SLOW REQUEST: ${req.method} ${req.path} took ${duration}ms`);
+      const { Logger } = require('../utils/logger');
+      Logger.warn(`SLOW REQUEST: ${req.method} ${req.path} took ${duration}ms`);
     }
     
     // Add performance headers
@@ -27,7 +28,8 @@ export function performanceMonitoring(req: Request, res: Response, next: NextFun
 // Database query monitoring
 export function logDatabaseQuery(query: string, duration: number) {
   if (duration > 500) { // Log queries slower than 500ms
-    console.warn(`SLOW QUERY (${duration}ms): ${query.substring(0, 100)}...`);
+    const { Logger } = require('../utils/logger');
+    Logger.warn(`SLOW QUERY (${duration}ms): ${query.substring(0, 100)}...`);
   }
 }
 
@@ -53,7 +55,8 @@ export function createHealthCheck() {
     } catch (error) {
       healthChecks.checks.database = 'error';
       healthChecks.status = 'degraded';
-      console.error('Health check database error:', error);
+      const { Logger } = require('../utils/logger');
+      Logger.error('Health check database error:', error);
     }
 
     // Memory usage check
@@ -61,7 +64,8 @@ export function createHealthCheck() {
     const memUsageMB = Math.round(memUsage.heapUsed / 1024 / 1024);
     if (memUsageMB > 512) { // Alert if using > 512MB
       healthChecks.checks.memory = 'warning';
-      console.warn(`High memory usage: ${memUsageMB}MB`);
+      const { Logger } = require('../utils/logger');
+      Logger.warn(`High memory usage: ${memUsageMB}MB`);
     }
 
     const statusCode = healthChecks.status === 'ok' ? 200 : 503;
@@ -69,23 +73,30 @@ export function createHealthCheck() {
   };
 }
 
-// Request logging middleware
+// Request logging middleware - OPTIMIZED WITH FILTERING
 export function requestLogging(req: Request, res: Response, next: NextFunction) {
-  const timestamp = new Date().toISOString();
-  const method = req.method;
   const url = req.url;
-  const userAgent = req.get('User-Agent') || 'unknown';
-  const ip = req.ip || req.connection.remoteAddress || 'unknown';
-
-  // Log the request
-  console.log(`[${timestamp}] ${method} ${url} - IP: ${ip} - UA: ${userAgent.substring(0, 50)}`);
-
-  // Log response when finished
-  res.on('finish', () => {
-    const duration = Date.now() - new Date(timestamp).getTime();
-    console.log(`[${timestamp}] ${method} ${url} - ${res.statusCode} - ${duration}ms`);
-  });
-
+  
+  // Skip patterns for development files and assets
+  const skipPatterns = [
+    '/@vite', '/@fs', '/@react-refresh', 
+    '/node_modules', '.js', '.css', '.map',
+    'hot-update', 'chunk-', '/src/', '/@id',
+    '.tsx', '.ts', '.jsx', '?import', '?t=', '?v='
+  ];
+  
+  // Skip if URL matches any skip pattern
+  if (skipPatterns.some(pattern => url?.includes(pattern))) {
+    return next(); // Skip logging development files
+  }
+  
+  // Skip versioned assets and query params
+  if (url?.includes('?t=') || url?.includes('?v=') || url?.includes('?import')) {
+    return next();
+  }
+  
+  // This middleware now delegates to the main logger system
+  // No duplicate logging - the main logger handles all request logging
   next();
 }
 
@@ -104,8 +115,9 @@ export function errorTracking(err: any, req: Request, res: Response, next: NextF
     ip: req.ip
   };
 
-  // Log error with unique ID
-  console.error('Error tracked:', errorDetails);
+  // Use Logger instead of console.error
+  const { Logger } = require('../utils/logger');
+  Logger.error('Error tracked:', errorDetails);
 
   // In production, you would send this to an error tracking service like Sentry
   // Sentry.captureException(err);
@@ -129,7 +141,8 @@ export function rateLimitHandler(req: Request, res: Response) {
     ip: req.ip
   };
 
-  console.warn('Rate limit exceeded:', {
+  const { Logger } = require('../utils/logger');
+  Logger.warn('Rate limit exceeded:', {
     ip: req.ip,
     method: req.method,
     url: req.url,

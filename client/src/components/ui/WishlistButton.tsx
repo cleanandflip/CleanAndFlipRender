@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface WishlistButtonProps {
   productId: string;
@@ -18,18 +19,17 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   
-  // Check wishlist status on mount and when user changes
+  // Reset state when user logs out
   useEffect(() => {
-    if (user && productId) {
-      checkWishlistStatus();
-    } else {
+    if (!user) {
       setIsWishlisted(false);
     }
-  }, [user, productId]);
+  }, [user]);
 
   // Listen for global wishlist updates
   useEffect(() => {
@@ -43,8 +43,10 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
     return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate as EventListener);
   }, [productId]);
   
-  const checkWishlistStatus = async () => {
-    try {
+  // Use React Query for caching and deduplication
+  const { data: wishlistData } = useQuery({
+    queryKey: ['wishlist', productId],
+    queryFn: async () => {
       const response = await fetch('/api/wishlist/check', {
         method: 'POST',
         headers: {
@@ -54,14 +56,21 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
         body: JSON.stringify({ productId })
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setIsWishlisted(data.isWishlisted);
-      }
-    } catch (error) {
-      console.error('Error checking wishlist:', error);
+      if (!response.ok) throw new Error('Failed to check wishlist');
+      return response.json();
+    },
+    enabled: !!user && !!productId,
+    staleTime: 30000, // 30 seconds
+    cacheTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+  });
+  
+  // Update local state when query data changes
+  useEffect(() => {
+    if (wishlistData) {
+      setIsWishlisted(wishlistData.isWishlisted);
     }
-  };
+  }, [wishlistData]);
   
   const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -101,6 +110,9 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
           title: newStatus ? "Added to wishlist" : "Removed from wishlist",
           description: newStatus ? "Item saved to your wishlist" : "Item removed from your wishlist"
         });
+        
+        // Invalidate React Query cache for this product
+        queryClient.invalidateQueries({ queryKey: ['wishlist', productId] });
         
         // Dispatch event for other components
         window.dispatchEvent(new CustomEvent('wishlistUpdated', {

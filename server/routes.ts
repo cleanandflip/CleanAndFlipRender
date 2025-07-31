@@ -89,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(cors(corsOptions));
   
   // Global security middleware
-  app.use(requestLogging);
+  // app.use(requestLogging); // DISABLED - Using main logger system instead to prevent duplicate logs
   app.use(performanceMonitoring);
   app.use(sanitizeInput);
   app.use(preventXSS);
@@ -523,13 +523,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check if product is in wishlist
+  // Wishlist cache for preventing spam requests
+  const wishlistCache = new Map<string, { data: any; timestamp: number }>();
+  const WISHLIST_CACHE_DURATION = 5000; // 5 seconds
+  
+  // Check if product is in wishlist - WITH CACHING
   app.post("/api/wishlist/check", requireAuth, async (req, res) => {
     try {
       const { productId } = req.body;
       const userId = req.userId; // Now set by requireAuth middleware
-      
-      Logger.debug(`Check wishlist - userId: ${userId}, productId: ${productId}`);
       
       if (!userId) {
         return res.status(401).json({ 
@@ -542,8 +544,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Product ID required" });
       }
       
+      // Check cache first to prevent spam
+      const cacheKey = `${userId}-${productId}`;
+      const cached = wishlistCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < WISHLIST_CACHE_DURATION) {
+        return res.json(cached.data);
+      }
+      
       const isWishlisted = await storage.isProductInWishlist(userId, productId);
-      res.json({ isWishlisted });
+      const result = { isWishlisted };
+      
+      // Cache the result
+      wishlistCache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now()
+      });
+      
+      res.json(result);
     } catch (error) {
       Logger.error("Error checking wishlist", error);
       res.status(500).json({ message: "Failed to check wishlist status" });
