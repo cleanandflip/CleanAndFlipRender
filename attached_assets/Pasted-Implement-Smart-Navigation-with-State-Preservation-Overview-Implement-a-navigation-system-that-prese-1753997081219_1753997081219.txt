@@ -1,0 +1,376 @@
+Implement Smart Navigation with State Preservation
+Overview
+Implement a navigation system that preserves user's scroll position, active tab, and page state when navigating between pages. This ensures a seamless user experience when using browser back/forward buttons.
+1. Create Navigation State Manager
+Create src/hooks/useNavigationState.ts:
+typescriptimport { useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+interface NavigationState {
+  scrollPosition: number;
+  activeTab?: string;
+  filters?: any;
+  expandedItems?: string[];
+}
+
+export function useNavigationState(key: string) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Save state before navigation
+  const saveState = useCallback((state: NavigationState) => {
+    const currentPath = location.pathname + location.search;
+    const savedStates = JSON.parse(sessionStorage.getItem('navigationStates') || '{}');
+    savedStates[currentPath] = {
+      ...state,
+      timestamp: Date.now()
+    };
+    sessionStorage.setItem('navigationStates', JSON.stringify(savedStates));
+  }, [location]);
+  
+  // Restore state when returning to page
+  const restoreState = useCallback((): NavigationState | null => {
+    const currentPath = location.pathname + location.search;
+    const savedStates = JSON.parse(sessionStorage.getItem('navigationStates') || '{}');
+    return savedStates[currentPath] || null;
+  }, [location]);
+  
+  // Clean up old states (older than 30 minutes)
+  useEffect(() => {
+    const savedStates = JSON.parse(sessionStorage.getItem('navigationStates') || '{}');
+    const now = Date.now();
+    const thirtyMinutes = 30 * 60 * 1000;
+    
+    Object.keys(savedStates).forEach(path => {
+      if (now - savedStates[path].timestamp > thirtyMinutes) {
+        delete savedStates[path];
+      }
+    });
+    
+    sessionStorage.setItem('navigationStates', JSON.stringify(savedStates));
+  }, []);
+  
+  return { saveState, restoreState };
+}
+2. Create Smart Link Component
+Create src/components/ui/smart-link.tsx:
+typescriptimport { ReactNode, MouseEvent } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigationState } from '@/hooks/useNavigationState';
+
+interface SmartLinkProps {
+  to: string;
+  children: ReactNode;
+  className?: string;
+  preserveState?: boolean;
+  onClick?: () => void;
+}
+
+export function SmartLink({ 
+  to, 
+  children, 
+  className, 
+  preserveState = true,
+  onClick 
+}: SmartLinkProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { saveState } = useNavigationState(location.pathname);
+  
+  const handleClick = (e: MouseEvent) => {
+    e.preventDefault();
+    
+    if (preserveState) {
+      // Save current state before navigating
+      saveState({
+        scrollPosition: window.scrollY,
+        activeTab: document.querySelector('[role="tab"][aria-selected="true"]')?.getAttribute('data-tab') || undefined,
+        filters: getActiveFilters(), // Implement based on your filter system
+        expandedItems: getExpandedItems() // For accordions, etc.
+      });
+    }
+    
+    // Call custom onClick if provided
+    onClick?.();
+    
+    // Navigate to new page
+    navigate(to);
+  };
+  
+  return (
+    <a href={to} onClick={handleClick} className={className}>
+      {children}
+    </a>
+  );
+}
+
+// Helper functions
+function getActiveFilters() {
+  // Implement based on your filter system
+  const filters: any = {};
+  document.querySelectorAll('[data-filter]:checked').forEach((input: any) => {
+    filters[input.name] = input.value;
+  });
+  return filters;
+}
+
+function getExpandedItems() {
+  // For accordions, expanded sections, etc.
+  const expanded: string[] = [];
+  document.querySelectorAll('[data-expanded="true"]').forEach((el) => {
+    const id = el.getAttribute('data-item-id');
+    if (id) expanded.push(id);
+  });
+  return expanded;
+}
+3. Update Dashboard with State Preservation
+Update src/pages/dashboard.tsx:
+typescriptimport { useEffect, useState } from 'react';
+import { useNavigationState } from '@/hooks/useNavigationState';
+import { SmartLink } from '@/components/ui/smart-link';
+
+export function Dashboard() {
+  const { restoreState, saveState } = useNavigationState('dashboard');
+  const [activeTab, setActiveTab] = useState('orders');
+  
+  // Restore state when component mounts
+  useEffect(() => {
+    const savedState = restoreState();
+    if (savedState) {
+      // Restore scroll position
+      setTimeout(() => {
+        window.scrollTo(0, savedState.scrollPosition);
+      }, 0);
+      
+      // Restore active tab
+      if (savedState.activeTab) {
+        setActiveTab(savedState.activeTab);
+      }
+    }
+  }, []);
+  
+  // Save state before unmounting
+  useEffect(() => {
+    return () => {
+      saveState({
+        scrollPosition: window.scrollY,
+        activeTab: activeTab
+      });
+    };
+  }, [activeTab]);
+  
+  // Update tab change handler
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    // Also save to URL for shareable links
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState({}, '', url.toString());
+  };
+  
+  return (
+    <div>
+      {/* Tab Navigation */}
+      <div className="flex space-x-4 mb-6">
+        {['orders', 'submissions', 'wishlist', 'profile', 'addresses'].map((tab) => (
+          <button
+            key={tab}
+            data-tab={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
+            onClick={() => handleTabChange(tab)}
+            className={`px-4 py-2 rounded-lg ${
+              activeTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300'
+            }`}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+      
+      {/* Tab Content */}
+      <div className="mt-6">
+        {activeTab === 'wishlist' && (
+          <div>
+            {/* Wishlist items with smart links */}
+            {wishlistItems.map(item => (
+              <div key={item.id} className="mb-4">
+                <SmartLink 
+                  to={`/products/${item.productId}`}
+                  className="block hover:bg-gray-800 p-4 rounded"
+                >
+                  View Product
+                </SmartLink>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+4. Update Product Pages with Back Navigation
+Update product detail page:
+typescript// src/pages/product-detail.tsx
+export function ProductDetail() {
+  const navigate = useNavigate();
+  const { restoreState } = useNavigationState('products');
+  
+  const handleBackClick = () => {
+    // Check if we came from a previous page
+    if (window.history.length > 1) {
+      navigate(-1); // Go back
+    } else {
+      navigate('/products'); // Fallback to products page
+    }
+  };
+  
+  return (
+    <div>
+      <button 
+        onClick={handleBackClick}
+        className="flex items-center gap-2 mb-4 text-gray-400 hover:text-white"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Products
+      </button>
+      
+      {/* Product details */}
+    </div>
+  );
+}
+5. Remove Duplicate/Legacy Code
+Search and remove these patterns:
+bash# Find duplicate navigation implementations
+grep -rn "navigate\|Link\|href" src/ --include="*.tsx" | sort | uniq -d
+
+# Find old scroll restoration code
+grep -rn "scrollTo\|scrollIntoView\|scroll" src/ --include="*.tsx"
+
+# Find duplicate tab implementations
+grep -rn "activeTab\|selectedTab\|currentTab" src/ --include="*.tsx"
+
+# Remove any of these legacy patterns:
+# - window.location.href = 
+# - history.pushState
+# - document.location
+# - <a href> without proper handling
+6. Global Navigation Enhancement
+Update src/App.tsx with scroll restoration:
+typescriptimport { useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+
+function ScrollRestoration() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Don't restore scroll for hash links
+    if (location.hash) {
+      const element = document.querySelector(location.hash);
+      element?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    
+    // Check if we have a saved position
+    const savedPosition = sessionStorage.getItem(`scroll-${location.pathname}`);
+    if (savedPosition) {
+      window.scrollTo(0, parseInt(savedPosition));
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [location]);
+  
+  // Save scroll position before navigation
+  useEffect(() => {
+    const handleScroll = () => {
+      sessionStorage.setItem(`scroll-${location.pathname}`, window.scrollY.toString());
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [location]);
+  
+  return null;
+}
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <ScrollRestoration />
+      {/* Your routes */}
+    </BrowserRouter>
+  );
+}
+7. Replace All Navigation Links
+Find and replace all basic links:
+typescript// OLD - Replace these
+<Link to="/products">View All</Link>
+<a href="/products">View All</a>
+<button onClick={() => navigate('/products')}>View All</button>
+
+// NEW - Use SmartLink
+<SmartLink to="/products">View All</SmartLink>
+8. Add Browser Back Button Handler
+typescript// src/hooks/useBackButton.ts
+export function useBackButton() {
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // Restore any saved state
+      const savedState = event.state;
+      if (savedState?.scrollPosition) {
+        setTimeout(() => {
+          window.scrollTo(0, savedState.scrollPosition);
+        }, 0);
+      }
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+}
+9. Testing Checklist
+
+Test Tab Persistence:
+
+Go to dashboard → Wishlist tab
+Click on a product
+Press browser back
+Should return to Wishlist tab, not Orders
+
+
+Test Scroll Position:
+
+Scroll down on products page
+Click on a product
+Press browser back
+Should return to same scroll position
+
+
+Test Filter State:
+
+Apply filters on products page
+Navigate to product detail
+Go back
+Filters should still be applied
+
+
+Test Multiple Navigation:
+
+Navigate: Home → Products → Product Detail → Cart
+Press back multiple times
+Each page should restore its state
+
+
+
+10. Clean Up Checklist
+Remove:
+
+ All window.location.href assignments
+ All basic <a href> tags without proper handling
+ Duplicate scroll restoration code
+ Multiple tab state management systems
+ Legacy navigation functions
+ Hardcoded scroll positions
+ Direct navigate() calls without state saving
+
+This implementation ensures that users always return to exactly where they left off, creating a seamless navigation experience throughout the Clean & Flip platform

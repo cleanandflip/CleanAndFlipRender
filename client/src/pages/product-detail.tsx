@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, Link } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { SmartLink } from "@/components/ui/smart-link";
+import { useNavigationState } from "@/hooks/useNavigationState";
+import { useBackButton } from "@/hooks/useBackButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -27,10 +30,25 @@ import type { Product } from "@shared/schema";
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  
+  // Initialize navigation state management
+  const { restoreState } = useNavigationState('product-detail');
+  useBackButton();
+  
+  // Smart back navigation handler
+  const handleBackClick = () => {
+    // Check if we came from a previous page
+    if (window.history.length > 1) {
+      navigate(-1); // Go back
+    } else {
+      navigate('/products'); // Fallback to products page
+    }
+  };
 
   // Safety check to ensure id is a valid string
   if (!id || typeof id !== 'string') {
@@ -103,11 +121,11 @@ export default function ProductDetail() {
             <p className="text-text-secondary mb-6">
               The product you're looking for doesn't exist or has been removed.
             </p>
-            <Link href="/products">
+            <SmartLink to="/products">
               <Button className="bg-accent-blue hover:bg-blue-500">
                 Browse Products
               </Button>
-            </Link>
+            </SmartLink>
           </GlassCard>
         </div>
       </div>
@@ -171,12 +189,19 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen pt-32 px-6 pb-12">
       <div className="max-w-6xl mx-auto">
-        {/* Breadcrumb */}
+        {/* Back Button and Breadcrumb */}
         <div className="mb-8">
+          <button 
+            onClick={handleBackClick}
+            className="flex items-center gap-2 mb-4 text-gray-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Products
+          </button>
           <div className="flex items-center space-x-2 text-sm text-text-secondary">
-            <Link href="/">Home</Link>
+            <SmartLink to="/">Home</SmartLink>
             <span>/</span>
-            <Link href="/products">Products</Link>
+            <SmartLink to="/products">Products</SmartLink>
             <span>/</span>
             <span className="text-white">{product.name}</span>
           </div>

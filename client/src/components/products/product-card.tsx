@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { SmartLink } from "@/components/ui/smart-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WishlistButton, ProductPrice, StockIndicator, AddToCartButton } from "@/components/ui";
@@ -33,7 +33,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
 
   if (compact) {
     return (
-      <Link href={`/products/${product.id}`}>
+      <SmartLink to={`/products/${product.id}`}>
         <GlassCard className="overflow-hidden glass-hover cursor-pointer">
           {hasImage ? (
             <img 
@@ -54,7 +54,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             <p className="text-accent-blue font-bold text-sm">${product.price}</p>
           </div>
         </GlassCard>
-      </Link>
+      </SmartLink>
     );
   }
 
@@ -63,7 +63,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       <GlassCard className="p-6">
         <div className="flex gap-6">
           {/* Image */}
-          <Link href={`/products/${product.id}`}>
+          <SmartLink to={`/products/${product.id}`}>
             <div className="w-32 h-32 flex-shrink-0 overflow-hidden rounded-lg cursor-pointer group">
               {hasImage ? (
                 <img
@@ -80,17 +80,17 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 </div>
               )}
             </div>
-          </Link>
+          </SmartLink>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start mb-3">
               <div className="flex-1 min-w-0">
-                <Link href={`/products/${product.id}`}>
+                <SmartLink to={`/products/${product.id}`}>
                   <h3 className="font-semibold text-lg hover:text-accent-blue transition-colors cursor-pointer line-clamp-2">
                     {product.name}
                   </h3>
-                </Link>
+                </SmartLink>
                 
                 <div className="flex items-center gap-4 mt-2">
                   {product.brand && (
@@ -185,7 +185,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       </div>
       
       {/* Clickable area for product details */}
-      <Link href={`/products/${product.id}`}>
+      <SmartLink to={`/products/${product.id}`}>
         <div className="cursor-pointer">
           {/* Clean Image */}
           <div className="aspect-square relative bg-gray-900/30 group-hover:bg-gray-900/40 transition-colors overflow-hidden">
@@ -225,7 +225,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             </p>
           </div>
         </div>
-      </Link>
+      </SmartLink>
       
       {/* Static Add to Cart Button */}
       <div className="px-4 pb-4" onClick={(e) => e.stopPropagation()}>

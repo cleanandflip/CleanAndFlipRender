@@ -25,13 +25,39 @@ import Navigation from "@/components/layout/navigation";
 import Footer from "@/components/layout/footer";
 import CartDrawer from "@/components/cart/cart-drawer";
 
-function ScrollToTop() {
+function ScrollRestoration() {
   const [location] = useLocation();
-
+  
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    // Don't restore scroll for hash links
+    if (location.includes('#')) {
+      const hash = location.split('#')[1];
+      const element = document.querySelector(`#${hash}`);
+      element?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    
+    // Check if we have a saved position
+    const savedPosition = sessionStorage.getItem(`scroll-${location}`);
+    if (savedPosition) {
+      setTimeout(() => {
+        window.scrollTo(0, parseInt(savedPosition));
+      }, 100);
+    } else {
+      window.scrollTo(0, 0);
+    }
   }, [location]);
-
+  
+  // Save scroll position before navigation
+  useEffect(() => {
+    const handleScroll = () => {
+      sessionStorage.setItem(`scroll-${location}`, window.scrollY.toString());
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [location]);
+  
   return null;
 }
 
@@ -41,7 +67,7 @@ function Router() {
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
         <Navigation />
         <CartDrawer />
-        <ScrollToTop />
+        <ScrollRestoration />
         <main className="flex-1">
           <Switch>
             <Route path="/" component={Home} />

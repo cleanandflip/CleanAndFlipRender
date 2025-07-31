@@ -11,6 +11,9 @@ import { WishlistButton } from "@/components/ui";
 import GlassCard from "@/components/common/glass-card";
 import { useToast } from "@/hooks/use-toast";
 import AddressAutocomplete from "@/components/ui/address-autocomplete";
+import { SmartLink } from "@/components/ui/smart-link";
+import { useNavigationState } from "@/hooks/useNavigationState";
+import { useBackButton } from "@/hooks/useBackButton";
 import { 
   Package, 
   DollarSign, 
@@ -177,6 +180,11 @@ function DashboardContent() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { restoreState, saveState } = useNavigationState('dashboard');
+  const [activeTab, setActiveTab] = useState('orders');
+  
+  // Initialize browser back button handling
+  useBackButton();
   
   const { data: orders = [] } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
@@ -190,6 +198,39 @@ function DashboardContent() {
     queryKey: ["/api/wishlist"],
   });
 
+  // Restore state when component mounts
+  useEffect(() => {
+    const savedState = restoreState();
+    if (savedState) {
+      // Restore scroll position
+      setTimeout(() => {
+        window.scrollTo(0, savedState.scrollPosition);
+      }, 100);
+      
+      // Restore active tab
+      if (savedState.activeTab) {
+        setActiveTab(savedState.activeTab);
+      }
+    }
+    
+    // Also check URL for tab parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabFromUrl = urlParams.get('tab');
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [restoreState]);
+
+  // Save state before unmounting
+  useEffect(() => {
+    return () => {
+      saveState({
+        scrollPosition: window.scrollY,
+        activeTab: activeTab
+      });
+    };
+  }, [activeTab, saveState]);
+
   // Listen for wishlist updates from product cards
   useEffect(() => {
     const handleWishlistUpdate = () => {
@@ -200,6 +241,15 @@ function DashboardContent() {
     window.addEventListener('wishlistUpdated', handleWishlistUpdate);
     return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
   }, [refetchWishlist]);
+
+  // Update tab change handler
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    // Also save to URL for shareable links
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState({}, '', url.toString());
+  };
 
   // Wishlist removal is now handled by the unified WishlistButton component
 
@@ -267,13 +317,13 @@ function DashboardContent() {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="orders" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="glass w-full justify-start">
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="submissions">Submissions</TabsTrigger>
-            <TabsTrigger value="wishlist">Wishlist</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="addresses">Addresses</TabsTrigger>
+            <TabsTrigger value="orders" data-tab="orders" role="tab" aria-selected={activeTab === 'orders'}>Orders</TabsTrigger>
+            <TabsTrigger value="submissions" data-tab="submissions" role="tab" aria-selected={activeTab === 'submissions'}>Submissions</TabsTrigger>
+            <TabsTrigger value="wishlist" data-tab="wishlist" role="tab" aria-selected={activeTab === 'wishlist'}>Wishlist</TabsTrigger>
+            <TabsTrigger value="profile" data-tab="profile" role="tab" aria-selected={activeTab === 'profile'}>Profile</TabsTrigger>
+            <TabsTrigger value="addresses" data-tab="addresses" role="tab" aria-selected={activeTab === 'addresses'}>Addresses</TabsTrigger>
           </TabsList>
 
           {/* Orders Tab */}
@@ -281,11 +331,11 @@ function DashboardContent() {
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">ORDER HISTORY</h2>
-                <Link href="/orders">
+                <SmartLink to="/orders">
                   <Button variant="outline" className="glass border-glass-border">
                     View All Orders
                   </Button>
-                </Link>
+                </SmartLink>
               </div>
 
               {orders.length === 0 ? (
@@ -295,11 +345,11 @@ function DashboardContent() {
                   <p className="text-text-secondary mb-6">
                     Start shopping to see your order history here.
                   </p>
-                  <Link href="/products">
+                  <SmartLink to="/products">
                     <Button className="bg-accent-blue hover:bg-blue-500">
                       Browse Products
                     </Button>
-                  </Link>
+                  </SmartLink>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -319,11 +369,11 @@ function DashboardContent() {
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-lg">${order.total}</div>
-                          <Link href={`/orders/${order.id}`}>
+                          <SmartLink to={`/orders/${order.id}`}>
                             <Button variant="outline" size="sm" className="glass border-glass-border mt-2">
                               View Details
                             </Button>
-                          </Link>
+                          </SmartLink>
                         </div>
                       </div>
                     </div>
@@ -338,11 +388,11 @@ function DashboardContent() {
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">EQUIPMENT SUBMISSIONS</h2>
-                <Link href="/sell-to-us">
+                <SmartLink to="/sell-to-us">
                   <Button className="bg-success hover:bg-green-600">
                     Sell More Equipment
                   </Button>
-                </Link>
+                </SmartLink>
               </div>
 
               {submissions.length === 0 ? (
@@ -352,11 +402,11 @@ function DashboardContent() {
                   <p className="text-text-secondary mb-6">
                     Have equipment to sell? Submit it for a cash offer.
                   </p>
-                  <Link href="/sell-to-us">
+                  <SmartLink to="/sell-to-us">
                     <Button className="bg-success hover:bg-green-600">
                       Sell Equipment
                     </Button>
-                  </Link>
+                  </SmartLink>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -406,11 +456,11 @@ function DashboardContent() {
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">WISHLIST</h2>
-                <Link href="/products">
+                <SmartLink to="/products">
                   <Button variant="outline" className="glass border-glass-border">
                     Browse Products
                   </Button>
-                </Link>
+                </SmartLink>
               </div>
 
               {!wishlist || wishlist.length === 0 ? (
@@ -420,23 +470,23 @@ function DashboardContent() {
                   <p className="text-text-secondary mb-6">
                     Save items you're interested in to easily find them later.
                   </p>
-                  <Link href="/products">
+                  <SmartLink to="/products">
                     <Button className="bg-accent-blue hover:bg-blue-500">
                       Start Shopping
                     </Button>
-                  </Link>
+                  </SmartLink>
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {wishlist?.map((item) => (
                     <div key={item.id} className="relative glass rounded-lg overflow-hidden">
-                      <Link href={`/products/${item.product.id}`}>
+                      <SmartLink to={`/products/${item.product.id}`}>
                         <img
                           src={item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300"}
                           alt={item.product.name}
                           className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
                         />
-                      </Link>
+                      </SmartLink>
                       <div className="absolute top-2 right-2">
                         <WishlistButton 
                           productId={item.product.id}
@@ -448,11 +498,11 @@ function DashboardContent() {
                         <h3 className="font-semibold mb-2 text-white">{item.product.name}</h3>
                         <p className="text-accent-blue font-bold mb-3">${item.product.price}</p>
                         <div className="flex gap-2">
-                          <Link href={`/products/${item.product.id}`} className="flex-1">
+                          <SmartLink to={`/products/${item.product.id}`} className="flex-1">
                             <Button className="w-full bg-accent-blue hover:bg-blue-500">
                               View Product
                             </Button>
-                          </Link>
+                          </SmartLink>
                         </div>
                       </div>
                     </div>
