@@ -89,9 +89,19 @@ export default function Products() {
 
   const [showFilters, setShowFilters] = useState(() => {
     const savedState = NavigationStateManager.getState('/products');
-    return (NavigationStateManager.isFromProductDetail() && savedState?.showFilters !== undefined) 
-      ? savedState.showFilters 
-      : false;
+    const isFromProductDetail = NavigationStateManager.isFromProductDetail();
+    
+    console.log('ShowFilters restoration:', {
+      isFromProductDetail,
+      savedState,
+      showFiltersInState: savedState?.showFilters
+    });
+    
+    if (isFromProductDetail && savedState && savedState.showFilters === true) {
+      return true;
+    }
+    
+    return false;
   });
 
   // Restore scroll position after state restoration
@@ -385,13 +395,17 @@ export default function Products() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setShowFilters(!showFilters);
+                  const newShowFilters = !showFilters;
+                  setShowFilters(newShowFilters);
+                  
+                  console.log('Saving filter toggle state:', newShowFilters);
+                  
                   // Save state immediately when toggling filters
                   const currentState = {
                     filters,
                     currentPage,
                     viewMode,
-                    showFilters: !showFilters,
+                    showFilters: newShowFilters,
                     scrollPosition: window.scrollY
                   };
                   NavigationStateManager.saveState('/products', currentState, location);
