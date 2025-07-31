@@ -8,6 +8,7 @@ import { User } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 import { normalizeEmail, parseCityStateZip, isLocalZip, validateCityStateZip, normalizePhone } from "@shared/utils";
 import { authLimiter } from "./middleware/security";
+import { Logger, LogLevel } from "./utils/logger";
 
 declare global {
   namespace Express {
@@ -379,31 +380,41 @@ export function setupAuth(app: Express) {
 
 // Middleware to require authentication
 export function requireAuth(req: any, res: any, next: any) {
-  console.log('RequireAuth middleware - Is authenticated:', req.isAuthenticated?.());
-  console.log('RequireAuth middleware - User from passport:', req.user);
-  console.log('RequireAuth middleware - Session passport:', req.session?.passport);
+  const endpoint = `${req.method} ${req.path}`;
   
   // Check if user is authenticated via passport
   if (!req.isAuthenticated || !req.isAuthenticated()) {
-    console.log('User not authenticated via passport in requireAuth');
+    Logger.consolidate(
+      `auth-fail-${endpoint}`,
+      `Authentication failed for ${endpoint}`,
+      LogLevel.DEBUG
+    );
     return res.status(401).json({ 
       error: 'Authentication required',
-      message: 'Please log in to access this resource'
+      message: 'Please log in to continue'
     });
   }
   
   const user = req.user;
   if (!user) {
-    console.log('No user object in request in requireAuth');
+    Logger.consolidate(
+      `auth-fail-nouser-${endpoint}`,
+      `No user object for ${endpoint}`,
+      LogLevel.DEBUG
+    );
     return res.status(401).json({ 
       error: 'Authentication required',
-      message: 'Please log in to access this resource'
+      message: 'Please log in to continue'
     });
   }
   
   // Set userId for consistent access in route handlers
   req.userId = user.id;
-  console.log('RequireAuth - Authentication successful for user:', user.email, 'userId:', user.id);
+  Logger.consolidate(
+    `auth-success-${user.id}-${endpoint}`,
+    `Auth successful for user ${user.id} on ${endpoint}`,
+    LogLevel.DEBUG
+  );
   next();
 }
 

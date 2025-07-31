@@ -38,6 +38,7 @@ import { setupCompression } from "./config/compression";
 import { healthLive, healthReady } from "./config/health";
 import { initializeWebSocket, broadcastProductUpdate, broadcastCartUpdate, broadcastStockUpdate } from "./config/websocket";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
+import { Logger, LogLevel } from "./utils/logger";
 import { displayStartupBanner } from "./utils/startup-banner";
 import { initRedis } from "./config/redis";
 import { initializeCache } from "./lib/cache";
@@ -528,7 +529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { productId } = req.body;
       const userId = req.userId; // Now set by requireAuth middleware
       
-      console.log('Check wishlist - userId:', userId, 'productId:', productId);
+      Logger.debug(`Check wishlist - userId: ${userId}, productId: ${productId}`);
       
       if (!userId) {
         return res.status(401).json({ 
@@ -569,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(wishlistMap);
     } catch (error) {
-      console.error("Error checking batch wishlist:", error);
+      Logger.error("Error checking batch wishlist", error);
       res.status(500).json({ error: "Failed to check wishlist" });
     }
   });
@@ -579,7 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { productId } = req.body;
       const userId = req.userId; // Now set by requireAuth middleware
       
-      console.log('Add to wishlist - userId:', userId, 'productId:', productId);
+      Logger.debug(`Add to wishlist - userId: ${userId}, productId: ${productId}`);
       
       if (!userId) {
         return res.status(401).json({ 
@@ -591,7 +592,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const wishlistItem = await storage.addToWishlist(userId, productId);
       res.json({ message: "Added to wishlist" });
     } catch (error) {
-      console.error("Error adding to wishlist:", error);
+      Logger.error("Error adding to wishlist", error);
       res.status(500).json({ message: "Failed to add to wishlist" });
     }
   });
@@ -601,7 +602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { productId } = req.body; // Read from body instead of query
       const userId = req.userId; // Now set by requireAuth middleware
       
-      console.log('Remove from wishlist - userId:', userId, 'productId:', productId);
+      Logger.debug(`Remove from wishlist - userId: ${userId}, productId: ${productId}`);
       
       if (!userId) {
         return res.status(401).json({ 
@@ -617,7 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.removeFromWishlist(userId, productId);
       res.json({ message: "Item removed from wishlist" });
     } catch (error) {
-      console.error("Error removing from wishlist:", error);
+      Logger.error("Error removing from wishlist", error);
       res.status(500).json({ message: "Failed to remove from wishlist" });
     }
   });
@@ -1348,15 +1349,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add global error handling
   app.use(errorTracking);
 
-  console.log('🚀 Clean & Flip Security Hardening Complete');
-  console.log('✅ Phase 1: Advanced Security Penetration Testing - COMPLETE');
-  console.log('✅ Phase 2: Database Performance Optimization - COMPLETE');  
-  console.log('✅ Phase 3: Atomic Transaction Management - COMPLETE');
-  console.log('✅ Security Headers: Helmet.js with CSP configured');
-  console.log('✅ Rate Limiting: API, Auth, Admin, Upload protection active');
-  console.log('✅ Database Indexes: 22+ performance indexes created');
-  console.log('✅ Monitoring: Real-time performance and security logging');
-  console.log('🔒 Production-grade security measures now active');
+  // Security hardening complete - simplified logging
+  Logger.info('Clean & Flip Security Hardening Complete');
+  Logger.info('Production-grade security measures now active');
 
   const httpServer = createServer(app);
   
@@ -1377,11 +1372,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     warnings,
   });
   
-  // Log database connection success only once
+  // Initialize consolidated logger with environment-based log level
+  const LOG_LEVEL = process.env.LOG_LEVEL || 'INFO';
+  Logger.setLogLevel(LogLevel[LOG_LEVEL as keyof typeof LogLevel]);
+  
+  // Log database connection success only once using new logger
   if (!process.env.DB_CONNECTION_LOGGED) {
-    logger.info('✅ Database connected successfully', { type: 'system' });
+    Logger.info('Database connected successfully');
     process.env.DB_CONNECTION_LOGGED = 'true';
   }
+  
+  // Setup consolidated request logging middleware - reduces noise
+  app.use((req, res, next) => {
+    const start = Date.now();
+    const key = `${req.method}-${req.path.split('?')[0]}`;
+    
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      
+      // Only log slow requests, errors, or important endpoints
+      if (duration > 1000 || res.statusCode >= 400) {
+        Logger.info(`${key} ${res.statusCode} ${duration}ms`);
+      } else {
+        Logger.consolidate(key, `${key} ${res.statusCode} ${duration}ms`, LogLevel.DEBUG);
+      }
+    });
+    
+    next();
+  });
   
   return httpServer;
 }

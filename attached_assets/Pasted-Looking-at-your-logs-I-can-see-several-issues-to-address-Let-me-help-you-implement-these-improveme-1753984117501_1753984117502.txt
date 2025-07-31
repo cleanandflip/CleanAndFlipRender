@@ -1,0 +1,200 @@
+Looking at your logs, I can see several issues to address. Let me help you implement these improvements:
+1. Add to Cart - Require Authentication
+Tell Replit to modify the AddToCartButton.tsx component:
+typescript// In src/components/AddToCartButton.tsx
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+
+export function AddToCartButton({ product, quantity = 1 }: AddToCartButtonProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const addToCart = useCart((state) => state.addItem);
+
+  const handleAddToCart = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to add items to your cart",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addToCart({
+      productId: product.id,
+      quantity,
+      price: product.salePrice || product.price,
+      product,
+    });
+
+    toast({
+      title: "Added to cart",
+      description: `${product.name} has been added to your cart`,
+    });
+  };
+
+  return (
+    <Button onClick={handleAddToCart} className="w-full">
+      <ShoppingCart className="mr-2 h-4 w-4" />
+      Add to Cart
+    </Button>
+  );
+}
+2. Remove Redis (Already Disabled)
+Your logs show Redis is already disabled. To fully remove Redis references:
+javascript// In server/index.ts - Remove these lines:
+// import { createClient } from 'redis';
+// Remove all redis-related code
+
+// Your startup already shows: "Redis Cache: Disabled"
+3. Optimize Logging System
+Create a centralized logging configuration:
+javascript// server/utils/logger.ts
+export enum LogLevel {
+  ERROR = 0,
+  WARN = 1,
+  INFO = 2,
+  DEBUG = 3,
+  VERBOSE = 4
+}
+
+export class Logger {
+  private static logLevel = LogLevel.INFO;
+  private static consolidatedLogs = new Map<string, { count: number, lastLogged: number }>();
+  private static consolidationWindow = 5000; // 5 seconds
+
+  static setLogLevel(level: LogLevel) {
+    this.logLevel = level;
+  }
+
+  static shouldLog(level: LogLevel): boolean {
+    return level <= this.logLevel;
+  }
+
+  static consolidate(key: string, message: string, level: LogLevel = LogLevel.INFO) {
+    if (!this.shouldLog(level)) return;
+
+    const now = Date.now();
+    const existing = this.consolidatedLogs.get(key);
+
+    if (existing && (now - existing.lastLogged) < this.consolidationWindow) {
+      existing.count++;
+      return;
+    }
+
+    if (existing && existing.count > 1) {
+      console.log(`[CONSOLIDATED] ${message} (occurred ${existing.count} times)`);
+    } else {
+      console.log(message);
+    }
+
+    this.consolidatedLogs.set(key, { count: 1, lastLogged: now });
+  }
+
+  static info(message: string, data?: any) {
+    if (this.shouldLog(LogLevel.INFO)) {
+      console.log(`[INFO] ${message}`, data || '');
+    }
+  }
+
+  static debug(message: string, data?: any) {
+    if (this.shouldLog(LogLevel.DEBUG)) {
+      console.log(`[DEBUG] ${message}`, data || '');
+    }
+  }
+
+  static error(message: string, error?: any) {
+    if (this.shouldLog(LogLevel.ERROR)) {
+      console.error(`[ERROR] ${message}`, error || '');
+    }
+  }
+}
+4. Update Middleware Logging
+javascript// In server/auth.ts - Update requireAuth middleware
+export const requireAuth: RequestHandler = (req, res, next) => {
+  const userId = req.user?.id;
+  const endpoint = `${req.method} ${req.path}`;
+  
+  if (!req.isAuthenticated()) {
+    Logger.consolidate(
+      `auth-fail-${endpoint}`,
+      `Authentication failed for ${endpoint}`,
+      LogLevel.DEBUG
+    );
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      message: 'Please log in to continue' 
+    });
+  }
+
+  Logger.consolidate(
+    `auth-success-${userId}-${endpoint}`,
+    `Auth successful for user ${userId} on ${endpoint}`,
+    LogLevel.DEBUG
+  );
+  
+  next();
+};
+5. Optimize Wishlist Check Batching
+javascript// Create a batch wishlist check endpoint
+app.post('/api/wishlist/check-batch', requireAuth, async (req, res) => {
+  const { productIds } = req.body;
+  const userId = req.user!.id;
+
+  try {
+    const wishlistItems = await db.getWishlistByProductIds(userId, productIds);
+    const wishlistMap = productIds.reduce((acc, id) => {
+      acc[id] = wishlistItems.some(item => item.productId === id);
+      return acc;
+    }, {} as Record<string, boolean>);
+
+    res.json(wishlistMap);
+  } catch (error) {
+    Logger.error('Batch wishlist check failed', error);
+    res.status(500).json({ error: 'Failed to check wishlist items' });
+  }
+});
+6. Environment-based Logging Configuration
+javascript// In server/index.ts
+const LOG_LEVEL = process.env.LOG_LEVEL || 'INFO';
+Logger.setLogLevel(LogLevel[LOG_LEVEL as keyof typeof LogLevel]);
+
+// Simplified startup message
+console.log(`
+🏋️ CLEAN & FLIP - Server Ready
+Environment: ${process.env.NODE_ENV || 'development'}
+Port: ${PORT}
+Database: Connected
+Log Level: ${LOG_LEVEL}
+`);
+7. Request Logging Middleware Update
+javascript// Consolidate similar requests
+app.use((req, res, next) => {
+  const start = Date.now();
+  const key = `${req.method}-${req.path}`;
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    
+    // Only log slow requests or errors
+    if (duration > 1000 || res.statusCode >= 400) {
+      Logger.info(`${key} ${res.statusCode} ${duration}ms`);
+    } else {
+      Logger.consolidate(key, `${key} ${res.statusCode} ${duration}ms`, LogLevel.DEBUG);
+    }
+  });
+  
+  next();
+});
+These changes will:
+
+Require authentication for adding to cart with a clear toast message
+Remove unnecessary Redis references
+Consolidate repetitive logs (like auth checks and wishlist checks)
+Batch similar requests to reduce API calls
+Only log important information based on log level
+Reduce spam from repetitive operations
+
+The consolidated logging will show messages like:
+[CONSOLIDATED] GET /api/wishlist/check 200 (occurred 6 times)
+Instead of 6 individual log entries.
