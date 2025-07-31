@@ -295,7 +295,7 @@ export default function Checkout() {
                     {/* Address Autocomplete */}
                     <div className="mt-4">
                       <Label className="text-sm font-medium">Address</Label>
-                      <div className="glass border-glass-border text-white placeholder:text-text-muted mt-2 rounded-lg px-3 py-2">
+                      <div className="glass border-glass-border text-white placeholder:text-text-muted mt-2 rounded-lg px-4 py-3">
                         <AddressAutocomplete
                           value={selectedAddress}
                           onChange={(address) => {
