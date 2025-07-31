@@ -16,7 +16,7 @@ export function log(message: string, source = "express") {
     hour12: true,
   });
 
-  console.log(`${formattedTime} [${source}] ${message}`);
+  // Express request logging handled by main logger system
 }
 
 export async function setupVite(app: Express, server: Server) {
