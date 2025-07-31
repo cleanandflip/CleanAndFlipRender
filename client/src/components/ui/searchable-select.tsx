@@ -64,7 +64,7 @@ export function SearchableSelect({
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full pl-3 pr-10 py-2 glass border-glass-border text-white placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent"
+          className="w-full pl-3 pr-10 py-2 bg-gray-800 border-2 border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-accent-blue transition-colors"
         />
         <button
           type="button"
@@ -76,38 +76,47 @@ export function SearchableSelect({
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 glass border-glass-border rounded-md shadow-lg max-h-60 overflow-auto">
-          {filteredOptions.length > 0 ? (
-            filteredOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => handleSelect(option)}
-                className={cn(
-                  "w-full px-3 py-2 text-left hover:bg-white/10 text-white transition-colors flex items-center justify-between",
-                  search === option && "bg-accent-blue/20"
-                )}
-              >
-                <span>{option}</span>
-                {search === option && <Check className="w-4 h-4 text-accent-blue" />}
-              </button>
-            ))
-          ) : (
-            <>
-              {allowCustom && search.trim() ? (
+        <>
+          {/* Backdrop for better focus */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/20" 
+            onClick={() => setIsOpen(false)}
+          />
+          
+          {/* Dropdown with improved visibility */}
+          <div className="absolute z-[9999] w-full mt-1 bg-gray-900 border-2 border-gray-500 rounded-md shadow-2xl max-h-60 overflow-auto brand-dropdown">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
                 <button
+                  key={option}
                   type="button"
-                  onClick={() => handleSelect(search)}
-                  className="w-full px-3 py-2 text-left hover:bg-white/10 text-accent-blue transition-colors"
+                  onClick={() => handleSelect(option)}
+                  className={cn(
+                    "w-full px-4 py-3 text-left text-gray-100 hover:bg-accent-blue hover:text-white transition-all duration-150 border-b border-gray-700 last:border-b-0 flex items-center justify-between",
+                    search === option && "bg-accent-blue/30 text-white"
+                  )}
                 >
-                  Use "{search}"
+                  <span>{option}</span>
+                  {search === option && <Check className="w-4 h-4 text-accent-blue" />}
                 </button>
-              ) : (
-                <div className="px-3 py-2 text-text-muted text-sm">No brands found</div>
-              )}
-            </>
-          )}
-        </div>
+              ))
+            ) : (
+              <>
+                {allowCustom && search.trim() ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSelect(search)}
+                    className="w-full px-4 py-3 text-left text-accent-blue hover:bg-accent-blue hover:text-white transition-all duration-150"
+                  >
+                    Use "{search}" (custom brand)
+                  </button>
+                ) : (
+                  <div className="px-4 py-3 text-gray-400 text-center">No brands found</div>
+                )}
+              </>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
