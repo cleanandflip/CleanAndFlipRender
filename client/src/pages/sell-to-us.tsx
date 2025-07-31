@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceInput } from "@/components/ui/price-input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -30,6 +31,35 @@ const submissionSchema = insertEquipmentSubmissionSchema.extend({
 });
 
 type SubmissionForm = z.infer<typeof submissionSchema>;
+
+// Popular equipment brands
+const EQUIPMENT_BRANDS = [
+  'Rogue Fitness',
+  'Concept2',
+  'Bowflex',
+  'York Barbell',
+  'PowerBlock',
+  'Rep Fitness',
+  'Titan Fitness',
+  'CAP Barbell',
+  'Eleiko',
+  'Life Fitness',
+  'Hammer Strength',
+  'Cybex',
+  'Precor',
+  'Body-Solid',
+  'Nautilus',
+  'StairMaster',
+  'TRX',
+  'Assault Fitness',
+  'Sorinex',
+  'EliteFTS',
+  'Texas Power Bar',
+  'American Barbell',
+  'Ivanko',
+  'Iron Grip',
+  'HulkFit'
+];
 
 export default function SellToUs() {
   const { toast } = useToast();
@@ -180,11 +210,12 @@ export default function SellToUs() {
                         <FormItem>
                           <FormLabel>Brand</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <SearchableSelect
+                              options={EQUIPMENT_BRANDS}
                               value={field.value || ""}
-                              placeholder="e.g. Rogue, Eleiko, etc."
-                              className="glass border-glass-border"
+                              placeholder="Search or select a brand..."
+                              onSelect={field.onChange}
+                              allowCustom={true}
                             />
                           </FormControl>
                           <FormMessage />

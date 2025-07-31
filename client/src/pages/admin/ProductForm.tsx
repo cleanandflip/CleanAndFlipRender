@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceInput } from '@/components/ui/price-input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,35 @@ interface ProductFormData {
   brand: string;
   images: File[];
 }
+
+// Popular equipment brands - same list as sell form
+const EQUIPMENT_BRANDS = [
+  'Rogue Fitness',
+  'Concept2',
+  'Bowflex',
+  'York Barbell',
+  'PowerBlock',
+  'Rep Fitness',
+  'Titan Fitness',
+  'CAP Barbell',
+  'Eleiko',
+  'Life Fitness',
+  'Hammer Strength',
+  'Cybex',
+  'Precor',
+  'Body-Solid',
+  'Nautilus',
+  'StairMaster',
+  'TRX',
+  'Assault Fitness',
+  'Sorinex',
+  'EliteFTS',
+  'Texas Power Bar',
+  'American Barbell',
+  'Ivanko',
+  'Iron Grip',
+  'HulkFit'
+];
 
 export function ProductForm() {
   const params = useParams();
@@ -313,12 +343,12 @@ export function ProductForm() {
               
               <div>
                 <Label htmlFor="brand">Brand *</Label>
-                <Input
-                  id="brand"
+                <SearchableSelect
+                  options={EQUIPMENT_BRANDS}
                   value={formData.brand}
-                  onChange={(e) => setFormData({...formData, brand: e.target.value})}
-                  placeholder="e.g., Rogue Fitness"
-                  required
+                  placeholder="Search or select a brand..."
+                  onSelect={(brand) => setFormData({...formData, brand})}
+                  allowCustom={true}
                 />
               </div>
             </div>
