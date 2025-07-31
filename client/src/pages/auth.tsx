@@ -11,6 +11,8 @@ import Logo from "@/components/common/logo";
 import { PasswordInput } from "@/components/auth/password-input";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
 import { SecurityNotice } from "@/components/auth/security-notice";
+import AddressAutocomplete, { type ParsedAddress } from "@/components/ui/address-autocomplete";
+import { isLocalCustomer } from "@/utils/location";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
@@ -21,6 +23,8 @@ export default function AuthPage() {
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<ParsedAddress | null>(null);
+  const [isLocalUser, setIsLocalUser] = useState(false);
   const formContainerRef = useRef<HTMLDivElement>(null);
   const loginFormRef = useRef<HTMLFormElement>(null);
   const registerFormRef = useRef<HTMLFormElement>(null);
@@ -77,9 +81,16 @@ export default function AuthPage() {
       confirmPassword,
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
-      address: formData.get("address") as string,
-      cityStateZip: formData.get("cityStateZip") as string,
+      // New structured address fields
+      street: selectedAddress?.street || "",
+      city: selectedAddress?.city || "",
+      state: selectedAddress?.state || "",
+      zipCode: selectedAddress?.zipCode || "",
+      // Legacy fields for backward compatibility
+      address: selectedAddress?.street || "",
+      cityStateZip: selectedAddress ? `${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.zipCode}` : "",
       phone: formData.get("phone") as string,
+      isLocalCustomer: isLocalUser,
     });
   };
 
@@ -103,6 +114,13 @@ export default function AuthPage() {
     } else {
       setPasswordsMatch(true);
     }
+  };
+
+  const handleAddressSelect = (address: ParsedAddress) => {
+    setSelectedAddress(address);
+    const isLocal = isLocalCustomer(address);
+    setIsLocalUser(isLocal);
+    scrollToForm();
   };
 
   // Simple password validation for inline display
@@ -249,26 +267,25 @@ export default function AuthPage() {
                     onFocus={scrollToForm}
                   />
                   
-                  {/* Address */}
-                  <Input
-                    id="address"
-                    name="address"
-                    type="text"
-                    required
-                    className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                    placeholder="Street Address"
-                    onFocus={scrollToForm}
-                  />
-                  
-                  <Input
-                    id="cityStateZip"
-                    name="cityStateZip"
-                    type="text"
-                    required
-                    className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                    placeholder="City, State ZIP"
-                    onFocus={scrollToForm}
-                  />
+                  {/* Address Autocomplete */}
+                  <div className="space-y-2">
+                    <AddressAutocomplete
+                      onAddressSelect={handleAddressSelect}
+                      placeholder="Start typing your full address..."
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                      onFocus={scrollToForm}
+                    />
+                    {selectedAddress && (
+                      <div className="text-sm text-text-secondary">
+                        {selectedAddress.fullAddress}
+                        {isLocalUser && (
+                          <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-400">
+                            Local Customer
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   
                   {/* Password with inline helper */}
                   <div className="space-y-1">

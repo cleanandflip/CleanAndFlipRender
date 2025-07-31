@@ -1,0 +1,170 @@
+Comprehensive Implementation Request: Address Autocomplete System
+Overview
+We need to implement a unified address autocomplete system that replaces the current two-field address input across the entire website. This will provide a better user experience and ensure consistent address data collection.
+Requirements
+1. Address Autocomplete Component
+Create a new reusable component src/components/ui/address-autocomplete.tsx that:
+
+Single input field that searches addresses as user types
+Shows dropdown of matching addresses
+Auto-fills full address when user selects from dropdown
+Parses address into: street, city, state, zipCode
+Matches our dark theme (gray-800 background, white text, blue accents)
+Shows subtle loading indicator while searching
+Handles errors gracefully
+
+2. API Integration
+Use Google Places Autocomplete API (or free alternative like Mapbox Geocoding):
+typescript// Example structure for address parsing
+interface ParsedAddress {
+  street: string;      // "123 Main St"
+  city: string;        // "Asheville"
+  state: string;       // "NC"
+  zipCode: string;     // "28806"
+  fullAddress: string; // "123 Main St, Asheville, NC 28806"
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+3. Component Design
+tsx// The component should look like this in use:
+<AddressAutocomplete
+  value={address}
+  onChange={(parsedAddress: ParsedAddress) => {
+    // Update form with parsed address
+  }}
+  placeholder="Start typing your address..."
+  className="w-full"
+/>
+4. Visual Design Requirements
+
+Input field: bg-gray-800 border-gray-700 text-white placeholder-gray-500
+Dropdown: bg-gray-900 border border-gray-700 rounded-lg shadow-xl
+Dropdown items: hover:bg-gray-800 px-4 py-3 cursor-pointer
+Selected/active item: bg-gray-800 text-blue-400
+Loading spinner: Small, inline, uses blue-500 color
+Error state: Red border with error message below
+
+5. Database Schema Update
+Update the users table to store address components:
+sqlALTER TABLE users 
+ADD COLUMN street VARCHAR(255),
+ADD COLUMN city VARCHAR(100),
+ADD COLUMN state VARCHAR(2),
+ADD COLUMN zip_code VARCHAR(10),
+ADD COLUMN latitude DECIMAL(10, 8),
+ADD COLUMN longitude DECIMAL(11, 8);
+
+-- Migrate existing data from address and cityStateZip fields
+6. Files to Update
+Replace address fields in these components:
+
+src/pages/auth.tsx - Registration form
+src/pages/dashboard.tsx - User profile section
+src/pages/checkout.tsx - Shipping address
+src/pages/sell-to-us.tsx - Seller address form
+src/components/admin/UserManagement.tsx - Admin user editing
+Any other components using address/cityStateZip fields
+
+Update API endpoints:
+
+/api/auth/register - Accept new address format
+/api/user/profile - Update profile with new fields
+/api/user - Return new address fields
+Add new endpoint: /api/location/validate to check if address is local
+
+7. Local Customer Detection
+Create a utility function to determine if customer is local:
+typescript// src/utils/location.ts
+export function isLocalCustomer(address: ParsedAddress): boolean {
+  // Check if within 25 miles of Asheville, NC 28806
+  // Can use coordinates or zip code proximity
+  const ashevilleZips = ['28801', '28802', '28803', '28804', '28805', '28806', ...];
+  return ashevilleZips.includes(address.zipCode);
+}
+8. Implementation Steps
+
+Set up API key:
+
+Add GOOGLE_PLACES_API_KEY or MAPBOX_TOKEN to .env
+Configure API restrictions for security
+
+
+Create the component:
+
+Debounced search (300ms delay)
+Minimum 3 characters before searching
+Limit to US addresses
+Keyboard navigation (arrow keys + enter)
+Click outside to close dropdown
+Clear button when field has value
+
+
+Update forms:
+
+Remove old address and cityStateZip fields
+Add new AddressAutocomplete component
+Update form validation
+Update submit handlers
+
+
+Migrate existing data:
+
+Create migration script to parse existing addresses
+Update all user records
+Remove old columns after verification
+
+
+Update display components:
+
+Anywhere addresses are displayed, use new format
+Create formatAddress() utility function
+
+
+
+9. Example Implementation
+tsx// Example of updating the registration form
+<div className="space-y-2">
+  <Label htmlFor="address">Address</Label>
+  <AddressAutocomplete
+    id="address"
+    value={formData.address}
+    onChange={(parsed) => {
+      setFormData({
+        ...formData,
+        street: parsed.street,
+        city: parsed.city,
+        state: parsed.state,
+        zipCode: parsed.zipCode,
+        fullAddress: parsed.fullAddress,
+        isLocal: isLocalCustomer(parsed)
+      });
+    }}
+    required
+    className="w-full"
+  />
+  {formData.isLocal && (
+    <p className="text-sm text-green-500">
+      ✓ Local pickup available in Asheville
+    </p>
+  )}
+</div>
+10. Testing Requirements
+
+Test with various address formats
+Test international addresses (to ensure US-only)
+Test mobile responsiveness
+Test keyboard navigation
+Test with slow connections
+Verify local detection accuracy
+
+Additional Considerations
+
+Privacy: Don't store full coordinates unless needed
+Fallback: Allow manual entry if autocomplete fails
+Accessibility: Ensure ARIA labels and keyboard support
+Performance: Cache recent searches
+Mobile: Ensure touch-friendly on mobile devices
+
+This unified address system will improve UX, ensure data consistency, and make local customer detection automatic across the entire platform.
