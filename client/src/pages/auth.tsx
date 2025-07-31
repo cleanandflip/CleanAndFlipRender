@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AddressAutocomplete from "@/components/ui/address-autocomplete";
 import { Loader2, Dumbbell, Users, Shield, CheckCircle, TrendingUp } from "lucide-react";
 import GlassCard from "@/components/common/glass-card";
 import Logo from "@/components/common/logo";
@@ -21,6 +22,15 @@ export default function AuthPage() {
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
+  const [addressData, setAddressData] = useState({
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    fullAddress: '',
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined
+  });
   const formContainerRef = useRef<HTMLDivElement>(null);
   const loginFormRef = useRef<HTMLFormElement>(null);
   const registerFormRef = useRef<HTMLFormElement>(null);
@@ -71,15 +81,24 @@ export default function AuthPage() {
       return;
     }
     
+    // Determine if local customer
+    const ashevilleZips = ['28801', '28802', '28803', '28804', '28805', '28806', '28810', '28813', '28814', '28815', '28816'];
+    const isLocalCustomer = ashevilleZips.includes(addressData.zipCode);
+    
     registerMutation.mutate({
       email: formData.get("email") as string,
       password,
       confirmPassword,
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
-      address: formData.get("address") as string,
-      cityStateZip: formData.get("cityStateZip") as string,
       phone: formData.get("phone") as string,
+      street: addressData.street,
+      city: addressData.city,
+      state: addressData.state,
+      zipCode: addressData.zipCode,
+      latitude: addressData.latitude,
+      longitude: addressData.longitude,
+      isLocalCustomer
     });
   };
 
@@ -249,26 +268,29 @@ export default function AuthPage() {
                     onFocus={scrollToForm}
                   />
                   
-                  {/* Address */}
-                  <Input
-                    id="address"
-                    name="address"
-                    type="text"
-                    required
-                    className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                    placeholder="Street Address"
-                    onFocus={scrollToForm}
-                  />
-                  
-                  <Input
-                    id="cityStateZip"
-                    name="cityStateZip"
-                    type="text"
-                    required
-                    className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                    placeholder="City, State ZIP"
-                    onFocus={scrollToForm}
-                  />
+                  {/* Address Autocomplete */}
+                  <div className="space-y-2">
+                    <Label htmlFor="address" className="text-text-secondary text-sm">Address</Label>
+                    <AddressAutocomplete
+                      id="address"
+                      name="address"
+                      value={addressData.fullAddress}
+                      onChange={(parsed) => {
+                        setAddressData({
+                          street: parsed.street,
+                          city: parsed.city,
+                          state: parsed.state,
+                          zipCode: parsed.zipCode,
+                          fullAddress: parsed.fullAddress,
+                          latitude: parsed.coordinates?.lat,
+                          longitude: parsed.coordinates?.lng
+                        });
+                      }}
+                      placeholder="Start typing your address..."
+                      className="glass bg-transparent border-glass-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                      required
+                    />
+                  </div>
                   
                   {/* Password with inline helper */}
                   <div className="space-y-1">

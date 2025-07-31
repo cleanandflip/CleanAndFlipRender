@@ -150,7 +150,21 @@ export function setupAuth(app: Express) {
   // Register endpoint
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { email, password, confirmPassword, firstName, lastName, address, cityStateZip, phone } = req.body;
+      const { 
+        email, 
+        password, 
+        confirmPassword, 
+        firstName, 
+        lastName, 
+        phone,
+        street,
+        city,
+        state,
+        zipCode,
+        latitude,
+        longitude,
+        isLocalCustomer 
+      } = req.body;
 
       // Validate required fields
       if (!email || !password || !confirmPassword || !firstName || !lastName) {
@@ -171,10 +185,10 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Validate city, state, ZIP format
-      if (cityStateZip && !validateCityStateZip(cityStateZip)) {
+      // Validate address fields if provided
+      if (street && (!city || !state || !zipCode)) {
         return res.status(400).json({ 
-          message: "Please enter city, state ZIP in format: City, ST 12345"
+          message: "Please provide complete address information (street, city, state, zip code)"
         });
       }
 
@@ -192,14 +206,7 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Determine if user is local customer
-      let isLocalCustomer = false;
-      if (cityStateZip) {
-        const parsed = parseCityStateZip(cityStateZip);
-        if (parsed) {
-          isLocalCustomer = isLocalZip(parsed.zip);
-        }
-      }
+      // Local customer status is determined client-side based on Asheville zip codes
 
       // Determine role based on criteria (using normalized email)
       let role: "user" | "developer" | "admin" = "user";
@@ -218,12 +225,16 @@ export function setupAuth(app: Express) {
         password: await hashPassword(password),
         firstName,
         lastName,
-        address: address || undefined,
-        cityStateZip: cityStateZip || undefined,
         phone: normalizedPhone,
+        street: street || undefined,
+        city: city || undefined,
+        state: state || undefined,
+        zipCode: zipCode || undefined,
+        latitude: latitude ? String(latitude) : undefined,
+        longitude: longitude ? String(longitude) : undefined,
         role,
         isAdmin: role === "admin" || role === "developer",
-        isLocalCustomer,
+        isLocalCustomer: isLocalCustomer || false,
       });
 
       const userForSession = {

@@ -25,7 +25,7 @@ interface AddressAutocompleteProps {
   name?: string;
 }
 
-export function AddressAutocomplete({
+export default function AddressAutocomplete({
   value = '',
   onChange,
   placeholder = "Start typing your address...",
