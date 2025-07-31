@@ -3,10 +3,11 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import GlassCard from "@/components/common/glass-card";
+import { ProtectedRoute } from "@/lib/protected-route";
 import { useCart } from "@/hooks/use-cart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 
-export default function Cart() {
+function Cart() {
   const { cartItems, updateQuantity, removeFromCart, cartTotal, cartCount, isLoading } = useCart();
   
   // Validate cart on mount and listen for product updates
@@ -116,7 +117,7 @@ export default function Cart() {
                     <div className="flex-shrink-0">
                       {item.product.images && item.product.images.length > 0 ? (
                         <img
-                          src={getImageUrl(item.product.images[0])}
+                          src={getImageUrl(item.product.images[0]) || ''}
                           alt={item.product.name}
                           className="w-24 h-24 object-cover rounded-lg"
                           key={`${item.product.id}-${Date.now()}`} // Force reload on updates
@@ -277,5 +278,13 @@ export default function Cart() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProtectedCart() {
+  return (
+    <ProtectedRoute>
+      <Cart />
+    </ProtectedRoute>
   );
 }

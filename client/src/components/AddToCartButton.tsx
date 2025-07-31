@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/use-cart';
+import { useAuth } from '@/hooks/use-auth';
 import { useLocation } from 'wouter';
-import { ShoppingCart, Check, X } from 'lucide-react';
+import { ShoppingCart, Check, X, Lock } from 'lucide-react';
 
 // Debounce utility function
 function debounce<T extends (...args: any[]) => any>(
@@ -38,6 +39,7 @@ export function AddToCartButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
   const { addToCart, isInCart, removeProductFromCart } = useCart();
   const [, setLocation] = useLocation();
   
@@ -53,6 +55,26 @@ export function AddToCartButton({
       e.preventDefault();
       
       if (loading) return;
+      
+      // Check authentication first
+      if (!user) {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to manage your cart",
+          variant: "destructive",
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation('/auth')}
+              className="ml-2"
+            >
+              Sign In
+            </Button>
+          ),
+        });
+        return;
+      }
       
       setLoading(true);
       try {
@@ -71,12 +93,32 @@ export function AddToCartButton({
         setLoading(false);
       }
     }, 500),
-    [productId, loading, removeProductFromCart, toast]
+    [productId, loading, removeProductFromCart, toast, user, setLocation]
   );
 
   const handleAddToCart = useMemo(
     () => debounce(async () => {
       if (loading) return;
+      
+      // Check authentication first
+      if (!user) {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to add items to your cart",
+          variant: "destructive",
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation('/auth')}
+              className="ml-2"
+            >
+              Sign In
+            </Button>
+          ),
+        });
+        return;
+      }
       
       setLoading(true);
       setError(null);
@@ -101,7 +143,7 @@ export function AddToCartButton({
         setLoading(false);
       }
     }, 500), // 500ms debounce to prevent spam clicking
-    [productId, loading, quantity, addToCart, toast]
+    [productId, loading, quantity, addToCart, toast, user, setLocation]
   );
 
   const handleViewCart = () => {
@@ -155,7 +197,8 @@ export function AddToCartButton({
       disabled={isDisabled}
       variant={variant}
       size={size}
-      className={`w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${className} ${loading ? 'opacity-50' : ''}`}
+      className={`w-full ${!user ? 'bg-gray-600 hover:bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'} text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${className} ${loading ? 'opacity-50' : ''}`}
+      title={!user ? 'Sign in required to add to cart' : 'Add to cart'}
     >
       {loading ? (
         <>
@@ -164,9 +207,8 @@ export function AddToCartButton({
         </>
       ) : (
         <>
-          <ShoppingCart className="w-5 h-5" />
-          Add to Cart
-          {quantity > 1 && ` (${quantity})`}
+          {!user ? <Lock className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
+          {!user ? 'Sign In to Shop' : `Add to Cart${quantity > 1 ? ` (${quantity})` : ''}`}
         </>
       )}
     </Button>

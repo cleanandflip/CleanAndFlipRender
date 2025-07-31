@@ -1,0 +1,130 @@
+1. Update the Add to Cart Handler
+First, modify your add to cart function to check for user authentication:
+javascript// In your cart handler file (e.g., CartContext.js or wherever you handle cart operations)
+
+const handleAddToCart = async (product) => {
+  // Check if user is authenticated
+  const user = await getCurrentUser(); // Replace with your auth check method
+  
+  if (!user) {
+    // Show toast message for non-authenticated users
+    toast.error('Please sign in to add items to your cart', {
+      duration: 4000,
+      position: 'bottom-center',
+      style: {
+        background: '#0f0f0f',
+        color: '#ffffff',
+        border: '1px solid #333',
+      },
+      icon: '🔒',
+    });
+    
+    // Optional: Redirect to login page after a delay
+    setTimeout(() => {
+      router.push('/login'); // Adjust path as needed
+    }, 2000);
+    
+    return;
+  }
+  
+  // Existing add to cart logic here
+  try {
+    // Your existing cart addition code
+    addToCart(product);
+    toast.success('Added to cart!');
+  } catch (error) {
+    toast.error('Failed to add to cart');
+  }
+};
+2. Update the Product Card Component
+Modify your product card button to use the new handler:
+jsx// In your ProductCard component
+
+const ProductCard = ({ product }) => {
+  const { user } = useAuth(); // Your auth hook
+  
+  return (
+    <div className="product-card">
+      {/* ... other product details ... */}
+      
+      <button
+        onClick={() => handleAddToCart(product)}
+        className="add-to-cart-btn"
+      >
+        {user ? 'Add to Cart' : 'Sign In to Shop'}
+      </button>
+    </div>
+  );
+};
+3. Alternative: Server-Side Protection
+If you're using Next.js API routes, also protect the cart endpoint:
+javascript// /api/cart/add.js
+
+export default async function handler(req, res) {
+  // Check authentication
+  const session = await getSession({ req });
+  
+  if (!session) {
+    return res.status(401).json({ 
+      error: 'Please sign in to add items to your cart' 
+    });
+  }
+  
+  // Proceed with adding to cart
+  // ... your cart logic
+}
+4. Update Toast Messages
+Create consistent toast messages for different scenarios:
+javascriptconst toastMessages = {
+  notAuthenticated: {
+    message: 'Sign in to start adding items to your cart',
+    icon: '🔐',
+  },
+  addedToCart: {
+    message: 'Successfully added to cart!',
+    icon: '✓',
+  },
+  cartError: {
+    message: 'Something went wrong. Please try again.',
+    icon: '⚠️',
+  },
+};
+
+// Usage
+toast.error(toastMessages.notAuthenticated.message, {
+  icon: toastMessages.notAuthenticated.icon,
+  duration: 4000,
+  style: {
+    background: '#0f0f0f',
+    color: '#f9f9f9',
+    border: '1px solid #333',
+  },
+});
+5. Optional: Add Visual Cues
+Update the UI to show authentication state:
+jsx// Add visual indicator on product cards
+<div className="product-actions">
+  {!user && (
+    <p className="text-sm text-gray-500 mb-2">
+      Sign in to purchase
+    </p>
+  )}
+  
+  <button
+    onClick={() => handleAddToCart(product)}
+    className={`add-to-cart-btn ${!user ? 'opacity-75' : ''}`}
+    title={!user ? 'Sign in required' : 'Add to cart'}
+  >
+    <ShoppingCart className="w-4 h-4 mr-2" />
+    {user ? 'Add to Cart' : 'Sign In to Shop'}
+  </button>
+</div>
+Implementation Steps for Replit:
+
+Locate your cart handling code - Usually in a context provider, custom hook, or component
+Find your authentication method - Could be useAuth(), useSession(), getCurrentUser(), etc.
+Update the add to cart function with the authentication check
+Test with both logged-in and logged-out states
+Ensure the toast notifications appear correctly
+
+The key is to check authentication status before any cart operations and provide clear feedback to users about why they need to sign in.
