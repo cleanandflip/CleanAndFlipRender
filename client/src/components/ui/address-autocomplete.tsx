@@ -3,6 +3,7 @@ import { ChevronDown, MapPin, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // MapTiler API configuration with security
+// Note: For client-side access, the environment variable needs VITE_ prefix
 const API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
 
 // Rate limiting implementation for security
@@ -116,7 +117,7 @@ export default function AddressAutocomplete({
           throw new Error("MapTiler API key not configured");
         }
 
-        // MapTiler Geocoding API with country restriction for security
+        // Use client-side API directly since we have the key in environment
         const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${API_KEY}&country=US&limit=5&types=address`;
         
         const response = await fetch(url, {
@@ -124,10 +125,13 @@ export default function AddressAutocomplete({
         });
 
         if (!response.ok) {
-          throw new Error(`API request failed: ${response.status}`);
+          const errorText = await response.text();
+          console.error('MapTiler API Error:', response.status, errorText);
+          throw new Error(`Address search failed: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log('MapTiler response:', data);
         
         if (data.features && Array.isArray(data.features)) {
           const formattedSuggestions: AddressSuggestion[] = data.features.map((feature: any) => ({
@@ -154,7 +158,10 @@ export default function AddressAutocomplete({
       } catch (err: any) {
         if (err.name !== 'AbortError') {
           console.error("Address search error:", err);
-          setError("Unable to search addresses. Please try again.");
+          const errorMessage = err.message?.includes('API key') 
+            ? "Address service temporarily unavailable" 
+            : "Unable to search addresses. Please try again.";
+          setError(errorMessage);
           setSuggestions([]);
           setIsOpen(false);
         }
@@ -304,10 +311,9 @@ export default function AddressAutocomplete({
           required={required}
           disabled={disabled}
           className={cn(
-            "w-full px-4 py-3 pr-12 bg-gray-800 border border-gray-700 rounded-lg",
-            "text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+            "w-full px-4 py-3 pr-12 bg-transparent border-0 rounded-lg",
+            "text-white placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-transparent",
             "disabled:opacity-50 disabled:cursor-not-allowed",
-            error && "border-red-500 focus:ring-red-500",
             className
           )}
           autoComplete="street-address"
