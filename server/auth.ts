@@ -371,22 +371,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Get current user endpoint
-  app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.sendStatus(401);
-    }
-    
-    const user = req.user as User;
-    res.json({
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role || 'user',
-      isAdmin: user.isAdmin || false,
-    });
-  });
+  // Note: /api/user endpoint is defined in routes.ts to avoid conflicts
 }
 
 // Middleware to require authentication
