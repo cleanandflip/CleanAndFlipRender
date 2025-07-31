@@ -39,8 +39,25 @@ import { healthLive, healthReady } from "./config/health";
 import { initializeWebSocket, broadcastProductUpdate, broadcastCartUpdate, broadcastStockUpdate } from "./config/websocket";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
-import { users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { db } from "./db";
+import { 
+  users, 
+  products, 
+  categories, 
+  orders,
+  orderItems,
+  submissions,
+  cart,
+  wishlist,
+  activityLogs,
+  type User,
+  type Product,
+  type Category,
+  type NewProduct,
+  type UpdateProduct,
+  type AnalyticsData
+} from "@shared/schema";
+import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray } from "drizzle-orm";
 import { displayStartupBanner } from "./utils/startup-banner";
 import { initRedis } from "./config/redis";
 import { initializeCache } from "./lib/cache";
@@ -743,32 +760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Addresses
-  app.get("/api/addresses", async (req, res) => {
-    try {
-      const userId = req.query.userId as string;
-      if (!userId) {
-        return res.status(400).json({ message: "User ID required" });
-      }
-      
-      const addresses = await storage.getUserAddresses(userId);
-      res.json(addresses);
-    } catch (error) {
-      Logger.error("Error fetching addresses", error);
-      res.status(500).json({ message: "Failed to fetch addresses" });
-    }
-  });
-
-  app.post("/api/addresses", async (req, res) => {
-    try {
-      const validatedData = insertAddressSchema.parse(req.body);
-      const address = await storage.createAddress(validatedData);
-      res.json(address);
-    } catch (error) {
-      Logger.error("Error creating address", error);
-      res.status(500).json({ message: "Failed to create address" });
-    }
-  });
+  // REMOVED - Old address endpoints replaced with unified system below
 
   // Admin routes - use passport authentication
   const requireAdmin = async (req: any, res: any, next: any) => {
@@ -1041,15 +1033,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Address endpoints - Fixed schema alignment
+  // UNIFIED ADDRESS SYSTEM - Single definitive endpoint
   app.get("/api/addresses", async (req, res) => {
     try {
-      // Debug authentication state
-      Logger.debug(`Session data: ${JSON.stringify(req.session)}`);
-      Logger.debug(`User data: ${JSON.stringify(req.user)}`);
-      Logger.debug(`Is authenticated: ${req.isAuthenticated?.()}`);
-      
-      // Check multiple auth sources
+      // Get authenticated user using comprehensive auth check
       let userId = null;
       if (req.isAuthenticated && req.isAuthenticated()) {
         userId = req.user?.id;
@@ -1057,32 +1044,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId = req.session.passport.user.id;
       } else if (req.user?.id) {
         userId = req.user.id;
+      } else if (req.session?.userId) {
+        userId = req.session.userId;
       }
       
-      Logger.debug(`Resolved userId: ${userId}`);
+      console.log("=== ADDRESS FETCH DEBUG ===");
+      console.log("Session ID:", req.sessionID);
+      console.log("Is authenticated:", req.isAuthenticated?.());
+      console.log("User object:", req.user);
+      console.log("Resolved userId:", userId);
       
       if (!userId) {
-        // For testing, temporarily allow hard-coded test user  
-        userId = 'da323ef6-6982-4606-bd6c-c36b51efa7a1'; // test3@gmail.com user ID
-        Logger.debug(`[TEMP DEBUG] Using test user ID: ${userId}`);
+        return res.status(401).json({ error: "Authentication required" });
       }
-
-      Logger.debug(`Fetching addresses for user: ${userId}`);
-
-      // Use storage method to avoid Drizzle schema issues
-      const user = await storage.getUser(userId);
-
-      if (!user) {
+      
+      // Fetch user with address data directly from database using Drizzle
+      const userWithAddress = await db
+        .select({
+          id: users.id,
+          street: users.street,
+          city: users.city,
+          state: users.state,
+          zipCode: users.zipCode,
+          latitude: users.latitude,
+          longitude: users.longitude,
+          isLocalCustomer: users.isLocalCustomer
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      
+      console.log("Database query result:", userWithAddress);
+      
+      if (!userWithAddress.length) {
         return res.status(404).json({ error: "User not found" });
       }
-
-      Logger.debug(`User address data: ${JSON.stringify({
-        hasStreet: !!user.street,
-        hasCity: !!user.city,
-        hasState: !!user.state,
-        hasZip: !!user.zipCode
-      })}`);
-
+      
+      const user = userWithAddress[0];
+      
       // Format address data for frontend
       const addresses = [];
       if (user.street && user.city && user.state && user.zipCode) {
@@ -1098,18 +1097,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isDefault: true
         });
       }
-
-      Logger.debug(`Returning ${addresses.length} addresses`);
-      res.json(addresses);
+      
+      console.log("Returning addresses:", addresses);
+      return res.json(addresses);
+      
     } catch (error) {
-      Logger.error("Error fetching addresses", error);
-      res.status(500).json({ error: "Failed to fetch addresses" });
+      console.error("Error fetching addresses:", error);
+      return res.status(500).json({ error: "Failed to fetch addresses" });
     }
   });
 
   app.post("/api/addresses", async (req, res) => {
     try {
-      // Check multiple auth sources
+      // Get authenticated user using comprehensive auth check
       let userId = null;
       if (req.isAuthenticated && req.isAuthenticated()) {
         userId = req.user?.id;
@@ -1117,49 +1117,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId = req.session.passport.user.id;
       } else if (req.user?.id) {
         userId = req.user.id;
+      } else if (req.session?.userId) {
+        userId = req.session.userId;
       }
       
       if (!userId) {
-        // For testing, temporarily allow hard-coded test user  
-        userId = 'da323ef6-6982-4606-bd6c-c36b51efa7a1'; // test3@gmail.com user ID
-        Logger.debug(`[TEMP DEBUG POST] Using test user ID: ${userId}`);
+        return res.status(401).json({ error: "Authentication required" });
       }
 
       const { street, city, state, zipCode, latitude, longitude } = req.body;
 
-      // Validate required fields
       if (!street || !city || !state || !zipCode) {
-        return res.status(400).json({ error: "Missing required address fields" });
+        return res.status(400).json({ error: "All address fields are required" });
       }
 
-      // Determine if local customer (Asheville area)
+      // Check if this is in Asheville area (local customer detection)
       const ashevilleZips = ['28801', '28802', '28803', '28804', '28805', '28806', '28810', '28813', '28814', '28815', '28816'];
-      const isLocalCustomer = ashevilleZips.includes(zipCode);
+      const isLocal = ashevilleZips.includes(zipCode);
 
-      // Update user's address in users table
-      const updatedUser = await storage.updateUserAddress(userId, {
-        street,
-        city,
-        state,
-        zipCode,
-        latitude: latitude ? String(latitude) : undefined,
-        longitude: longitude ? String(longitude) : undefined,
-        isLocalCustomer
-      });
+      // Update user address directly in database using Drizzle
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          street,
+          city,
+          state,
+          zipCode,
+          latitude: latitude ? parseFloat(latitude) : null,
+          longitude: longitude ? parseFloat(longitude) : null,
+          isLocalCustomer: isLocal,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId))
+        .returning();
 
       res.json({
-        id: updatedUser.id,
-        street: updatedUser.street,
-        city: updatedUser.city,
-        state: updatedUser.state,
-        zipCode: updatedUser.zipCode,
-        latitude: updatedUser.latitude,
-        longitude: updatedUser.longitude,
-        isLocal: updatedUser.isLocalCustomer,
-        isDefault: true
+        success: true,
+        address: {
+          id: updatedUser.id,
+          street: updatedUser.street,
+          city: updatedUser.city,
+          state: updatedUser.state,
+          zipCode: updatedUser.zipCode,
+          latitude: updatedUser.latitude,
+          longitude: updatedUser.longitude,
+          isLocal: updatedUser.isLocalCustomer,
+          isDefault: true
+        }
       });
     } catch (error) {
-      Logger.error("Error saving address", error);
+      console.error("Error saving address:", error);
       res.status(500).json({ error: "Failed to save address" });
     }
   });
