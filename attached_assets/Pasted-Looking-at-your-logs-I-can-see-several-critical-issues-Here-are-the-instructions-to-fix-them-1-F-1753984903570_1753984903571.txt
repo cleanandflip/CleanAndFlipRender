@@ -1,0 +1,115 @@
+Looking at your logs, I can see several critical issues. Here are the instructions to fix them:
+1. Fix the Logger Error (CRITICAL - This is breaking cart functionality)
+In server/config/logger.ts around line 63:
+The error TypeError: message?.includes is not a function means the logger is receiving non-string messages. Fix this:
+typescript// Find this line in your logger format function:
+if (message?.includes('something'))
+
+// Replace with:
+const messageStr = typeof message === 'string' ? message : JSON.stringify(message);
+if (messageStr?.includes('something'))
+Or better yet, ensure all logger calls use strings:
+typescript// In your logger format, add at the top:
+const messageStr = String(message || '');
+2. Remove ALL Legacy Express Logging
+In your server files, remove:
+
+Any app.use(morgan(...)) middleware
+Any middleware that logs [express]
+Check server/index.ts for any express logging middleware
+Remove any console.log statements that show request/response data
+
+Search for and remove:
+typescript// Remove lines like:
+res.json(products); // This logs the response
+console.log('Get cart - userId:', userId);
+3. Fix Duplicate Logging
+You're getting 3 logs per request:
+
+Timestamp log from new logger
+Legacy [express] log
+Final summary log
+
+To fix:
+
+Remove the express middleware that's creating the [express] logs
+Keep only your new unified logger
+
+4. Implement Request Consolidation
+Add these filters to skip logging:
+typescript// In your request logger middleware, add:
+const skipPatterns = [
+  '/@vite', '/@fs', '/@react-refresh', 
+  '/node_modules', '.js', '.css', '.map',
+  'hot-update', 'chunk-', '.tsx', '.ts'
+];
+
+if (skipPatterns.some(pattern => url?.includes(pattern))) {
+  return next(); // Skip logging
+}
+5. Consolidate Wishlist Check Spam
+For the wishlist endpoint spam:
+typescript// Add rate limiting or batching for /api/wishlist/check
+// In your wishlist route, implement caching:
+const wishlistCache = new Map();
+const CACHE_TTL = 5000; // 5 seconds
+
+// Before checking database:
+const cacheKey = `${userId}-${productId}`;
+const cached = wishlistCache.get(cacheKey);
+if (cached && Date.now() - cached.time < CACHE_TTL) {
+  return res.json(cached.data);
+}
+6. Fix Database Error
+The analytics error column "page_url" does not exist:
+
+Check your database schema
+Either add the missing column or update the query in server/storage.ts line 573
+
+7. Consolidate Authentication Checks
+For /api/user and /api/cart spam:
+
+These are being called repeatedly
+Implement frontend caching (already mentioned in previous response)
+Add deduplication in the logger for auth endpoints
+
+8. Clean Up Response Logging
+Remove these patterns from your routes:
+typescript// BAD - This logs the entire response:
+res.json(products);
+
+// GOOD - Just send the response:
+res.json(products);
+
+// Remove any res.json() that's wrapped in console.log
+9. Fix WebSocket Logger Error
+In server/config/websocket.ts line 64:
+The broadcastCartUpdate function is passing non-string data to logger. Fix:
+typescriptlogger.info(`Broadcasting cart update`, { userId, items }); // Wrong
+logger.info('Broadcasting cart update'); // Correct
+10. Implementation Order
+
+First: Fix the logger error (it's breaking functionality)
+Second: Remove all legacy logging
+Third: Add skip patterns for development files
+Fourth: Fix the websocket logger calls
+Fifth: Implement consolidation for similar requests
+
+Quick Fixes to Apply NOW:
+
+In logger.ts, ensure message is always a string:
+
+typescriptconst messageStr = typeof message === 'string' ? message : 
+                  typeof message === 'object' ? JSON.stringify(message) : 
+                  String(message);
+
+Search entire codebase for [express] and remove that logging middleware
+In all route files, remove lines that look like:
+
+typescriptconsole.log('Products API - Received filters:', filters);
+console.log('Admin middleware - User from passport:', user);
+
+Add to request logger to skip development files:
+
+typescriptif (url?.includes('/src/') || url?.includes('/@')) return next();
+The main issue is that your logger is expecting strings but receiving objects, which is breaking your cart functionality. Fix that first!

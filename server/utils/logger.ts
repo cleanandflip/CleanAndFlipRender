@@ -19,8 +19,13 @@ export class Logger {
     return level <= this.logLevel;
   }
 
-  static consolidate(key: string, message: string, level: LogLevel = LogLevel.INFO) {
+  static consolidate(key: string, message: any, level: LogLevel = LogLevel.INFO) {
     if (!this.shouldLog(level)) return;
+
+    // CRITICAL FIX: Ensure message is always a string
+    const messageStr = typeof message === 'string' ? message : 
+                      typeof message === 'object' ? JSON.stringify(message) : 
+                      String(message || '');
 
     const now = Date.now();
     const existing = this.consolidatedLogs.get(key);
@@ -31,9 +36,9 @@ export class Logger {
     }
 
     if (existing && existing.count > 1) {
-      console.log(`[CONSOLIDATED] ${message} (occurred ${existing.count} times)`);
+      console.log(`[CONSOLIDATED] ${messageStr} (occurred ${existing.count} times)`);
     } else {
-      console.log(message);
+      console.log(messageStr);
     }
 
     this.consolidatedLogs.set(key, { count: 1, lastLogged: now });
