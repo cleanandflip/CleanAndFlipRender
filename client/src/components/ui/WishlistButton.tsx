@@ -3,7 +3,6 @@ import { Heart } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { triggerCacheInvalidation } from '@/hooks/useRealtimeSync';
 
 interface WishlistButtonProps {
   productId: string;
@@ -119,10 +118,6 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
         
         // Invalidate React Query cache for this product
         queryClient.invalidateQueries({ queryKey: ['wishlist', productId] });
-        queryClient.invalidateQueries({ queryKey: ['/api/wishlist'] });
-        
-        // Trigger cross-tab cache invalidation for real-time sync
-        triggerCacheInvalidation('wishlist');
         
         // Dispatch event for other components
         window.dispatchEvent(new CustomEvent('wishlistUpdated', {

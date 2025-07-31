@@ -82,48 +82,8 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       retry: false,
-      onSuccess: () => {
-        // Invalidate related queries after successful mutations
-        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/wishlist"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      },
     },
   },
-});
-
-// Set specific cache strategies for different data types
-import { realtimeConfig } from './cache-manager';
-
-// User-specific data - always fresh
-realtimeConfig.noStaleQueries.forEach(queryKey => {
-  queryClient.setQueryDefaults([queryKey], {
-    staleTime: 0, // Always fresh
-    gcTime: 1000 * 60 * 2, // 2 minutes cache
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-  });
-});
-
-// Real-time data - short stale time
-realtimeConfig.realtimeQueries.forEach(queryKey => {
-  queryClient.setQueryDefaults([queryKey], {
-    staleTime: 1000 * 30, // 30 seconds
-    gcTime: 1000 * 60 * 5, // 5 minutes cache
-    refetchInterval: 1000 * 60, // Refetch every minute
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-  });
-});
-
-// Static content - longer cache
-realtimeConfig.staticQueries.forEach(queryKey => {
-  queryClient.setQueryDefaults([queryKey], {
-    staleTime: 1000 * 60 * 15, // 15 minutes
-    gcTime: 1000 * 60 * 60, // 1 hour cache
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
 });
 
 // Global function to broadcast product updates

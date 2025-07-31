@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getProductImageUrl } from "@/lib/cache-manager";
 import { useAuth } from '@/hooks/use-auth';
 import ProductCard from './product-card';
 import type { Product } from '@shared/schema';
