@@ -7,6 +7,7 @@ import { storage } from "./storage";
 import { User } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 import { normalizeEmail, parseCityStateZip, isLocalZip, validateCityStateZip, normalizePhone } from "@shared/utils";
+import { authLimiter } from "./middleware/security";
 
 declare global {
   namespace Express {
@@ -247,8 +248,8 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Login endpoint with detailed error messages
-  app.post("/api/login", (req, res, next) => {
+  // Login endpoint with detailed error messages and rate limiting
+  app.post("/api/login", authLimiter, (req, res, next) => {
     const { email, password } = req.body;
     
     // Basic validation
