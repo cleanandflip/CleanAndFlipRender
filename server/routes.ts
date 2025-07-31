@@ -1036,6 +1036,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // UNIFIED ADDRESS SYSTEM - Single definitive endpoint
   app.get("/api/addresses", async (req, res) => {
     try {
+      // Debug authentication state
+      Logger.info("=== /api/addresses DEBUG ===");
+      Logger.info("1. Request user:", req.user);
+      Logger.info("2. Session:", req.session);
+      Logger.info("3. Is authenticated:", req.isAuthenticated?.());
+      
       // Get authenticated user using comprehensive auth check
       let userId = null;
       if (req.isAuthenticated && req.isAuthenticated()) {
@@ -1048,7 +1054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId = req.session.userId;
       }
       
-      // Authentication check
+      Logger.info("4. Extracted userId:", userId);
       
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
@@ -1097,7 +1103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(addresses);
       
     } catch (error) {
-      console.error("Error fetching addresses:", error);
+      Logger.error("Error fetching addresses", error);
       return res.status(500).json({ error: "Failed to fetch addresses" });
     }
   });
