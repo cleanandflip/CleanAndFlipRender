@@ -14,7 +14,7 @@ import Logo from "@/components/common/logo";
 import SearchBar from "@/components/products/search-bar";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
-import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package } from "lucide-react";
 
 export default function Navigation() {
   const [location, setLocation] = useLocation();
@@ -198,6 +198,12 @@ export default function Navigation() {
                       <Link href="/orders" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
                         <ShoppingCart className="mr-3 h-4 w-4" />
                         Order History
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard?tab=submissions" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                        <Package className="mr-3 h-4 w-4" />
+                        My Submissions
                       </Link>
                     </DropdownMenuItem>
 

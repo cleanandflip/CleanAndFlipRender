@@ -23,7 +23,9 @@ import {
   Clock, 
   Truck,
   Star,
-  MessageSquare
+  MessageSquare,
+  Copy,
+  Eye
 } from "lucide-react";
 
 const submissionSchema = z.object({
@@ -153,7 +155,7 @@ export default function SellToUs() {
                   }}
                   className="hover:bg-gray-700"
                 >
-                  <Clock className="w-5 h-5" />
+                  <Copy className="w-5 h-5" />
                 </Button>
               </div>
               <p className="text-xs text-text-muted mt-2">
@@ -165,6 +167,25 @@ export default function SellToUs() {
               Thank you for choosing Clean & Flip. We've received your equipment submission 
               and our team will review it within 48 hours.
             </p>
+            
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+              <Button 
+                onClick={() => window.open(`/track-submission?ref=${referenceNumber}`, '_blank')}
+                className="bg-accent-blue hover:bg-blue-600"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Track This Submission
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.reload()} 
+                className="glass border-glass-border"
+              >
+                Submit Another Item
+              </Button>
+            </div>
+            
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <div className="text-center">
                 <Clock className="mx-auto mb-2 text-accent-blue" size={32} />

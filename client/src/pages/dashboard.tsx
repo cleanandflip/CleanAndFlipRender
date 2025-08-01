@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -193,9 +193,21 @@ function DashboardContent() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [location] = useLocation();
   const { restoreState, saveState } = useNavigationState('dashboard');
-  const [activeTab, setActiveTab] = useState('orders');
+  
+  // Get tab from URL parameters
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const urlTab = urlParams.get('tab');
+  const [activeTab, setActiveTab] = useState(urlTab || 'orders');
   const [cancellingSubmission, setCancellingSubmission] = useState<any>(null);
+  
+  // Update tab when URL changes
+  useEffect(() => {
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [urlTab, activeTab]);
   
   // Initialize browser back button handling
   useBackButton();
