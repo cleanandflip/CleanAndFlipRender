@@ -54,19 +54,15 @@ export function AnalyticsManager() {
   const [groupBy, setGroupBy] = useState('day');
 
   const { data: analytics, isLoading, refetch } = useQuery({
-    queryKey: ['admin-analytics', dateRange, metric, groupBy],
+    queryKey: ['admin-analytics', 'last30days'],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        from: dateRange.from.toISOString(),
-        to: dateRange.to.toISOString(),
-        metric,
-        groupBy
-      });
-      const res = await fetch(`/api/admin/analytics?${params}`, {
+      const res = await fetch(`/api/admin/analytics?range=last30days`, {
         credentials: 'include'
       });
       if (!res.ok) throw new Error('Failed to fetch analytics');
-      return res.json();
+      const data = await res.json();
+      console.log('AnalyticsManager received data:', data);
+      return data;
     },
     retry: 2
   });
@@ -205,38 +201,38 @@ export function AnalyticsManager() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <MetricCard
           title="Total Revenue"
-          value={formatCurrency(analytics?.totalRevenue || 0)}
-          change={analytics?.revenueChange}
+          value={formatCurrency(analytics?.revenue?.total || 0)}
+          change={analytics?.revenue?.change}
           icon={DollarSign}
         />
         <MetricCard
           title="Total Orders"
-          value={analytics?.totalOrders || 0}
-          change={analytics?.ordersChange}
+          value={analytics?.orders?.total || 0}
+          change={analytics?.orders?.change}
           icon={ShoppingCart}
         />
         <MetricCard
           title="Conversion Rate"
-          value={`${analytics?.conversionRate || 0}%`}
-          change={analytics?.conversionChange}
+          value={`${analytics?.conversion?.rate || 0}%`}
+          change={analytics?.conversion?.change}
           icon={TrendingUp}
         />
         <MetricCard
           title="Avg Order Value"
-          value={formatCurrency(analytics?.avgOrderValue || 0)}
-          change={analytics?.aovChange}
+          value={formatCurrency(analytics?.orders?.avgValue || 0)}
+          change={analytics?.orders?.change}
           icon={Calculator}
         />
         <MetricCard
           title="Total Users"
-          value={analytics?.totalUsers || 0}
-          change={analytics?.usersChange}
+          value={analytics?.users?.total || 0}
+          change={analytics?.users?.change}
           icon={Users}
         />
         <MetricCard
           title="Total Products"
-          value={analytics?.totalProducts || 0}
-          change={analytics?.productsChange}
+          value={analytics?.products?.total || 0}
+          change={analytics?.products?.change}
           icon={Package}
         />
       </div>
