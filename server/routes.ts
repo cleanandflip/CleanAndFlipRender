@@ -272,13 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment view count
       await storage.incrementProductViews(req.params.id);
       
-      // MAP stockQuantity to stock for frontend compatibility
-      const response = {
-        ...product,
-        stock: product.stockQuantity || 0
-      };
-      
-      res.json(response);
+      res.json(product);
     } catch (error) {
       Logger.error("Error fetching product", error);
       res.status(500).json({ message: "Failed to fetch product" });
@@ -1065,19 +1059,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin Products Management - Main endpoint - ENHANCED WITH EXTENSIVE LOGGING  
+  // Admin Products Management - Main endpoint  
   app.get("/api/admin/products", requireAdmin, async (req, res) => {
     try {
-      console.log('=== FETCHING PRODUCTS ===');
-      console.log('Query params:', req.query);
-      
-      // CRITICAL: Add no-cache headers to prevent any caching
-      res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-        'Expires': '-1',
-        'Pragma': 'no-cache'
-      });
-      
       const {
         search = '',
         category = 'all',
@@ -1168,25 +1152,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       query = query.limit(parseInt(limit as string)).offset(offset) as any;
 
       const result = await query;
-      
-      console.log(`Found ${result.length} products`);
-      console.log('First product:', result[0]);
 
       res.json({
         data: result.map(product => ({
           id: product.id,
           name: product.name,
-          sku: product.sku,
           price: parseFloat(product.price),
-          stock: product.stockQuantity || 0, // MAP stockQuantity to stock
-          stockQuantity: product.stockQuantity || 0, // Keep original too
-          compareAtPrice: product.compareAtPrice,
-          isActive: product.isActive ?? true,
-          isFeatured: product.isFeatured ?? false,
+          stock: product.stockQuantity || 0,
           brand: product.brand,
           condition: product.condition,
           description: product.description,
-          features: product.features || [],
           images: product.images || [],
           createdAt: product.createdAt,
           updatedAt: product.updatedAt,
@@ -1948,46 +1923,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update product with image uploads - ENHANCED WITH EXTENSIVE LOGGING
+  // Update product with image uploads
   app.put("/api/admin/products/:id", requireAdmin, upload.array('images', 6), async (req, res) => {
     try {
       const { id } = req.params;
       
-      console.log('=== UPDATE PRODUCT REQUEST ===');
-      console.log('Product ID:', id);
-      console.log('Request Body:', JSON.stringify(req.body, null, 2));
-      
-      // CRITICAL: Add no-cache headers to prevent any caching
-      res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
-        'Expires': '-1',
-        'Pragma': 'no-cache'
-      });
-      
-      // Get current product state BEFORE update
-      const currentProduct = await storage.getProduct(id);
-      console.log('Current Product State:', currentProduct);
-      
       const updateData = {
-        name: req.body.name,
-        sku: req.body.sku || null,
+        ...req.body,
         price: parseFloat(req.body.price) || 0,
-        compareAtPrice: req.body.compareAtPrice || null,
-        stockQuantity: parseInt(req.body.stock) || parseInt(req.body.stockQuantity) || 0, // MAP stock to stockQuantity!
-        categoryId: req.body.categoryId,
-        description: req.body.description || '',
-        isActive: req.body.isActive ?? true,
-        isFeatured: req.body.isFeatured ?? false,
-        features: req.body.features || [],
-        weight: parseFloat(req.body.weight) || 0,
-        updatedAt: new Date()
+        stockQuantity: parseInt(req.body.stockQuantity) || 0,
+        weight: parseFloat(req.body.weight) || 0
       };
       
       // Handle images array from form data - always update images field
       if ('images' in req.body) {
         if (req.body.images && req.body.images.length > 0) {
           const images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-          updateData.images = images.filter((img: any) => img && img.trim() !== '');
+          updateData.images = images.filter(img => img && img.trim() !== '');
         } else {
           // Explicitly set to empty array when no images
           updateData.images = [];
@@ -2000,27 +1952,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.images = updateData.images ? [...updateData.images, ...newImages] : newImages;
       }
       
-      console.log('Update Data:', updateData);
-      
-      console.log('Updating with stockQuantity:', updateData.stockQuantity);
-      
       Logger.debug(`Updating product with data: ${JSON.stringify(updateData)}`);
       const updatedProduct = await storage.updateProduct(id, updateData);
-      
-      console.log('Updated Product - stockQuantity:', updatedProduct?.stockQuantity);
-      
-      // CRITICAL: Return with mapped field for frontend compatibility
-      const response = {
-        ...updatedProduct,
-        stock: updatedProduct?.stockQuantity || 0 // MAP stockQuantity back to stock
-      };
-      
-      console.log('Response with mapped stock field:', response.stock);
-      console.log('=== UPDATE COMPLETE ===');
-      
-      res.json(response);
-    } catch (error: any) {
-      console.error('UPDATE ERROR:', error);
+      res.json(updatedProduct);
+    } catch (error) {
       Logger.error('Update product error:', error);
       res.status(500).json({ error: 'Failed to update product: ' + error.message });
     }

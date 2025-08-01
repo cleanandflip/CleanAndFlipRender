@@ -325,19 +325,13 @@ export function CategoryManager() {
           setEditingCategory(null);
         }}
         category={editingCategory}
-        onSave={async () => {
-          // CRITICAL: Force refresh of category list
-          await refetch();
-        }}
+        onSave={refetch}
       />
       
       <CategoryModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSave={async () => {
-          // CRITICAL: Force refresh of category list
-          await refetch();
-        }}
+        onSave={refetch}
       />
     </DashboardLayout>
   );

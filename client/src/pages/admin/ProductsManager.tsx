@@ -63,16 +63,10 @@ export function ProductsManager() {
         page: filters.page.toString(),
         limit: filters.limit.toString()
       });
-      const res = await fetch(`/api/admin/products?${params}`, {
-        credentials: 'include'
-      });
+      const res = await fetch(`/api/admin/products?${params}`);
       if (!res.ok) throw new Error('Failed to fetch products');
       return res.json();
-    },
-    // CRITICAL: No cache for admin data to ensure fresh state
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnWindowFocus: true
+    }
   });
 
   const { data: categories } = useQuery({
@@ -550,20 +544,14 @@ export function ProductsManager() {
         }}
         product={editingProduct}
         categories={categories || []}
-        onSave={async () => {
-          // CRITICAL: Force refresh of product list
-          await refetch();
-        }}
+        onSave={refetch}
       />
       
       <ProductModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         categories={categories || []}
-        onSave={async () => {
-          // CRITICAL: Force refresh of product list
-          await refetch();
-        }}
+        onSave={refetch}
       />
     </DashboardLayout>
   );
