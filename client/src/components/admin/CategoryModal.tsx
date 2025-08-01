@@ -13,8 +13,22 @@ import {
   DialogDescription 
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import type { Category } from '@shared/schema';
+// Category type definition
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  displayOrder?: number;
+  isActive: boolean;
+  featuredImageUrl?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  customAttributes?: Record<string, any>;
+  createdAt?: string;
+  updatedAt?: string;
+}
 import { globalDesignSystem as theme } from '@/styles/design-system/theme';
 
 interface CategoryModalProps {

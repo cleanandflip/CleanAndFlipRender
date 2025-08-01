@@ -1059,9 +1059,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin Products Management - Main endpoint  
+  // Admin Products Management - Main endpoint - ENHANCED WITH EXTENSIVE LOGGING  
   app.get("/api/admin/products", requireAdmin, async (req, res) => {
     try {
+      console.log('=== FETCHING PRODUCTS ===');
+      console.log('Query params:', req.query);
+      
+      // CRITICAL: Add no-cache headers to prevent any caching
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'Expires': '-1',
+        'Pragma': 'no-cache'
+      });
+      
       const {
         search = '',
         category = 'all',
@@ -1152,6 +1162,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       query = query.limit(parseInt(limit as string)).offset(offset) as any;
 
       const result = await query;
+      
+      console.log(`Found ${result.length} products`);
+      console.log('First product:', result[0]);
 
       res.json({
         data: result.map(product => ({
@@ -1159,6 +1172,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: product.name,
           price: parseFloat(product.price),
           stock: product.stockQuantity || 0,
+          stockQuantity: product.stockQuantity || 0, // Include both for compatibility
+          isActive: true, // Default since we don't have this field yet
+          isFeatured: false, // Default since we don't have this field yet
           brand: product.brand,
           condition: product.condition,
           description: product.description,
@@ -1923,23 +1939,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update product with image uploads
+  // Update product with image uploads - ENHANCED WITH EXTENSIVE LOGGING
   app.put("/api/admin/products/:id", requireAdmin, upload.array('images', 6), async (req, res) => {
     try {
       const { id } = req.params;
       
+      console.log('=== UPDATE PRODUCT REQUEST ===');
+      console.log('Product ID:', id);
+      console.log('Request Body:', JSON.stringify(req.body, null, 2));
+      
+      // CRITICAL: Add no-cache headers to prevent any caching
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'Expires': '-1',
+        'Pragma': 'no-cache'
+      });
+      
+      // Get current product state BEFORE update
+      const currentProduct = await storage.getProduct(id);
+      console.log('Current Product State:', currentProduct);
+      
       const updateData = {
         ...req.body,
         price: parseFloat(req.body.price) || 0,
-        stockQuantity: parseInt(req.body.stockQuantity) || 0,
-        weight: parseFloat(req.body.weight) || 0
+        stockQuantity: parseInt(req.body.stockQuantity) || parseInt(req.body.stock) || 0, // Handle both stock and stockQuantity
+        weight: parseFloat(req.body.weight) || 0,
+        isActive: req.body.isActive ?? true, // CRITICAL: Ensure this is properly set
+        isFeatured: req.body.isFeatured ?? false,
+        updatedAt: new Date()
       };
       
       // Handle images array from form data - always update images field
       if ('images' in req.body) {
         if (req.body.images && req.body.images.length > 0) {
           const images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-          updateData.images = images.filter(img => img && img.trim() !== '');
+          updateData.images = images.filter((img: any) => img && img.trim() !== '');
         } else {
           // Explicitly set to empty array when no images
           updateData.images = [];
@@ -1952,10 +1986,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.images = updateData.images ? [...updateData.images, ...newImages] : newImages;
       }
       
+      console.log('Update Data:', updateData);
+      
       Logger.debug(`Updating product with data: ${JSON.stringify(updateData)}`);
       const updatedProduct = await storage.updateProduct(id, updateData);
-      res.json(updatedProduct);
-    } catch (error) {
+      
+      console.log('Updated Product:', updatedProduct);
+      
+      // CRITICAL: Fetch fresh data immediately after update to ensure consistency
+      const freshProduct = await storage.getProduct(id);
+      console.log('Fresh Product After Update:', freshProduct);
+      console.log('=== UPDATE COMPLETE ===');
+      
+      // Return the fresh product data
+      res.json(freshProduct);
+    } catch (error: any) {
+      console.error('UPDATE ERROR:', error);
       Logger.error('Update product error:', error);
       res.status(500).json({ error: 'Failed to update product: ' + error.message });
     }

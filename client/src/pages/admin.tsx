@@ -37,6 +37,7 @@ import { useLiveData } from "@/hooks/use-live-data";
 import CategoryManagement from "@/components/admin/category-management";
 import { SubmissionsManager } from "./admin/SubmissionsManager";
 import { ProductsManager } from './admin/ProductsManager';
+import { ProductsManagerNew } from './admin/ProductsManagerNew';
 import { UserManager } from './admin/UserManager';
 import { AnalyticsManager } from './admin/AnalyticsManager';
 import { CategoryManager } from './admin/CategoryManager';
@@ -648,7 +649,7 @@ function AdminDashboard() {
             </TabsList>
 
             <TabsContent value="products">
-              <ProductsManager />
+              <ProductsManagerNew />
             </TabsContent>
 
             <TabsContent value="categories">
