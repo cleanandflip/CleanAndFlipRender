@@ -892,7 +892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               SELECT COALESCE(SUM(total), 0) as total_spent
               FROM orders
               WHERE user_id = ${user.id}
-              AND status = 'completed'
+              AND status = 'delivered'
             `);
             
             return {
@@ -961,7 +961,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         SELECT COALESCE(SUM(total), 0) as total_revenue,
                COUNT(*) as total_orders
         FROM orders
-        WHERE status = 'completed'
+        WHERE status = 'delivered'
         AND created_at >= ${startDate}
       `);
       
@@ -980,7 +980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       })
       .from(orders)
       .where(and(
-        eq(orders.status, 'completed'),
+        eq(orders.status, 'delivered'),
         gte(orders.createdAt, startDate)
       ))
       .orderBy(desc(orders.createdAt));
