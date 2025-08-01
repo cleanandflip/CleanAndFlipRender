@@ -337,7 +337,7 @@ export default function Products() {
                 
                 {/* Reset All Filters Button */}
                 <Button 
-                  variant="outline" 
+                  variant="secondary" 
                   size="sm" 
                   onClick={handleResetFilters}
                   className="bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30"
@@ -364,7 +364,7 @@ export default function Products() {
               {/* View Mode Toggle */}
               <div className="flex items-center glass rounded-lg p-1">
                 <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  variant={viewMode === 'grid' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => {
                     setViewMode('grid');
@@ -383,7 +383,7 @@ export default function Products() {
                   <Grid size={16} />
                 </Button>
                 <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  variant={viewMode === 'list' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => {
                     setViewMode('list');
@@ -405,7 +405,7 @@ export default function Products() {
 
               {/* Filter Toggle */}
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => {
                   const newShowFilters = !showFilters;
                   setShowFilters(newShowFilters);
@@ -480,7 +480,7 @@ export default function Products() {
                   <div className="mt-12 flex justify-center">
                     <div className="flex gap-2">
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         disabled={currentPage === 0}
                         onClick={() => setCurrentPage(currentPage - 1)}
                       >
@@ -494,7 +494,7 @@ export default function Products() {
                         return (
                           <Button
                             key={pageNum}
-                            variant={pageNum === currentPage ? "default" : "outline"}
+                            variant={pageNum === currentPage ? "primary" : "secondary"}
                             onClick={() => setCurrentPage(pageNum)}
                           >
                             {pageNum + 1}
@@ -503,7 +503,7 @@ export default function Products() {
                       })}
                       
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         disabled={currentPage === totalPages - 1}
                         onClick={() => setCurrentPage(currentPage + 1)}
                       >

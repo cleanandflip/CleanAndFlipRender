@@ -1,0 +1,287 @@
+# 🧹 Routing System Cleanup Instructions
+
+## 🔍 **Current Routing Stack**
+Based on your codebase audit, you're using **Wouter** for client-side routing. Let's ensure there are no conflicts or legacy routing code.
+
+## 📋 **Step 1: Audit All Routing Code**
+
+### Check these files for routing implementations:
+```bash
+# Search for all routing-related imports
+grep -r "useNavigate\|useHistory\|useLocation\|Router\|Route\|Link\|NavLink" client/src/
+
+# Look for common routing libraries
+grep -r "react-router\|wouter\|reach-router" client/src/
+grep -r "window.location\|history.push" client/src/
+```
+
+### Expected Results:
+- ✅ **ONLY Wouter imports** should be found
+- ❌ **Remove any:** react-router, react-router-dom, reach-router imports
+
+## 📦 **Step 2: Clean Package.json**
+
+### Remove conflicting router packages:
+```json
+// In client/package.json, REMOVE these if present:
+"react-router": "...",
+"react-router-dom": "...",
+"@reach/router": "...",
+"@tanstack/router": "...",
+
+// KEEP only:
+"wouter": "^3.x.x"
+```
+
+### Run after cleanup:
+```bash
+cd client && npm uninstall react-router react-router-dom @reach/router
+cd client && npm install  # Clean install
+```
+
+## 🔧 **Step 3: Fix Common Routing Conflicts**
+
+### 1. **App.tsx/Main Entry Point**
+Ensure you have ONLY Wouter's Router:
+
+```typescript
+// ✅ CORRECT - App.tsx
+import { Route, Switch } from "wouter";
+
+function App() {
+  return (
+    <Switch>
+      <Route path="/" component={HomePage} />
+      <Route path="/products" component={ProductsPage} />
+      <Route path="/products/:id" component={ProductDetailPage} />
+      <Route path="/admin" component={AdminPage} />
+      {/* etc */}
+    </Switch>
+  );
+}
+
+// ❌ REMOVE any of these patterns:
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Router } from "@reach/router";
+```
+
+### 2. **Navigation Components**
+Replace all navigation methods with Wouter:
+
+```typescript
+// ✅ CORRECT - Using Wouter
+import { useLocation, useRoute } from "wouter";
+
+const MyComponent = () => {
+  const [location, setLocation] = useLocation();
+  
+  const handleNavigate = () => {
+    setLocation("/products");
+  };
+  
+  return <button onClick={handleNavigate}>Go to Products</button>;
+};
+
+// ❌ REMOVE these patterns:
+import { useNavigate } from "react-router-dom";
+import { navigate } from "@reach/router";
+const navigate = useNavigate(); // react-router pattern
+window.location.href = "/products"; // direct manipulation
+```
+
+### 3. **Link Components**
+Standardize all links to Wouter:
+
+```typescript
+// ✅ CORRECT
+import { Link } from "wouter";
+
+<Link href="/products">Products</Link>
+<Link href={`/products/${product.id}`}>View Product</Link>
+
+// ❌ REMOVE
+import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
+<Link to="/products">Products</Link> // react-router uses 'to' prop
+```
+
+### 4. **Route Parameters**
+Use Wouter's param syntax:
+
+```typescript
+// ✅ CORRECT
+import { useRoute, useParams } from "wouter";
+
+// In component
+const [match, params] = useRoute("/products/:id");
+// OR
+const params = useParams();
+const productId = params.id;
+
+// ❌ REMOVE
+import { useParams } from "react-router-dom";
+```
+
+## 🗑️ **Step 4: Remove Legacy Routing Code**
+
+### Common legacy patterns to remove:
+
+```typescript
+// ❌ REMOVE all instances of:
+
+// 1. Direct history manipulation
+history.push("/products");
+history.replace("/");
+window.history.pushState(...);
+
+// 2. Hash routing
+window.location.hash = "#/products";
+
+// 3. Custom routing solutions
+const router = {
+  navigate: (path) => { ... }
+};
+
+// 4. Query string routers
+if (window.location.search.includes("page=products")) { ... }
+```
+
+## 🔄 **Step 5: Consolidate Navigation Logic**
+
+### Create a unified navigation hook:
+```typescript
+// client/src/hooks/useNavigation.ts
+import { useLocation } from "wouter";
+
+export const useNavigation = () => {
+  const [location, setLocation] = useLocation();
+  
+  return {
+    navigate: setLocation,
+    currentPath: location,
+    goBack: () => window.history.back(),
+    goToHome: () => setLocation("/"),
+    goToProducts: () => setLocation("/products"),
+    goToProduct: (id: string) => setLocation(`/products/${id}`),
+    goToAdmin: () => setLocation("/admin"),
+    goToCart: () => setLocation("/cart"),
+    // Add other common navigations
+  };
+};
+```
+
+### Use throughout the app:
+```typescript
+import { useNavigation } from "@/hooks/useNavigation";
+
+const MyComponent = () => {
+  const { navigate, goToProducts } = useNavigation();
+  
+  // Use consistent navigation
+};
+```
+
+## 🔍 **Step 6: Search & Destroy Checklist**
+
+Run these searches and fix/remove any matches:
+
+```bash
+# 1. React Router imports
+grep -r "from 'react-router" client/src/
+grep -r 'from "react-router' client/src/
+
+# 2. Direct window navigation
+grep -r "window\.location\." client/src/
+grep -r "window\.history\." client/src/
+
+# 3. Hash routing
+grep -r "location\.hash" client/src/
+
+# 4. Query parameter routing
+grep -r "URLSearchParams.*page\|route\|view" client/src/
+
+# 5. Custom navigate functions
+grep -r "navigate\(" client/src/ | grep -v "wouter"
+```
+
+## ✅ **Step 7: Verify Clean Routing**
+
+### Final structure should be:
+```
+client/src/
+├── App.tsx              # Contains main <Switch> with all routes
+├── components/
+│   └── Navigation.tsx   # Uses Wouter's <Link>
+├── hooks/
+│   └── useNavigation.ts # Centralized navigation logic
+└── pages/              # All page components
+```
+
+### Test all routes:
+1. `/` - Home/Landing
+2. `/products` - Product listing
+3. `/products/:id` - Product details
+4. `/cart` - Shopping cart
+5. `/checkout` - Checkout flow
+6. `/dashboard` - User dashboard
+7. `/submit` - Equipment submission
+8. `/admin` - Admin panel
+
+## 🚨 **Common Issues After Cleanup**
+
+### 1. **404 on refresh**
+If using client-side routing, ensure your server redirects all routes to index.html:
+
+```typescript
+// server/index.ts
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  }
+});
+```
+
+### 2. **Broken navigation after cleanup**
+Check for:
+- Missed `to` → `href` prop changes
+- `useNavigate()` → `useLocation()` hook changes
+- Parameter syntax differences
+
+### 3. **State preservation issues**
+Wouter doesn't have built-in state passing. Use:
+- Query parameters
+- Global state (Context/Zustand)
+- Local storage for temporary data
+
+## 🎯 **Quick Cleanup Script**
+
+```bash
+#!/bin/bash
+# Run from project root
+
+# Remove old router packages
+cd client && npm uninstall react-router react-router-dom @reach/router
+
+# Find and list files that need manual review
+echo "Files with potential routing conflicts:"
+grep -r -l "react-router\|window.location\|history.push" src/
+
+# Clean node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+echo "Routing cleanup complete! Please manually review the listed files."
+```
+
+## 📝 **Final Checklist**
+
+- [ ] Only Wouter imports remain
+- [ ] No react-router packages in package.json
+- [ ] All Links use `href` prop (not `to`)
+- [ ] All navigation uses `useLocation` hook
+- [ ] No direct window.location manipulation
+- [ ] Server configured for client-side routing
+- [ ] All routes tested and working
+- [ ] No console errors about missing routes
+
+After completing these steps, your routing should be clean, consistent, and conflict-free!
