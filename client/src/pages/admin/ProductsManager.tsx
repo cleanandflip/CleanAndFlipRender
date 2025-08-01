@@ -17,7 +17,6 @@ import { ProductModal } from '@/components/admin/ProductModal';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/utils/submissionHelpers';
 import { useToast } from '@/hooks/use-toast';
-import { NewButton, ComponentComparison, DesignSystemTest } from '@/components/shared/NewAnimatedComponents';
 
 interface Product {
   id: string;
@@ -554,24 +553,6 @@ export function ProductsManager() {
         categories={categories || []}
         onSave={refetch}
       />
-
-      {/* Design System Test Components */}
-      {process.env.NODE_ENV === 'development' && (
-        <>
-          <ComponentComparison>
-            <div className="flex gap-2 mb-2">
-              <Button size="sm">Old Button</Button>
-              <NewButton size="sm">New Button</NewButton>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="secondary" size="sm">Old Secondary</Button>
-              <NewButton variant="secondary" size="sm">New Secondary</NewButton>
-            </div>
-          </ComponentComparison>
-          
-          <DesignSystemTest />
-        </>
-      )}
     </DashboardLayout>
   );
 }
