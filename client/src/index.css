@@ -9,50 +9,50 @@ html {
 }
 
 :root {
-  /* Blue-gray theme backgrounds - consistent with Clean & Flip design */
-  --background: hsl(222, 47%, 11%);        /* #1e293b - main background */
-  --foreground: hsl(210, 40%, 98%);        /* #f8fafc - text on dark */
-  --muted: hsl(215, 25%, 27%);             /* #475569 - muted elements */
-  --muted-foreground: hsl(215, 16%, 57%);  /* #94a3b8 - muted text */
-  --popover: hsl(215, 25%, 27%);           /* #475569 - popover background */
-  --popover-foreground: hsl(210, 40%, 98%);
-  --card: hsl(215, 25%, 27%);              /* #475569 - card background */
-  --card-foreground: hsl(210, 40%, 98%);
+  /* Global Design System Colors - Clean & Flip */
+  --background: #1A1F2E;                   /* Primary background */
+  --foreground: #FFFFFF;                   /* Primary text */
+  --muted: #232937;                        /* Muted backgrounds */
+  --muted-foreground: #94A3B8;             /* Muted text */
+  --popover: #232937;                      /* Popover backgrounds */
+  --popover-foreground: #E2E8F0;
+  --card: #232937;                         /* Card backgrounds */
+  --card-foreground: #E2E8F0;
   
-  /* Form inputs and borders - blue-gray theme */
-  --border: hsl(215, 20%, 35%);            /* #64748b - borders */
-  --input: hsl(215, 25%, 20%);             /* #334155 - input backgrounds */
+  /* Form inputs and borders */
+  --border: rgba(255, 255, 255, 0.08);     /* Subtle borders */
+  --input: #1A1F2E;                        /* Input backgrounds */
   
-  /* Primary colors - Clean blue accent */
-  --primary: hsl(213, 94%, 68%);           /* #3b82f6 - Clean & Flip blue */
-  --primary-foreground: hsl(222, 47%, 11%);
+  /* Primary colors - Clean & Flip blue */
+  --primary: #3B82F6;                      /* Brand blue */
+  --primary-foreground: #FFFFFF;
   
-  /* Secondary colors - blue-gray instead of black */
-  --secondary: hsl(215, 25%, 35%);         /* #475569 - secondary buttons */
-  --secondary-foreground: hsl(210, 40%, 98%);
+  /* Secondary colors */
+  --secondary: #232937;                    /* Secondary backgrounds */
+  --secondary-foreground: #E2E8F0;
   
-  /* Accent colors - subtle blue-gray */
-  --accent: hsl(215, 25%, 20%);            /* #334155 - hover states */
-  --accent-foreground: hsl(210, 40%, 98%);
+  /* Accent colors */
+  --accent: #2D3548;                       /* Hover states */
+  --accent-foreground: #E2E8F0;
   
-  /* State colors - Professional palette */
-  --destructive: hsl(0, 62%, 55%);         /* #ef4444 - red */
-  --destructive-foreground: hsl(0, 0%, 100%);
-  --success: hsl(142, 76%, 36%);           /* #10b981 - green */
-  --warning: hsl(38, 92%, 50%);            /* #f59e0b - yellow */
-  --error: hsl(0, 62%, 55%);
+  /* State colors */
+  --destructive: #EF4444;                  /* Error red */
+  --destructive-foreground: #FFFFFF;
+  --success: #10B981;                      /* Success green */
+  --warning: #F59E0B;                      /* Warning yellow */
+  --info: #3B82F6;                         /* Info blue */
   
   /* Ring and radius */
-  --ring: hsl(213, 94%, 68%);              /* #3b82f6 - focus rings */
+  --ring: rgba(59, 130, 246, 0.5);         /* Focus rings */
   --radius: 0.75rem;
   
-  /* Clean & Flip theme colors - updated for consistency */
-  --glass-bg: rgba(30, 41, 59, 0.4);       /* Consistent with #1e293b */
-  --glass-border: rgba(100, 116, 139, 0.2); /* Subtle blue-gray border */
-  --text-primary: #e2e8f0;                 /* Softer white */
-  --text-secondary: #cbd5e1;               /* Light blue-gray */
-  --text-muted: #94a3b8;                   /* Muted blue-gray */
-  --accent-blue: #3b82f6;                  /* Clean & Flip blue */
+  /* Clean & Flip theme colors */
+  --glass-bg: rgba(35, 41, 55, 0.4);       /* Glass morphism */
+  --glass-border: rgba(255, 255, 255, 0.08); /* Glass borders */
+  --text-primary: #FFFFFF;                 /* Primary text */
+  --text-secondary: #E2E8F0;               /* Secondary text */
+  --text-muted: #94A3B8;                   /* Muted text */
+  --accent-blue: #3B82F6;                  /* Brand blue */
   
   /* Additional theme variables for consistency */
   --bg-primary: hsl(222, 47%, 11%);        /* #1e293b */
@@ -67,10 +67,12 @@ html {
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
-    background: linear-gradient(135deg, #4B5563 0%, #475569 25%, #334155 50%, #1E293B 75%, #0F172A 100%);
+    @apply font-sans antialiased text-foreground;
+    background: #1A1F2E;
+    background: linear-gradient(135deg, #1A1F2E 0%, #232937 100%);
     background-attachment: fixed;
     min-height: 100vh;
+    transition: all 0.3s ease;
   }
 }
 
