@@ -1500,9 +1500,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/submissions", requireAdmin, async (req, res) => {
     try {
-      console.log('Admin submissions endpoint called');
-      console.log('User:', req.session?.user || req.user);
-      console.log('Query params:', req.query);
+      
+      
+      
       
       const { status, search, isLocal, page = 1, limit = 20 } = req.query;
       
