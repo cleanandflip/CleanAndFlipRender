@@ -1,0 +1,614 @@
+Instructions to Fix All UI Issues in Developer Dashboard
+1. Fix Category Management Action Buttons (Image 1)
+tsx// client/src/pages/admin/CategoryManager.tsx
+
+// Add click handlers for the action buttons
+const handleViewCategory = (category: any) => {
+  // Open modal or navigate to category detail
+  console.log('View category:', category);
+  // TODO: Implement view modal
+  toast({
+    title: "View Category",
+    description: `Viewing ${category.name} - Feature coming soon`,
+  });
+};
+
+const handleEditCategory = (category: any) => {
+  setEditingCategory(category);
+  setIsEditModalOpen(true);
+};
+
+const handleDeleteCategory = async (category: any) => {
+  if (category.productCount > 0) {
+    toast({
+      title: "Cannot Delete",
+      description: "Category has products. Remove all products first.",
+      variant: "destructive"
+    });
+    return;
+  }
+  
+  if (confirm(`Delete category "${category.name}"?`)) {
+    try {
+      const res = await fetch(`/api/admin/categories/${category.id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        refetch();
+        toast({ title: "Category deleted successfully" });
+      }
+    } catch (error) {
+      toast({ title: "Error deleting category", variant: "destructive" });
+    }
+  }
+};
+
+// In the render, update buttons:
+<Button
+  variant="ghost"
+  size="icon"
+  onClick={() => handleViewCategory(category)}
+>
+  <Eye className="w-4 h-4" />
+</Button>
+<Button
+  variant="ghost"
+  size="icon"
+  onClick={() => handleEditCategory(category)}
+>
+  <Edit className="w-4 h-4" />
+</Button>
+<Button
+  variant="ghost"
+  size="icon"
+  onClick={() => handleDeleteCategory(category)}
+  className="text-red-500 hover:text-red-700"
+>
+  <Trash2 className="w-4 h-4" />
+</Button>
+2. Fix Product Management Action Buttons (Image 2)
+tsx// client/src/pages/admin/ProductsManager.tsx
+
+const handleViewProduct = (product: any) => {
+  window.open(`/products/${product.id}`, '_blank');
+};
+
+const handleEditProduct = (product: any) => {
+  setEditingProduct(product);
+  setIsEditModalOpen(true);
+};
+
+const handleDeleteProduct = async (product: any) => {
+  if (confirm(`Delete "${product.name}"?`)) {
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        refetch();
+        toast({ title: "Product deleted successfully" });
+      }
+    } catch (error) {
+      toast({ title: "Error deleting product", variant: "destructive" });
+    }
+  }
+};
+
+// Update the action buttons:
+<div className="flex gap-2">
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={() => handleViewProduct(product)}
+  >
+    <Eye className="w-4 h-4" />
+  </Button>
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={() => handleEditProduct(product)}
+  >
+    <Edit className="w-4 h-4" />
+  </Button>
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={() => handleDeleteProduct(product)}
+    className="text-red-500"
+  >
+    <Trash2 className="w-4 h-4" />
+  </Button>
+</div>
+3. Fix Submissions Dropdown Actions (Image 3)
+tsx// client/src/pages/admin/SubmissionsManager.tsx
+
+const handleEditSubmission = (submission: any) => {
+  setEditingSubmission(submission);
+  setIsEditModalOpen(true);
+};
+
+const handleAddNote = (submission: any) => {
+  const note = prompt('Add a note for this submission:');
+  if (note) {
+    // Save note to database
+    fetch(`/api/admin/submissions/${submission.id}/note`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note }),
+      credentials: 'include'
+    }).then(() => {
+      toast({ title: "Note added successfully" });
+      refetch();
+    });
+  }
+};
+
+const handleArchiveSubmission = async (submission: any) => {
+  if (confirm('Archive this submission?')) {
+    const res = await fetch(`/api/admin/submissions/${submission.id}/archive`, {
+      method: 'PUT',
+      credentials: 'include'
+    });
+    if (res.ok) {
+      toast({ title: "Submission archived" });
+      refetch();
+    }
+  }
+};
+
+const handleDeleteSubmission = async (submission: any) => {
+  if (confirm('Delete this submission permanently?')) {
+    const res = await fetch(`/api/admin/submissions/${submission.id}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    if (res.ok) {
+      toast({ title: "Submission deleted" });
+      refetch();
+    }
+  }
+};
+
+// Update dropdown menu items:
+<DropdownMenuItem onClick={() => handleEditSubmission(submission)}>
+  <Edit className="w-4 h-4 mr-2" />
+  Edit
+</DropdownMenuItem>
+<DropdownMenuItem onClick={() => handleAddNote(submission)}>
+  <MessageSquare className="w-4 h-4 mr-2" />
+  Add Note
+</DropdownMenuItem>
+<DropdownMenuItem onClick={() => handleArchiveSubmission(submission)}>
+  <Archive className="w-4 h-4 mr-2" />
+  Archive
+</DropdownMenuItem>
+<DropdownMenuSeparator />
+<DropdownMenuItem 
+  onClick={() => handleDeleteSubmission(submission)}
+  className="text-red-500"
+>
+  <Trash2 className="w-4 h-4 mr-2" />
+  Delete
+</DropdownMenuItem>
+4. Fix Analytics Display Issues (Image 4)
+tsx// client/src/pages/admin/AnalyticsManager.tsx
+
+// Fix the "Open" display issue - ensure proper data structure
+const AnalyticsManager = () => {
+  const { data: analytics, isLoading } = useQuery({
+    queryKey: ['admin-analytics'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/analytics');
+      const data = await res.json();
+      // Ensure proper data structure
+      return {
+        revenue: {
+          total: data.revenue?.total || 0,
+          change: data.revenue?.change || 0
+        },
+        orders: {
+          total: data.orders?.total || 0,
+          avgValue: data.orders?.avgValue || 0,
+          change: data.orders?.change || 0
+        },
+        // ... other metrics
+        topProducts: data.topProducts || [],
+        recentActivity: data.recentActivity || []
+      };
+    }
+  });
+
+  return (
+    <>
+      {/* Fix metric cards */}
+      <MetricCard
+        title="Total Revenue"
+        value={`$${analytics?.revenue?.total?.toFixed(2) || '0.00'}`}
+        change={analytics?.revenue?.change}
+        icon={DollarSign}
+      />
+      
+      <MetricCard
+        title="Avg Order Value"
+        value={`$${analytics?.orders?.avgValue?.toFixed(2) || '0.00'}`}
+        change={analytics?.orders?.avgChange}
+        icon={Calculator}
+      />
+      
+      {/* Fix Top Products */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Top Products</h3>
+        {analytics?.topProducts?.length > 0 ? (
+          <div className="space-y-3">
+            {analytics.topProducts.map((product, idx) => (
+              <div key={product.id} className="flex justify-between items-center">
+                <div>
+                  <p className="font-medium">{product.name}</p>
+                  <p className="text-sm text-gray-400">{product.soldCount} sold</p>
+                </div>
+                <p className="font-bold">${product.revenue}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-400 text-center py-8">No sales data yet</p>
+        )}
+      </Card>
+      
+      {/* Fix Recent Activity */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+        {analytics?.recentActivity?.length > 0 ? (
+          <div className="space-y-2">
+            {analytics.recentActivity.map((activity, idx) => (
+              <div key={idx} className="flex items-center gap-3 py-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                <p className="text-sm">{activity.description}</p>
+                <p className="text-xs text-gray-400 ml-auto">{activity.time}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-400 text-center py-8">No recent activity</p>
+        )}
+      </Card>
+    </>
+  );
+};
+5. Fix Wishlist Action Buttons (Images 5-6)
+tsx// client/src/pages/admin/WishlistManager.tsx
+
+// For product actions
+const handleViewProduct = (productId: string) => {
+  window.open(`/products/${productId}`, '_blank');
+};
+
+const handleAddToCart = async (productId: string) => {
+  try {
+    const res = await fetch('/api/cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, quantity: 1 }),
+      credentials: 'include'
+    });
+    if (res.ok) {
+      toast({ title: "Added to cart" });
+    }
+  } catch (error) {
+    toast({ title: "Error adding to cart", variant: "destructive" });
+  }
+};
+
+// For user actions
+const handleViewUserWishlist = (userId: string) => {
+  // Navigate to user's wishlist detail
+  navigate(`/admin/users/${userId}/wishlist`);
+};
+
+const handleEmailUser = (user: any) => {
+  window.location.href = `mailto:${user.email}?subject=About your wishlist`;
+};
+
+// Update buttons in the UI:
+<div className="flex gap-2">
+  <Button
+    size="sm"
+    variant="ghost"
+    onClick={() => handleViewProduct(product.id)}
+  >
+    <Eye className="w-4 h-4" />
+  </Button>
+  <Button
+    size="sm"
+    variant="ghost"
+    onClick={() => handleAddToCart(product.id)}
+  >
+    <ShoppingCart className="w-4 h-4" />
+  </Button>
+</div>
+
+// For users:
+<div className="flex gap-2">
+  <Button
+    size="sm"
+    variant="ghost"
+    onClick={() => handleViewUserWishlist(user.id)}
+  >
+    <Eye className="w-4 h-4" />
+  </Button>
+  <Button
+    size="sm"
+    variant="ghost"
+    onClick={() => handleEmailUser(user)}
+  >
+    <Mail className="w-4 h-4" />
+  </Button>
+</div>
+6. Fix User Management Actions (Image 7)
+tsx// client/src/pages/admin/UserManager.tsx
+
+const handleViewProfile = (user: any) => {
+  setSelectedUser(user);
+  setIsProfileModalOpen(true);
+};
+
+const handleEditUser = (user: any) => {
+  setEditingUser(user);
+  setIsEditModalOpen(true);
+};
+
+const handleResetPassword = async (user: any) => {
+  if (confirm(`Reset password for ${user.email}?`)) {
+    const res = await fetch(`/api/admin/users/${user.id}/reset-password`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    if (res.ok) {
+      toast({ title: "Password reset email sent" });
+    }
+  }
+};
+
+const handleSuspendUser = async (user: any) => {
+  if (confirm(`Suspend user ${user.email}?`)) {
+    const res = await fetch(`/api/admin/users/${user.id}/suspend`, {
+      method: 'PUT',
+      credentials: 'include'
+    });
+    if (res.ok) {
+      toast({ title: "User suspended" });
+      refetch();
+    }
+  }
+};
+
+// Update dropdown menu:
+<DropdownMenuContent>
+  <DropdownMenuItem onClick={() => handleViewProfile(user)}>
+    View Profile
+  </DropdownMenuItem>
+  <DropdownMenuItem onClick={() => handleEditUser(user)}>
+    Edit User
+  </DropdownMenuItem>
+  <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+    <Mail className="w-4 h-4 mr-2" />
+    Reset Password
+  </DropdownMenuItem>
+  <DropdownMenuSeparator />
+  <DropdownMenuItem 
+    onClick={() => handleSuspendUser(user)}
+    className="text-red-500"
+  >
+    <Ban className="w-4 h-4 mr-2" />
+    Suspend User
+  </DropdownMenuItem>
+</DropdownMenuContent>
+7. Fix System Tab Issues (Images 8-9)
+tsx// client/src/pages/admin/SystemManager.tsx
+
+// Fix database status display
+const DatabaseSection = () => {
+  const { data: dbStatus } = useQuery({
+    queryKey: ['database-status'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/system/database-status');
+      return res.json();
+    },
+    refetchInterval: 5000 // Refresh every 5 seconds
+  });
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-6">Database Management</h2>
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Database Status</h3>
+        <div className="space-y-3">
+          <div className="flex justify-between">
+            <span className="text-gray-400">Connection Status</span>
+            <Badge variant={dbStatus?.connected ? 'success' : 'destructive'}>
+              {dbStatus?.connected ? 'Connected' : 'Disconnected'}
+            </Badge>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Provider</span>
+            <span>Neon PostgreSQL</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Environment</span>
+            <span>Development</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Database Size</span>
+            <span>{dbStatus?.size || 'Calculating...'}</span>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+// Implement all system settings sections
+const SystemSettings = () => {
+  const [activeSection, setActiveSection] = useState('general');
+  
+  const renderSection = () => {
+    switch(activeSection) {
+      case 'general':
+        return <GeneralSettings />;
+      case 'database':
+        return <DatabaseSection />;
+      case 'email':
+        return <EmailConfiguration />;
+      case 'payment':
+        return <PaymentSettings />;
+      case 'security':
+        return <SecuritySettings />;
+      case 'backup':
+        return <BackupExport />;
+      case 'logs':
+        return <SystemLogs />;
+      case 'cache':
+        return <CacheManagement />;
+      default:
+        return <GeneralSettings />;
+    }
+  };
+  
+  return (
+    <div className="flex">
+      <div className="w-64 p-6 border-r border-gray-800">
+        {/* Sidebar navigation */}
+        {sections.map(section => (
+          <button
+            key={section.id}
+            onClick={() => setActiveSection(section.id)}
+            className={`w-full text-left p-3 rounded-lg mb-2 flex items-center gap-3 ${
+              activeSection === section.id ? 'bg-gray-800' : 'hover:bg-gray-800/50'
+            }`}
+          >
+            <section.icon className="w-4 h-4" />
+            {section.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 p-6">
+        {renderSection()}
+      </div>
+    </div>
+  );
+};
+8. Backend Endpoints to Support All Actions
+ts// server/routes.ts - Add missing endpoints
+
+// Category endpoints
+app.delete('/api/admin/categories/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if category has products
+    const products = await db.select().from(products).where(eq(products.categoryId, id));
+    if (products.length > 0) {
+      return res.status(400).json({ error: 'Category has products' });
+    }
+    
+    await db.delete(categories).where(eq(categories.id, id));
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete category' });
+  }
+});
+
+// Product endpoints
+app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
+  try {
+    await db.delete(products).where(eq(products.id, req.params.id));
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete product' });
+  }
+});
+
+// Submission endpoints
+app.post('/api/admin/submissions/:id/note', requireAdmin, async (req, res) => {
+  try {
+    const { note } = req.body;
+    await db.update(equipmentSubmissions)
+      .set({ notes: note, updatedAt: new Date() })
+      .where(eq(equipmentSubmissions.id, req.params.id));
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add note' });
+  }
+});
+
+app.put('/api/admin/submissions/:id/archive', requireAdmin, async (req, res) => {
+  try {
+    await db.update(equipmentSubmissions)
+      .set({ status: 'archived', updatedAt: new Date() })
+      .where(eq(equipmentSubmissions.id, req.params.id));
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to archive submission' });
+  }
+});
+
+// User endpoints
+app.post('/api/admin/users/:id/reset-password', requireAdmin, async (req, res) => {
+  try {
+    // Generate reset token and send email
+    const resetToken = crypto.randomUUID();
+    // Save token to database and send email
+    res.json({ success: true, message: 'Password reset email sent' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
+app.put('/api/admin/users/:id/suspend', requireAdmin, async (req, res) => {
+  try {
+    await db.update(users)
+      .set({ suspended: true, updatedAt: new Date() })
+      .where(eq(users.id, req.params.id));
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to suspend user' });
+  }
+});
+
+// System status endpoint
+app.get('/api/admin/system/database-status', requireAdmin, async (req, res) => {
+  try {
+    // Check database connection
+    const result = await db.select({ count: count() }).from(users);
+    
+    res.json({
+      connected: true,
+      size: '12.4 MB', // Calculate actual size
+      tables: 11,
+      records: result[0]?.count || 0
+    });
+  } catch (error) {
+    res.json({ connected: false });
+  }
+});
+Instructions for Replit:
+
+IMPLEMENT ALL HANDLERS - Add all the click handlers shown above for each button
+CREATE MODALS - Add edit/view modals for categories, products, users
+ADD BACKEND ENDPOINTS - Implement all missing API endpoints
+FIX DATA DISPLAY - Ensure analytics shows numbers, not "Open"
+ADD LOADING STATES - Show spinners while data loads
+ADD ERROR HANDLING - Catch and display errors properly
+TEST EACH BUTTON - Click every button to ensure it works
+FIX SYSTEM SECTIONS - Implement all system settings pages
+
+Every button should either:
+
+Perform its action (delete, edit, etc.)
+Show a modal/form
+Navigate to a detail page
+Or show a "Coming soon" toast if not implemented
+
+No button should do nothing when clicked.

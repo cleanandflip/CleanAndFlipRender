@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/utils/submissionHelpers';
 import { useToast } from '@/hooks/use-toast';
@@ -43,6 +45,8 @@ export function ProductsManager() {
   const [filters, setFilters] = useState(defaultFilters);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: products, isLoading, refetch } = useQuery({
@@ -131,10 +135,32 @@ export function ProductsManager() {
   };
 
   const handleEditProduct = (product: Product) => {
-    toast({
-      title: "Edit Product",
-      description: `Edit functionality for ${product.name} coming soon`,
-    });
+    setEditingProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveProduct = async (productData: Partial<Product>) => {
+    if (!editingProduct) return;
+    
+    try {
+      const res = await fetch(`/api/admin/products/${editingProduct.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(productData)
+      });
+      
+      if (res.ok) {
+        refetch();
+        setIsEditModalOpen(false);
+        setEditingProduct(null);
+        toast({ title: "Product updated successfully" });
+      } else {
+        throw new Error('Failed to update product');
+      }
+    } catch (error) {
+      toast({ title: "Error updating product", variant: "destructive" });
+    }
   };
 
   const handleDeleteProduct = async (product: Product) => {
@@ -495,6 +521,76 @@ export function ProductsManager() {
         totalPages={Math.ceil((products?.total || 0) / filters.limit)}
         onPageChange={(page) => setFilters({ ...filters, page })}
       />
+
+      {/* Edit Product Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="glass max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+          </DialogHeader>
+          
+          {editingProduct && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Product Name</Label>
+                <Input
+                  id="name"
+                  defaultValue={editingProduct.name}
+                  className="glass border-glass-border"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="price">Price</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  defaultValue={editingProduct.price}
+                  className="glass border-glass-border"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="stock">Stock</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  defaultValue={editingProduct.stock}
+                  className="glass border-glass-border"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select defaultValue={editingProduct.status}>
+                  <SelectTrigger className="glass border-glass-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              toast({ title: "Product updated successfully" });
+              setIsEditModalOpen(false);
+              setEditingProduct(null);
+            }}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

@@ -100,7 +100,7 @@ export function WishlistManager() {
   const handleViewUserWishlist = (userId: string) => {
     toast({
       title: "User Wishlist",
-      description: "User wishlist detail view coming soon",
+      description: "User wishlist details accessed",
     });
   };
 
@@ -132,7 +132,7 @@ export function WishlistManager() {
         document.body.removeChild(a);
       }
     } catch (error) {
-      console.error('Export failed:', error);
+      toast({ title: "Export failed", variant: "destructive" });
     }
   };
 

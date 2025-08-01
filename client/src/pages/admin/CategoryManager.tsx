@@ -136,8 +136,8 @@ export function CategoryManager() {
 
   const handleViewCategory = (category: Category) => {
     toast({
-      title: "View Category",
-      description: `Viewing ${category.name} - Feature coming soon`,
+      title: "Category Details",
+      description: `${category.name} has ${category.productCount} products`,
     });
   };
 
