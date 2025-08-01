@@ -47,7 +47,11 @@ export function ProductsManager() {
     queryKey: ['admin-products', filters],
     queryFn: async () => {
       const params = new URLSearchParams({
-        ...filters,
+        search: filters.search,
+        category: filters.category,
+        status: filters.status,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
         priceMin: filters.priceRange.min.toString(),
         priceMax: filters.priceRange.max.toString(),
         page: filters.page.toString(),
@@ -60,7 +64,7 @@ export function ProductsManager() {
   });
 
   const handleBulkAction = async (action: string) => {
-    const confirmActions = {
+    const confirmActions: Record<string, string> = {
       delete: 'delete these products',
       deactivate: 'deactivate these products',
       duplicate: 'duplicate these products'
@@ -85,7 +89,11 @@ export function ProductsManager() {
     try {
       const params = new URLSearchParams({
         format,
-        ...filters,
+        search: filters.search,
+        category: filters.category,
+        status: filters.status,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
         priceMin: filters.priceRange.min.toString(),
         priceMax: filters.priceRange.max.toString()
       });
@@ -117,7 +125,7 @@ export function ProductsManager() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants = {
+    const variants: Record<string, string> = {
       active: 'secondary',
       inactive: 'outline',
       'out-of-stock': 'destructive'
@@ -296,7 +304,7 @@ export function ProductsManager() {
                     setSelectedProducts(newSelected);
                   }}
                 />
-                <Badge variant={getStatusBadge(product.status)}>
+                <Badge variant={getStatusBadge(product.status) as any}>
                   {product.status.replace('-', ' ')}
                 </Badge>
               </div>
@@ -392,7 +400,7 @@ export function ProductsManager() {
                 </div>
                 
                 <div className="col-span-1">
-                  <Badge variant={getStatusBadge(product.status)}>
+                  <Badge variant={getStatusBadge(product.status) as any}>
                     {product.status.replace('-', ' ')}
                   </Badge>
                 </div>

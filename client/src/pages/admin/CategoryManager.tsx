@@ -1,0 +1,306 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DashboardLayout } from '@/components/admin/DashboardLayout';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  GripVertical, 
+  Eye,
+  EyeOff
+} from 'lucide-react';
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  isActive: boolean;
+  productCount: number;
+  order: number;
+  createdAt: string;
+}
+
+export function CategoryManager() {
+  const [filters, setFilters] = useState({
+    search: '',
+    sortBy: 'order',
+    sortOrder: 'asc' as 'asc' | 'desc'
+  });
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: categories, isLoading, refetch } = useQuery({
+    queryKey: ['admin-categories', filters],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        search: filters.search,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
+      });
+      const res = await fetch(`/api/admin/categories?${params}`, {
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      return res.json();
+    },
+    retry: 2
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async (reorderedCategories: Array<{ id: string; order: number }>) => {
+      const res = await fetch('/api/admin/categories/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ categories: reorderedCategories })
+      });
+      if (!res.ok) throw new Error('Failed to reorder categories');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+      toast({ title: "Categories reordered successfully" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Error", 
+        description: "Failed to reorder categories",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ categoryId, updates }: { categoryId: string; updates: Partial<Category> }) => {
+      const res = await fetch(`/api/admin/categories/${categoryId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updates)
+      });
+      if (!res.ok) throw new Error('Failed to update category');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+      toast({ title: "Category updated successfully" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Error", 
+        description: "Failed to update category",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (categoryId: string) => {
+      const res = await fetch(`/api/admin/categories/${categoryId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Failed to delete category');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+      toast({ title: "Category deleted successfully" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Error", 
+        description: "Failed to delete category",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const handleToggleActive = (category: Category) => {
+    updateCategoryMutation.mutate({
+      categoryId: category.id,
+      updates: { isActive: !category.isActive }
+    });
+  };
+
+  const handleDelete = (category: Category) => {
+    if (category.productCount > 0) {
+      toast({
+        title: "Cannot delete category",
+        description: `This category has ${category.productCount} products. Move or delete products first.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete "${category.name}"?`)) {
+      deleteCategoryMutation.mutate(category.id);
+    }
+  };
+
+  const handleExport = async (format: 'csv' | 'pdf') => {
+    try {
+      const params = new URLSearchParams({ format });
+      const res = await fetch(`/api/admin/categories/export?${params}`, {
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Export failed');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `categories-${new Date().toISOString().split('T')[0]}.${format}`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({ 
+        title: "Export failed", 
+        description: "Could not export categories",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  return (
+    <DashboardLayout
+      title="Category Management"
+      description="Organize your product categories and structure"
+      totalCount={categories?.length || 0}
+      searchPlaceholder="Search categories..."
+      onSearch={(query) => setFilters({ ...filters, search: query })}
+      onRefresh={refetch}
+      onExport={handleExport}
+      isLoading={isLoading}
+      filters={
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-text-muted">
+            Drag and drop categories to reorder them. Categories with products cannot be deleted.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFilters({ ...filters, search: '' })}
+          >
+            Clear Search
+          </Button>
+        </div>
+      }
+      actions={
+        <Button className="gap-2">
+          <Plus className="w-4 h-4" />
+          Add Category
+        </Button>
+      }
+    >
+      <div className="space-y-2">
+        {categories?.length === 0 ? (
+          <Card className="glass p-8 text-center">
+            <p className="text-text-muted">No categories found</p>
+            <Button className="mt-4 gap-2">
+              <Plus className="w-4 h-4" />
+              Create your first category
+            </Button>
+          </Card>
+        ) : (
+          categories?.map((category: Category) => (
+            <Card key={category.id} className="glass p-4">
+              <div className="flex items-center gap-4">
+                {/* Drag Handle */}
+                <GripVertical className="w-4 h-4 text-text-muted cursor-grab hover:text-white" />
+                
+                {/* Category Info */}
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-semibold text-white">{category.name}</h3>
+                    <Badge variant={category.isActive ? 'default' : 'secondary'}>
+                      {category.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <Badge variant="outline">
+                      {category.productCount} products
+                    </Badge>
+                  </div>
+                  {category.description && (
+                    <p className="text-sm text-text-muted mt-1">{category.description}</p>
+                  )}
+                  <p className="text-xs text-text-muted mt-1">
+                    Slug: /{category.slug} • Order: {category.order}
+                  </p>
+                </div>
+                
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleToggleActive(category)}
+                    title={category.isActive ? 'Deactivate' : 'Activate'}
+                  >
+                    {category.isActive ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => console.log('Edit category', category)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(category)}
+                    disabled={category.productCount > 0}
+                    className="text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Category Statistics */}
+      {categories?.length > 0 && (
+        <Card className="glass p-6 mt-6">
+          <h3 className="text-lg font-semibold mb-4 text-white">Category Statistics</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">
+                {categories?.filter((c: Category) => c.isActive).length || 0}
+              </p>
+              <p className="text-sm text-text-muted">Active Categories</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">
+                {categories?.reduce((sum: number, c: Category) => sum + c.productCount, 0) || 0}
+              </p>
+              <p className="text-sm text-text-muted">Total Products</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">
+                {categories?.filter((c: Category) => c.productCount === 0).length || 0}
+              </p>
+              <p className="text-sm text-text-muted">Empty Categories</p>
+            </div>
+          </div>
+        </Card>
+      )}
+    </DashboardLayout>
+  );
+}

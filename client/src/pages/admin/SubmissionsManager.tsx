@@ -72,7 +72,7 @@ const getWeekStart = () => {
   return new Date(now.setDate(diff));
 };
 
-export default function SubmissionsManager() {
+export function SubmissionsManager() {
   const [filters, setFilters] = useState<SubmissionFilters>({
     status: 'all',
     search: '',

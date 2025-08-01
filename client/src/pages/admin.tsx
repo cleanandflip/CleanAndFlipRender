@@ -37,7 +37,12 @@ import { useLiveData } from "@/hooks/use-live-data";
 import WishlistAnalytics from "@/components/admin/wishlist-analytics";
 import EnhancedWishlistAnalytics from "@/components/admin/enhanced-wishlist-analytics";
 import CategoryManagement from "@/components/admin/category-management";
-import SubmissionsManager from "./admin/SubmissionsManager";
+import { SubmissionsManager } from "./admin/SubmissionsManager";
+import { ProductsManager } from './admin/ProductsManager';
+import { UserManager } from './admin/UserManager';
+import { AnalyticsManager } from './admin/AnalyticsManager';
+import { CategoryManager } from './admin/CategoryManager';
+import { SystemManager } from './admin/SystemManager';
 import type { Product, User, Order } from "@shared/schema";
 
 interface AdminStats {
@@ -644,11 +649,11 @@ function AdminDashboard() {
             </TabsList>
 
             <TabsContent value="products">
-              <ProductManagement />
+              <ProductsManager />
             </TabsContent>
 
             <TabsContent value="categories">
-              <CategoryManagement />
+              <CategoryManager />
             </TabsContent>
 
             <TabsContent value="submissions">
@@ -656,7 +661,7 @@ function AdminDashboard() {
             </TabsContent>
 
             <TabsContent value="analytics">
-              <Analytics />
+              <AnalyticsManager />
             </TabsContent>
 
             <TabsContent value="wishlist">
@@ -664,11 +669,11 @@ function AdminDashboard() {
             </TabsContent>
 
             <TabsContent value="users">
-              <UserManagement />
+              <UserManager />
             </TabsContent>
 
             <TabsContent value="system">
-              <SystemSettings />
+              <SystemManager />
             </TabsContent>
           </Tabs>
         </div>

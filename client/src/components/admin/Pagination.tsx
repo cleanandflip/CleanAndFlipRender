@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PaginationProps {
   currentPage: number;
@@ -8,51 +8,30 @@ interface PaginationProps {
   className?: string;
 }
 
-export function Pagination({ currentPage, totalPages, onPageChange, className = '' }: PaginationProps) {
+export function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+  className = ''
+}: PaginationProps) {
+  const pages = [];
+  const maxVisible = 5;
+  
+  let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+  let end = Math.min(totalPages, start + maxVisible - 1);
+  
+  if (end - start + 1 < maxVisible) {
+    start = Math.max(1, end - maxVisible + 1);
+  }
+  
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  
   if (totalPages <= 1) return null;
-
-  const getVisiblePages = () => {
-    const delta = 2;
-    const range = [];
-    const rangeWithDots = [];
-
-    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
-      range.push(i);
-    }
-
-    if (currentPage - delta > 2) {
-      rangeWithDots.push(1, '...');
-    } else {
-      rangeWithDots.push(1);
-    }
-
-    rangeWithDots.push(...range);
-
-    if (currentPage + delta < totalPages - 1) {
-      rangeWithDots.push('...', totalPages);
-    } else {
-      rangeWithDots.push(totalPages);
-    }
-
-    return rangeWithDots;
-  };
-
-  const visiblePages = getVisiblePages();
-
+  
   return (
-    <div className={`flex items-center justify-center gap-2 mt-6 ${className}`}>
-      {/* First Page */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onPageChange(1)}
-        disabled={currentPage === 1}
-        className="glass border-glass-border"
-      >
-        <ChevronsLeft className="w-4 h-4" />
-      </Button>
-
-      {/* Previous Page */}
+    <div className={`flex items-center justify-center gap-2 ${className}`}>
       <Button
         variant="outline"
         size="sm"
@@ -62,26 +41,47 @@ export function Pagination({ currentPage, totalPages, onPageChange, className = 
       >
         <ChevronLeft className="w-4 h-4" />
       </Button>
-
-      {/* Page Numbers */}
-      {visiblePages.map((page, index) => (
+      
+      {start > 1 && (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(1)}
+            className="glass border-glass-border"
+          >
+            1
+          </Button>
+          {start > 2 && <span className="text-text-muted">...</span>}
+        </>
+      )}
+      
+      {pages.map((page) => (
         <Button
-          key={index}
+          key={page}
           variant={page === currentPage ? 'default' : 'outline'}
           size="sm"
-          onClick={() => typeof page === 'number' && onPageChange(page)}
-          disabled={typeof page !== 'number'}
-          className={`min-w-[40px] ${
-            page === currentPage 
-              ? 'bg-accent-blue hover:bg-blue-600' 
-              : 'glass border-glass-border'
-          }`}
+          onClick={() => onPageChange(page)}
+          className={`w-10 ${page === currentPage ? 'bg-primary text-white' : 'glass border-glass-border'}`}
         >
           {page}
         </Button>
       ))}
-
-      {/* Next Page */}
+      
+      {end < totalPages && (
+        <>
+          {end < totalPages - 1 && <span className="text-text-muted">...</span>}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(totalPages)}
+            className="glass border-glass-border"
+          >
+            {totalPages}
+          </Button>
+        </>
+      )}
+      
       <Button
         variant="outline"
         size="sm"
@@ -90,17 +90,6 @@ export function Pagination({ currentPage, totalPages, onPageChange, className = 
         className="glass border-glass-border"
       >
         <ChevronRight className="w-4 h-4" />
-      </Button>
-
-      {/* Last Page */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onPageChange(totalPages)}
-        disabled={currentPage === totalPages}
-        className="glass border-glass-border"
-      >
-        <ChevronsRight className="w-4 h-4" />
       </Button>
     </div>
   );
