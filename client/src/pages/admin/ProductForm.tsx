@@ -199,17 +199,9 @@ export function ProductForm() {
   
   // Remove image with proper state management
   const removeImage = (index: number) => {
-    console.log('Removing image at index:', index);
-    console.log('Current imagePreview:', imagePreview);
-    
     const newImages = imagePreview.filter((_, i) => i !== index);
-    console.log('New images after removal:', newImages);
-    
     setImagePreview(newImages);
-    setFormData(prev => ({
-      ...prev,
-      images: newImages
-    }));
+    // Don't update formData.images here as it's handled differently for submission
   };
 
   // Move image position
@@ -219,10 +211,7 @@ export function ProductForm() {
     newImages.splice(toIndex, 0, moved);
     
     setImagePreview(newImages);
-    setFormData(prev => ({
-      ...prev,
-      images: newImages
-    }));
+    // Don't update formData.images here as it's handled differently for submission
   };
   
   // Submit mutation
@@ -287,9 +276,7 @@ export function ProductForm() {
     const data = new FormData();
     const currentImages = imagePreview;
     
-    console.log('Submitting with images:', currentImages);
-    console.log('imagePreview state:', imagePreview);
-    console.log('formData.images state:', formData.images);
+
     
     Object.entries(formData).forEach(([key, value]) => {
       if (key !== 'images') {

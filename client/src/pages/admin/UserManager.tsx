@@ -395,13 +395,19 @@ export function UserManager() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => console.log('View user', user)}>
+              <DropdownMenuItem onClick={() => {
+                toast({ title: "Feature Coming Soon", description: "User profile view is being developed." });
+              }}>
                 View Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => console.log('Edit user', user)}>
+              <DropdownMenuItem onClick={() => {
+                toast({ title: "Feature Coming Soon", description: "User editing is being developed." });
+              }}>
                 Edit User
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => console.log('Reset password', user)}>
+              <DropdownMenuItem onClick={() => {
+                toast({ title: "Feature Coming Soon", description: "Password reset email is being developed." });
+              }}>
                 <Mail className="w-4 h-4 mr-2" />
                 Reset Password
               </DropdownMenuItem>

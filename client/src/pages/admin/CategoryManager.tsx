@@ -33,6 +33,8 @@ export function CategoryManager() {
     sortOrder: 'asc' as 'asc' | 'desc'
   });
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -130,6 +132,12 @@ export function CategoryManager() {
       categoryId: category.id,
       updates: { isActive: !category.isActive }
     });
+  };
+
+  const handleEdit = (category: Category) => {
+    // Set category for editing and open modal/form
+    setEditingCategory(category);
+    setShowAddForm(true);
   };
 
   const handleDelete = (category: Category) => {
@@ -256,7 +264,7 @@ export function CategoryManager() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => console.log('Edit category', category)}
+                    onClick={() => handleEdit(category)}
                   >
                     <Edit className="w-4 h-4" />
                   </Button>

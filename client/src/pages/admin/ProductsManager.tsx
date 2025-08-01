@@ -109,7 +109,7 @@ export function ProductsManager() {
         a.click();
       } else {
         const data = await response.json();
-        console.log('PDF export data:', data);
+
       }
     } catch (error) {
       console.error('Export failed:', error);

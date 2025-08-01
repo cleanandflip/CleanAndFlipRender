@@ -88,7 +88,7 @@ export const queryClient = new QueryClient({
 
 // Global function to broadcast product updates
 export const broadcastProductUpdate = (productId: string, action: string, updates?: any) => {
-  console.log(`Broadcasting product update: ${action} for product ${productId}`);
+  // Broadcasting product update event
   
   // Dispatch custom events for cross-component synchronization
   productEvents.dispatchEvent(

@@ -39,12 +39,12 @@ interface Submission {
   id: string;
   referenceNumber: string;
   name: string;
-  description: string;
+  description?: string;
   brand: string;
   condition: string;
   weight?: number;
   askingPrice?: number;
-  images: string[];
+  images?: string[];
   status: string;
   offerAmount?: number;
   adminNotes?: string;
@@ -474,8 +474,11 @@ export function SubmissionsManager() {
             setSelectedSubmissions(newSelected);
           }}
           onViewDetails={(submission) => {
-            // Handle view details
-            console.log('View details:', submission);
+            setSelectedSubmission({
+              ...submission,
+              description: submission.description || '',
+              images: submission.images || []
+            });
           }}
         />
       ) : (
@@ -492,8 +495,11 @@ export function SubmissionsManager() {
             setSelectedSubmissions(newSelected);
           }}
           onViewDetails={(submission) => {
-            // Handle view details
-            console.log('View details:', submission);
+            setSelectedSubmission({
+              ...submission,
+              description: submission.description || '',
+              images: submission.images || []
+            });
           }}
         />
       )}

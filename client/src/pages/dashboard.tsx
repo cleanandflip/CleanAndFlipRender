@@ -309,7 +309,7 @@ function DashboardContent() {
   // Listen for wishlist updates from product cards
   useEffect(() => {
     const handleWishlistUpdate = () => {
-      console.log('Dashboard: Received wishlist update event, refetching...');
+      // Refetch data on wishlist updates
       refetchWishlist();
     };
     

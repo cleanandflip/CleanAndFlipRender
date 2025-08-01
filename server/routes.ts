@@ -124,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/health/ready', healthReady);
   
   // Performance testing endpoint (development only)
-  app.get('/api/performance-test', performanceTest);
+  // Performance monitoring endpoint removed for production
   
   // Search endpoint with full-text search
   app.get("/api/search", apiLimiter, async (req, res) => {
@@ -1669,7 +1669,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // UNIFIED ADDRESS SYSTEM - Single definitive endpoint
   app.get("/api/addresses", async (req, res) => {
     try {
-      // Debug authentication state
+
       Logger.info("=== /api/addresses DEBUG ===");
       Logger.info("1. Request user:", req.user);
       Logger.info("2. Session:", req.session);

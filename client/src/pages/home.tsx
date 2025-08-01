@@ -22,7 +22,7 @@ export default function Home() {
   // Real-time event listeners for admin updates
   useEffect(() => {
     const handleProductUpdate = () => {
-      console.log('Featured products page received update event - force refreshing');
+      // Force refresh on product updates
       refetch();
     };
 
