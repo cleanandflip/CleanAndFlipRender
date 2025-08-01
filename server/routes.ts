@@ -53,7 +53,7 @@ import {
   type Product,
   type Category
 } from "@shared/schema";
-import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not } from "drizzle-orm";
+import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not, count } from "drizzle-orm";
 import { displayStartupBanner } from "./utils/startup-banner";
 import { initRedis } from "./config/redis";
 import { initializeCache } from "./lib/cache";
@@ -1262,7 +1262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/admin/debug-submissions', requireAdmin, async (req, res) => {
     try {
       const counts = {
-        total: await db.select({ count: count() }).from(equipmentSubmissions),
+        total: await db.select({ total: count() }).from(equipmentSubmissions),
         byStatus: await db.select({
           status: equipmentSubmissions.status,
           count: count()
@@ -1279,6 +1279,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Test endpoint to verify count function
+  app.get('/api/admin/test-submissions', requireAdmin, async (req, res) => {
+    try {
+      // Test 1: Simple count
+      const total = await db.select({ count: count() }).from(equipmentSubmissions);
+      
+      // Test 2: Get first 5 submissions
+      const submissions = await db
+        .select()
+        .from(equipmentSubmissions)
+        .limit(5);
+      
+      res.json({
+        totalCount: total[0]?.count || 0,
+        sampleSubmissions: submissions,
+        success: true
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        error: error.message,
+        success: false 
+      });
     }
   });
 
@@ -1480,41 +1505,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { status, search, isLocal, page = 1, limit = 20 } = req.query;
       
-      // First, get total count
-      const totalCount = await db
-        .select({ count: count() })
+      // Get total count
+      const totalResult = await db
+        .select({ total: count() })
         .from(equipmentSubmissions);
       
-      console.log('Total submissions in DB:', totalCount[0]?.count);
+      const totalCount = totalResult[0]?.total || 0;
+      console.log('Total submissions in DB:', totalCount);
       
-      // Build query - Direct database access for reliability
-      let query = db.select({
-        submission: equipmentSubmissions,
-        user: {
-          id: users.id,
-          email: users.email,
-          firstName: users.firstName,
-          lastName: users.lastName,
-        }
-      })
-      .from(equipmentSubmissions)
-      .leftJoin(users, eq(equipmentSubmissions.userId, users.id));
-      
-      // Apply filters
+      // Build main query with conditions
       const conditions = [];
       if (status && status !== 'all') {
         conditions.push(eq(equipmentSubmissions.status, status as string));
       }
-      
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
+      if (search) {
+        conditions.push(
+          or(
+            ilike(equipmentSubmissions.referenceNumber, `%${search}%`),
+            ilike(equipmentSubmissions.name, `%${search}%`)
+          )
+        );
+      }
+      if (isLocal !== undefined && isLocal !== null) {
+        conditions.push(eq(equipmentSubmissions.isLocal, isLocal === 'true'));
       }
       
-      // Execute query
-      const submissions = await query
+      // Main query with joins
+      const query = db
+        .select({
+          submission: equipmentSubmissions,
+          user: {
+            name: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+            email: users.email
+          }
+        })
+        .from(equipmentSubmissions)
+        .leftJoin(users, eq(equipmentSubmissions.userId, users.id))
         .orderBy(desc(equipmentSubmissions.createdAt))
         .limit(Number(limit))
         .offset((Number(page) - 1) * Number(limit));
+      
+      // Execute query with conditions
+      const submissions = conditions.length > 0 
+        ? await query.where(and(...conditions))
+        : await query;
       
       console.log('Fetched submissions:', submissions.length);
       
@@ -1533,7 +1567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = {
         data: submissions.map(s => ({
           id: s.submission.id,
-          referenceNumber: s.submission.referenceNumber,
+          referenceNumber: s.submission.referenceNumber || 'N/A',
           name: s.submission.name, // Map 'name' field
           equipmentName: s.submission.name, // Also provide as equipmentName for compatibility
           description: s.submission.description,
@@ -1552,9 +1586,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           images: s.submission.images || [],
           user: s.user || { id: '', email: '', firstName: '', lastName: '' }
         })),
-        total: Number(totalCount[0]?.count || 0),
+        total: Number(totalCount),
         ...Object.fromEntries(
-          statusCounts.map(sc => [sc.status, Number(sc.count)])
+          statusCounts.map(sc => [sc.status || 'unknown', Number(sc.count)])
         )
       };
       
