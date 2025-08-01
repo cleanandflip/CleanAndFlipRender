@@ -44,7 +44,7 @@ export function ProductsManager() {
   const [filters, setFilters] = useState(defaultFilters);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { toast } = useToast();
@@ -151,7 +151,7 @@ export function ProductsManager() {
   };
 
   const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
+    setEditingProductId(product.id);
     setIsEditModalOpen(true);
   };
 
@@ -546,9 +546,9 @@ export function ProductsManager() {
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
-          setEditingProduct(null);
+          setEditingProductId(null);
         }}
-        product={editingProduct}
+        productId={editingProductId}
         categories={categories || []}
         onSave={async () => {
           // CRITICAL: Force refresh of product list
@@ -559,6 +559,7 @@ export function ProductsManager() {
       <ProductModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        productId={null}
         categories={categories || []}
         onSave={async () => {
           // CRITICAL: Force refresh of product list
