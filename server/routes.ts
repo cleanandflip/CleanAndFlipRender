@@ -1059,35 +1059,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // CRITICAL: Get single product for admin editing
-  app.get("/api/admin/products/:id", requireAdmin, async (req, res) => {
-    try {
-      const { id } = req.params;
-      
-      // Log for debugging
-      Logger.debug('Fetching admin product with ID:', id);
-      
-      const product = await storage.getProduct(id);
-      
-      if (!product) {
-        return res.status(404).json({ 
-          error: 'Product not found',
-          id: id 
-        });
-      }
-      
-      // Send complete product data for admin editing
-      res.json(product);
-      
-    } catch (error) {
-      Logger.error('Error fetching admin product:', error);
-      res.status(500).json({ 
-        error: 'Failed to fetch product',
-        details: error.message 
-      });
-    }
-  });
-
   // Admin Products Management - Main endpoint  
   app.get("/api/admin/products", requireAdmin, async (req, res) => {
     try {

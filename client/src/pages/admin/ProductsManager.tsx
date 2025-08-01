@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/admin/DashboardLayout';
 import { Pagination } from '@/components/admin/Pagination';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProductModal } from '@/components/admin/ProductModal';
-import { Plus, Edit, Eye, Trash2, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/utils/submissionHelpers';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,19 +41,17 @@ const defaultFilters = {
 };
 
 export function ProductsManager() {
-  const queryClient = useQueryClient();
   const [filters, setFilters] = useState(defaultFilters);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: products, isLoading, refetch, isRefetching } = useQuery({
+  const { data: products, isLoading, refetch } = useQuery({
     queryKey: ['admin-products', filters],
     queryFn: async () => {
-      // Add timestamp to prevent caching
       const params = new URLSearchParams({
         search: filters.search,
         category: filters.category,
@@ -63,28 +61,18 @@ export function ProductsManager() {
         priceMin: filters.priceRange.min.toString(),
         priceMax: filters.priceRange.max.toString(),
         page: filters.page.toString(),
-        limit: filters.limit.toString(),
-        _t: Date.now().toString() // Force fresh data
+        limit: filters.limit.toString()
       });
-      
       const res = await fetch(`/api/admin/products?${params}`, {
-        credentials: 'include',
-        cache: 'no-store', // Disable browser cache
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
+        credentials: 'include'
       });
-      
       if (!res.ok) throw new Error('Failed to fetch products');
       return res.json();
     },
-    // CRITICAL: Disable ALL caching for fresh data
+    // CRITICAL: No cache for admin data to ensure fresh state
     staleTime: 0,
     gcTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    refetchInterval: false
+    refetchOnWindowFocus: true
   });
 
   const { data: categories } = useQuery({
@@ -163,7 +151,7 @@ export function ProductsManager() {
   };
 
   const handleEditProduct = (product: Product) => {
-    setEditingProductId(product.id);
+    setEditingProduct(product);
     setIsEditModalOpen(true);
   };
 
@@ -558,41 +546,23 @@ export function ProductsManager() {
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
-          setEditingProductId(null);
+          setEditingProduct(null);
         }}
-        productId={editingProductId}
+        product={editingProduct}
         categories={categories || []}
         onSave={async () => {
-          // CRITICAL: Clear all caches and force refresh
-          queryClient.clear();
-          
-          // Wait for database to update
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
-          // Force refetch
+          // CRITICAL: Force refresh of product list
           await refetch();
-          
-          // Don't close modal here - let modal handle it
         }}
       />
       
       <ProductModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        productId={null}
         categories={categories || []}
         onSave={async () => {
-          // CRITICAL: Clear all caches and force refresh
-          queryClient.clear();
-          
-          // Wait for database to update
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
-          // Force refetch
+          // CRITICAL: Force refresh of product list
           await refetch();
-          
-          // Close modal after save
-          setIsCreateModalOpen(false);
         }}
       />
     </DashboardLayout>

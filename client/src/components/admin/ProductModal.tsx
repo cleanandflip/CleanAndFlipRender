@@ -14,15 +14,14 @@ import { motion } from 'framer-motion';
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  productId?: string | null; // Pass ID instead of full object
+  product?: any; // For editing
   categories: any[];
   onSave: () => void;
 }
 
-export function ProductModal({ isOpen, onClose, productId, categories, onSave }: ProductModalProps) {
+export function ProductModal({ isOpen, onClose, product, categories, onSave }: ProductModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
   const initialFormState = {
     name: '',
@@ -48,81 +47,57 @@ export function ProductModal({ isOpen, onClose, productId, categories, onSave }:
 
   const [formData, setFormData] = useState(initialFormState);
 
-  // CRITICAL: Load product data when modal opens
+  // CRITICAL: Fetch fresh data when modal opens
   useEffect(() => {
-    if (isOpen && productId) {
-      loadProductData();
-    } else if (isOpen && !productId) {
+    if (isOpen && product?.id) {
+      // Fetch fresh product data from server
+      fetchProductDetails(product.id);
+    } else if (isOpen && !product) {
       // Reset form for new product
       resetForm();
     }
-  }, [isOpen, productId]);
+  }, [isOpen, product?.id]);
 
-  // Debug logging to track form data updates
-  useEffect(() => {
-    console.log('ProductModal Form Debug:', {
-      isOpen,
-      productId,
-      formStock: formData.stock,
-      stockType: typeof formData.stock,
-      allFormData: formData
-    });
-  }, [isOpen, productId, formData.stock]);
-
-  const loadProductData = async () => {
+  const fetchProductDetails = async (productId: string) => {
     setIsLoading(true);
-    setError(null);
-    
     try {
-      console.log('Loading product with ID:', productId);
-      
-      const response = await fetch(`/api/admin/products/${productId}`, {
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
+      const res = await fetch(`/api/admin/products/${productId}`, {
+        credentials: 'include'
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        throw new Error(`Failed to load product: ${response.status} ${response.statusText}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch product details');
       }
       
-      const data = await response.json();
-      console.log('Received product data:', data);
+      const freshData = await res.json();
       
-      // Populate form with fetched data
+      // Update form with fresh data from server
       setFormData({
-        name: data.name || '',
-        sku: data.sku || '',
-        price: data.price?.toString() || '',
-        compareAtPrice: data.compareAtPrice?.toString() || '',
-        stock: (data.stockQuantity || data.stock || 0).toString(), // CRITICAL FIX: Backend uses stockQuantity
-        categoryId: data.categoryId || '',
-        description: data.description || '',
-        shortDescription: data.shortDescription || '',
-        images: data.images || [],
-        features: data.features || [],
-        specifications: data.specifications || {},
-        weight: data.weight?.toString() || '',
-        dimensions: data.dimensions || { length: '', width: '', height: '' },
-        isActive: data.isActive ?? true,
-        isFeatured: data.isFeatured ?? false,
-        tags: data.tags || [],
-        seoTitle: data.seoTitle || '',
-        seoDescription: data.seoDescription || '',
-        slug: data.slug || ''
+        name: freshData.name || '',
+        sku: freshData.sku || '',
+        price: freshData.price?.toString() || '',
+        compareAtPrice: freshData.compareAtPrice?.toString() || '',
+        stock: freshData.stock?.toString() || '',
+        categoryId: freshData.categoryId || '',
+        description: freshData.description || '',
+        shortDescription: freshData.shortDescription || '',
+        images: freshData.images || [],
+        features: freshData.features || [],
+        specifications: freshData.specifications || {},
+        weight: freshData.weight?.toString() || '',
+        dimensions: freshData.dimensions || { length: '', width: '', height: '' },
+        isActive: freshData.isActive ?? true, // CRITICAL: Ensure this is properly set
+        isFeatured: freshData.isFeatured ?? false,
+        tags: freshData.tags || [],
+        seoTitle: freshData.seoTitle || '',
+        seoDescription: freshData.seoDescription || '',
+        slug: freshData.slug || ''
       });
-      
-    } catch (err) {
-      console.error('Error loading product:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load product details';
-      setError(errorMessage);
+    } catch (error) {
+      console.error('Error fetching product details:', error);
       toast({
         title: 'Error',
-        description: errorMessage,
+        description: 'Failed to load product details',
         variant: 'destructive'
       });
     } finally {
@@ -132,7 +107,6 @@ export function ProductModal({ isOpen, onClose, productId, categories, onSave }:
 
   const resetForm = () => {
     setFormData(initialFormState);
-    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -150,17 +124,17 @@ export function ProductModal({ isOpen, onClose, productId, categories, onSave }:
     }
     
     try {
-      const url = productId 
-        ? `/api/admin/products/${productId}`
+      const url = product 
+        ? `/api/admin/products/${product.id}`
         : '/api/admin/products';
       
-      const method = productId ? 'PUT' : 'POST';
+      const method = product ? 'PUT' : 'POST';
       
       const payload = {
         ...formData,
         price: parseFloat(formData.price),
         compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
-        stockQuantity: parseInt(formData.stock), // CRITICAL FIX: Backend expects stockQuantity
+        stock: parseInt(formData.stock),
         weight: formData.weight ? parseFloat(formData.weight) : null,
         isActive: formData.isActive, // CRITICAL: Ensure this is sent to server
         isFeatured: formData.isFeatured
@@ -174,16 +148,16 @@ export function ProductModal({ isOpen, onClose, productId, categories, onSave }:
       });
 
       if (res.ok) {
-        toast({ 
-          title: productId ? 'Product updated' : 'Product created',
-          description: 'Changes saved successfully'
-        });
-        
         // CRITICAL: Call parent's onSave to refresh the list
         await onSave();
         
         // Close modal and reset form
         handleClose();
+        
+        toast({ 
+          title: product ? 'Product updated' : 'Product created',
+          description: 'Changes saved successfully'
+        });
       } else {
         const error = await res.json();
         toast({ 
@@ -261,31 +235,16 @@ export function ProductModal({ isOpen, onClose, productId, categories, onSave }:
           style={{ borderColor: theme.colors.border.default }}
         >
           <DialogTitle style={{ color: theme.colors.text.primary }}>
-            {productId ? 'Edit Product' : 'Add New Product'}
+            {product ? 'Edit Product' : 'Add New Product'}
           </DialogTitle>
           <DialogDescription style={{ color: theme.colors.text.secondary }}>
-            {productId ? 'Update product information and inventory' : 'Create a new product for your store'}
+            {product ? 'Update product information and inventory' : 'Create a new product for your store'}
           </DialogDescription>
         </DialogHeader>
 
         {isLoading && (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2" style={{ color: theme.colors.text.secondary }}>
-              Loading product details...
-            </span>
-          </div>
-        )}
-
-        {error && (
-          <div className="p-4 text-center border rounded" style={{ 
-            borderColor: theme.colors.border.default,
-            backgroundColor: theme.colors.bg.secondary 
-          }}>
-            <p className="text-red-500 mb-4">Error: {error}</p>
-            <Button onClick={() => loadProductData()} variant="outline">
-              Try Again
-            </Button>
           </div>
         )}
 
@@ -503,8 +462,8 @@ export function ProductModal({ isOpen, onClose, productId, categories, onSave }:
             <Button type="button" variant="secondary" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Saving...' : (productId ? 'Update Product' : 'Create Product')}
+            <Button type="submit" variant="primary" disabled={isLoading}>
+              {isLoading ? 'Saving...' : (product ? 'Update Product' : 'Create Product')}
             </Button>
           </div>
         </form>
