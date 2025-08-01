@@ -410,10 +410,10 @@ export function SubmissionsManager() {
               value={filters.status}
               onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
             >
-              <SelectTrigger className="glass border-glass-border">
+              <SelectTrigger className="glass border-border">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
-              <SelectContent className="glass border-glass-border">
+              <SelectContent className="glass border-border">
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="under_review">Under Review</SelectItem>
@@ -432,10 +432,10 @@ export function SubmissionsManager() {
                 page: 1 
               })}
             >
-              <SelectTrigger className="glass border-glass-border">
+              <SelectTrigger className="glass border-border">
                 <SelectValue placeholder="All Locations" />
               </SelectTrigger>
-              <SelectContent className="glass border-glass-border">
+              <SelectContent className="glass border-border">
                 <SelectItem value="all">All Locations</SelectItem>
                 <SelectItem value="true">Local (Asheville)</SelectItem>
                 <SelectItem value="false">Remote</SelectItem>
@@ -444,7 +444,7 @@ export function SubmissionsManager() {
             
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="glass border-glass-border justify-start">
+                <Button variant="outline" className="glass border-border justify-start">
                   <CalendarIcon className="w-4 h-4 mr-2" />
                   {filters.dateRange.from ? (
                     filters.dateRange.to ? (
@@ -457,7 +457,7 @@ export function SubmissionsManager() {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 glass border-glass-border">
+              <PopoverContent className="w-auto p-0 glass border-border">
                 <Calendar
                   mode="range"
                   selected={filters.dateRange as any}
@@ -475,7 +475,7 @@ export function SubmissionsManager() {
                 dateRange: { from: null, to: null },
                 page: 1
               })}
-              className="glass border-glass-border"
+              className="glass border-border"
             >
               Clear Filters
             </Button>
@@ -495,7 +495,7 @@ export function SubmissionsManager() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleBulkAction('archive')}
-                className="glass border-glass-border"
+                className="glass border-border"
               >
                 <Archive className="w-4 h-4 mr-2" />
                 Archive
@@ -504,7 +504,7 @@ export function SubmissionsManager() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleBulkAction('reject')}
-                className="glass border-glass-border"
+                className="glass border-border"
               >
                 <XCircle className="w-4 h-4 mr-2" />
                 Reject

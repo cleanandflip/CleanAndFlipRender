@@ -57,7 +57,7 @@ export function DataTable<T extends { id: string }>({
 
   if (isLoading) {
     return (
-      <div className="glass rounded-lg p-6">
+      <div className="bg-secondary rounded-lg p-6">
         <div className="animate-pulse space-y-4">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="h-4 bg-gray-700 rounded w-full"></div>
@@ -68,16 +68,16 @@ export function DataTable<T extends { id: string }>({
   }
 
   return (
-    <div className="glass rounded-lg overflow-hidden">
+    <div className="bg-secondary rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-800/50 border-b border-glass-border">
+          <thead className="bg-gray-800/50 border-b border-bg-secondary-border">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
                   className={`px-4 py-3 text-left text-sm font-medium text-text-muted ${
-                    column.sortable ? 'cursor-pointer hover:text-white' : ''
+                    column.sortable ? 'cursor-pointer hover:text-primary' : ''
                   }`}
                   style={{ width: column.width }}
                   onClick={() => column.sortable && handleSort(column.key)}
@@ -116,7 +116,7 @@ export function DataTable<T extends { id: string }>({
               data.map((row) => (
                 <tr
                   key={row.id}
-                  className={`border-b border-glass-border hover:bg-gray-800/30 transition-colors cursor-pointer ${
+                  className={`border-b border-bg-secondary-border hover:bg-gray-800/30 transition-colors cursor-pointer ${
                     selectedRows.has(row.id) ? 'bg-primary/10 border-primary/20' : ''
                   }`}
                   onClick={() => onRowClick?.(row)}

@@ -208,7 +208,7 @@ function CategoryEditModal({
                   id="image-upload"
                 />
                 <Label htmlFor="image-upload" className="cursor-pointer">
-                  <div className="glass border-2 border-dashed border-glass-border rounded-lg p-4 text-center hover:bg-white/5 transition-colors">
+                  <div className="glass border-2 border-dashed border-border border-primary rounded-lg p-4 text-center hover:bg-white/5 transition-colors">
                     <Upload className="mx-auto mb-2 text-text-muted" size={24} />
                     <p className="text-sm text-text-muted">
                       Click to upload category image

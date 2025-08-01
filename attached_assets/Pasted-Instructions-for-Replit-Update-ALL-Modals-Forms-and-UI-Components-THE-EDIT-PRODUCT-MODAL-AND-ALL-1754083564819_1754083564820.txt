@@ -1,0 +1,599 @@
+Instructions for Replit: Update ALL Modals, Forms, and UI Components
+THE EDIT PRODUCT MODAL AND ALL SIMILAR COMPONENTS MUST BE UPDATED
+1. Update ProductModal Component Immediately
+tsx// client/src/components/admin/ProductModal.tsx
+
+import { globalDesignSystem as theme } from '@/styles/design-system/theme';
+import { componentClasses } from '@/styles/design-system/components';
+import { Button, Card } from '@/components/shared/AnimatedComponents';
+import { motion } from 'framer-motion';
+
+export function ProductModal({ isOpen, onClose, product, categories, onSave }: ProductModalProps) {
+  // ... state logic ...
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        style={{
+          backgroundColor: theme.colors.bg.secondary, // #232937
+          border: `1px solid ${theme.colors.border.default}`,
+          color: theme.colors.text.primary
+        }}
+      >
+        <DialogHeader 
+          className="border-b pb-4"
+          style={{ borderColor: theme.colors.border.default }}
+        >
+          <DialogTitle style={{ color: theme.colors.text.primary }}>
+            {product ? 'Edit Product' : 'Add New Product'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6 pt-6">
+          {/* Basic Information Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold" style={{ color: theme.colors.text.primary }}>
+              Basic Information
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label 
+                  htmlFor="name" 
+                  style={{ color: theme.colors.text.secondary }}
+                >
+                  Product Name *
+                </Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  className={componentClasses.input.base}
+                  style={{
+                    backgroundColor: theme.colors.bg.primary,
+                    borderColor: theme.colors.border.default,
+                    color: theme.colors.text.primary
+                  }}
+                />
+              </div>
+              
+              <div>
+                <Label 
+                  htmlFor="sku"
+                  style={{ color: theme.colors.text.secondary }}
+                >
+                  SKU
+                </Label>
+                <Input
+                  id="sku"
+                  value={formData.sku}
+                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  placeholder="Auto-generated if empty"
+                  className={componentClasses.input.base}
+                  style={{
+                    backgroundColor: theme.colors.bg.primary,
+                    borderColor: theme.colors.border.default,
+                    color: theme.colors.text.primary
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Category Dropdown */}
+            <div>
+              <Label style={{ color: theme.colors.text.secondary }}>
+                Category *
+              </Label>
+              <Select
+                value={formData.categoryId}
+                onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+              >
+                <SelectTrigger 
+                  className={componentClasses.input.base}
+                  style={{
+                    backgroundColor: theme.colors.bg.primary,
+                    borderColor: theme.colors.border.default,
+                    color: theme.colors.text.primary
+                  }}
+                >
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent
+                  style={{
+                    backgroundColor: theme.colors.bg.secondary,
+                    borderColor: theme.colors.border.default
+                  }}
+                >
+                  {categories.map(cat => (
+                    <SelectItem 
+                      key={cat.id} 
+                      value={cat.id}
+                      style={{ color: theme.colors.text.primary }}
+                    >
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Description */}
+            <div>
+              <Label style={{ color: theme.colors.text.secondary }}>
+                Description
+              </Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={4}
+                className={componentClasses.input.base}
+                style={{
+                  backgroundColor: theme.colors.bg.primary,
+                  borderColor: theme.colors.border.default,
+                  color: theme.colors.text.primary
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Pricing Section */}
+          <div 
+            className="space-y-4 p-6 rounded-lg"
+            style={{ backgroundColor: theme.colors.bg.primary }}
+          >
+            <h3 className="text-lg font-semibold" style={{ color: theme.colors.text.primary }}>
+              Pricing & Inventory
+            </h3>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label style={{ color: theme.colors.text.secondary }}>
+                  Price *
+                </Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  required
+                  className={componentClasses.input.base}
+                  style={{
+                    backgroundColor: theme.colors.bg.secondary,
+                    borderColor: theme.colors.border.default,
+                    color: theme.colors.text.primary
+                  }}
+                />
+              </div>
+              
+              <div>
+                <Label style={{ color: theme.colors.text.secondary }}>
+                  Compare at Price
+                </Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.compareAtPrice}
+                  onChange={(e) => setFormData({ ...formData, compareAtPrice: e.target.value })}
+                  className={componentClasses.input.base}
+                  style={{
+                    backgroundColor: theme.colors.bg.secondary,
+                    borderColor: theme.colors.border.default,
+                    color: theme.colors.text.primary
+                  }}
+                />
+              </div>
+              
+              <div>
+                <Label style={{ color: theme.colors.text.secondary }}>
+                  Stock *
+                </Label>
+                <Input
+                  type="number"
+                  value={formData.stock}
+                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  required
+                  className={componentClasses.input.base}
+                  style={{
+                    backgroundColor: theme.colors.bg.secondary,
+                    borderColor: theme.colors.border.default,
+                    color: theme.colors.text.primary
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Product Status */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold" style={{ color: theme.colors.text.primary }}>
+              Product Status
+            </h3>
+            
+            <div className="flex items-center justify-between">
+              <Label style={{ color: theme.colors.text.secondary }}>
+                Active
+              </Label>
+              <Toggle
+                checked={formData.isActive}
+                onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label style={{ color: theme.colors.text.secondary }}>
+                Featured
+              </Label>
+              <Toggle
+                checked={formData.isFeatured}
+                onChange={(checked) => setFormData({ ...formData, isFeatured: checked })}
+              />
+            </div>
+          </div>
+
+          {/* Features Section */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold" style={{ color: theme.colors.text.primary }}>
+                Features
+              </h3>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={addFeature}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Feature
+              </Button>
+            </div>
+            
+            {formData.features.map((feature, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-2"
+              >
+                <Input
+                  value={feature}
+                  readOnly
+                  className={componentClasses.input.base}
+                  style={{
+                    backgroundColor: theme.colors.bg.primary,
+                    borderColor: theme.colors.border.default,
+                    color: theme.colors.text.primary
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeFeature(idx)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Form Actions */}
+          <div 
+            className="flex justify-end gap-4 pt-6 border-t"
+            style={{ borderColor: theme.colors.border.default }}
+          >
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmitting}
+            >
+              {product ? 'Update Product' : 'Create Product'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+2. Update ALL Modal Components
+Find and update EVERY modal in the application:
+bash# Find all modal components
+find client/src -name "*.tsx" | xargs grep -l "Dialog\|Modal\|Popup"
+
+# Common modals to update:
+- ProductModal
+- CategoryModal
+- UserModal
+- OrderModal
+- SubmissionModal
+- ConfirmationModal
+- ImageUploadModal
+- etc.
+3. Update Base Modal/Dialog Styles
+tsx// client/src/components/ui/dialog.tsx (or wherever your Dialog component is)
+
+import { globalDesignSystem as theme } from '@/styles/design-system/theme';
+
+// Update the Dialog overlay
+const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn(
+      "fixed inset-0 z-50 backdrop-blur-sm",
+      className
+    )}
+    style={{
+      backgroundColor: theme.colors.bg.overlay
+    }}
+    {...props}
+  />
+));
+
+// Update the Dialog content
+const DialogContent = React.forwardRef(({ className, children, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 p-6 shadow-lg duration-200",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out",
+        className
+      )}
+      style={{
+        backgroundColor: theme.colors.bg.secondary,
+        border: `1px solid ${theme.colors.border.default}`,
+        color: theme.colors.text.primary,
+        borderRadius: theme.radius.lg
+      }}
+      {...props}
+    >
+      {children}
+    </DialogPrimitive.Content>
+  </DialogPortal>
+));
+4. Update ALL Form Components
+tsx// Update Input component
+// client/src/components/ui/input.tsx
+
+import { globalDesignSystem as theme } from '@/styles/design-system/theme';
+import { componentClasses } from '@/styles/design-system/components';
+
+export const Input = React.forwardRef(({ className, type, ...props }, ref) => {
+  return (
+    <input
+      type={type}
+      className={cn(componentClasses.input.base, className)}
+      ref={ref}
+      {...props}
+    />
+  );
+});
+
+// Update Select component
+// client/src/components/ui/select.tsx
+
+export const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Trigger
+    ref={ref}
+    className={cn(componentClasses.input.base, "flex items-center justify-between", className)}
+    {...props}
+  >
+    {children}
+    <ChevronDown className="h-4 w-4 opacity-50" />
+  </SelectPrimitive.Trigger>
+));
+
+// Update Textarea component
+export const Textarea = React.forwardRef(({ className, ...props }, ref) => {
+  return (
+    <textarea
+      className={cn(
+        componentClasses.input.base,
+        "min-h-[80px]",
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  );
+});
+5. Update ALL Dropdown Menus
+tsx// client/src/components/ui/dropdown-menu.tsx
+
+const DropdownMenuContent = React.forwardRef(({ className, sideOffset = 4, ...props }, ref) => (
+  <DropdownMenuPrimitive.Content
+    ref={ref}
+    sideOffset={sideOffset}
+    className={cn(
+      "z-50 min-w-[8rem] overflow-hidden rounded-md p-1 shadow-md",
+      className
+    )}
+    style={{
+      backgroundColor: theme.colors.bg.secondary,
+      border: `1px solid ${theme.colors.border.default}`,
+      color: theme.colors.text.primary
+    }}
+    {...props}
+  />
+));
+6. Update EVERY Table Component
+tsx// Find all tables and update them
+const Table = React.forwardRef(({ className, ...props }, ref) => (
+  <table
+    ref={ref}
+    className={cn("w-full caption-bottom text-sm", className)}
+    style={{
+      color: theme.colors.text.primary
+    }}
+    {...props}
+  />
+));
+
+const TableHeader = React.forwardRef(({ className, ...props }, ref) => (
+  <thead 
+    ref={ref} 
+    className={cn("border-b", className)}
+    style={{
+      backgroundColor: theme.colors.bg.primary,
+      borderColor: theme.colors.border.default
+    }}
+    {...props}
+  />
+));
+
+const TableRow = React.forwardRef(({ className, ...props }, ref) => (
+  <tr
+    ref={ref}
+    className={cn(
+      "border-b transition-colors",
+      className
+    )}
+    style={{
+      borderColor: theme.colors.border.default
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.backgroundColor = theme.colors.bg.tertiary;
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.backgroundColor = 'transparent';
+    }}
+    {...props}
+  />
+));
+7. Global Component Search & Replace
+bash# Run these commands to find ALL UI components that need updating:
+
+# Find all hardcoded background colors
+grep -r "bg-\(gray\|slate\|zinc\)" client/src --include="*.tsx" --include="*.ts"
+
+# Find all hardcoded text colors  
+grep -r "text-\(gray\|slate\|zinc\|white\)" client/src --include="*.tsx" --include="*.ts"
+
+# Find all border colors
+grep -r "border-\(gray\|slate\|zinc\)" client/src --include="*.tsx" --include="*.ts"
+
+# Find inline styles with hex colors
+grep -r "backgroundColor:\|color:\|borderColor:" client/src --include="*.tsx"
+
+# Find all className props
+grep -r "className=" client/src --include="*.tsx" | grep -v "theme\|componentClasses"
+8. Component Checklist - UPDATE ALL OF THESE
+typescript// Components that MUST be updated:
+const componentsToUpdate = [
+  // Modals & Dialogs
+  'ProductModal',
+  'CategoryModal', 
+  'UserModal',
+  'OrderModal',
+  'SubmissionModal',
+  'ConfirmationDialog',
+  'ImageUploadModal',
+  
+  // Forms & Inputs
+  'Input',
+  'Textarea',
+  'Select',
+  'Checkbox',
+  'Radio',
+  'Switch/Toggle',
+  'DatePicker',
+  'FileUpload',
+  
+  // Data Display
+  'Table',
+  'DataTable',
+  'Card',
+  'Badge',
+  'Alert',
+  'Toast',
+  
+  // Navigation
+  'Tabs',
+  'Breadcrumb',
+  'Pagination',
+  'Dropdown',
+  'Menu',
+  
+  // Layout
+  'Header',
+  'Footer',
+  'Sidebar',
+  'Container',
+  
+  // Feedback
+  'Spinner/Loader',
+  'Progress',
+  'Skeleton',
+  'EmptyState',
+  
+  // ALL other UI components
+];
+9. Test Script to Verify Updates
+javascript// Run this in browser console on EVERY page
+function verifyThemeApplication() {
+  const issues = [];
+  
+  // Check all modals
+  document.querySelectorAll('[role="dialog"]').forEach(modal => {
+    const bg = getComputedStyle(modal).backgroundColor;
+    if (!bg.includes('35, 41, 55')) { // #232937 in RGB
+      issues.push('Modal background not updated');
+    }
+  });
+  
+  // Check all inputs
+  document.querySelectorAll('input, textarea, select').forEach(input => {
+    const bg = getComputedStyle(input).backgroundColor;
+    if (bg.includes('55, 65, 81')) { // Old gray color
+      issues.push(`Input not updated: ${input.id || input.className}`);
+    }
+  });
+  
+  // Check all buttons
+  document.querySelectorAll('button').forEach(button => {
+    const bg = getComputedStyle(button).backgroundColor;
+    if (bg.includes('75, 85, 99')) { // Old gray-600
+      issues.push(`Button not updated: ${button.textContent}`);
+    }
+  });
+  
+  // Check text colors
+  document.querySelectorAll('h1, h2, h3, p, span, label').forEach(el => {
+    const color = getComputedStyle(el).color;
+    if (color.includes('156, 163, 175')) { // Old gray-400
+      issues.push(`Text color not updated: ${el.tagName}`);
+    }
+  });
+  
+  console.log('Theme Issues Found:', issues.length);
+  issues.forEach(issue => console.log('- ' + issue));
+  
+  return issues.length === 0;
+}
+
+// Run the verification
+verifyThemeApplication();
+CRITICAL: Every Single Component Must Use the New Theme
+No exceptions. If you see ANY component with old colors like:
+
+bg-gray-700, bg-gray-800, bg-gray-900
+text-gray-300, text-gray-400
+border-gray-600, border-gray-700
+Hardcoded hex colors like #374151, #4B5563
+
+REPLACE THEM IMMEDIATELY with theme values:
+
+theme.colors.bg.primary (#1A1F2E)
+theme.colors.bg.secondary (#232937)
+theme.colors.text.primary (#FFFFFF)
+theme.colors.text.secondary (#E2E8F0)
+theme.colors.border.default (rgba(255,255,255,0.08))

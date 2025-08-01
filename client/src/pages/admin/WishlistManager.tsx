@@ -199,7 +199,7 @@ export function WishlistManager() {
         <Button 
           size="sm" 
           variant="outline" 
-          className="glass border-glass-border"
+          className="glass border-border"
           onClick={() => handleViewProduct(product.productId)}
           title="View Product"
         >
@@ -208,7 +208,7 @@ export function WishlistManager() {
         <Button 
           size="sm" 
           variant="outline" 
-          className="glass border-glass-border"
+          className="glass border-border"
           onClick={() => handleAddToCart(product.productId)}
           title="Add to Cart"
         >
@@ -239,7 +239,7 @@ export function WishlistManager() {
         <Button 
           size="sm" 
           variant="outline" 
-          className="glass border-glass-border"
+          className="glass border-border"
           onClick={() => handleViewUserWishlist(user.userId)}
           title="View User Wishlist"
         >
@@ -248,7 +248,7 @@ export function WishlistManager() {
         <Button 
           size="sm" 
           variant="outline" 
-          className="glass border-glass-border"
+          className="glass border-border"
           onClick={() => handleEmailUser(user)}
           title="Email User"
         >
@@ -270,7 +270,7 @@ export function WishlistManager() {
       filters={
         <div className="flex gap-2">
           <Select value={filters.timeRange} onValueChange={(value: any) => setFilters({ ...filters, timeRange: value })}>
-            <SelectTrigger className="glass border-glass-border w-32">
+            <SelectTrigger className="glass border-border w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -281,7 +281,7 @@ export function WishlistManager() {
             </SelectContent>
           </Select>
           <Select value={filters.userType} onValueChange={(value: any) => setFilters({ ...filters, userType: value })}>
-            <SelectTrigger className="glass border-glass-border w-40">
+            <SelectTrigger className="glass border-border w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -361,7 +361,7 @@ export function WishlistManager() {
                   <h4 className="font-medium text-white">{insight.title}</h4>
                   <p className="text-sm text-text-muted">{insight.description}</p>
                 </div>
-                <Button size="sm" variant="outline" className="glass border-glass-border">
+                <Button size="sm" variant="outline" className="glass border-border">
                   {insight.action}
                 </Button>
               </div>
@@ -448,7 +448,7 @@ export function WishlistManager() {
                     placeholder="Search products..."
                     value={filters.search}
                     onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                    className="glass border-glass-border pl-10 w-64"
+                    className="glass border-border pl-10 w-64"
                   />
                 </div>
               </div>
@@ -482,11 +482,11 @@ export function WishlistManager() {
                     placeholder="Search users..."
                     value={filters.search}
                     onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                    className="glass border-glass-border pl-10 w-64"
+                    className="glass border-border pl-10 w-64"
                   />
                 </div>
                 <Select value={filters.userType} onValueChange={(value: any) => setFilters({ ...filters, userType: value })}>
-                  <SelectTrigger className="glass border-glass-border w-40">
+                  <SelectTrigger className="glass border-border w-40">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

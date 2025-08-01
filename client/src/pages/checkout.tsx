@@ -188,7 +188,7 @@ export default function Checkout() {
         <div className="flex items-center justify-between mb-8">
           <h1 className="font-bebas text-4xl md:text-6xl">CHECKOUT</h1>
           <Link href="/cart">
-            <Button variant="outline" className="glass border-glass-border">
+            <Button variant="outline" className="glass border-border">
               <ArrowLeft className="mr-2" size={18} />
               Back to Cart
             </Button>
@@ -236,7 +236,7 @@ export default function Checkout() {
                           <FormItem>
                             <FormLabel>First Name</FormLabel>
                             <FormControl>
-                              <Input {...field} className="glass border-glass-border" />
+                              <Input {...field} className="glass border-border" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -250,7 +250,7 @@ export default function Checkout() {
                           <FormItem>
                             <FormLabel>Last Name</FormLabel>
                             <FormControl>
-                              <Input {...field} className="glass border-glass-border" />
+                              <Input {...field} className="glass border-border" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -266,7 +266,7 @@ export default function Checkout() {
                           <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input {...field} type="email" className="glass border-glass-border" />
+                              <Input {...field} type="email" className="glass border-border" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -280,7 +280,7 @@ export default function Checkout() {
                           <FormItem>
                             <FormLabel>Phone</FormLabel>
                             <FormControl>
-                              <Input {...field} className="glass border-glass-border" />
+                              <Input {...field} className="glass border-border" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -295,7 +295,7 @@ export default function Checkout() {
                         <FormItem className="mt-4">
                           <FormLabel>Street Address</FormLabel>
                           <FormControl>
-                            <Input {...field} className="glass border-glass-border" />
+                            <Input {...field} className="glass border-border" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -310,7 +310,7 @@ export default function Checkout() {
                           <FormItem>
                             <FormLabel>City</FormLabel>
                             <FormControl>
-                              <Input {...field} className="glass border-glass-border" />
+                              <Input {...field} className="glass border-border" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -324,7 +324,7 @@ export default function Checkout() {
                           <FormItem>
                             <FormLabel>State</FormLabel>
                             <FormControl>
-                              <Input {...field} className="glass border-glass-border" />
+                              <Input {...field} className="glass border-border" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -338,7 +338,7 @@ export default function Checkout() {
                           <FormItem>
                             <FormLabel>ZIP Code</FormLabel>
                             <FormControl>
-                              <Input {...field} className="glass border-glass-border" />
+                              <Input {...field} className="glass border-border" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -353,7 +353,7 @@ export default function Checkout() {
                         <FormItem className="mt-4">
                           <FormLabel>Delivery Instructions (Optional)</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Gate code, special instructions, etc." className="glass border-glass-border" />
+                            <Input {...field} placeholder="Gate code, special instructions, etc." className="glass border-border" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

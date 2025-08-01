@@ -37,7 +37,7 @@ export function Pagination({
         size="sm"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="glass border-glass-border"
+        className="glass border-border"
       >
         <ChevronLeft className="w-4 h-4" />
       </Button>
@@ -48,7 +48,7 @@ export function Pagination({
             variant="outline"
             size="sm"
             onClick={() => onPageChange(1)}
-            className="glass border-glass-border"
+            className="glass border-border"
           >
             1
           </Button>
@@ -62,7 +62,7 @@ export function Pagination({
           variant={page === currentPage ? 'default' : 'outline'}
           size="sm"
           onClick={() => onPageChange(page)}
-          className={`w-10 ${page === currentPage ? 'bg-primary text-white' : 'glass border-glass-border'}`}
+          className={`w-10 ${page === currentPage ? 'bg-primary text-white' : 'glass border-border'}`}
         >
           {page}
         </Button>
@@ -75,7 +75,7 @@ export function Pagination({
             variant="outline"
             size="sm"
             onClick={() => onPageChange(totalPages)}
-            className="glass border-glass-border"
+            className="glass border-border"
           >
             {totalPages}
           </Button>
@@ -87,7 +87,7 @@ export function Pagination({
         size="sm"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="glass border-glass-border"
+        className="glass border-border"
       >
         <ChevronRight className="w-4 h-4" />
       </Button>

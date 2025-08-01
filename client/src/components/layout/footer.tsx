@@ -115,21 +115,21 @@ export default function Footer() {
             <div className="flex space-x-4 mt-6">
               <a 
                 href="#" 
-                className="text-text-muted hover:text-accent-blue transition-colors"
+                className="text-text-muted-foreground hover:text-accent-blue transition-colors"
                 aria-label="Facebook"
               >
                 <Facebook size={20} />
               </a>
               <a 
                 href="#" 
-                className="text-text-muted hover:text-accent-blue transition-colors"
+                className="text-text-muted-foreground hover:text-accent-blue transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={20} />
               </a>
               <a 
                 href="#" 
-                className="text-text-muted hover:text-accent-blue transition-colors"
+                className="text-text-muted-foreground hover:text-accent-blue transition-colors"
                 aria-label="YouTube"
               >
                 <Youtube size={20} />
@@ -144,7 +144,7 @@ export default function Footer() {
             <Logo />
           </div>
 
-          <div className="text-text-muted text-sm mb-4 md:mb-0">
+          <div className="text-text-muted-foreground text-sm mb-4 md:mb-0">
             <p>&copy; 2024 Clean & Flip. All rights reserved.</p>
           </div>
 

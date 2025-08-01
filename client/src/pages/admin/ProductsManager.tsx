@@ -231,10 +231,10 @@ export function ProductsManager() {
             value={filters.category}
             onValueChange={(v) => setFilters({ ...filters, category: v, page: 1 })}
           >
-            <SelectTrigger className="glass border-glass-border">
+            <SelectTrigger className="glass border-border">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
-            <SelectContent className="glass border-glass-border">
+            <SelectContent className="glass border-border">
               <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="barbells">Barbells</SelectItem>
               <SelectItem value="plates">Plates</SelectItem>
@@ -248,10 +248,10 @@ export function ProductsManager() {
             value={filters.status}
             onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
           >
-            <SelectTrigger className="glass border-glass-border">
+            <SelectTrigger className="glass border-border">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
-            <SelectContent className="glass border-glass-border">
+            <SelectContent className="glass border-border">
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
@@ -268,7 +268,7 @@ export function ProductsManager() {
                 ...filters,
                 priceRange: { ...filters.priceRange, min: Number(e.target.value) || 0 }
               })}
-              className="glass border-glass-border"
+              className="glass border-border"
             />
             <Input
               type="number"
@@ -278,14 +278,14 @@ export function ProductsManager() {
                 ...filters,
                 priceRange: { ...filters.priceRange, max: Number(e.target.value) || 10000 }
               })}
-              className="glass border-glass-border"
+              className="glass border-border"
             />
           </div>
           
           <Button 
             variant="outline" 
             onClick={() => setFilters(defaultFilters)}
-            className="glass border-glass-border"
+            className="glass border-border"
           >
             Clear Filters
           </Button>
@@ -313,7 +313,7 @@ export function ProductsManager() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleBulkAction('duplicate')}
-                className="glass border-glass-border"
+                className="glass border-border"
               >
                 Duplicate
               </Button>
@@ -321,7 +321,7 @@ export function ProductsManager() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleBulkAction('deactivate')}
-                className="glass border-glass-border"
+                className="glass border-border"
               >
                 Deactivate
               </Button>
@@ -401,7 +401,7 @@ export function ProductsManager() {
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="flex-1 glass border-glass-border"
+                  className="flex-1 glass border-border"
                   onClick={() => handleViewProduct(product)}
                   title="View Product"
                 >
@@ -410,7 +410,7 @@ export function ProductsManager() {
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="flex-1 glass border-glass-border"
+                  className="flex-1 glass border-border"
                   onClick={() => handleEditProduct(product)}
                   title="Edit Product"
                 >
@@ -432,7 +432,7 @@ export function ProductsManager() {
       ) : (
         <div className="space-y-2">
           {/* List View Header */}
-          <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm text-text-muted font-medium border-b border-glass-border">
+          <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm text-text-muted font-medium border-b border-border">
             <div className="col-span-1"></div>
             <div className="col-span-3">Product</div>
             <div className="col-span-2">Category</div>
@@ -497,7 +497,7 @@ export function ProductsManager() {
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      className="glass border-glass-border"
+                      className="glass border-border"
                       onClick={() => handleViewProduct(product)}
                       title="View Product"
                     >
@@ -506,7 +506,7 @@ export function ProductsManager() {
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      className="glass border-glass-border"
+                      className="glass border-border"
                       onClick={() => handleEditProduct(product)}
                       title="Edit Product"
                     >

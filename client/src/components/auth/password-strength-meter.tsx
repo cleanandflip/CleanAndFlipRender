@@ -84,7 +84,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
               <div
                 key={requirement.key}
                 className={`flex items-center gap-2 text-sm transition-colors duration-200 ${
-                  isMet ? "text-green-400" : "text-text-muted"
+                  isMet ? "text-green-400" : "text-text-muted-foreground"
                 }`}
               >
                 {isMet ? (

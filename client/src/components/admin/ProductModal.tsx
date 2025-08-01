@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Upload, X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { globalDesignSystem as theme } from '@/styles/design-system/theme';
+import { motion } from 'framer-motion';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -170,50 +172,82 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass">
-        <DialogHeader>
-          <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-          <DialogDescription>
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        style={{
+          backgroundColor: theme.colors.bg.secondary,
+          border: `1px solid ${theme.colors.border.default}`,
+          color: theme.colors.text.primary
+        }}
+      >
+        <DialogHeader 
+          className="border-b pb-4"
+          style={{ borderColor: theme.colors.border.default }}
+        >
+          <DialogTitle style={{ color: theme.colors.text.primary }}>
+            {product ? 'Edit Product' : 'Add New Product'}
+          </DialogTitle>
+          <DialogDescription style={{ color: theme.colors.text.secondary }}>
             {product ? 'Update product information and settings' : 'Create a new product for your store'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 pt-6">
           {/* Basic Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Basic Information</h3>
+            <h3 className="text-lg font-semibold" style={{ color: theme.colors.text.primary }}>
+              Basic Information
+            </h3>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="name" className="text-white">Product Name *</Label>
+                <Label 
+                  htmlFor="name" 
+                  style={{ color: theme.colors.text.secondary }}
+                >
+                  Product Name *
+                </Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="glass border-glass-border text-white"
                   required
+                  style={{
+                    backgroundColor: theme.colors.bg.primary,
+                    borderColor: theme.colors.border.default,
+                    color: theme.colors.text.primary
+                  }}
                 />
               </div>
               
               <div>
-                <Label htmlFor="sku" className="text-white">SKU</Label>
+                <Label 
+                  htmlFor="sku"
+                  style={{ color: theme.colors.text.secondary }}
+                >
+                  SKU
+                </Label>
                 <Input
                   id="sku"
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  className="glass border-glass-border text-white"
                   placeholder="Auto-generated if empty"
+                  style={{
+                    backgroundColor: theme.colors.bg.primary,
+                    borderColor: theme.colors.border.default,
+                    color: theme.colors.text.primary
+                  }}
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="category" className="text-white">Category *</Label>
+              <Label htmlFor="category" style={{ color: theme.colors.text.secondary }}>Category *</Label>
               <Select
                 value={formData.categoryId}
                 onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
               >
-                <SelectTrigger className="glass border-glass-border text-white">
+                <SelectTrigger style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -227,12 +261,12 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
             </div>
 
             <div>
-              <Label htmlFor="description" className="text-white">Description</Label>
+              <Label htmlFor="description" style={{ color: theme.colors.text.secondary }}>Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="glass border-glass-border text-white"
+                style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}
                 rows={4}
               />
             </div>
@@ -240,43 +274,43 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
 
           {/* Pricing & Inventory */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Pricing & Inventory</h3>
+            <h3 style={{ color: theme.colors.text.primary }} className="text-lg font-semibold">Pricing & Inventory</h3>
             
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="price" className="text-white">Price *</Label>
+                <Label htmlFor="price" style={{ color: theme.colors.text.secondary }}>Price *</Label>
                 <Input
                   id="price"
                   type="number"
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="glass border-glass-border text-white"
+                  style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}
                   required
                 />
               </div>
               
               <div>
-                <Label htmlFor="compareAtPrice" className="text-white">Compare at Price</Label>
+                <Label htmlFor="compareAtPrice" style={{ color: theme.colors.text.secondary }}>Compare at Price</Label>
                 <Input
                   id="compareAtPrice"
                   type="number"
                   step="0.01"
                   value={formData.compareAtPrice}
                   onChange={(e) => setFormData({ ...formData, compareAtPrice: e.target.value })}
-                  className="glass border-glass-border text-white"
+                  style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}
                   placeholder="Original price"
                 />
               </div>
               
               <div>
-                <Label htmlFor="stock" className="text-white">Stock *</Label>
+                <Label htmlFor="stock" style={{ color: theme.colors.text.secondary }}>Stock *</Label>
                 <Input
                   id="stock"
                   type="number"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                  className="glass border-glass-border text-white"
+                  style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}
                   required
                 />
               </div>
@@ -285,7 +319,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
 
           {/* Product Status */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Product Status</h3>
+            <h3 style={{ color: theme.colors.text.primary }} className="text-lg font-semibold">Product Status</h3>
             
             <div className="flex items-center gap-6">
               <div className="flex items-center space-x-2">
@@ -294,7 +328,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
                   checked={formData.isActive}
                   onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 />
-                <Label htmlFor="isActive" className="text-white">Active</Label>
+                <Label htmlFor="isActive" style={{ color: theme.colors.text.secondary }}>Active</Label>
               </div>
               
               <div className="flex items-center space-x-2">
@@ -303,7 +337,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
                   checked={formData.isFeatured}
                   onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: checked })}
                 />
-                <Label htmlFor="isFeatured" className="text-white">Featured</Label>
+                <Label htmlFor="isFeatured" style={{ color: theme.colors.text.secondary }}>Featured</Label>
               </div>
             </div>
           </div>
@@ -311,7 +345,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
           {/* Features */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-white">Features</h3>
+              <h3 style={{ color: theme.colors.text.primary }} className="text-lg font-semibold">Features</h3>
               <Button type="button" size="sm" variant="outline" onClick={addFeature}>
                 <Plus className="w-4 h-4 mr-1" />
                 Add Feature
@@ -324,7 +358,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
                   <Input 
                     value={feature} 
                     readOnly 
-                    className="glass border-glass-border text-white"
+                    style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}
                   />
                   <Button
                     type="button"
@@ -345,7 +379,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end gap-3 pt-6 border-t border-glass-border">
+          <div className="flex justify-end gap-3 pt-6 border-t" style={{ borderColor: theme.colors.border.default }}>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>

@@ -209,7 +209,7 @@ function Cart() {
             {/* Continue Shopping */}
             <div className="mt-6">
               <Link href="/products">
-                <Button variant="outline" className="glass border-glass-border">
+                <Button variant="outline" className="glass border-border">
                   Continue Shopping
                 </Button>
               </Link>

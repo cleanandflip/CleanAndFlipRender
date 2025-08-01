@@ -158,7 +158,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           <Filter size={20} />
           <h3 className="font-bebas text-xl">FILTERS</h3>
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="glass border-glass-border">
+            <Badge variant="secondary" className="bg-secondary border-bg-secondary-border">
               {activeFilterCount}
             </Badge>
           )}
@@ -169,7 +169,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
             variant="ghost"
             size="sm"
             onClick={clearAllFilters}
-            className="text-text-secondary hover:text-white hover:bg-white/10"
+            className="text-text-secondary hover:text-primary hover:bg-white/10"
           >
             <RotateCcw size={14} className="mr-1" />
             Clear
@@ -198,7 +198,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </div>
 
-        <Separator className="bg-glass-border" />
+        <Separator className="bg-bg-secondary-border" />
 
         {/* Categories */}
         {categories.length > 0 && (
@@ -256,7 +256,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
               </div>
             </div>
 
-            <Separator className="bg-glass-border" />
+            <Separator className="bg-bg-secondary-border" />
           </>
         )}
 
@@ -279,7 +279,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </div>
 
-        <Separator className="bg-glass-border" />
+        <Separator className="bg-bg-secondary-border" />
 
         {/* Condition */}
         <div>
@@ -313,7 +313,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </div>
 
-        <Separator className="bg-glass-border" />
+        <Separator className="bg-bg-secondary-border" />
 
         {/* Brand */}
         <div>
@@ -350,12 +350,12 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
       {/* Active Filters Summary */}
       {activeFilterCount > 0 && (
         <>
-          <Separator className="bg-glass-border my-6" />
+          <Separator className="bg-bg-secondary-border my-6" />
           <div>
             <h4 className="font-semibold mb-3">Active Filters</h4>
             <div className="flex flex-wrap gap-2">
               {localFilters.category && (
-                <Badge variant="secondary" className="glass border-glass-border">
+                <Badge variant="secondary" className="bg-secondary border-bg-secondary-border">
                   {categories.find(c => c.id === localFilters.category)?.name || localFilters.category}
                   <Button
                     variant="ghost"
@@ -369,7 +369,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
               )}
               
               {localFilters.condition && (
-                <Badge variant="secondary" className="glass border-glass-border">
+                <Badge variant="secondary" className="bg-secondary border-bg-secondary-border">
                   {conditions.find(c => c.value === localFilters.condition)?.label || localFilters.condition}
                   <Button
                     variant="ghost"
@@ -383,7 +383,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
               )}
               
               {localFilters.brand && (
-                <Badge variant="secondary" className="glass border-glass-border">
+                <Badge variant="secondary" className="bg-secondary border-bg-secondary-border">
                   {localFilters.brand}
                   <Button
                     variant="ghost"
@@ -397,7 +397,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
               )}
               
               {(localFilters.minPrice || localFilters.maxPrice) && (
-                <Badge variant="secondary" className="glass border-glass-border">
+                <Badge variant="secondary" className="bg-secondary border-bg-secondary-border">
                   ${localFilters.minPrice || 0} - ${localFilters.maxPrice || 1000}
                   <Button
                     variant="ghost"

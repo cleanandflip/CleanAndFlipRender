@@ -38,7 +38,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="glass border-glass-border w-full sm:w-96 p-0">
+      <SheetContent side="right" className="bg-card border-bg-card-border w-full sm:w-96 p-0">
         <div className="flex flex-col h-full">
           {/* Header */}
           <SheetHeader className="p-6 pb-4">
@@ -69,10 +69,10 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 <div className="animate-pulse space-y-4">
                   {Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="flex gap-4">
-                      <div className="w-16 h-16 bg-glass-bg rounded"></div>
+                      <div className="w-16 h-16 bg-bg-card-bg rounded"></div>
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-glass-bg rounded w-3/4"></div>
-                        <div className="h-3 bg-glass-bg rounded w-1/2"></div>
+                        <div className="h-4 bg-bg-card-bg rounded w-3/4"></div>
+                        <div className="h-3 bg-bg-card-bg rounded w-1/2"></div>
                       </div>
                     </div>
                   ))}
@@ -102,7 +102,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 <div className="flex-1 overflow-y-auto px-6">
                   <div className="space-y-4">
                     {cartItems.map((item) => (
-                      <div key={item.id} className="glass rounded-lg p-4">
+                      <div key={item.id} className="bg-card rounded-lg p-4">
                         <div className="flex gap-3">
                           {/* Product Image */}
                           <Link href={`/products/${item.product.id}`}>
@@ -140,7 +140,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
                             <div className="flex items-center justify-between">
                               {/* Quantity Controls */}
-                              <div className="flex items-center glass rounded">
+                              <div className="flex items-center bg-card rounded">
                                 <button
                                   onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
                                   className="p-1 hover:bg-white/10 transition-colors"
@@ -185,9 +185,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-glass-border mt-auto">
+                <div className="p-6 border-t border-bg-card-border mt-auto">
                   {/* Summary */}
-                  <div className="glass rounded-lg p-4 mb-4">
+                  <div className="bg-card rounded-lg p-4 mb-4">
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Subtotal</span>
@@ -207,7 +207,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                         <span>Tax</span>
                         <span>${tax.toFixed(2)}</span>
                       </div>
-                      <Separator className="bg-glass-border" />
+                      <Separator className="bg-bg-card-border" />
                       <div className="flex justify-between font-semibold">
                         <span>Total</span>
                         <span>${total.toFixed(2)}</span>
@@ -217,7 +217,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
                   {/* Free Shipping Notice */}
                   {shipping > 0 && (
-                    <div className="mb-4 p-3 glass rounded-lg text-sm text-text-secondary">
+                    <div className="mb-4 p-3 bg-card rounded-lg text-sm text-text-secondary">
                       <p>Free shipping on orders over $100</p>
                       <p className="text-accent-blue">
                         Add ${(100 - subtotal).toFixed(2)} more to qualify
@@ -230,7 +230,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     <Link href="/cart">
                       <Button 
                         variant="outline" 
-                        className="w-full glass border-glass-border"
+                        className="w-full bg-card border-bg-card-border"
                         onClick={() => handleOpenChange(false)}
                       >
                         View Cart
@@ -239,7 +239,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     
                     <Link href="/checkout">
                       <Button 
-                        className="w-full bg-accent-blue hover:bg-blue-500 text-white"
+                        className="w-full bg-accent-blue hover:bg-blue-500 text-primary"
                         onClick={() => handleOpenChange(false)}
                       >
                         Checkout

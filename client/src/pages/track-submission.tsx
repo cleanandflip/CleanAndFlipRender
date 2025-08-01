@@ -108,7 +108,7 @@ export default function TrackSubmission() {
               placeholder="Enter reference number (e.g., REF-20250731-1234)"
               value={referenceInput}
               onChange={(e) => setReferenceInput(e.target.value)}
-              className="flex-1 glass border-glass-border"
+              className="flex-1 glass border-border"
             />
             <Button type="submit" className="bg-accent-blue hover:bg-blue-600">
               <Search className="w-4 h-4 mr-2" />

@@ -44,7 +44,7 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
   const inputSize = size === 'small' ? 'w-12 h-8 text-sm' : 'w-16 h-10';
 
   return (
-    <div className={`flex items-center glass rounded-lg ${className}`}>
+    <div className={`flex items-center bg-card rounded-lg ${className}`}>
       <Button
         variant="ghost"
         size={buttonSize}
@@ -64,7 +64,7 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
         disabled={disabled}
         className={`
           ${inputSize}
-          bg-transparent text-center text-white font-medium
+          bg-transparent text-center text-primary font-medium
           border-none outline-none
           [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
         `}

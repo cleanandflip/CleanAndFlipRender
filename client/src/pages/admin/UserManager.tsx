@@ -342,7 +342,7 @@ export function UserManager() {
                 Date Range
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 glass border-glass-border">
+            <PopoverContent className="w-auto p-0 glass border-border">
               <Calendar
                 mode="range"
                 selected={filters.dateRange as any}

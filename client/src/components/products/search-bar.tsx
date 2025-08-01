@@ -120,7 +120,7 @@ export default function SearchBar({
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       <form onSubmit={handleFormSubmit} className="relative">
-        <div className="flex items-center glass rounded-lg px-4 py-2">
+        <div className="flex items-center bg-card rounded-lg px-4 py-2">
           <Search className="text-gray-400 mr-3 flex-shrink-0" size={18} />
           <Input
             ref={inputRef}
@@ -129,7 +129,7 @@ export default function SearchBar({
             onChange={(e) => handleInputChange(e.target.value)}
             onFocus={() => setIsOpen(true)}
             placeholder={placeholder}
-            className="bg-transparent border-none outline-none flex-1 text-white placeholder-gray-400 p-0 h-auto focus-visible:ring-0"
+            className="bg-transparent border-none outline-none flex-1 text-primary placeholder-gray-400 p-0 h-auto focus-visible:ring-0"
           />
           {inputValue && (
             <Button
@@ -162,7 +162,7 @@ export default function SearchBar({
                         className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
                       >
                         <Search size={14} className="text-gray-400 mr-3" />
-                        <span className="text-white">{suggestion}</span>
+                        <span className="text-primary">{suggestion}</span>
                       </button>
                     ))}
                   </div>
@@ -192,7 +192,7 @@ export default function SearchBar({
                         className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
                       >
                         <Clock size={14} className="text-gray-400 mr-3" />
-                        <span className="text-white">{term}</span>
+                        <span className="text-primary">{term}</span>
                       </button>
                     ))}
                   </div>
@@ -213,7 +213,7 @@ export default function SearchBar({
                       className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
                     >
                       <TrendingUp size={14} className="text-gray-400 mr-3" />
-                      <span className="text-white">{term}</span>
+                      <span className="text-primary">{term}</span>
                     </button>
                   ))}
                 </div>

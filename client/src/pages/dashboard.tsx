@@ -125,7 +125,7 @@ function AddressesSection() {
       ) : (
         <div className="space-y-4">
           {addresses.map((address) => (
-            <div key={address.id} className="p-4 glass border border-glass-border rounded-lg">
+            <div key={address.id} className="p-4 glass border border-border rounded-lg">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -173,7 +173,7 @@ function AddressesSection() {
 
       {/* Edit Address Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="glass border-glass-border">
+        <DialogContent className="glass border-border">
           <DialogHeader>
             <DialogTitle className="text-white">Edit Address</DialogTitle>
           </DialogHeader>
@@ -415,7 +415,7 @@ function DashboardContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">ORDER HISTORY</h2>
                 <SmartLink href="/orders">
-                  <Button variant="outline" className="glass border-glass-border">
+                  <Button variant="outline" className="glass border-border">
                     View All Orders
                   </Button>
                 </SmartLink>
@@ -453,7 +453,7 @@ function DashboardContent() {
                         <div className="text-right">
                           <div className="font-semibold text-lg">${order.total}</div>
                           <SmartLink href={`/orders/${order.id}`}>
-                            <Button variant="outline" size="sm" className="glass border-glass-border mt-2">
+                            <Button variant="outline" size="sm" className="glass border-border mt-2">
                               View Details
                             </Button>
                           </SmartLink>
@@ -524,7 +524,7 @@ function DashboardContent() {
                           
                           <div className="flex gap-2">
                             <SmartLink href={`/track-submission?ref=${submission.referenceNumber}`}>
-                              <Button variant="outline" size="sm" className="glass border-glass-border">
+                              <Button variant="outline" size="sm" className="glass border-border">
                                 <Eye className="w-4 h-4 mr-1" />
                                 Track
                               </Button>
@@ -535,7 +535,7 @@ function DashboardContent() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setCancellingSubmission(submission)}
-                                className="text-red-400 hover:text-red-300 hover:border-red-600 glass border-glass-border"
+                                className="text-red-400 hover:text-red-300 hover:border-red-600 glass border-border"
                               >
                                 <X className="w-4 h-4 mr-1" />
                                 Cancel
@@ -603,7 +603,7 @@ function DashboardContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">WISHLIST</h2>
                 <SmartLink href="/products">
-                  <Button variant="outline" className="glass border-glass-border">
+                  <Button variant="outline" className="glass border-border">
                     Browse Products
                   </Button>
                 </SmartLink>
@@ -706,16 +706,16 @@ function DashboardContent() {
                     Account Settings
                   </h3>
                   <div className="space-y-3">
-                    <Button variant="outline" className="w-full glass border-glass-border justify-start">
+                    <Button variant="outline" className="w-full glass border-border justify-start">
                       Change Password
                     </Button>
-                    <Button variant="outline" className="w-full glass border-glass-border justify-start">
+                    <Button variant="outline" className="w-full glass border-border justify-start">
                       Email Preferences
                     </Button>
-                    <Button variant="outline" className="w-full glass border-glass-border justify-start">
+                    <Button variant="outline" className="w-full glass border-border justify-start">
                       Privacy Settings
                     </Button>
-                    <Button variant="outline" className="w-full glass border-glass-border justify-start">
+                    <Button variant="outline" className="w-full glass border-border justify-start">
                       Download Data
                     </Button>
                   </div>
@@ -736,7 +736,7 @@ function DashboardContent() {
         open={!!cancellingSubmission} 
         onOpenChange={() => setCancellingSubmission(null)}
       >
-        <AlertDialogContent className="glass border-glass-border">
+        <AlertDialogContent className="glass border-border">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Cancel Equipment Submission?</AlertDialogTitle>
             <AlertDialogDescription className="text-text-secondary">
@@ -750,7 +750,7 @@ function DashboardContent() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="glass border-glass-border">Keep Submission</AlertDialogCancel>
+            <AlertDialogCancel className="glass border-border">Keep Submission</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => cancelSubmissionMutation.mutate(cancellingSubmission?.id)}
               className="bg-red-600 hover:bg-red-700"

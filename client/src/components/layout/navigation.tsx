@@ -114,7 +114,7 @@ export default function Navigation() {
                 className={`transition-all duration-200 font-medium cursor-pointer px-3 py-2 rounded-lg hover:bg-white/10 text-base whitespace-nowrap ${
                   isActive(item.href)
                     ? "text-accent-blue bg-accent-blue/10 cursor-default"
-                    : "text-text-secondary hover:text-white"
+                    : "text-text-secondary hover:text-primary"
                 }`}
                 disabled={isActive(item.href)}
               >
@@ -140,7 +140,7 @@ export default function Navigation() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden glass p-2 w-10 h-10 flex-shrink-0 text-text-secondary border border-transparent hover:text-white hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20 transition-all duration-200"
+              className="lg:hidden bg-secondary p-2 w-10 h-10 flex-shrink-0 text-text-secondary border border-primary border-transparent hover:text-primary hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20 transition-all duration-200"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
               <Search size={18} />
@@ -154,7 +154,7 @@ export default function Navigation() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="group glass p-2 text-accent-blue w-10 h-10 flex-shrink-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:outline-none border border-accent-blue/30 relative overflow-hidden transition-all duration-300 hover:border-accent-blue/60 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:bg-accent-blue/10 data-[state=open]:border-accent-blue/60 data-[state=open]:shadow-[0_0_20px_rgba(59,130,246,0.3)] data-[state=open]:bg-accent-blue/10"
+                      className="group bg-secondary p-2 text-accent-blue w-10 h-10 flex-shrink-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:outline-none border border-primary border-accent-blue/30 relative overflow-hidden transition-all duration-300 hover:border-accent-blue/60 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:bg-accent-blue/10 data-[state=open]:border-accent-blue/60 data-[state=open]:shadow-[0_0_20px_rgba(59,130,246,0.3)] data-[state=open]:bg-accent-blue/10"
                     >
                       {/* Inner glow effect */}
                       <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/0 via-accent-blue/5 to-accent-blue/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -162,20 +162,20 @@ export default function Navigation() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
-                    className="w-64 glass border-glass-border shadow-2xl backdrop-blur-xl z-[100]"
+                    className="w-64 bg-secondary border-bg-secondary-border border-primary shadow-2xl backdrop-blur-xl z-[100]"
                     align="end"
                     sideOffset={8}
                     avoidCollisions={true}
                     collisionPadding={8}
                   >
                   {/* User Info Header */}
-                  <div className="px-4 py-3 border-b border-glass-border">
+                  <div className="px-4 py-3 border-b border-bg-secondary-border">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-accent-blue/20 rounded-full flex items-center justify-center">
                         <User size={18} className="text-accent-blue" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">
+                        <p className="text-sm font-semibold text-primary truncate">
                           {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
                         </p>
                         <p className="text-xs text-text-secondary truncate">
@@ -183,7 +183,7 @@ export default function Navigation() {
                         </p>
                       </div>
                       {user.isAdmin && (
-                        <span className="text-xs bg-accent-blue px-2 py-1 rounded text-white font-medium">
+                        <span className="text-xs bg-accent-blue px-2 py-1 rounded text-primary font-medium">
                           ADMIN
                         </span>
                       )}
@@ -193,19 +193,19 @@ export default function Navigation() {
                   {/* Navigation Links */}
                   <div className="py-2">
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                      <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
                         <User className="mr-3 h-4 w-4" />
                         My Dashboard
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/orders" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                      <Link href="/orders" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
                         <ShoppingCart className="mr-3 h-4 w-4" />
                         Order History
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard?tab=submissions" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                      <Link href="/dashboard?tab=submissions" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
                         <Package className="mr-3 h-4 w-4" />
                         My Submissions
                       </Link>
@@ -221,7 +221,7 @@ export default function Navigation() {
                     )}
                   </div>
 
-                  <DropdownMenuSeparator className="bg-glass-border" />
+                  <DropdownMenuSeparator className="bg-bg-secondary-border" />
                   
                   {/* Logout */}
                   <div className="py-2">
@@ -240,7 +240,7 @@ export default function Navigation() {
               <Button
                 size="sm"
                 onClick={(e) => handleNavigation('/auth', e)}
-                className="bg-accent-blue hover:bg-blue-500 text-white font-medium px-5 py-2 transition-colors whitespace-nowrap"
+                className="bg-accent-blue hover:bg-blue-500 text-primary font-medium px-5 py-2 transition-colors whitespace-nowrap"
               >
                 <LogIn className="mr-2 h-4 w-4" />
                 Sign In
@@ -253,10 +253,10 @@ export default function Navigation() {
                 variant="ghost"
                 size="icon"
                 onClick={handleCartClick}
-                className={`group glass relative p-2 w-10 h-10 flex-shrink-0 transition-all duration-300 ${
+                className={`group bg-secondary relative p-2 w-10 h-10 flex-shrink-0 transition-all duration-300 ${
                   isCartOpen 
-                    ? "text-accent-blue border border-accent-blue/30 bg-accent-blue/10 shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
-                    : "text-text-secondary border border-transparent hover:text-accent-blue hover:bg-accent-blue/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:border-accent-blue/60"
+                    ? "text-accent-blue border border-primary border-accent-blue/30 bg-accent-blue/10 shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
+                    : "text-text-secondary border border-primary border-transparent hover:text-accent-blue hover:bg-accent-blue/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:border-accent-blue/60"
                 }`}
               >
                 {/* Inner glow effect */}
@@ -272,7 +272,7 @@ export default function Navigation() {
                 </div>
                 
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse">
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-primary text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse">
                     {cartCount}
                   </span>
                 )}
@@ -285,12 +285,12 @@ export default function Navigation() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="lg:hidden glass p-2 w-10 h-10 flex-shrink-0 text-text-secondary border border-transparent hover:text-white hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20 transition-all duration-200"
+                  className="lg:hidden bg-secondary p-2 w-10 h-10 flex-shrink-0 text-text-secondary border border-primary border-transparent hover:text-primary hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20 transition-all duration-200"
                 >
                   <Menu size={18} />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="glass border-glass-border">
+              <SheetContent side="right" className="bg-secondary border-bg-secondary-border">
                 <div className="flex items-center justify-between mb-8">
                   <Logo />
                   <Button
@@ -312,8 +312,8 @@ export default function Navigation() {
                       }}
                       className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
                         isActive(item.href)
-                          ? "bg-accent-blue text-white cursor-default"
-                          : "text-text-secondary hover:bg-white/10 hover:text-white"
+                          ? "bg-accent-blue text-primary cursor-default"
+                          : "text-text-secondary hover:bg-white/10 hover:text-primary"
                       }`}
                       disabled={isActive(item.href)}
                     >
@@ -328,8 +328,8 @@ export default function Navigation() {
                     }}
                     className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
                       isActive("/dashboard")
-                        ? "bg-accent-blue text-white cursor-default"
-                        : "text-text-secondary hover:bg-white/10 hover:text-white"
+                        ? "bg-accent-blue text-primary cursor-default"
+                        : "text-text-secondary hover:bg-white/10 hover:text-primary"
                     }`}
                     disabled={isActive("/dashboard")}
                   >
@@ -343,7 +343,7 @@ export default function Navigation() {
 
         {/* Mobile Search Bar */}
         {isSearchOpen && (
-          <div className="lg:hidden mt-4 pt-4 border-t border-glass-border">
+          <div className="lg:hidden mt-4 pt-4 border-t border-bg-secondary-border">
             <SearchBar
               placeholder="Search equipment..."
               onSearch={(query) => {

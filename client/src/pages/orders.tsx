@@ -109,7 +109,7 @@ export default function Orders() {
             </p>
           </div>
           <Link href="/dashboard">
-            <Button variant="outline" className="glass border-glass-border">
+            <Button variant="outline" className="glass border-border">
               <ArrowLeft className="mr-2" size={18} />
               Back to Dashboard
             </Button>
@@ -126,13 +126,13 @@ export default function Orders() {
                 placeholder="Search by order ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="glass border-glass-border pl-10"
+                className="glass border-border pl-10"
               />
             </div>
 
             {/* Status Filter */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="glass border-glass-border">
+              <SelectTrigger className="glass border-border">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -148,7 +148,7 @@ export default function Orders() {
 
             {/* Sort */}
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="glass border-glass-border">
+              <SelectTrigger className="glass border-border">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -260,19 +260,19 @@ export default function Orders() {
                   </Link>
                   
                   {order.status === 'delivered' && (
-                    <Button variant="outline" className="glass border-glass-border">
+                    <Button variant="outline" className="glass border-border">
                       Reorder
                     </Button>
                   )}
                   
                   {order.status === 'shipped' && order.trackingNumber && (
-                    <Button variant="outline" className="glass border-glass-border">
+                    <Button variant="outline" className="glass border-border">
                       Track Package
                     </Button>
                   )}
                   
                   {(order.status === 'pending' || order.status === 'confirmed') && (
-                    <Button variant="outline" className="glass border-glass-border text-red-400 border-red-400">
+                    <Button variant="outline" className="glass border-border text-red-400 border-red-400">
                       Cancel Order
                     </Button>
                   )}
@@ -285,7 +285,7 @@ export default function Orders() {
         {/* Load More Button (if needed for pagination) */}
         {filteredOrders.length >= 20 && (
           <div className="mt-8 text-center">
-            <Button variant="outline" className="glass border-glass-border">
+            <Button variant="outline" className="glass border-border">
               Load More Orders
             </Button>
           </div>

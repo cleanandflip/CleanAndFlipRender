@@ -30,7 +30,7 @@ export function MetricCard({
   };
 
   const getTrendColor = () => {
-    if (change === undefined) return 'text-text-muted';
+    if (change === undefined) return 'text-text-muted-foreground';
     if (change > 0) return 'text-green-400';
     if (change < 0) return 'text-red-400';
     return 'text-gray-400';
@@ -40,10 +40,10 @@ export function MetricCard({
     <Card className={`glass p-6 ${className}`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-text-muted">{title}</p>
+          <p className="text-sm font-medium text-text-muted-foreground">{title}</p>
           <p className="text-2xl font-bold mt-2 text-white">{value}</p>
           {subtitle && (
-            <p className="text-xs text-text-muted mt-1">{subtitle}</p>
+            <p className="text-xs text-text-muted-foreground mt-1">{subtitle}</p>
           )}
         </div>
         {Icon && (
@@ -59,7 +59,7 @@ export function MetricCard({
           <span className={`text-sm font-medium ${getTrendColor()}`}>
             {Math.abs(change)}%
           </span>
-          <span className="text-xs text-text-muted">from last period</span>
+          <span className="text-xs text-text-muted-foreground">from last period</span>
         </div>
       )}
     </Card>

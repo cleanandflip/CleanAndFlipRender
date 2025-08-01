@@ -138,8 +138,8 @@ export function AnalyticsManager() {
                 }
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 glass border-glass-border">
-              <div className="p-3 space-y-2 border-b border-glass-border">
+            <PopoverContent className="w-auto p-0 glass border-border">
+              <div className="p-3 space-y-2 border-b border-border">
                 {quickDateRanges.map((range) => (
                   <Button
                     key={range.days}

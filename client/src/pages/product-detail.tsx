@@ -299,7 +299,7 @@ export default function ProductDetail() {
               <div className="flex items-center gap-4 mb-4">
                 <span className="text-3xl font-bold text-accent-blue">${product.price}</span>
                 {product.brand && (
-                  <Badge variant="outline" className="glass border-glass-border">
+                  <Badge variant="outline" className="glass border-border">
                     {product.brand}
                   </Badge>
                 )}
@@ -391,13 +391,13 @@ export default function ProductDetail() {
               <div className="flex gap-3 mt-4">
                 <WishlistButton
                   productId={product.id}
-                  className="glass border-glass-border"
+                  className="glass border-border"
                 />
                 
                 <Button
                   variant="outline"
                   onClick={handleShare}
-                  className="glass border-glass-border"
+                  className="glass border-border"
                 >
                   <Share2 size={20} />
                 </Button>

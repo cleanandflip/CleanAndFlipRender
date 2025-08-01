@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react';
+import { globalDesignSystem as theme } from '@/styles/design-system/theme';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,9 +61,12 @@ export function DashboardLayout({
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-secondary">
       {/* Header */}
-      <div className="border-b border-glass-border bg-background/80 backdrop-blur sticky top-0 z-40">
+      <div 
+        className="border-b bg-secondary/80 backdrop-blur sticky top-0 z-40"
+        style={{ borderColor: theme.colors.border.default }}
+      >
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -81,7 +85,7 @@ export function DashboardLayout({
                 variant="outline"
                 size="sm"
                 onClick={onRefresh}
-                className="gap-2 glass border-glass-border"
+                className="gap-2"
                 disabled={isLoading}
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -90,13 +94,13 @@ export function DashboardLayout({
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 glass border-glass-border">
+                  <Button variant="outline" size="sm" className="gap-2">
                     <Download className="w-4 h-4" />
                     Export
                     <ChevronDown className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="glass border-glass-border">
+                <DropdownMenuContent>
                   <DropdownMenuItem onClick={() => onExport('csv')}>
                     Export as CSV
                   </DropdownMenuItem>
@@ -119,14 +123,19 @@ export function DashboardLayout({
                   setSearchQuery(e.target.value);
                   onSearch(e.target.value);
                 }}
-                className="pl-10 glass border-glass-border"
+                className="pl-10"
+                style={{
+                  backgroundColor: theme.colors.bg.primary,
+                  borderColor: theme.colors.border.default,
+                  color: theme.colors.text.primary
+                }}
               />
             </div>
             
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="gap-2 glass border-glass-border relative"
+              className="gap-2 relative"
             >
               <Filter className="w-4 h-4" />
               Filters
@@ -136,56 +145,61 @@ export function DashboardLayout({
                 </span>
               )}
             </Button>
-            
-            {/* View Toggle */}
+
             {viewMode === 'both' && onViewChange && (
-              <div className="flex items-center gap-1 glass rounded-lg p-1">
+              <div className="flex border border-primary rounded-lg">
                 <Button
-                  variant={currentView === 'list' ? 'secondary' : 'ghost'}
+                  variant={currentView === 'list' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => onViewChange('list')}
-                  className="glass"
+                  className="rounded-r-none"
                 >
                   <List className="w-4 h-4" />
                 </Button>
                 <Button
-                  variant={currentView === 'grid' ? 'secondary' : 'ghost'}
+                  variant={currentView === 'grid' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => onViewChange('grid')}
-                  className="glass"
+                  className="rounded-l-none"
                 >
                   <Grid className="w-4 h-4" />
                 </Button>
               </div>
             )}
-            
-            {/* Sort Options */}
+
             {sortOptions && onSort && (
-              <Select onValueChange={onSort}>
-                <SelectTrigger className="w-[180px] glass border-glass-border">
-                  <ArrowUpDown className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Sort by..." />
-                </SelectTrigger>
-                <SelectContent className="glass border-glass-border">
-                  {sortOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="w-4 h-4 text-text-muted" />
+                <Select onValueChange={onSort}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
-          
-          {/* Filters Section */}
-          {showFilters && (
-            <div className="mt-4 p-4 glass rounded-lg border border-glass-border">
-              {filters}
-            </div>
-          )}
         </div>
       </div>
-      
+
+      {/* Filters Panel */}
+      {showFilters && (
+        <div 
+          className="border-b p-4"
+          style={{ borderColor: theme.colors.border.default }}
+        >
+          <Card className="p-4">
+            {filters}
+          </Card>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="p-6">
         {children}

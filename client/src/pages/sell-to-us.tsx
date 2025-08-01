@@ -180,7 +180,7 @@ export default function SellToUs() {
               <Button 
                 variant="outline" 
                 onClick={() => window.location.reload()} 
-                className="glass border-glass-border"
+                className="glass border-border"
               >
                 Submit Another Item
               </Button>
@@ -267,7 +267,7 @@ export default function SellToUs() {
                             <Input 
                               {...field} 
                               placeholder="e.g. Olympic Barbell 45lb"
-                              className="glass border-glass-border"
+                              className="glass border-border"
                             />
                           </FormControl>
                           <FormMessage />
@@ -336,7 +336,7 @@ export default function SellToUs() {
                               value={field.value || ""}
                               type="number"
                               placeholder="Total weight in pounds"
-                              className="glass border-glass-border"
+                              className="glass border-border"
                               onChange={(e) => field.onChange(e.target.value)}
                             />
                           </FormControl>
@@ -357,7 +357,7 @@ export default function SellToUs() {
                             {...field} 
                             value={field.value || ""}
                             placeholder="50"
-                            className="glass border-glass-border"
+                            className="glass border-border"
                             onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
@@ -380,7 +380,7 @@ export default function SellToUs() {
                             {...field} 
                             value={field.value || ""}
                             placeholder="Tell us about the equipment - age, usage, any wear or damage..."
-                            className="glass border-glass-border min-h-[100px]"
+                            className="glass border-border min-h-[100px]"
                           />
                         </FormControl>
                         <FormMessage />
@@ -397,13 +397,13 @@ export default function SellToUs() {
                     Include any wear, damage, or unique features.
                   </p>
                   
-                  <div className="border-2 border-dashed border-glass-border rounded-lg p-8 text-center">
+                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                     <Upload className="mx-auto mb-4 text-text-muted" size={48} />
                     <h4 className="font-semibold mb-2">Upload Photos</h4>
                     <p className="text-text-muted mb-4">
                       Drag and drop photos here, or click to select
                     </p>
-                    <Button variant="outline" className="glass border-glass-border">
+                    <Button variant="outline" className="glass border-border">
                       Choose Files
                     </Button>
                   </div>

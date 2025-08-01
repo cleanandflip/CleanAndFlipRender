@@ -82,7 +82,7 @@ export function SystemManager() {
     <div className="min-h-screen bg-background">
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 border-r border-glass-border glass p-6">
+        <div className="w-64 border-r border-border glass p-6">
           <h2 className="text-lg font-semibold mb-4 text-white bebas-neue">System Settings</h2>
           <nav className="space-y-1">
             {sections.map((section) => {
