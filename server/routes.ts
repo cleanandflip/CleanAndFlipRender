@@ -53,6 +53,7 @@ import {
   type Product,
   type Category
 } from "@shared/schema";
+import { convertSubmissionsToCSV } from './utils/exportHelpers';
 import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not, count } from "drizzle-orm";
 import { displayStartupBanner } from "./utils/startup-banner";
 import { initRedis } from "./config/redis";
@@ -1852,10 +1853,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           s.submission.adminNotes || ''
         ]);
 
-        const csvContent = [
-          csvHeaders.join(','),
-          ...csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-        ].join('\n');
+        const csvContent = convertSubmissionsToCSV(submissions.map(s => ({
+          referenceNumber: s.submission.referenceNumber,
+          name: s.submission.name,
+          brand: s.submission.brand,
+          condition: s.submission.condition,
+          status: s.submission.status,
+          askingPrice: s.submission.askingPrice,
+          offerAmount: s.submission.offerAmount,
+          user: s.user,
+          userCity: s.submission.userCity,
+          userState: s.submission.userState,
+          isLocal: s.submission.isLocal,
+          adminNotes: s.submission.adminNotes,
+          createdAt: s.submission.createdAt
+        })));
 
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename=submissions-${new Date().toISOString().split('T')[0]}.csv`);

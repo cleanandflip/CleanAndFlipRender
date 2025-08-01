@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Eye, Edit, MessageSquare, Archive, Trash2, MoreVertical } from 'lucide-react';
+import { formatStatus, getStatusVariant, formatCurrency } from '@/utils/submissionHelpers';
 
 interface Submission {
   id: string;
@@ -35,22 +36,7 @@ interface SubmissionsListProps {
   onViewDetails: (submission: Submission) => void;
 }
 
-const getStatusVariant = (status: string) => {
-  switch (status) {
-    case 'pending': return 'default';
-    case 'under_review': return 'secondary';
-    case 'accepted': return 'secondary';
-    case 'scheduled': return 'secondary';
-    case 'completed': return 'secondary';
-    case 'rejected': return 'destructive';
-    case 'cancelled': return 'outline';
-    default: return 'outline';
-  }
-};
-
-const formatStatus = (status: string) => {
-  return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-};
+// Removed duplicate functions - now using centralized utilities
 
 export function SubmissionsList({ 
   submissions, 
