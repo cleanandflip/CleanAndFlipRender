@@ -1451,8 +1451,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/submissions", requireAdmin, async (req, res) => {
     try {
       const { status } = req.query;
+      Logger.debug(`Fetching admin submissions with status filter: ${status}`);
+      
       const submissions = await storage.getEquipmentSubmissions(status as string);
-      res.json(submissions);
+      Logger.debug(`Found ${submissions.length} submissions`);
+      
+      // Ensure we return the right data structure for the frontend
+      const formattedSubmissions = submissions.map(submission => ({
+        id: submission.id,
+        name: submission.name,
+        description: submission.description,
+        brand: submission.brand,
+        condition: submission.condition,
+        weight: submission.weight,
+        askingPrice: submission.askingPrice,
+        images: submission.images || [],
+        status: submission.status,
+        offerAmount: submission.offerAmount,
+        adminNotes: submission.adminNotes,
+        phoneNumber: submission.phoneNumber,
+        userCity: submission.userCity,
+        userState: submission.userState,
+        userZipCode: submission.userZipCode,
+        isLocal: submission.isLocal,
+        distance: submission.distance,
+        createdAt: submission.createdAt,
+        user: submission.user || { id: '', email: '', firstName: '', lastName: '' }
+      }));
+      
+      Logger.debug(`Returning ${formattedSubmissions.length} formatted submissions`);
+      res.json(formattedSubmissions);
     } catch (error) {
       Logger.error("Error fetching submissions", error);
       res.status(500).json({ error: "Failed to fetch submissions" });
