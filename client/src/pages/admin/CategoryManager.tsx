@@ -36,7 +36,7 @@ export function CategoryManager() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: categories, isLoading, refetch } = useQuery({
+  const { data: categoriesData, isLoading, refetch } = useQuery({
     queryKey: ['admin-categories', filters],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -52,6 +52,8 @@ export function CategoryManager() {
     },
     retry: 2
   });
+
+  const categories = categoriesData?.categories || [];
 
   const reorderMutation = useMutation({
     mutationFn: async (reorderedCategories: Array<{ id: string; order: number }>) => {
