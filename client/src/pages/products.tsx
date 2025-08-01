@@ -1,17 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { motion } from "framer-motion";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import ProductGrid from "@/components/products/product-grid";
 import ProductList from "@/components/products/ProductList";
 import FilterSidebar from "@/components/products/filter-sidebar";
 import SearchBar from "@/components/products/search-bar";
 import FilterChip from "@/components/products/filter-chip";
-import GlassCard from "@/components/common/glass-card";
-import { Button } from "@/components/ui/button";
+import { Button, Card } from "@/components/shared/AnimatedComponents";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Filter, Grid, List } from "lucide-react";
 import { ApiError } from "@/components/error-boundary";
+import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import type { Product } from "@shared/schema";
 
 interface ProductFilters {

@@ -89,7 +89,11 @@ export default function Navigation() {
   return (
     <>
       {/* Main Navigation - Cleaner Layout with Badge Support */}
-      <nav className="fixed top-4 left-4 right-4 z-50 glass rounded-xl px-6 py-3 max-w-7xl mx-auto overflow-visible">
+      <nav className="fixed top-4 left-4 right-4 z-50 rounded-xl px-6 py-3 max-w-7xl mx-auto overflow-visible" style={{ 
+        background: 'rgba(35, 41, 55, 0.4)', 
+        backdropFilter: 'blur(12px)', 
+        border: '1px solid rgba(255, 255, 255, 0.08)' 
+      }}>
         <div className="flex items-center justify-between w-full gap-4">
           {/* Left Side - Logo */}
           <div className="flex items-center flex-shrink-0">
