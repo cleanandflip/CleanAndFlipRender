@@ -9,7 +9,7 @@ export function useWishlistBatch(productIds: string[], enabled: boolean = true) 
       
       const response = await apiRequest('POST', '/api/wishlist/check-batch', { productIds });
       
-      return response as Record<string, boolean>;
+      return response;
     },
     enabled: enabled && productIds.length > 0,
     staleTime: 1000 * 60 * 2, // 2 minutes

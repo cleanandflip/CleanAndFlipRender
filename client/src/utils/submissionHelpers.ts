@@ -24,12 +24,6 @@ export function getWeekStart(): Date {
   return new Date(now.setDate(diff));
 }
 
-export function generateReferenceNumber(): string {
-  const timestamp = Date.now().toString(36);
-  const randomStr = Math.random().toString(36).substring(2, 8);
-  return `CF-${timestamp}-${randomStr}`.toUpperCase();
-}
-
 export function formatCurrency(amount: number | null | undefined): string {
   if (!amount) return 'Open';
   return `$${amount.toLocaleString()}`;

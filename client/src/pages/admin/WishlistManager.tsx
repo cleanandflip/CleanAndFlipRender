@@ -100,7 +100,10 @@ export function WishlistManager() {
     }
   };
 
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number | string) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return `$${(num || 0).toFixed(2)}`;
+  };
 
   const getInsightIcon = (type: string) => {
     switch (type) {
