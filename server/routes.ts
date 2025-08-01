@@ -782,8 +782,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Authentication required" });
     }
     
-    // Check if user has admin privileges
-    if (!user.isAdmin && user.role !== 'developer') {
+    // Check if user has admin privileges (allow admin role or isAdmin flag)
+    if (!user.isAdmin && user.role !== 'admin' && user.role !== 'developer') {
       return res.status(403).json({ error: "Admin access required" });
     }
     
