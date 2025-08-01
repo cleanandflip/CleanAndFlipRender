@@ -15,6 +15,7 @@ import {
   ExternalLink, Eye, ShoppingCart, AlertTriangle, Lightbulb,
   BarChart3, Calendar, Mail, Star, Package
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface WishlistFilters {
   timeRange: '7d' | '30d' | '90d' | '365d';
@@ -73,6 +74,41 @@ export function WishlistManager() {
     page: 1,
     limit: 20
   });
+
+  // Action handlers for wishlist items
+  const handleViewProduct = (productId: string) => {
+    window.open(`/products/${productId}`, '_blank');
+  };
+
+  const handleAddToCart = async (productId: string) => {
+    try {
+      const res = await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, quantity: 1 }),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        toast({ title: "Added to cart" });
+      }
+    } catch (error) {
+      toast({ title: "Error adding to cart", variant: "destructive" });
+    }
+  };
+
+  // Action handlers for users
+  const handleViewUserWishlist = (userId: string) => {
+    toast({
+      title: "User Wishlist",
+      description: "User wishlist detail view coming soon",
+    });
+  };
+
+  const handleEmailUser = (user: any) => {
+    window.location.href = `mailto:${user.email}?subject=About your wishlist`;
+  };
+
+  const { toast } = useToast();
 
   const { data: analytics, isLoading } = useQuery<DetailedWishlistAnalytics>({
     queryKey: ['/api/admin/wishlist-analytics/detailed', filters.timeRange],
@@ -160,10 +196,22 @@ export function WishlistManager() {
         </Badge>
       </div>
       <div className="flex gap-2">
-        <Button size="sm" variant="outline" className="glass border-glass-border">
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="glass border-glass-border"
+          onClick={() => handleViewProduct(product.productId)}
+          title="View Product"
+        >
           <Eye className="w-4 h-4" />
         </Button>
-        <Button size="sm" variant="outline" className="glass border-glass-border">
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="glass border-glass-border"
+          onClick={() => handleAddToCart(product.productId)}
+          title="Add to Cart"
+        >
           <ShoppingCart className="w-4 h-4" />
         </Button>
       </div>
@@ -188,10 +236,22 @@ export function WishlistManager() {
         </Badge>
       </div>
       <div className="flex gap-2">
-        <Button size="sm" variant="outline" className="glass border-glass-border">
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="glass border-glass-border"
+          onClick={() => handleViewUserWishlist(user.userId)}
+          title="View User Wishlist"
+        >
           <Eye className="w-4 h-4" />
         </Button>
-        <Button size="sm" variant="outline" className="glass border-glass-border">
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="glass border-glass-border"
+          onClick={() => handleEmailUser(user)}
+          title="Email User"
+        >
           <Mail className="w-4 h-4" />
         </Button>
       </div>

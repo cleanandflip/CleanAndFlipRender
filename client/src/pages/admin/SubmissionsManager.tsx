@@ -142,6 +142,69 @@ export function SubmissionsManager() {
     { label: 'Rejected Items', filters: { status: 'rejected' } }
   ];
 
+  // Individual submission actions
+  const handleEditSubmission = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    toast({
+      title: "Edit Submission",
+      description: `Edit functionality for ${submission.name} coming soon`,
+    });
+  };
+
+  const handleAddNote = async (submission: Submission) => {
+    const note = prompt('Add a note for this submission:');
+    if (note) {
+      try {
+        const res = await fetch(`/api/admin/submissions/${submission.id}/note`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ note }),
+          credentials: 'include'
+        });
+        if (res.ok) {
+          toast({ title: "Note added successfully" });
+          refetch();
+        }
+      } catch (error) {
+        toast({ title: "Error adding note", variant: "destructive" });
+      }
+    }
+  };
+
+  const handleArchiveSubmission = async (submission: Submission) => {
+    if (confirm('Archive this submission?')) {
+      try {
+        const res = await fetch(`/api/admin/submissions/${submission.id}/archive`, {
+          method: 'PUT',
+          credentials: 'include'
+        });
+        if (res.ok) {
+          toast({ title: "Submission archived" });
+          refetch();
+        }
+      } catch (error) {
+        toast({ title: "Error archiving submission", variant: "destructive" });
+      }
+    }
+  };
+
+  const handleDeleteSubmission = async (submission: Submission) => {
+    if (confirm('Delete this submission permanently?')) {
+      try {
+        const res = await fetch(`/api/admin/submissions/${submission.id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        if (res.ok) {
+          toast({ title: "Submission deleted" });
+          refetch();
+        }
+      } catch (error) {
+        toast({ title: "Error deleting submission", variant: "destructive" });
+      }
+    }
+  };
+
   // Bulk actions
   const handleBulkAction = async (action: string) => {
     if (selectedSubmissions.size === 0) return;

@@ -134,6 +134,13 @@ export function CategoryManager() {
     });
   };
 
+  const handleViewCategory = (category: Category) => {
+    toast({
+      title: "View Category",
+      description: `Viewing ${category.name} - Feature coming soon`,
+    });
+  };
+
   const handleEdit = (category: Category) => {
     // Set category for editing and open modal/form
     setEditingCategory(category);
@@ -251,20 +258,17 @@ export function CategoryManager() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleToggleActive(category)}
-                    title={category.isActive ? 'Deactivate' : 'Activate'}
+                    onClick={() => handleViewCategory(category)}
+                    title="View Category"
                   >
-                    {category.isActive ? (
-                      <Eye className="w-4 h-4" />
-                    ) : (
-                      <EyeOff className="w-4 h-4" />
-                    )}
+                    <Eye className="w-4 h-4" />
                   </Button>
                   
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleEdit(category)}
+                    title="Edit Category"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -274,6 +278,7 @@ export function CategoryManager() {
                     size="icon"
                     onClick={() => handleDelete(category)}
                     disabled={category.productCount > 0}
+                    title={category.productCount > 0 ? 'Cannot delete - has products' : 'Delete Category'}
                     className="text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="w-4 h-4" />

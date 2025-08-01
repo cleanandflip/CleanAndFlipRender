@@ -62,7 +62,23 @@ export function AnalyticsManager() {
       if (!res.ok) throw new Error('Failed to fetch analytics');
       const data = await res.json();
 
-      return data;
+      // Ensure proper data structure with fallbacks
+      return {
+        totalRevenue: data.totalRevenue || 0,
+        revenueChange: data.revenueChange || 0,
+        totalOrders: data.totalOrders || 0,
+        ordersChange: data.ordersChange || 0,
+        conversionRate: data.conversionRate || 0,
+        conversionChange: data.conversionChange || 0,
+        avgOrderValue: data.avgOrderValue || 0,
+        aovChange: data.aovChange || 0,
+        totalUsers: data.totalUsers || 0,
+        usersChange: data.usersChange || 0,
+        totalProducts: data.totalProducts || 0,
+        productsChange: data.productsChange || 0,
+        topProducts: data.topProducts || [],
+        recentActivity: data.recentActivity || []
+      };
     },
     retry: 2
   });
@@ -201,38 +217,38 @@ export function AnalyticsManager() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
         <MetricCard
           title="Total Revenue"
-          value={formatCurrency(analytics?.revenue?.total || 0)}
-          change={analytics?.revenue?.change}
+          value={`$${(analytics?.totalRevenue || 0).toFixed(2)}`}
+          change={analytics?.revenueChange}
           icon={DollarSign}
         />
         <MetricCard
           title="Total Orders"
-          value={analytics?.orders?.total || 0}
-          change={analytics?.orders?.change}
+          value={analytics?.totalOrders || 0}
+          change={analytics?.ordersChange}
           icon={ShoppingCart}
         />
         <MetricCard
           title="Conversion Rate"
-          value={`${analytics?.conversion?.rate || 0}%`}
-          change={analytics?.conversion?.change}
+          value={`${(analytics?.conversionRate || 0).toFixed(1)}%`}
+          change={analytics?.conversionChange}
           icon={TrendingUp}
         />
         <MetricCard
           title="Avg Order Value"
-          value={formatCurrency(analytics?.orders?.avgValue || 0)}
-          change={analytics?.orders?.change}
+          value={`$${(analytics?.avgOrderValue || 0).toFixed(2)}`}
+          change={analytics?.aovChange}
           icon={Calculator}
         />
         <MetricCard
           title="Total Users"
-          value={analytics?.users?.total || 0}
-          change={analytics?.users?.change}
+          value={analytics?.totalUsers || 0}
+          change={analytics?.usersChange}
           icon={Users}
         />
         <MetricCard
           title="Total Products"
-          value={analytics?.products?.total || 0}
-          change={analytics?.products?.change}
+          value={analytics?.totalProducts || 0}
+          change={analytics?.productsChange}
           icon={Package}
         />
       </div>
@@ -241,86 +257,50 @@ export function AnalyticsManager() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="glass p-6">
           <h3 className="text-lg font-semibold mb-4 text-white">Revenue Trend</h3>
-          {analytics?.revenueData ? (
-            <div className="h-64 flex items-end justify-between gap-2">
-              {analytics.revenueData.slice(-30).map((item: any, index: number) => (
-                <div
-                  key={index}
-                  className="bg-primary/70 hover:bg-primary transition-colors rounded-sm min-w-[8px] relative group"
-                  style={{ 
-                    height: `${Math.max(4, (item.value / Math.max(...analytics.revenueData.map((d: any) => d.value))) * 240)}px` 
-                  }}
-                  title={`${item.date}: ${formatCurrency(item.value)}`}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="h-64 flex items-center justify-center text-text-muted">
-              No revenue data available
-            </div>
-          )}
+          <div className="h-64 flex items-center justify-center text-text-muted">
+            Revenue chart coming soon
+          </div>
         </Card>
         
         <Card className="glass p-6">
           <h3 className="text-lg font-semibold mb-4 text-white">Top Products</h3>
           <div className="space-y-3">
-            {analytics?.topProducts?.slice(0, 5).map((product: any, index: number) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="font-medium text-white truncate">{product.name}</p>
-                  <p className="text-sm text-text-muted">{product.sales} sales</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-white">{formatCurrency(product.revenue)}</p>
-                </div>
-              </div>
-            )) || (
-              <p className="text-text-muted text-center py-8">No product data available</p>
-            )}
-          </div>
-        </Card>
-        
-        <Card className="glass p-6">
-          <h3 className="text-lg font-semibold mb-4 text-white">Traffic Sources</h3>
-          <div className="space-y-3">
-            {analytics?.trafficSources?.map((source: any, index: number) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="font-medium text-white">{source.source}</p>
-                  <div className="w-full bg-gray-700 h-2 rounded-full mt-1">
-                    <div 
-                      className="bg-primary h-2 rounded-full" 
-                      style={{ width: `${source.percentage}%` }}
-                    />
+            {analytics?.topProducts && analytics.topProducts.length > 0 ? 
+              analytics.topProducts.slice(0, 5).map((product: any, index: number) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="font-medium text-white truncate">{product.name}</p>
+                    <p className="text-sm text-text-muted">{product.sales} sales</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-white">${(product.revenue || 0).toFixed(2)}</p>
                   </div>
                 </div>
-                <div className="text-right ml-4">
-                  <p className="font-medium text-white">{source.users}</p>
-                  <p className="text-sm text-text-muted">{source.percentage}%</p>
-                </div>
-              </div>
-            )) || (
-              <p className="text-text-muted text-center py-8">No traffic data available</p>
-            )}
+              )) : (
+                <p className="text-text-muted text-center py-8">No product data available</p>
+              )
+            }
           </div>
         </Card>
         
         <Card className="glass p-6">
           <h3 className="text-lg font-semibold mb-4 text-white">Recent Activity</h3>
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {analytics?.recentActivity?.map((activity: any) => (
-              <div key={activity.id} className="flex items-start gap-3">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white">{activity.description}</p>
-                  <p className="text-xs text-text-muted">
-                    {new Date(activity.timestamp).toLocaleString()}
-                  </p>
+          <div className="space-y-3">
+            {analytics?.recentActivity && analytics.recentActivity.length > 0 ? 
+              analytics.recentActivity.slice(0, 5).map((activity: any, index: number) => (
+                <div key={index} className="flex items-center justify-between border-b border-gray-700 pb-2">
+                  <div className="flex-1">
+                    <p className="font-medium text-white">{activity.description}</p>
+                    <p className="text-sm text-text-muted">{activity.type}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-text-muted">{new Date(activity.timestamp).toLocaleDateString()}</p>
+                  </div>
                 </div>
-              </div>
-            )) || (
-              <p className="text-text-muted text-center py-8">No recent activity</p>
-            )}
+              )) : (
+                <p className="text-text-muted text-center py-8">No recent activity</p>
+              )
+            }
           </div>
         </Card>
       </div>

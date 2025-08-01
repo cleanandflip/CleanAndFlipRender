@@ -117,6 +117,36 @@ export function UserManager() {
     }
   });
 
+  // Individual user actions
+  const handleViewUser = (user: User) => {
+    toast({
+      title: "User Details",
+      description: `User details for ${user.email} coming soon`,
+    });
+  };
+
+  const handleEmailUser = (user: User) => {
+    window.location.href = `mailto:${user.email}?subject=Account Information`;
+  };
+
+  const handleToggleAdmin = async (user: User) => {
+    const newRole = user.role === 'admin' ? 'user' : 'admin';
+    updateUserMutation.mutate({
+      userId: user.id,
+      updates: { role: newRole }
+    });
+  };
+
+  const handleSuspendUser = async (user: User) => {
+    if (confirm(`${user.status === 'suspended' ? 'Unsuspend' : 'Suspend'} ${user.email}?`)) {
+      const newStatus = user.status === 'suspended' ? 'active' : 'suspended';
+      updateUserMutation.mutate({
+        userId: user.id,
+        updates: { status: newStatus }
+      });
+    }
+  };
+
   const handleBulkAction = async (action: string) => {
     const confirmActions: Record<string, string> = {
       activate: 'activate these users',
@@ -395,32 +425,24 @@ export function UserManager() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => {
-                toast({ title: "Feature Coming Soon", description: "User profile view is being developed." });
-              }}>
+              <DropdownMenuItem onClick={() => handleViewUser(user)}>
                 View Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                toast({ title: "Feature Coming Soon", description: "User editing is being developed." });
-              }}>
-                Edit User
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                toast({ title: "Feature Coming Soon", description: "Password reset email is being developed." });
-              }}>
+              <DropdownMenuItem onClick={() => handleEmailUser(user)}>
                 <Mail className="w-4 h-4 mr-2" />
-                Reset Password
+                Email User
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleToggleAdmin(user)}>
+                <Shield className="w-4 h-4 mr-2" />
+                {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onClick={() => updateUserMutation.mutate({ 
-                  userId: user.id, 
-                  updates: { status: 'suspended' as any }
-                })}
+                onClick={() => handleSuspendUser(user)}
                 className="text-red-400"
               >
                 <Ban className="w-4 h-4 mr-2" />
-                Suspend User
+                {user.status === 'suspended' ? 'Unsuspend' : 'Suspend'} User
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

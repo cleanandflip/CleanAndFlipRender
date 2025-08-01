@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/utils/submissionHelpers';
+import { useToast } from '@/hooks/use-toast';
 
 interface Product {
   id: string;
@@ -42,6 +43,7 @@ export function ProductsManager() {
   const [filters, setFilters] = useState(defaultFilters);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const { toast } = useToast();
 
   const { data: products, isLoading, refetch } = useQuery({
     queryKey: ['admin-products', filters],
@@ -122,6 +124,34 @@ export function ProductsManager() {
     if (filters.status !== 'all') count++;
     if (filters.priceRange.min > 0 || filters.priceRange.max < 10000) count++;
     return count;
+  };
+
+  const handleViewProduct = (product: Product) => {
+    window.open(`/products/${product.id}`, '_blank');
+  };
+
+  const handleEditProduct = (product: Product) => {
+    toast({
+      title: "Edit Product",
+      description: `Edit functionality for ${product.name} coming soon`,
+    });
+  };
+
+  const handleDeleteProduct = async (product: Product) => {
+    if (confirm(`Delete "${product.name}"?`)) {
+      try {
+        const res = await fetch(`/api/admin/products/${product.id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        if (res.ok) {
+          refetch();
+          toast({ title: "Product deleted successfully" });
+        }
+      } catch (error) {
+        toast({ title: "Error deleting product", variant: "destructive" });
+      }
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -329,13 +359,31 @@ export function ProductsManager() {
               </div>
               
               <div className="flex gap-2 mt-3">
-                <Button size="sm" variant="outline" className="flex-1 glass border-glass-border">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1 glass border-glass-border"
+                  onClick={() => handleViewProduct(product)}
+                  title="View Product"
+                >
                   <Eye className="w-4 h-4" />
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1 glass border-glass-border">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1 glass border-glass-border"
+                  onClick={() => handleEditProduct(product)}
+                  title="Edit Product"
+                >
                   <Edit className="w-4 h-4" />
                 </Button>
-                <Button size="sm" variant="destructive" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="destructive" 
+                  className="flex-1"
+                  onClick={() => handleDeleteProduct(product)}
+                  title="Delete Product"
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -407,13 +455,30 @@ export function ProductsManager() {
                 
                 <div className="col-span-2">
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="glass border-glass-border">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="glass border-glass-border"
+                      onClick={() => handleViewProduct(product)}
+                      title="View Product"
+                    >
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button size="sm" variant="outline" className="glass border-glass-border">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="glass border-glass-border"
+                      onClick={() => handleEditProduct(product)}
+                      title="Edit Product"
+                    >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button size="sm" variant="destructive">
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      onClick={() => handleDeleteProduct(product)}
+                      title="Delete Product"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
