@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DashboardLayout } from '@/components/admin/DashboardLayout';
+import { Pagination } from '@/components/admin/Pagination';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +21,7 @@ import { SubmissionsGrid } from '@/components/admin/SubmissionsGrid';
 import { SubmissionAnalytics } from '@/components/admin/SubmissionAnalytics';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { formatStatus, getStatusVariant } from '@/utils/submissionHelpers';
 
 interface SubmissionFilters {
   status: string;
@@ -85,11 +88,13 @@ export default function SubmissionsManager() {
   const [selectedSubmissions, setSelectedSubmissions] = useState<Set<string>>(new Set());
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [offerAmount, setOfferAmount] = useState('');
+  const [adminNotes, setAdminNotes] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Main data query
-  const { data: submissions, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['admin-submissions', filters],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -118,14 +123,14 @@ export default function SubmissionsManager() {
 
   // Status tabs with counts
   const statusTabs = [
-    { value: 'all', label: 'All', count: submissions?.total || 0, color: 'default' },
-    { value: 'pending', label: 'Pending', count: submissions?.pending || 0, color: 'default' },
-    { value: 'under_review', label: 'Under Review', count: submissions?.under_review || 0, color: 'secondary' },
-    { value: 'accepted', label: 'Accepted', count: submissions?.accepted || 0, color: 'secondary' },
-    { value: 'scheduled', label: 'Scheduled', count: submissions?.scheduled || 0, color: 'secondary' },
-    { value: 'completed', label: 'Completed', count: submissions?.completed || 0, color: 'secondary' },
-    { value: 'rejected', label: 'Rejected', count: submissions?.rejected || 0, color: 'destructive' },
-    { value: 'cancelled', label: 'Cancelled', count: submissions?.cancelled || 0, color: 'outline' }
+    { value: 'all', label: 'All', count: data?.total || 0, color: 'default' },
+    { value: 'pending', label: 'Pending', count: data?.pending || 0, color: 'default' },
+    { value: 'under_review', label: 'Under Review', count: data?.under_review || 0, color: 'secondary' },
+    { value: 'accepted', label: 'Accepted', count: data?.accepted || 0, color: 'secondary' },
+    { value: 'scheduled', label: 'Scheduled', count: data?.scheduled || 0, color: 'secondary' },
+    { value: 'completed', label: 'Completed', count: data?.completed || 0, color: 'secondary' },
+    { value: 'rejected', label: 'Rejected', count: data?.rejected || 0, color: 'destructive' },
+    { value: 'cancelled', label: 'Cancelled', count: data?.cancelled || 0, color: 'outline' }
   ];
   
   // Saved filter presets
@@ -254,7 +259,7 @@ export default function SubmissionsManager() {
     if (status === 'offer_made') {
       toast({
         title: "Offer Sent",
-        description: `Offer of $${offerAmount} sent to ${submission.user.email}`,
+        description: `Offer of $${offerAmount} sent to ${submission.user?.email}`,
       });
     }
   };
@@ -296,226 +301,129 @@ export default function SubmissionsManager() {
 
 
 
-  return (
-    <div className="min-h-screen bg-gray-900">
-      {/* Analytics Section */}
-      <div className="p-6 border-b border-gray-800">
-        <SubmissionAnalytics />
-      </div>
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.status !== 'all') count++;
+    if (filters.isLocal !== null) count++;
+    if (filters.dateRange.from) count++;
+    return count;
+  };
 
-      {/* Header */}
-      <div className="border-b border-gray-800 bg-gray-900/50 backdrop-blur sticky top-0 z-40">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Equipment Submissions</h1>
-              <p className="text-gray-400 mt-1">
-                Manage and process equipment buy requests
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Quick Actions */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => refetch()}
-                className="gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Refresh
-              </Button>
-              
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Export
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent>
-                  <div className="space-y-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => handleExport('csv')}
-                    >
-                      Export as CSV
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => handleExport('pdf')}
-                    >
-                      Export as PDF
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+  return (
+    <DashboardLayout
+      title="Equipment Submissions"
+      description="Manage and process equipment buy requests"
+      totalCount={data?.total || 0}
+      searchPlaceholder="Search by reference, name, brand..."
+      onSearch={(query) => setFilters({ ...filters, search: query, page: 1 })}
+      onRefresh={refetch}
+      onExport={handleExport}
+      viewMode="both"
+      currentView={filters.view}
+      onViewChange={(view) => setFilters({ ...filters, view })}
+      isLoading={isLoading}
+      activeFiltersCount={getActiveFiltersCount()}
+      sortOptions={[
+        { value: 'date-desc', label: 'Newest First' },
+        { value: 'date-asc', label: 'Oldest First' },
+        { value: 'price-desc', label: 'Highest Price' },
+        { value: 'price-asc', label: 'Lowest Price' },
+        { value: 'name-asc', label: 'Name A-Z' },
+        { value: 'name-desc', label: 'Name Z-A' }
+      ]}
+      onSort={(value) => {
+        const [sortBy, sortOrder] = value.split('-');
+        setFilters({ ...filters, sortBy: sortBy as any, sortOrder: sortOrder as any });
+      }}
+      filters={
+        <div className="space-y-4">
+          {/* Analytics Section */}
+          <div className="mb-6">
+            <SubmissionAnalytics />
           </div>
           
-          {/* Search and Filters Bar */}
-          <div className="flex items-center gap-4 mt-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="Search by reference, name, brand..."
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
-                className="pl-10"
-              />
-            </div>
-            
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="gap-2"
-            >
-              <Filter className="w-4 h-4" />
-              Filters
-              {(filters.isLocal !== null || filters.dateRange.from) && (
-                <Badge variant="secondary" className="ml-1">
-                  Active
-                </Badge>
-              )}
-            </Button>
-            
-            {/* View Toggle */}
-            <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
-              <Button
-                variant={filters.view === 'list' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setFilters({ ...filters, view: 'list' })}
-              >
-                <List className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={filters.view === 'grid' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setFilters({ ...filters, view: 'grid' })}
-              >
-                <Grid className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {/* Sort Options */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Select
-              value={`${filters.sortBy}-${filters.sortOrder}`}
-              onValueChange={(value) => {
-                const [sortBy, sortOrder] = value.split('-');
-                setFilters({ ...filters, sortBy: sortBy as any, sortOrder: sortOrder as any });
-              }}
+              value={filters.status}
+              onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
             >
-              <SelectTrigger className="w-[180px]">
-                <ArrowUpDown className="w-4 h-4 mr-2" />
-                <SelectValue />
+              <SelectTrigger className="glass border-glass-border">
+                <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date-desc">Newest First</SelectItem>
-                <SelectItem value="date-asc">Oldest First</SelectItem>
-                <SelectItem value="price-desc">Highest Price</SelectItem>
-                <SelectItem value="price-asc">Lowest Price</SelectItem>
-                <SelectItem value="name-asc">Name A-Z</SelectItem>
-                <SelectItem value="name-desc">Name Z-A</SelectItem>
+              <SelectContent className="glass border-glass-border">
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="under_review">Under Review</SelectItem>
+                <SelectItem value="accepted">Accepted</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          
-          {/* Filter Presets */}
-          {showFilters && (
-            <div className="mt-4 p-4 bg-gray-800/50 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium">Quick Filters</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setFilters({
-                      ...filters,
-                      dateRange: { from: null, to: null },
-                      isLocal: null
-                    });
-                  }}
-                >
-                  Clear All
+            
+            <Select
+              value={filters.isLocal === null ? 'all' : filters.isLocal.toString()}
+              onValueChange={(v) => setFilters({ 
+                ...filters, 
+                isLocal: v === 'all' ? null : v === 'true',
+                page: 1 
+              })}
+            >
+              <SelectTrigger className="glass border-glass-border">
+                <SelectValue placeholder="All Locations" />
+              </SelectTrigger>
+              <SelectContent className="glass border-glass-border">
+                <SelectItem value="all">All Locations</SelectItem>
+                <SelectItem value="true">Local (Asheville)</SelectItem>
+                <SelectItem value="false">Remote</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="glass border-glass-border justify-start">
+                  <CalendarIcon className="w-4 h-4 mr-2" />
+                  {filters.dateRange.from ? (
+                    filters.dateRange.to ? (
+                      `${filters.dateRange.from.toLocaleDateString()} - ${filters.dateRange.to.toLocaleDateString()}`
+                    ) : (
+                      filters.dateRange.from.toLocaleDateString()
+                    )
+                  ) : (
+                    'Date Range'
+                  )}
                 </Button>
-              </div>
-              
-              <div className="flex flex-wrap gap-2">
-                {filterPresets.map((preset) => (
-                  <Button
-                    key={preset.label}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFilters({ ...filters, ...preset.filters })}
-                  >
-                    {preset.label}
-                  </Button>
-                ))}
-                
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <CalendarIcon className="w-4 h-4" />
-                      Date Range
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="range"
-                      selected={filters.dateRange}
-                      onSelect={(range) => setFilters({ ...filters, dateRange: range || { from: null, to: null } })}
-                    />
-                  </PopoverContent>
-                </Popover>
-                
-                <Select
-                  value={filters.isLocal?.toString() || 'all'}
-                  onValueChange={(value) => {
-                    setFilters({
-                      ...filters,
-                      isLocal: value === 'all' ? null : value === 'true'
-                    });
-                  }}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Locations</SelectItem>
-                    <SelectItem value="true">Local Only</SelectItem>
-                    <SelectItem value="false">Non-Local</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 glass border-glass-border">
+                <Calendar
+                  mode="range"
+                  selected={filters.dateRange as any}
+                  onSelect={(range) => setFilters({ ...filters, dateRange: (range as any) || { from: null, to: null } })}
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setFilters({
+                ...filters,
+                status: 'all',
+                isLocal: null,
+                dateRange: { from: null, to: null },
+                page: 1
+              })}
+              className="glass border-glass-border"
+            >
+              Clear Filters
+            </Button>
+          </div>
         </div>
-        
-        {/* Status Tabs */}
-        <Tabs value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}>
-          <TabsList className="px-6">
-            {statusTabs.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="gap-2">
-                {tab.label}
-                <Badge variant={tab.color as any} className="ml-1">
-                  {tab.count}
-                </Badge>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      </div>
-      
-      {/* Main Content */}
-      <div className="p-6">
-        {/* Bulk Actions Bar */}
-        {selectedSubmissions.size > 0 && (
-          <div className="mb-4 p-4 bg-blue-900/20 border border-blue-700 rounded-lg flex items-center justify-between">
+      }
+    >
+      {/* Bulk Actions */}
+      {selectedSubmissions.size > 0 && (
+        <div className="mb-4 p-4 glass rounded-lg border border-blue-500/30 bg-blue-900/20">
+          <div className="flex items-center justify-between">
             <p className="text-blue-300">
               {selectedSubmissions.size} submission{selectedSubmissions.size > 1 ? 's' : ''} selected
             </p>
@@ -524,6 +432,7 @@ export default function SubmissionsManager() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleBulkAction('archive')}
+                className="glass border-glass-border"
               >
                 <Archive className="w-4 h-4 mr-2" />
                 Archive
@@ -531,10 +440,11 @@ export default function SubmissionsManager() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleBulkAction('export')}
+                onClick={() => handleBulkAction('reject')}
+                className="glass border-glass-border"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Export
+                <XCircle className="w-4 h-4 mr-2" />
+                Reject
               </Button>
               <Button
                 variant="destructive"
@@ -546,116 +456,54 @@ export default function SubmissionsManager() {
               </Button>
             </div>
           </div>
-        )}
-        
-        {/* Submissions Display */}
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          </div>
-        ) : submissions?.data?.length === 0 ? (
-          <Card className="p-12 text-center">
-            <div className="max-w-md mx-auto">
-              <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-semibold mb-2">No submissions found</h3>
-              <p className="text-gray-400 mb-4">
-                {filters.search || filters.status !== 'all' 
-                  ? 'Try adjusting your filters or search terms'
-                  : 'Equipment submissions will appear here when users submit them'}
-              </p>
-              <Button variant="outline" onClick={() => setFilters({ ...filters, status: 'all', search: '' })}>
-                Clear Filters
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          <>
-            {filters.view === 'list' ? (
-              <SubmissionsList 
-                submissions={submissions.data || []}
-                selectedSubmissions={selectedSubmissions}
-                onSelectSubmission={(id) => {
-                  const newSelected = new Set(selectedSubmissions);
-                  if (newSelected.has(id)) {
-                    newSelected.delete(id);
-                  } else {
-                    newSelected.add(id);
-                  }
-                  setSelectedSubmissions(newSelected);
-                }}
-                onViewDetails={setSelectedSubmission}
-              />
-            ) : (
-              <SubmissionsGrid
-                submissions={submissions.data || []}
-                selectedSubmissions={selectedSubmissions}
-                onSelectSubmission={(id) => {
-                  const newSelected = new Set(selectedSubmissions);
-                  if (newSelected.has(id)) {
-                    newSelected.delete(id);
-                  } else {
-                    newSelected.add(id);
-                  }
-                  setSelectedSubmissions(newSelected);
-                }}
-                onViewDetails={setSelectedSubmission}
-              />
-            )}
-            
-            {/* Pagination */}
-            {submissions?.total > filters.limit && (
-              <div className="mt-6 flex items-center justify-between">
-                <p className="text-sm text-gray-400">
-                  Showing {((filters.page - 1) * filters.limit) + 1} to{' '}
-                  {Math.min(filters.page * filters.limit, submissions.total)} of{' '}
-                  {submissions.total} submissions
-                </p>
-                
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
-                    disabled={filters.page === 1}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    Previous
-                  </Button>
-                  
-                  <div className="flex gap-1">
-                    {[...Array(Math.min(5, Math.ceil(submissions.total / filters.limit)))].map((_, i) => {
-                      const pageNum = Math.max(1, filters.page - 2) + i;
-                      if (pageNum > Math.ceil(submissions.total / filters.limit)) return null;
-                      
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={filters.page === pageNum ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setFilters({ ...filters, page: pageNum })}
-                          className="w-10"
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
-                    disabled={filters.page * filters.limit >= submissions.total}
-                  >
-                    Next
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+
+      {/* Submissions Display */}
+      {filters.view === 'grid' ? (
+        <SubmissionsGrid
+          submissions={data?.data || []}
+          selectedSubmissions={selectedSubmissions}
+          onSelectSubmission={(id) => {
+            const newSelected = new Set(selectedSubmissions);
+            if (newSelected.has(id)) {
+              newSelected.delete(id);
+            } else {
+              newSelected.add(id);
+            }
+            setSelectedSubmissions(newSelected);
+          }}
+          onViewDetails={(submission) => {
+            // Handle view details
+            console.log('View details:', submission);
+          }}
+        />
+      ) : (
+        <SubmissionsList
+          submissions={data?.data || []}
+          selectedSubmissions={selectedSubmissions}
+          onSelectSubmission={(id) => {
+            const newSelected = new Set(selectedSubmissions);
+            if (newSelected.has(id)) {
+              newSelected.delete(id);
+            } else {
+              newSelected.add(id);
+            }
+            setSelectedSubmissions(newSelected);
+          }}
+          onViewDetails={(submission) => {
+            // Handle view details
+            console.log('View details:', submission);
+          }}
+        />
+      )}
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={filters.page}
+        totalPages={Math.ceil((data?.total || 0) / filters.limit)}
+        onPageChange={(page) => setFilters({ ...filters, page })}
+      />
+    </DashboardLayout>
   );
 }
