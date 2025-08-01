@@ -18,7 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { WishlistButton } from "@/components/ui";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/shared/AnimatedComponents";
+import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import { useToast } from "@/hooks/use-toast";
 import AddressAutocomplete from "@/components/ui/address-autocomplete";
 import { SmartLink } from "@/components/ui/smart-link";
@@ -92,17 +93,17 @@ function AddressesSection() {
 
   if (isLoading) {
     return (
-      <GlassCard className="p-6">
+      <Card className="p-6">
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue mx-auto"></div>
           <p className="text-text-secondary mt-4">Loading addresses...</p>
         </div>
-      </GlassCard>
+      </Card>
     );
   }
 
   return (
-    <GlassCard className="p-6">
+    <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-bebas text-2xl">SAVED ADDRESSES</h2>
         <Button className="bg-accent-blue hover:bg-blue-500">
@@ -185,7 +186,7 @@ function AddressesSection() {
           </div>
         </DialogContent>
       </Dialog>
-    </GlassCard>
+    </Card>
   );
 }
 
@@ -366,13 +367,13 @@ function DashboardContent() {
 
         {/* Quick Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <GlassCard className="p-6 text-center">
+          <Card className="p-6 text-center">
             <Package className="mx-auto mb-3 text-accent-blue" size={32} />
             <div className="text-2xl font-bold">{orders?.length || 0}</div>
             <div className="text-sm text-text-muted">Total Orders</div>
-          </GlassCard>
+          </Card>
           
-          <GlassCard className="p-6 text-center">
+          <Card className="p-6 text-center">
             <DollarSign className="mx-auto mb-3 text-success" size={32} />
             <div className="text-2xl font-bold">
               {submissionsLoading ? (
@@ -382,13 +383,13 @@ function DashboardContent() {
               )}
             </div>
             <div className="text-sm text-text-muted">Submissions</div>
-          </GlassCard>
+          </Card>
           
-          <GlassCard className="p-6 text-center">
+          <Card className="p-6 text-center">
             <Heart className="mx-auto mb-3 text-red-400" size={32} />
             <div className="text-2xl font-bold">{Array.isArray(wishlist) ? wishlist.length : 0}</div>
             <div className="text-sm text-text-muted">Wishlist Items</div>
-          </GlassCard>
+          </Card>
         </div>
 
         {/* Main Content */}
@@ -410,7 +411,7 @@ function DashboardContent() {
 
           {/* Orders Tab */}
           <TabsContent value="orders">
-            <GlassCard className="p-6">
+            <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">ORDER HISTORY</h2>
                 <SmartLink href="/orders">
@@ -462,12 +463,12 @@ function DashboardContent() {
                   ))}
                 </div>
               )}
-            </GlassCard>
+            </Card>
           </TabsContent>
 
           {/* Submissions Tab */}
           <TabsContent value="submissions">
-            <GlassCard className="p-6">
+            <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">EQUIPMENT SUBMISSIONS</h2>
                 <SmartLink href="/sell-to-us">
@@ -593,12 +594,12 @@ function DashboardContent() {
                   })}
                 </div>
               )}
-            </GlassCard>
+            </Card>
           </TabsContent>
 
           {/* Wishlist Tab */}
           <TabsContent value="wishlist">
-            <GlassCard className="p-6">
+            <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">WISHLIST</h2>
                 <SmartLink href="/products">
@@ -665,12 +666,12 @@ function DashboardContent() {
                   ))}
                 </div>
               )}
-            </GlassCard>
+            </Card>
           </TabsContent>
 
           {/* Profile Tab */}
           <TabsContent value="profile">
-            <GlassCard className="p-6">
+            <Card className="p-6">
               <h2 className="font-bebas text-2xl mb-6">PROFILE INFORMATION</h2>
               
               <div className="grid md:grid-cols-2 gap-6">
@@ -720,7 +721,7 @@ function DashboardContent() {
                   </div>
                 </div>
               </div>
-            </GlassCard>
+            </Card>
           </TabsContent>
 
           {/* Addresses Tab */}

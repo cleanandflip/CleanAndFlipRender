@@ -7,8 +7,8 @@ import { UnifiedDropdown } from "@/components/ui/unified-dropdown";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent } from "@/components/ui/card";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/shared/AnimatedComponents";
+import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -135,7 +135,7 @@ export default function SellToUs() {
     return (
       <div className="min-h-screen pt-32 px-6">
         <div className="max-w-4xl mx-auto">
-          <GlassCard className="p-12 text-center">
+          <Card className="p-12 text-center">
             <CheckCircle className="mx-auto mb-6 text-green-400" size={64} />
             <h1 className="font-bebas text-4xl mb-4">SUBMISSION RECEIVED!</h1>
             
@@ -206,7 +206,7 @@ export default function SellToUs() {
             <p className="text-text-secondary">
               Check your email for a confirmation and tracking link.
             </p>
-          </GlassCard>
+          </Card>
         </div>
       </div>
     );
@@ -227,23 +227,23 @@ export default function SellToUs() {
           
           {/* Value Props */}
           <div className="grid md:grid-cols-3 gap-8 mb-12">
-            <GlassCard className="p-6 text-center">
+            <Card className="p-6 text-center">
               <DollarSign className="mx-auto mb-4 text-success" size={40} />
               <h3 className="font-bebas text-xl mb-2">CASH OFFERS</h3>
               <p className="text-text-secondary">Get paid within 48 hours of acceptance</p>
-            </GlassCard>
+            </Card>
             
-            <GlassCard className="p-6 text-center">
+            <Card className="p-6 text-center">
               <Camera className="mx-auto mb-4 text-accent-blue" size={40} />
               <h3 className="font-bebas text-xl mb-2">EASY PROCESS</h3>
               <p className="text-text-secondary">Just upload photos and basic info</p>
-            </GlassCard>
+            </Card>
             
-            <GlassCard className="p-6 text-center">
+            <Card className="p-6 text-center">
               <Truck className="mx-auto mb-4 text-warning" size={40} />
               <h3 className="font-bebas text-xl mb-2">FREE PICKUP</h3>
               <p className="text-text-secondary">We handle pickup and payment</p>
-            </GlassCard>
+            </Card>
           </div>
         </div>
 
@@ -253,7 +253,7 @@ export default function SellToUs() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Equipment Details */}
-                <GlassCard className="p-6">
+                <Card className="p-6">
                   <h3 className="font-bebas text-2xl mb-6">EQUIPMENT DETAILS</h3>
                   
                   <div className="grid md:grid-cols-2 gap-4">
@@ -387,10 +387,10 @@ export default function SellToUs() {
                       </FormItem>
                     )}
                   />
-                </GlassCard>
+                </Card>
 
                 {/* Photo Upload */}
-                <GlassCard className="p-6">
+                <Card className="p-6">
                   <h3 className="font-bebas text-2xl mb-4">PHOTOS</h3>
                   <p className="text-text-secondary mb-6">
                     Upload clear photos showing the equipment from multiple angles. 
@@ -413,7 +413,7 @@ export default function SellToUs() {
                     <p>• Show front, back, and detail views</p>
                     <p>• Highlight any wear or damage</p>
                   </div>
-                </GlassCard>
+                </Card>
 
                 <Button 
                   type="submit" 
@@ -428,7 +428,7 @@ export default function SellToUs() {
 
           {/* Process Sidebar */}
           <div className="lg:col-span-1">
-            <GlassCard className="p-6 sticky top-32">
+            <Card className="p-6 sticky top-32">
               <h3 className="font-bebas text-xl mb-6">HOW IT WORKS</h3>
               
               <div className="space-y-6">
@@ -480,10 +480,10 @@ export default function SellToUs() {
                   </div>
                 </div>
               </div>
-            </GlassCard>
+            </Card>
 
             {/* Testimonial */}
-            <GlassCard className="p-6 mt-6">
+            <Card className="p-6 mt-6">
               <div className="flex items-center mb-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="text-yellow-400 fill-current" size={16} />
@@ -494,7 +494,7 @@ export default function SellToUs() {
                 quick pickup, and cash in hand. Highly recommend!"
               </blockquote>
               <cite className="text-sm font-semibold">- Sarah M.</cite>
-            </GlassCard>
+            </Card>
           </div>
         </div>
       </div>

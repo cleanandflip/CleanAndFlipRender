@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/shared/AnimatedComponents";
+import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 
 interface Category {
   id: string;
@@ -39,10 +40,17 @@ export default function CategoryGrid() {
 
   if (!categories.length) {
     return (
-      <GlassCard className="p-12 text-center">
-        <h3 className="text-xl font-semibold mb-2">No Categories Available</h3>
-        <p className="text-text-secondary">Categories will appear here once they are added by administrators.</p>
-      </GlassCard>
+      <Card className="p-12 text-center">
+        <h3 
+          className="text-xl font-semibold mb-2"
+          style={{ color: theme.colors.text.primary }}
+        >
+          No Categories Available
+        </h3>
+        <p style={{ color: theme.colors.text.secondary }}>
+          Categories will appear here once they are added by administrators.
+        </p>
+      </Card>
     );
   }
 

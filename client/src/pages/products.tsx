@@ -257,17 +257,29 @@ export default function Products() {
   }
 
   return (
-    <div className="min-h-screen pt-32 px-6 pb-12">
+    <motion.div 
+      className="min-h-screen pt-32 px-6 pb-12"
+      style={{ backgroundColor: theme.colors.bg.primary }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-bebas text-4xl md:text-6xl mb-4">
+          <h1 
+            className="font-bebas text-4xl md:text-6xl mb-4"
+            style={{ color: theme.colors.text.primary }}
+          >
             {filters.category && filters.category !== 'all' 
               ? filters.category.replace('-', ' & ').toUpperCase()
               : 'SHOP EQUIPMENT'
             }
           </h1>
-          <p className="text-text-secondary text-lg">
+          <p 
+            className="text-lg"
+            style={{ color: theme.colors.text.secondary }}
+          >
             Discover premium weightlifting equipment inspected and verified by our team.
           </p>
           
@@ -275,7 +287,12 @@ export default function Products() {
           {activeFilterCount > 0 && (
             <div className="mt-4">
               <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-sm text-text-secondary">Active filters:</span>
+                <span 
+                  className="text-sm"
+                  style={{ color: theme.colors.text.secondary }}
+                >
+                  Active filters:
+                </span>
                 
                 {/* Brand filters */}
                 {filters.brand && Array.isArray(filters.brand) && filters.brand.map(brand => (
@@ -333,7 +350,7 @@ export default function Products() {
         </div>
 
         {/* Search and Controls */}
-        <GlassCard className="p-6 mb-8">
+        <Card className="p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 max-w-md">
               <SearchBar 
@@ -403,7 +420,6 @@ export default function Products() {
                   };
                   NavigationStateManager.saveState('/products', currentState, location);
                 }}
-                className="glass border-glass-border"
               >
                 <Filter size={16} className="mr-2" />
                 Filters {showFilters && '✓'}
@@ -427,7 +443,7 @@ export default function Products() {
               </span>
             )}
           </div>
-        </GlassCard>
+        </Card>
 
         <div className="flex gap-8">
           {/* Filters Sidebar */}
@@ -447,12 +463,12 @@ export default function Products() {
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <GlassCard key={i} className="p-4">
+                  <Card key={i} className="p-4">
                     <Skeleton className="w-full h-48 mb-4" />
                     <Skeleton className="h-6 w-3/4 mb-2" />
                     <Skeleton className="h-4 w-1/2 mb-2" />
                     <Skeleton className="h-6 w-1/4" />
-                  </GlassCard>
+                  </Card>
                 ))}
               </div>
             ) : data && data.products.length > 0 ? (
@@ -467,7 +483,6 @@ export default function Products() {
                         variant="outline"
                         disabled={currentPage === 0}
                         onClick={() => setCurrentPage(currentPage - 1)}
-                        className="glass border-glass-border"
                       >
                         Previous
                       </Button>
@@ -481,7 +496,6 @@ export default function Products() {
                             key={pageNum}
                             variant={pageNum === currentPage ? "default" : "outline"}
                             onClick={() => setCurrentPage(pageNum)}
-                            className="glass border-glass-border"
                           >
                             {pageNum + 1}
                           </Button>
@@ -492,7 +506,6 @@ export default function Products() {
                         variant="outline"
                         disabled={currentPage === totalPages - 1}
                         onClick={() => setCurrentPage(currentPage + 1)}
-                        className="glass border-glass-border"
                       >
                         Next
                       </Button>
@@ -501,22 +514,22 @@ export default function Products() {
                 )}
               </>
             ) : (
-              <GlassCard className="p-12 text-center">
+              <Card className="p-12 text-center">
                 <h3 className="text-xl font-semibold mb-4">No products found</h3>
                 <p className="text-text-secondary mb-6">
                   Try adjusting your search terms or filters to find what you're looking for.
                 </p>
                 <Button
                   onClick={() => handleFilterChange({})}
-                  className="bg-accent-blue hover:bg-blue-500"
+                  variant="primary"
                 >
                   Clear Filters
                 </Button>
-              </GlassCard>
+              </Card>
             )}
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

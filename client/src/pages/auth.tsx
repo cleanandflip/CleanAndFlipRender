@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AddressAutocomplete from "@/components/ui/address-autocomplete";
 import { Loader2, Dumbbell, Users, Shield, CheckCircle, TrendingUp } from "lucide-react";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/shared/AnimatedComponents";
+import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import Logo from "@/components/common/logo";
 import { PasswordInput } from "@/components/auth/password-input";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
@@ -166,7 +167,7 @@ export default function AuthPage() {
             </TabsList>
 
             <TabsContent value="login" className="transition-all duration-300 ease-in-out">
-              <GlassCard className="p-8">
+              <Card className="p-8">
                 <div className="mb-8">
                   <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">WELCOME BACK</h2>
                   <p className="text-text-secondary">
@@ -213,11 +214,11 @@ export default function AuthPage() {
                     )}
                   </Button>
                 </form>
-              </GlassCard>
+              </Card>
             </TabsContent>
 
             <TabsContent value="register" className="transition-all duration-300 ease-in-out">
-              <GlassCard className="p-8">
+              <Card className="p-8">
                 <div className="mb-6">
                   <h2 className="font-bebas text-3xl text-white tracking-wider mb-2">CREATE ACCOUNT</h2>
                   <p className="text-text-secondary">
@@ -387,7 +388,7 @@ export default function AuthPage() {
                     </div>
                   )}
                 </div>
-              </GlassCard>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
@@ -407,7 +408,7 @@ export default function AuthPage() {
           </div>
 
           <div className="space-y-8">
-            <GlassCard className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
+            <Card className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
               <div className="flex items-start space-x-6">
                 <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center flex-shrink-0">
                   <CheckCircle className="h-8 w-8 text-white" />
@@ -417,9 +418,9 @@ export default function AuthPage() {
                   <p className="text-text-secondary text-lg">All equipment professionally inspected and guaranteed before sale</p>
                 </div>
               </div>
-            </GlassCard>
+            </Card>
 
-            <GlassCard className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
+            <Card className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
               <div className="flex items-start space-x-6">
                 <div className="w-16 h-16 bg-accent-blue rounded-full flex items-center justify-center flex-shrink-0">
                   <Shield className="h-8 w-8 text-white" />
@@ -429,9 +430,9 @@ export default function AuthPage() {
                   <p className="text-text-secondary text-lg">Weightlifting specialists with years of experience in quality equipment</p>
                 </div>
               </div>
-            </GlassCard>
+            </Card>
 
-            <GlassCard className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
+            <Card className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
               <div className="flex items-start space-x-6">
                 <div className="w-16 h-16 bg-warning rounded-full flex items-center justify-center flex-shrink-0">
                   <TrendingUp className="h-8 w-8 text-white" />
@@ -441,7 +442,7 @@ export default function AuthPage() {
                   <p className="text-text-secondary text-lg">Best market value for both buyers and sellers in the fitness community</p>
                 </div>
               </div>
-            </GlassCard>
+            </Card>
           </div>
         </div>
       </div>
