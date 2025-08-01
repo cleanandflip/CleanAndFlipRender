@@ -1258,6 +1258,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint for submissions
+  app.get('/api/admin/debug-submissions', requireAdmin, async (req, res) => {
+    try {
+      const counts = {
+        total: await db.select({ count: count() }).from(equipmentSubmissions),
+        byStatus: await db.select({
+          status: equipmentSubmissions.status,
+          count: count()
+        }).from(equipmentSubmissions).groupBy(equipmentSubmissions.status),
+        recent: await db.select().from(equipmentSubmissions)
+          .orderBy(desc(equipmentSubmissions.createdAt))
+          .limit(5)
+      };
+      
+      res.json({
+        database: 'connected',
+        counts,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Database health check
   app.get("/api/admin/system/db-check", requireAdmin, async (req, res) => {
     try {
@@ -1450,40 +1474,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/submissions", requireAdmin, async (req, res) => {
     try {
-      const { status } = req.query;
-      Logger.debug(`Fetching admin submissions with status filter: ${status}`);
+      console.log('Admin submissions endpoint called');
+      console.log('User:', req.session?.user || req.user);
+      console.log('Query params:', req.query);
       
-      const submissions = await storage.getEquipmentSubmissions(status as string);
-      Logger.debug(`Found ${submissions.length} submissions`);
+      const { status, search, isLocal, page = 1, limit = 20 } = req.query;
       
-      // Ensure we return the right data structure for the frontend
-      const formattedSubmissions = submissions.map(submission => ({
-        id: submission.id,
-        name: submission.name,
-        description: submission.description,
-        brand: submission.brand,
-        condition: submission.condition,
-        weight: submission.weight,
-        askingPrice: submission.askingPrice,
-        images: submission.images || [],
-        status: submission.status,
-        offerAmount: submission.offerAmount,
-        adminNotes: submission.adminNotes,
-        phoneNumber: submission.phoneNumber,
-        userCity: submission.userCity,
-        userState: submission.userState,
-        userZipCode: submission.userZipCode,
-        isLocal: submission.isLocal,
-        distance: submission.distance,
-        createdAt: submission.createdAt,
-        user: submission.user || { id: '', email: '', firstName: '', lastName: '' }
-      }));
+      // First, get total count
+      const totalCount = await db
+        .select({ count: count() })
+        .from(equipmentSubmissions);
       
-      Logger.debug(`Returning ${formattedSubmissions.length} formatted submissions`);
-      res.json(formattedSubmissions);
+      console.log('Total submissions in DB:', totalCount[0]?.count);
+      
+      // Build query - Direct database access for reliability
+      let query = db.select({
+        submission: equipmentSubmissions,
+        user: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        }
+      })
+      .from(equipmentSubmissions)
+      .leftJoin(users, eq(equipmentSubmissions.userId, users.id));
+      
+      // Apply filters
+      const conditions = [];
+      if (status && status !== 'all') {
+        conditions.push(eq(equipmentSubmissions.status, status as string));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      // Execute query
+      const submissions = await query
+        .orderBy(desc(equipmentSubmissions.createdAt))
+        .limit(Number(limit))
+        .offset((Number(page) - 1) * Number(limit));
+      
+      console.log('Fetched submissions:', submissions.length);
+      
+      // Get status counts
+      const statusCounts = await db
+        .select({
+          status: equipmentSubmissions.status,
+          count: count()
+        })
+        .from(equipmentSubmissions)
+        .groupBy(equipmentSubmissions.status);
+      
+      console.log('Status counts:', statusCounts);
+      
+      // Format response for frontend compatibility
+      const response = {
+        data: submissions.map(s => ({
+          id: s.submission.id,
+          referenceNumber: s.submission.referenceNumber,
+          name: s.submission.name, // Map 'name' field
+          equipmentName: s.submission.name, // Also provide as equipmentName for compatibility
+          description: s.submission.description,
+          brand: s.submission.brand,
+          condition: s.submission.condition,
+          weight: s.submission.weight,
+          askingPrice: s.submission.askingPrice,
+          status: s.submission.status,
+          createdAt: s.submission.createdAt,
+          phoneNumber: s.submission.phoneNumber,
+          email: s.submission.email,
+          isLocal: s.submission.isLocal,
+          distance: s.submission.distance,
+          offerAmount: s.submission.offerAmount,
+          adminNotes: s.submission.adminNotes,
+          images: s.submission.images || [],
+          user: s.user || { id: '', email: '', firstName: '', lastName: '' }
+        })),
+        total: Number(totalCount[0]?.count || 0),
+        ...Object.fromEntries(
+          statusCounts.map(sc => [sc.status, Number(sc.count)])
+        )
+      };
+      
+      console.log('Sending response with', response.data.length, 'submissions');
+      res.json(response);
+      
     } catch (error) {
-      Logger.error("Error fetching submissions", error);
-      res.status(500).json({ error: "Failed to fetch submissions" });
+      console.error('Error in admin submissions endpoint:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch submissions',
+        details: error.message,
+        data: [],
+        total: 0
+      });
     }
   });
 

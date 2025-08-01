@@ -45,18 +45,31 @@ export default function SubmissionsManager() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: submissionsData, isLoading, error } = useQuery({
+  const { data: response, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-submissions', statusFilter],
     queryFn: async () => {
       const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
-      return await apiRequest('GET', `/api/admin/submissions${params}`);
+      const res = await fetch(`/api/admin/submissions${params}`, {
+        credentials: 'include' // Important for session cookies
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to fetch submissions');
+      }
+      
+      return res.json();
     },
     retry: 2,
-    staleTime: 30000,
+    staleTime: 0, // Always fetch fresh data
+    onError: (error) => {
+      console.error('Submissions fetch error:', error);
+    }
   });
 
-  // Ensure submissions is always an array
-  const submissions = Array.isArray(submissionsData) ? submissionsData : [];
+  // Handle both array response (old format) and object response (new format)
+  const submissions = response?.data ? response.data : (Array.isArray(response) ? response : []);
+  const totalSubmissions = response?.total || submissions.length;
 
   const updateSubmission = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
