@@ -87,8 +87,7 @@ export function UserManager() {
       
       if (!res.ok) throw new Error('Failed to fetch users');
       const data = await res.json();
-      console.log('UserManager received data:', data);
-      console.log('Users array:', data?.users);
+
       return data;
     },
     retry: 2

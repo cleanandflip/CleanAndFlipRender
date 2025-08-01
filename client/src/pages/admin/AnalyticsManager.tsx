@@ -61,7 +61,7 @@ export function AnalyticsManager() {
       });
       if (!res.ok) throw new Error('Failed to fetch analytics');
       const data = await res.json();
-      console.log('AnalyticsManager received data:', data);
+
       return data;
     },
     retry: 2

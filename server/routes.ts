@@ -925,7 +925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
-      console.error('[ERROR] Error fetching users', error);
+      Logger.error("Error fetching users", error);
       res.status(500).json({ error: 'Failed to fetch users' });
     }
   });
@@ -957,12 +957,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Simplified approach - fetch data and process in JavaScript
-      console.log('Fetching basic data for analytics...');
       const allOrders = await db.select().from(orders);
       const allUsers = await db.select().from(users);
       const allProducts = await db.select().from(products);
-      
-      console.log(`Fetched: ${allOrders.length} orders, ${allUsers.length} users, ${allProducts.length} products`);
       
       // Filter and calculate in JavaScript
       const filteredOrders = allOrders.filter(order => 
@@ -1013,74 +1010,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
-      console.error('[ERROR] Error fetching analytics', error);
+      Logger.error("Error fetching analytics", error);
       res.status(500).json({ error: 'Failed to fetch analytics' });
     }
   });
 
-  // Debug endpoint to check data
-  app.get('/api/admin/debug-data', requireAdmin, async (req, res) => {
-    try {
-      const [userCount, orderCount, productCount] = await Promise.all([
-        db.select({ count: count() }).from(users),
-        db.select({ count: count() }).from(orders),
-        db.select({ count: count() }).from(products)
-      ]);
-      
-      const recentUsers = await db.select().from(users).limit(5);
-      const recentOrders = await db.select().from(orders).limit(5);
-      
-      res.json({
-        counts: {
-          users: userCount[0]?.count || 0,
-          orders: orderCount[0]?.count || 0,
-          products: productCount[0]?.count || 0
-        },
-        samples: {
-          users: recentUsers,
-          orders: recentOrders
-        }
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
 
-  // Create test order for analytics testing
-  app.post('/api/admin/create-test-order', requireAdmin, async (req, res) => {
-    try {
-      const [user] = await db.select().from(users).limit(1);
-      const [product] = await db.select().from(products).limit(1);
-      
-      if (!user || !product) {
-        return res.status(400).json({ error: 'Need at least one user and product' });
-      }
-      
-      const [order] = await db.insert(orders).values({
-        userId: user.id,
-        status: 'delivered',
-        subtotal: product.price,
-        total: product.price,
-        tax: '0',
-        shipping: '0'
-      }).returning();
-      
-      await db.insert(orderItems).values({
-        orderId: order.id,
-        productId: product.id,
-        quantity: 1,
-        price: product.price
-      });
-      
-      res.json({ 
-        message: 'Test order created',
-        order 
-      });
-    } catch (error) {
-      console.error('Error creating test order:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
 
   // Admin wishlist analytics - Basic
   app.get("/api/admin/wishlist-analytics", requireAdmin, async (req, res) => {
