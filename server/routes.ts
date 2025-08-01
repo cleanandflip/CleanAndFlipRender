@@ -54,7 +54,7 @@ import {
   type Category
 } from "@shared/schema";
 import { convertSubmissionsToCSV } from './utils/exportHelpers';
-import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not, count } from "drizzle-orm";
+import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not, count, sum } from "drizzle-orm";
 import { displayStartupBanner } from "./utils/startup-banner";
 import { initRedis } from "./config/redis";
 import { initializeCache } from "./lib/cache";
@@ -931,130 +931,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Analytics endpoint - Enhanced with real data
+  // Analytics endpoint - Fixed SQL syntax
   app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
     try {
       const { range = 'last30days' } = req.query;
       
-      // Calculate date filters
+      // Calculate date range
       const now = new Date();
-      let dateFilter: Date;
+      const startDate = new Date();
       
       switch (range) {
         case 'today':
-          dateFilter = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          startDate.setHours(0, 0, 0, 0);
           break;
         case 'last7days':
-          dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          startDate.setDate(now.getDate() - 7);
           break;
         case 'last30days':
-          dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          startDate.setDate(now.getDate() - 30);
           break;
         case 'last90days':
-          dateFilter = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          startDate.setDate(now.getDate() - 90);
           break;
         default:
-          dateFilter = new Date(0); // All time
+          startDate.setFullYear(2020); // All time
       }
-
-      // Get revenue data
-      const revenueData = await db
-        .select({
-          total: sql<number>`COALESCE(SUM(CAST(${orders.totalAmount} AS NUMERIC)), 0)`,
-          count: sql<number>`COUNT(*)`
-        })
-        .from(orders)
-        .where(and(
-          eq(orders.status, 'completed'),
-          gte(orders.createdAt, dateFilter)
-        ));
-
-      // Get user stats
-      const userStats = await db
-        .select({
-          total: sql<number>`COUNT(*)`,
-          newUsers: sql<number>`COUNT(CASE WHEN ${users.createdAt} >= '${dateFilter.toISOString()}' THEN 1 END)`
-        })
-        .from(users);
-
-      // Get product stats
-      const productStats = await db
-        .select({
-          total: sql<number>`COUNT(*)`,
-          avgPrice: sql<number>`AVG(CAST(${products.price} AS NUMERIC))`
-        })
-        .from(products);
-
-      // Get daily revenue for charts (simplified to avoid SQL errors)
-      const dailyRevenue = await db
-        .select({
-          amount: sql<number>`COALESCE(SUM(CAST(${orders.totalAmount} AS NUMERIC)), 0)`
-        })
-        .from(orders)
-        .where(and(
-          eq(orders.status, 'completed'),
-          gte(orders.createdAt, dateFilter)
-        ));
-
-      // Get top products (simplified)
-      const topProducts = await db
-        .select({
-          id: products.id,
-          name: products.name
-        })
-        .from(products)
-        .limit(5);
-
-      const analytics = {
+      
+      // Get basic counts - Fixed queries without complex SQL
+      const [totalRevenue, totalOrders, totalUsers, totalProducts] = await Promise.all([
+        // Total revenue
+        db.select({ sum: sum(orders.totalAmount) })
+          .from(orders)
+          .where(and(
+            eq(orders.status, 'completed'),
+            gte(orders.createdAt, startDate)
+          )),
+        
+        // Total orders
+        db.select({ count: count() })
+          .from(orders)
+          .where(gte(orders.createdAt, startDate)),
+        
+        // Total users
+        db.select({ count: count() })
+          .from(users),
+        
+        // Total products
+        db.select({ count: count() })
+          .from(products)
+      ]);
+      
+      // Get orders for chart data
+      const ordersForChart = await db.select({
+        createdAt: orders.createdAt,
+        totalAmount: orders.totalAmount
+      })
+      .from(orders)
+      .where(and(
+        eq(orders.status, 'completed'),
+        gte(orders.createdAt, startDate)
+      ))
+      .orderBy(desc(orders.createdAt));
+      
+      // Group orders by date in JavaScript
+      const chartData = {};
+      ordersForChart.forEach(order => {
+        const date = new Date(order.createdAt).toISOString().split('T')[0];
+        if (!chartData[date]) {
+          chartData[date] = { date, count: 0, amount: 0 };
+        }
+        chartData[date].count++;
+        chartData[date].amount += Number(order.totalAmount || 0);
+      });
+      
+      // Get top products - simplified query
+      const topProductsData = await db.select({
+        productId: orderItems.productId,
+        productName: products.name,
+        count: count()
+      })
+      .from(orderItems)
+      .leftJoin(products, eq(orderItems.productId, products.id))
+      .groupBy(orderItems.productId, products.name)
+      .orderBy(desc(count()))
+      .limit(5);
+      
+      res.json({
         revenue: {
-          total: revenueData[0]?.total || 0,
-          change: 0 // TODO: Calculate actual change from previous period
+          total: Number(totalRevenue[0]?.sum || 0),
+          change: 0
         },
         orders: {
-          total: revenueData[0]?.count || 0, 
-          avgValue: revenueData[0]?.total && revenueData[0]?.count > 0 
-            ? revenueData[0].total / revenueData[0].count 
-            : 0,
+          total: totalOrders[0]?.count || 0,
+          avgValue: totalOrders[0]?.count ? 
+            Number(totalRevenue[0]?.sum || 0) / Number(totalOrders[0]?.count) : 0,
           change: 0
         },
         users: {
-          total: userStats[0]?.total || 0,
+          total: totalUsers[0]?.count || 0,
           change: 0
         },
         products: {
-          total: productStats[0]?.total || 0,
+          total: totalProducts[0]?.count || 0,
           change: 0
         },
         conversion: {
-          rate: 0, // TODO: Calculate actual conversion rate
+          rate: 0,
           change: 0
         },
         charts: {
-          revenue: [
-            { date: '2025-01-01', amount: dailyRevenue[0]?.amount || 0 }
-          ]
+          revenue: Object.values(chartData).sort((a: any, b: any) => 
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+          )
         },
-        topProducts: topProducts.map(product => ({
-          id: product.id,
-          name: product.name,
-          revenue: 0,
-          soldCount: 0
+        topProducts: topProductsData.map(p => ({
+          id: p.productId,
+          name: p.productName || 'Unknown',
+          soldCount: Number(p.count),
+          revenue: 0
         })),
         traffic: {
-          sources: [
-            { source: 'Direct', visits: 45, percentage: 45 },
-            { source: 'Search', visits: 30, percentage: 30 },
-            { source: 'Social', visits: 15, percentage: 15 },
-            { source: 'Referral', visits: 10, percentage: 10 }
-          ]
+          sources: []
         },
-        recentActivity: [] // TODO: Get from activity_logs table
-      };
-
-      res.json(analytics);
-    } catch (error: any) {
-      Logger.error("Error fetching analytics", error);
-      res.status(500).json({ message: "Failed to fetch analytics", error: error.message });
+        recentActivity: []
+      });
+      
+    } catch (error) {
+      console.error('[ERROR] Error fetching analytics', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
     }
   });
 
