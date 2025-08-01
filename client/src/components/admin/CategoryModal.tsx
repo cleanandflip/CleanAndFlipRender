@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import type { Category } from '@/shared/schema';
+import type { Category } from '@shared/schema';
 import { globalDesignSystem as theme } from '@/styles/design-system/theme';
 
 interface CategoryModalProps {
@@ -23,6 +23,7 @@ interface CategoryModalProps {
   category?: Category | null;
   onCategoryCreated?: (category: Category) => void;
   onCategoryUpdated?: (category: Category) => void;
+  onSave?: () => void;
 }
 
 export function CategoryModal({ 
@@ -30,11 +31,13 @@ export function CategoryModal({
   onClose, 
   category, 
   onCategoryCreated, 
-  onCategoryUpdated 
+  onCategoryUpdated,
+  onSave
 }: CategoryModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  
+  const initialFormState = {
     name: '',
     slug: '',
     description: '',
@@ -45,37 +48,65 @@ export function CategoryModal({
     seoTitle: '',
     seoDescription: '',
     customAttributes: {} as Record<string, any>
-  });
+  };
+  
+  const [formData, setFormData] = useState(initialFormState);
 
+  // CRITICAL: Fetch fresh data when modal opens
   useEffect(() => {
-    if (category) {
-      setFormData({
-        name: category.name || '',
-        slug: category.slug || '',
-        description: category.description || '',
-        icon: category.icon || '',
-        displayOrder: category.displayOrder || 0,
-        isActive: category.isActive ?? true,
-        featuredImageUrl: category.featuredImageUrl || '',
-        seoTitle: category.seoTitle || '',
-        seoDescription: category.seoDescription || '',
-        customAttributes: category.customAttributes || {}
+    if (isOpen && category?.id) {
+      // Fetch fresh category data from server
+      fetchCategoryDetails(category.id);
+    } else if (isOpen && !category) {
+      // Reset form for new category
+      resetForm();
+    }
+  }, [isOpen, category?.id]);
+
+  const fetchCategoryDetails = async (categoryId: string) => {
+    try {
+      const res = await fetch(`/api/admin/categories/${categoryId}`, {
+        credentials: 'include'
       });
-    } else {
+      
+      if (!res.ok) {
+        throw new Error('Failed to fetch category details');
+      }
+      
+      const freshData = await res.json();
+      
+      // Update form with fresh data from server
       setFormData({
-        name: '',
-        slug: '',
-        description: '',
-        icon: '',
-        displayOrder: 0,
-        isActive: true,
-        featuredImageUrl: '',
-        seoTitle: '',
-        seoDescription: '',
-        customAttributes: {}
+        name: freshData.name || '',
+        slug: freshData.slug || '',
+        description: freshData.description || '',
+        icon: freshData.icon || '',
+        displayOrder: freshData.displayOrder || 0,
+        isActive: freshData.isActive ?? true, // CRITICAL: Ensure this is properly set
+        featuredImageUrl: freshData.featuredImageUrl || '',
+        seoTitle: freshData.seoTitle || '',
+        seoDescription: freshData.seoDescription || '',
+        customAttributes: freshData.customAttributes || {}
+      });
+    } catch (error) {
+      console.error('Error fetching category details:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load category details',
+        variant: 'destructive'
       });
     }
-  }, [category, isOpen]);
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormState);
+  };
+
+  // Clear form data when modal closes
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   const generateSlug = (name: string) => {
     return name
@@ -98,28 +129,47 @@ export function CategoryModal({
     setIsLoading(true);
 
     try {
-      if (category) {
-        const updated = await apiRequest(`/api/admin/categories/${category.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(formData)
-        });
-        onCategoryUpdated?.(updated);
+      const url = category 
+        ? `/api/admin/categories/${category.id}`
+        : '/api/admin/categories';
+      
+      const method = category ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(formData)
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        
+        // CRITICAL: Notify parent component callbacks
+        if (category) {
+          onCategoryUpdated?.(result);
+        } else {
+          onCategoryCreated?.(result);
+        }
+        
+        // CRITICAL: Call parent's onSave to refresh the list
+        await onSave?.();
+        
+        // Close modal and reset form
+        handleClose();
+        
         toast({
-          title: "Category Updated",
-          description: "Category has been successfully updated."
+          title: category ? "Category Updated" : "Category Created",
+          description: category ? "Category has been successfully updated." : "New category has been successfully created."
         });
       } else {
-        const created = await apiRequest('/api/admin/categories', {
-          method: 'POST',
-          body: JSON.stringify(formData)
-        });
-        onCategoryCreated?.(created);
+        const error = await res.json();
         toast({
-          title: "Category Created",
-          description: "New category has been successfully created."
+          title: "Error",
+          description: error.message || `Failed to ${category ? 'update' : 'create'} category`,
+          variant: "destructive"
         });
       }
-      onClose();
     } catch (error) {
       toast({
         title: "Error",
@@ -308,7 +358,7 @@ export function CategoryModal({
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" variant="primary" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Saving...' : (category ? 'Update Category' : 'Create Category')}
             </Button>
           </div>

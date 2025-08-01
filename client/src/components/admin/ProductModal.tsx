@@ -21,8 +21,9 @@ interface ProductModalProps {
 
 export function ProductModal({ isOpen, onClose, product, categories, onSave }: ProductModalProps) {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     name: '',
     sku: '',
     price: '',
@@ -42,59 +43,75 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
     seoTitle: '',
     seoDescription: '',
     slug: ''
-  });
+  };
 
+  const [formData, setFormData] = useState(initialFormState);
+
+  // CRITICAL: Fetch fresh data when modal opens
   useEffect(() => {
-    if (product) {
-      setFormData({
-        name: product.name || '',
-        sku: product.sku || '',
-        price: product.price?.toString() || '',
-        compareAtPrice: product.compareAtPrice?.toString() || '',
-        stock: product.stock?.toString() || '',
-        categoryId: product.categoryId || '',
-        description: product.description || '',
-        shortDescription: product.shortDescription || '',
-        images: product.images || [],
-        features: product.features || [],
-        specifications: product.specifications || {},
-        weight: product.weight?.toString() || '',
-        dimensions: product.dimensions || { length: '', width: '', height: '' },
-        isActive: product.isActive ?? true,
-        isFeatured: product.isFeatured ?? false,
-        tags: product.tags || [],
-        seoTitle: product.seoTitle || '',
-        seoDescription: product.seoDescription || '',
-        slug: product.slug || ''
-      });
-    } else {
+    if (isOpen && product?.id) {
+      // Fetch fresh product data from server
+      fetchProductDetails(product.id);
+    } else if (isOpen && !product) {
       // Reset form for new product
-      setFormData({
-        name: '',
-        sku: '',
-        price: '',
-        compareAtPrice: '',
-        stock: '',
-        categoryId: '',
-        description: '',
-        shortDescription: '',
-        images: [],
-        features: [],
-        specifications: {},
-        weight: '',
-        dimensions: { length: '', width: '', height: '' },
-        isActive: true,
-        isFeatured: false,
-        tags: [],
-        seoTitle: '',
-        seoDescription: '',
-        slug: ''
-      });
+      resetForm();
     }
-  }, [product, isOpen]);
+  }, [isOpen, product?.id]);
+
+  const fetchProductDetails = async (productId: string) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/admin/products/${productId}`, {
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to fetch product details');
+      }
+      
+      const freshData = await res.json();
+      
+      // Update form with fresh data from server
+      setFormData({
+        name: freshData.name || '',
+        sku: freshData.sku || '',
+        price: freshData.price?.toString() || '',
+        compareAtPrice: freshData.compareAtPrice?.toString() || '',
+        stock: freshData.stock?.toString() || '',
+        categoryId: freshData.categoryId || '',
+        description: freshData.description || '',
+        shortDescription: freshData.shortDescription || '',
+        images: freshData.images || [],
+        features: freshData.features || [],
+        specifications: freshData.specifications || {},
+        weight: freshData.weight?.toString() || '',
+        dimensions: freshData.dimensions || { length: '', width: '', height: '' },
+        isActive: freshData.isActive ?? true, // CRITICAL: Ensure this is properly set
+        isFeatured: freshData.isFeatured ?? false,
+        tags: freshData.tags || [],
+        seoTitle: freshData.seoTitle || '',
+        seoDescription: freshData.seoDescription || '',
+        slug: freshData.slug || ''
+      });
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load product details',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormState);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
     if (!formData.name || !formData.price || !formData.stock || !formData.categoryId) {
       toast({
@@ -102,6 +119,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
         description: "Please fill in all required fields",
         variant: "destructive"
       });
+      setIsLoading(false);
       return;
     }
     
@@ -112,22 +130,30 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
       
       const method = product ? 'PUT' : 'POST';
       
+      const payload = {
+        ...formData,
+        price: parseFloat(formData.price),
+        compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
+        stock: parseInt(formData.stock),
+        weight: formData.weight ? parseFloat(formData.weight) : null,
+        isActive: formData.isActive, // CRITICAL: Ensure this is sent to server
+        isFeatured: formData.isFeatured
+      };
+      
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price),
-          compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
-          stock: parseInt(formData.stock),
-          weight: formData.weight ? parseFloat(formData.weight) : null
-        })
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
-        onSave();
-        onClose();
+        // CRITICAL: Call parent's onSave to refresh the list
+        await onSave();
+        
+        // Close modal and reset form
+        handleClose();
+        
         toast({ 
           title: product ? 'Product updated' : 'Product created',
           description: 'Changes saved successfully'
@@ -141,12 +167,21 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
         });
       }
     } catch (error) {
+      console.error('Error saving product:', error);
       toast({ 
         title: 'Error',
         description: 'Failed to save product',
         variant: 'destructive'
       });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Clear form data when modal closes
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
 
   const addFeature = () => {
@@ -157,6 +192,13 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
         features: [...prev.features, feature]
       }));
     }
+  };
+
+  const removeFeature = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.filter((_, i) => i !== index)
+    }));
   };
 
   const addSpecification = () => {
@@ -170,8 +212,16 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
     }
   };
 
+  const removeSpecification = (key: string) => {
+    setFormData(prev => {
+      const newSpecs = { ...prev.specifications };
+      delete newSpecs[key];
+      return { ...prev, specifications: newSpecs };
+    });
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent 
         className="max-w-4xl max-h-[90vh] overflow-y-auto"
         style={{
@@ -188,9 +238,15 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
             {product ? 'Edit Product' : 'Add New Product'}
           </DialogTitle>
           <DialogDescription style={{ color: theme.colors.text.secondary }}>
-            {product ? 'Update product information and settings' : 'Create a new product for your store'}
+            {product ? 'Update product information and inventory' : 'Create a new product for your store'}
           </DialogDescription>
         </DialogHeader>
+
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6 pt-6">
           {/* Basic Information */}
@@ -201,59 +257,114 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label 
-                  htmlFor="name" 
-                  style={{ color: theme.colors.text.secondary }}
-                >
+                <Label htmlFor="name" style={{ color: theme.colors.text.secondary }}>
                   Product Name *
                 </Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  style={{
-                    backgroundColor: theme.colors.bg.primary,
-                    borderColor: theme.colors.border.default,
-                    color: theme.colors.text.primary
+                  style={{ 
+                    backgroundColor: theme.colors.bg.primary, 
+                    borderColor: theme.colors.border.default, 
+                    color: theme.colors.text.primary 
                   }}
+                  required
                 />
               </div>
               
               <div>
-                <Label 
-                  htmlFor="sku"
-                  style={{ color: theme.colors.text.secondary }}
-                >
+                <Label htmlFor="sku" style={{ color: theme.colors.text.secondary }}>
                   SKU
                 </Label>
                 <Input
                   id="sku"
                   value={formData.sku}
                   onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  placeholder="Auto-generated if empty"
-                  style={{
-                    backgroundColor: theme.colors.bg.primary,
-                    borderColor: theme.colors.border.default,
-                    color: theme.colors.text.primary
+                  style={{ 
+                    backgroundColor: theme.colors.bg.primary, 
+                    borderColor: theme.colors.border.default, 
+                    color: theme.colors.text.primary 
                   }}
                 />
               </div>
             </div>
 
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="price" style={{ color: theme.colors.text.secondary }}>
+                  Price *
+                </Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  style={{ 
+                    backgroundColor: theme.colors.bg.primary, 
+                    borderColor: theme.colors.border.default, 
+                    color: theme.colors.text.primary 
+                  }}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="compareAtPrice" style={{ color: theme.colors.text.secondary }}>
+                  Compare Price
+                </Label>
+                <Input
+                  id="compareAtPrice"
+                  type="number"
+                  step="0.01"
+                  value={formData.compareAtPrice}
+                  onChange={(e) => setFormData({ ...formData, compareAtPrice: e.target.value })}
+                  style={{ 
+                    backgroundColor: theme.colors.bg.primary, 
+                    borderColor: theme.colors.border.default, 
+                    color: theme.colors.text.primary 
+                  }}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="stock" style={{ color: theme.colors.text.secondary }}>
+                  Stock *
+                </Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  value={formData.stock}
+                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  style={{ 
+                    backgroundColor: theme.colors.bg.primary, 
+                    borderColor: theme.colors.border.default, 
+                    color: theme.colors.text.primary 
+                  }}
+                  required
+                />
+              </div>
+            </div>
+
             <div>
-              <Label htmlFor="category" style={{ color: theme.colors.text.secondary }}>Category *</Label>
-              <Select
-                value={formData.categoryId}
-                onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
-              >
-                <SelectTrigger style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}>
-                  <SelectValue placeholder="Select category" />
+              <Label htmlFor="categoryId" style={{ color: theme.colors.text.secondary }}>
+                Category *
+              </Label>
+              <Select value={formData.categoryId} onValueChange={(value) => setFormData({ ...formData, categoryId: value })}>
+                <SelectTrigger 
+                  style={{ 
+                    backgroundColor: theme.colors.bg.primary, 
+                    borderColor: theme.colors.border.default, 
+                    color: theme.colors.text.primary 
+                  }}
+                >
+                  <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -261,117 +372,82 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
             </div>
 
             <div>
-              <Label htmlFor="description" style={{ color: theme.colors.text.secondary }}>Description</Label>
+              <Label htmlFor="description" style={{ color: theme.colors.text.secondary }}>
+                Description
+              </Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}
+                style={{ 
+                  backgroundColor: theme.colors.bg.primary, 
+                  borderColor: theme.colors.border.default, 
+                  color: theme.colors.text.primary 
+                }}
                 rows={4}
               />
             </div>
-          </div>
 
-          {/* Pricing & Inventory */}
-          <div className="space-y-4">
-            <h3 style={{ color: theme.colors.text.primary }} className="text-lg font-semibold">Pricing & Inventory</h3>
-            
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="price" style={{ color: theme.colors.text.secondary }}>Price *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="compareAtPrice" style={{ color: theme.colors.text.secondary }}>Compare at Price</Label>
-                <Input
-                  id="compareAtPrice"
-                  type="number"
-                  step="0.01"
-                  value={formData.compareAtPrice}
-                  onChange={(e) => setFormData({ ...formData, compareAtPrice: e.target.value })}
-                  style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}
-                  placeholder="Original price"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="stock" style={{ color: theme.colors.text.secondary }}>Stock *</Label>
-                <Input
-                  id="stock"
-                  type="number"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                  style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Product Status */}
-          <div className="space-y-4">
-            <h3 style={{ color: theme.colors.text.primary }} className="text-lg font-semibold">Product Status</h3>
-            
-            <div className="flex items-center gap-6">
-              <div className="flex items-center space-x-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isActive" style={{ color: theme.colors.text.secondary }}>
+                  Active Status
+                </Label>
                 <Switch
                   id="isActive"
                   checked={formData.isActive}
                   onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 />
-                <Label htmlFor="isActive" style={{ color: theme.colors.text.secondary }}>Active</Label>
               </div>
               
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isFeatured" style={{ color: theme.colors.text.secondary }}>
+                  Featured Product
+                </Label>
                 <Switch
                   id="isFeatured"
                   checked={formData.isFeatured}
                   onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: checked })}
                 />
-                <Label htmlFor="isFeatured" style={{ color: theme.colors.text.secondary }}>Featured</Label>
               </div>
             </div>
           </div>
 
-          {/* Features */}
+          {/* Features Section */}
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 style={{ color: theme.colors.text.primary }} className="text-lg font-semibold">Features</h3>
-              <Button type="button" size="sm" variant="outline" onClick={addFeature}>
-                <Plus className="w-4 h-4 mr-1" />
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold" style={{ color: theme.colors.text.primary }}>
+                Features
+              </h3>
+              <Button type="button" onClick={addFeature} size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
                 Add Feature
               </Button>
             </div>
             
             <div className="space-y-2">
-              {formData.features.map((feature, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <Input 
-                    value={feature} 
-                    readOnly 
-                    style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}
+              {formData.features.map((feature, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={feature}
+                    onChange={(e) => {
+                      const newFeatures = [...formData.features];
+                      newFeatures[index] = e.target.value;
+                      setFormData({ ...formData, features: newFeatures });
+                    }}
+                    style={{ 
+                      backgroundColor: theme.colors.bg.primary, 
+                      borderColor: theme.colors.border.default, 
+                      color: theme.colors.text.primary 
+                    }}
                   />
                   <Button
                     type="button"
+                    onClick={() => removeFeature(index)}
                     size="sm"
                     variant="destructive"
-                    onClick={() => {
-                      setFormData(prev => ({
-                        ...prev,
-                        features: prev.features.filter((_, i) => i !== idx)
-                      }));
-                    }}
                   >
-                    <X className="w-4 h-4" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
@@ -379,12 +455,15 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end gap-3 pt-6 border-t" style={{ borderColor: theme.colors.border.default }}>
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div 
+            className="flex justify-end gap-3 pt-6 border-t"
+            style={{ borderColor: theme.colors.border.default }}
+          >
+            <Button type="button" variant="secondary" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-primary hover:bg-primary/90">
-              {product ? 'Update Product' : 'Create Product'}
+            <Button type="submit" variant="primary" disabled={isLoading}>
+              {isLoading ? 'Saving...' : (product ? 'Update Product' : 'Create Product')}
             </Button>
           </div>
         </form>
