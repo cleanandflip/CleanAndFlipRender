@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { UnifiedDropdown } from '@/components/ui/unified-dropdown';
-import { Calendar, MapPin, Phone, DollarSign, Clock, CheckCircle, XCircle, Package } from 'lucide-react';
+import { Calendar, MapPin, Phone, DollarSign, Clock, CheckCircle, XCircle, Package, Star } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -45,13 +45,18 @@ export default function SubmissionsManager() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: submissions = [], isLoading } = useQuery({
+  const { data: submissionsData, isLoading, error } = useQuery({
     queryKey: ['admin-submissions', statusFilter],
     queryFn: async () => {
       const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
       return await apiRequest('GET', `/api/admin/submissions${params}`);
-    }
+    },
+    retry: 2,
+    staleTime: 30000,
   });
+
+  // Ensure submissions is always an array
+  const submissions = Array.isArray(submissionsData) ? submissionsData : [];
 
   const updateSubmission = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
@@ -129,6 +134,26 @@ export default function SubmissionsManager() {
           <Package className="w-8 h-8 animate-spin mx-auto mb-4 text-accent-blue" />
           <p className="text-text-muted">Loading submissions...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen">
+        <Card className="glass-card p-8 text-center">
+          <XCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+          <h3 className="text-lg font-semibold mb-2 text-white">Error Loading Submissions</h3>
+          <p className="text-text-muted mb-4">
+            Failed to load equipment submissions. Please try again.
+          </p>
+          <Button 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-submissions'] })}
+            className="bg-accent-blue hover:bg-blue-600"
+          >
+            Retry
+          </Button>
+        </Card>
       </div>
     );
   }

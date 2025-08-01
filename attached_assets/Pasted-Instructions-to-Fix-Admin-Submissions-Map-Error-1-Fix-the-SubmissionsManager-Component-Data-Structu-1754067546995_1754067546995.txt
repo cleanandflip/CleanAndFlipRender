@@ -1,0 +1,389 @@
+Instructions to Fix Admin Submissions Map Error
+1. Fix the SubmissionsManager Component Data Structure
+The error occurs because the API returns an object with data property, not a direct array. Fix this:
+tsx// client/src/pages/admin/SubmissionsManager.tsx
+
+// Update the query to properly destructure the response
+const { data: submissionsResponse, refetch } = useQuery({
+  queryKey: ['admin-submissions', filters],
+  queryFn: async () => {
+    const params = new URLSearchParams();
+    if (filters.status !== 'all') params.append('status', filters.status);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.isLocal !== null) params.append('isLocal', filters.isLocal.toString());
+    
+    const res = await fetch(`/api/admin/submissions?${params}`);
+    if (!res.ok) throw new Error('Failed to fetch submissions');
+    return res.json();
+  }
+});
+
+// Extract the actual submissions array
+const submissions = submissionsResponse?.data || [];
+const statusCounts = {
+  total: submissionsResponse?.total || 0,
+  pending: submissionsResponse?.pending || 0,
+  under_review: submissionsResponse?.underReview || 0,
+  accepted: submissionsResponse?.accepted || 0,
+  scheduled: submissionsResponse?.scheduled || 0
+};
+
+// Update the statusTabs to use the counts
+const statusTabs = [
+  { value: 'all', label: 'All', count: statusCounts.total },
+  { value: 'pending', label: 'Pending', count: statusCounts.pending },
+  { value: 'under_review', label: 'Under Review', count: statusCounts.under_review },
+  { value: 'accepted', label: 'Accepted', count: statusCounts.accepted },
+  { value: 'scheduled', label: 'Scheduled', count: statusCounts.scheduled }
+];
+
+// Now the map will work correctly
+{submissions.length === 0 ? (
+  <Card className="p-8 text-center">
+    <Package className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+    <p className="text-gray-400">No submissions found</p>
+  </Card>
+) : (
+  submissions.map((submission: Submission) => (
+    <Card 
+      key={submission.id}
+      // ... rest of the card
+    >
+2. Alternative Quick Fix - Add Safe Checks
+If you need a quick fix without restructuring:
+tsx// Add safety checks
+{Array.isArray(submissions) && submissions.length > 0 ? (
+  submissions.map((submission: Submission) => (
+    // ... card content
+  ))
+) : (
+  <Card className="p-8 text-center">
+    <p className="text-gray-400">No submissions found</p>
+  </Card>
+)}
+3. Update the Complete Component with Proper Types
+tsx// client/src/pages/admin/SubmissionsManager.tsx
+
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Package, Search, Filter, Eye, Clock, DollarSign, MapPin, Phone } from 'lucide-react';
+
+interface Submission {
+  id: string;
+  referenceNumber: string;
+  equipmentName: string;
+  brand: string;
+  condition: string;
+  askingPrice: string | null;
+  status: string;
+  createdAt: string;
+  phoneNumber: string;
+  isLocal: boolean;
+  distance: string | null;
+  viewedByAdmin: boolean;
+  userName?: string;
+  userEmail?: string;
+}
+
+interface SubmissionsResponse {
+  data: Submission[];
+  total: number;
+  pending?: number;
+  under_review?: number;
+  accepted?: number;
+  scheduled?: number;
+  declined?: number;
+  completed?: number;
+  cancelled?: number;
+}
+
+export function SubmissionsManager() {
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [filters, setFilters] = useState({
+    status: 'all',
+    search: '',
+    isLocal: null as boolean | null
+  });
+  
+  const { 
+    data: response, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useQuery<SubmissionsResponse>({
+    queryKey: ['admin-submissions', filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.status !== 'all') params.append('status', filters.status);
+      if (filters.search) params.append('search', filters.search);
+      if (filters.isLocal !== null) params.append('isLocal', filters.isLocal.toString());
+      
+      const res = await fetch(`/api/admin/submissions?${params}`);
+      if (!res.ok) throw new Error('Failed to fetch submissions');
+      return res.json();
+    }
+  });
+  
+  const submissions = response?.data || [];
+  
+  const statusTabs = [
+    { value: 'all', label: 'All', count: response?.total || 0 },
+    { value: 'pending', label: 'Pending', count: response?.pending || 0 },
+    { value: 'under_review', label: 'Under Review', count: response?.under_review || 0 },
+    { value: 'accepted', label: 'Accepted', count: response?.accepted || 0 },
+    { value: 'scheduled', label: 'Scheduled', count: response?.scheduled || 0 }
+  ];
+  
+  const updateSubmission = useMutation({
+    mutationFn: async ({ id, updates, action }: any) => {
+      const res = await fetch(`/api/admin/submissions/${id}/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates })
+      });
+      if (!res.ok) throw new Error('Failed to update submission');
+      return res.json();
+    },
+    onSuccess: () => {
+      refetch();
+    }
+  });
+  
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-700 rounded w-1/4 mb-6"></div>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-700 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card className="p-8 text-center">
+          <p className="text-red-400">Error loading submissions</p>
+          <Button onClick={() => refetch()} className="mt-4">
+            Retry
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+  
+  const getTimeAgo = (date: string) => {
+    const now = new Date();
+    const then = new Date(date);
+    const diffInHours = Math.floor((now.getTime() - then.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    return then.toLocaleDateString();
+  };
+  
+  const getStatusVariant = (status: string) => {
+    const variants: Record<string, string> = {
+      pending: 'warning',
+      under_review: 'default',
+      accepted: 'success',
+      declined: 'destructive',
+      scheduled: 'secondary',
+      completed: 'outline',
+      cancelled: 'outline'
+    };
+    return variants[status] || 'default';
+  };
+  
+  const formatStatus = (status: string) => {
+    return status.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
+  
+  return (
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Equipment Submissions</h1>
+        <div className="flex gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search by ref# or name..."
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              className="pl-10 w-64"
+            />
+          </div>
+          <Button variant="outline">
+            <Filter className="w-4 h-4 mr-2" />
+            Filters
+          </Button>
+        </div>
+      </div>
+      
+      <Tabs value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v })}>
+        <TabsList className="mb-6">
+          {statusTabs.map(tab => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+              <Badge variant="secondary" className="ml-2">
+                {tab.count}
+              </Badge>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-4">
+            {submissions.length === 0 ? (
+              <Card className="p-8 text-center">
+                <Package className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-400">
+                  {filters.search || filters.status !== 'all' 
+                    ? 'No submissions match your filters' 
+                    : 'No submissions yet'}
+                </p>
+              </Card>
+            ) : (
+              submissions.map((submission) => (
+                <Card 
+                  key={submission.id}
+                  className={`p-4 cursor-pointer transition-all ${
+                    selectedSubmission?.id === submission.id 
+                      ? 'ring-2 ring-blue-500' 
+                      : 'hover:bg-gray-800/50'
+                  }`}
+                  onClick={() => setSelectedSubmission(submission)}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">
+                          {submission.equipmentName}
+                        </h3>
+                        {!submission.viewedByAdmin && (
+                          <Badge variant="secondary" className="text-xs">
+                            New
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-400 font-mono">
+                        {submission.referenceNumber}
+                      </p>
+                    </div>
+                    <Badge variant={getStatusVariant(submission.status) as any}>
+                      {formatStatus(submission.status)}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <DollarSign className="w-4 h-4" />
+                      Asking: ${submission.askingPrice || 'Open'}
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Clock className="w-4 h-4" />
+                      {getTimeAgo(submission.createdAt)}
+                    </div>
+                    {submission.isLocal && (
+                      <div className="flex items-center gap-2 text-green-400">
+                        <MapPin className="w-4 h-4" />
+                        Local ({submission.distance} mi)
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-gray-400">
+                      <Phone className="w-4 h-4" />
+                      {submission.phoneNumber}
+                    </div>
+                  </div>
+                  
+                  {submission.status === 'pending' && (
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateSubmission.mutate({
+                            id: submission.id,
+                            action: 'status',
+                            updates: { status: 'under_review' }
+                          });
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Start Review
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              ))
+            )}
+          </div>
+          
+          {selectedSubmission && (
+            <div className="lg:col-span-1">
+              {/* Detail panel component */}
+            </div>
+          )}
+        </div>
+      </Tabs>
+    </div>
+  );
+}
+4. Verify API Response Structure
+Make sure the API returns the expected structure:
+ts// server/routes.ts - Verify the admin submissions endpoint
+
+app.get('/api/admin/submissions', requireAdmin, async (req, res) => {
+  try {
+    // ... query logic ...
+    
+    // Ensure response structure matches what frontend expects
+    res.json({
+      data: submissions.map(s => ({
+        ...s.submission,
+        userName: s.user?.name,
+        userEmail: s.user?.email
+      })),
+      total: submissions.length,
+      pending: statusCounts.pending || 0,
+      under_review: statusCounts.under_review || 0,
+      accepted: statusCounts.accepted || 0,
+      scheduled: statusCounts.scheduled || 0,
+      declined: statusCounts.declined || 0,
+      completed: statusCounts.completed || 0,
+      cancelled: statusCounts.cancelled || 0
+    });
+  } catch (error) {
+    console.error('Error fetching admin submissions:', error);
+    // Return empty data structure on error
+    res.json({
+      data: [],
+      total: 0
+    });
+  }
+});
+Instructions for Replit:
+
+Update SubmissionsManager to properly destructure the API response
+Access submissions via response.data instead of using submissions directly
+Add null checks and default to empty array
+Add proper TypeScript types for the response structure
+Update status counts to use the response object
+Test the fix by navigating to admin submissions page
+
+This will resolve the .map is not a function error by ensuring we're always working with an array.
