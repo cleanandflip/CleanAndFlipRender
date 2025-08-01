@@ -272,7 +272,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment view count
       await storage.incrementProductViews(req.params.id);
       
-      res.json(product);
+      // MAP stockQuantity to stock for frontend compatibility
+      const response = {
+        ...product,
+        stock: product.stockQuantity || 0
+      };
+      
+      res.json(response);
     } catch (error) {
       Logger.error("Error fetching product", error);
       res.status(500).json({ message: "Failed to fetch product" });
@@ -1170,14 +1176,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: result.map(product => ({
           id: product.id,
           name: product.name,
+          sku: product.sku,
           price: parseFloat(product.price),
-          stock: product.stockQuantity || 0,
-          stockQuantity: product.stockQuantity || 0, // Include both for compatibility
-          isActive: true, // Default since we don't have this field yet
-          isFeatured: false, // Default since we don't have this field yet
+          stock: product.stockQuantity || 0, // MAP stockQuantity to stock
+          stockQuantity: product.stockQuantity || 0, // Keep original too
+          compareAtPrice: product.compareAtPrice,
+          isActive: product.isActive ?? true,
+          isFeatured: product.isFeatured ?? false,
           brand: product.brand,
           condition: product.condition,
           description: product.description,
+          features: product.features || [],
           images: product.images || [],
           createdAt: product.createdAt,
           updatedAt: product.updatedAt,
@@ -1960,12 +1969,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Current Product State:', currentProduct);
       
       const updateData = {
-        ...req.body,
+        name: req.body.name,
+        sku: req.body.sku || null,
         price: parseFloat(req.body.price) || 0,
-        stockQuantity: parseInt(req.body.stockQuantity) || parseInt(req.body.stock) || 0, // Handle both stock and stockQuantity
-        weight: parseFloat(req.body.weight) || 0,
-        isActive: req.body.isActive ?? true, // CRITICAL: Ensure this is properly set
+        compareAtPrice: req.body.compareAtPrice || null,
+        stockQuantity: parseInt(req.body.stock) || parseInt(req.body.stockQuantity) || 0, // MAP stock to stockQuantity!
+        categoryId: req.body.categoryId,
+        description: req.body.description || '',
+        isActive: req.body.isActive ?? true,
         isFeatured: req.body.isFeatured ?? false,
+        features: req.body.features || [],
+        weight: parseFloat(req.body.weight) || 0,
         updatedAt: new Date()
       };
       
@@ -1988,18 +2002,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Update Data:', updateData);
       
+      console.log('Updating with stockQuantity:', updateData.stockQuantity);
+      
       Logger.debug(`Updating product with data: ${JSON.stringify(updateData)}`);
       const updatedProduct = await storage.updateProduct(id, updateData);
       
-      console.log('Updated Product:', updatedProduct);
+      console.log('Updated Product - stockQuantity:', updatedProduct?.stockQuantity);
       
-      // CRITICAL: Fetch fresh data immediately after update to ensure consistency
-      const freshProduct = await storage.getProduct(id);
-      console.log('Fresh Product After Update:', freshProduct);
+      // CRITICAL: Return with mapped field for frontend compatibility
+      const response = {
+        ...updatedProduct,
+        stock: updatedProduct?.stockQuantity || 0 // MAP stockQuantity back to stock
+      };
+      
+      console.log('Response with mapped stock field:', response.stock);
       console.log('=== UPDATE COMPLETE ===');
       
-      // Return the fresh product data
-      res.json(freshProduct);
+      res.json(response);
     } catch (error: any) {
       console.error('UPDATE ERROR:', error);
       Logger.error('Update product error:', error);

@@ -1,0 +1,221 @@
+Instructions for Replit: CRITICAL FIX - Database Column is stockQuantity not stock
+FOUND THE ISSUE: The database column is stockQuantity but frontend/backend are using stock
+1. Fix Backend Mapping - UPDATE IMMEDIATELY
+ts// server/routes.ts - Fix ALL occurrences
+
+// In the GET /api/admin/products endpoint
+app.get('/api/admin/products', requireAdmin, async (req, res) => {
+  try {
+    const products = await db
+      .select({
+        id: products.id,
+        name: products.name,
+        sku: products.sku,
+        price: products.price,
+        compareAtPrice: products.compareAtPrice,
+        stock: products.stockQuantity, // MAP stockQuantity to stock
+        stockQuantity: products.stockQuantity, // Keep original too
+        categoryId: products.categoryId,
+        categoryName: categories.name,
+        description: products.description,
+        isActive: products.isActive,
+        isFeatured: products.isFeatured,
+        features: products.features,
+        images: products.images,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id));
+    
+    console.log('Mapped products with stock field');
+    
+    res.json({
+      data: products,
+      total: products.length
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// In the PUT /api/admin/products/:id endpoint
+app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('Update request - stock value:', req.body.stock);
+    
+    const updateData = {
+      name: req.body.name,
+      sku: req.body.sku || null,
+      price: req.body.price,
+      compareAtPrice: req.body.compareAtPrice || null,
+      stockQuantity: req.body.stock || 0, // MAP stock to stockQuantity!
+      categoryId: req.body.categoryId,
+      description: req.body.description || '',
+      isActive: req.body.isActive ?? true,
+      isFeatured: req.body.isFeatured ?? false,
+      features: req.body.features || [],
+      updatedAt: new Date()
+    };
+    
+    console.log('Updating with stockQuantity:', updateData.stockQuantity);
+    
+    const [updated] = await db
+      .update(products)
+      .set(updateData)
+      .where(eq(products.id, id))
+      .returning();
+    
+    // Return with mapped field
+    const response = {
+      ...updated,
+      stock: updated.stockQuantity // MAP back for frontend
+    };
+    
+    console.log('Updated product - stockQuantity:', updated.stockQuantity);
+    
+    res.json(response);
+    
+  } catch (error) {
+    console.error('Update error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// In the GET /api/admin/products/:id endpoint
+app.get('/api/admin/products/:id', requireAdmin, async (req, res) => {
+  try {
+    const [product] = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, req.params.id))
+      .limit(1);
+    
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Map stockQuantity to stock
+    res.json({
+      ...product,
+      stock: product.stockQuantity
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+2. Alternative Fix - Update Database Schema
+If you prefer to rename the column:
+sql-- Run this SQL to rename the column
+ALTER TABLE products RENAME COLUMN "stockQuantity" TO stock;
+3. Quick Frontend Fix - Handle Both Names
+tsx// client/src/components/admin/ProductModal.tsx
+
+// When loading product data
+useEffect(() => {
+  if (isOpen && product) {
+    setFormData({
+      name: product.name || '',
+      sku: product.sku || '',
+      price: product.price?.toString() || '',
+      compareAtPrice: product.compareAtPrice?.toString() || '',
+      stock: (product.stock || product.stockQuantity || 0).toString(), // Handle both
+      categoryId: product.categoryId || '',
+      description: product.description || '',
+      isActive: product.isActive ?? true,
+      isFeatured: product.isFeatured ?? false,
+      features: product.features || []
+    });
+  }
+}, [isOpen, product]);
+
+// In ProductsManager - display stock
+<span className={`px-3 py-1 rounded-full text-sm ${
+  (product.stock || product.stockQuantity || 0) > 0 
+    ? 'bg-green-900/50 text-green-400' 
+    : 'bg-red-900/50 text-red-400'
+}`}>
+  {product.stock || product.stockQuantity || 0} in stock
+</span>
+4. Test Script to Verify Fix
+javascript// Run this in browser console
+async function testStockUpdate() {
+  // 1. Get products
+  const res1 = await fetch('/api/admin/products?_t=' + Date.now());
+  const data1 = await res1.json();
+  const product = data1.data[0];
+  
+  console.log('Product before:', {
+    id: product.id,
+    name: product.name,
+    stock: product.stock,
+    stockQuantity: product.stockQuantity
+  });
+  
+  // 2. Update stock
+  const newStock = 25;
+  const updateRes = await fetch(`/api/admin/products/${product.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      ...product,
+      stock: newStock
+    })
+  });
+  
+  const updated = await updateRes.json();
+  console.log('Update response:', updated);
+  
+  // 3. Fetch again
+  await new Promise(r => setTimeout(r, 500));
+  const res2 = await fetch('/api/admin/products?_t=' + Date.now());
+  const data2 = await res2.json();
+  const productAfter = data2.data.find(p => p.id === product.id);
+  
+  console.log('Product after:', {
+    id: productAfter.id,
+    name: productAfter.name,
+    stock: productAfter.stock,
+    stockQuantity: productAfter.stockQuantity
+  });
+  
+  console.log('SUCCESS?', (productAfter.stock || productAfter.stockQuantity) === newStock);
+}
+
+testStockUpdate();
+5. Fix ALL Product-Related Endpoints
+Search and fix these endpoints too:
+ts// Any endpoint that deals with products needs the mapping:
+
+// Featured products
+app.get('/api/products/featured', async (req, res) => {
+  const products = await db.select({
+    // ... other fields
+    stock: products.stockQuantity, // ADD THIS MAPPING
+    stockQuantity: products.stockQuantity
+  }).from(products);
+  // ...
+});
+
+// Product search
+app.get('/api/search', async (req, res) => {
+  // Add the same mapping
+});
+
+// Single product
+app.get('/api/products/:id', async (req, res) => {
+  // Add the same mapping
+});
+IMMEDIATE ACTIONS FOR REPLIT:
+
+UPDATE the backend mapping - Change stock: req.body.stock to stockQuantity: req.body.stock
+MAP the response - Return stock: product.stockQuantity in all responses
+TEST immediately - The stock should now update correctly
+Search entire codebase for products.stock and replace with products.stockQuantity
+
+The issue is 100% the column name mismatch. Fix this mapping and everything will work!
