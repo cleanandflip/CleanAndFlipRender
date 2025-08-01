@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/admin/DashboardLayout';
+import { CategoryModal } from '@/components/admin/CategoryModal';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,8 @@ export function CategoryManager() {
   });
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -141,26 +143,18 @@ export function CategoryManager() {
     });
   };
 
-  const handleEdit = (category: Category) => {
-    // Set category for editing and open modal/form
+  const handleEditCategory = (category: Category) => {
     setEditingCategory(category);
-    setShowAddForm(true);
+    setIsEditModalOpen(true);
   };
 
-  const handleDelete = (category: Category) => {
-    if (category.productCount > 0) {
-      toast({
-        title: "Cannot delete category",
-        description: `This category has ${category.productCount} products. Move or delete products first.`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (confirm(`Are you sure you want to delete "${category.name}"?`)) {
+  const handleDeleteCategory = (category: Category) => {
+    if (window.confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
       deleteCategoryMutation.mutate(category.id);
     }
   };
+
+
 
   const handleExport = async (format: 'csv' | 'pdf') => {
     try {
@@ -212,7 +206,10 @@ export function CategoryManager() {
         </div>
       }
       actions={
-        <Button className="gap-2">
+        <Button 
+          className="gap-2" 
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           <Plus className="w-4 h-4" />
           Add Category
         </Button>
@@ -222,7 +219,10 @@ export function CategoryManager() {
         {categories?.length === 0 ? (
           <Card className="glass p-8 text-center">
             <p className="text-text-muted">No categories found</p>
-            <Button className="mt-4 gap-2">
+            <Button 
+              className="mt-4 gap-2"
+              onClick={() => setIsCreateModalOpen(true)}
+            >
               <Plus className="w-4 h-4" />
               Create your first category
             </Button>
@@ -267,7 +267,7 @@ export function CategoryManager() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleEdit(category)}
+                    onClick={() => handleEditCategory(category)}
                     title="Edit Category"
                   >
                     <Edit className="w-4 h-4" />
@@ -276,7 +276,7 @@ export function CategoryManager() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDelete(category)}
+                    onClick={() => handleDeleteCategory(category)}
                     disabled={category.productCount > 0}
                     title={category.productCount > 0 ? 'Cannot delete - has products' : 'Delete Category'}
                     className="text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -316,6 +316,23 @@ export function CategoryManager() {
           </div>
         </Card>
       )}
+
+      {/* Category Modals */}
+      <CategoryModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingCategory(null);
+        }}
+        category={editingCategory}
+        onSave={refetch}
+      />
+      
+      <CategoryModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={refetch}
+      />
     </DashboardLayout>
   );
 }

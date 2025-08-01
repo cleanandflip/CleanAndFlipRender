@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { Logger } from '../utils/logger';
 
 // Performance monitoring middleware
 export function performanceMonitoring(req: Request, res: Response, next: NextFunction) {
@@ -11,8 +12,7 @@ export function performanceMonitoring(req: Request, res: Response, next: NextFun
     
     // Log slow requests (> 1 second)
     if (duration > 1000) {
-      const { Logger } = require('../utils/logger');
-      Logger.warn(`SLOW REQUEST: ${req.method} ${req.path} took ${duration}ms`);
+      Logger.warn(`Slow request detected: ${req.method} ${req.path} took ${duration}ms`);
     }
     
     // Add performance headers
@@ -28,7 +28,6 @@ export function performanceMonitoring(req: Request, res: Response, next: NextFun
 // Database query monitoring
 export function logDatabaseQuery(query: string, duration: number) {
   if (duration > 500) { // Log queries slower than 500ms
-    const { Logger } = require('../utils/logger');
     Logger.warn(`SLOW QUERY (${duration}ms): ${query.substring(0, 100)}...`);
   }
 }
@@ -55,7 +54,6 @@ export function createHealthCheck() {
     } catch (error) {
       healthChecks.checks.database = 'error';
       healthChecks.status = 'degraded';
-      const { Logger } = require('../utils/logger');
       Logger.error('Health check database error:', error);
     }
 
@@ -64,7 +62,6 @@ export function createHealthCheck() {
     const memUsageMB = Math.round(memUsage.heapUsed / 1024 / 1024);
     if (memUsageMB > 512) { // Alert if using > 512MB
       healthChecks.checks.memory = 'warning';
-      const { Logger } = require('../utils/logger');
       Logger.warn(`High memory usage: ${memUsageMB}MB`);
     }
 
@@ -84,70 +81,51 @@ export function requestLogging(req: Request, res: Response, next: NextFunction) 
     'hot-update', 'chunk-', '/src/', '/@id',
     '.tsx', '.ts', '.jsx', '?import', '?t=', '?v='
   ];
-  
-  // Skip if URL matches any skip pattern
-  if (skipPatterns.some(pattern => url?.includes(pattern))) {
-    return next(); // Skip logging development files
-  }
-  
-  // Skip versioned assets and query params
-  if (url?.includes('?t=') || url?.includes('?v=') || url?.includes('?import')) {
+
+  // Skip logging for development/asset requests
+  if (skipPatterns.some(pattern => url.includes(pattern))) {
     return next();
   }
+
+  // Skip frequent polling endpoints
+  if (url.includes('/api/cart') || url.includes('/api/user') || url.includes('/api/admin/stats')) {
+    return next();
+  }
+
+  const timestamp = new Date().toLocaleTimeString();
+  Logger.info(`${timestamp} ${req.method.padEnd(6)} ${req.path.padEnd(40)} ${res.statusCode || ''}${res.get('X-Response-Time') || ''}`);
   
-  // This middleware now delegates to the main logger system
-  // No duplicate logging - the main logger handles all request logging
   next();
 }
 
 // Error tracking middleware
-export function errorTracking(err: any, req: Request, res: Response, next: NextFunction) {
-  const errorId = Math.random().toString(36).substring(2, 15);
-  
-  const errorDetails = {
-    id: errorId,
-    message: err.message,
-    stack: err.stack,
+export function errorTracking(err: Error, req: Request, res: Response, next: NextFunction) {
+  const errorInfo = {
+    timestamp: new Date().toISOString(),
     method: req.method,
     url: req.url,
-    timestamp: new Date().toISOString(),
     userAgent: req.get('User-Agent'),
-    ip: req.ip
+    error: {
+      name: err.name,
+      message: err.message,
+      stack: err.stack
+    }
   };
 
-  // Use Logger instead of console.error
-  const { Logger } = require('../utils/logger');
-  Logger.error('Error tracked:', errorDetails);
-
-  // In production, you would send this to an error tracking service like Sentry
-  // Sentry.captureException(err);
-
-  // Don't expose internal error details to client
-  res.status(500).json({
-    error: 'Internal server error',
-    message: 'An unexpected error occurred',
-    errorId: errorId, // Reference ID for support
-    timestamp: errorDetails.timestamp
-  });
+  Logger.error('Application error:', errorInfo);
+  
+  next(err);
 }
 
-// Rate limit exceeded handler
-export function rateLimitHandler(req: Request, res: Response) {
-  const errorDetails = {
-    error: 'Rate limit exceeded',
-    message: 'Too many requests. Please try again later.',
-    retryAfter: res.get('Retry-After') || '900', // 15 minutes default
-    timestamp: new Date().toISOString(),
-    ip: req.ip
-  };
-
-  const { Logger } = require('../utils/logger');
-  Logger.warn('Rate limit exceeded:', {
-    ip: req.ip,
-    method: req.method,
-    url: req.url,
-    timestamp: errorDetails.timestamp
-  });
-
-  res.status(429).json(errorDetails);
+// Rate limiting monitoring
+export function rateLimitMonitoring(req: Request, res: Response, next: NextFunction) {
+  const userAgent = req.get('User-Agent') || 'unknown';
+  const ip = req.ip || req.connection.remoteAddress;
+  
+  // Log suspicious activity patterns
+  if (userAgent.toLowerCase().includes('bot') && !userAgent.includes('googlebot')) {
+    Logger.warn(`Potential bot detected: ${ip} - ${userAgent}`);
+  }
+  
+  next();
 }

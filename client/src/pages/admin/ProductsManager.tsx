@@ -13,8 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { ProductModal } from '@/components/admin/ProductModal';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/utils/submissionHelpers';
 import { useToast } from '@/hooks/use-toast';
@@ -47,6 +46,7 @@ export function ProductsManager() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: products, isLoading, refetch } = useQuery({
@@ -66,6 +66,16 @@ export function ProductsManager() {
       const res = await fetch(`/api/admin/products?${params}`);
       if (!res.ok) throw new Error('Failed to fetch products');
       return res.json();
+    }
+  });
+
+  const { data: categories } = useQuery({
+    queryKey: ['admin-categories'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/categories', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      const data = await res.json();
+      return data.categories || [];
     }
   });
 
@@ -282,7 +292,10 @@ export function ProductsManager() {
         </div>
       }
       actions={
-        <Button className="gap-2 bg-accent-blue hover:bg-blue-600">
+        <Button 
+          className="gap-2 bg-accent-blue hover:bg-blue-600"
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           <Plus className="w-4 h-4" />
           Add Product
         </Button>
@@ -522,75 +535,24 @@ export function ProductsManager() {
         onPageChange={(page) => setFilters({ ...filters, page })}
       />
 
-      {/* Edit Product Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="glass max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
-          </DialogHeader>
-          
-          {editingProduct && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Product Name</Label>
-                <Input
-                  id="name"
-                  defaultValue={editingProduct.name}
-                  className="glass border-glass-border"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="price">Price</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  defaultValue={editingProduct.price}
-                  className="glass border-glass-border"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="stock">Stock</Label>
-                <Input
-                  id="stock"
-                  type="number"
-                  defaultValue={editingProduct.stock}
-                  className="glass border-glass-border"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select defaultValue={editingProduct.status}>
-                  <SelectTrigger className="glass border-glass-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              toast({ title: "Product updated successfully" });
-              setIsEditModalOpen(false);
-              setEditingProduct(null);
-            }}>
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Product Modals */}
+      <ProductModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingProduct(null);
+        }}
+        product={editingProduct}
+        categories={categories || []}
+        onSave={refetch}
+      />
+      
+      <ProductModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        categories={categories || []}
+        onSave={refetch}
+      />
     </DashboardLayout>
   );
 }

@@ -1,0 +1,1293 @@
+Comprehensive Instructions to Fix ALL Dashboard Buttons
+1. Create Complete Product Add/Edit Modal
+tsx// client/src/components/admin/ProductModal.tsx
+
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Upload, X, Plus } from 'lucide-react';
+
+interface ProductModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  product?: any; // For editing
+  categories: any[];
+  onSave: () => void;
+}
+
+export function ProductModal({ isOpen, onClose, product, categories, onSave }: ProductModalProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    sku: '',
+    price: '',
+    compareAtPrice: '',
+    stock: '',
+    categoryId: '',
+    description: '',
+    shortDescription: '',
+    images: [] as string[],
+    features: [] as string[],
+    specifications: {} as Record<string, string>,
+    weight: '',
+    dimensions: { length: '', width: '', height: '' },
+    isActive: true,
+    isFeatured: false,
+    tags: [] as string[],
+    seoTitle: '',
+    seoDescription: '',
+    slug: ''
+  });
+
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name || '',
+        sku: product.sku || '',
+        price: product.price?.toString() || '',
+        compareAtPrice: product.compareAtPrice?.toString() || '',
+        stock: product.stock?.toString() || '',
+        categoryId: product.categoryId || '',
+        description: product.description || '',
+        shortDescription: product.shortDescription || '',
+        images: product.images || [],
+        features: product.features || [],
+        specifications: product.specifications || {},
+        weight: product.weight?.toString() || '',
+        dimensions: product.dimensions || { length: '', width: '', height: '' },
+        isActive: product.isActive ?? true,
+        isFeatured: product.isFeatured ?? false,
+        tags: product.tags || [],
+        seoTitle: product.seoTitle || '',
+        seoDescription: product.seoDescription || '',
+        slug: product.slug || ''
+      });
+    }
+  }, [product]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const url = product 
+        ? `/api/admin/products/${product.id}`
+        : '/api/admin/products';
+      
+      const method = product ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...formData,
+          price: parseFloat(formData.price),
+          compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
+          stock: parseInt(formData.stock),
+          weight: formData.weight ? parseFloat(formData.weight) : null
+        })
+      });
+
+      if (res.ok) {
+        onSave();
+        onClose();
+        toast({ 
+          title: product ? 'Product updated' : 'Product created',
+          description: 'Changes saved successfully'
+        });
+      } else {
+        const error = await res.json();
+        toast({ 
+          title: 'Error',
+          description: error.message || 'Failed to save product',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Error',
+        description: 'Failed to save product',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'your-cloudinary-preset');
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, data.url]
+      }));
+    } catch (error) {
+      toast({ title: 'Failed to upload image', variant: 'destructive' });
+    }
+  };
+
+  const addFeature = () => {
+    const feature = prompt('Enter feature:');
+    if (feature) {
+      setFormData(prev => ({
+        ...prev,
+        features: [...prev.features, feature]
+      }));
+    }
+  };
+
+  const addSpecification = () => {
+    const key = prompt('Specification name:');
+    const value = prompt('Specification value:');
+    if (key && value) {
+      setFormData(prev => ({
+        ...prev,
+        specifications: { ...prev.specifications, [key]: value }
+      }));
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Basic Information</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Product Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="sku">SKU</Label>
+                <Input
+                  id="sku"
+                  value={formData.sku}
+                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  placeholder="Auto-generated if empty"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="category">Category *</Label>
+              <Select
+                value={formData.categoryId}
+                onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="shortDescription">Short Description</Label>
+              <Input
+                id="shortDescription"
+                value={formData.shortDescription}
+                onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
+                placeholder="Brief product summary"
+              />
+            </div>
+          </div>
+
+          {/* Pricing & Inventory */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Pricing & Inventory</h3>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="price">Price *</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="compareAtPrice">Compare at Price</Label>
+                <Input
+                  id="compareAtPrice"
+                  type="number"
+                  step="0.01"
+                  value={formData.compareAtPrice}
+                  onChange={(e) => setFormData({ ...formData, compareAtPrice: e.target.value })}
+                  placeholder="Original price"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="stock">Stock *</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  value={formData.stock}
+                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Images */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Images</h3>
+            
+            <div className="grid grid-cols-4 gap-4">
+              {formData.images.map((img, idx) => (
+                <div key={idx} className="relative">
+                  <img src={img} alt="" className="w-full h-24 object-cover rounded" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        images: prev.images.filter((_, i) => i !== idx)
+                      }));
+                    }}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              
+              <label className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400">
+                <Upload className="w-8 h-8 text-gray-400" />
+                <span className="text-sm text-gray-500 mt-2">Upload Image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Features & Specifications */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Features & Specifications</h3>
+            
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <Label>Features</Label>
+                <Button type="button" size="sm" onClick={addFeature}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Feature
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {formData.features.map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input value={feature} readOnly />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          features: prev.features.filter((_, i) => i !== idx)
+                        }));
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <Label>Specifications</Label>
+                <Button type="button" size="sm" onClick={addSpecification}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Specification
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {Object.entries(formData.specifications).map(([key, value]) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <Input value={key} readOnly className="flex-1" />
+                    <Input value={value} readOnly className="flex-1" />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        const newSpecs = { ...formData.specifications };
+                        delete newSpecs[key];
+                        setFormData(prev => ({ ...prev, specifications: newSpecs }));
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Physical Properties */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Physical Properties</h3>
+            
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="weight">Weight (lbs)</Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  step="0.01"
+                  value={formData.weight}
+                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="length">Length (in)</Label>
+                <Input
+                  id="length"
+                  type="number"
+                  step="0.01"
+                  value={formData.dimensions.length}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    dimensions: { ...formData.dimensions, length: e.target.value }
+                  })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="width">Width (in)</Label>
+                <Input
+                  id="width"
+                  type="number"
+                  step="0.01"
+                  value={formData.dimensions.width}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    dimensions: { ...formData.dimensions, width: e.target.value }
+                  })}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="height">Height (in)</Label>
+                <Input
+                  id="height"
+                  type="number"
+                  step="0.01"
+                  value={formData.dimensions.height}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    dimensions: { ...formData.dimensions, height: e.target.value }
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Status & Visibility */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Status & Visibility</h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isActive">Product Active</Label>
+                <Switch
+                  id="isActive"
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="isFeatured">Featured Product</Label>
+                <Switch
+                  id="isFeatured"
+                  checked={formData.isFeatured}
+                  onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: checked })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SEO */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">SEO</h3>
+            
+            <div>
+              <Label htmlFor="slug">URL Slug</Label>
+              <Input
+                id="slug"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                placeholder="auto-generated-from-name"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="seoTitle">SEO Title</Label>
+              <Input
+                id="seoTitle"
+                value={formData.seoTitle}
+                onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
+                placeholder="Page title for search engines"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="seoDescription">SEO Description</Label>
+              <Textarea
+                id="seoDescription"
+                value={formData.seoDescription}
+                onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
+                placeholder="Page description for search engines"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {/* Form Actions */}
+          <div className="flex justify-end gap-4 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              {product ? 'Update Product' : 'Create Product'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+2. Create Category Add/Edit Modal
+tsx// client/src/components/admin/CategoryModal.tsx
+
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Upload } from 'lucide-react';
+
+interface CategoryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  category?: any;
+  onSave: () => void;
+}
+
+export function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    image: '',
+    active: true,
+    order: 0,
+    seoTitle: '',
+    seoDescription: ''
+  });
+
+  useEffect(() => {
+    if (category) {
+      setFormData({
+        name: category.name || '',
+        slug: category.slug || '',
+        description: category.description || '',
+        image: category.image || '',
+        active: category.active ?? true,
+        order: category.order || 0,
+        seoTitle: category.seoTitle || '',
+        seoDescription: category.seoDescription || ''
+      });
+    }
+  }, [category]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const url = category 
+        ? `/api/admin/categories/${category.id}`
+        : '/api/admin/categories';
+      
+      const method = category ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(formData)
+      });
+
+      if (res.ok) {
+        onSave();
+        onClose();
+        toast({ 
+          title: category ? 'Category updated' : 'Category created',
+          description: 'Changes saved successfully'
+        });
+      } else {
+        const error = await res.json();
+        toast({ 
+          title: 'Error',
+          description: error.message || 'Failed to save category',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Error',
+        description: 'Failed to save category',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      setFormData(prev => ({ ...prev, image: data.url }));
+    } catch (error) {
+      toast({ title: 'Failed to upload image', variant: 'destructive' });
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{category ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Category Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="slug">URL Slug</Label>
+              <Input
+                id="slug"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                placeholder="auto-generated-from-name"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+            />
+          </div>
+
+          <div>
+            <Label>Category Image</Label>
+            <div className="mt-2 flex items-center gap-4">
+              {formData.image && (
+                <img src={formData.image} alt="" className="w-20 h-20 object-cover rounded" />
+              )}
+              <label className="cursor-pointer bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                Upload Image
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="order">Display Order</Label>
+              <Input
+                id="order"
+                type="number"
+                value={formData.order}
+                onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="active">Active</Label>
+              <Switch
+                id="active"
+                checked={formData.active}
+                onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">SEO Settings</h3>
+            
+            <div>
+              <Label htmlFor="seoTitle">SEO Title</Label>
+              <Input
+                id="seoTitle"
+                value={formData.seoTitle}
+                onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
+                placeholder="Page title for search engines"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="seoDescription">SEO Description</Label>
+              <Textarea
+                id="seoDescription"
+                value={formData.seoDescription}
+                onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
+                placeholder="Page description for search engines"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-4 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              {category ? 'Update Category' : 'Create Category'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+3. Fix Products Tab - Complete Implementation
+tsx// client/src/pages/admin/ProductsManager.tsx
+
+import { ProductModal } from '@/components/admin/ProductModal';
+
+export function ProductsManager() {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [categories, setCategories] = useState([]);
+  
+  // Fetch categories for the dropdown
+  useEffect(() => {
+    fetch('/api/admin/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data.categories || []));
+  }, []);
+  
+  const { data: productsData, refetch } = useQuery({
+    queryKey: ['admin-products', filters],
+    queryFn: async () => {
+      const params = new URLSearchParams(filters);
+      const res = await fetch(`/api/admin/products?${params}`);
+      return res.json();
+    }
+  });
+  
+  const handleAddProduct = () => {
+    setEditingProduct(null);
+    setIsAddModalOpen(true);
+  };
+  
+  const handleEditProduct = (product: any) => {
+    setEditingProduct(product);
+    setIsAddModalOpen(true);
+  };
+  
+  const handleDeleteProduct = async (product: any) => {
+    if (!confirm(`Delete product "${product.name}"?`)) return;
+    
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (res.ok) {
+        toast({ title: 'Product deleted successfully' });
+        refetch();
+      } else {
+        toast({ 
+          title: 'Error',
+          description: 'Failed to delete product',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Error',
+        description: 'Failed to delete product',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  const handleViewProduct = (product: any) => {
+    window.open(`/products/${product.id}`, '_blank');
+  };
+  
+  return (
+    <>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Product Management</h1>
+          <p className="text-gray-400">Manage your Clean & Flip inventory</p>
+        </div>
+        <Button onClick={handleAddProduct} className="gap-2">
+          <Plus className="w-4 h-4" />
+          Add Product
+        </Button>
+      </div>
+      
+      {/* Product List */}
+      <div className="space-y-2">
+        {productsData?.data?.map((product) => (
+          <Card key={product.id} className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold">{product.name}</h3>
+                <p className="text-sm text-gray-400">
+                  {product.category} • SKU: {product.sku || 'N/A'}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <p className="font-bold">${product.price}</p>
+                <Badge variant={product.stock > 0 ? 'success' : 'destructive'}>
+                  {product.stock} in stock
+                </Badge>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleViewProduct(product)}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEditProduct(product)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteProduct(product)}
+                    className="text-red-500"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+      
+      {/* Product Modal */}
+      <ProductModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        product={editingProduct}
+        categories={categories}
+        onSave={refetch}
+      />
+    </>
+  );
+}
+4. Fix Categories Tab - Complete Implementation
+tsx// client/src/pages/admin/CategoryManager.tsx
+
+import { CategoryModal } from '@/components/admin/CategoryModal';
+
+export function CategoryManager() {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [viewingCategory, setViewingCategory] = useState(null);
+  
+  const { data: categoriesData, refetch } = useQuery({
+    queryKey: ['admin-categories'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/categories?include=productCount');
+      return res.json();
+    }
+  });
+  
+  const handleAddCategory = () => {
+    setEditingCategory(null);
+    setIsAddModalOpen(true);
+  };
+  
+  const handleViewCategory = (category: any) => {
+    // Show category details modal
+    setViewingCategory(category);
+  };
+  
+  const handleEditCategory = (category: any) => {
+    setEditingCategory(category);
+    setIsAddModalOpen(true);
+  };
+  
+  const handleDeleteCategory = async (category: any) => {
+    if (category.productCount > 0) {
+      toast({
+        title: 'Cannot delete',
+        description: 'This category has products. Remove all products first.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (!confirm(`Delete category "${category.name}"?`)) return;
+    
+    try {
+      const res = await fetch(`/api/admin/categories/${category.id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (res.ok) {
+        toast({ title: 'Category deleted successfully' });
+        refetch();
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Error',
+        description: 'Failed to delete category',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  return (
+    <>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Category Management</h1>
+          <p className="text-gray-400">Organize your product categories and structure</p>
+        </div>
+        <Button onClick={handleAddCategory} className="gap-2">
+          <Plus className="w-4 h-4" />
+          Add Category
+        </Button>
+      </div>
+      
+      {/* Categories List */}
+      <div className="space-y-2">
+        {categoriesData?.categories?.map((category) => (
+          <Card key={category.id} className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gray-800 rounded flex items-center justify-center">
+                  {category.image ? (
+                    <img src={category.image} alt="" className="w-8 h-8" />
+                  ) : (
+                    <Package className="w-6 h-6 text-gray-400" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold">{category.name}</h3>
+                  <p className="text-sm text-gray-400">
+                    Slug: {category.slug} • Order: {category.order}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <Badge variant="secondary">
+                  {category.productCount || 0} products
+                </Badge>
+                <Badge variant={category.active ? 'success' : 'destructive'}>
+                  {category.active ? 'Active' : 'Inactive'}
+                </Badge>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleViewCategory(category)}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEditCategory(category)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteCategory(category)}
+                    className="text-red-500"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+      
+      {/* Category Modal */}
+      <CategoryModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        category={editingCategory}
+        onSave={refetch}
+      />
+      
+      {/* View Category Modal */}
+      {viewingCategory && (
+        <Dialog open={!!viewingCategory} onOpenChange={() => setViewingCategory(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{viewingCategory.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-400">Description</p>
+                <p>{viewingCategory.description || 'No description'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">Products</p>
+                <p>{viewingCategory.productCount} products in this category</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">Status</p>
+                <Badge variant={viewingCategory.active ? 'success' : 'destructive'}>
+                  {viewingCategory.active ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+}
+5. Backend API Endpoints - Complete Implementation
+ts// server/routes.ts - Add ALL missing endpoints
+
+// Products CRUD
+app.post('/api/admin/products', requireAdmin, async (req, res) => {
+  try {
+    const productData = {
+      ...req.body,
+      id: crypto.randomUUID(),
+      sku: req.body.sku || generateSKU(req.body.name),
+      slug: req.body.slug || slugify(req.body.name),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const [product] = await db.insert(products).values(productData).returning();
+    res.json(product);
+  } catch (error) {
+    console.error('Error creating product:', error);
+    res.status(500).json({ error: 'Failed to create product' });
+  }
+});
+
+app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = {
+      ...req.body,
+      updatedAt: new Date()
+    };
+    
+    const [product] = await db
+      .update(products)
+      .set(updateData)
+      .where(eq(products.id, id))
+      .returning();
+      
+    res.json(product);
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(500).json({ error: 'Failed to update product' });
+  }
+});
+
+app.delete('/api/admin/products/:id', requireAdmin, async (req, res) => {
+  try {
+    await db.delete(products).where(eq(products.id, req.params.id));
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    res.status(500).json({ error: 'Failed to delete product' });
+  }
+});
+
+// Categories CRUD
+app.post('/api/admin/categories', requireAdmin, async (req, res) => {
+  try {
+    const categoryData = {
+      ...req.body,
+      id: crypto.randomUUID(),
+      slug: req.body.slug || slugify(req.body.name),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const [category] = await db.insert(categories).values(categoryData).returning();
+    res.json(category);
+  } catch (error) {
+    console.error('Error creating category:', error);
+    res.status(500).json({ error: 'Failed to create category' });
+  }
+});
+
+app.put('/api/admin/categories/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = {
+      ...req.body,
+      slug: req.body.slug || slugify(req.body.name),
+      updatedAt: new Date()
+    };
+    
+    const [category] = await db
+      .update(categories)
+      .set(updateData)
+      .where(eq(categories.id, id))
+      .returning();
+      
+    res.json(category);
+  } catch (error) {
+    console.error('Error updating category:', error);
+    res.status(500).json({ error: 'Failed to update category' });
+  }
+});
+
+app.delete('/api/admin/categories/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check for products
+    const productsInCategory = await db
+      .select()
+      .from(products)
+      .where(eq(products.categoryId, id));
+      
+    if (productsInCategory.length > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete category with products' 
+      });
+    }
+    
+    await db.delete(categories).where(eq(categories.id, id));
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    res.status(500).json({ error: 'Failed to delete category' });
+  }
+});
+
+// Image upload endpoint
+app.post('/api/upload', requireAuth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'clean-flip',
+      transformation: [
+        { width: 1000, height: 1000, crop: 'limit' },
+        { quality: 'auto' }
+      ]
+    });
+    
+    res.json({ url: result.secure_url });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Utility functions
+function generateSKU(name: string): string {
+  const prefix = name.substring(0, 3).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `${prefix}-${random}`;
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w ]+/g, '')
+    .replace(/ +/g, '-');
+}
+6. Test All Buttons Script
+javascript// test-all-buttons.js - Run this in browser console
+
+async function testAllDashboardButtons() {
+  console.log('🧪 Testing All Dashboard Buttons...\n');
+  
+  // Products Tab
+  console.log('📦 Products Tab:');
+  document.querySelector('button:has(svg.lucide-plus)').click(); // Add Product
+  console.log('✓ Add Product button clicked');
+  
+  // Test each product's buttons
+  document.querySelectorAll('[data-product-actions] button').forEach((btn, idx) => {
+    console.log(`✓ Product ${idx + 1} action button found`);
+  });
+  
+  // Categories Tab
+  console.log('\n📁 Categories Tab:');
+  // Navigate to categories
+  await new Promise(r => setTimeout(r, 1000));
+  
+  // Submissions Tab
+  console.log('\n📋 Submissions Tab:');
+  document.querySelectorAll('[data-submission-dropdown]').forEach((dropdown, idx) => {
+    console.log(`✓ Submission ${idx + 1} dropdown found`);
+  });
+  
+  // Test all other tabs...
+  
+  console.log('\n✅ Button testing complete!');
+}
+
+// Run the test
+testAllDashboardButtons();
+Instructions for Replit:
+
+CREATE ALL MODALS:
+
+ProductModal with ALL fields (images, specs, SEO, etc.)
+CategoryModal with full functionality
+User modals, submission modals, etc.
+
+
+IMPLEMENT ALL HANDLERS:
+
+Every button must have a click handler
+Every handler must do something (even if just showing a toast)
+
+
+ADD ALL BACKEND ENDPOINTS:
+
+Full CRUD for products
+Full CRUD for categories
+Image upload endpoint
+All missing endpoints for other tabs
+
+
+TEST SYSTEMATICALLY:
+
+Go to each tab
+Click EVERY button
+Ensure it either:
+
+Opens a modal
+Performs an action
+Shows a toast message
+Or navigates somewhere
+
+
+
+
+FIX DATA DISPLAY:
+
+No more "Open" or "[object Object]"
+All numbers formatted properly
+All dates formatted consistently
+
+
+COMPREHENSIVE TESTING:
+
+Products: Add, Edit, Delete, View
+Categories: Add, Edit, Delete, View, Reorder
+Submissions: View, Edit, Archive, Delete, Add Note
+Analytics: All charts display data
+Wishlist: All actions work
+Users: Edit role, suspend, reset password
+System: All settings sections implemented
+
+
+
+Every single button in the dashboard must work. No exceptions.
