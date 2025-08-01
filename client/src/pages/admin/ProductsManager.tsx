@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/admin/DashboardLayout';
 import { Pagination } from '@/components/admin/Pagination';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProductModal } from '@/components/admin/ProductModal';
-import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
+import { Plus, Edit, Eye, Trash2, RefreshCw } from 'lucide-react';
 import { formatCurrency } from '@/utils/submissionHelpers';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,6 +41,7 @@ const defaultFilters = {
 };
 
 export function ProductsManager() {
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState(defaultFilters);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
@@ -52,6 +53,7 @@ export function ProductsManager() {
   const { data: products, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['admin-products', filters],
     queryFn: async () => {
+      // Add timestamp to prevent caching
       const params = new URLSearchParams({
         search: filters.search,
         category: filters.category,
@@ -61,19 +63,28 @@ export function ProductsManager() {
         priceMin: filters.priceRange.min.toString(),
         priceMax: filters.priceRange.max.toString(),
         page: filters.page.toString(),
-        limit: filters.limit.toString()
+        limit: filters.limit.toString(),
+        _t: Date.now().toString() // Force fresh data
       });
+      
       const res = await fetch(`/api/admin/products?${params}`, {
-        credentials: 'include'
+        credentials: 'include',
+        cache: 'no-store', // Disable browser cache
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
+      
       if (!res.ok) throw new Error('Failed to fetch products');
       return res.json();
     },
-    // CRITICAL: No cache for admin data to ensure fresh state
+    // CRITICAL: Disable ALL caching for fresh data
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true,
-    refetchOnMount: true
+    refetchOnMount: true,
+    refetchInterval: false
   });
 
   const { data: categories } = useQuery({
@@ -552,12 +563,16 @@ export function ProductsManager() {
         productId={editingProductId}
         categories={categories || []}
         onSave={async () => {
-          // CRITICAL: Multiple strategies to ensure refresh
+          // CRITICAL: Clear all caches and force refresh
+          queryClient.clear();
+          
+          // Wait for database to update
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // Force refetch
           await refetch();
-          // Also force refetch with delay
-          setTimeout(async () => {
-            await refetch();
-          }, 100);
+          
+          // Don't close modal here - let modal handle it
         }}
       />
       
@@ -567,12 +582,17 @@ export function ProductsManager() {
         productId={null}
         categories={categories || []}
         onSave={async () => {
-          // CRITICAL: Multiple strategies to ensure refresh
+          // CRITICAL: Clear all caches and force refresh
+          queryClient.clear();
+          
+          // Wait for database to update
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // Force refetch
           await refetch();
-          // Also force refetch with delay
-          setTimeout(async () => {
-            await refetch();
-          }, 100);
+          
+          // Close modal after save
+          setIsCreateModalOpen(false);
         }}
       />
     </DashboardLayout>

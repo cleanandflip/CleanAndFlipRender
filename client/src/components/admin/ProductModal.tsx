@@ -174,16 +174,16 @@ export function ProductModal({ isOpen, onClose, productId, categories, onSave }:
       });
 
       if (res.ok) {
+        toast({ 
+          title: productId ? 'Product updated' : 'Product created',
+          description: 'Changes saved successfully'
+        });
+        
         // CRITICAL: Call parent's onSave to refresh the list
         await onSave();
         
         // Close modal and reset form
         handleClose();
-        
-        toast({ 
-          title: productId ? 'Product updated' : 'Product created',
-          description: 'Changes saved successfully'
-        });
       } else {
         const error = await res.json();
         toast({ 
