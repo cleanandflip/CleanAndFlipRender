@@ -9,7 +9,7 @@ import { NavigationStateManager } from "@/lib/navigation-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { productEvents } from "@/lib/queryClient";
 import { AddToCartButton } from "@/components/AddToCartButton";
@@ -125,7 +125,7 @@ export default function ProductDetail() {
     return (
       <div className="min-h-screen pt-32 px-6">
         <div className="max-w-6xl mx-auto">
-          <GlassCard className="p-8 text-center">
+          <Card className="p-8 text-center">
             <h1 className="text-2xl font-bold text-red-400 mb-4">Product Not Found</h1>
             <p className="text-text-secondary mb-6">
               The product you're looking for doesn't exist or has been removed.
@@ -135,7 +135,7 @@ export default function ProductDetail() {
                 Browse Products
               </Button>
             </SmartLink>
-          </GlassCard>
+          </Card>
         </div>
       </div>
     );
@@ -220,7 +220,7 @@ export default function ProductDetail() {
           {/* Image Gallery */}
           <div className="space-y-4">
             {/* Main Image */}
-            <GlassCard className="overflow-hidden">
+            <Card className="overflow-hidden">
               <div className="relative group cursor-pointer" onClick={hasImages ? () => setShowLightbox(true) : undefined}>
                 {hasImages ? (
                   <>
@@ -267,7 +267,7 @@ export default function ProductDetail() {
                   </>
                 )}
               </div>
-            </GlassCard>
+            </Card>
 
             {/* Thumbnail Gallery */}
             {hasImages && images.length > 1 && (
@@ -405,7 +405,7 @@ export default function ProductDetail() {
             </div>
 
             {/* Features */}
-            <GlassCard className="p-4">
+            <Card className="p-4">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <Truck className="mx-auto mb-2 text-accent-blue" size={24} />
@@ -423,7 +423,7 @@ export default function ProductDetail() {
                   <div className="text-xs text-text-muted">Easy returns</div>
                 </div>
               </div>
-            </GlassCard>
+            </Card>
           </div>
         </div>
 
@@ -438,18 +438,18 @@ export default function ProductDetail() {
             </TabsList>
             
             <TabsContent value="description" className="mt-6">
-              <GlassCard className="p-6">
+              <Card className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Product Description</h3>
                 <div className="prose prose-invert max-w-none">
                   <p className="text-text-secondary leading-relaxed">
                     {product.description || "No detailed description available for this product."}
                   </p>
                 </div>
-              </GlassCard>
+              </Card>
             </TabsContent>
             
             <TabsContent value="specifications" className="mt-6">
-              <GlassCard className="p-6">
+              <Card className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Specifications</h3>
                 {product.specifications && Object.keys(product.specifications).length > 0 ? (
                   <div className="grid md:grid-cols-2 gap-4">
@@ -463,11 +463,11 @@ export default function ProductDetail() {
                 ) : (
                   <p className="text-text-secondary">No specifications available for this product.</p>
                 )}
-              </GlassCard>
+              </Card>
             </TabsContent>
             
             <TabsContent value="shipping" className="mt-6">
-              <GlassCard className="p-6">
+              <Card className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Shipping Information</h3>
                 <div className="space-y-4 text-text-secondary">
                   <div>
@@ -483,11 +483,11 @@ export default function ProductDetail() {
                     <p>Shipping costs are calculated at checkout based on weight and destination.</p>
                   </div>
                 </div>
-              </GlassCard>
+              </Card>
             </TabsContent>
             
             <TabsContent value="returns" className="mt-6">
-              <GlassCard className="p-6">
+              <Card className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Return Policy</h3>
                 <div className="space-y-4 text-text-secondary">
                   <div>
@@ -508,7 +508,7 @@ export default function ProductDetail() {
                     <p>Refunds are processed within 5-7 business days after we receive your return.</p>
                   </div>
                 </div>
-              </GlassCard>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>

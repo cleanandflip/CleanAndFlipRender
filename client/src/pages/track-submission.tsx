@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import GlassCard from '@/components/common/glass-card';
 import { 
   Package, 
   Clock, 
@@ -102,7 +101,7 @@ export default function TrackSubmission() {
         </div>
         
         {/* Search Bar */}
-        <GlassCard className="p-6 mb-8">
+        <Card className="p-6 mb-8">
           <form onSubmit={handleSearch} className="flex gap-4">
             <Input
               type="text"
@@ -116,19 +115,19 @@ export default function TrackSubmission() {
               Track
             </Button>
           </form>
-        </GlassCard>
+        </Card>
         
         {/* Loading State */}
         {isLoading && (
-          <GlassCard className="p-8 text-center">
+          <Card className="p-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-blue mx-auto"></div>
             <p className="mt-4 text-text-secondary">Loading submission details...</p>
-          </GlassCard>
+          </Card>
         )}
         
         {/* Error State */}
         {error && (
-          <GlassCard className="p-8 text-center border-red-500/30">
+          <Card className="p-8 text-center border-red-500/30">
             <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
             <p className="text-red-400 text-lg mb-2">Submission Not Found</p>
             <p className="text-text-muted">
@@ -137,14 +136,14 @@ export default function TrackSubmission() {
             <p className="text-sm text-text-muted mt-2">
               Please check your reference number and try again.
             </p>
-          </GlassCard>
+          </Card>
         )}
         
         {/* Submission Details */}
         {submission && (
           <div className="space-y-6">
             {/* Status Card */}
-            <GlassCard className="p-6">
+            <Card className="p-6">
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <h2 className="font-bebas text-2xl mb-2">SUBMISSION STATUS</h2>
@@ -190,10 +189,10 @@ export default function TrackSubmission() {
                   </>
                 )}
               </div>
-            </GlassCard>
+            </Card>
             
             {/* Equipment Details */}
-            <GlassCard className="p-6">
+            <Card className="p-6">
               <h3 className="font-bebas text-xl mb-4">EQUIPMENT DETAILS</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -215,11 +214,11 @@ export default function TrackSubmission() {
                   </div>
                 )}
               </div>
-            </GlassCard>
+            </Card>
             
             {/* Pickup Information */}
             {submission.scheduledPickupDate && (
-              <GlassCard className="p-6">
+              <Card className="p-6">
                 <h3 className="font-bebas text-xl mb-4">PICKUP INFORMATION</h3>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -237,15 +236,15 @@ export default function TrackSubmission() {
                     </div>
                   )}
                 </div>
-              </GlassCard>
+              </Card>
             )}
             
             {/* Decline Reason */}
             {submission.status === 'declined' && submission.declineReason && (
-              <GlassCard className="p-6 border-red-500/30">
+              <Card className="p-6 border-red-500/30">
                 <h3 className="font-bebas text-xl mb-4 text-red-400">DECLINE REASON</h3>
                 <p className="text-text-secondary">{submission.declineReason}</p>
-              </GlassCard>
+              </Card>
             )}
           </div>
         )}

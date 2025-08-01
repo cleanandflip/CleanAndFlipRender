@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import GlassCard from "@/components/common/glass-card";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -80,13 +79,13 @@ const CheckoutForm = () => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <GlassCard className="p-6 mb-6">
+      <Card className="p-6 mb-6">
         <h3 className="font-bebas text-xl mb-4 flex items-center">
           <CreditCard className="mr-2" size={20} />
           PAYMENT INFORMATION
         </h3>
         <PaymentElement />
-      </GlassCard>
+      </Card>
       
       <Button 
         type="submit" 
@@ -160,7 +159,7 @@ export default function Checkout() {
     return (
       <div className="min-h-screen pt-32 px-6">
         <div className="max-w-4xl mx-auto">
-          <GlassCard className="p-12 text-center">
+          <Card className="p-12 text-center">
             <ShoppingCart className="mx-auto mb-6 text-gray-400" size={64} />
             <h2 className="text-2xl font-semibold mb-4">Your cart is empty</h2>
             <p className="text-text-secondary mb-8">
@@ -171,7 +170,7 @@ export default function Checkout() {
                 Continue Shopping
               </Button>
             </Link>
-          </GlassCard>
+          </Card>
         </div>
       </div>
     );
@@ -223,7 +222,7 @@ export default function Checkout() {
             {step === 1 && (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onShippingSubmit)} className="space-y-6">
-                  <GlassCard className="p-6">
+                  <Card className="p-6">
                     <h3 className="font-bebas text-xl mb-4 flex items-center">
                       <Truck className="mr-2" size={20} />
                       SHIPPING INFORMATION
@@ -360,7 +359,7 @@ export default function Checkout() {
                         </FormItem>
                       )}
                     />
-                  </GlassCard>
+                  </Card>
 
                   <Button type="submit" className="w-full bg-accent-blue hover:bg-blue-500 text-white py-3">
                     Continue to Payment
@@ -376,18 +375,18 @@ export default function Checkout() {
             )}
 
             {step === 2 && !clientSecret && (
-              <GlassCard className="p-6">
+              <Card className="p-6">
                 <div className="text-center">
                   <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
                   <p>Setting up payment...</p>
                 </div>
-              </GlassCard>
+              </Card>
             )}
           </div>
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <GlassCard className="p-6 sticky top-32">
+            <Card className="p-6 sticky top-32">
               <h3 className="font-bebas text-xl mb-4">ORDER SUMMARY</h3>
               
               {/* Items */}
@@ -440,7 +439,7 @@ export default function Checkout() {
                 <Lock className="inline mr-1" size={14} />
                 Secure 256-bit SSL encryption
               </div>
-            </GlassCard>
+            </Card>
           </div>
         </div>
       </div>

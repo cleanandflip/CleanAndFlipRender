@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import GlassCard from "@/components/common/glass-card";
 import { 
   Settings, 
   Package, 
@@ -59,7 +58,7 @@ function StatCard({ title, value, icon: Icon, trend }: {
   trend?: string;
 }) {
   return (
-    <GlassCard className="p-6">
+    <Card className="p-6">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-text-secondary text-sm">{title}</p>
@@ -68,7 +67,7 @@ function StatCard({ title, value, icon: Icon, trend }: {
         </div>
         <Icon className="w-8 h-8 text-accent-blue" />
       </div>
-    </GlassCard>
+    </Card>
   );
 }
 
@@ -158,7 +157,7 @@ function ProductManagement() {
         </Button>
       </div>
 
-      <GlassCard className="p-6">
+      <Card className="p-6">
         <Table>
           <TableHeader>
             <TableRow>
@@ -211,7 +210,7 @@ function ProductManagement() {
             ))}
           </TableBody>
         </Table>
-      </GlassCard>
+      </Card>
     </div>
   );
 }
@@ -269,7 +268,7 @@ function Analytics() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GlassCard className="p-6">
+        <Card className="p-6">
           <h3 className="font-semibold text-lg mb-4">Top Products</h3>
           {analyticsData?.topProducts?.length > 0 ? (
             <div className="space-y-3">
@@ -293,9 +292,9 @@ function Analytics() {
               <p className="text-sm">Sales data will appear when orders are placed</p>
             </div>
           )}
-        </GlassCard>
+        </Card>
 
-        <GlassCard className="p-6">
+        <Card className="p-6">
           <h3 className="font-semibold text-lg mb-4">Recent Activity</h3>
           {analyticsData?.recentActivity?.length > 0 ? (
             <div className="space-y-3">
@@ -318,7 +317,7 @@ function Analytics() {
               <p className="text-sm">Activity will appear when orders are processed</p>
             </div>
           )}
-        </GlassCard>
+        </Card>
       </div>
     </div>
   );
@@ -363,7 +362,7 @@ function UserManagement() {
         />
       </div>
 
-      <GlassCard className="p-6">
+      <Card className="p-6">
         <Table>
           <TableHeader>
             <TableRow>
@@ -407,7 +406,7 @@ function UserManagement() {
             ))}
           </TableBody>
         </Table>
-      </GlassCard>
+      </Card>
     </div>
   );
 }
@@ -470,7 +469,7 @@ function SystemSettings() {
       <h2 className="font-bebas text-2xl">SYSTEM SETTINGS</h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GlassCard className="p-6">
+        <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <Database className="w-5 h-5" />
             <h3 className="font-semibold">Database Status</h3>
@@ -491,9 +490,9 @@ function SystemSettings() {
               <span>{(dbStatus as any)?.pool || 'Unknown'}</span>
             </div>
           </div>
-        </GlassCard>
+        </Card>
 
-        <GlassCard className="p-6">
+        <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <Activity className="w-5 h-5" />
             <h3 className="font-semibold">System Health</h3>
@@ -514,9 +513,9 @@ function SystemSettings() {
               <span>{formatUptime((systemHealth as any)?.uptime || 0)}</span>
             </div>
           </div>
-        </GlassCard>
+        </Card>
 
-        <GlassCard className="p-6">
+        <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <AlertCircle className="w-5 h-5" />
             <h3 className="font-semibold">Recent Errors</h3>
@@ -524,9 +523,9 @@ function SystemSettings() {
           <div className="space-y-2 text-sm">
             <div className="text-text-secondary">No recent errors</div>
           </div>
-        </GlassCard>
+        </Card>
 
-        <GlassCard className="p-6">
+        <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <Download className="w-5 h-5" />
             <h3 className="font-semibold">Export Data</h3>
@@ -554,7 +553,7 @@ function SystemSettings() {
               Export Orders CSV
             </Button>
           </div>
-        </GlassCard>
+        </Card>
       </div>
     </div>
   );

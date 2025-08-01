@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/ui/card";
 import { Package, Search, Calendar, Truck, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import type { Order } from "@shared/schema";
@@ -88,10 +88,10 @@ export default function Orders() {
     return (
       <div className="min-h-screen pt-32 px-6">
         <div className="max-w-6xl mx-auto">
-          <GlassCard className="p-8 text-center">
+          <Card className="p-8 text-center">
             <h1 className="text-2xl font-bold text-red-400 mb-4">Error Loading Orders</h1>
             <p className="text-text-secondary">Please try again later.</p>
-          </GlassCard>
+          </Card>
         </div>
       </div>
     );
@@ -117,7 +117,7 @@ export default function Orders() {
         </div>
 
         {/* Filters and Search */}
-        <GlassCard className="p-6 mb-8">
+        <Card className="p-6 mb-8">
           <div className="grid md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
@@ -164,11 +164,11 @@ export default function Orders() {
               {filteredOrders.length} of {orders.length} orders
             </div>
           </div>
-        </GlassCard>
+        </Card>
 
         {/* Orders List */}
         {filteredOrders.length === 0 ? (
-          <GlassCard className="p-12 text-center">
+          <Card className="p-12 text-center">
             <Package className="mx-auto mb-6 text-gray-400" size={64} />
             <h2 className="text-2xl font-semibold mb-4">
               {orders.length === 0 ? "No orders yet" : "No orders found"}
@@ -193,11 +193,11 @@ export default function Orders() {
                 Clear Filters
               </Button>
             )}
-          </GlassCard>
+          </Card>
         ) : (
           <div className="space-y-6">
             {filteredOrders.map((order) => (
-              <GlassCard key={order.id} className="p-6">
+              <Card key={order.id} className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div className={`p-2 rounded-lg ${getStatusColor(order.status)} text-white`}>
@@ -277,7 +277,7 @@ export default function Orders() {
                     </Button>
                   )}
                 </div>
-              </GlassCard>
+              </Card>
             ))}
           </div>
         )}

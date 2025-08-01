@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/ui/card";
 import { X, Filter, RotateCcw } from "lucide-react";
 import type { Category } from "@shared/schema";
 
@@ -151,7 +151,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
     : "createdAt-desc";
 
   return (
-    <GlassCard className="p-6 sticky top-32">
+    <Card className="p-6 sticky top-32">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
@@ -417,6 +417,6 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </>
       )}
-    </GlassCard>
+    </Card>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/ui/card";
 import { Search, X, Clock, TrendingUp } from "lucide-react";
 
 interface SearchBarProps {
@@ -147,7 +147,7 @@ export default function SearchBar({
 
       {/* Search Suggestions Dropdown */}
       {isOpen && (
-        <GlassCard className="absolute top-full left-0 right-0 mt-2 p-4 z-50 max-h-80 overflow-y-auto">
+        <Card className="absolute top-full left-0 right-0 mt-2 p-4 z-50 max-h-80 overflow-y-auto">
           {inputValue.length >= 2 ? (
             // Show suggestions when typing
             <div>
@@ -220,7 +220,7 @@ export default function SearchBar({
               </div>
             </div>
           )}
-        </GlassCard>
+        </Card>
       )}
     </div>
   );

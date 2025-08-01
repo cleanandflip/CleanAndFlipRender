@@ -4,7 +4,7 @@ import { SmartLink } from "@/components/ui/smart-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WishlistButton, ProductPrice, StockIndicator, AddToCartButton } from "@/components/ui";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/ui/card";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,7 +34,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
   if (compact) {
     return (
       <SmartLink href={`/products/${product.id}`} preserveState={true}>
-        <GlassCard className="overflow-hidden glass-hover cursor-pointer">
+        <Card className="overflow-hidden glass-hover cursor-pointer">
           {hasImage ? (
             <img 
               src={mainImage}
@@ -53,14 +53,14 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             <h4 className="font-semibold text-sm line-clamp-2 mb-1">{product.name}</h4>
             <p className="text-accent-blue font-bold text-sm">${product.price}</p>
           </div>
-        </GlassCard>
+        </Card>
       </SmartLink>
     );
   }
 
   if (viewMode === 'list') {
     return (
-      <GlassCard className="p-6">
+      <Card className="p-6">
         <div className="flex gap-6">
           {/* Image */}
           <SmartLink href={`/products/${product.id}`} preserveState={true}>
@@ -157,7 +157,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             </div>
           </div>
         </div>
-      </GlassCard>
+      </Card>
     );
   }
 

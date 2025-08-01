@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/ui/card";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { useCart } from "@/hooks/use-cart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
@@ -74,7 +74,7 @@ function Cart() {
         <div className="max-w-6xl mx-auto">
           <h1 className="font-bebas text-4xl md:text-6xl mb-8">YOUR CART</h1>
           
-          <GlassCard className="p-12 text-center">
+          <Card className="p-12 text-center">
             <ShoppingBag className="mx-auto mb-6 text-gray-400" size={64} />
             <h2 className="text-2xl font-semibold mb-4">Your cart is empty</h2>
             <p className="text-text-secondary mb-8">
@@ -85,7 +85,7 @@ function Cart() {
                 Start Shopping
               </Button>
             </Link>
-          </GlassCard>
+          </Card>
         </div>
       </div>
     );
@@ -109,7 +109,7 @@ function Cart() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
-            <GlassCard className="divide-y divide-glass-border">
+            <Card className="divide-y divide-glass-border">
               {cartItems.map((item) => (
                 <div key={item.id} className="p-6">
                   <div className="flex gap-6">
@@ -204,7 +204,7 @@ function Cart() {
                   </div>
                 </div>
               ))}
-            </GlassCard>
+            </Card>
 
             {/* Continue Shopping */}
             <div className="mt-6">
@@ -218,7 +218,7 @@ function Cart() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <GlassCard className="p-6 sticky top-32">
+            <Card className="p-6 sticky top-32">
               <h2 className="font-bebas text-2xl mb-6">ORDER SUMMARY</h2>
               
               <div className="space-y-4">
@@ -273,7 +273,7 @@ function Cart() {
               <div className="mt-4 text-center text-sm text-text-muted">
                 🔒 Secure checkout with 256-bit SSL encryption
               </div>
-            </GlassCard>
+            </Card>
           </div>
         </div>
       </div>

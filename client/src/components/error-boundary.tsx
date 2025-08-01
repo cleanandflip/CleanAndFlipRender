@@ -1,6 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
-import GlassCard from "@/components/common/glass-card";
+import { Card } from "@/components/ui/card";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 
 interface Props {
