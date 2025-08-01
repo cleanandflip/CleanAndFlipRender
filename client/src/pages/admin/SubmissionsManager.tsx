@@ -1,17 +1,40 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { UnifiedDropdown } from '@/components/ui/unified-dropdown';
-import { Calendar, MapPin, Phone, DollarSign, Clock, CheckCircle, XCircle, Package, Star } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { 
+  Search, Filter, Download, Archive, CheckCircle, XCircle, Clock, 
+  Eye, Calendar as CalendarIcon, DollarSign, MapPin, Phone, Mail,
+  ChevronLeft, ChevronRight, Grid, List, ArrowUpDown, RefreshCw,
+  FileText, Trash2, Edit, MessageSquare, Star, MoreVertical, Package
+} from 'lucide-react';
+import { SubmissionsList } from '@/components/admin/SubmissionsList';
+import { SubmissionsGrid } from '@/components/admin/SubmissionsGrid';
+import { SubmissionAnalytics } from '@/components/admin/SubmissionAnalytics';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
+interface SubmissionFilters {
+  status: string;
+  search: string;
+  dateRange: { from: Date | null; to: Date | null };
+  isLocal: boolean | null;
+  sortBy: 'date' | 'price' | 'name' | 'status';
+  sortOrder: 'asc' | 'desc';
+  view: 'grid' | 'list';
+  page: number;
+  limit: number;
+}
+
 interface Submission {
   id: string;
+  referenceNumber: string;
   name: string;
   description: string;
   brand: string;
@@ -29,7 +52,8 @@ interface Submission {
   isLocal?: boolean;
   distance?: number;
   createdAt: string;
-  user: {
+  viewedByAdmin?: boolean;
+  user?: {
     id: string;
     email: string;
     firstName?: string;
@@ -37,39 +61,158 @@ interface Submission {
   };
 }
 
+// Helper functions
+const getWeekStart = () => {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day;
+  return new Date(now.setDate(diff));
+};
+
 export default function SubmissionsManager() {
+  const [filters, setFilters] = useState<SubmissionFilters>({
+    status: 'all',
+    search: '',
+    dateRange: { from: null, to: null },
+    isLocal: null,
+    sortBy: 'date',
+    sortOrder: 'desc',
+    view: 'list',
+    page: 1,
+    limit: 20
+  });
+  
+  const [selectedSubmissions, setSelectedSubmissions] = useState<Set<string>>(new Set());
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
-  const [offerAmount, setOfferAmount] = useState('');
-  const [adminNotes, setAdminNotes] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: response, isLoading, error, refetch } = useQuery({
-    queryKey: ['admin-submissions', statusFilter],
+  // Main data query
+  const { data: submissions, isLoading, refetch } = useQuery({
+    queryKey: ['admin-submissions', filters],
     queryFn: async () => {
-      const params = statusFilter !== 'all' ? `?status=${statusFilter}` : '';
-      const res = await fetch(`/api/admin/submissions${params}`, {
-        credentials: 'include' // Important for session cookies
+      const params = new URLSearchParams({
+        status: filters.status,
+        search: filters.search,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        page: filters.page.toString(),
+        limit: filters.limit.toString()
       });
       
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to fetch submissions');
-      }
+      if (filters.isLocal !== null) params.append('isLocal', filters.isLocal.toString());
+      if (filters.dateRange.from) params.append('dateFrom', filters.dateRange.from.toISOString());
+      if (filters.dateRange.to) params.append('dateTo', filters.dateRange.to.toISOString());
       
+      const res = await fetch(`/api/admin/submissions?${params}`, {
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Failed to fetch submissions');
       return res.json();
     },
     retry: 2,
-    staleTime: 0, // Always fetch fresh data
-    onError: (error) => {
-      console.error('Submissions fetch error:', error);
-    }
+    staleTime: 0
   });
 
-  // Handle both array response (old format) and object response (new format)
-  const submissions = response?.data ? response.data : (Array.isArray(response) ? response : []);
-  const totalSubmissions = response?.total || submissions.length;
+  // Status tabs with counts
+  const statusTabs = [
+    { value: 'all', label: 'All', count: submissions?.total || 0, color: 'default' },
+    { value: 'pending', label: 'Pending', count: submissions?.pending || 0, color: 'default' },
+    { value: 'under_review', label: 'Under Review', count: submissions?.under_review || 0, color: 'secondary' },
+    { value: 'accepted', label: 'Accepted', count: submissions?.accepted || 0, color: 'secondary' },
+    { value: 'scheduled', label: 'Scheduled', count: submissions?.scheduled || 0, color: 'secondary' },
+    { value: 'completed', label: 'Completed', count: submissions?.completed || 0, color: 'secondary' },
+    { value: 'rejected', label: 'Rejected', count: submissions?.rejected || 0, color: 'destructive' },
+    { value: 'cancelled', label: 'Cancelled', count: submissions?.cancelled || 0, color: 'outline' }
+  ];
+  
+  // Saved filter presets
+  const filterPresets = [
+    { label: 'Needs Action', filters: { status: 'pending', sortBy: 'date' as const } },
+    { label: 'High Value', filters: { sortBy: 'price' as const, sortOrder: 'desc' as const } },
+    { label: 'Local Only', filters: { isLocal: true } },
+    { label: 'This Week', filters: { dateRange: { from: getWeekStart(), to: new Date() } } },
+    { label: 'Rejected Items', filters: { status: 'rejected' } }
+  ];
+
+  // Bulk actions
+  const handleBulkAction = async (action: string) => {
+    if (selectedSubmissions.size === 0) return;
+    
+    const confirmMessage = `Are you sure you want to ${action} ${selectedSubmissions.size} submissions?`;
+    if (!confirm(confirmMessage)) return;
+    
+    try {
+      const res = await fetch('/api/admin/submissions/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          action,
+          submissionIds: Array.from(selectedSubmissions)
+        })
+      });
+      
+      if (!res.ok) throw new Error('Failed to perform bulk action');
+      
+      setSelectedSubmissions(new Set());
+      refetch();
+      toast({
+        title: "Success",
+        description: `Successfully ${action}d ${selectedSubmissions.size} submissions`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to ${action} submissions`,
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Export functionality
+  const handleExport = async (format: 'csv' | 'pdf') => {
+    try {
+      const params = new URLSearchParams({ 
+        format,
+        status: filters.status,
+        search: filters.search,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
+      });
+      
+      if (filters.isLocal !== null) params.append('isLocal', filters.isLocal.toString());
+      if (filters.dateRange.from) params.append('dateFrom', filters.dateRange.from.toISOString());
+      if (filters.dateRange.to) params.append('dateTo', filters.dateRange.to.toISOString());
+      
+      const res = await fetch(`/api/admin/submissions/export?${params}`, {
+        credentials: 'include'
+      });
+      
+      if (!res.ok) throw new Error('Failed to export');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `submissions-${new Date().toISOString().split('T')[0]}.${format}`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Success",
+        description: `Submissions exported as ${format.toUpperCase()}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export submissions",
+        variant: "destructive",
+      });
+    }
+  };
 
   const updateSubmission = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
@@ -151,280 +294,367 @@ export default function SubmissionsManager() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <Card className="glass-card p-8 text-center">
-          <XCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
-          <h3 className="text-lg font-semibold mb-2 text-white">Error Loading Submissions</h3>
-          <p className="text-text-muted mb-4">
-            Failed to load equipment submissions. Please try again.
-          </p>
-          <Button 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-submissions'] })}
-            className="bg-accent-blue hover:bg-blue-600"
-          >
-            Retry
-          </Button>
-        </Card>
-      </div>
-    );
-  }
+
 
   return (
-    <div className="p-6 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bebas text-white">EQUIPMENT SUBMISSIONS</h1>
-            <p className="text-text-muted">Review and manage equipment submissions</p>
-          </div>
-          
-          <UnifiedDropdown
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={[
-              { value: 'all', label: 'All Submissions' },
-              { value: 'pending', label: 'Pending Review' },
-              { value: 'reviewed', label: 'Reviewed' },
-              { value: 'offer_made', label: 'Offer Made' },
-              { value: 'accepted', label: 'Accepted' },
-              { value: 'rejected', label: 'Rejected' },
-              { value: 'scheduled', label: 'Scheduled' }
-            ]}
-            className="w-48"
-          />
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Submissions List */}
-          <div className="lg:col-span-2 space-y-4">
-            {submissions.length === 0 ? (
-              <Card className="glass-card p-8 text-center">
-                <Package className="w-12 h-12 mx-auto mb-4 text-text-muted" />
-                <h3 className="text-lg font-semibold mb-2">No Submissions Found</h3>
-                <p className="text-text-muted">
-                  {statusFilter === 'all' 
-                    ? 'No equipment submissions have been received yet.'
-                    : `No submissions with status "${statusFilter}" found.`
-                  }
-                </p>
-              </Card>
-            ) : (
-              submissions.map((submission: Submission) => (
-                <Card 
-                  key={submission.id}
-                  className={`glass-card p-4 cursor-pointer transition-all duration-200 hover:bg-white/5 ${
-                    selectedSubmission?.id === submission.id ? 'ring-2 ring-accent-blue' : ''
-                  }`}
-                  onClick={() => setSelectedSubmission(submission)}
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold text-lg text-white">{submission.name}</h3>
-                      <p className="text-text-muted">{submission.brand} • {submission.condition}</p>
-                    </div>
-                    <Badge className={`${getStatusColor(submission.status)} border flex items-center gap-1`}>
-                      {getStatusIcon(submission.status)}
-                      {submission.status.replace('_', ' ')}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-accent-blue" />
-                      <span className="text-text-muted">
-                        Asking: {submission.askingPrice ? `$${submission.askingPrice}` : 'Open to offers'}
-                      </span>
-                    </div>
-                    
-                    {submission.isLocal && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-green-400" />
-                        <span className="text-green-400">
-                          {submission.distance ? `${submission.distance} miles` : 'Local'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-3 flex items-center justify-between text-sm text-text-muted">
-                    <span>{submission.user.firstName || submission.user.email}</span>
-                    <span>{new Date(submission.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  
-                  {submission.offerAmount && (
-                    <div className="mt-2 text-sm">
-                      <span className="text-accent-blue">Current Offer: ${submission.offerAmount}</span>
-                    </div>
-                  )}
-                </Card>
-              ))
-            )}
-          </div>
+    <div className="min-h-screen bg-gray-900">
+      {/* Analytics Section */}
+      <div className="p-6 border-b border-gray-800">
+        <SubmissionAnalytics />
+      </div>
 
-          {/* Detail Panel */}
-          {selectedSubmission ? (
-            <Card className="glass-card p-6 h-fit">
-              <CardHeader className="px-0 pt-0">
-                <CardTitle className="text-xl text-white">Submission Details</CardTitle>
-              </CardHeader>
+      {/* Header */}
+      <div className="border-b border-gray-800 bg-gray-900/50 backdrop-blur sticky top-0 z-40">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Equipment Submissions</h1>
+              <p className="text-gray-400 mt-1">
+                Manage and process equipment buy requests
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {/* Quick Actions */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                className="gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </Button>
               
-              <CardContent className="px-0 space-y-4">
-                {/* Images */}
-                {selectedSubmission.images?.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedSubmission.images.map((img, idx) => (
-                      <img 
-                        key={idx}
-                        src={img} 
-                        alt={`Equipment ${idx + 1}`}
-                        className="rounded-lg w-full h-24 object-cover border border-glass-border"
-                      />
-                    ))}
-                  </div>
-                )}
-                
-                {/* Equipment Details */}
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm text-text-muted">Description</label>
-                    <p className="text-white">{selectedSubmission.description || 'No description provided'}</p>
-                  </div>
-                  
-                  {selectedSubmission.weight && (
-                    <div>
-                      <label className="text-sm text-text-muted">Weight</label>
-                      <p className="text-white">{selectedSubmission.weight} lbs</p>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <label className="text-sm text-text-muted">Contact</label>
-                    <div className="space-y-1">
-                      <p className="text-white">{selectedSubmission.user.email}</p>
-                      {selectedSubmission.phoneNumber && (
-                        <p className="flex items-center gap-2 text-white">
-                          <Phone className="w-4 h-4" />
-                          {selectedSubmission.phoneNumber}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {(selectedSubmission.userCity || selectedSubmission.userState) && (
-                    <div>
-                      <label className="text-sm text-text-muted">Location</label>
-                      <p className="text-white">
-                        {[selectedSubmission.userCity, selectedSubmission.userState, selectedSubmission.userZipCode]
-                          .filter(Boolean).join(', ')}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {selectedSubmission.adminNotes && (
-                    <div>
-                      <label className="text-sm text-text-muted">Admin Notes</label>
-                      <p className="text-white">{selectedSubmission.adminNotes}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Action Panel */}
-                {selectedSubmission.status === 'pending' && (
-                  <div className="space-y-4 pt-4 border-t border-glass-border">
-                    <div>
-                      <label className="text-sm text-text-muted mb-2 block">Your Offer ($)</label>
-                      <Input
-                        type="number"
-                        value={offerAmount}
-                        onChange={(e) => setOfferAmount(e.target.value)}
-                        placeholder="Enter offer amount"
-                        className="glass border-glass-border"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm text-text-muted mb-2 block">Notes</label>
-                      <Textarea
-                        value={adminNotes}
-                        onChange={(e) => setAdminNotes(e.target.value)}
-                        placeholder="Internal notes or message to user"
-                        className="glass border-glass-border"
-                        rows={3}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button 
-                        onClick={() => handleStatusUpdate(selectedSubmission, 'offer_made')}
-                        disabled={!offerAmount || updateSubmission.isPending}
-                        className="bg-accent-blue hover:bg-blue-600"
-                      >
-                        Make Offer
-                      </Button>
-                      <Button 
-                        variant="destructive"
-                        onClick={() => handleStatusUpdate(selectedSubmission, 'rejected')}
-                        disabled={updateSubmission.isPending}
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                
-                {selectedSubmission.status === 'offer_made' && (
-                  <div className="bg-purple-900/20 border border-purple-700 rounded-lg p-4">
-                    <p className="text-purple-400 font-semibold">
-                      Offer Made: ${selectedSubmission.offerAmount}
-                    </p>
-                    <p className="text-sm text-text-muted mt-1">
-                      Waiting for user response
-                    </p>
-                  </div>
-                )}
-                
-                {selectedSubmission.status === 'accepted' && (
-                  <div className="bg-green-900/20 border border-green-700 rounded-lg p-4">
-                    <p className="text-green-400 font-semibold">
-                      Offer Accepted: ${selectedSubmission.offerAmount}
-                    </p>
-                    <p className="text-sm text-text-muted mt-1">
-                      Contact user to schedule pickup
-                    </p>
-                    <Button 
-                      onClick={() => handleStatusUpdate(selectedSubmission, 'scheduled')}
-                      className="mt-2 w-full bg-green-600 hover:bg-green-700"
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Download className="w-4 h-4" />
+                    Export
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  <div className="space-y-2">
+                    <Button
+                      variant="ghost"
                       size="sm"
+                      className="w-full justify-start"
+                      onClick={() => handleExport('csv')}
                     >
-                      Mark as Scheduled
+                      Export as CSV
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={() => handleExport('pdf')}
+                    >
+                      Export as PDF
                     </Button>
                   </div>
-                )}
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          
+          {/* Search and Filters Bar */}
+          <div className="flex items-center gap-4 mt-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search by reference, name, brand..."
+                value={filters.search}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
+                className="pl-10"
+              />
+            </div>
+            
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+              {(filters.isLocal !== null || filters.dateRange.from) && (
+                <Badge variant="secondary" className="ml-1">
+                  Active
+                </Badge>
+              )}
+            </Button>
+            
+            {/* View Toggle */}
+            <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
+              <Button
+                variant={filters.view === 'list' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setFilters({ ...filters, view: 'list' })}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={filters.view === 'grid' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setFilters({ ...filters, view: 'grid' })}
+              >
+                <Grid className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Sort Options */}
+            <Select
+              value={`${filters.sortBy}-${filters.sortOrder}`}
+              onValueChange={(value) => {
+                const [sortBy, sortOrder] = value.split('-');
+                setFilters({ ...filters, sortBy: sortBy as any, sortOrder: sortOrder as any });
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <ArrowUpDown className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date-desc">Newest First</SelectItem>
+                <SelectItem value="date-asc">Oldest First</SelectItem>
+                <SelectItem value="price-desc">Highest Price</SelectItem>
+                <SelectItem value="price-asc">Lowest Price</SelectItem>
+                <SelectItem value="name-asc">Name A-Z</SelectItem>
+                <SelectItem value="name-desc">Name Z-A</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Filter Presets */}
+          {showFilters && (
+            <div className="mt-4 p-4 bg-gray-800/50 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium">Quick Filters</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFilters({
+                      ...filters,
+                      dateRange: { from: null, to: null },
+                      isLocal: null
+                    });
+                  }}
+                >
+                  Clear All
+                </Button>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {filterPresets.map((preset) => (
+                  <Button
+                    key={preset.label}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFilters({ ...filters, ...preset.filters })}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
                 
-                {selectedSubmission.status === 'rejected' && (
-                  <div className="bg-red-900/20 border border-red-700 rounded-lg p-4">
-                    <p className="text-red-400 font-semibold">
-                      Submission Rejected
-                    </p>
-                    {selectedSubmission.adminNotes && (
-                      <p className="text-sm text-text-muted mt-1">
-                        Reason: {selectedSubmission.adminNotes}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="glass-card p-6 text-center">
-              <Package className="w-12 h-12 mx-auto mb-4 text-text-muted" />
-              <h3 className="text-lg font-semibold mb-2 text-white">Select a Submission</h3>
-              <p className="text-text-muted">Click on a submission to view details and take action</p>
-            </Card>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <CalendarIcon className="w-4 h-4" />
+                      Date Range
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="range"
+                      selected={filters.dateRange}
+                      onSelect={(range) => setFilters({ ...filters, dateRange: range || { from: null, to: null } })}
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <Select
+                  value={filters.isLocal?.toString() || 'all'}
+                  onValueChange={(value) => {
+                    setFilters({
+                      ...filters,
+                      isLocal: value === 'all' ? null : value === 'true'
+                    });
+                  }}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    <SelectItem value="true">Local Only</SelectItem>
+                    <SelectItem value="false">Non-Local</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           )}
         </div>
+        
+        {/* Status Tabs */}
+        <Tabs value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}>
+          <TabsList className="px-6">
+            {statusTabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} className="gap-2">
+                {tab.label}
+                <Badge variant={tab.color as any} className="ml-1">
+                  {tab.count}
+                </Badge>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
+      
+      {/* Main Content */}
+      <div className="p-6">
+        {/* Bulk Actions Bar */}
+        {selectedSubmissions.size > 0 && (
+          <div className="mb-4 p-4 bg-blue-900/20 border border-blue-700 rounded-lg flex items-center justify-between">
+            <p className="text-blue-300">
+              {selectedSubmissions.size} submission{selectedSubmissions.size > 1 ? 's' : ''} selected
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkAction('archive')}
+              >
+                <Archive className="w-4 h-4 mr-2" />
+                Archive
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkAction('export')}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleBulkAction('delete')}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* Submissions Display */}
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        ) : submissions?.data?.length === 0 ? (
+          <Card className="p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-semibold mb-2">No submissions found</h3>
+              <p className="text-gray-400 mb-4">
+                {filters.search || filters.status !== 'all' 
+                  ? 'Try adjusting your filters or search terms'
+                  : 'Equipment submissions will appear here when users submit them'}
+              </p>
+              <Button variant="outline" onClick={() => setFilters({ ...filters, status: 'all', search: '' })}>
+                Clear Filters
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          <>
+            {filters.view === 'list' ? (
+              <SubmissionsList 
+                submissions={submissions.data || []}
+                selectedSubmissions={selectedSubmissions}
+                onSelectSubmission={(id) => {
+                  const newSelected = new Set(selectedSubmissions);
+                  if (newSelected.has(id)) {
+                    newSelected.delete(id);
+                  } else {
+                    newSelected.add(id);
+                  }
+                  setSelectedSubmissions(newSelected);
+                }}
+                onViewDetails={setSelectedSubmission}
+              />
+            ) : (
+              <SubmissionsGrid
+                submissions={submissions.data || []}
+                selectedSubmissions={selectedSubmissions}
+                onSelectSubmission={(id) => {
+                  const newSelected = new Set(selectedSubmissions);
+                  if (newSelected.has(id)) {
+                    newSelected.delete(id);
+                  } else {
+                    newSelected.add(id);
+                  }
+                  setSelectedSubmissions(newSelected);
+                }}
+                onViewDetails={setSelectedSubmission}
+              />
+            )}
+            
+            {/* Pagination */}
+            {submissions?.total > filters.limit && (
+              <div className="mt-6 flex items-center justify-between">
+                <p className="text-sm text-gray-400">
+                  Showing {((filters.page - 1) * filters.limit) + 1} to{' '}
+                  {Math.min(filters.page * filters.limit, submissions.total)} of{' '}
+                  {submissions.total} submissions
+                </p>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
+                    disabled={filters.page === 1}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Previous
+                  </Button>
+                  
+                  <div className="flex gap-1">
+                    {[...Array(Math.min(5, Math.ceil(submissions.total / filters.limit)))].map((_, i) => {
+                      const pageNum = Math.max(1, filters.page - 2) + i;
+                      if (pageNum > Math.ceil(submissions.total / filters.limit)) return null;
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={filters.page === pageNum ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setFilters({ ...filters, page: pageNum })}
+                          className="w-10"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
+                    disabled={filters.page * filters.limit >= submissions.total}
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

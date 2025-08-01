@@ -1737,6 +1737,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk actions for submissions
+  app.post("/api/admin/submissions/bulk", requireAdmin, async (req, res) => {
+    try {
+      const { action, submissionIds } = req.body;
+      
+      if (!action || !submissionIds || !Array.isArray(submissionIds)) {
+        return res.status(400).json({ error: "Invalid bulk action request" });
+      }
+
+      let updateData: any = { updatedAt: new Date() };
+      
+      switch (action) {
+        case 'archive':
+          updateData.status = 'archived';
+          break;
+        case 'delete':
+          // For safety, we'll mark as deleted rather than actually deleting
+          updateData.status = 'deleted';
+          break;
+        case 'export':
+          // This is handled by the export endpoint, just return success
+          return res.json({ success: true, message: 'Export initiated' });
+        default:
+          return res.status(400).json({ error: 'Invalid action' });
+      }
+
+      // Update all submissions in the array
+      const results = await Promise.allSettled(
+        submissionIds.map(id => 
+          db.update(equipmentSubmissions)
+            .set(updateData)
+            .where(eq(equipmentSubmissions.id, id))
+        )
+      );
+
+      const successCount = results.filter(r => r.status === 'fulfilled').length;
+      
+      Logger.info(`Bulk action ${action} completed for ${successCount}/${submissionIds.length} submissions`);
+      res.json({ success: true, updated: successCount, total: submissionIds.length });
+    } catch (error) {
+      Logger.error("Error performing bulk action", error);
+      res.status(500).json({ error: "Failed to perform bulk action" });
+    }
+  });
+
+  // Export submissions data
+  app.get("/api/admin/submissions/export", requireAdmin, async (req, res) => {
+    try {
+      const {
+        format = 'csv',
+        status = 'all',
+        search = '',
+        isLocal
+      } = req.query;
+
+      // Build query for export - similar to main submissions endpoint but get all results
+      const conditions = [];
+      if (status && status !== 'all') {
+        conditions.push(eq(equipmentSubmissions.status, status as string));
+      }
+      if (search) {
+        conditions.push(
+          or(
+            ilike(equipmentSubmissions.referenceNumber, `%${search}%`),
+            ilike(equipmentSubmissions.name, `%${search}%`)
+          )
+        );
+      }
+      if (isLocal !== undefined && isLocal !== null) {
+        conditions.push(eq(equipmentSubmissions.isLocal, isLocal === 'true'));
+      }
+
+      // Get all matching submissions for export
+      let query = db
+        .select({
+          submission: equipmentSubmissions,
+          user: {
+            name: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+            email: users.email
+          }
+        })
+        .from(equipmentSubmissions)
+        .leftJoin(users, eq(equipmentSubmissions.userId, users.id))
+        .orderBy(desc(equipmentSubmissions.createdAt));
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+
+      const submissions = await query;
+      
+      if (format === 'csv') {
+        // Convert to CSV format
+        const csvHeaders = [
+          'Reference Number', 'Name', 'Brand', 'Condition', 'Status', 
+          'Asking Price', 'Offer Amount', 'User Email', 'User Name',
+          'Location', 'Is Local', 'Created Date', 'Admin Notes'
+        ];
+        
+        const csvRows = submissions.map(s => [
+          s.submission.referenceNumber,
+          s.submission.name,
+          s.submission.brand,
+          s.submission.condition,
+          s.submission.status,
+          s.submission.askingPrice || '',
+          s.submission.offerAmount || '',
+          s.user?.email || '',
+          s.user?.name || '',
+          [s.submission.userCity, s.submission.userState].filter(Boolean).join(', '),
+          s.submission.isLocal ? 'Yes' : 'No',
+          new Date(s.submission.createdAt).toLocaleDateString(),
+          s.submission.adminNotes || ''
+        ]);
+
+        const csvContent = [
+          csvHeaders.join(','),
+          ...csvRows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        ].join('\n');
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=submissions-${new Date().toISOString().split('T')[0]}.csv`);
+        res.send(csvContent);
+      } else {
+        // Return JSON for PDF or other processing
+        res.json({
+          format,
+          data: submissions.map(s => ({
+            ...s.submission,
+            user: s.user
+          })),
+          timestamp: new Date().toISOString(),
+          totalRecords: submissions.length
+        });
+      }
+    } catch (error) {
+      Logger.error("Error exporting submissions", error);
+      res.status(500).json({ error: "Failed to export submissions" });
+    }
+  });
+
   // CSV Export endpoints
   app.get("/api/admin/export/:type", requireAdmin, async (req, res) => {
     try {
