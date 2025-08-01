@@ -887,21 +887,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               .from(orders)
               .where(eq(orders.userId, user.id));
             
-            // Get total spent for this user
-            const totalSpentResult = await db
-              .select({ 
-                total: sql<number>`COALESCE(SUM(${orders.totalAmount}), 0)` 
-              })
-              .from(orders)
-              .where(and(
-                eq(orders.userId, user.id),
-                eq(orders.status, 'completed')
-              ));
+            // Get total spent for this user using raw SQL
+            const totalSpentResult = await db.execute(sql`
+              SELECT COALESCE(SUM(total), 0) as total_spent
+              FROM orders
+              WHERE user_id = ${user.id}
+              AND status = 'completed'
+            `);
             
             return {
               ...user,
               orderCount: orderCountResult[0]?.count || 0,
-              totalSpent: Number(totalSpentResult[0]?.total || 0)
+              totalSpent: Number(totalSpentResult.rows[0]?.total_spent || 0)
             };
           } catch (error) {
             console.error(`Error fetching stats for user ${user.id}:`, error);
@@ -959,31 +956,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           startDate.setFullYear(2020); // All time
       }
       
-      // Get basic counts - Fixed queries without complex SQL
-      const [totalRevenue, totalOrders, totalUsers, totalProducts] = await Promise.all([
-        // Total revenue
-        db.select({ 
-          sum: sql<number>`COALESCE(SUM(${orders.totalAmount}), 0)` 
-        })
-        .from(orders)
-        .where(and(
-          eq(orders.status, 'completed'),
-          gte(orders.createdAt, startDate)
-        )),
-        
-        // Total orders
-        db.select({ count: count() })
-          .from(orders)
-          .where(gte(orders.createdAt, startDate)),
-        
-        // Total users
-        db.select({ count: count() })
-          .from(users),
-        
-        // Total products
-        db.select({ count: count() })
-          .from(products)
-      ]);
+      // Use raw SQL for reliability - no Drizzle aggregation issues
+      const revenueResult = await db.execute(sql`
+        SELECT COALESCE(SUM(total), 0) as total_revenue,
+               COUNT(*) as total_orders
+        FROM orders
+        WHERE status = 'completed'
+        AND created_at >= ${startDate}
+      `);
+      
+      const userResult = await db.execute(sql`
+        SELECT COUNT(*) as total_users FROM users
+      `);
+      
+      const productResult = await db.execute(sql`
+        SELECT COUNT(*) as total_products FROM products
+      `);
       
       // Get orders for chart data
       const ordersForChart = await db.select({
@@ -1022,21 +1010,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         revenue: {
-          total: Number(totalRevenue[0]?.sum || 0),
+          total: Number(revenueResult.rows[0]?.total_revenue || 0),
           change: 0
         },
         orders: {
-          total: totalOrders[0]?.count || 0,
-          avgValue: totalOrders[0]?.count ? 
-            Number(totalRevenue[0]?.sum || 0) / Number(totalOrders[0]?.count) : 0,
+          total: Number(revenueResult.rows[0]?.total_orders || 0),
+          avgValue: revenueResult.rows[0]?.total_orders > 0 
+            ? Number(revenueResult.rows[0]?.total_revenue) / Number(revenueResult.rows[0]?.total_orders)
+            : 0,
           change: 0
         },
         users: {
-          total: totalUsers[0]?.count || 0,
+          total: Number(userResult.rows[0]?.total_users || 0),
           change: 0
         },
         products: {
-          total: totalProducts[0]?.count || 0,
+          total: Number(productResult.rows[0]?.total_products || 0),
           change: 0
         },
         conversion: {
