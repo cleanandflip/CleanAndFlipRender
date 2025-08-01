@@ -889,7 +889,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Get total spent for this user
             const totalSpentResult = await db
-              .select({ total: sum(orders.totalAmount) })
+              .select({ 
+                total: sql<number>`COALESCE(SUM(${orders.totalAmount}), 0)` 
+              })
               .from(orders)
               .where(and(
                 eq(orders.userId, user.id),
@@ -960,12 +962,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get basic counts - Fixed queries without complex SQL
       const [totalRevenue, totalOrders, totalUsers, totalProducts] = await Promise.all([
         // Total revenue
-        db.select({ sum: sum(orders.totalAmount) })
-          .from(orders)
-          .where(and(
-            eq(orders.status, 'completed'),
-            gte(orders.createdAt, startDate)
-          )),
+        db.select({ 
+          sum: sql<number>`COALESCE(SUM(${orders.totalAmount}), 0)` 
+        })
+        .from(orders)
+        .where(and(
+          eq(orders.status, 'completed'),
+          gte(orders.createdAt, startDate)
+        )),
         
         // Total orders
         db.select({ count: count() })
