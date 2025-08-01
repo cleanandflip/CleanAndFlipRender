@@ -1,7 +1,57 @@
 @import "./styles/dropdown.css";
+@import './styles/design-system/animations.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Design System CSS Variables */
+:root {
+  /* Background Colors */
+  --color-bg-primary: #1A1F2E;
+  --color-bg-secondary: #232937;
+  --color-bg-tertiary: #2D3548;
+  --color-bg-overlay: rgba(0, 0, 0, 0.6);
+  
+  /* Text Colors */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #E2E8F0;
+  --color-text-muted: #94A3B8;
+  --color-text-disabled: #64748B;
+  --color-text-inverse: #1A1F2E;
+  
+  /* Brand Colors */
+  --color-brand-blue: #3B82F6;
+  --color-brand-blue-hover: #2563EB;
+  --color-brand-blue-light: rgba(59, 130, 246, 0.1);
+  --color-brand-green: #10B981;
+  --color-brand-green-hover: #059669;
+  --color-brand-green-light: rgba(16, 185, 129, 0.1);
+  
+  /* Status Colors */
+  --color-status-info: #3B82F6;
+  --color-status-success: #10B981;
+  --color-status-warning: #F59E0B;
+  --color-status-error: #EF4444;
+  --color-status-neutral: #6B7280;
+  
+  /* Border Colors */
+  --color-border-default: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(255, 255, 255, 0.12);
+  --color-border-focus: rgba(59, 130, 246, 0.5);
+  --color-border-divider: rgba(255, 255, 255, 0.06);
+  
+  /* Shadow Colors */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Glow Effects */
+  --glow-blue: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  --glow-green: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  --glow-subtle: 0 0 20px rgba(59, 130, 246, 0.15);
+}
 
 /* Global smooth scrolling */
 html {
