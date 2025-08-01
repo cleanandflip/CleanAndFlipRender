@@ -34,8 +34,7 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import { apiRequest, broadcastProductUpdate } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLiveData } from "@/hooks/use-live-data";
-import WishlistAnalytics from "@/components/admin/wishlist-analytics";
-import EnhancedWishlistAnalytics from "@/components/admin/enhanced-wishlist-analytics";
+
 import CategoryManagement from "@/components/admin/category-management";
 import { SubmissionsManager } from "./admin/SubmissionsManager";
 import { ProductsManager } from './admin/ProductsManager';
@@ -43,6 +42,7 @@ import { UserManager } from './admin/UserManager';
 import { AnalyticsManager } from './admin/AnalyticsManager';
 import { CategoryManager } from './admin/CategoryManager';
 import { SystemManager } from './admin/SystemManager';
+import { WishlistManager } from './admin/WishlistManager';
 import type { Product, User, Order } from "@shared/schema";
 
 interface AdminStats {
@@ -665,7 +665,7 @@ function AdminDashboard() {
             </TabsContent>
 
             <TabsContent value="wishlist">
-              <EnhancedWishlistAnalytics />
+              <WishlistManager />
             </TabsContent>
 
             <TabsContent value="users">
