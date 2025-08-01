@@ -10,6 +10,8 @@ import { Upload, X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { globalDesignSystem as theme } from '@/styles/design-system/theme';
 import { motion } from 'framer-motion';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { broadcastProductUpdate } from '@/lib/queryClient';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -21,6 +23,7 @@ interface ProductModalProps {
 
 export function ProductModal({ isOpen, onClose, product, categories, onSave }: ProductModalProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -93,6 +96,71 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
     }
   }, [product, isOpen]);
 
+  // TanStack Query mutation for saving products with proper cache invalidation
+  const saveProductMutation = useMutation({
+    mutationFn: async (productData: any) => {
+      const url = product 
+        ? `/api/admin/products/${product.id}`
+        : '/api/admin/products';
+      
+      const method = product ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...productData,
+          price: parseFloat(productData.price),
+          compareAtPrice: productData.compareAtPrice ? parseFloat(productData.compareAtPrice) : null,
+          stock: parseInt(productData.stock),
+          weight: productData.weight ? parseFloat(productData.weight) : null
+        })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to save product');
+      }
+      
+      return res.json();
+    },
+    onSuccess: (data) => {
+      // Invalidate ALL product-related queries with correct query keys
+      queryClient.invalidateQueries({ queryKey: ['admin-products'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/products'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      
+      if (product?.id) {
+        queryClient.invalidateQueries({ queryKey: [`/api/products/${product.id}`] });
+      }
+      
+      // Force immediate refetch for critical views
+      queryClient.refetchQueries({ queryKey: ['admin-products'] });
+      
+      // Use the global broadcast system for real-time sync
+      const productId = product?.id || data?.id;
+      const action = product ? 'product_update' : 'product_create';
+      broadcastProductUpdate(productId, action, formData);
+      
+      // Call the parent onSave callback
+      onSave();
+      onClose();
+      
+      toast({ 
+        title: product ? 'Product updated' : 'Product created',
+        description: 'Changes saved successfully'
+      });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: 'Error',
+        description: error.message || 'Failed to save product',
+        variant: 'destructive'
+      });
+    }
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -105,48 +173,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
       return;
     }
     
-    try {
-      const url = product 
-        ? `/api/admin/products/${product.id}`
-        : '/api/admin/products';
-      
-      const method = product ? 'PUT' : 'POST';
-      
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price),
-          compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
-          stock: parseInt(formData.stock),
-          weight: formData.weight ? parseFloat(formData.weight) : null
-        })
-      });
-
-      if (res.ok) {
-        onSave();
-        onClose();
-        toast({ 
-          title: product ? 'Product updated' : 'Product created',
-          description: 'Changes saved successfully'
-        });
-      } else {
-        const error = await res.json();
-        toast({ 
-          title: 'Error',
-          description: error.message || 'Failed to save product',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
-      toast({ 
-        title: 'Error',
-        description: 'Failed to save product',
-        variant: 'destructive'
-      });
-    }
+    saveProductMutation.mutate(formData);
   };
 
   const addFeature = () => {

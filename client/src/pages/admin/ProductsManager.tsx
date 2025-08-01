@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/admin/DashboardLayout';
 import { Pagination } from '@/components/admin/Pagination';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { ProductModal } from '@/components/admin/ProductModal';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/utils/submissionHelpers';
 import { useToast } from '@/hooks/use-toast';
+import { broadcastProductUpdate } from '@/lib/queryClient';
 
 interface Product {
   id: string;
@@ -41,6 +42,7 @@ const defaultFilters = {
 };
 
 export function ProductsManager() {
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState(defaultFilters);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
@@ -149,44 +151,87 @@ export function ProductsManager() {
     setIsEditModalOpen(true);
   };
 
-  const handleSaveProduct = async (productData: Partial<Product>) => {
-    if (!editingProduct) return;
-    
-    try {
-      const res = await fetch(`/api/admin/products/${editingProduct.id}`, {
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ productId, productData }: { productId: string; productData: Partial<Product> }) => {
+      const res = await fetch(`/api/admin/products/${productId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(productData)
       });
       
-      if (res.ok) {
-        refetch();
-        setIsEditModalOpen(false);
-        setEditingProduct(null);
-        toast({ title: "Product updated successfully" });
-      } else {
+      if (!res.ok) {
         throw new Error('Failed to update product');
       }
-    } catch (error) {
+      return res.json();
+    },
+    onSuccess: (data, { productId, productData }) => {
+      // Invalidate ALL product-related queries with correct query keys
+      queryClient.invalidateQueries({ queryKey: ['admin-products'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/products'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/products/${productId}`] });
+      
+      // Force immediate refetch for the current view
+      queryClient.refetchQueries({ queryKey: ['admin-products'] });
+      
+      // Use the global broadcast system for real-time sync
+      broadcastProductUpdate(productId, 'product_update', productData);
+      
+      setIsEditModalOpen(false);
+      setEditingProduct(null);
+      toast({ title: "Product updated successfully" });
+    },
+    onError: (error) => {
+      console.error('Update error:', error);
       toast({ title: "Error updating product", variant: "destructive" });
     }
+  });
+
+  const handleSaveProduct = async (productData: Partial<Product>) => {
+    if (!editingProduct) return;
+    updateProductMutation.mutate({ productId: editingProduct.id, productData });
   };
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Delete failed: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: (_, productId) => {
+      // Invalidate ALL product-related queries with correct query keys
+      queryClient.invalidateQueries({ queryKey: ['admin-products'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/products'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      
+      // Force immediate refetch for the current view
+      queryClient.refetchQueries({ queryKey: ['admin-products'] });
+      
+      // Use global broadcast system for comprehensive real-time sync
+      broadcastProductUpdate(productId, 'product_delete', { deleted: true });
+      
+      toast({ title: "Product deleted successfully" });
+    },
+    onError: (error) => {
+      console.error('Delete error:', error);
+      toast({ 
+        title: "Error deleting product",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleDeleteProduct = async (product: Product) => {
     if (confirm(`Delete "${product.name}"?`)) {
-      try {
-        const res = await fetch(`/api/admin/products/${product.id}`, {
-          method: 'DELETE',
-          credentials: 'include'
-        });
-        if (res.ok) {
-          refetch();
-          toast({ title: "Product deleted successfully" });
-        }
-      } catch (error) {
-        toast({ title: "Error deleting product", variant: "destructive" });
-      }
+      deleteProductMutation.mutate(product.id);
     }
   };
 
