@@ -901,7 +901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               totalSpent: totalSpent
             };
           } catch (error) {
-            console.error(`Error fetching stats for user ${user.id}:`, error);
+            Logger.error(`Error fetching stats for user ${user.id}`, error);
             return {
               ...user,
               orderCount: 0,
@@ -1462,7 +1462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await cloudinary.v2.uploader.destroy(`categories/${publicId}`);
             }
           } catch (deleteError) {
-            console.warn("Failed to delete old image:", deleteError);
+            Logger.error("Failed to delete old image", deleteError);
           }
         }
       }
@@ -1801,7 +1801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error("Error saving address:", error);
+      Logger.error("Error saving address", error);
       res.status(500).json({ error: "Failed to save address" });
     }
   });
@@ -1884,54 +1884,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Debug endpoint for submissions
-  app.get('/api/admin/debug-submissions', requireAdmin, async (req, res) => {
-    try {
-      const counts = {
-        total: await db.select({ total: count() }).from(equipmentSubmissions),
-        byStatus: await db.select({
-          status: equipmentSubmissions.status,
-          count: count()
-        }).from(equipmentSubmissions).groupBy(equipmentSubmissions.status),
-        recent: await db.select().from(equipmentSubmissions)
-          .orderBy(desc(equipmentSubmissions.createdAt))
-          .limit(5)
-      };
-      
-      res.json({
-        database: 'connected',
-        counts,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
 
-  // Test endpoint to verify count function
-  app.get('/api/admin/test-submissions', requireAdmin, async (req, res) => {
-    try {
-      // Test 1: Simple count
-      const total = await db.select({ count: count() }).from(equipmentSubmissions);
-      
-      // Test 2: Get first 5 submissions
-      const submissions = await db
-        .select()
-        .from(equipmentSubmissions)
-        .limit(5);
-      
-      res.json({
-        totalCount: total[0]?.count || 0,
-        sampleSubmissions: submissions,
-        success: true
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        error: error.message,
-        success: false 
-      });
-    }
-  });
 
   // Database health check
   app.get("/api/admin/system/db-check", requireAdmin, async (req, res) => {
@@ -2137,7 +2090,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(equipmentSubmissions);
       
       const totalCount = totalResult[0]?.total || 0;
-      console.log('Total submissions in DB:', totalCount);
+
       
       // Build main query with conditions
       const conditions = [];
@@ -2176,7 +2129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? await query.where(and(...conditions))
         : await query;
       
-      console.log('Fetched submissions:', submissions.length);
+
       
       // Get status counts
       const statusCounts = await db
@@ -2187,7 +2140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(equipmentSubmissions)
         .groupBy(equipmentSubmissions.status);
       
-      console.log('Status counts:', statusCounts);
+
       
       // Format response for frontend compatibility
       const response = {
@@ -2218,11 +2171,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
       };
       
-      console.log('Sending response with', response.data.length, 'submissions');
+
       res.json(response);
       
     } catch (error) {
-      console.error('Error in admin submissions endpoint:', error);
+      Logger.error('Error in admin submissions endpoint', error);
       res.status(500).json({ 
         error: 'Failed to fetch submissions',
         details: error.message,
