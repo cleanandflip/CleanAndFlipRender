@@ -127,7 +127,7 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
         throw new Error('Failed to update wishlist');
       }
     } catch (error) {
-      console.error('Wishlist error:', error);
+      // Error handled via toast notification
       toast({
         title: "Error",
         description: "Failed to update wishlist. Please try again.",

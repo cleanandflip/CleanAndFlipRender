@@ -793,18 +793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health Check Endpoint
   app.get("/health", createHealthCheck());
   
-  // Security Test Endpoint (Development Only)
-  if (process.env.NODE_ENV === 'development') {
-    app.get("/api/security/test", adminLimiter, requireRole(['admin', 'developer']), async (req, res) => {
-      try {
-        const testResults = await runPenetrationTests();
-        res.json(testResults);
-      } catch (error) {
-        Logger.error("Security test error:", error);
-        res.status(500).json({ message: "Security test failed" });
-      }
-    });
-  }
+  // Security test endpoint removed for production
 
   app.get("/api/admin/stats", adminLimiter, requireAdmin, async (req, res) => {
     try {

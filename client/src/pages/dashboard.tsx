@@ -509,7 +509,7 @@ function DashboardContent() {
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <h3 className="text-lg font-semibold">
-                                {submission.equipmentName}
+                                {submission.name}
                               </h3>
                               <Badge className={`${getSubmissionStatusColor(submission.status || 'pending')} text-white`}>
                                 <StatusIcon className="w-3 h-3 mr-1" />

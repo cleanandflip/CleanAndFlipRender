@@ -213,7 +213,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                     value=""
                     checked={!localFilters.category && !localFilters.categoryId}
                     onChange={() => {
-                      console.log('Filter: Selecting All Categories via radio');
+                      // Clear category selection
                       const newFilters = { ...localFilters };
                       delete newFilters.category;
                       delete newFilters.categoryId; 
@@ -233,7 +233,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                       value={category.id}
                       checked={localFilters.categoryId === category.id || localFilters.category === category.slug}
                       onChange={() => {
-                        console.log('Filter: Selecting category via radio:', category.name, 'ID:', category.id);
+                        // Apply category filter
                         const newFilters = {
                           ...localFilters,
                           categoryId: category.id,
