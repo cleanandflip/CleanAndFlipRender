@@ -1,0 +1,423 @@
+Instructions for Replit: Fix Product Modal Data Sync & UI Issues
+CRITICAL BUGS TO FIX:
+
+Stock value shows 0 instead of actual value
+Changes don't update in dashboard after save
+UI styling is broken (red underlines, button spacing)
+Form data resets on each open
+
+1. Fix Data Loading - Stock Shows Wrong Value
+tsx// client/src/components/admin/ProductModal.tsx
+
+export function ProductModal({ isOpen, onClose, product, categories, onSave }) {
+  // Initialize with empty values, NOT the product directly
+  const [formData, setFormData] = useState({
+    name: '',
+    sku: '',
+    price: '',
+    compareAtPrice: '',
+    stock: '',
+    categoryId: '',
+    description: '',
+    isActive: true,
+    isFeatured: false,
+    features: []
+  });
+
+  // Load product data when modal opens OR product changes
+  useEffect(() => {
+    if (isOpen && product) {
+      // Set form data from the product prop
+      setFormData({
+        name: product.name || '',
+        sku: product.sku || '',
+        price: product.price?.toString() || '',
+        compareAtPrice: product.compareAtPrice?.toString() || '',
+        stock: product.stock?.toString() || '0', // FIX: Ensure stock is converted to string
+        categoryId: product.categoryId || '',
+        description: product.description || '',
+        isActive: product.isActive ?? true,
+        isFeatured: product.isFeatured ?? false,
+        features: product.features || []
+      });
+    } else if (isOpen && !product) {
+      // Reset for new product
+      setFormData({
+        name: '',
+        sku: '',
+        price: '',
+        compareAtPrice: '',
+        stock: '0',
+        categoryId: '',
+        description: '',
+        isActive: true,
+        isFeatured: false,
+        features: []
+      });
+    }
+  }, [isOpen, product]); // Re-run when product changes
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const payload = {
+        ...formData,
+        price: parseFloat(formData.price) || 0,
+        compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
+        stock: parseInt(formData.stock) || 0, // Ensure stock is a number
+      };
+
+      const url = product 
+        ? `/api/admin/products/${product.id}`
+        : '/api/admin/products';
+      
+      const res = await fetch(url, {
+        method: product ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        // Wait for save to complete
+        const savedProduct = await res.json();
+        
+        // Call onSave with a delay to ensure backend has updated
+        setTimeout(async () => {
+          await onSave();
+          onClose();
+        }, 100);
+        
+        toast({ 
+          title: product ? 'Product updated' : 'Product created',
+          description: 'Changes saved successfully'
+        });
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      toast({ 
+        title: 'Error',
+        description: 'Failed to save product',
+        variant: 'destructive'
+      });
+    }
+  };
+2. Fix Parent Component Refresh
+tsx// client/src/pages/admin/ProductsManager.tsx
+
+export function ProductsManager() {
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // Force refetch with trigger
+  const { data: productsData, refetch, isRefetching } = useQuery({
+    queryKey: ['admin-products', filters, refreshTrigger],
+    queryFn: async () => {
+      const params = new URLSearchParams(filters);
+      const res = await fetch(`/api/admin/products?${params}`, {
+        credentials: 'include'
+      });
+      return res.json();
+    },
+    // Disable cache to always get fresh data
+    cacheTime: 0,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false
+  });
+
+  const handleProductSave = async () => {
+    // Multiple strategies to ensure refresh
+    await refetch();
+    setRefreshTrigger(prev => prev + 1);
+    
+    // Also manually invalidate the query
+    queryClient.invalidateQueries(['admin-products']);
+  };
+
+  const handleEditProduct = (product) => {
+    // Pass the full product object
+    setEditingProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  return (
+    <>
+      {/* Show loading overlay when refetching */}
+      {isRefetching && (
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      )}
+      
+      {/* Product List */}
+      <div className="space-y-4">
+        {productsData?.data?.map((product) => (
+          <Card key={product.id} className="p-4">
+            {/* ... product display ... */}
+            <Badge variant={product.stock > 0 ? 'default' : 'destructive'}>
+              {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+            </Badge>
+          </Card>
+        ))}
+      </div>
+      
+      <ProductModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingProduct(null);
+        }}
+        product={editingProduct}
+        categories={categories}
+        onSave={handleProductSave}
+      />
+    </>
+  );
+}
+3. Fix UI Styling Issues
+tsx// client/src/components/admin/ProductModal.tsx - Fix the UI
+
+import { globalDesignSystem as theme } from '@/styles/design-system/theme';
+
+// Remove red underlines and fix spacing
+const modalStyles = {
+  label: {
+    color: theme.colors.text.secondary,
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    marginBottom: '0.5rem',
+    display: 'block',
+    textDecoration: 'none' // Remove underlines
+  },
+  input: {
+    width: '100%',
+    padding: '0.5rem 0.75rem',
+    backgroundColor: theme.colors.bg.primary,
+    border: `1px solid ${theme.colors.border.default}`,
+    borderRadius: theme.radius.md,
+    color: theme.colors.text.primary,
+    fontSize: '0.875rem'
+  },
+  section: {
+    marginBottom: '1.5rem'
+  }
+};
+
+// In the component:
+<form onSubmit={handleSubmit} className="space-y-6">
+  {/* Basic Information */}
+  <div style={modalStyles.section}>
+    <h3 className="text-lg font-semibold mb-4" style={{ color: theme.colors.text.primary }}>
+      Basic Information
+    </h3>
+    
+    <div className="space-y-4">
+      <div>
+        <label htmlFor="name" style={modalStyles.label}>
+          Product Name *
+        </label>
+        <input
+          id="name"
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          style={modalStyles.input}
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <label htmlFor="price" style={modalStyles.label}>
+            Price *
+          </label>
+          <input
+            id="price"
+            type="number"
+            step="0.01"
+            value={formData.price}
+            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            style={modalStyles.input}
+            required
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="comparePrice" style={modalStyles.label}>
+            Compare Price
+          </label>
+          <input
+            id="comparePrice"
+            type="number"
+            step="0.01"
+            value={formData.compareAtPrice}
+            onChange={(e) => setFormData({ ...formData, compareAtPrice: e.target.value })}
+            style={modalStyles.input}
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="stock" style={modalStyles.label}>
+            Stock *
+          </label>
+          <input
+            id="stock"
+            type="number"
+            min="0"
+            value={formData.stock}
+            onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+            style={modalStyles.input}
+            required
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="category" style={modalStyles.label}>
+          Category *
+        </label>
+        <select
+          id="category"
+          value={formData.categoryId}
+          onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+          style={modalStyles.input}
+          required
+        >
+          <option value="">Select a category</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="description" style={modalStyles.label}>
+          Description
+        </label>
+        <textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          style={{ ...modalStyles.input, minHeight: '100px' }}
+          rows={4}
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* Status Section */}
+  <div style={modalStyles.section}>
+    <div className="flex items-center justify-between mb-4">
+      <label style={{ ...modalStyles.label, marginBottom: 0 }}>
+        Active Status
+      </label>
+      <Toggle
+        checked={formData.isActive}
+        onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+      />
+    </div>
+    
+    <div className="flex items-center justify-between">
+      <label style={{ ...modalStyles.label, marginBottom: 0 }}>
+        Featured Product
+      </label>
+      <Toggle
+        checked={formData.isFeatured}
+        onChange={(checked) => setFormData({ ...formData, isFeatured: checked })}
+      />
+    </div>
+  </div>
+
+  {/* Form Actions - Fix button spacing */}
+  <div 
+    className="flex justify-end gap-3 pt-6 border-t"
+    style={{ borderColor: theme.colors.border.default }}
+  >
+    <Button
+      type="button"
+      variant="secondary"
+      onClick={onClose}
+      style={{ marginRight: '0.75rem' }}
+    >
+      Cancel
+    </Button>
+    <Button
+      type="submit"
+      variant="primary"
+    >
+      {product ? 'Update Product' : 'Create Product'}
+    </Button>
+  </div>
+</form>
+4. Fix Backend Response
+ts// server/routes.ts - Ensure backend returns updated data
+
+app.put('/api/admin/products/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Log the incoming data
+    console.log('Updating product:', id, req.body);
+    
+    const updateData = {
+      name: req.body.name,
+      sku: req.body.sku || null,
+      price: req.body.price,
+      compareAtPrice: req.body.compareAtPrice || null,
+      stock: req.body.stock || 0, // Ensure stock is saved
+      categoryId: req.body.categoryId,
+      description: req.body.description || '',
+      isActive: req.body.isActive ?? true,
+      isFeatured: req.body.isFeatured ?? false,
+      features: req.body.features || [],
+      updatedAt: new Date()
+    };
+    
+    const [updatedProduct] = await db
+      .update(products)
+      .set(updateData)
+      .where(eq(products.id, id))
+      .returning();
+    
+    if (!updatedProduct) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Return the updated product
+    res.json(updatedProduct);
+    
+  } catch (error) {
+    console.error('Update error:', error);
+    res.status(500).json({ error: 'Failed to update product' });
+  }
+});
+5. Add Debug Logging
+tsx// Add this temporarily to debug
+useEffect(() => {
+  console.log('ProductModal Debug:', {
+    isOpen,
+    product,
+    formData,
+    stock: formData.stock,
+    stockType: typeof formData.stock
+  });
+}, [isOpen, product, formData]);
+IMMEDIATE FIXES NEEDED:
+
+Stock field must show actual value, not 0
+Remove red underlines from labels (text-decoration: none)
+Fix button spacing (use gap-3 not spread out)
+Force refresh after save (use multiple strategies)
+Ensure form preserves data between opens
+Make sure backend saves and returns all fields
+
+Test by:
+
+Open modal - stock should show correct value
+Change stock to different number
+Save - modal should close
+List should update immediately showing new stock value
+Reopen modal - should show the updated values

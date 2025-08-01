@@ -49,7 +49,7 @@ export function ProductsManager() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: products, isLoading, refetch } = useQuery({
+  const { data: products, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['admin-products', filters],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -72,7 +72,8 @@ export function ProductsManager() {
     // CRITICAL: No cache for admin data to ensure fresh state
     staleTime: 0,
     gcTime: 0,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: true,
+    refetchOnMount: true
   });
 
   const { data: categories } = useQuery({
@@ -551,8 +552,12 @@ export function ProductsManager() {
         productId={editingProductId}
         categories={categories || []}
         onSave={async () => {
-          // CRITICAL: Force refresh of product list
+          // CRITICAL: Multiple strategies to ensure refresh
           await refetch();
+          // Also force refetch with delay
+          setTimeout(async () => {
+            await refetch();
+          }, 100);
         }}
       />
       
@@ -562,8 +567,12 @@ export function ProductsManager() {
         productId={null}
         categories={categories || []}
         onSave={async () => {
-          // CRITICAL: Force refresh of product list
+          // CRITICAL: Multiple strategies to ensure refresh
           await refetch();
+          // Also force refetch with delay
+          setTimeout(async () => {
+            await refetch();
+          }, 100);
         }}
       />
     </DashboardLayout>

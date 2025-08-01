@@ -58,6 +58,17 @@ export function ProductModal({ isOpen, onClose, productId, categories, onSave }:
     }
   }, [isOpen, productId]);
 
+  // Debug logging to track form data updates
+  useEffect(() => {
+    console.log('ProductModal Form Debug:', {
+      isOpen,
+      productId,
+      formStock: formData.stock,
+      stockType: typeof formData.stock,
+      allFormData: formData
+    });
+  }, [isOpen, productId, formData.stock]);
+
   const loadProductData = async () => {
     setIsLoading(true);
     setError(null);
@@ -88,7 +99,7 @@ export function ProductModal({ isOpen, onClose, productId, categories, onSave }:
         sku: data.sku || '',
         price: data.price?.toString() || '',
         compareAtPrice: data.compareAtPrice?.toString() || '',
-        stock: data.stock?.toString() || '',
+        stock: (data.stockQuantity || data.stock || 0).toString(), // CRITICAL FIX: Backend uses stockQuantity
         categoryId: data.categoryId || '',
         description: data.description || '',
         shortDescription: data.shortDescription || '',
@@ -149,7 +160,7 @@ export function ProductModal({ isOpen, onClose, productId, categories, onSave }:
         ...formData,
         price: parseFloat(formData.price),
         compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
-        stock: parseInt(formData.stock),
+        stockQuantity: parseInt(formData.stock), // CRITICAL FIX: Backend expects stockQuantity
         weight: formData.weight ? parseFloat(formData.weight) : null,
         isActive: formData.isActive, // CRITICAL: Ensure this is sent to server
         isFeatured: formData.isFeatured
