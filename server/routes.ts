@@ -826,36 +826,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced admin users endpoint with filtering and stats
   app.get("/api/admin/users", adminLimiter, requireAdmin, async (req, res) => {
     try {
-      const {
-        search = '',
-        role = 'all',
+      const { 
+        search = '', 
+        role = 'all', 
         status = 'all',
-        sortBy = 'created',
-        sortOrder = 'desc',
-        page = '1',
-        limit = '20'
+        sortBy = 'created', 
+        sortOrder = 'desc', 
+        page = 1, 
+        limit = 20 
       } = req.query;
-
-      // Build query with user stats
-      let query = db
-        .select({
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          email: users.email,
-          role: users.role,
-          isAdmin: users.isAdmin,
-          createdAt: users.createdAt,
-          updatedAt: users.updatedAt,
-          orderCount: sql<number>`(SELECT COUNT(*) FROM ${orders} WHERE ${orders.userId} = ${users.id})`,
-          totalSpent: sql<number>`(SELECT COALESCE(SUM(CAST(${orders.totalAmount} AS NUMERIC)), 0) FROM ${orders} WHERE ${orders.userId} = ${users.id} AND ${orders.status} = 'completed')`,
-          lastOrderDate: sql<Date | null>`(SELECT MAX(${orders.createdAt}) FROM ${orders} WHERE ${orders.userId} = ${users.id})`
-        })
-        .from(users);
-
+      
+      // Build conditions
       const conditions = [];
-
-      // Apply search filter
+      
       if (search) {
         conditions.push(
           or(
@@ -865,70 +848,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         );
       }
-
-      // Apply role filter
+      
       if (role !== 'all') {
         conditions.push(eq(users.role, role));
       }
-
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
-      }
-
+      
+      // Get users without complex subqueries
+      const usersQuery = db.select()
+        .from(users)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .limit(Number(limit))
+        .offset((Number(page) - 1) * Number(limit));
+      
       // Apply sorting
-      const sortColumn = sortBy === 'name' ? users.firstName :
-                        sortBy === 'email' ? users.email :
-                        sortBy === 'role' ? users.role :
-                        sortBy === 'spent' ? sql<number>`COALESCE(SUM(CAST(${orders.totalAmount} AS NUMERIC)), 0)` :
-                        users.createdAt;
-
-      query = query.orderBy(sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn)) as any;
-
-      // Get total count for pagination
-      let countQuery = db.select({ count: sql<number>`count(*)` }).from(users);
-      if (conditions.length > 0) {
-        countQuery = countQuery.where(and(...conditions)) as any;
+      switch (sortBy) {
+        case 'created':
+          usersQuery.orderBy(sortOrder === 'desc' ? desc(users.createdAt) : asc(users.createdAt));
+          break;
+        case 'name':
+          usersQuery.orderBy(sortOrder === 'desc' ? desc(users.firstName) : asc(users.firstName));
+          break;
+        case 'email':
+          usersQuery.orderBy(sortOrder === 'desc' ? desc(users.email) : asc(users.email));
+          break;
+        default:
+          usersQuery.orderBy(desc(users.createdAt));
       }
-      const [totalResult] = await countQuery;
-      const total = totalResult?.count || 0;
-
-      // Apply pagination
-      const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
-      query = query.limit(parseInt(limit as string)).offset(offset) as any;
-
-      const result = await query;
-
+      
+      const usersList = await usersQuery;
+      
+      // Get stats for each user separately
+      const usersWithStats = await Promise.all(
+        usersList.map(async (user) => {
+          try {
+            // Get order count for this user
+            const orderCountResult = await db
+              .select({ count: count() })
+              .from(orders)
+              .where(eq(orders.userId, user.id));
+            
+            // Get total spent for this user
+            const totalSpentResult = await db
+              .select({ total: sum(orders.totalAmount) })
+              .from(orders)
+              .where(and(
+                eq(orders.userId, user.id),
+                eq(orders.status, 'completed')
+              ));
+            
+            return {
+              ...user,
+              orderCount: orderCountResult[0]?.count || 0,
+              totalSpent: Number(totalSpentResult[0]?.total || 0)
+            };
+          } catch (error) {
+            console.error(`Error fetching stats for user ${user.id}:`, error);
+            return {
+              ...user,
+              orderCount: 0,
+              totalSpent: 0
+            };
+          }
+        })
+      );
+      
+      // Get total count for pagination
+      const totalUsersResult = await db
+        .select({ count: count() })
+        .from(users)
+        .where(conditions.length > 0 ? and(...conditions) : undefined);
+      
       res.json({
-        data: result.map(user => ({
-          id: user.id,
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
-          email: user.email,
-          role: user.role,
-          isAdmin: user.isAdmin,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,    
-          orderCount: Number(user.orderCount) || 0,
-          totalSpent: Number(user.totalSpent) || 0,
-          lastOrderDate: user.lastOrderDate,
-          status: user.lastOrderDate && new Date(user.lastOrderDate) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) ? 'active' : 'inactive'
-        })),
-        pagination: {
-          page: parseInt(page as string),
-          limit: parseInt(limit as string),
-          total,
-          totalPages: Math.ceil(total / parseInt(limit as string))
-        },
-        stats: {
-          total,
-          admins: result.filter(u => u.isAdmin).length,
-          developers: result.filter(u => u.role === 'developer').length,
-          users: result.filter(u => u.role === 'user').length
-        }
+        users: usersWithStats,
+        total: totalUsersResult[0]?.count || 0,
+        page: Number(page),
+        totalPages: Math.ceil((totalUsersResult[0]?.count || 0) / Number(limit))
       });
+      
     } catch (error) {
-      Logger.error("Error fetching users", error);
-      res.status(500).json({ error: "Failed to fetch users" });
+      console.error('[ERROR] Error fetching users', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
     }
   });
 
