@@ -43,7 +43,6 @@ export default function Home() {
   return (
     <motion.div 
       className="min-h-screen"
-      style={{ backgroundColor: theme.colors.bg.primary }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
