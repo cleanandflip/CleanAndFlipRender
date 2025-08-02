@@ -1,5 +1,4 @@
 @import "./styles/dropdown.css";
-@import "./styles/search-theme.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
