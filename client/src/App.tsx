@@ -67,8 +67,10 @@ function Router() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen flex flex-col">
-        {/* Athletic pattern overlay - Hexagonal gym flooring pattern */}
+        {/* Enhanced Athletic pattern overlay - Larger hexagonal gym flooring */}
         <div className="athletic-pattern" />
+        {/* Industrial texture overlay for athletic feel */}
+        <div className="texture-overlay" />
         {/* Gym atmosphere subtle lighting effects */}
         <div className="gym-atmosphere" />
         
