@@ -64,13 +64,56 @@ function ScrollRestoration() {
 }
 
 function Router() {
+  // Enhanced background with mouse interaction
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = e.clientX / window.innerWidth;
+      const y = e.clientY / window.innerHeight;
+      
+      document.documentElement.style.setProperty('--mouse-x', x.toString());
+      document.documentElement.style.setProperty('--mouse-y', y.toString());
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+      <div className="min-h-screen flex flex-col relative">
+        {/* Enhanced animated background layers */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          {/* Floating particles */}
+          {[...Array(15)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-white rounded-full opacity-10 animate-float"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 10}s`,
+                animationDuration: `${15 + Math.random() * 10}s`
+              }}
+            />
+          ))}
+          
+          {/* Interactive gradient layer */}
+          <div 
+            className="absolute inset-0 opacity-20"
+            style={{
+              background: `radial-gradient(
+                circle at calc(var(--mouse-x, 0.5) * 100%) calc(var(--mouse-y, 0.5) * 100%),
+                rgba(59, 130, 246, 0.15) 0%,
+                transparent 40%
+              )`
+            }}
+          />
+        </div>
+
         <Navigation />
         <CartDrawer />
         <ScrollRestoration />
-        <main className="flex-1">
+        <main className="flex-1 relative z-10">
           <Switch>
             {/* Public Routes */}
             <Route path={ROUTES.HOME} component={Home} />
