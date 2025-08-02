@@ -237,7 +237,6 @@ export default function Products() {
   };
 
   const handleSearchChange = (search: string) => {
-    console.log('Search changed to:', search);
     handleFilterChange({ ...filters, search });
   };
 
@@ -336,15 +335,17 @@ export default function Products() {
                   />
                 ))}
                 
-                {/* Reset All Filters Button */}
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={handleResetFilters}
-                  className="bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30"
-                >
-                  Reset All
-                </Button>
+                {/* Reset All Filters Button - Only show if there are non-search filters */}
+                {(activeFilterCount > (filters.search ? 1 : 0)) && (
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    onClick={handleResetFilters}
+                    className="bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30"
+                  >
+                    Reset All
+                  </Button>
+                )}
               </div>
             </div>
           )}

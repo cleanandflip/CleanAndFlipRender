@@ -72,11 +72,9 @@ export default function SearchBar({
 
   // Handle search submission
   const handleSearch = (query: string) => {
-    console.log('handleSearch called with:', query);
     if (!query.trim()) return;
 
     const trimmedQuery = query.trim();
-    console.log('onSearch prop is:', onSearch);
     
     // Save to search history
     const newHistory = [trimmedQuery, ...searchHistory.filter(h => h !== trimmedQuery)].slice(0, 5);
@@ -97,7 +95,6 @@ export default function SearchBar({
 
   // Handle suggestion click
   const handleSuggestionClick = (suggestion: string) => {
-    console.log('Suggestion clicked:', suggestion);
     setInputValue(suggestion);
     handleSearch(suggestion);
   };
@@ -158,8 +155,8 @@ export default function SearchBar({
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       <form onSubmit={handleFormSubmit} className="relative">
-        <div className="flex items-center bg-card rounded-lg px-4 py-2">
-          <Search className="text-gray-400 mr-3 flex-shrink-0" size={18} />
+        <div className="flex items-center bg-card rounded-lg px-4 py-3 border border-white/10 transition-colors focus-within:border-primary/50 hover:border-white/20">
+          <Search className="text-gray-400 mr-3 flex-shrink-0" size={20} />
           <Input
             ref={inputRef}
             type="text"
@@ -167,7 +164,7 @@ export default function SearchBar({
             onChange={(e) => handleInputChange(e.target.value)}
             onFocus={() => setIsOpen(true)}
             placeholder={placeholder}
-            className="bg-transparent border-none outline-none flex-1 text-white placeholder-gray-400 p-0 h-auto focus-visible:ring-0"
+            className="bg-transparent border-none outline-none flex-1 text-white placeholder-white/60 p-0 h-auto focus-visible:ring-0 text-base"
           />
           {inputValue && (
             <Button
@@ -175,9 +172,10 @@ export default function SearchBar({
               variant="ghost"
               size="sm"
               onClick={handleClear}
-              className="p-1 h-auto hover:bg-white/10 ml-2"
+              className="p-1.5 h-auto hover:bg-white/10 ml-2 rounded-full transition-colors"
+              title="Clear search"
             >
-              <X size={16} />
+              <X size={18} className="text-gray-400 hover:text-white transition-colors" />
             </Button>
           )}
         </div>
@@ -196,7 +194,7 @@ export default function SearchBar({
             pointerEvents: 'auto'
           }}
         >
-          <Card className="search-dropdown-portal p-4 max-h-80 overflow-y-auto shadow-2xl bg-gray-900/98 backdrop-blur-xl border-gray-700/50">
+          <Card className="search-dropdown-portal p-5 max-h-80 overflow-y-auto shadow-2xl bg-gray-900/98 backdrop-blur-xl border-gray-700/50 animate-in slide-in-from-top-2 duration-200">
             {inputValue.length >= 2 ? (
               // Show suggestions when typing
               <div>
@@ -206,12 +204,23 @@ export default function SearchBar({
                     <div className="space-y-1">
                       {suggestions.map((suggestion, index) => (
                         <button
-                          key={index}
-                          onClick={() => handleSuggestionClick(suggestion)}
-                          className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
+                          key={`suggestion-${index}`}
+                          type="button"
+                          data-search-suggestion="true"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSuggestionClick(suggestion);
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSuggestionClick(suggestion);
+                          }}
+                          className="w-full text-left px-4 py-3 hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center cursor-pointer group hover:shadow-sm"
                         >
-                          <Search size={14} className="text-gray-400 mr-3" />
-                          <span className="text-primary">{suggestion}</span>
+                          <Search size={16} className="text-gray-400 mr-3 group-hover:text-primary transition-colors" />
+                          <span className="text-primary group-hover:text-white font-medium">{suggestion}</span>
                         </button>
                       ))}
                     </div>
@@ -242,19 +251,17 @@ export default function SearchBar({
                           onMouseDown={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            console.log('MouseDown on history:', term);
                             handleSuggestionClick(term);
                           }}
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            console.log('Clicking history:', term);
                             handleSuggestionClick(term);
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center cursor-pointer"
+                          className="w-full text-left px-4 py-3 hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center cursor-pointer group hover:shadow-sm"
                         >
-                          <Clock size={14} className="text-gray-400 mr-3" />
-                          <span className="text-primary">{term}</span>
+                          <Clock size={16} className="text-gray-400 mr-3 group-hover:text-primary transition-colors" />
+                          <span className="text-primary group-hover:text-white font-medium">{term}</span>
                         </button>
                       ))}
                     </div>
@@ -276,19 +283,17 @@ export default function SearchBar({
                         onMouseDown={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          console.log('MouseDown on popular:', term);
                           handleSuggestionClick(term);
                         }}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          console.log('Clicking popular:', term);
                           handleSuggestionClick(term);
                         }}
-                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center cursor-pointer"
+                        className="w-full text-left px-4 py-3 hover:bg-white/10 rounded-lg transition-all duration-200 flex items-center cursor-pointer group hover:shadow-sm"
                       >
-                        <TrendingUp size={14} className="text-gray-400 mr-3" />
-                        <span className="text-primary">{term}</span>
+                        <TrendingUp size={16} className="text-gray-400 mr-3 group-hover:text-primary transition-colors" />
+                        <span className="text-primary group-hover:text-white font-medium">{term}</span>
                       </button>
                     ))}
                   </div>
