@@ -168,7 +168,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       {/* Only show critical stock badge */}
       {product.stockQuantity === 1 && (
         <div className="absolute top-3 left-3 z-20 animate-bounce-subtle">
-          <span className="bg-red-500 text-primary px-2 py-1 rounded text-xs font-medium">
+          <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
             Only 1 left
           </span>
         </div>
@@ -209,7 +209,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           {/* Product Info Section */}
           <div className="p-4 pb-2">
             {/* Title */}
-            <h3 className="font-medium text-primary mb-1 line-clamp-1 group-hover:text-blue-300 transition-colors duration-200">
+            <h3 className="font-medium text-white mb-1 line-clamp-1 group-hover:text-slate-100 transition-colors duration-200">
               {product.name}
             </h3>
             
@@ -221,7 +221,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             )}
             
             {/* Price */}
-            <p className="text-2xl font-bold text-primary mb-4 group-hover:text-blue-200 transition-colors">
+            <p className="text-2xl font-bold text-white mb-4 group-hover:text-slate-100 transition-colors">
               ${product.price}
             </p>
           </div>
