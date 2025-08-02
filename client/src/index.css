@@ -256,3 +256,154 @@ html {
   66% { transform: translate(-20px, 20px) scale(0.9); }
   100% { transform: translate(0px, 0px) scale(1); }
 }
+
+/* ========================================
+   GLOBAL THEME VISIBILITY FIXES - Clean & Flip
+   Addressing gray text visibility issues
+======================================== */
+
+/* 1. HELPER/INFORMATIONAL TEXT - Make all helper text more visible */
+.text-muted, 
+p.help-text,
+span.help-text,
+.form-help {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+/* Specific helper text patterns */
+p:has(> small),
+div[class*="help"],
+div[class*="info"] {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+/* 2. FILE UPLOAD SECTION TEXT - Improve upload area visibility */
+.upload-text,
+.dropzone-text,
+[class*="upload"] p,
+[class*="drag-drop"],
+.file-upload-hint {
+  color: #e5e7eb !important; /* gray-200 */
+}
+
+/* "Choose Files" button styling */
+input[type="file"]::file-selector-button,
+.file-input-button,
+button[class*="file"],
+.choose-files-btn {
+  @apply bg-gray-700 text-white border border-gray-400 
+         px-4 py-2 rounded cursor-pointer
+         hover:bg-gray-600 hover:border-gray-300 !important;
+}
+
+/* 3. BULLET POINTS / LISTS - Fix all instructional lists */
+ul li,
+ol li,
+.form-instructions li,
+[class*="instruction"] li,
+[class*="requirement"] li {
+  color: #e5e7eb !important; /* gray-200 */
+}
+
+/* Bullet points specifically */
+ul li::marker,
+ol li::marker {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+/* 4. GLOBAL CSS OVERRIDES - Force visibility for secondary text */
+.text-secondary,
+.text-muted-foreground {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+/* Target specific gray classes that are too dark */
+.text-gray-500,
+.text-gray-600,
+.text-gray-700 {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+/* Ensure all form-related text is visible */
+form p:not(.error):not(.success),
+form span:not(.required),
+form small,
+form .hint,
+form .help {
+  color: #e5e7eb !important; /* gray-200 */
+}
+
+/* 5. COMPONENT-LEVEL FIXES - Utility classes for quick fixes */
+.readable-text {
+  color: #e5e7eb !important; /* gray-200 */
+}
+
+.readable-helper {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+.readable-placeholder::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+/* 6. SPECIFIC FIXES FOR FORMS */
+.price-helper-text,
+[class*="fair-offer"],
+.form-note {
+  color: #e5e7eb !important; /* gray-200 */
+  font-size: 0.875rem; /* text-sm */
+}
+
+/* Upload instructions */
+.upload-instructions,
+.photo-requirements {
+  color: #e5e7eb !important; /* gray-200 */
+}
+
+/* File drop zone */
+.file-drop-zone {
+  border: 2px dashed #6b7280; /* border-gray-500 */
+}
+
+.file-drop-zone:hover {
+  border-color: #9ca3af; /* border-gray-400 */
+  background-color: rgba(31, 41, 55, 0.3); /* bg-gray-800/30 */
+}
+
+/* 7. FORM INPUT PLACEHOLDERS - Global placeholder visibility */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+/* 8. DESCRIPTIVE TEXT - All descriptive paragraphs */
+.description,
+.note,
+.info-text,
+p.text-sm,
+span.text-sm {
+  color: #e5e7eb !important; /* gray-200 */
+}
+
+/* 9. MODAL AND DIALOG TEXT - Ensure visibility in overlays */
+[role="dialog"] p,
+[role="dialog"] span:not(.required),
+.modal-content p,
+.dialog-content p {
+  color: #e5e7eb !important; /* gray-200 */
+}
+
+/* 10. CARD CONTENT TEXT - Secondary text in cards */
+.card p:not(.error):not(.success),
+.card span:not(.badge):not(.required),
+[class*="card"] p:not(.error):not(.success) {
+  color: #e5e7eb !important; /* gray-200 */
+}
+
+/* PostCSS catch-all for any remaining gray text */
+form [class*="gray-5"],
+form [class*="gray-6"],
+form [class*="gray-7"] {
+  color: #d1d5db !important; /* gray-300 */
+}
