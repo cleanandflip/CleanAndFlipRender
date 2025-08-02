@@ -237,6 +237,7 @@ export default function Products() {
   };
 
   const handleSearchChange = (search: string) => {
+    console.log('Search changed to:', search);
     handleFilterChange({ ...filters, search });
   };
 
@@ -356,6 +357,7 @@ export default function Products() {
               <SearchBar 
                 value={filters.search || ''} 
                 onChange={handleSearchChange}
+                onSearch={handleSearchChange}
                 placeholder="Search equipment..."
               />
             </div>

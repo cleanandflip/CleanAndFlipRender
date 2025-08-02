@@ -72,9 +72,11 @@ export default function SearchBar({
 
   // Handle search submission
   const handleSearch = (query: string) => {
+    console.log('handleSearch called with:', query);
     if (!query.trim()) return;
 
     const trimmedQuery = query.trim();
+    console.log('onSearch prop is:', onSearch);
     
     // Save to search history
     const newHistory = [trimmedQuery, ...searchHistory.filter(h => h !== trimmedQuery)].slice(0, 5);
@@ -95,6 +97,7 @@ export default function SearchBar({
 
   // Handle suggestion click
   const handleSuggestionClick = (suggestion: string) => {
+    console.log('Suggestion clicked:', suggestion);
     setInputValue(suggestion);
     handleSearch(suggestion);
   };
@@ -138,7 +141,8 @@ export default function SearchBar({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+        // Add small delay to allow click to process
+        setTimeout(() => setIsOpen(false), 100);
       }
     };
 
@@ -227,8 +231,14 @@ export default function SearchBar({
                     <div className="space-y-1">
                       {searchHistory.map((term, index) => (
                         <button
-                          key={index}
-                          onClick={() => handleSuggestionClick(term)}
+                          key={`history-${index}`}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Clicking history:', term);
+                            handleSuggestionClick(term);
+                          }}
                           className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
                         >
                           <Clock size={14} className="text-gray-400 mr-3" />
@@ -248,8 +258,14 @@ export default function SearchBar({
                   <div className="space-y-1">
                     {popularSearches.slice(0, searchHistory.length > 0 ? 4 : 6).map((term, index) => (
                       <button
-                        key={index}
-                        onClick={() => handleSuggestionClick(term)}
+                        key={`popular-${index}`}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('Clicking popular:', term);
+                          handleSuggestionClick(term);
+                        }}
                         className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
                       >
                         <TrendingUp size={14} className="text-gray-400 mr-3" />

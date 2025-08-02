@@ -19,6 +19,31 @@ body {
   transform: translateZ(0);
 }
 
+/* Ensure dropdown buttons are clickable */
+button:has(.text-primary),
+.hover\:bg-white\/10,
+button.text-left {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 9999 !important;
+  position: relative !important;
+}
+
+/* Remove any blocking overlays */
+.card:has(button:has(.text-primary)) {
+  pointer-events: auto !important;
+}
+
+.card * {
+  pointer-events: auto !important;
+}
+
+/* Force dropdown and buttons to top layer */
+.relative:has(input[placeholder*="Search"]) .card button {
+  z-index: 99999 !important;
+  position: relative !important;
+}
+
 :root {
   /* Global Design System Colors - Clean & Flip */
   --background: #1A1F2E;                   /* Primary background */
