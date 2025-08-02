@@ -46,26 +46,19 @@ html {
   --ring: rgba(59, 130, 246, 0.5);         /* Focus rings */
   --radius: 0.75rem;
   
-  /* Masculine gym theme colors */
-  --gym-black: #0a0a0a;
-  --gym-steel: #1a1f2e;
-  --gym-accent: #3b82f6; /* Blue for primary */
-  --gym-danger: #dc2626; /* Red for accents */
-  --gym-hex: rgba(255,255,255,0.02);
-  
-  /* Clean & Flip theme colors - updated for gym theme */
-  --glass-bg: rgba(10, 10, 10, 0.6);       /* Darker glass morphism */
-  --glass-border: rgba(255, 255, 255, 0.05); /* Subtler glass borders */
+  /* Clean & Flip theme colors */
+  --glass-bg: rgba(35, 41, 55, 0.4);       /* Glass morphism */
+  --glass-border: rgba(255, 255, 255, 0.08); /* Glass borders */
   --text-primary: #FFFFFF;                 /* Primary text */
   --text-secondary: #E2E8F0;               /* Secondary text */
   --text-muted: #94A3B8;                   /* Muted text */
   --accent-blue: #3B82F6;                  /* Brand blue */
   
   /* Additional theme variables for consistency */
-  --bg-primary: var(--gym-black);          /* Almost black */
-  --bg-secondary: var(--gym-steel);        /* Dark blue-gray */
-  --bg-tertiary: #111827;                  /* Slightly lighter */
-  --border-color: rgba(255,255,255,0.1);   /* Light borders for dark theme */
+  --bg-primary: hsl(222, 47%, 11%);        /* #1e293b */
+  --bg-secondary: hsl(215, 25%, 20%);      /* #334155 */
+  --bg-tertiary: hsl(215, 25%, 27%);       /* #475569 */
+  --border-color: hsl(215, 20%, 35%);      /* #64748b */
 }
 
 @layer base {
@@ -73,53 +66,20 @@ html {
     @apply border-border;
   }
 
-  /* Masculine gym theme with static hexagon floor pattern */
   body {
     @apply font-sans antialiased text-foreground;
-    background: 
-      /* Very subtle red accent in corner */
-      radial-gradient(circle at 95% 95%, rgba(220, 38, 38, 0.05) 0%, transparent 25%),
-      /* Main gradient - dark and industrial */
-      linear-gradient(180deg, 
-        #0a0a0a 0%,      /* Almost black */
-        #0f1419 30%,     /* Dark blue-gray */
-        #111827 70%,     /* Slightly lighter */
-        #0a0a0a 100%     /* Back to almost black */
-      );
+    background: #1A1F2E;
+    background: linear-gradient(135deg, #1A1F2E 0%, #232937 100%);
     background-attachment: fixed;
     min-height: 100vh;
-    position: relative;
-  }
-
-  /* Static hexagon floor pattern - like rubber gym flooring */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: 
-      url("data:image/svg+xml,%3Csvg width='140' height='121' viewBox='0 0 140 121' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='70,3 117,30.5 117,90.5 70,118 23,90.5 23,30.5' fill='rgba(0,0,0,0.4)' stroke='rgba(255,255,255,0.025)' stroke-width='2'/%3E%3Cpolygon points='70,10 110,33.5 110,87.5 70,111 30,87.5 30,33.5' fill='none' stroke='rgba(59,130,246,0.02)' stroke-width='1'/%3E%3C/svg%3E");
-    background-size: 140px 121px;
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0.8;
-  }
-
-  /* Weight room atmosphere - subtle movement */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: 
-      /* Breathing light effect */
-      radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.2) 100%);
-    z-index: 2;
-    pointer-events: none;
-    animation: ambientPulse 10s ease-in-out infinite;
+    transition: all 0.3s ease;
   }
 
   /* Ensure all pages inherit global background */
   html, body, #root {
-    background: transparent;
+    background: #1A1F2E;
+    background: linear-gradient(135deg, #1A1F2E 0%, #232937 100%);
+    background-attachment: fixed;
     min-height: 100vh;
   }
 
@@ -128,66 +88,17 @@ html {
   .min-h-screen {
     background: transparent !important;
   }
+
+  /* Global page background utility */
+  .global-bg {
+    background: #1A1F2E;
+    background: linear-gradient(135deg, #1A1F2E 0%, #232937 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
 }
 
 @layer components {
-  /* Gym atmosphere animations */
-  @keyframes ambientPulse {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 0.5; }
-  }
-
-  @keyframes lightingShift {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 0.8; filter: brightness(1.1); }
-  }
-
-  @keyframes gentlePulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 0.7; }
-  }
-
-  /* Gym atmosphere layers */
-  .gym-atmosphere {
-    position: fixed;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    background: 
-      /* Overhead light effect */
-      radial-gradient(ellipse 800px 400px at 50% 0%, rgba(255,255,255,0.02) 0%, transparent 40%),
-      /* Corner spotlights */
-      radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 30%),
-      radial-gradient(circle at 90% 80%, rgba(239, 68, 68, 0.02) 0%, transparent 30%);
-    animation: lightingShift 20s ease-in-out infinite;
-  }
-
-  /* Industrial metal texture */
-  .metal-texture {
-    position: fixed;
-    inset: 0;
-    z-index: 3;
-    pointer-events: none;
-    background: 
-      /* Horizontal brush strokes */
-      repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 2px,
-        rgba(255,255,255,0.015) 2px,
-        rgba(255,255,255,0.015) 4px
-      ),
-      /* Vertical subtle lines */
-      repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 50px,
-        rgba(255,255,255,0.01) 50px,
-        rgba(255,255,255,0.01) 51px
-      );
-    opacity: 0.7;
-  }
-
   .glass {
     background: var(--glass-bg);
     backdrop-filter: blur(12px);
