@@ -223,6 +223,45 @@ html {
     background-color: hsl(45, 93%, 58%) !important;
   }
 
+  /* High Contrast Form Theme for Better Accessibility */
+  .high-contrast-form input,
+  .high-contrast-form select,
+  .high-contrast-form textarea,
+  input, select, textarea {
+    @apply border-gray-300 text-white placeholder:text-gray-400 bg-gray-800/50 border-2 !important;
+    @apply focus:border-blue-400 focus:ring-blue-400/50 !important;
+  }
+
+  /* Override all form labels for high contrast */
+  .high-contrast-form label,
+  label {
+    @apply text-gray-200 font-medium !important;
+  }
+
+  /* Helper text and descriptions */
+  .high-contrast-form .text-gray-500,
+  .high-contrast-form .text-gray-600,
+  .text-gray-500, .text-gray-600 {
+    @apply text-gray-300 !important;
+  }
+
+  /* Error text remains highly visible */
+  .high-contrast-form .text-red-500,
+  .text-red-500 {
+    @apply text-red-400 !important;
+  }
+
+  /* Make all buttons and interactive elements more visible */
+  .high-contrast-form button,
+  button {
+    @apply border-2 !important;
+  }
+
+  /* Special case for disabled inputs */
+  input:disabled, select:disabled, textarea:disabled {
+    @apply border-gray-500 text-gray-400 bg-gray-700/50 !important;
+  }
+
   /* Navigation styling */
   .nav-floating {
     @apply fixed top-6 left-6 right-6 z-50 glass px-6 py-4;

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { routes } from '@/config/routes';
+// Remove the import since Submission type doesn't exist - we'll use any for now
 import { 
   Package, 
   Clock, 
@@ -26,7 +28,7 @@ export default function TrackSubmission() {
   const [searchRef, setSearchRef] = useState(urlParams.get('ref') || '');
   const { toast } = useToast();
   
-  const { data: submission, isLoading, error } = useQuery({
+  const { data: submission, isLoading, error } = useQuery<any>({
     queryKey: ['track-submission', searchRef],
     queryFn: async () => {
       if (!searchRef) return null;
@@ -149,7 +151,7 @@ export default function TrackSubmission() {
                   <h2 className="font-bebas text-2xl mb-2">SUBMISSION STATUS</h2>
                   <div className="flex items-center gap-3">
                     <code className="text-sm bg-gray-800 px-3 py-1 rounded text-accent-blue">
-                      {submission.referenceNumber}
+                      {submission?.referenceNumber}
                     </code>
                     <Button
                       variant="ghost"
@@ -165,14 +167,14 @@ export default function TrackSubmission() {
                 <div className="text-right">
                   <p className="text-sm text-text-muted mb-1">Submitted</p>
                   <p className="text-sm">
-                    {new Date(submission.createdAt).toLocaleDateString()}
+                    {submission?.createdAt ? new Date(submission.createdAt).toLocaleDateString() : 'N/A'}
                   </p>
                 </div>
               </div>
               
               {/* Current Status */}
               <div className="space-y-4">
-                {statusConfig[submission.status as keyof typeof statusConfig] && (
+                {submission?.status && statusConfig[submission.status as keyof typeof statusConfig] && (
                   <>
                     <div className="flex items-center gap-3">
                       {React.createElement(
@@ -197,17 +199,17 @@ export default function TrackSubmission() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-text-muted">Equipment</p>
-                  <p className="font-medium">{submission.name}</p>
+                  <p className="font-medium">{submission?.name}</p>
                 </div>
                 <div>
                   <p className="text-sm text-text-muted">Brand</p>
-                  <p className="font-medium">{submission.brand || 'Not specified'}</p>
+                  <p className="font-medium">{submission?.brand || 'Not specified'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-text-muted">Condition</p>
-                  <p className="font-medium capitalize">{submission.condition.replace('_', ' ')}</p>
+                  <p className="font-medium capitalize">{submission?.condition?.replace('_', ' ')}</p>
                 </div>
-                {submission.offerAmount && (
+                {submission?.offerAmount && (
                   <div>
                     <p className="text-sm text-text-muted">Offer Amount</p>
                     <p className="font-medium text-green-400">${submission.offerAmount}</p>
@@ -217,7 +219,7 @@ export default function TrackSubmission() {
             </Card>
             
             {/* Pickup Information */}
-            {submission.scheduledPickupDate && (
+            {submission?.scheduledPickupDate && (
               <Card className="p-6">
                 <h3 className="font-bebas text-xl mb-4">PICKUP INFORMATION</h3>
                 <div className="space-y-2">
@@ -227,7 +229,7 @@ export default function TrackSubmission() {
                       {new Date(submission.scheduledPickupDate).toLocaleDateString()}
                     </span>
                   </div>
-                  {submission.pickupWindowStart && submission.pickupWindowEnd && (
+                  {submission?.pickupWindowStart && submission?.pickupWindowEnd && (
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-accent-blue" />
                       <span>
@@ -240,7 +242,7 @@ export default function TrackSubmission() {
             )}
             
             {/* Decline Reason */}
-            {submission.status === 'declined' && submission.declineReason && (
+            {submission?.status === 'declined' && submission?.declineReason && (
               <Card className="p-6 border-red-500/30">
                 <h3 className="font-bebas text-xl mb-4 text-red-400">DECLINE REASON</h3>
                 <p className="text-text-secondary">{submission.declineReason}</p>
