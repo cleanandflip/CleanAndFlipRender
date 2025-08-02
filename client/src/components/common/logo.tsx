@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { ROUTES } from "@/config/routes";
 
 interface LogoProps {
   className?: string;
@@ -61,7 +62,7 @@ export default function Logo({ className = "", size = 'md', clickable = true, te
   }
 
   return (
-    <Link href="/">
+    <Link href={ROUTES.HOME}>
       <LogoContent />
     </Link>
   );

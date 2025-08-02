@@ -18,6 +18,7 @@ import {
   Truck
 } from "lucide-react";
 import type { Product } from "@shared/schema";
+import { routes } from "@/config/routes";
 
 interface ProductCardProps {
   product: Product;
@@ -33,7 +34,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
 
   if (compact) {
     return (
-      <SmartLink href={`/products/${product.id}`} preserveState={true}>
+      <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
         <Card className="overflow-hidden bg-card-hover cursor-pointer">
           {hasImage ? (
             <img 
@@ -63,7 +64,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       <Card className="p-6">
         <div className="flex gap-6">
           {/* Image */}
-          <SmartLink href={`/products/${product.id}`} preserveState={true}>
+          <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
             <div className="w-32 h-32 flex-shrink-0 overflow-hidden rounded-lg cursor-pointer group">
               {hasImage ? (
                 <img
@@ -86,7 +87,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start mb-3">
               <div className="flex-1 min-w-0">
-                <SmartLink href={`/products/${product.id}`} preserveState={true}>
+                <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
                   <h3 className="font-semibold text-lg hover:text-accent-blue transition-colors cursor-pointer line-clamp-2">
                     {product.name}
                   </h3>
@@ -185,7 +186,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       </div>
       
       {/* Clickable area for product details */}
-      <SmartLink href={`/products/${product.id}`} preserveState={true}>
+      <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
         <div className="cursor-pointer">
           {/* Clean Image */}
           <div className="aspect-square relative bg-gray-900/30 group-hover:bg-gray-900/40 transition-colors overflow-hidden">

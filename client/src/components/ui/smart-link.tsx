@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { NavigationStateManager } from "@/lib/navigation-state";
+import { ROUTES } from "@/config/routes";
 
 interface SmartLinkProps {
   href: string;
@@ -19,12 +20,12 @@ export function SmartLink({ href, children, className, onClick, preserveState = 
     // Save current state if needed
     if (preserveState && href.startsWith('/products/')) {
       // This link goes to a product detail, so save products page state
-      if (currentPath === '/products') {
+      if (currentPath === ROUTES.PRODUCTS) {
         NavigationStateManager.updatePreviousPath(currentPath);
       }
     } else if (!href.startsWith('/products')) {
       // Clear products state when navigating away from products
-      NavigationStateManager.clearState('/products');
+      NavigationStateManager.clearState(ROUTES.PRODUCTS);
       NavigationStateManager.updatePreviousPath(currentPath);
     } else {
       // For any other navigation, update previous path

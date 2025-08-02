@@ -1,4 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
+import { ROUTES } from "@/config/routes";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -71,21 +72,32 @@ function Router() {
         <ScrollRestoration />
         <main className="flex-1">
           <Switch>
-            <Route path="/" component={Home} />
-            <Route path="/products" component={Products} />
-            <Route path="/products/:id" component={ProductDetail} />
-            <Route path="/cart" component={Cart} />
-            <Route path="/checkout" component={Checkout} />
-            <Route path="/sell-to-us" component={SellToUs} />
-            <Route path="/track-submission" component={TrackSubmission} />
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/admin" component={AdminDashboard} />
-            <Route path="/admin/products/new" component={ProductForm} />
-            <Route path="/admin/products/edit/:id" component={ProductForm} />
-            <Route path="/orders" component={Orders} />
-            <Route path="/about" component={About} />
-            <Route path="/contact" component={Contact} />
-            <Route path="/auth" component={AuthPage} />
+            {/* Public Routes */}
+            <Route path={ROUTES.HOME} component={Home} />
+            <Route path={ROUTES.PRODUCTS} component={Products} />
+            <Route path={ROUTES.PRODUCT_DETAIL} component={ProductDetail} />
+            <Route path={ROUTES.ABOUT} component={About} />
+            <Route path={ROUTES.CONTACT} component={Contact} />
+            
+            {/* Shopping Routes */}
+            <Route path={ROUTES.CART} component={Cart} />
+            <Route path={ROUTES.CHECKOUT} component={Checkout} />
+            
+            {/* Auth Routes */}
+            <Route path={ROUTES.LOGIN} component={AuthPage} />
+            
+            {/* User Routes */}
+            <Route path={ROUTES.DASHBOARD} component={Dashboard} />
+            <Route path={ROUTES.ORDERS} component={Orders} />
+            <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />
+            <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
+            
+            {/* Admin Routes */}
+            <Route path={ROUTES.ADMIN} component={AdminDashboard} />
+            <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
+            <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
+            
+            {/* 404 */}
             <Route component={NotFound} />
           </Switch>
         </main>

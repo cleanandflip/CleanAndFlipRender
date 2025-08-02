@@ -1,0 +1,110 @@
+client/src/hooks/use-auth.tsx:              onClick={() => window.location.hash = "#login"}
+client/src/hooks/useProductsState.ts:    const urlParams = new URLSearchParams(window.location.search);
+client/src/hooks/useNavigation.ts:    goToHome: () => setLocation("/"),
+client/src/hooks/useNavigation.ts:    goToProducts: () => setLocation("/products"),
+client/src/hooks/useNavigation.ts:    goToProduct: (id: string) => setLocation(`/products/${id}`),
+client/src/hooks/useNavigation.ts:    goToCart: () => setLocation("/cart"),
+client/src/hooks/useNavigation.ts:    goToCheckout: () => setLocation("/checkout"),
+client/src/hooks/useNavigation.ts:    goToDashboard: () => setLocation("/dashboard"),
+client/src/hooks/useNavigation.ts:    goToSubmit: () => setLocation("/submit"),
+client/src/hooks/useNavigation.ts:    goToAdmin: () => setLocation("/admin"),
+client/src/hooks/useNavigation.ts:    goToContact: () => setLocation("/contact"),
+client/src/hooks/useNavigation.ts:    goToAbout: () => setLocation("/about"),
+client/src/hooks/useNavigation.ts:    goToAdminProducts: () => setLocation("/admin?tab=products"),
+client/src/hooks/useNavigation.ts:    goToAdminUsers: () => setLocation("/admin?tab=users"),
+client/src/hooks/useNavigation.ts:    goToAdminAnalytics: () => setLocation("/admin?tab=analytics"),
+client/src/hooks/useNavigation.ts:    goToAdminCategories: () => setLocation("/admin?tab=categories"),
+client/src/hooks/useNavigation.ts:    goToAdminSubmissions: () => setLocation("/admin?tab=submissions"),
+client/src/hooks/useNavigation.ts:    goToNewProduct: () => setLocation("/admin/products/new"),
+client/src/hooks/useNavigation.ts:    goToEditProduct: (id: string) => setLocation(`/admin/products/edit/${id}`),
+client/src/hooks/useNavigation.ts:    refresh: () => window.location.reload(),
+client/src/hooks/useNavigation.ts:      window.location.href = mailtoUrl;
+client/src/hooks/useNavigation.ts:            url: window.location.href,
+client/src/hooks/useNavigation.ts:          await navigator.clipboard.writeText(window.location.href);
+client/src/hooks/useNavigation.ts:        await navigator.clipboard.writeText(window.location.href);
+client/src/hooks/useNavigation.ts:    getCurrentUrl: () => window.location.href,
+client/src/hooks/useNavigation.ts:    getSearchParams: () => new URLSearchParams(window.location.search),
+client/src/hooks/useNavigation.ts:      const searchParams = new URLSearchParams(window.location.search);
+client/src/hooks/useNavigation.ts:      window.history.replaceState({}, '', `${window.location.pathname}?${searchParams.toString()}`);
+client/src/components/ui/smart-link.tsx:    const currentPath = window.location.pathname;
+client/src/components/layout/navigation.tsx:    setLocation(href);
+client/src/components/layout/navigation.tsx:      setLocation('/cart');
+client/src/components/layout/navigation.tsx:        setLocation(savedPath);
+client/src/components/layout/navigation.tsx:        setLocation('/products'); // fallback
+client/src/components/layout/navigation.tsx:                      <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
+client/src/components/layout/navigation.tsx:                      <Link href="/orders" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
+client/src/components/layout/navigation.tsx:                      <Link href="/dashboard?tab=submissions" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
+client/src/components/layout/navigation.tsx:                        <Link href="/admin" className="flex items-center px-4 py-2 text-sm text-accent-blue hover:text-blue-300 hover:bg-accent-blue/10 transition-colors cursor-pointer">
+client/src/components/cart/cart-drawer.tsx:                  <Link href="/products">
+client/src/components/cart/cart-drawer.tsx:                    <Link href="/cart">
+client/src/components/cart/cart-drawer.tsx:                    <Link href="/checkout">
+client/src/components/common/logo.tsx:    <Link href="/">
+client/src/components/AddToCartButton.tsx:              onClick={() => setLocation('/auth')}
+client/src/components/AddToCartButton.tsx:              onClick={() => setLocation('/auth')}
+client/src/components/AddToCartButton.tsx:    setLocation('/cart');
+client/src/components/error-boundary.tsx:    window.location.reload();
+client/src/components/error-boundary.tsx:    window.location.href = '/';
+client/src/components/error-boundary.tsx:                <a href="/contact" className="text-blue-500 hover:text-blue-400 ml-1">
+client/src/components/error-boundary.tsx:    window.location.href = '/';
+client/src/components/error-boundary.tsx:            <a href="/contact" className="text-blue-500 hover:text-blue-400 ml-1">
+client/src/lib/protected-route.tsx:      setLocation("/auth");
+client/src/pages/admin/ProductForm.tsx:      navigate('/admin');
+client/src/pages/admin/ProductForm.tsx:        <Button variant="ghost" onClick={() => navigate('/admin')}>
+client/src/pages/admin/ProductForm.tsx:            onClick={() => navigate('/admin')}
+client/src/pages/admin/UserManager.tsx:    window.location.href = `mailto:${user.email}?subject=Account Information`;
+client/src/pages/admin/WishlistManager.tsx:    window.location.href = `mailto:${user.email}?subject=About your wishlist`;
+client/src/pages/admin/WishlistManager.tsx:      onRefresh={() => window.location.reload()}
+client/src/pages/home.tsx:              <Link href="/sell-to-us">
+client/src/pages/home.tsx:              <Link href="/products">
+client/src/pages/home.tsx:                <Link href="/sell-to-us">
+client/src/pages/home.tsx:                <Link href="/products">
+client/src/pages/about.tsx:                <Link href="/sell-to-us">
+client/src/pages/about.tsx:                <Link href="/products">
+client/src/pages/about.tsx:                <Link href="/contact">
+client/src/pages/contact.tsx:                  <Link href="/sell-to-us">
+client/src/pages/contact.tsx:                  <Link href="/products">
+client/src/pages/contact.tsx:                  <Link href="/dashboard">
+client/src/pages/sell-to-us.tsx:                onClick={() => window.location.reload()} 
+client/src/pages/dashboard.tsx:    const urlParams = new URLSearchParams(window.location.search);
+client/src/pages/dashboard.tsx:    const url = new URL(window.location.href);
+client/src/pages/dashboard.tsx:                <SmartLink href="/orders">
+client/src/pages/dashboard.tsx:                  <SmartLink href="/products">
+client/src/pages/dashboard.tsx:                <SmartLink href="/sell-to-us">
+client/src/pages/dashboard.tsx:                  <SmartLink href="/sell-to-us">
+client/src/pages/dashboard.tsx:                <SmartLink href="/products">
+client/src/pages/dashboard.tsx:                  <SmartLink href="/products">
+client/src/pages/auth.tsx:      setLocation("/");
+client/src/pages/cart.tsx:            <Link href="/products">
+client/src/pages/cart.tsx:              <Link href="/products">
+client/src/pages/cart.tsx:              <Link href="/checkout">
+client/src/pages/orders.tsx:          <Link href="/dashboard">
+client/src/pages/orders.tsx:              <Link href="/products">
+client/src/pages/checkout.tsx:        return_url: `${window.location.origin}/order/success`,
+client/src/pages/checkout.tsx:      navigate("/order/success");
+client/src/pages/checkout.tsx:            <Link href="/products">
+client/src/pages/checkout.tsx:          <Link href="/cart">
+client/src/pages/product-detail.tsx:      navigate(-1); // Go back
+client/src/pages/product-detail.tsx:      navigate('/products'); // Fallback to products page
+client/src/pages/product-detail.tsx:          url: window.location.href,
+client/src/pages/product-detail.tsx:        navigator.clipboard.writeText(window.location.href);
+client/src/pages/product-detail.tsx:      navigator.clipboard.writeText(window.location.href);
+client/src/pages/admin.tsx:          onClick={() => navigate('/admin/products/new')}
+client/src/pages/admin.tsx:                      onClick={() => navigate(`/admin/products/edit/${product.id}`)}
+client/src/pages/products.tsx:    const urlParams = new URLSearchParams(window.location.search);
+client/src/pages/products.tsx:    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+client/src/pages/products.tsx:            onRetry={() => window.location.reload()}
+client/src/App.tsx:            <Route path="/" component={Home} />
+client/src/App.tsx:            <Route path="/products" component={Products} />
+client/src/App.tsx:            <Route path="/products/:id" component={ProductDetail} />
+client/src/App.tsx:            <Route path="/cart" component={Cart} />
+client/src/App.tsx:            <Route path="/checkout" component={Checkout} />
+client/src/App.tsx:            <Route path="/sell-to-us" component={SellToUs} />
+client/src/App.tsx:            <Route path="/track-submission" component={TrackSubmission} />
+client/src/App.tsx:            <Route path="/dashboard" component={Dashboard} />
+client/src/App.tsx:            <Route path="/admin" component={AdminDashboard} />
+client/src/App.tsx:            <Route path="/admin/products/new" component={ProductForm} />
+client/src/App.tsx:            <Route path="/admin/products/edit/:id" component={ProductForm} />
+client/src/App.tsx:            <Route path="/orders" component={Orders} />
+client/src/App.tsx:            <Route path="/about" component={About} />
+client/src/App.tsx:            <Route path="/contact" component={Contact} />
+client/src/App.tsx:            <Route path="/auth" component={AuthPage} />

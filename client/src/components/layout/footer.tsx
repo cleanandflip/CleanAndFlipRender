@@ -1,21 +1,22 @@
 import { Link } from "wouter";
 import Logo from "@/components/common/logo";
 import { Facebook, Instagram, Youtube, Mail, Phone, MapPin, Clock } from "lucide-react";
+import { ROUTES } from "@/config/routes";
 
 export default function Footer() {
   const shopLinks = [
-    { name: "All Equipment", href: "/products" },
-    { name: "Barbells", href: "/products?category=barbells" },
-    { name: "Plates", href: "/products?category=plates" },
-    { name: "Racks", href: "/products?category=racks" },
-    { name: "Dumbbells", href: "/products?category=dumbbells" },
-    { name: "Accessories", href: "/products?category=accessories" },
+    { name: "All Equipment", href: ROUTES.PRODUCTS },
+    { name: "Barbells", href: `${ROUTES.PRODUCTS}?category=barbells` },
+    { name: "Plates", href: `${ROUTES.PRODUCTS}?category=plates` },
+    { name: "Racks", href: `${ROUTES.PRODUCTS}?category=racks` },
+    { name: "Dumbbells", href: `${ROUTES.PRODUCTS}?category=dumbbells` },
+    { name: "Accessories", href: `${ROUTES.PRODUCTS}?category=accessories` },
   ];
 
   const companyLinks = [
-    { name: "About Us", href: "/about" },
-    { name: "Sell To Us", href: "/sell-to-us" },
-    { name: "Contact", href: "/contact" },
+    { name: "About Us", href: ROUTES.ABOUT },
+    { name: "Sell To Us", href: ROUTES.SUBMIT_EQUIPMENT },
+    { name: "Contact", href: ROUTES.CONTACT },
     { name: "FAQ", href: "/faq" },
     { name: "Reviews", href: "/reviews" },
     { name: "Blog", href: "/blog" },

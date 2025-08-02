@@ -15,6 +15,7 @@ import SearchBar from "@/components/products/search-bar";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package } from "lucide-react";
+import { ROUTES } from "@/config/routes";
 
 export default function Navigation() {
   const [location, setLocation] = useLocation();
@@ -27,20 +28,20 @@ export default function Navigation() {
 
   // Track cart open state based on current location
   useEffect(() => {
-    setIsCartOpen(location === '/cart');
+    setIsCartOpen(location === ROUTES.CART);
   }, [location]);
 
   const navigation = [
-    { name: "Shop", href: "/products" },
-    { name: "Sell", href: "/sell-to-us" },
-    { name: "About", href: "/about" },
-    { name: "Contact", href: "/contact" },
+    { name: "Shop", href: ROUTES.PRODUCTS },
+    { name: "Sell", href: ROUTES.SUBMIT_EQUIPMENT },
+    { name: "About", href: ROUTES.ABOUT },
+    { name: "Contact", href: ROUTES.CONTACT },
   ];
 
   const isActive = (href: string) => {
     if (!href || !location) return false;
-    if (href === "/" && location === "/") return true;
-    if (href !== "/" && location.startsWith(href)) return true;
+    if (href === ROUTES.HOME && location === ROUTES.HOME) return true;
+    if (href !== ROUTES.HOME && location.startsWith(href)) return true;
     return false;
   };
 
@@ -56,8 +57,8 @@ export default function Navigation() {
     }
     
     // Clear products state when navigating to non-product pages
-    if (href && href !== '/products' && !href.startsWith('/products/')) {
-      NavigationStateManager.clearState('/products');
+    if (href && href !== ROUTES.PRODUCTS && !href.startsWith('/products/')) {
+      NavigationStateManager.clearState(ROUTES.PRODUCTS);
     }
     
     setLocation(href);
@@ -69,19 +70,19 @@ export default function Navigation() {
     
     if (!isCartOpen) {
       // Save current location before opening cart
-      if (location !== '/cart') {
+      if (location !== ROUTES.CART) {
         setPreviousPath(location);
         sessionStorage.setItem('cartPreviousPath', location);
       }
-      setLocation('/cart');
+      setLocation(ROUTES.CART);
     } else {
       // Cart is open, go back to previous view
       const savedPath = sessionStorage.getItem('cartPreviousPath') || previousPath;
-      if (savedPath && savedPath !== '/cart') {
+      if (savedPath && savedPath !== ROUTES.CART) {
         setLocation(savedPath);
         sessionStorage.removeItem('cartPreviousPath');
       } else {
-        setLocation('/products'); // fallback
+        setLocation(ROUTES.PRODUCTS); // fallback
       }
     }
   };
@@ -97,7 +98,7 @@ export default function Navigation() {
         <div className="flex items-center justify-between w-full gap-4">
           {/* Left Side - Logo */}
           <div className="flex items-center flex-shrink-0">
-            <button onClick={(e) => handleNavigation('/', e)}>
+            <button onClick={(e) => handleNavigation(ROUTES.HOME, e)}>
               <Logo size="md" />
             </button>
           </div>
@@ -130,7 +131,7 @@ export default function Navigation() {
               <SearchBar
                 placeholder="Search equipment..."
                 onSearch={(query) => {
-                  const searchUrl = `/products?search=${encodeURIComponent(query)}`;
+                  const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
                   handleNavigation(searchUrl);
                 }}
               />
@@ -193,19 +194,19 @@ export default function Navigation() {
                   {/* Navigation Links */}
                   <div className="py-2">
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
+                      <Link href={ROUTES.DASHBOARD} className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
                         <User className="mr-3 h-4 w-4" />
                         My Dashboard
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/orders" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
+                      <Link href={ROUTES.ORDERS} className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
                         <ShoppingCart className="mr-3 h-4 w-4" />
                         Order History
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard?tab=submissions" className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
+                      <Link href={`${ROUTES.DASHBOARD}?tab=submissions`} className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
                         <Package className="mr-3 h-4 w-4" />
                         My Submissions
                       </Link>
@@ -213,7 +214,7 @@ export default function Navigation() {
 
                     {(user.role === 'developer' || user.role === 'admin' || user.isAdmin) && (
                       <DropdownMenuItem asChild>
-                        <Link href="/admin" className="flex items-center px-4 py-2 text-sm text-accent-blue hover:text-blue-300 hover:bg-accent-blue/10 transition-colors cursor-pointer">
+                        <Link href={ROUTES.ADMIN} className="flex items-center px-4 py-2 text-sm text-accent-blue hover:text-blue-300 hover:bg-accent-blue/10 transition-colors cursor-pointer">
                           <Settings className="mr-3 h-4 w-4" />
                           Developer Dashboard
                         </Link>
@@ -239,7 +240,7 @@ export default function Navigation() {
             ) : (
               <Button
                 size="sm"
-                onClick={(e) => handleNavigation('/auth', e)}
+                onClick={(e) => handleNavigation(ROUTES.LOGIN, e)}
                 className="bg-accent-blue hover:bg-blue-500 text-primary font-medium px-5 py-2 transition-colors whitespace-nowrap"
               >
                 <LogIn className="mr-2 h-4 w-4" />

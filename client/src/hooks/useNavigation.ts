@@ -1,43 +1,66 @@
 import { useLocation } from "wouter";
+import { ROUTES, routes } from "@/config/routes";
 
 /**
- * Centralized navigation hook for the Clean & Flip application
- * Provides consistent navigation methods throughout the app
+ * 🎯 CENTRALIZED NAVIGATION SERVICE - Single source of truth for all app navigation
+ * Provides consistent navigation methods throughout the app using centralized route definitions
  */
 export const useNavigation = () => {
   const [location, setLocation] = useLocation();
-  
+
   return {
+    // Current location
+    currentPath: location,
+    isActive: (path: string) => location === path,
+    isActiveRoute: (routePath: string) => location.startsWith(routePath),
+    
     // Core navigation
     navigate: setLocation,
-    currentPath: location,
+    
+    // Public navigations
+    goToHome: () => setLocation(ROUTES.HOME),
+    goToProducts: () => setLocation(ROUTES.PRODUCTS),
+    goToProduct: (id: string) => setLocation(routes.productDetail(id)),
+    goToSearch: () => setLocation(ROUTES.SEARCH),
+    goToAbout: () => setLocation(ROUTES.ABOUT),
+    goToContact: () => setLocation(ROUTES.CONTACT),
+    
+    // Shopping navigations
+    goToCart: () => setLocation(ROUTES.CART),
+    goToCheckout: () => setLocation(ROUTES.CHECKOUT),
+    goToCheckoutSuccess: () => setLocation(ROUTES.CHECKOUT_SUCCESS),
+    
+    // Auth navigations (handled by Replit Auth)
+    goToLogin: () => setLocation(ROUTES.LOGIN),
+    goToRegister: () => setLocation(ROUTES.REGISTER),
+    
+    // User navigations
+    goToDashboard: () => setLocation(ROUTES.DASHBOARD),
+    goToOrders: () => setLocation(ROUTES.ORDERS),
+    goToSubmitEquipment: () => setLocation(ROUTES.SUBMIT_EQUIPMENT),
+    goToTrackSubmission: () => setLocation(ROUTES.TRACK_SUBMISSION),
+    
+    // Admin navigations
+    goToAdmin: () => setLocation(ROUTES.ADMIN),
+    goToAdminProducts: () => setLocation(routes.adminTab('products')),
+    goToAdminCategories: () => setLocation(routes.adminTab('categories')),
+    goToAdminUsers: () => setLocation(routes.adminTab('users')),
+    goToAdminSubmissions: () => setLocation(routes.adminTab('submissions')),
+    goToAdminAnalytics: () => setLocation(routes.adminTab('analytics')),
+    goToAdminWishlist: () => setLocation(routes.adminTab('wishlist')),
+    goToAdminSystem: () => setLocation(routes.adminTab('system')),
+    goToNewProduct: () => setLocation(ROUTES.ADMIN_PRODUCT_NEW),
+    goToEditProduct: (id: string) => setLocation(routes.adminProduct(id)),
+    
+    // Utility methods
     goBack: () => window.history.back(),
-    
-    // Common page navigations
-    goToHome: () => setLocation("/"),
-    goToProducts: () => setLocation("/products"),
-    goToProduct: (id: string) => setLocation(`/products/${id}`),
-    goToCart: () => setLocation("/cart"),
-    goToCheckout: () => setLocation("/checkout"),
-    goToDashboard: () => setLocation("/dashboard"),
-    goToSubmit: () => setLocation("/submit"),
-    goToAdmin: () => setLocation("/admin"),
-    goToContact: () => setLocation("/contact"),
-    goToAbout: () => setLocation("/about"),
-    
-    // Admin specific navigations
-    goToAdminProducts: () => setLocation("/admin?tab=products"),
-    goToAdminUsers: () => setLocation("/admin?tab=users"),
-    goToAdminAnalytics: () => setLocation("/admin?tab=analytics"),
-    goToAdminCategories: () => setLocation("/admin?tab=categories"),
-    goToAdminSubmissions: () => setLocation("/admin?tab=submissions"),
-    
-    // Product form navigations
-    goToNewProduct: () => setLocation("/admin/products/new"),
-    goToEditProduct: (id: string) => setLocation(`/admin/products/edit/${id}`),
-    
-    // Utility functions
     refresh: () => window.location.reload(),
+    
+    // Helper for checking admin routes
+    isAdminRoute: () => location.startsWith('/admin'),
+    isUserRoute: () => ['/dashboard', '/orders'].some(route => location.startsWith(route)),
+    
+    // External links and utilities
     goToEmail: (email: string, subject?: string) => {
       const mailtoUrl = subject 
         ? `mailto:${email}?subject=${encodeURIComponent(subject)}`
@@ -81,6 +104,16 @@ export const useNavigation = () => {
       window.history.replaceState({}, '', `${window.location.pathname}?${searchParams.toString()}`);
     }
   };
+};
+
+// Export for non-hook usage (e.g., in services, utilities)
+export const navigation = {
+  navigate: (path: string) => {
+    window.location.href = path;
+  },
+  goToRoute: (route: string) => {
+    window.location.href = route;
+  },
 };
 
 export default useNavigation;

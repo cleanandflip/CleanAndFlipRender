@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "@/hooks/use-cart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, X } from "lucide-react";
+import { ROUTES, routes } from "@/config/routes";
 
 interface CartDrawerProps {
   isOpen?: boolean;
@@ -86,7 +87,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   <p className="text-text-secondary text-sm mb-6">
                     Start shopping to add items to your cart.
                   </p>
-                  <Link href="/products">
+                  <Link href={ROUTES.PRODUCTS}>
                     <Button 
                       className="bg-accent-blue hover:bg-blue-500"
                       onClick={() => handleOpenChange(false)}
@@ -105,7 +106,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       <div key={item.id} className="bg-card rounded-lg p-4">
                         <div className="flex gap-3">
                           {/* Product Image */}
-                          <Link href={`/products/${item.product.id}`}>
+                          <Link href={routes.productDetail(item.product.id)}>
                             <img
                               src={item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100"}
                               alt={item.product.name}
@@ -118,7 +119,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start mb-2">
                               <div className="flex-1 min-w-0">
-                                <Link href={`/products/${item.product.id}`}>
+                                <Link href={routes.productDetail(item.product.id)}>
                                   <h4 
                                     className="font-medium text-sm hover:text-accent-blue transition-colors cursor-pointer line-clamp-2"
                                     onClick={() => handleOpenChange(false)}
@@ -227,7 +228,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
                   {/* Action Buttons */}
                   <div className="space-y-3">
-                    <Link href="/cart">
+                    <Link href={ROUTES.CART}>
                       <Button 
                         variant="outline" 
                         className="w-full bg-card border-bg-card-border"
@@ -237,7 +238,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       </Button>
                     </Link>
                     
-                    <Link href="/checkout">
+                    <Link href={ROUTES.CHECKOUT}>
                       <Button 
                         className="w-full bg-accent-blue hover:bg-blue-500 text-primary"
                         onClick={() => handleOpenChange(false)}
