@@ -96,31 +96,6 @@ html {
     background-attachment: fixed;
     min-height: 100vh;
   }
-
-  /* Ultra-subtle hexagon texture - barely visible */
-  .subtle-hex-texture {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-  }
-
-  .subtle-hex-texture::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: 
-      url("data:image/svg+xml,%3Csvg width='240' height='208' viewBox='0 0 240 208' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='120,4 206,54 206,154 120,204 34,154 34,54' fill='none' stroke='rgba(255,255,255,0.015)' stroke-width='0.8'/%3E%3C/svg%3E");
-    background-size: 240px 208px;
-    opacity: 0.3;
-    filter: blur(0.5px);
-  }
-
-  /* Ensure all content stays above hexagon overlay */
-  #root > * {
-    position: relative;
-    z-index: 10;
-  }
 }
 
 @layer components {
@@ -139,17 +114,6 @@ html {
     background: hsla(222, 84%, 5%, 0.6);
     border-color: hsla(210, 40%, 98%, 0.12);
     @apply transform -translate-y-0.5;
-  }
-
-  /* Subtle gym lighting effect for atmosphere - no animation */
-  .gym-lighting {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    mix-blend-mode: overlay;
-    background: radial-gradient(ellipse 600px 200px at 50% 0%, rgba(255,255,255,0.02) 0%, transparent 30%);
-    opacity: 0.3;
   }
 
   /* Logo styling with enhanced glow effects */

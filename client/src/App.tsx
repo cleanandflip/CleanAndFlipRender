@@ -67,9 +67,6 @@ function Router() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
-        {/* Ultra-subtle hexagon texture */}
-        <div className="subtle-hex-texture" />
-        
         <Navigation />
         <CartDrawer />
         <ScrollRestoration />
