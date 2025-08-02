@@ -1,0 +1,208 @@
+Static Masculine Gym Background Instructions for Replit
+1. STATIC HEXAGON BASE (No Animation)
+css/* Static hex pattern - like rubber gym flooring */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg width='120' height='104' viewBox='0 0 120 104' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='60,2 102,26 102,78 60,102 18,78 18,26' fill='rgba(0,0,0,0.3)' stroke='rgba(255,255,255,0.03)' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-size: 120px 104px;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.6;
+}
+2. SUBTLE AMBIENT LIGHTING EFFECT
+css/* Gym lighting atmosphere - moves, not hexagons */
+.gym-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: 
+    /* Overhead light effect */
+    radial-gradient(ellipse 800px 400px at 50% 0%, rgba(255,255,255,0.02) 0%, transparent 40%),
+    /* Corner spotlights */
+    radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 30%),
+    radial-gradient(circle at 90% 80%, rgba(239, 68, 68, 0.02) 0%, transparent 30%);
+  animation: lightingShift 20s ease-in-out infinite;
+}
+
+@keyframes lightingShift {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; filter: brightness(1.1); }
+}
+3. INDUSTRIAL METAL TEXTURE
+css/* Brushed steel effect overlay */
+.metal-texture {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: 
+    /* Horizontal brush strokes */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.015) 2px,
+      rgba(255,255,255,0.015) 4px
+    ),
+    /* Vertical subtle lines */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 50px,
+      rgba(255,255,255,0.01) 50px,
+      rgba(255,255,255,0.01) 51px
+    );
+  opacity: 0.7;
+}
+4. COMPLETE MASCULINE GYM THEME
+css/* Base gradient - dark and industrial */
+body {
+  background: 
+    /* Very subtle red accent in corner */
+    radial-gradient(circle at 95% 95%, rgba(220, 38, 38, 0.05) 0%, transparent 25%),
+    /* Main gradient */
+    linear-gradient(180deg, 
+      #0a0a0a 0%,      /* Almost black */
+      #0f1419 30%,     /* Dark blue-gray */
+      #111827 70%,     /* Slightly lighter */
+      #0a0a0a 100%     /* Back to almost black */
+    );
+  background-attachment: fixed;
+}
+
+/* Static hexagon floor pattern */
+.gym-floor {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.gym-floor::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg width='140' height='121' viewBox='0 0 140 121' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='70,3 117,30.5 117,90.5 70,118 23,90.5 23,30.5' fill='rgba(0,0,0,0.4)' stroke='rgba(255,255,255,0.025)' stroke-width='2'/%3E%3Cpolygon points='70,10 110,33.5 110,87.5 70,111 30,87.5 30,33.5' fill='none' stroke='rgba(59,130,246,0.02)' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 140px 121px;
+  opacity: 0.8;
+}
+
+/* Weight room atmosphere - subtle movement */
+.gym-floor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    /* Breathing light effect */
+    radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.2) 100%);
+  animation: ambientPulse 10s ease-in-out infinite;
+}
+
+@keyframes ambientPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+5. SUBTLE SCAN LINE EFFECT (Like Old Gym TVs)
+css/* Very subtle scan lines */
+.scan-effect {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(255,255,255,0.008) 3px,
+      rgba(255,255,255,0.008) 4px
+    );
+  animation: scanMove 8s linear infinite;
+}
+
+@keyframes scanMove {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(4px); }
+}
+6. IMPLEMENT IN APP.TSX
+jsxfunction App() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-gray-950 to-black">
+      {/* Static gym floor hexagons */}
+      <div className="gym-floor" />
+      
+      {/* Ambient lighting */}
+      <div className="gym-atmosphere" />
+      
+      {/* Metal texture */}
+      <div className="metal-texture" />
+      
+      {/* Optional: scan effect */}
+      <div className="scan-effect" />
+      
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Your routes */}
+      </div>
+    </div>
+  );
+}
+7. ALTERNATIVE: MINIMALIST VERSION
+css/* Simpler, cleaner approach */
+body {
+  background: #0a0a0a;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: 
+    /* Static hex pattern */
+    url("data:image/svg+xml,%3Csvg width='100' height='87' viewBox='0 0 100 87' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='50,1 95,25 95,62 50,86 5,62 5,25' fill='none' stroke='rgba(255,255,255,0.02)' stroke-width='1' stroke-dasharray='5,5'/%3E%3C/svg%3E"),
+    /* Subtle gradient overlay */
+    linear-gradient(180deg, transparent 0%, rgba(59,130,246,0.02) 100%);
+  background-size: 100px 87px, 100% 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Single ambient effect */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.4) 100%);
+  z-index: 2;
+  pointer-events: none;
+  animation: gentlePulse 12s ease-in-out infinite;
+}
+
+@keyframes gentlePulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.7; }
+}
+8. COLOR ADJUSTMENTS FOR MASCULINE FEEL
+css:root {
+  --gym-black: #0a0a0a;
+  --gym-steel: #1a1f2e;
+  --gym-accent: #3b82f6; /* Blue for primary */
+  --gym-danger: #dc2626; /* Red for accents */
+  --gym-hex: rgba(255,255,255,0.02);
+}
+This design features:
+
+Static hexagons - no distracting movement
+Subtle ambient effects - only lighting/atmosphere moves
+Masculine palette - blacks, dark grays, minimal color
+Industrial gym feel - metal textures, minimal design
+Easy on eyes - very low contrast patterns
+Performance optimized - minimal animations
+
+The hexagons stay perfectly still like real gym flooring, while subtle lighting effects create the "alive" feeling without distraction.

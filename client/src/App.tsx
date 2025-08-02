@@ -66,42 +66,49 @@ function ScrollRestoration() {
 function Router() {
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
-        <Navigation />
-        <CartDrawer />
-        <ScrollRestoration />
-        <main className="flex-1">
-          <Switch>
-            {/* Public Routes */}
-            <Route path={ROUTES.HOME} component={Home} />
-            <Route path={ROUTES.PRODUCTS} component={Products} />
-            <Route path={ROUTES.PRODUCT_DETAIL} component={ProductDetail} />
-            <Route path={ROUTES.ABOUT} component={About} />
-            <Route path={ROUTES.CONTACT} component={Contact} />
-            
-            {/* Shopping Routes */}
-            <Route path={ROUTES.CART} component={Cart} />
-            <Route path={ROUTES.CHECKOUT} component={Checkout} />
-            
-            {/* Auth Routes */}
-            <Route path={ROUTES.LOGIN} component={AuthPage} />
-            
-            {/* User Routes */}
-            <Route path={ROUTES.DASHBOARD} component={Dashboard} />
-            <Route path={ROUTES.ORDERS} component={Orders} />
-            <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />
-            <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
-            
-            {/* Admin Routes */}
-            <Route path={ROUTES.ADMIN} component={AdminDashboard} />
-            <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
-            <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
-            
-            {/* 404 */}
-            <Route component={NotFound} />
-          </Switch>
-        </main>
-        <Footer />
+      <div className="min-h-screen flex flex-col">
+        {/* Gym atmosphere layers */}
+        <div className="gym-atmosphere" />
+        <div className="metal-texture" />
+        
+        {/* App content with proper z-index */}
+        <div className="relative z-10 min-h-screen flex flex-col">
+          <Navigation />
+          <CartDrawer />
+          <ScrollRestoration />
+          <main className="flex-1">
+            <Switch>
+              {/* Public Routes */}
+              <Route path={ROUTES.HOME} component={Home} />
+              <Route path={ROUTES.PRODUCTS} component={Products} />
+              <Route path={ROUTES.PRODUCT_DETAIL} component={ProductDetail} />
+              <Route path={ROUTES.ABOUT} component={About} />
+              <Route path={ROUTES.CONTACT} component={Contact} />
+              
+              {/* Shopping Routes */}
+              <Route path={ROUTES.CART} component={Cart} />
+              <Route path={ROUTES.CHECKOUT} component={Checkout} />
+              
+              {/* Auth Routes */}
+              <Route path={ROUTES.LOGIN} component={AuthPage} />
+              
+              {/* User Routes */}
+              <Route path={ROUTES.DASHBOARD} component={Dashboard} />
+              <Route path={ROUTES.ORDERS} component={Orders} />
+              <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />
+              <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
+              
+              {/* Admin Routes */}
+              <Route path={ROUTES.ADMIN} component={AdminDashboard} />
+              <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
+              <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
+              
+              {/* 404 */}
+              <Route component={NotFound} />
+            </Switch>
+          </main>
+          <Footer />
+        </div>
       </div>
     </ErrorBoundary>
   );
