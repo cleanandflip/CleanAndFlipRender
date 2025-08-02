@@ -192,8 +192,10 @@ export default function AddressAutocomplete({
           placeholder={placeholder}
           required={required}
           className={cn(
-            // Complete text visibility overhaul - high contrast address input
-            "w-full px-4 py-3 text-white text-lg bg-gray-800/50 border-2 border-gray-400 rounded-lg placeholder:text-gray-300 placeholder:text-base focus:border-white focus:bg-gray-800 hover:border-gray-300 transition-all font-medium shadow-lg",
+            "w-full px-3 py-3 bg-gray-800 border border-gray-700",
+            "text-white placeholder-gray-500 rounded-lg",
+            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+            "transition-all duration-200",
             className
           )}
           autoComplete="off"

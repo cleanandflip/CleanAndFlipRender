@@ -249,12 +249,12 @@ export default function SellToUs() {
 
         {/* Submission Form */}
         <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 form-container">
+          <div className="lg:col-span-2">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Equipment Details */}
-                <div className="form-section">
-                  <h2 className="section-header">EQUIPMENT DETAILS</h2>
+                <Card className="p-6">
+                  <h3 className="font-bebas text-2xl mb-6">EQUIPMENT DETAILS</h3>
                   
                   <div className="grid md:grid-cols-2 gap-4">
                     <FormField
@@ -361,7 +361,7 @@ export default function SellToUs() {
                             onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
-                        <p className="helper-text">
+                        <p className="text-sm text-text-muted mt-1">
                           This helps us make a fair offer, but we'll evaluate based on condition and market value.
                         </p>
                         <FormMessage />
@@ -387,38 +387,38 @@ export default function SellToUs() {
                       </FormItem>
                     )}
                   />
-                </div>
+                </Card>
 
                 {/* Photo Upload */}
-                <div className="form-section">
-                  <h2 className="section-header">PHOTOS</h2>
-                  <p className="helper-text mb-6">
+                <Card className="p-6">
+                  <h3 className="font-bebas text-2xl mb-4">PHOTOS</h3>
+                  <p className="text-text-secondary mb-6">
                     Upload clear photos showing the equipment from multiple angles. 
                     Include any wear, damage, or unique features.
                   </p>
                   
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-                    <Upload className="mx-auto mb-4 text-white" size={48} />
-                    <h4 className="text-white text-lg font-semibold mb-2">Upload Photos</h4>
-                    <p className="text-gray-200 text-base leading-relaxed mb-4">
+                    <Upload className="mx-auto mb-4 text-text-muted" size={48} />
+                    <h4 className="font-semibold mb-2">Upload Photos</h4>
+                    <p className="text-text-muted mb-4">
                       Drag and drop photos here, or click to select
                     </p>
-                    <Button variant="outline" className="bg-gray-700 text-white border-2 border-gray-400 hover:bg-gray-600">
+                    <Button variant="outline" className="glass border-border">
                       Choose Files
                     </Button>
                   </div>
                   
-                  <div className="mt-4 text-gray-200 text-base leading-relaxed">
+                  <div className="mt-4 text-sm text-text-muted">
                     <p>• Upload 3-8 photos for best results</p>
                     <p>• Show front, back, and detail views</p>
                     <p>• Highlight any wear or damage</p>
                   </div>
-                </div>
+                </Card>
 
                 <Button 
                   type="submit" 
                   disabled={submitMutation.isPending}
-                  className="btn-primary w-full"
+                  className="w-full bg-success hover:bg-green-600 text-white py-3"
                 >
                   {submitMutation.isPending ? "Submitting..." : "Submit for Review"}
                 </Button>

@@ -86,11 +86,10 @@ export function UnifiedDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          // Complete text visibility overhaul - high contrast dropdown
-          "w-full px-4 py-3 bg-gray-800/50 border-2 border-gray-400 rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group text-white text-lg font-medium shadow-lg",
+          "w-full px-4 py-3 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group",
           disabled 
             ? "cursor-not-allowed opacity-50" 
-            : "hover:border-gray-300 focus:border-white cursor-pointer"
+            : "hover:border-gray-600 focus:border-gray-500 cursor-pointer"
         )}
       >
         {searchable && isOpen ? (
@@ -99,7 +98,7 @@ export function UnifiedDropdown({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={placeholder}
-            className="bg-transparent outline-none flex-1 placeholder-gray-300 text-white text-lg font-medium"
+            className="bg-transparent outline-none flex-1 placeholder-gray-500 text-white"
             onClick={(e) => e.stopPropagation()}
             autoFocus
           />
