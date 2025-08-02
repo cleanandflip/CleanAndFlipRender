@@ -831,3 +831,41 @@ form [class*="gray-6"],
 form [class*="gray-7"] {
   color: #d1d5db !important; /* gray-300 */
 }
+
+/* ==========================================
+   ADVANCED SEARCH SYSTEM Z-INDEX FIXES
+   ========================================== */
+
+/* Advanced SearchBar dropdown positioning */
+.search-container {
+  position: relative;
+  z-index: 1;
+}
+
+.search-container .absolute {
+  z-index: 9999 !important;
+  position: absolute !important;
+}
+
+/* Ensure search dropdown appears above all cards and components */
+.search-container [data-radix-popper-content-wrapper],
+.search-container [data-radix-portal],
+.search-dropdown-overlay {
+  z-index: 9999 !important;
+}
+
+/* Fix for any card overlapping issues */
+.card {
+  position: relative;
+  z-index: 1;
+}
+
+.search-container:focus-within {
+  z-index: 9999;
+}
+
+/* Search dropdown specific styling */
+.search-dropdown-portal {
+  z-index: 9999 !important;
+  position: fixed;
+}
