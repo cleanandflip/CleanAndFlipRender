@@ -338,6 +338,82 @@ html {
     color: white !important;
   }
 
+  /* Search Dropdown Z-Index Fix */
+  .search-dropdown,
+  [class*="search"] .absolute,
+  div[class*="absolute"][class*="mt-2"] {
+    z-index: 9999 !important;
+    position: absolute !important;
+  }
+
+  /* Specific fix for SearchBar dropdown */
+  .relative:has(> form):has(input[placeholder*="Search"]) .absolute {
+    z-index: 9999 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* Enhanced dropdown Card styling */
+  .relative:has(> form) > .absolute.card,
+  .relative:has(> form) > div[class*="card"] {
+    z-index: 9999 !important;
+    background: rgba(24, 29, 37, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(75, 85, 99, 0.5) !important;
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.8),
+      0 0 0 1px rgba(75, 85, 99, 0.3) !important;
+    animation: dropdownSlide 0.2s ease-out;
+  }
+
+  @keyframes dropdownSlide {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Prevent parent overflow clipping */
+  main,
+  section,
+  .products-container,
+  .search-container,
+  [class*="container"]:has(input[type="search"]),
+  [class*="container"]:has(input[placeholder*="Search"]) {
+    overflow: visible !important;
+  }
+
+  .relative:has(> form):has(input[placeholder*="Search"]) {
+    overflow: visible !important;
+    z-index: 1000 !important;
+  }
+
+  /* Ensure product cards don't interfere */
+  .products-grid,
+  .product-card,
+  [class*="grid"] > div {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Custom z-index utilities */
+  @layer utilities {
+    .z-dropdown {
+      z-index: 9999 !important;
+    }
+    
+    .z-above-all {
+      z-index: 10000 !important;
+    }
+  }
+
   /* Remove all possible gray placeholder classes */
   .placeholder-gray-400::placeholder,
   .placeholder-gray-500::placeholder,
