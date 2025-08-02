@@ -132,7 +132,7 @@ export function UnifiedDropdown({
           />
           
           {/* Menu */}
-          <div className="absolute z-dropdown w-full mt-2 py-1 bg-popover backdrop-blur-md border border-input rounded-lg shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+          <div className="absolute z-[9999] w-full mt-2 py-1 bg-popover backdrop-blur-md border border-input rounded-lg shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <button

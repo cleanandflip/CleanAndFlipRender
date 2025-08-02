@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,7 +25,6 @@ export default function SearchBar({
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
   // Popular search terms
   const popularSearches = [
@@ -52,18 +50,6 @@ export default function SearchBar({
     }
   }, []);
 
-  // Update dropdown position
-  const updateDropdownPosition = () => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.left + window.scrollX,
-        width: rect.width
-      });
-    }
-  };
-
   // Handle input changes
   const handleInputChange = (newValue: string) => {
     setInputValue(newValue);
@@ -76,12 +62,9 @@ export default function SearchBar({
       );
       setSuggestions(filtered.slice(0, 6));
       setIsOpen(true);
-      updateDropdownPosition();
     } else {
       setSuggestions([]);
-      const shouldOpen = newValue.length === 0;
-      setIsOpen(shouldOpen);
-      if (shouldOpen) updateDropdownPosition();
+      setIsOpen(newValue.length === 0); // Show history when empty
     }
   };
 
@@ -122,7 +105,7 @@ export default function SearchBar({
     inputRef.current?.focus();
   };
 
-  // Handle click outside and position updates
+  // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -130,31 +113,12 @@ export default function SearchBar({
       }
     };
 
-    const handleScroll = () => {
-      if (isOpen) {
-        updateDropdownPosition();
-      }
-    };
-
-    const handleResize = () => {
-      if (isOpen) {
-        updateDropdownPosition();
-      }
-    };
-
     document.addEventListener("mousedown", handleClickOutside);
-    window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleResize);
-    
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [isOpen]);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative search-container ${className}`}>
       <form onSubmit={handleFormSubmit} className="relative">
         <div className="flex items-center bg-card rounded-lg px-4 py-2">
           <Search className="text-gray-400 mr-3 flex-shrink-0" size={18} />
@@ -163,10 +127,7 @@ export default function SearchBar({
             type="text"
             value={inputValue}
             onChange={(e) => handleInputChange(e.target.value)}
-            onFocus={() => {
-              setIsOpen(true);
-              updateDropdownPosition();
-            }}
+            onFocus={() => setIsOpen(true)}
             placeholder={placeholder}
             className="bg-transparent border-none outline-none flex-1 text-white placeholder-gray-400 p-0 h-auto focus-visible:ring-0"
           />
@@ -184,18 +145,9 @@ export default function SearchBar({
         </div>
       </form>
 
-      {/* Search Suggestions Dropdown - Portal rendered */}
-      {isOpen && typeof document !== 'undefined' && document.body && createPortal(
-        <div 
-          className="fixed p-4 max-h-80 overflow-y-auto bg-card backdrop-blur-md border border-input rounded-lg shadow-2xl"
-          style={{ 
-            zIndex: 999999,
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            width: dropdownPosition.width,
-            position: 'fixed'
-          }}
-        >
+      {/* Search Suggestions Dropdown */}
+      {isOpen && (
+        <Card className="absolute top-full left-0 right-0 mt-2 p-4 z-dropdown max-h-80 overflow-y-auto search-results-dropdown">
           {inputValue.length >= 2 ? (
             // Show suggestions when typing
             <div>
@@ -268,8 +220,7 @@ export default function SearchBar({
               </div>
             </div>
           )}
-        </div>,
-        document.body
+        </Card>
       )}
     </div>
   );

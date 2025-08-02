@@ -356,150 +356,6 @@ html {
   /* Ensure all dropdowns appear above other content */
   [role="listbox"],
   [role="menu"],
-  [role="combobox"] [role="listbox"],
-  [aria-expanded="true"] + *,
-  [data-radix-popper-content-wrapper],
-  [data-radix-select-content],
-  [data-radix-dropdown-menu-content],
-  [data-radix-popover-content],
-  [data-headlessui-portal],
-  .dropdown-menu,
-  .dropdown-content,
-  .search-results,
-  .search-dropdown,
-  .search-suggestions,
-  .autocomplete-results,
-  .suggestions,
-  [class*="dropdown-content"],
-  [class*="menu-content"],
-  [class*="popover"],
-  [class*="search-results"],
-  [class*="suggestions"] {
-    z-index: var(--z-dropdown-menu) !important;
-    position: absolute !important;
-  }
-
-  /* Portal and floating elements */
-  [data-floating-ui-portal],
-  [data-radix-portal],
-  .portal,
-  #portal-root {
-    z-index: var(--z-maximum) !important;
-  }
-
-  /* Search dropdown specific styling */
-  .search-container {
-    position: relative !important;
-    z-index: var(--z-dropdown) !important;
-  }
-
-  /* Force search dropdown above product cards */
-  .search-dropdown,
-  .search-suggestions,
-  [class*="search"] .card,
-  [class*="search"] [class*="dropdown"] {
-    z-index: 99999 !important;
-    position: absolute !important;
-  }
-
-  /* Prevent product grid from creating stacking context */
-  .product-grid,
-  .product-card,
-  [class*="product-grid"],
-  [class*="product-card"] {
-    z-index: auto !important;
-    isolation: auto !important;
-    transform: none !important;
-  }
-
-  /* Prevent parent containers from creating new stacking contexts */
-  .search-wrapper,
-  .dropdown-wrapper,
-  form,
-  main {
-    isolation: auto !important;
-    transform: none !important;
-    filter: none !important;
-  }
-
-  /* Ensure parent containers don't hide dropdowns */
-  .search-container,
-  .dropdown-container,
-  .form-group,
-  .input-wrapper {
-    overflow: visible !important;
-  }
-
-  /* Allow scrolling within dropdowns while maintaining z-index */
-  .dropdown-menu,
-  .search-results,
-  [role="listbox"],
-  [class*="dropdown-content"],
-  [class*="menu-content"] {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    max-height: min(400px, 80vh) !important;
-    scrollbar-width: thin !important;
-    scrollbar-color: rgba(107, 114, 128, 0.8) transparent !important;
-  }
-
-  /* Webkit scrollbar styling for dropdowns */
-  .dropdown-menu::-webkit-scrollbar,
-  .search-results::-webkit-scrollbar,
-  [role="listbox"]::-webkit-scrollbar,
-  [class*="dropdown-content"]::-webkit-scrollbar {
-    width: 6px !important;
-  }
-
-  .dropdown-menu::-webkit-scrollbar-track,
-  .search-results::-webkit-scrollbar-track,
-  [role="listbox"]::-webkit-scrollbar-track,
-  [class*="dropdown-content"]::-webkit-scrollbar-track {
-    background: transparent !important;
-  }
-
-  .dropdown-menu::-webkit-scrollbar-thumb,
-  .search-results::-webkit-scrollbar-thumb,
-  [role="listbox"]::-webkit-scrollbar-thumb,
-  [class*="dropdown-content"]::-webkit-scrollbar-thumb {
-    background: rgba(107, 114, 128, 0.8) !important;
-    border-radius: 3px !important;
-  }
-
-  .dropdown-menu::-webkit-scrollbar-thumb:hover,
-  .search-results::-webkit-scrollbar-thumb:hover,
-  [role="listbox"]::-webkit-scrollbar-thumb:hover,
-  [class*="dropdown-content"]::-webkit-scrollbar-thumb:hover {
-    background: rgba(107, 114, 128, 1) !important;
-  }
-
-  /* Utility classes */
-  .z-dropdown {
-    z-index: var(--z-dropdown-menu) !important;
-  }
-
-  .z-above-all {
-    z-index: var(--z-maximum) !important;
-  }
-
-  /* Global Z-Index Hierarchy for Dropdowns and Floating Elements */
-  :root {
-    --z-base: 1;
-    --z-dropdown: 1000;
-    --z-sticky: 2000;
-    --z-fixed: 3000;
-    --z-modal-backdrop: 4000;
-    --z-modal: 5000;
-    --z-popover: 6000;
-    --z-tooltip: 7000;
-    --z-notification: 8000;
-    --z-dropdown-menu: 9999;
-    --z-maximum: 10000;
-  }
-
-  /* Ensure all dropdowns appear above other content */
-  [role="listbox"],
-  [role="menu"],
   [role="combobox"],
   [aria-expanded="true"] + *,
   [data-radix-popper-content-wrapper],
@@ -583,6 +439,71 @@ html {
     overflow-y: auto !important;
     overflow-x: hidden !important;
     max-height: min(400px, 80vh) !important;
+  }
+
+  /* Nuclear option - force all dropdowns above everything */
+  [aria-expanded="true"] + *,
+  [data-state="open"],
+  div[style*="position: absolute"],
+  div[style*="position: fixed"] {
+    z-index: var(--z-dropdown-menu) !important;
+  }
+
+  /* Recent searches dropdown specifically */
+  [class*="recent-searches"],
+  div:has(> button:contains("Recent Searches")) + *,
+  .search-suggestions,
+  .recent-searches-dropdown {
+    z-index: var(--z-dropdown-menu) !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  /* Ensure portals render at body level */
+  body > [data-portal],
+  body > [class*="portal"],
+  body > .dropdown-portal {
+    position: fixed !important;
+    z-index: var(--z-maximum) !important;
+    pointer-events: none !important;
+  }
+
+  body > [data-portal] > *,
+  body > [class*="portal"] > *,
+  body > .dropdown-portal > * {
+    pointer-events: auto !important;
+  }
+
+  /* Force specific positioning for search dropdowns */
+  .search-input + *,
+  input[type="search"] + *,
+  [placeholder*="Search"] + *,
+  [placeholder*="search"] + *,
+  .search-results-dropdown,
+  .search-container .card {
+    z-index: var(--z-dropdown-menu) !important;
+    position: absolute !important;
+  }
+
+  /* Additional specific targeting for search dropdowns */
+  .search-container > form + *,
+  .search-container [class*="card"],
+  div[class*="search"] div[class*="card"] {
+    z-index: var(--z-dropdown-menu) !important;
+  }
+
+  /* Direct targeting for search results dropdown card */
+  .search-results-dropdown {
+    z-index: var(--z-dropdown-menu) !important;
+    position: absolute !important;
+    background: rgba(31, 41, 55, 0.95) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(156, 163, 175, 0.3) !important;
+    box-shadow: 
+      0 20px 25px -5px rgba(0, 0, 0, 0.5),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
   }
 
   /* Utility classes */
@@ -1058,12 +979,4 @@ form [class*="gray-5"],
 form [class*="gray-6"],
 form [class*="gray-7"] {
   color: #d1d5db !important; /* gray-300 */
-}
-
-/* Additional Card component z-index fixes to prevent dropdown interference */
-.card,
-[class*="card"],
-.bg-card {
-  z-index: auto !important;
-  isolation: auto !important;
 }
