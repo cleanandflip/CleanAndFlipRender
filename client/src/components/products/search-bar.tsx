@@ -110,6 +110,9 @@ export default function SearchBar({
   // Update dropdown position when opened
   useEffect(() => {
     if (isOpen && inputRef.current) {
+      // Prevent scrollbar flicker by maintaining consistent overflow
+      document.documentElement.classList.add('dropdown-open');
+      
       const updatePosition = () => {
         const rect = inputRef.current?.getBoundingClientRect();
         if (rect) {
@@ -128,7 +131,10 @@ export default function SearchBar({
       return () => {
         window.removeEventListener('scroll', updatePosition);
         window.removeEventListener('resize', updatePosition);
+        document.documentElement.classList.remove('dropdown-open');
       };
+    } else {
+      document.documentElement.classList.remove('dropdown-open');
     }
   }, [isOpen]);
 
@@ -181,10 +187,11 @@ export default function SearchBar({
             left: `${dropdownPosition.left}px`,
             width: `${dropdownPosition.width}px`,
             zIndex: 9999,
-            maxHeight: '320px'
+            maxHeight: '320px',
+            pointerEvents: 'auto'
           }}
         >
-          <Card className="p-4 max-h-80 overflow-y-auto shadow-2xl bg-gray-900/98 backdrop-blur-xl border-gray-700/50">
+          <Card className="search-dropdown-portal p-4 max-h-80 overflow-y-auto shadow-2xl bg-gray-900/98 backdrop-blur-xl border-gray-700/50">
             {inputValue.length >= 2 ? (
               // Show suggestions when typing
               <div>

@@ -8,6 +8,24 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Prevent scrollbar flicker during dropdowns */
+html.dropdown-open {
+  overflow-y: scroll !important;
+}
+
+body {
+  overflow-x: hidden;
+  /* Maintain consistent scrollbar space */
+  scrollbar-gutter: stable;
+}
+
+/* Smooth dropdown animations without layout shift */
+.search-dropdown-portal {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
 :root {
   /* Global Design System Colors - Clean & Flip */
   --background: #1A1F2E;                   /* Primary background */
