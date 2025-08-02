@@ -350,7 +350,7 @@ export default function Products() {
         </div>
 
         {/* Search and Controls */}
-        <Card className="p-6 mb-8">
+        <Card className="p-6 mb-8 w-full">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 max-w-md">
               <SearchBar 
@@ -458,8 +458,8 @@ export default function Products() {
             </div>
           </div>
 
-          {/* Products Grid */}
-          <div className="flex-1">
+          {/* Products Grid - Aligned with search card */}
+          <div className={`flex-1 ${showFilters ? '' : 'max-w-none'}`}>
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
