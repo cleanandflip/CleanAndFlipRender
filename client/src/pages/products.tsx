@@ -10,7 +10,7 @@ import SearchBar from "@/components/products/search-bar";
 import FilterChip from "@/components/products/filter-chip";
 import { Button, Card } from "@/components/shared/AnimatedComponents";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Filter, Grid, List } from "lucide-react";
+import { Filter, Grid, List, Search, X } from "lucide-react";
 import { ApiError } from "@/components/error-boundary";
 import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import type { Product } from "@shared/schema";
@@ -354,13 +354,27 @@ export default function Products() {
         {/* Search and Controls */}
         <Card className="p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex-1 max-w-md">
-              <SearchBar 
-                value={filters.search || ''} 
-                onChange={handleSearchChange}
-                onSearch={handleSearchChange}
-                placeholder="Search equipment..."
-              />
+            <div className="flex-1 max-w-lg">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" size={20} />
+                <input
+                  type="text"
+                  value={filters.search || ''}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Search equipment..."
+                  className="w-full bg-card text-white placeholder-white/60 rounded-lg pl-12 pr-12 py-3 border border-white/10 transition-colors focus:border-primary/50 hover:border-white/20 focus:outline-none focus:ring-0 text-base"
+                />
+                {filters.search && (
+                  <button
+                    type="button"
+                    onClick={() => handleSearchChange('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1.5 hover:bg-white/10 rounded-full transition-colors z-10"
+                    title="Clear search"
+                  >
+                    <X size={18} className="text-gray-400 hover:text-white transition-colors" />
+                  </button>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center gap-4">
