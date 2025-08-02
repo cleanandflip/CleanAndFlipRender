@@ -127,6 +127,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
   );
 });
 
+Input.displayName = "Input";
+
 // Toggle Component
 interface ToggleProps {
   checked: boolean;
