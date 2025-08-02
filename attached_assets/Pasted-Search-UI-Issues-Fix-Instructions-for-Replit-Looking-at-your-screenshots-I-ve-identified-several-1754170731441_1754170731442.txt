@@ -1,0 +1,199 @@
+Search UI Issues Fix - Instructions for Replit
+Looking at your screenshots, I've identified several UI issues that need fixing:
+1. DROPDOWN CUTOFF ISSUE - CRITICAL FIX
+The dropdown is being cut off at the bottom. Fix the overflow and height:
+css/* Remove overflow hidden from parent containers */
+.search-container,
+.card:has(.search-container),
+[class*="card"]:has(input[placeholder*="Search"]) {
+  overflow: visible !important;
+}
+
+/* Fix dropdown height and scrolling */
+.search-dropdown,
+.card:has(.search-section) {
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Ensure dropdown is above everything */
+.search-dropdown {
+  position: absolute !important;
+  z-index: 99999 !important;
+  margin-top: 0.5rem !important;
+}
+2. SEARCH BAR STYLING CONSISTENCY
+Fix the inconsistent blue border and styling:
+css/* Consistent search input styling */
+input[placeholder*="Search"] {
+  background: rgba(31, 41, 55, 0.6) !important;
+  border: 1px solid rgba(75, 85, 99, 0.4) !important;
+  color: white !important;
+  border-radius: 0.5rem !important;
+  padding: 0.75rem 1rem 0.75rem 2.5rem !important;
+  width: 100% !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Remove any blue focus borders */
+input[placeholder*="Search"]:focus {
+  outline: none !important;
+  border-color: rgba(107, 114, 128, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.15) !important;
+}
+3. DROPDOWN BACKGROUND & STYLING
+Make the dropdown match the theme better:
+css/* Dropdown container styling */
+.search-dropdown,
+.card:has(.search-section) {
+  background: rgba(24, 29, 37, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(75, 85, 99, 0.3) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.5),
+    0 10px 10px -5px rgba(0, 0, 0, 0.3) !important;
+  padding: 0 !important;
+}
+4. SECTION HEADERS STYLING
+Fix the "RECENT SEARCHES" and "POPULAR SEARCHES" headers:
+css/* Section headers */
+.search-section-header,
+div:has(> button):has(> svg) > div:first-child,
+.text-sm.font-medium.text-text-secondary {
+  background: rgba(31, 41, 55, 0.5) !important;
+  padding: 0.75rem 1rem !important;
+  margin: 0 !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: rgba(156, 163, 175, 0.9) !important;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3) !important;
+  font-weight: 600 !important;
+}
+5. SEARCH ITEMS PROPER SPACING
+Fix the search result items:
+css/* Search result items */
+.search-item,
+button:has(> svg):has(> span) {
+  padding: 0.75rem 1rem !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  transition: all 0.15s ease !important;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.1) !important;
+}
+
+.search-item:hover {
+  background: rgba(75, 85, 99, 0.3) !important;
+  padding-left: 1.25rem !important;
+}
+
+/* Remove last border */
+.search-section:last-child button:last-child {
+  border-bottom: none !important;
+}
+6. SCROLLBAR STYLING
+Style the scrollbar to match the dark theme:
+css/* Custom scrollbar for dropdown */
+.search-dropdown::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.search-dropdown::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.5) !important;
+}
+
+.search-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5) !important;
+  border-radius: 3px !important;
+}
+
+.search-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.7) !important;
+}
+7. BLUE ACCENT LINE FIX
+Remove or style the blue accent line properly:
+css/* Fix blue accent line */
+.search-item::before,
+button:has(> span.text-primary)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: #3b82f6;
+  transition: height 0.2s ease;
+}
+
+.search-item:hover::before {
+  height: 60%;
+}
+8. CONTAINER STRUCTURE FIX
+Fix the overall container structure:
+css/* Main search container */
+.search-wrapper {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 600px !important;
+}
+
+/* Inner card container */
+.search-wrapper > .card {
+  overflow: visible !important;
+  position: static !important;
+}
+
+/* Dropdown positioning */
+.search-dropdown {
+  position: absolute !important;
+  top: calc(100% + 0.5rem) !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+}
+9. ICON ALIGNMENT
+Fix icon alignment in search items:
+css/* Icons in search items */
+.search-item svg,
+button svg:first-child {
+  width: 16px !important;
+  height: 16px !important;
+  margin-right: 0.75rem !important;
+  color: rgba(156, 163, 175, 0.7) !important;
+  flex-shrink: 0 !important;
+}
+10. IMMEDIATE NUCLEAR FIX
+Add this to force everything to work:
+css/* Force dropdown visibility */
+div:has(input[placeholder*="Search"]) {
+  position: relative !important;
+  z-index: 9999 !important;
+}
+
+div:has(input[placeholder*="Search"]) .card {
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 99999 !important;
+  max-height: min(400px, 50vh) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Remove any clipping */
+* {
+  clip-path: none !important;
+}
+These fixes will:
+
+Prevent the dropdown from being cut off
+Create consistent styling across all states
+Match your dark theme perfectly
+Fix spacing and alignment issues
+Add smooth interactions
+Ensure the dropdown is always visible and properly positioned
