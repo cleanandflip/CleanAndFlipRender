@@ -18,12 +18,8 @@ import {
   Clock, 
   MessageSquare, 
   CheckCircle,
-  Send,
-  DollarSign,
-  ShoppingCart,
-  User
+  Send
 } from "lucide-react";
-import { Link } from "wouter";
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -447,51 +443,6 @@ export default function Contact() {
                     </p>
                   </div>
                 </div>
-              </div>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="p-6">
-              <h3 
-                className="font-bebas text-xl mb-6"
-                style={{ color: theme.colors.text.primary }}
-              >
-                QUICK ACTIONS
-              </h3>
-              
-              <div className="space-y-3">
-                <Button 
-                  variant="secondary" 
-                  className="w-full justify-start"
-                  asChild
-                >
-                  <Link href="/sell-to-us">
-                    <DollarSign className="mr-2" size={18} />
-                    Sell Equipment
-                  </Link>
-                </Button>
-                
-                <Button 
-                  variant="secondary" 
-                  className="w-full justify-start"
-                  asChild
-                >
-                  <Link href="/products">
-                    <ShoppingCart className="mr-2" size={18} />
-                    Browse Equipment
-                  </Link>
-                </Button>
-                
-                <Button 
-                  variant="secondary" 
-                  className="w-full justify-start"
-                  asChild
-                >
-                  <Link href="/dashboard">
-                    <User className="mr-2" size={18} />
-                    My Account
-                  </Link>
-                </Button>
               </div>
             </Card>
 
