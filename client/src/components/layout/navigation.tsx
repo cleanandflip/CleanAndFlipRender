@@ -241,7 +241,7 @@ export default function Navigation() {
               <Button
                 size="sm"
                 onClick={(e) => handleNavigation(ROUTES.LOGIN, e)}
-                className="bg-slate-600 hover:bg-slate-500 text-primary font-medium px-5 py-2 transition-colors whitespace-nowrap"
+                className="font-medium px-5 py-2 whitespace-nowrap"
               >
                 <LogIn className="mr-2 h-4 w-4" />
                 Sign In

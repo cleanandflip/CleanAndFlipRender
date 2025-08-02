@@ -23,8 +23,8 @@ html {
   --border: rgba(255, 255, 255, 0.08);     /* Subtle borders */
   --input: #1A1F2E;                        /* Input backgrounds */
   
-  /* Primary colors - Athletic silver/steel theme */
-  --primary: #64748B;                      /* Steel blue-gray */
+  /* Primary colors - Blue theme */
+  --primary: #3B82F6;                      /* Vibrant blue */
   --primary-foreground: #FFFFFF;
   
   /* Secondary colors */
@@ -53,7 +53,7 @@ html {
   --text-secondary: #E2E8F0;               /* Secondary text */
   --text-muted: #94A3B8;                   /* Muted text */
   --accent-steel: #64748B;                 /* Athletic steel */
-  --accent-blue: #64748B;                  /* Updated to steel for compatibility */
+  --accent-blue: #3B82F6;                  /* Vibrant blue */
   
   /* Additional theme variables for consistency */
   --bg-primary: hsl(222, 47%, 11%);        /* #1e293b */

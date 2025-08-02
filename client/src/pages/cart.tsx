@@ -263,7 +263,7 @@ function Cart() {
 
               {/* Checkout Button */}
               <Link href="/checkout">
-                <Button className="w-full mt-6 bg-accent-blue hover:bg-blue-500 text-white">
+                <Button className="w-full mt-6">
                   Proceed to Checkout
                   <ArrowRight className="ml-2" size={18} />
                 </Button>

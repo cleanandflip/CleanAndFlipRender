@@ -338,7 +338,7 @@ export function ProductsManager() {
       }
       actions={
         <Button 
-          className="gap-2 bg-accent-blue hover:bg-blue-600"
+          className="gap-2"
           onClick={() => setIsCreateModalOpen(true)}
         >
           <Plus className="w-4 h-4" />

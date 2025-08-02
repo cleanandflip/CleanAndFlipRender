@@ -551,7 +551,7 @@ export function ProductForm() {
           <Button
             type="submit"
             disabled={submitMutation.isPending}
-            className="bg-blue-600 hover:bg-blue-700"
+            className=""
           >
             {submitMutation.isPending ? 'Saving...' : (isEdit ? 'Update Product' : 'Create Product')}
           </Button>

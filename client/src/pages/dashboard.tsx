@@ -106,7 +106,7 @@ function AddressesSection() {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-bebas text-2xl">SAVED ADDRESSES</h2>
-        <Button className="bg-accent-blue hover:bg-blue-500">
+        <Button>
           Add New Address
         </Button>
       </div>
@@ -118,7 +118,7 @@ function AddressesSection() {
           <p className="text-text-secondary mb-6">
             Add addresses to make checkout faster.
           </p>
-          <Button className="bg-accent-blue hover:bg-blue-500">
+          <Button>
             Add Address
           </Button>
         </div>
@@ -429,7 +429,7 @@ function DashboardContent() {
                     Start shopping to see your order history here.
                   </p>
                   <SmartLink href="/products">
-                    <Button className="bg-accent-blue hover:bg-blue-500">
+                    <Button>
                       Browse Products
                     </Button>
                   </SmartLink>
@@ -617,7 +617,7 @@ function DashboardContent() {
                     Save items you're interested in to easily find them later.
                   </p>
                   <SmartLink href="/products">
-                    <Button className="bg-accent-blue hover:bg-blue-500">
+                    <Button>
                       Start Shopping
                     </Button>
                   </SmartLink>
@@ -656,7 +656,7 @@ function DashboardContent() {
                         <p className="text-accent-blue font-bold mb-3">${item.product.price}</p>
                         <div className="flex gap-2">
                           <SmartLink href={`/products/${item.product.id}`} className="flex-1">
-                            <Button className="w-full bg-accent-blue hover:bg-blue-500">
+                            <Button className="w-full">
                               View Product
                             </Button>
                           </SmartLink>
