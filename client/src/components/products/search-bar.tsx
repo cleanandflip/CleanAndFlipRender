@@ -150,7 +150,7 @@ export default function SearchBar({
               {suggestions.length > 0 ? (
                 <>
                   <div className="search-section-title">
-                    <Search size={16} />
+                    <Search size={14} />
                     Suggestions
                   </div>
                   <div className="search-items">
@@ -161,7 +161,7 @@ export default function SearchBar({
                         onClick={() => handleSuggestionClick(suggestion)}
                         className="search-item"
                       >
-                        <Search size={16} />
+                        <Search size={14} />
                         <span className="search-highlight">{suggestion}</span>
                       </button>
                     ))}
@@ -181,7 +181,7 @@ export default function SearchBar({
               {searchHistory.length > 0 && (
                 <div className="search-section">
                   <div className="search-section-title">
-                    <Clock size={16} />
+                    <Clock size={14} />
                     Recent Searches
                   </div>
                   <div className="search-items">
@@ -191,9 +191,8 @@ export default function SearchBar({
                         type="button"
                         onClick={() => handleSuggestionClick(term)}
                         className="search-item"
-                        onMouseDown={(e) => console.log("MouseDown on history:", term)}
                       >
-                        <Clock size={16} />
+                        <Clock size={14} />
                         <span>{term}</span>
                       </button>
                     ))}
@@ -204,7 +203,7 @@ export default function SearchBar({
               {/* Popular Searches */}
               <div className="search-section">
                 <div className="search-section-title">
-                  <TrendingUp size={16} />
+                  <TrendingUp size={14} />
                   Popular Searches
                 </div>
                 <div className="search-items">
@@ -214,9 +213,8 @@ export default function SearchBar({
                       type="button"
                       onClick={() => handleSuggestionClick(term)}
                       className="search-item"
-                      onMouseDown={(e) => console.log("MouseDown on popular:", term)}
                     >
-                      <TrendingUp size={16} />
+                      <TrendingUp size={14} />
                       <span>{term}</span>
                     </button>
                   ))}
