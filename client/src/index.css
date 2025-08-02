@@ -441,6 +441,71 @@ html {
     max-height: min(400px, 80vh) !important;
   }
 
+  /* Nuclear option - force all dropdowns above everything */
+  [aria-expanded="true"] + *,
+  [data-state="open"],
+  div[style*="position: absolute"],
+  div[style*="position: fixed"] {
+    z-index: var(--z-dropdown-menu) !important;
+  }
+
+  /* Recent searches dropdown specifically */
+  [class*="recent-searches"],
+  div:has(> button:contains("Recent Searches")) + *,
+  .search-suggestions,
+  .recent-searches-dropdown {
+    z-index: var(--z-dropdown-menu) !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  /* Ensure portals render at body level */
+  body > [data-portal],
+  body > [class*="portal"],
+  body > .dropdown-portal {
+    position: fixed !important;
+    z-index: var(--z-maximum) !important;
+    pointer-events: none !important;
+  }
+
+  body > [data-portal] > *,
+  body > [class*="portal"] > *,
+  body > .dropdown-portal > * {
+    pointer-events: auto !important;
+  }
+
+  /* Force specific positioning for search dropdowns */
+  .search-input + *,
+  input[type="search"] + *,
+  [placeholder*="Search"] + *,
+  [placeholder*="search"] + *,
+  .search-results-dropdown,
+  .search-container .card {
+    z-index: var(--z-dropdown-menu) !important;
+    position: absolute !important;
+  }
+
+  /* Additional specific targeting for search dropdowns */
+  .search-container > form + *,
+  .search-container [class*="card"],
+  div[class*="search"] div[class*="card"] {
+    z-index: var(--z-dropdown-menu) !important;
+  }
+
+  /* Direct targeting for search results dropdown card */
+  .search-results-dropdown {
+    z-index: var(--z-dropdown-menu) !important;
+    position: absolute !important;
+    background: rgba(31, 41, 55, 0.95) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(156, 163, 175, 0.3) !important;
+    box-shadow: 
+      0 20px 25px -5px rgba(0, 0, 0, 0.5),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  }
+
   /* Utility classes */
   .z-dropdown {
     z-index: var(--z-dropdown-menu) !important;

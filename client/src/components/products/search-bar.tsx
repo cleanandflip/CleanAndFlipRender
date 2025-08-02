@@ -118,7 +118,7 @@ export default function SearchBar({
   }, []);
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative search-container ${className}`}>
       <form onSubmit={handleFormSubmit} className="relative">
         <div className="flex items-center bg-card rounded-lg px-4 py-2">
           <Search className="text-gray-400 mr-3 flex-shrink-0" size={18} />
@@ -147,7 +147,7 @@ export default function SearchBar({
 
       {/* Search Suggestions Dropdown */}
       {isOpen && (
-        <Card className="absolute top-full left-0 right-0 mt-2 p-4 z-50 max-h-80 overflow-y-auto">
+        <Card className="absolute top-full left-0 right-0 mt-2 p-4 z-dropdown max-h-80 overflow-y-auto search-results-dropdown">
           {inputValue.length >= 2 ? (
             // Show suggestions when typing
             <div>
