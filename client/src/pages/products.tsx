@@ -350,7 +350,7 @@ export default function Products() {
         </div>
 
         {/* Search and Controls */}
-        <div className="p-6 mb-8 bg-card/95 backdrop-blur-sm rounded-lg border border-white/10 shadow-lg">
+        <Card className="p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 max-w-md">
               <SearchBar 
@@ -443,7 +443,7 @@ export default function Products() {
               </span>
             )}
           </div>
-        </div>
+        </Card>
 
         <div className="flex gap-8">
           {/* Filters Sidebar */}
