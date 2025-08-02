@@ -159,9 +159,32 @@ div:has(> button):has(> svg) > div:first-child,
   font-weight: 600 !important;
   display: flex !important;
   align-items: center !important;
-  gap: 0.625rem !important;
   position: relative !important;
   overflow: hidden !important;
+}
+
+.search-section-title svg {
+  margin-right: 0.625rem !important;
+  flex-shrink: 0 !important;
+}
+
+/* Specific fix for dropdown item spacing */
+.search-dropdown .search-item,
+.search-dropdown button {
+  text-align: left !important;
+  justify-content: flex-start !important;
+}
+
+.search-dropdown .search-item > span,
+.search-dropdown button > span {
+  margin-left: 0 !important;
+  flex: 1 !important;
+}
+
+/* Ensure proper icon spacing in all dropdown items */
+.search-dropdown svg + span,
+.search-item svg + span {
+  margin-left: 0.75rem !important;
 }
 
 .search-section-title::before {
@@ -180,7 +203,6 @@ div:has(> button):has(> svg) > div:first-child,
 button:has(> svg):has(> span) {
   display: flex !important;
   align-items: center !important;
-  gap: 0.875rem !important;
   width: 100% !important;
   padding: 1rem 1.25rem !important;
   margin: 0 !important;
@@ -240,16 +262,17 @@ button:has(> svg):has(> span) {
 
 /* Icons in search items */
 .search-item svg,
-button svg:first-child {
-  width: 18px !important;
-  height: 18px !important;
-  margin-right: 0 !important;
+.search-dropdown button svg {
+  width: 16px !important;
+  height: 16px !important;
+  margin-right: 0.75rem !important;
   color: rgba(156, 163, 175, 0.8) !important;
   flex-shrink: 0 !important;
   transition: all 0.2s ease !important;
 }
 
-.search-item:hover svg {
+.search-item:hover svg,
+.search-dropdown button:hover svg {
   color: #3b82f6 !important;
   transform: scale(1.1) !important;
 }
