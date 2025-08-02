@@ -365,11 +365,8 @@ export default function Contact() {
                     </h4>
                     <a 
                       href="mailto:support@cleanandflip.com"
-                      className="transition-colors"
-                      style={{ 
-                        color: theme.colors.text.secondary,
-                        ':hover': { color: theme.colors.brand.blue }
-                      }}
+                      className="transition-colors hover:text-blue-500"
+                      style={{ color: theme.colors.text.secondary }}
                     >
                       support@cleanandflip.com
                     </a>
@@ -391,11 +388,8 @@ export default function Contact() {
                     </h4>
                     <a 
                       href="tel:+18285550123"
-                      className="transition-colors"
-                      style={{ 
-                        color: theme.colors.text.secondary,
-                        ':hover': { color: theme.colors.brand.green }
-                      }}
+                      className="transition-colors hover:text-green-500"
+                      style={{ color: theme.colors.text.secondary }}
                     >
                       (828) 555-0123
                     </a>
@@ -460,38 +454,35 @@ export default function Contact() {
               </h3>
               
               <div className="space-y-3">
-                <Button 
-                  variant="secondary" 
-                  className="w-full justify-start"
-                  asChild
-                >
-                  <Link href="/sell-to-us">
+                <Link href="/sell-to-us">
+                  <Button 
+                    variant="secondary" 
+                    className="w-full justify-start"
+                  >
                     <DollarSign className="mr-2" size={18} />
                     Sell Equipment
-                  </Link>
-                </Button>
+                  </Button>
+                </Link>
                 
-                <Button 
-                  variant="secondary" 
-                  className="w-full justify-start"
-                  asChild
-                >
-                  <Link href="/products">
+                <Link href="/products">
+                  <Button 
+                    variant="secondary" 
+                    className="w-full justify-start"
+                  >
                     <ShoppingCart className="mr-2" size={18} />
                     Browse Equipment
-                  </Link>
-                </Button>
+                  </Button>
+                </Link>
                 
-                <Button 
-                  variant="secondary" 
-                  className="w-full justify-start"
-                  asChild
-                >
-                  <Link href="/dashboard">
+                <Link href="/dashboard">
+                  <Button 
+                    variant="secondary" 
+                    className="w-full justify-start"
+                  >
                     <User className="mr-2" size={18} />
                     My Account
-                  </Link>
-                </Button>
+                  </Button>
+                </Link>
               </div>
             </Card>
 

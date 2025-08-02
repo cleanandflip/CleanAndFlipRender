@@ -3,6 +3,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Complete Text Visibility Overhaul - Global Form Styling */
+.equipment-form *,
+form * {
+  color: white !important;
+}
+
+.equipment-form input::placeholder,
+.equipment-form textarea::placeholder,
+form input::placeholder,
+form textarea::placeholder {
+  color: rgb(209 213 219) !important; /* gray-300 */
+}
+
+/* Special element styling for high visibility */
+.required-asterisk {
+  @apply text-red-400;
+}
+
+.dollar-sign {
+  @apply text-white text-lg;
+}
+
+/* Enhanced accessibility features */
+.high-visibility-text {
+  @apply text-white text-lg leading-relaxed;
+}
+
+.helper-text {
+  @apply text-gray-200 text-base leading-relaxed;
+}
+
 /* Global smooth scrolling */
 html {
   scroll-behavior: smooth;

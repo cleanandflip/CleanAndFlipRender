@@ -86,11 +86,11 @@ export function UnifiedDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          // Senior-friendly high-visibility styling for dropdown
-          "w-full p-4 h-14 bg-gray-900 border-2 border-white rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group text-lg font-medium shadow-lg",
+          // Complete text visibility overhaul - high contrast dropdown
+          "w-full px-4 py-3 bg-gray-800/50 border-2 border-gray-400 rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group text-white text-lg font-medium shadow-lg",
           disabled 
             ? "cursor-not-allowed opacity-50" 
-            : "hover:border-gray-200 focus:border-yellow-400 cursor-pointer"
+            : "hover:border-gray-300 focus:border-white cursor-pointer"
         )}
       >
         {searchable && isOpen ? (

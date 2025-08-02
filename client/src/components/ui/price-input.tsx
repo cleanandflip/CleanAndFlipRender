@@ -11,7 +11,7 @@ export const PriceInput = React.forwardRef<HTMLInputElement, PriceInputProps>(
   ({ className, value, onChange, ...props }, ref) => {
     return (
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none z-10">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white text-lg font-medium dollar-sign pointer-events-none z-10">
           $
         </span>
         <Input

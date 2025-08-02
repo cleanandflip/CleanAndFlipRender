@@ -19,8 +19,8 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      // Senior-friendly high-visibility select styling
-      "flex h-14 w-full items-center justify-between rounded-lg border-2 border-white bg-gray-900 px-4 py-4 text-lg text-white font-medium data-[placeholder]:text-gray-300 focus:outline-none focus:border-3 focus:border-yellow-400 hover:border-gray-200 transition-colors disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 shadow-lg",
+      // Complete text visibility overhaul - high contrast select styling
+      "flex h-auto w-full items-center justify-between rounded-lg border-2 border-gray-400 bg-gray-800/50 px-4 py-3 text-white text-lg font-medium data-[placeholder]:text-gray-300 focus:outline-none focus:border-white focus:bg-gray-800 hover:border-gray-300 transition-all disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 shadow-lg",
       className
     )}
     {...props}

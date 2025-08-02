@@ -5,8 +5,8 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const labelVariants = cva(
-  // Senior-friendly high-visibility label styling
-  "text-white text-lg font-semibold mb-2 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+  // High-contrast label styling - make them POP
+  "text-white text-lg font-semibold mb-2 leading-relaxed peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 )
 
 const Label = React.forwardRef<
