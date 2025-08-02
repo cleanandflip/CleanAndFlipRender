@@ -64,7 +64,7 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
         disabled={disabled}
         className={`
           ${inputSize}
-          bg-transparent text-center text-white font-medium
+          bg-transparent text-center text-input-foreground font-medium
           border-none outline-none
           [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
         `}

@@ -86,7 +86,7 @@ export function UnifiedDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "w-full px-4 py-3 bg-input backdrop-blur-sm border border-input rounded-lg text-left text-white transition-all duration-200 focus:outline-none flex items-center justify-between group",
+          "w-full px-4 py-3 bg-input backdrop-blur-sm border border-input rounded-lg text-left text-input-foreground transition-all duration-200 focus:outline-none flex items-center justify-between group",
           disabled 
             ? "cursor-not-allowed opacity-50" 
             : "hover:border-gray-600 focus:border-gray-500 cursor-pointer"
@@ -98,12 +98,12 @@ export function UnifiedDropdown({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={placeholder}
-            className="bg-transparent outline-none flex-1 placeholder-gray-400 text-white"
+            className="bg-transparent outline-none flex-1 placeholder-gray-400 text-input-foreground"
             onClick={(e) => e.stopPropagation()}
             autoFocus
           />
         ) : (
-          <span className={selectedOption ? 'text-white' : 'text-gray-500'}>
+          <span className={selectedOption ? 'text-input-foreground' : 'text-gray-500'}>
             {selectedOption?.label || placeholder}
           </span>
         )}
@@ -144,8 +144,8 @@ export function UnifiedDropdown({
                     "w-full px-4 py-3 text-left flex items-center justify-between transition-all duration-150",
                     option.disabled 
                       ? 'text-gray-500 cursor-not-allowed' 
-                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-white cursor-pointer',
-                    option.value === value && 'bg-gray-700/30 text-white'
+                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-input-foreground cursor-pointer',
+                    option.value === value && 'bg-gray-700/30 text-input-foreground'
                   )}
                 >
                   <span>{option.label}</span>
@@ -163,7 +163,7 @@ export function UnifiedDropdown({
                       onChange(search.trim());
                       setIsOpen(false);
                     }}
-                    className="text-slate-300 hover:text-white transition-colors"
+                    className="text-slate-300 hover:text-input-foreground transition-colors"
                   >
                     Use "{search.trim()}" (custom)
                   </button>

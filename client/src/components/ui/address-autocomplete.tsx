@@ -193,7 +193,7 @@ export default function AddressAutocomplete({
           required={required}
           className={cn(
             "w-full px-3 py-3 bg-input border border-input",
-            "text-white placeholder-gray-400 rounded-lg",
+            "text-input-foreground placeholder-gray-400 rounded-lg",
             "focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
             "transition-all duration-200",
             className
@@ -211,7 +211,7 @@ export default function AddressAutocomplete({
           <button
             type="button"
             onClick={clearInput}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-input-foreground transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -231,12 +231,12 @@ export default function AddressAutocomplete({
                 key={result.place_id || index}
                 type="button"
                 onClick={() => selectAddress(result)}
-                className="w-full px-4 py-3 text-left text-white hover:bg-accent focus:bg-accent focus:outline-none transition-colors border-b border-border last:border-0"
+                className="w-full px-4 py-3 text-left text-input-foreground hover:bg-accent focus:bg-accent focus:outline-none transition-colors border-b border-border last:border-0"
               >
                 <div className="flex items-start gap-3">
                   <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    <div className="text-white">
+                    <div className="text-input-foreground">
                       {parsed.street}
                     </div>
                     <div className="text-gray-400 text-sm">
