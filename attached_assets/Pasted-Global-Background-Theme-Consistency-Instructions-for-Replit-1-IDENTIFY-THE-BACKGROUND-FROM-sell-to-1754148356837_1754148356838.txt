@@ -1,0 +1,162 @@
+Global Background Theme Consistency Instructions for Replit
+1. IDENTIFY THE BACKGROUND FROM /sell-to-us
+Based on the form screenshots, the background appears to be:
+
+Dark navy/gray gradient
+Slightly textured or gradient effect
+Professional dark theme
+
+2. CREATE GLOBAL BACKGROUND IN APP.TSX OR LAYOUT
+jsx// In your main App.tsx or Layout component
+<div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black">
+  {/* All your routes/content */}
+</div>
+3. UPDATE GLOBAL CSS FILE
+In client/src/index.css or globals.css:
+css/* Global background for all pages */
+html, body {
+  @apply bg-gradient-to-br from-gray-900 via-gray-950 to-black;
+  min-height: 100vh;
+}
+
+/* Alternative if you want exact match to /sell-to-us */
+body {
+  background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 50%, #000000 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Ensure content areas don't override */
+main, .content, .page-wrapper {
+  background: transparent !important;
+}
+4. REMOVE PAGE-SPECIFIC BACKGROUNDS
+Search and remove any page-specific backgrounds:
+bash# Find all background overrides
+grep -r "bg-white\|bg-gray-50\|bg-slate" client/src/pages/
+grep -r "background:" client/src/components/
+Replace any light backgrounds with:
+jsx// Remove these
+className="bg-white"
+className="bg-gray-50"
+
+// Replace with transparent or dark variants
+className="bg-transparent"
+className="bg-gray-900/50" // semi-transparent dark
+5. UPDATE TAILWIND CONFIG
+javascript// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      backgroundColor: {
+        'app': '#0f1419', // Main app background
+        'app-light': '#1a1f2e', // Lighter variant
+        'app-dark': '#000000', // Darker variant
+      },
+      backgroundImage: {
+        'app-gradient': 'linear-gradient(135deg, #1a1f2e 0%, #0f1419 50%, #000000 100%)',
+      }
+    }
+  }
+}
+6. APPLY TO ROOT LAYOUT
+jsx// In your root layout component
+export function RootLayout({ children }) {
+  return (
+    <div className="min-h-screen bg-app-gradient">
+      <Navigation />
+      <main className="relative z-10">
+        {children}
+      </main>
+      <Footer />
+    </div>
+  );
+}
+7. FIX CONTENT CONTAINERS
+Update all content containers to work with dark background:
+css/* Content sections that need contrast */
+.card,
+.panel,
+.content-box {
+  @apply bg-gray-900/60 backdrop-blur-sm 
+         border border-gray-800 
+         shadow-xl shadow-black/50;
+}
+
+/* Forms and modals */
+.form-container,
+.modal-content {
+  @apply bg-gray-900/80 backdrop-blur 
+         border border-gray-700;
+}
+8. UPDATE NAVIGATION & FOOTER
+Ensure nav and footer blend with new background:
+css/* Navigation */
+nav, .navbar, header {
+  @apply bg-gray-900/90 backdrop-blur-md 
+         border-b border-gray-800;
+}
+
+/* Footer */
+footer {
+  @apply bg-gray-950/90 backdrop-blur-sm 
+         border-t border-gray-800;
+}
+9. PAGE-SPECIFIC OVERRIDES (if needed)
+For any pages that MUST have different backgrounds:
+jsx// Only if absolutely necessary
+<div className="min-h-screen bg-app-gradient">
+  <div className="special-page bg-white">
+    {/* Special content */}
+  </div>
+</div>
+10. GLOBAL CSS RESET
+Add to ensure consistency:
+css/* Reset any default backgrounds */
+* {
+  background-color: transparent;
+}
+
+/* Specific overrides for common elements */
+input, select, textarea {
+  @apply bg-gray-800/50;
+}
+
+button {
+  @apply bg-gray-700;
+}
+
+/* Tables, lists, etc */
+table {
+  @apply bg-gray-900/50;
+}
+11. CHECK THESE SPECIFIC PAGES
+Ensure these pages use the global background:
+
+/ (home)
+/products
+/products/:id
+/cart
+/checkout
+/dashboard
+/admin
+/login
+/register
+
+12. QUICK IMPLEMENTATION
+The fastest way - add this to your root App.tsx:
+jsxfunction App() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black text-white">
+      <Router>
+        {/* All your routes */}
+      </Router>
+    </div>
+  );
+}
+This will ensure:
+
+Every page has the same dark gradient background as /sell-to-us
+Content remains readable with proper contrast
+The site has a consistent, professional dark theme
+No page can override the global background accidentally

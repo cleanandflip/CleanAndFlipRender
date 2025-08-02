@@ -68,11 +68,22 @@ html {
 
   body {
     @apply font-sans antialiased text-foreground;
-    background: #1A1F2E;
-    background: linear-gradient(135deg, #1A1F2E 0%, #232937 100%);
+    background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 50%, #000000 100%);
     background-attachment: fixed;
     min-height: 100vh;
     transition: all 0.3s ease;
+  }
+
+  /* Global background consistency - matches /sell-to-us */
+  html, body {
+    background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 50%, #000000 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Ensure content areas don't override global background */
+  main, .content, .page-wrapper {
+    background: transparent !important;
   }
 }
 
@@ -406,4 +417,69 @@ form [class*="gray-5"],
 form [class*="gray-6"],
 form [class*="gray-7"] {
   color: #d1d5db !important; /* gray-300 */
+}
+
+/* ========================================
+   GLOBAL BACKGROUND THEME CONSISTENCY
+   Ensure all content works with dark background
+======================================== */
+
+/* Content sections that need contrast */
+.card,
+.panel,
+.content-box {
+  background: rgba(31, 41, 55, 0.6); /* bg-gray-900/60 */
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(55, 65, 81, 1); /* border-gray-800 */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* shadow-xl shadow-black/50 */
+}
+
+/* Forms and modals */
+.form-container,
+.modal-content {
+  background: rgba(31, 41, 55, 0.8); /* bg-gray-900/80 */
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(75, 85, 99, 1); /* border-gray-700 */
+}
+
+/* Navigation */
+nav, .navbar, header {
+  background: rgba(31, 41, 55, 0.9); /* bg-gray-900/90 */
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(55, 65, 81, 1); /* border-gray-800 */
+}
+
+/* Footer */
+footer {
+  background: rgba(3, 7, 18, 0.9); /* bg-gray-950/90 */
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(55, 65, 81, 1); /* border-gray-800 */
+}
+
+/* Input elements for dark theme */
+input, select, textarea {
+  background: rgba(31, 41, 55, 0.5); /* bg-gray-800/50 */
+}
+
+button {
+  background: rgba(75, 85, 99, 1); /* bg-gray-700 */
+}
+
+/* Tables, lists, etc */
+table {
+  background: rgba(31, 41, 55, 0.5); /* bg-gray-900/50 */
+}
+
+/* Ensure no page-specific backgrounds override global theme */
+.page-wrapper,
+.content,
+main {
+  background: transparent !important;
+}
+
+/* Remove any white or light backgrounds that might conflict */
+.bg-white,
+.bg-gray-50,
+.bg-slate-50 {
+  background: transparent !important;
 }

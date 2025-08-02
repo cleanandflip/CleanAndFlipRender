@@ -66,7 +66,7 @@ function ScrollRestoration() {
 function Router() {
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+      <div className="min-h-screen flex flex-col">
         <Navigation />
         <CartDrawer />
         <ScrollRestoration />
@@ -113,8 +113,10 @@ function App() {
       <TooltipProvider>
         <AuthProvider>
           <CartProvider>
+            <div className="min-h-screen bg-app-gradient text-white">
+              <Router />
+            </div>
             <Toaster />
-            <Router />
           </CartProvider>
         </AuthProvider>
       </TooltipProvider>
