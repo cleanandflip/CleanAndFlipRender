@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +24,7 @@ export default function SearchBar({
   const [isOpen, setIsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -105,6 +107,31 @@ export default function SearchBar({
     inputRef.current?.focus();
   };
 
+  // Update dropdown position when opened
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      const updatePosition = () => {
+        const rect = inputRef.current?.getBoundingClientRect();
+        if (rect) {
+          setDropdownPosition({
+            top: rect.bottom + window.scrollY + 8,
+            left: rect.left + window.scrollX,
+            width: rect.width
+          });
+        }
+      };
+      
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [isOpen]);
+
   // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -145,82 +172,94 @@ export default function SearchBar({
         </div>
       </form>
 
-      {/* Search Suggestions Dropdown */}
-      {isOpen && (
-        <Card className="absolute top-full left-0 right-0 mt-2 p-4 z-50 max-h-80 overflow-y-auto">
-          {inputValue.length >= 2 ? (
-            // Show suggestions when typing
-            <div>
-              {suggestions.length > 0 ? (
-                <>
-                  <div className="text-sm font-medium text-text-secondary mb-3">Suggestions</div>
-                  <div className="space-y-1">
-                    {suggestions.map((suggestion, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
-                      >
-                        <Search size={14} className="text-gray-400 mr-3" />
-                        <span className="text-primary">{suggestion}</span>
-                      </button>
-                    ))}
+      {/* Search Suggestions Dropdown - Portal */}
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
+            zIndex: 9999,
+            maxHeight: '320px'
+          }}
+        >
+          <Card className="p-4 max-h-80 overflow-y-auto shadow-2xl bg-gray-900/98 backdrop-blur-xl border-gray-700/50">
+            {inputValue.length >= 2 ? (
+              // Show suggestions when typing
+              <div>
+                {suggestions.length > 0 ? (
+                  <>
+                    <div className="text-sm font-medium text-text-secondary mb-3">Suggestions</div>
+                    <div className="space-y-1">
+                      {suggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
+                        >
+                          <Search size={14} className="text-gray-400 mr-3" />
+                          <span className="text-primary">{suggestion}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-6 text-text-muted">
+                    <Search size={24} className="mx-auto mb-2 opacity-50" />
+                    <p>No suggestions found</p>
                   </div>
-                </>
-              ) : (
-                <div className="text-center py-6 text-text-muted">
-                  <Search size={24} className="mx-auto mb-2 opacity-50" />
-                  <p>No suggestions found</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            // Show history and popular searches when not typing
-            <div className="space-y-4">
-              {/* Search History */}
-              {searchHistory.length > 0 && (
+                )}
+              </div>
+            ) : (
+              // Show history and popular searches when not typing
+              <div className="space-y-4">
+                {/* Search History */}
+                {searchHistory.length > 0 && (
+                  <div>
+                    <div className="flex items-center text-sm font-medium text-text-secondary mb-3">
+                      <Clock size={14} className="mr-2" />
+                      Recent Searches
+                    </div>
+                    <div className="space-y-1">
+                      {searchHistory.map((term, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleSuggestionClick(term)}
+                          className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
+                        >
+                          <Clock size={14} className="text-gray-400 mr-3" />
+                          <span className="text-primary">{term}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Popular Searches */}
                 <div>
                   <div className="flex items-center text-sm font-medium text-text-secondary mb-3">
-                    <Clock size={14} className="mr-2" />
-                    Recent Searches
+                    <TrendingUp size={14} className="mr-2" />
+                    Popular Searches
                   </div>
                   <div className="space-y-1">
-                    {searchHistory.map((term, index) => (
+                    {popularSearches.slice(0, searchHistory.length > 0 ? 4 : 6).map((term, index) => (
                       <button
                         key={index}
                         onClick={() => handleSuggestionClick(term)}
                         className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
                       >
-                        <Clock size={14} className="text-gray-400 mr-3" />
+                        <TrendingUp size={14} className="text-gray-400 mr-3" />
                         <span className="text-primary">{term}</span>
                       </button>
                     ))}
                   </div>
                 </div>
-              )}
-
-              {/* Popular Searches */}
-              <div>
-                <div className="flex items-center text-sm font-medium text-text-secondary mb-3">
-                  <TrendingUp size={14} className="mr-2" />
-                  Popular Searches
-                </div>
-                <div className="space-y-1">
-                  {popularSearches.slice(0, searchHistory.length > 0 ? 4 : 6).map((term, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSuggestionClick(term)}
-                      className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
-                    >
-                      <TrendingUp size={14} className="text-gray-400 mr-3" />
-                      <span className="text-primary">{term}</span>
-                    </button>
-                  ))}
-                </div>
               </div>
-            </div>
-          )}
-        </Card>
+            )}
+          </Card>
+        </div>,
+        document.body
       )}
     </div>
   );
