@@ -1,10 +1,10 @@
-// Legacy SearchBar - replaced with new advanced search system
+// Legacy SearchBar - updated to use new enhanced search system
 // This file is maintained for backward compatibility
-// New search functionality is in @/components/search/SearchBar
+// New search functionality is in @/components/ui/EnhancedSearchBar
 
-import AdvancedSearchBar from '@/components/search/SearchBar';
+import { EnhancedSearchBar } from '@/components/ui/EnhancedSearchBar';
 
-// Backward compatibility wrapper - forwards to new SearchBar
+// Backward compatibility wrapper - forwards to new Enhanced SearchBar
 interface LegacySearchBarProps {
   placeholder?: string;
   onSearch: (query: string) => void;
@@ -17,7 +17,8 @@ export function SearchBar({
   className 
 }: LegacySearchBarProps) {
   return (
-    <AdvancedSearchBar 
+    <EnhancedSearchBar 
+      context="header"
       placeholder={placeholder}
       onSearch={onSearch}
       className={className}
