@@ -68,17 +68,17 @@ html {
 
   body {
     @apply font-sans antialiased text-foreground;
-    background: #1A1F2E;
-    background: linear-gradient(135deg, #1A1F2E 0%, #232937 100%);
+    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%);
     background-attachment: fixed;
     min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
     transition: all 0.3s ease;
   }
 
   /* Ensure all pages inherit global background */
   html, body, #root {
-    background: #1A1F2E;
-    background: linear-gradient(135deg, #1A1F2E 0%, #232937 100%);
+    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -91,8 +91,7 @@ html {
 
   /* Global page background utility */
   .global-bg {
-    background: #1A1F2E;
-    background: linear-gradient(135deg, #1A1F2E 0%, #232937 100%);
+    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -124,6 +123,71 @@ html {
   
   .logo-glow:hover {
     filter: invert(1) drop-shadow(0 0 16px rgba(255, 255, 255, 0.6));
+  }
+
+  /* Athletic Pattern Overlay - Hexagonal gym flooring pattern */
+  .athletic-pattern {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .athletic-pattern::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='30,0 52,13 52,39 30,52 8,39 8,13' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-size: 60px 52px;
+    opacity: 0.7;
+    animation: hexBreathe 8s ease-in-out infinite;
+  }
+
+  /* Subtle accent lines for athletic grid effect */
+  .athletic-pattern::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      linear-gradient(90deg, transparent 49%, rgba(59,130,246,0.02) 50%, transparent 51%),
+      linear-gradient(0deg, transparent 49%, rgba(59,130,246,0.02) 50%, transparent 51%);
+    background-size: 200px 200px;
+    animation: gridPulse 20s ease-in-out infinite;
+  }
+
+  @keyframes hexBreathe {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.7; }
+  }
+
+  @keyframes gridPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+  }
+
+  /* Gym atmosphere subtle lighting effects */
+  .gym-atmosphere {
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.03) 0%, transparent 40%),
+      radial-gradient(circle at 70% 80%, rgba(34, 197, 94, 0.03) 0%, transparent 40%);
+    animation: atmosphereShift 25s ease-in-out infinite;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  @keyframes atmosphereShift {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
+  }
+
+  /* Ensure content is above pattern */
+  main, nav, footer, .content, 
+  [role="main"], [role="navigation"], 
+  .z-10, .relative {
+    position: relative;
+    z-index: 2;
   }
   
   .logo-glow-large {
