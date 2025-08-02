@@ -9,6 +9,10 @@ export default {
         'bebas': ['Bebas Neue', 'cursive'],
         'sans': ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
+      boxShadow: {
+        'input': '0 2px 4px rgba(0, 0, 0, 0.3)',
+        'input-focus': '0 4px 6px rgba(255, 255, 255, 0.1)',
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

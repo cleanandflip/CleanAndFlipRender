@@ -1,0 +1,135 @@
+/* High Visibility Form Theme - Global Enhancement */
+:root {
+  --form-bg: rgba(17, 24, 39, 0.8);        /* Darker background for forms */
+  --input-bg: rgba(31, 41, 55, 0.9);       /* Slightly lighter for inputs */
+  --input-border: rgb(156, 163, 175);      /* Gray-400 */
+  --input-border-focus: rgb(255, 255, 255); /* White on focus */
+  --text-primary: rgb(255, 255, 255);      /* White */
+  --text-secondary: rgb(229, 231, 235);    /* Gray-200 */
+}
+
+/* Section containers */
+.form-section {
+  @apply bg-gray-900/60 p-6 rounded-xl mb-6 
+         border border-gray-700 
+         shadow-xl shadow-black/50;
+}
+
+/* Add subtle gradient background */
+.form-container {
+  @apply bg-gradient-to-br from-gray-900 via-gray-950 to-black;
+}
+
+/* All form inputs */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+select,
+textarea {
+  @apply text-white text-lg bg-gray-800/80 
+         border-2 border-gray-400 rounded-lg
+         px-4 py-3.5 w-full
+         placeholder:text-gray-300
+         focus:border-white focus:bg-gray-800/100
+         focus:shadow-lg focus:shadow-white/10
+         hover:border-gray-300
+         transition-all duration-200;
+}
+
+/* Make select dropdowns more visible */
+select {
+  @apply cursor-pointer appearance-none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1.5em;
+}
+
+/* All labels */
+label {
+  @apply text-white text-lg font-semibold mb-2 block;
+}
+
+/* Required field asterisks */
+.required-asterisk {
+  @apply text-yellow-400 ml-1;
+}
+
+/* Better focus states */
+input:focus,
+select:focus,
+textarea:focus {
+  @apply outline-none ring-2 ring-white ring-offset-2 
+         ring-offset-gray-900 scale-[1.02];
+}
+
+/* Section headers with impact */
+.section-header {
+  @apply text-white text-2xl font-bold uppercase 
+         tracking-wider mb-6 pb-3 
+         border-b-2 border-gray-600;
+}
+
+/* Primary buttons */
+.btn-primary {
+  @apply bg-gradient-to-r from-green-500 to-green-600 
+         text-white text-xl font-bold 
+         px-8 py-4 rounded-lg 
+         border-2 border-green-400
+         hover:from-green-400 hover:to-green-500 
+         hover:shadow-2xl hover:shadow-green-500/30
+         active:scale-95 
+         transition-all duration-200;
+}
+
+/* Secondary buttons */
+.btn-secondary {
+  @apply bg-gray-700 text-white border-2 border-gray-500
+         hover:bg-gray-600 hover:border-gray-400;
+}
+
+/* Helper text improvements */
+.helper-text {
+  @apply text-gray-200 text-base leading-relaxed mt-2
+         bg-gray-800/40 p-3 rounded-lg border-l-4 border-gray-600;
+}
+
+/* Add subtle animations */
+.form-group {
+  @apply transition-all duration-300;
+}
+
+.form-group:focus-within {
+  @apply transform scale-[1.01];
+}
+
+/* Error states */
+.error input,
+.error select,
+.error textarea {
+  @apply border-red-400 bg-red-900/20;
+}
+
+.error-message {
+  @apply text-red-300 text-sm mt-1 font-medium;
+}
+
+/* Success states */
+.success input {
+  @apply border-green-400 bg-green-900/20;
+}
+
+/* Responsive improvements */
+/* Larger touch targets on mobile */
+@media (max-width: 640px) {
+  input, select, textarea, button {
+    @apply min-h-[3.5rem] text-base;
+  }
+}
+
+/* Even larger for tablets */
+@media (min-width: 641px) and (max-width: 1024px) {
+  input, select, textarea, button {
+    @apply min-h-[3rem];
+  }
+}

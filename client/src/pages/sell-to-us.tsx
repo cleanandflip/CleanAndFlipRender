@@ -249,12 +249,12 @@ export default function SellToUs() {
 
         {/* Submission Form */}
         <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 form-container">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Equipment Details */}
-                <Card className="p-6">
-                  <h3 className="text-white text-2xl font-bold uppercase tracking-wide mb-6">EQUIPMENT DETAILS</h3>
+                <div className="form-section">
+                  <h2 className="section-header">EQUIPMENT DETAILS</h2>
                   
                   <div className="grid md:grid-cols-2 gap-4">
                     <FormField
@@ -361,7 +361,7 @@ export default function SellToUs() {
                             onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
-                        <p className="text-gray-200 text-base leading-relaxed mt-1">
+                        <p className="helper-text">
                           This helps us make a fair offer, but we'll evaluate based on condition and market value.
                         </p>
                         <FormMessage />
@@ -387,12 +387,12 @@ export default function SellToUs() {
                       </FormItem>
                     )}
                   />
-                </Card>
+                </div>
 
                 {/* Photo Upload */}
-                <Card className="p-6">
-                  <h3 className="text-white text-2xl font-bold uppercase tracking-wide mb-6">PHOTOS</h3>
-                  <p className="text-gray-200 text-base leading-relaxed mb-6">
+                <div className="form-section">
+                  <h2 className="section-header">PHOTOS</h2>
+                  <p className="helper-text mb-6">
                     Upload clear photos showing the equipment from multiple angles. 
                     Include any wear, damage, or unique features.
                   </p>
@@ -413,13 +413,12 @@ export default function SellToUs() {
                     <p>• Show front, back, and detail views</p>
                     <p>• Highlight any wear or damage</p>
                   </div>
-                </Card>
+                </div>
 
                 <Button 
                   type="submit" 
                   disabled={submitMutation.isPending}
-                  variant="success"
-                  className="w-full"
+                  className="btn-primary w-full"
                 >
                   {submitMutation.isPending ? "Submitting..." : "Submit for Review"}
                 </Button>
