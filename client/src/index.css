@@ -304,33 +304,71 @@ html {
     background: transparent !important;
   }
 
-  /* Ensure buttons in CTA sections maintain theme consistency */
+  /* CTA BUTTON CONTAINER SPACING */
+  /* Fix button spacing in GET STARTED sections */
+  .get-started-section .space-y-3,
+  .cta-section .space-y-3,
+  section:has(h3:contains("GET STARTED")) .space-y-3,
+  div:has(> h3:contains("GET STARTED")) .space-y-3 {
+    gap: 1rem !important; /* Increase spacing between buttons */
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Override space-y with proper margin for buttons */
+  .get-started-section .space-y-3 > *,
+  .cta-section .space-y-3 > *,
+  section:has(h3:contains("GET STARTED")) .space-y-3 > *,
+  div:has(> h3:contains("GET STARTED")) .space-y-3 > * {
+    margin-top: 0 !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .get-started-section .space-y-3 > *:last-child,
+  .cta-section .space-y-3 > *:last-child,
+  section:has(h3:contains("GET STARTED")) .space-y-3 > *:last-child,
+  div:has(> h3:contains("GET STARTED")) .space-y-3 > *:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  /* RESET BUTTON STYLING TO MATCH GLOBAL THEME */
+  /* Remove AnimatedComponents inline styles and apply global button styling */
   .get-started-section button,
   .cta-section button,
   section:has(h3:contains("GET STARTED")) button,
   div:has(> h3:contains("GET STARTED")) button {
-    border-radius: 0.5rem !important; /* Match form elements */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    /* Reset inline styles */
+    background: unset !important;
+    backdrop-filter: unset !important;
+    border: unset !important;
+    box-shadow: unset !important;
     
-    /* Override bright blue with subtle glass morphism styling */
-    background: rgba(75, 85, 99, 0.6) !important;
-    backdrop-filter: blur(12px) !important;
+    /* Apply global button styling to match other website buttons */
+    background-color: rgba(75, 85, 99, 0.6) !important;
+    backdrop-filter: blur(8px) !important;
     border: 1px solid rgba(156, 163, 175, 0.4) !important;
+    border-radius: 0.5rem !important;
     color: white !important;
     font-weight: 500 !important;
+    font-size: 1rem !important;
+    padding: 0.75rem 1.5rem !important; /* Match standard button padding */
+    min-height: 48px !important; /* Consistent button height */
     
-    /* Subtle inner glow for depth */
+    /* Enhanced shadows to match form elements */
     box-shadow: 
       0 2px 4px rgba(0, 0, 0, 0.1),
       inset 0 1px 2px rgba(255, 255, 255, 0.1) !important;
+    
+    /* Smooth transitions */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
-  /* Button hover states in CTA sections */
+  /* Button hover states matching global theme */
   .get-started-section button:hover,
   .cta-section button:hover,
   section:has(h3:contains("GET STARTED")) button:hover,
   div:has(> h3:contains("GET STARTED")) button:hover {
-    background: rgba(75, 85, 99, 0.7) !important;
+    background-color: rgba(75, 85, 99, 0.75) !important;
     border-color: rgba(156, 163, 175, 0.6) !important;
     transform: translateY(-1px) !important;
     box-shadow: 
@@ -338,21 +376,21 @@ html {
       inset 0 1px 2px rgba(255, 255, 255, 0.15) !important;
   }
 
-  /* Primary action button - keep subtle blue accent */
+  /* Primary action button styling with subtle blue accent */
   .get-started-section button:first-of-type,
   .cta-section button:first-of-type,
   section:has(h3:contains("GET STARTED")) button:first-of-type,
   div:has(> h3:contains("GET STARTED")) button:first-of-type {
-    background: rgba(59, 130, 246, 0.3) !important; /* Subtle blue accent */
-    border-color: rgba(59, 130, 246, 0.5) !important;
+    background-color: rgba(59, 130, 246, 0.4) !important;
+    border-color: rgba(59, 130, 246, 0.6) !important;
   }
 
   .get-started-section button:first-of-type:hover,
   .cta-section button:first-of-type:hover,
   section:has(h3:contains("GET STARTED")) button:first-of-type:hover,
   div:has(> h3:contains("GET STARTED")) button:first-of-type:hover {
-    background: rgba(59, 130, 246, 0.4) !important;
-    border-color: rgba(59, 130, 246, 0.6) !important;
+    background-color: rgba(59, 130, 246, 0.5) !important;
+    border-color: rgba(59, 130, 246, 0.7) !important;
   }
 
   /* Dropdown hover states - match input hover exactly */

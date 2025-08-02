@@ -32,15 +32,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.1 }}
-      style={{
-        // Override component classes with glass morphism for CTA sections
-        background: variant === 'primary' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(75, 85, 99, 0.6)',
-        backdropFilter: 'blur(12px)',
-        border: `1px solid ${variant === 'primary' ? 'rgba(59, 130, 246, 0.5)' : 'rgba(156, 163, 175, 0.4)'}`,
-        color: 'white',
-        fontWeight: '500',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.1)'
-      }}
       {...props}
     >
       {children}
