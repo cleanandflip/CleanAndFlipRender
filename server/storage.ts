@@ -397,9 +397,7 @@ export class DatabaseStorage implements IStorage {
     return updatedProduct;
   }
 
-  async deleteProduct(id: string): Promise<void> {
-    await db.delete(products).where(eq(products.id, id));
-  }
+
 
   async incrementProductViews(id: string): Promise<void> {
     await db
