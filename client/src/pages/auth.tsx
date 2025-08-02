@@ -182,7 +182,7 @@ export default function AuthPage() {
                       name="email"
                       type="email"
                       required
-                      className="glass bg-transparent border-border text-white placeholder:text-text-muted h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                      className="h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Enter your email"
                       onFocus={scrollToForm}
                     />
@@ -194,7 +194,7 @@ export default function AuthPage() {
                       name="password"
                       type="password"
                       required
-                      className="glass bg-transparent border-border text-white placeholder:text-text-muted h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                      className="h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Enter your password"
                       onFocus={scrollToForm}
                     />
@@ -234,7 +234,7 @@ export default function AuthPage() {
                       name="firstName"
                       type="text"
                       required
-                      className="glass bg-transparent border-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                      className="h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="First Name"
                       onFocus={scrollToForm}
                     />
@@ -243,7 +243,7 @@ export default function AuthPage() {
                       name="lastName"
                       type="text"
                       required
-                      className="glass bg-transparent border-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                      className="h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       placeholder="Last Name"
                       onFocus={scrollToForm}
                     />
@@ -255,7 +255,7 @@ export default function AuthPage() {
                     name="email"
                     type="email"
                     required
-                    className="glass bg-transparent border-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                    className="h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                     placeholder="Email Address"
                     onFocus={scrollToForm}
                   />
@@ -264,7 +264,7 @@ export default function AuthPage() {
                     id="phone"
                     name="phone"
                     type="tel"
-                    className="glass bg-transparent border-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                    className="h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                     placeholder="Phone Number (Optional)"
                     onFocus={scrollToForm}
                   />
@@ -288,7 +288,7 @@ export default function AuthPage() {
                         });
                       }}
                       placeholder="Start typing your address..."
-                      className="glass bg-transparent border-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
+                      className="h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
                       required
                     />
                   </div>
@@ -301,7 +301,7 @@ export default function AuthPage() {
                         name="password"
                         placeholder="Password"
                         required
-                        className={`glass bg-transparent border-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 ${
+                        className={`h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 ${
                           password && !isPasswordValid(password) ? 'border-red-500/50' : 
                           password && isPasswordValid(password) ? 'border-green-500/50' : ''
                         }`}
@@ -330,7 +330,7 @@ export default function AuthPage() {
                       name="confirmPassword"
                       placeholder="Confirm Password"
                       required
-                      className={`glass bg-transparent border-border text-white placeholder:text-text-muted h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 ${
+                      className={`h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 ${
                         !passwordsMatch && confirmPassword ? 'border-red-500/50' : 
                         passwordsMatch && confirmPassword && password ? 'border-green-500/50' : ''
                       }`}
