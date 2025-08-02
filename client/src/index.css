@@ -71,6 +71,45 @@ html {
     @apply border-border;
   }
 
+  /* Global placeholder text fix - make ALL placeholders white */
+  ::placeholder {
+    color: #ffffff !important;
+    opacity: 0.8;
+  }
+
+  /* Browser compatibility for placeholder styles */
+  ::-webkit-input-placeholder {
+    color: #ffffff !important;
+    opacity: 0.8;
+  }
+  ::-moz-placeholder {
+    color: #ffffff !important;
+    opacity: 0.8;
+  }
+  :-ms-input-placeholder {
+    color: #ffffff !important;
+    opacity: 0.8;
+  }
+  :-moz-placeholder {
+    color: #ffffff !important;
+    opacity: 0.8;
+  }
+
+  /* Ensure input text is white and visible */
+  input,
+  textarea,
+  select {
+    @apply text-white placeholder:text-white placeholder:opacity-80;
+  }
+
+  /* Remove any conflicting gray placeholder styles */
+  .placeholder\:text-gray-400::placeholder,
+  .placeholder\:text-gray-500::placeholder,
+  .placeholder\:text-gray-600::placeholder,
+  [class*="placeholder:text-gray"]::placeholder {
+    color: white !important;
+  }
+
   body {
     @apply font-sans antialiased text-foreground;
     background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%);

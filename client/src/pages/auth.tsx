@@ -94,6 +94,7 @@ export default function AuthPage() {
       lastName: formData.get("lastName") as string,
       phone: formData.get("phone") as string,
       fullAddress: addressData.fullAddress,
+      zipCode: addressData.zipCode,
       latitude: addressData.latitude,
       longitude: addressData.longitude,
       isLocalCustomer
