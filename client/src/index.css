@@ -8,15 +8,8 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Prevent scrollbar flicker during dropdowns */
-html.dropdown-open {
-  overflow-y: scroll !important;
-}
-
 body {
   overflow-x: hidden;
-  /* Maintain consistent scrollbar space */
-  scrollbar-gutter: stable;
 }
 
 /* Smooth dropdown animations without layout shift */

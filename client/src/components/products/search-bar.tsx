@@ -110,31 +110,27 @@ export default function SearchBar({
   // Update dropdown position when opened
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      // Prevent scrollbar flicker by maintaining consistent overflow
-      document.documentElement.classList.add('dropdown-open');
-      
       const updatePosition = () => {
         const rect = inputRef.current?.getBoundingClientRect();
         if (rect) {
           setDropdownPosition({
-            top: rect.bottom + window.scrollY + 8,
-            left: rect.left + window.scrollX,
+            top: rect.bottom + 8, // Use viewport coordinates, not page coordinates
+            left: rect.left,
             width: rect.width
           });
         }
       };
       
-      updatePosition();
+      // Initial position calculation
+      setTimeout(updatePosition, 0); // Use setTimeout to ensure DOM is ready
+      
       window.addEventListener('scroll', updatePosition);
       window.addEventListener('resize', updatePosition);
       
       return () => {
         window.removeEventListener('scroll', updatePosition);
         window.removeEventListener('resize', updatePosition);
-        document.documentElement.classList.remove('dropdown-open');
       };
-    } else {
-      document.documentElement.classList.remove('dropdown-open');
     }
   }, [isOpen]);
 
@@ -179,10 +175,10 @@ export default function SearchBar({
       </form>
 
       {/* Search Suggestions Dropdown - Portal */}
-      {isOpen && typeof document !== 'undefined' && createPortal(
+      {isOpen && typeof document !== 'undefined' && dropdownPosition.width > 0 && createPortal(
         <div
+          className="fixed"
           style={{
-            position: 'fixed',
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
             width: `${dropdownPosition.width}px`,
