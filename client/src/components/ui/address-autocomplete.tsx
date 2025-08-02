@@ -192,9 +192,9 @@ export default function AddressAutocomplete({
           placeholder={placeholder}
           required={required}
           className={cn(
-            "w-full px-3 py-3 bg-gray-800 border border-gray-700",
-            "text-white placeholder-gray-500 rounded-lg",
-            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+            "w-full px-3 py-3 bg-input border border-input",
+            "text-white placeholder-gray-400 rounded-lg",
+            "focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
             "transition-all duration-200",
             className
           )}
@@ -221,7 +221,7 @@ export default function AddressAutocomplete({
       {/* Suggestions dropdown */}
       {showDropdown && suggestions.length > 0 && (
         <div 
-          className="absolute z-[100] w-full mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl max-h-60 overflow-auto"
+          className="absolute z-[100] w-full mt-1 bg-popover border border-input rounded-lg shadow-2xl max-h-60 overflow-auto"
           style={{ top: '100%' }}
         >
           {suggestions.map((result, index) => {
@@ -231,7 +231,7 @@ export default function AddressAutocomplete({
                 key={result.place_id || index}
                 type="button"
                 onClick={() => selectAddress(result)}
-                className="w-full px-4 py-3 text-left hover:bg-gray-800 focus:bg-gray-800 focus:outline-none transition-colors border-b border-gray-800 last:border-0"
+                className="w-full px-4 py-3 text-left text-white hover:bg-accent focus:bg-accent focus:outline-none transition-colors border-b border-border last:border-0"
               >
                 <div className="flex items-start gap-3">
                   <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />

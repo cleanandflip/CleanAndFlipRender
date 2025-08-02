@@ -20,8 +20,8 @@ html {
   --card-foreground: #E2E8F0;
   
   /* Form inputs and borders */
-  --border: rgba(255, 255, 255, 0.08);     /* Subtle borders */
-  --input: #1A1F2E;                        /* Input backgrounds */
+  --border: rgba(255, 255, 255, 0.15);     /* More visible borders */
+  --input: #475569;                        /* Lighter input backgrounds for better visibility */
   
   /* Primary colors - Blue theme */
   --primary: #3B82F6;                      /* Vibrant blue */

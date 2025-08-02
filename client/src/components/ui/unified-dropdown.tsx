@@ -86,7 +86,7 @@ export function UnifiedDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "w-full px-4 py-3 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group",
+          "w-full px-4 py-3 bg-input backdrop-blur-sm border border-input rounded-lg text-left text-white transition-all duration-200 focus:outline-none flex items-center justify-between group",
           disabled 
             ? "cursor-not-allowed opacity-50" 
             : "hover:border-gray-600 focus:border-gray-500 cursor-pointer"
@@ -98,7 +98,7 @@ export function UnifiedDropdown({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={placeholder}
-            className="bg-transparent outline-none flex-1 placeholder-gray-500 text-white"
+            className="bg-transparent outline-none flex-1 placeholder-gray-400 text-white"
             onClick={(e) => e.stopPropagation()}
             autoFocus
           />
@@ -126,7 +126,7 @@ export function UnifiedDropdown({
           />
           
           {/* Menu */}
-          <div className="absolute z-[9999] w-full mt-2 py-1 bg-gray-800/95 backdrop-blur-md border border-gray-700 rounded-lg shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+          <div className="absolute z-[9999] w-full mt-2 py-1 bg-popover backdrop-blur-md border border-input rounded-lg shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <button

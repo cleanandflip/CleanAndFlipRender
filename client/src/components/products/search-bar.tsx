@@ -129,7 +129,7 @@ export default function SearchBar({
             onChange={(e) => handleInputChange(e.target.value)}
             onFocus={() => setIsOpen(true)}
             placeholder={placeholder}
-            className="bg-transparent border-none outline-none flex-1 text-primary placeholder-gray-400 p-0 h-auto focus-visible:ring-0"
+            className="bg-transparent border-none outline-none flex-1 text-white placeholder-gray-400 p-0 h-auto focus-visible:ring-0"
           />
           {inputValue && (
             <Button
