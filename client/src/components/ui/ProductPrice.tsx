@@ -42,7 +42,7 @@ export const ProductPrice: React.FC<ProductPriceProps> = ({
           <span className={`line-through text-gray-400 ${originalSizeClasses[size]}`}>
             ${originalPriceNum.toFixed(2)}
           </span>
-          <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
             -{discount}%
           </span>
         </>

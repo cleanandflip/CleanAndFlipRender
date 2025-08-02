@@ -57,11 +57,11 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
 
   // Equipment conditions
   const conditions = [
-    { value: "new", label: "New", color: "bg-gray-600" },
-    { value: "like_new", label: "Like New", color: "bg-gray-700" },
-    { value: "good", label: "Good", color: "bg-gray-800" },
-    { value: "fair", label: "Fair", color: "bg-gray-700" },
-    { value: "needs_repair", label: "Needs Repair", color: "bg-gray-900" },
+    { value: "new", label: "New", color: "bg-green-500" },
+    { value: "like_new", label: "Like New", color: "bg-blue-500" },
+    { value: "good", label: "Good", color: "bg-yellow-500" },
+    { value: "fair", label: "Fair", color: "bg-orange-500" },
+    { value: "needs_repair", label: "Needs Repair", color: "bg-red-500" },
   ];
 
   // Use actual brands from database, fallback to popular brands if not loaded
