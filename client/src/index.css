@@ -12,166 +12,26 @@ body {
   overflow-x: hidden;
 }
 
-/* =====================
-   UNIFIED SEARCH STYLES
-   ===================== */
-.search-bar-container {
-  position: relative;
-  width: 100%;
+/* Custom scrollbar styling for search dropdown */
+.scrollbar-thin {
+  scrollbar-width: thin;
 }
 
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-input {
-  width: 100%;
-  background: rgba(31, 41, 55, 0.6);
-  border: 1px solid rgba(75, 85, 99, 0.4);
-  color: white;
-  padding: 0.75rem 2.5rem;
-  padding-right: 1rem;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  outline: none;
-}
-
-.search-input:hover {
-  background: rgba(31, 41, 55, 0.7);
-  border-color: rgba(107, 114, 128, 0.5);
-}
-
-.search-input:focus {
-  background: rgba(31, 41, 55, 0.8);
-  border-color: rgba(107, 114, 128, 0.6);
-  box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.15);
-}
-
-.search-input::placeholder {
-  color: rgba(156, 163, 175, 0.7);
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.875rem;
-  color: rgba(156, 163, 175, 0.7);
-  pointer-events: none;
-}
-
-.search-clear {
-  position: absolute;
-  right: 0.5rem;
-  padding: 0.25rem;
-  background: transparent;
-  border: none;
-  color: rgba(156, 163, 175, 0.7);
-  cursor: pointer;
-  border-radius: 0.25rem;
-  transition: all 0.15s ease;
-}
-
-.search-clear:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-/* Dropdown styles */
-.search-dropdown-portal {
-  animation: dropdownFadeIn 0.2s ease-out;
-  z-index: 999999 !important;
-}
-
-.search-dropdown-content {
-  background: rgba(24, 29, 37, 0.98);
-  border: 1px solid rgba(75, 85, 99, 0.4);
-  border-radius: 0.75rem;
-  backdrop-filter: blur(20px);
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.5),
-    0 10px 10px -5px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.search-section {
-  padding: 0.5rem 0;
-}
-
-.search-section-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  color: rgba(156, 163, 175, 0.9);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.search-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: transparent;
-  border: none;
-  color: white;
-  font-size: 0.9375rem;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.search-item:hover {
-  background: rgba(75, 85, 99, 0.3);
-  padding-left: 1.25rem;
-}
-
-.search-item svg {
-  color: rgba(156, 163, 175, 0.7);
-  flex-shrink: 0;
-}
-
-@keyframes dropdownFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Custom scrollbar */
-.search-dropdown-content::-webkit-scrollbar {
+.scrollbar-thumb-white\/20::-webkit-scrollbar {
   width: 6px;
 }
 
-.search-dropdown-content::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.5);
-}
-
-.search-dropdown-content::-webkit-scrollbar-thumb {
-  background: rgba(75, 85, 99, 0.5);
+.scrollbar-thumb-white\/20::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
   border-radius: 3px;
 }
 
-/* Global z-index fix */
-.search-dropdown-portal {
-  z-index: 999999 !important;
+.scrollbar-thumb-white\/20::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Remove any transforms/filters that create stacking contexts */
-main, section, .card, [class*="card"] {
-  transform: none !important;
-  filter: none !important;
+.scrollbar-track-transparent::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 :root {
@@ -504,7 +364,7 @@ main, section, .card, [class*="card"] {
     color: white !important;
   }
 
-  /* Cleaned up all legacy search styles */
+  /* Clean up - removed old search dropdown CSS as new SearchBar handles positioning natively */
 
   /* Remove all possible gray placeholder classes */
   .placeholder-gray-400::placeholder,
@@ -970,4 +830,53 @@ form [class*="gray-5"],
 form [class*="gray-6"],
 form [class*="gray-7"] {
   color: #d1d5db !important; /* gray-300 */
+}
+
+/* ==========================================
+   ADVANCED SEARCH SYSTEM Z-INDEX FIXES
+   ========================================== */
+
+/* Advanced SearchBar dropdown positioning - CRITICAL Z-INDEX FIXES */
+.search-container {
+  position: relative;
+  z-index: 50;
+}
+
+.search-container .absolute {
+  z-index: 99999 !important;
+  position: absolute !important;
+}
+
+/* Ensure search dropdown appears above ALL content */
+.search-container [data-radix-popper-content-wrapper],
+.search-container [data-radix-portal],
+.search-dropdown-overlay {
+  z-index: 99999 !important;
+}
+
+/* Lower z-index for all other components */
+.card,
+.product-card,
+[class*="card"],
+.no-products-card,
+.filter-sidebar,
+.product-grid {
+  position: relative;
+  z-index: 1 !important;
+}
+
+.search-container:focus-within {
+  z-index: 99999 !important;
+}
+
+/* Search dropdown specific styling */
+.search-dropdown-portal {
+  z-index: 99999 !important;
+  position: fixed !important;
+}
+
+/* Ensure dropdown is always on top */
+.search-container > div:last-child {
+  z-index: 99999 !important;
+  position: absolute !important;
 }

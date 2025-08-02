@@ -6,7 +6,7 @@ import { NavigationStateManager } from "@/lib/navigation-state";
 import ProductGrid from "@/components/products/product-grid";
 import ProductList from "@/components/products/ProductList";
 import FilterSidebar from "@/components/products/filter-sidebar";
-import { SearchBar } from "@/components/ui/SearchBar";
+import SearchBar from "@/components/search/SearchBar";
 import FilterChip from "@/components/products/filter-chip";
 import { Button, Card } from "@/components/shared/AnimatedComponents";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -353,12 +353,11 @@ export default function Products() {
         <Card className="p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 max-w-md">
-              <SearchBar
-                value={filters.search || ''}
-                onChange={(value) => handleFilterChange({ search: value })}
-                onSearch={(value) => handleFilterChange({ search: value })}
+              <SearchBar 
+                onSearch={(search) => handleFilterChange({ search })}
                 placeholder="Search weightlifting equipment..."
-                recentSearches={[]}
+                variant="default"
+                showSuggestions={true}
               />
             </div>
             
