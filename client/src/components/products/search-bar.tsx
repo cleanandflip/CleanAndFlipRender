@@ -147,7 +147,10 @@ export default function SearchBar({
 
       {/* Search Suggestions Dropdown */}
       {isOpen && (
-        <Card className="absolute top-full left-0 right-0 mt-2 p-4 z-50 max-h-80 overflow-y-auto">
+        <div 
+          className="absolute top-full left-0 right-0 mt-2 p-4 z-[99999] max-h-80 overflow-y-auto bg-card backdrop-blur-md border border-input rounded-lg shadow-2xl"
+          style={{ zIndex: 99999, position: 'absolute' }}
+        >
           {inputValue.length >= 2 ? (
             // Show suggestions when typing
             <div>
@@ -220,7 +223,7 @@ export default function SearchBar({
               </div>
             </div>
           )}
-        </Card>
+        </div>
       )}
     </div>
   );

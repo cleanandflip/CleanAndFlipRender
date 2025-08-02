@@ -393,6 +393,25 @@ html {
     z-index: var(--z-dropdown) !important;
   }
 
+  /* Force search dropdown above product cards */
+  .search-dropdown,
+  .search-suggestions,
+  [class*="search"] .card,
+  [class*="search"] [class*="dropdown"] {
+    z-index: 99999 !important;
+    position: absolute !important;
+  }
+
+  /* Prevent product grid from creating stacking context */
+  .product-grid,
+  .product-card,
+  [class*="product-grid"],
+  [class*="product-card"] {
+    z-index: auto !important;
+    isolation: auto !important;
+    transform: none !important;
+  }
+
   /* Prevent parent containers from creating new stacking contexts */
   .search-wrapper,
   .dropdown-wrapper,
@@ -1039,4 +1058,12 @@ form [class*="gray-5"],
 form [class*="gray-6"],
 form [class*="gray-7"] {
   color: #d1d5db !important; /* gray-300 */
+}
+
+/* Additional Card component z-index fixes to prevent dropdown interference */
+.card,
+[class*="card"],
+.bg-card {
+  z-index: auto !important;
+  isolation: auto !important;
 }
