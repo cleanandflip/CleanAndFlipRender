@@ -307,9 +307,52 @@ html {
   /* Ensure buttons in CTA sections maintain theme consistency */
   .get-started-section button,
   .cta-section button,
-  section:has(h3:contains("GET STARTED")) button {
+  section:has(h3:contains("GET STARTED")) button,
+  div:has(> h3:contains("GET STARTED")) button {
     border-radius: 0.5rem !important; /* Match form elements */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    
+    /* Override bright blue with subtle glass morphism styling */
+    background: rgba(75, 85, 99, 0.6) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(156, 163, 175, 0.4) !important;
+    color: white !important;
+    font-weight: 500 !important;
+    
+    /* Subtle inner glow for depth */
+    box-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.1),
+      inset 0 1px 2px rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Button hover states in CTA sections */
+  .get-started-section button:hover,
+  .cta-section button:hover,
+  section:has(h3:contains("GET STARTED")) button:hover,
+  div:has(> h3:contains("GET STARTED")) button:hover {
+    background: rgba(75, 85, 99, 0.7) !important;
+    border-color: rgba(156, 163, 175, 0.6) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 
+      0 4px 8px rgba(0, 0, 0, 0.15),
+      inset 0 1px 2px rgba(255, 255, 255, 0.15) !important;
+  }
+
+  /* Primary action button - keep subtle blue accent */
+  .get-started-section button:first-of-type,
+  .cta-section button:first-of-type,
+  section:has(h3:contains("GET STARTED")) button:first-of-type,
+  div:has(> h3:contains("GET STARTED")) button:first-of-type {
+    background: rgba(59, 130, 246, 0.3) !important; /* Subtle blue accent */
+    border-color: rgba(59, 130, 246, 0.5) !important;
+  }
+
+  .get-started-section button:first-of-type:hover,
+  .cta-section button:first-of-type:hover,
+  section:has(h3:contains("GET STARTED")) button:first-of-type:hover,
+  div:has(> h3:contains("GET STARTED")) button:first-of-type:hover {
+    background: rgba(59, 130, 246, 0.4) !important;
+    border-color: rgba(59, 130, 246, 0.6) !important;
   }
 
   /* Dropdown hover states - match input hover exactly */
