@@ -2,7 +2,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { ROUTES } from "@/config/routes";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/use-cart";
@@ -30,15 +30,22 @@ import CartDrawer from "@/components/cart/cart-drawer";
 function ScrollRestoration() {
   const [location] = useLocation();
   
+  // Anti-flicker initialization - runs before paint
+  useLayoutEffect(() => {
+    // Calculate scrollbar width for compensation
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.documentElement.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
+  }, []);
+  
   useEffect(() => {
-    // Prevent flash of unstyled content
+    // Smooth body fade-in when loaded
     if (typeof document !== 'undefined') {
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-          document.documentElement.classList.add('loaded');
+          document.body.classList.add('loaded');
         });
       } else {
-        document.documentElement.classList.add('loaded');
+        document.body.classList.add('loaded');
       }
     }
     
