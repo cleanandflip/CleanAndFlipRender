@@ -100,6 +100,14 @@ Preferred communication style: Simple, everyday language.
 ✓ **Button Variant Type Safety**: Fixed all Button variant TypeScript errors in products.tsx for production compliance
 ✓ **Production-Ready Sync**: Product edits now trigger immediate UI refreshes with proper error handling
 
+### Product Active/Inactive Toggle & Stock Field Fix ✅ (August 2025)
+✓ **Schema Alignment Completed**: Fixed ProductModal to use `status` enum instead of `isActive` boolean to match database schema
+✓ **Toggle Functionality Working**: Active/Inactive toggle properly switches between 'active' and 'draft' status values
+✓ **Backend Field Mapping Fixed**: Corrected form submission to use proper field names (`stockQuantity`, `featured`, `status`)
+✓ **Stock Field Issue Resolved**: Fixed stock field reset by properly mapping `product.stock` from API response
+✓ **Visual Status Feedback**: Toggle now displays "(Published)" or "(Draft)" for clear user understanding
+✓ **Production Ready**: All product editing functionality fully operational with real-time UI sync
+
 ### Previous Code Cleanup & Organization
 ✓ **Eliminated Duplicate Code**: Removed all duplicate function definitions across components
 ✓ **Centralized Utilities**: Created `client/src/utils/submissionHelpers.ts` and `server/utils/exportHelpers.ts`

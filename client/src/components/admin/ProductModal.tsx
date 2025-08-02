@@ -54,7 +54,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
         sku: product.sku || '',
         price: product.price?.toString() || '',
         compareAtPrice: product.compareAtPrice?.toString() || '',
-        stock: product.stockQuantity?.toString() || '',
+        stock: product.stock?.toString() || '1',
         categoryId: product.categoryId || '',
         description: product.description || '',
         shortDescription: product.shortDescription || '',
@@ -176,13 +176,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
       return;
     }
     
-    console.log('Submitting product update:', {
-      id: product?.id,
-      formData,
-      status: formData.status,
-      featured: formData.featured,
-      stockQuantity: parseInt(formData.stock)
-    });
+
     
     saveProductMutation.mutate(formData);
   };
@@ -365,15 +359,10 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
                   id="status"
                   checked={formData.status === 'active'}
                   onCheckedChange={(checked) => {
-                    console.log('Status toggle changed:', { checked, newStatus: checked ? 'active' : 'draft' });
-                    setFormData(prev => {
-                      const newData = {
-                        ...prev,
-                        status: checked ? 'active' as const : 'draft' as const
-                      };
-                      console.log('New form data status:', newData.status);
-                      return newData;
-                    });
+                    setFormData(prev => ({
+                      ...prev,
+                      status: checked ? 'active' as const : 'draft' as const
+                    }));
                   }}
                 />
                 <Label htmlFor="status" style={{ color: theme.colors.text.secondary }}>
@@ -385,10 +374,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
                 <Switch
                   id="featured"
                   checked={formData.featured}
-                  onCheckedChange={(checked) => {
-                    console.log('Featured toggle changed:', { checked });
-                    setFormData(prev => ({ ...prev, featured: checked }));
-                  }}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked }))}
                 />
                 <Label htmlFor="featured" style={{ color: theme.colors.text.secondary }}>Featured</Label>
               </div>
