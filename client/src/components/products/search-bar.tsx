@@ -147,7 +147,7 @@ export default function SearchBar({
 
       {/* Search Suggestions Dropdown */}
       {isOpen && (
-        <Card className="absolute top-full left-0 right-0 mt-2 p-4 z-dropdown max-h-80 overflow-y-auto search-results-dropdown bg-card/95 backdrop-blur-sm rounded-lg border border-white/10 shadow-lg">
+        <Card className="absolute top-full left-0 right-0 mt-2 p-4 z-50 max-h-80 overflow-y-auto">
           {inputValue.length >= 2 ? (
             // Show suggestions when typing
             <div>
