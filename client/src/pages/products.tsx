@@ -203,12 +203,12 @@ export default function Products() {
   // Add global event listener for real-time admin updates
   useEffect(() => {
     const handleProductUpdate = () => {
-      console.log('Product update event received - force refreshing products page');
+
       refetch();
     };
 
     const handleStorageUpdate = () => {
-      console.log('Storage update event received - force refreshing products page');
+
       refetch();
     };
 

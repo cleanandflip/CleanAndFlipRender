@@ -79,11 +79,11 @@ export default function ProductDetail() {
   useEffect(() => {
     const handleProductUpdate = (event: any) => {
       const { productId, action } = event.detail || {};
-      console.log(`Product detail page received ${action} event for product ${productId}`);
+
       
       // If this is the current product or a global update, refresh
       if (!productId || productId === id) {
-        console.log('Force refreshing product detail page');
+
         refetch();
       }
     };

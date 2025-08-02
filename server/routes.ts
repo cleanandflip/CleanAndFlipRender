@@ -1961,15 +1961,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/admin/products/:id", requireAdmin, async (req, res) => {
-    try {
-      await storage.deleteProduct(req.params.id);
-      res.json({ message: "Product deleted successfully" });
-    } catch (error) {
-      Logger.error("Error deleting product", error);
-      res.status(500).json({ message: "Failed to delete product" });
-    }
-  });
+
 
   app.put("/api/admin/products/:id/stock", requireAdmin, async (req, res) => {
     try {
