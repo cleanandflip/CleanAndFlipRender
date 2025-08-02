@@ -42,10 +42,10 @@ function getPasswordStrength(password: string): { score: number; label: string; 
   const metRequirements = requirements.filter((req) => req.test(password)).length;
   
   if (metRequirements === 0) return { score: 0, label: "Enter password", color: "bg-gray-400" };
-  if (metRequirements <= 2) return { score: 25, label: "Weak", color: "bg-red-500" };
-  if (metRequirements <= 3) return { score: 50, label: "Fair", color: "bg-yellow-500" };
-  if (metRequirements <= 4) return { score: 75, label: "Good", color: "bg-blue-500" };
-  return { score: 100, label: "Strong", color: "bg-green-500" };
+  if (metRequirements <= 2) return { score: 25, label: "Weak", color: "bg-gray-800" };
+  if (metRequirements <= 3) return { score: 50, label: "Fair", color: "bg-gray-700" };
+  if (metRequirements <= 4) return { score: 75, label: "Good", color: "bg-gray-600" };
+  return { score: 100, label: "Strong", color: "bg-gray-500" };
 }
 
 export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) {
@@ -58,10 +58,10 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
         <div className="flex justify-between items-center">
           <span className="text-sm text-text-secondary">Password Strength</span>
           <span className={`text-sm font-medium ${
-            strength.label === "Strong" ? "text-green-400" :
-            strength.label === "Good" ? "text-blue-400" :
-            strength.label === "Fair" ? "text-yellow-400" :
-            strength.label === "Weak" ? "text-red-400" : "text-gray-400"
+            strength.label === "Strong" ? "text-gray-300" :
+            strength.label === "Good" ? "text-gray-400" :
+            strength.label === "Fair" ? "text-gray-400" :
+            strength.label === "Weak" ? "text-gray-500" : "text-gray-400"
           }`}>
             {strength.label}
           </span>

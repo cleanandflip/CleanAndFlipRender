@@ -1,0 +1,225 @@
+Global Theme Color Consistency Fix for Replit
+Looking at both images, here are the color inconsistencies that need fixing:
+1. STATUS BADGES - Make ALL Badges Consistent
+css/* GOOD badge (yellow in image 1) - make it subtle */
+.badge-good,
+.status-good,
+[class*="good"] {
+  @apply bg-gray-800/80 
+         text-gray-300 
+         border border-gray-700/50
+         text-xs font-medium
+         px-2.5 py-1 
+         rounded-full
+         backdrop-blur-sm;
+}
+
+/* Only 1 left badges - replace harsh red */
+.only-one-left,
+.low-stock-badge,
+[class*="only"][class*="left"] {
+  @apply bg-gray-900/90 
+         text-gray-300
+         border border-gray-700/70
+         text-xs font-semibold
+         px-3 py-1.5 
+         rounded-full
+         backdrop-blur-sm
+         shadow-md shadow-black/30;
+}
+
+/* Alternative: Very subtle amber for urgency */
+.low-stock-subtle {
+  @apply bg-amber-950/50 
+         text-amber-200/70
+         border border-amber-900/30;
+}
+2. BUTTON CONSISTENCY ACROSS PAGES
+css/* Primary Add to Cart - keep blue */
+.btn-primary,
+.add-to-cart,
+[class*="add-to-cart"] {
+  @apply bg-blue-500 hover:bg-blue-600
+         text-white font-semibold
+         transition-all duration-200;
+}
+
+/* In Cart button - make it subtle, not green */
+.in-cart-button,
+[class*="in-cart"] {
+  @apply bg-gray-800 
+         text-gray-300
+         border border-gray-700
+         hover:bg-gray-700 
+         hover:text-white
+         font-semibold
+         transition-all duration-200;
+}
+
+/* If you want to keep green, make it darker */
+.in-cart-button-green {
+  @apply bg-green-950/80 
+         text-green-200/90
+         border border-green-900/50
+         hover:bg-green-900/80;
+}
+3. GLOBAL COLOR VARIABLES FOR CONSISTENCY
+css/* Add to your root/global CSS */
+:root {
+  /* Primary colors */
+  --primary-blue: #3b82f6;
+  --primary-blue-hover: #2563eb;
+  
+  /* Backgrounds */
+  --bg-card: rgba(17, 24, 39, 0.6);
+  --bg-badge: rgba(31, 41, 55, 0.8);
+  --bg-badge-hover: rgba(31, 41, 55, 0.9);
+  
+  /* Text colors */
+  --text-primary: #f3f4f6;      /* gray-100 */
+  --text-secondary: #d1d5db;    /* gray-300 */
+  --text-muted: #6b7280;        /* gray-500 */
+  --text-brand: #9ca3af;        /* gray-400 for brand names */
+  
+  /* Border colors */
+  --border-default: rgba(55, 65, 81, 0.5);
+  --border-hover: rgba(75, 85, 99, 0.7);
+  
+  /* Status colors (all muted) */
+  --status-good: rgba(31, 41, 55, 0.8);
+  --status-warning: rgba(31, 41, 55, 0.9);
+  --status-error: rgba(31, 41, 55, 0.9);
+}
+4. PRODUCT PAGE SPECIFIC FIXES
+css/* Product detail page styling */
+.product-detail {
+  /* Price styling */
+  .price-tag {
+    @apply text-white font-bold text-3xl;
+  }
+  
+  /* Brand name */
+  .brand-tag {
+    @apply text-gray-500 text-sm uppercase tracking-wider;
+  }
+  
+  /* View count */
+  .view-count {
+    @apply text-gray-500 text-sm;
+  }
+}
+
+/* Tabs styling */
+.tab-button {
+  @apply text-gray-400 
+         hover:text-white 
+         border-b-2 border-transparent
+         hover:border-gray-600
+         transition-all duration-200;
+}
+
+.tab-button.active {
+  @apply text-white border-blue-500;
+}
+5. QUICK GLOBAL OVERRIDES
+css/* Force consistency across all pages */
+/* Remove all harsh colors */
+.bg-yellow-500,
+.bg-yellow-400,
+.bg-yellow-300,
+[class*="bg-yellow"] {
+  @apply bg-gray-800/80 !important;
+}
+
+.bg-red-500,
+.bg-red-400,
+[class*="bg-red"]:not(.wishlist-heart) {
+  @apply bg-gray-900/90 !important;
+}
+
+.bg-green-500,
+.bg-green-400,
+[class*="bg-green"] {
+  @apply bg-gray-800 !important;
+}
+
+/* Text color consistency */
+.text-yellow-500,
+.text-yellow-400,
+[class*="text-yellow"] {
+  @apply text-gray-300 !important;
+}
+
+.text-red-500,
+.text-red-400,
+[class*="text-red"]:not(.wishlist-heart) {
+  @apply text-gray-300 !important;
+}
+6. BRAND NAME CONSISTENCY
+css/* Ensure all brand names use same style */
+.product-brand,
+.brand-name,
+[class*="brand"] {
+  @apply text-gray-400 
+         text-xs 
+         font-medium 
+         uppercase 
+         tracking-wider;
+}
+7. SHOP PAGE GRID ITEMS
+css/* Ensure shop page items match detail page */
+.product-grid-item {
+  .product-title {
+    @apply text-gray-100 font-semibold;
+  }
+  
+  .product-brand {
+    @apply text-gray-500 text-xs uppercase;
+  }
+  
+  .product-price {
+    @apply text-white font-bold text-xl;
+  }
+}
+8. COMPREHENSIVE THEME FILE
+Create a theme.css file:
+css/* Global theme rules */
+* {
+  /* Remove default browser colors */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* All badges should be subtle */
+[class*="badge"],
+[class*="status"],
+[class*="tag"]:not(.price-tag) {
+  @apply bg-gray-800/80 
+         text-gray-300 
+         border-gray-700/50 
+         backdrop-blur-sm !important;
+}
+
+/* All primary buttons */
+[class*="btn-primary"],
+[class*="add-to-cart"] {
+  @apply bg-blue-500 
+         hover:bg-blue-600 
+         text-white !important;
+}
+
+/* All secondary buttons */
+[class*="btn-secondary"],
+[class*="in-cart"] {
+  @apply bg-gray-800 
+         text-gray-300 
+         border-gray-700 !important;
+}
+IMPLEMENTATION PRIORITY:
+
+Fix the yellow "GOOD" badge → make it gray
+Fix the red "Only 1 left" badges → make them gray
+Fix the green "In Cart" button → make it gray or very dark green
+Apply global color variables to ensure consistency
+Test both shop and product detail pages
+
+This will create a cohesive, professional dark theme across your entire application!

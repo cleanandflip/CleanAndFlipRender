@@ -171,7 +171,7 @@ export function AddToCartButton({
           onClick={handleViewCart}
           variant="default"
           size={size}
-          className={`w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${className}`}
+          className={`in-cart-button w-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 py-3 px-6 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${className}`}
         >
           <Check className="w-5 h-5" />
           In Cart - View
@@ -180,7 +180,7 @@ export function AddToCartButton({
         <button
           onClick={handleRemoveFromCart}
           disabled={loading}
-          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center disabled:opacity-50 z-10"
+          className="absolute -top-2 -right-2 w-6 h-6 bg-gray-900/90 hover:bg-gray-800 text-gray-300 border border-gray-700/70 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center disabled:opacity-50 z-10"
           title="Remove from cart"
         >
           <X className="w-3 h-3" />

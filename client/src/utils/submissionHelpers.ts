@@ -6,12 +6,12 @@ export function formatStatus(status: string): string {
 
 export function getStatusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
   switch (status) {
-    case 'pending': return 'default';
+    case 'pending': return 'secondary';
     case 'under_review': return 'secondary';
     case 'accepted': return 'secondary';
     case 'scheduled': return 'secondary';
     case 'completed': return 'secondary';
-    case 'rejected': return 'destructive';
+    case 'rejected': return 'outline';
     case 'cancelled': return 'outline';
     default: return 'outline';
   }
