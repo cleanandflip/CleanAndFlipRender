@@ -350,7 +350,7 @@ export default function Products() {
         </div>
 
         {/* Search and Controls */}
-        <Card className="p-6 mb-8 w-full">
+        <Card className="p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 max-w-md">
               <SearchBar 
@@ -445,91 +445,21 @@ export default function Products() {
           </div>
         </Card>
 
-        {/* Layout Container */}
-        {showFilters ? (
-          <div className="flex gap-8">
-            {/* Filters Sidebar */}
-            <div className="w-80 flex-shrink-0">
+        <div className="flex gap-8">
+          {/* Filters Sidebar */}
+          <div className={`transition-all duration-300 ease-in-out flex-shrink-0 ${
+            showFilters ? 'w-80 opacity-100' : 'w-0 opacity-0 overflow-hidden'
+          }`}>
+            <div className={`w-80 ${showFilters ? 'block' : 'hidden'}`}>
               <FilterSidebar
                 filters={filters}
                 onFiltersChange={handleFilterChange}
               />
             </div>
-
-            {/* Products Grid */}
-            <div className="flex-1 min-w-0">
-              {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Card key={i} className="p-4">
-                      <Skeleton className="w-full h-48 mb-4" />
-                      <Skeleton className="h-6 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-1/2 mb-2" />
-                      <Skeleton className="h-6 w-1/4" />
-                    </Card>
-                  ))}
-                </div>
-              ) : data && data.products.length > 0 ? (
-                <>
-                  <ProductList products={data.products} />
-                  
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="mt-12 flex justify-center">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="secondary"
-                          disabled={currentPage === 0}
-                          onClick={() => setCurrentPage(currentPage - 1)}
-                        >
-                          Previous
-                        </Button>
-                        
-                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                          const pageNum = currentPage < 3 ? i : currentPage - 2 + i;
-                          if (pageNum >= totalPages) return null;
-                          
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant={pageNum === currentPage ? "primary" : "secondary"}
-                              onClick={() => setCurrentPage(pageNum)}
-                            >
-                              {pageNum + 1}
-                            </Button>
-                          );
-                        })}
-                        
-                        <Button
-                          variant="secondary"
-                          disabled={currentPage === totalPages - 1}
-                          onClick={() => setCurrentPage(currentPage + 1)}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <Card className="p-12 text-center">
-                  <h3 className="text-xl font-semibold mb-4">No products found</h3>
-                  <p className="text-text-secondary mb-6">
-                    Try adjusting your search terms or filters to find what you're looking for.
-                  </p>
-                  <Button
-                    onClick={() => handleFilterChange({})}
-                    variant="primary"
-                  >
-                    Clear Filters
-                  </Button>
-                </Card>
-              )}
-            </div>
           </div>
-        ) : (
-          /* Full width when no filters */
-          <div className="w-full">
+
+          {/* Products Grid */}
+          <div className="flex-1">
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -598,7 +528,7 @@ export default function Products() {
               </Card>
             )}
           </div>
-        )}
+        </div>
       </div>
     </motion.div>
   );
