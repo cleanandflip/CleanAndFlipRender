@@ -72,6 +72,9 @@ export default {
         "accent-blue": "var(--accent-blue)",
         "glass-bg": "var(--glass-bg)",
         "glass-border": "var(--glass-border)",
+        "placeholder-color": "var(--placeholder-color)",
+        "label-color": "var(--label-color)",
+        "input-foreground": "var(--input-foreground)",
       },
       keyframes: {
         "accordion-down": {

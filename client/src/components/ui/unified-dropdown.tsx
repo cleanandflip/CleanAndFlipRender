@@ -98,7 +98,7 @@ export function UnifiedDropdown({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={placeholder}
-            className="bg-transparent outline-none flex-1 placeholder:text-placeholder-color text-input-foreground"
+            className="bg-transparent outline-none flex-1 placeholder:text-white text-input-foreground"
             onClick={(e) => e.stopPropagation()}
             autoFocus
           />

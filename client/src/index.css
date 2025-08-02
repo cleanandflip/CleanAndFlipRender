@@ -13,7 +13,7 @@ html {
   --background: #1A1F2E;                   /* Primary background */
   --foreground: #FFFFFF;                   /* Primary text */
   --muted: #232937;                        /* Muted backgrounds */
-  --muted-foreground: #94A3B8;             /* Muted text */
+  --muted-foreground: #FFFFFF;             /* Muted text */
   --popover: #232937;                      /* Popover backgrounds */
   --popover-foreground: #E2E8F0;
   --card: #232937;                         /* Card backgrounds */
@@ -55,6 +55,7 @@ html {
   --text-muted: #FFFFFF;                   /* Muted text - now white for better visibility */
   --placeholder-color: #FFFFFF;            /* Placeholder text - white for visibility */
   --label-color: #FFFFFF;                  /* Form label text - white for visibility */
+  --muted-foreground: #FFFFFF;             /* Muted foreground - white for visibility */
   --accent-steel: #64748B;                 /* Athletic steel */
   --accent-blue: #3B82F6;                  /* Vibrant blue */
   
