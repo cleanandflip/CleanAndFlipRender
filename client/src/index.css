@@ -114,7 +114,7 @@ html {
     caret-color: white !important;
   }
 
-  /* Soft border refinement - elegant form field styling */
+  /* Enhanced visibility form field styling - lighter backgrounds */
   input,
   textarea,
   select,
@@ -123,36 +123,40 @@ html {
   [type="email"],
   [type="password"],
   [type="tel"],
-  [type="number"] {
-    border: 1px solid rgba(107, 114, 128, 0.25) !important;
-    background: rgba(31, 41, 55, 0.4) !important;
-    backdrop-filter: blur(8px) !important;
+  [type="number"],
+  [type="search"] {
+    border: 1px solid rgba(156, 163, 175, 0.4) !important; /* gray-400 with 40% opacity */
+    background: rgba(75, 85, 99, 0.4) !important; /* gray-600 with 40% opacity - much lighter */
+    backdrop-filter: blur(12px) !important;
     border-radius: 0.5rem !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    font-weight: 500 !important; /* Slightly bolder text for better readability */
     box-shadow: 
       0 1px 2px 0 rgba(0, 0, 0, 0.05),
-      inset 0 1px 1px 0 rgba(0, 0, 0, 0.1) !important;
+      inset 0 1px 2px rgba(0, 0, 0, 0.1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
   }
 
-  /* Hover state - gentle transition */
+  /* Hover state - even lighter and more visible */
   input:hover,
   textarea:hover,
   select:hover {
-    border-color: rgba(107, 114, 128, 0.4) !important;
-    background: rgba(31, 41, 55, 0.6) !important;
+    border-color: rgba(156, 163, 175, 0.5) !important; /* gray-400 with 50% opacity */
+    background: rgba(75, 85, 99, 0.5) !important; /* gray-600 with 50% opacity */
   }
 
-  /* Focus state - smooth glow instead of sharp border */
+  /* Focus state - maximum visibility with blue accent */
   input:focus,
   textarea:focus,
   select:focus {
-    border-color: rgba(59, 130, 246, 0.4) !important;
-    background: rgba(31, 41, 55, 0.7) !important;
+    border-color: rgba(148, 163, 184, 0.6) !important; /* gray-300 with 60% opacity */
+    background: rgba(75, 85, 99, 0.6) !important; /* gray-600 with 60% opacity */
     outline: none !important;
     box-shadow: 
       0 0 0 3px rgba(59, 130, 246, 0.15),
       0 1px 2px 0 rgba(0, 0, 0, 0.05),
-      inset 0 1px 1px 0 rgba(0, 0, 0, 0.1) !important;
+      inset 0 1px 2px rgba(0, 0, 0, 0.1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
   }
 
   /* Override component library styles */
@@ -161,7 +165,21 @@ html {
   [class*="input"]::placeholder,
   [class*="form"]::placeholder {
     color: white !important;
-    opacity: 1 !important;
+    opacity: 0.8 !important;
+  }
+
+  /* Enhanced label and helper text visibility */
+  label,
+  .form-label {
+    color: rgba(229, 231, 235, 0.9) !important; /* gray-200 with 90% opacity */
+    font-weight: 500 !important;
+  }
+
+  /* Helper text under inputs */
+  .form-text,
+  .helper-text,
+  small {
+    color: rgba(209, 213, 219, 0.8) !important; /* gray-300 with 80% opacity */
   }
 
   /* Remove all possible gray placeholder classes */
