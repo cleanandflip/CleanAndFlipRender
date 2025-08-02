@@ -56,6 +56,8 @@ html {
   --placeholder-color: #FFFFFF;            /* Placeholder text - white for visibility */
   --label-color: #FFFFFF;                  /* Form label text - white for visibility */
   --muted-foreground: #FFFFFF;             /* Muted foreground - white for visibility */
+  --input-placeholder: #FFFFFF;            /* Input placeholder override */
+  --form-placeholder: #FFFFFF;             /* Form placeholder override */
   --accent-steel: #64748B;                 /* Athletic steel */
   --accent-blue: #3B82F6;                  /* Vibrant blue */
   
@@ -71,43 +73,66 @@ html {
     @apply border-border;
   }
 
-  /* Global placeholder text fix - make ALL placeholders white */
-  ::placeholder {
+  /* NUCLEAR OPTION - Force ALL placeholders to be white with maximum specificity */
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder,
+  [type="text"]::placeholder,
+  [type="email"]::placeholder,
+  [type="password"]::placeholder,
+  [type="tel"]::placeholder,
+  [type="number"]::placeholder,
+  [type="search"]::placeholder,
+  *::placeholder {
     color: #ffffff !important;
-    opacity: 0.8;
+    opacity: 1 !important;
   }
 
-  /* Browser compatibility for placeholder styles */
-  ::-webkit-input-placeholder {
-    color: #ffffff !important;
-    opacity: 0.8;
+  /* Absolute override for all browser prefixes */
+  ::-webkit-input-placeholder { 
+    color: white !important; 
+    opacity: 1 !important; 
   }
-  ::-moz-placeholder {
-    color: #ffffff !important;
-    opacity: 0.8;
+  ::-moz-placeholder { 
+    color: white !important; 
+    opacity: 1 !important; 
   }
-  :-ms-input-placeholder {
-    color: #ffffff !important;
-    opacity: 0.8;
+  :-ms-input-placeholder { 
+    color: white !important; 
+    opacity: 1 !important; 
   }
-  :-moz-placeholder {
-    color: #ffffff !important;
-    opacity: 0.8;
+  :-moz-placeholder { 
+    color: white !important; 
+    opacity: 1 !important; 
   }
 
-  /* Ensure input text is white and visible */
-  input,
-  textarea,
+  /* Force input text to be white */
+  input, 
+  textarea, 
   select {
-    @apply text-white placeholder:text-white placeholder:opacity-80;
+    color: white !important;
+    caret-color: white !important;
   }
 
-  /* Remove any conflicting gray placeholder styles */
-  .placeholder\:text-gray-400::placeholder,
-  .placeholder\:text-gray-500::placeholder,
-  .placeholder\:text-gray-600::placeholder,
+  /* Override component library styles */
+  .form-input::placeholder,
+  .input::placeholder,
+  [class*="input"]::placeholder,
+  [class*="form"]::placeholder {
+    color: white !important;
+    opacity: 1 !important;
+  }
+
+  /* Remove all possible gray placeholder classes */
+  .placeholder-gray-400::placeholder,
+  .placeholder-gray-500::placeholder,
+  .placeholder-gray-600::placeholder,
+  .placeholder-slate-400::placeholder,
+  .placeholder-muted::placeholder,
+  [class*="placeholder-gray"]::placeholder,
   [class*="placeholder:text-gray"]::placeholder {
     color: white !important;
+    opacity: 1 !important;
   }
 
   body {

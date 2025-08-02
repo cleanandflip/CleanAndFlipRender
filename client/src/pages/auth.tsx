@@ -13,6 +13,7 @@ import Logo from "@/components/common/logo";
 import { PasswordInput } from "@/components/auth/password-input";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
 import { SecurityNotice } from "@/components/auth/security-notice";
+import type { RegisterData } from "@shared/schema";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();

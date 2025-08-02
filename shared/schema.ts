@@ -411,6 +411,19 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
+// Registration specific type that includes additional fields
+export const registerDataSchema = insertUserSchema.extend({
+  confirmPassword: z.string(),
+  fullAddress: z.string().optional(),
+}).omit({
+  role: true,
+  isAdmin: true,
+  stripeCustomerId: true,
+  stripeSubscriptionId: true,
+});
+
+export type RegisterData = z.infer<typeof registerDataSchema>;
+
 export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 
