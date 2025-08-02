@@ -96,6 +96,24 @@ html {
     background-attachment: fixed;
     min-height: 100vh;
   }
+
+  /* Hexagon overlay texture - adds subtle gym atmosphere */
+  #root::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='120' height='104' viewBox='0 0 120 104' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='60,2 102,26 102,78 60,102 18,78 18,26' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-size: 120px 104px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.4;
+  }
+
+  /* Ensure all content stays above hexagon overlay */
+  #root > * {
+    position: relative;
+    z-index: 2;
+  }
 }
 
 @layer components {
@@ -114,6 +132,22 @@ html {
     background: hsla(222, 84%, 5%, 0.6);
     border-color: hsla(210, 40%, 98%, 0.12);
     @apply transform -translate-y-0.5;
+  }
+
+  /* Subtle gym lighting effect for atmosphere */
+  .gym-lighting {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    background: radial-gradient(ellipse 600px 200px at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 30%);
+    animation: subtleGlow 15s ease-in-out infinite;
+  }
+
+  @keyframes subtleGlow {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.5; }
   }
 
   /* Logo styling with enhanced glow effects */
