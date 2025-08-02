@@ -3,12 +3,17 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global smooth scrolling */
+/* Global smooth scrolling and scrollbar compensation */
 html {
   scroll-behavior: smooth;
+  overflow-y: scroll; /* Always show scrollbar to prevent layout shift */
+  scrollbar-gutter: stable; /* Modern browsers - reserve space for scrollbar */
 }
 
 :root {
+  /* Scrollbar width compensation for jitter prevention */
+  --scrollbar-width: calc(100vw - 100%);
+  
   /* Global Design System Colors - Clean & Flip */
   --background: #1A1F2E;                   /* Primary background */
   --foreground: #FFFFFF;                   /* Primary text */
@@ -73,7 +78,64 @@ html {
     min-height: 100vh;
     position: relative;
     overflow-x: hidden;
-    transition: all 0.3s ease;
+  }
+
+  /* Modal scroll lock with scrollbar compensation */
+  body.modal-open {
+    overflow: hidden;
+    padding-right: var(--scrollbar-width);
+  }
+
+  /* Anti-jitter focus styles */
+  * {
+    margin-top: 0; /* Prevent margin collapse */
+  }
+
+  *:focus {
+    outline: none;
+  }
+
+  *:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+
+  /* Smooth button interactions without jitter */
+  button, .btn {
+    outline: none;
+    position: relative;
+    transition: transform 0.1s ease;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  /* Dropdown anti-jitter */
+  .dropdown-container {
+    position: relative;
+    min-height: 40px; /* Reserve space to prevent jump */
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    transform-origin: top;
+    transform: scaleY(0);
+    opacity: 0;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .dropdown-menu.open {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+
+  /* Radix UI portal fixes */
+  [data-radix-portal] {
+    position: fixed !important;
   }
 
   /* Athletic hexagonal pattern overlay (gym floor style) */
