@@ -86,11 +86,17 @@ export function UnifiedDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "w-full px-4 py-3 bg-input backdrop-blur-sm border border-input rounded-lg text-left text-input-foreground transition-all duration-200 focus:outline-none flex items-center justify-between group",
+          "w-full px-4 py-3 backdrop-blur-sm rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group",
           disabled 
             ? "cursor-not-allowed opacity-50" 
-            : "hover:border-gray-600 focus:border-gray-500 cursor-pointer"
+            : "cursor-pointer"
         )}
+        style={{
+          background: 'rgba(75, 85, 99, 0.4)',
+          border: '1px solid rgba(156, 163, 175, 0.4)',
+          color: 'white',
+          fontWeight: '500'
+        }}
       >
         {searchable && isOpen ? (
           <input
