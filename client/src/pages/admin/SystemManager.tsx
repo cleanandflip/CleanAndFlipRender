@@ -94,7 +94,7 @@ export function SystemManager() {
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                     activeSection === section.id
                       ? 'bg-primary/20 text-primary border border-primary/30'
-                      : 'text-text-muted hover:text-white hover:bg-gray-800/50'
+                      : 'text-white hover:text-white hover:bg-gray-800/50'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -111,7 +111,7 @@ export function SystemManager() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-2xl font-bold text-white bebas-neue mb-2">System Overview</h1>
-                <p className="text-text-muted">Monitor your Clean & Flip system health and performance</p>
+                <p className="text-white">Monitor your Clean & Flip system health and performance</p>
               </div>
 
               {/* System Health Cards */}
@@ -119,7 +119,7 @@ export function SystemManager() {
                 <Card className="glass p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-text-muted">Database</p>
+                      <p className="text-sm font-medium text-white">Database</p>
                       <p className="text-lg font-bold text-white">{systemHealth?.database?.status || 'Unknown'}</p>
                     </div>
                     <Database className={`w-6 h-6 ${getStatusColor(systemHealth?.database?.status || 'unknown')}`} />
@@ -132,7 +132,7 @@ export function SystemManager() {
                 <Card className="glass p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-text-muted">Cache</p>
+                      <p className="text-sm font-medium text-white">Cache</p>
                       <p className="text-lg font-bold text-white">{systemHealth?.redis?.status || 'Disabled'}</p>
                     </div>
                     <Zap className={`w-6 h-6 ${getStatusColor(systemHealth?.redis?.status || 'warning')}`} />
@@ -145,7 +145,7 @@ export function SystemManager() {
                 <Card className="glass p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-text-muted">Storage</p>
+                      <p className="text-sm font-medium text-white">Storage</p>
                       <p className="text-lg font-bold text-white">{systemHealth?.storage?.status || 'Unknown'}</p>
                     </div>
                     <HardDrive className={`w-6 h-6 ${getStatusColor(systemHealth?.storage?.status || 'unknown')}`} />
@@ -158,7 +158,7 @@ export function SystemManager() {
                 <Card className="glass p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-text-muted">Uptime</p>
+                      <p className="text-sm font-medium text-white">Uptime</p>
                       <p className="text-lg font-bold text-white">{systemHealth?.uptime ? formatUptime(systemHealth.uptime) : 'Unknown'}</p>
                     </div>
                     <Activity className="w-6 h-6 text-green-400" />
@@ -175,7 +175,7 @@ export function SystemManager() {
                   <h3 className="text-lg font-semibold mb-4 text-white">Memory Usage</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-text-muted">Used</span>
+                      <span className="text-white">Used</span>
                       <span className="text-white">{systemHealth?.memory?.used || 0} MB</span>
                     </div>
                     <div className="w-full bg-gray-700 h-2 rounded-full">
@@ -184,7 +184,7 @@ export function SystemManager() {
                         style={{ width: `${systemHealth?.memory?.percentage || 0}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-xs text-text-muted">
+                    <div className="flex justify-between text-xs text-white">
                       <span>0 MB</span>
                       <span>{systemHealth?.memory?.total || 0} MB</span>
                     </div>
@@ -195,7 +195,7 @@ export function SystemManager() {
                   <h3 className="text-lg font-semibold mb-4 text-white">CPU Usage</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-text-muted">Current</span>
+                      <span className="text-white">Current</span>
                       <span className="text-white">{systemHealth?.cpu?.usage || 0}%</span>
                     </div>
                     <div className="w-full bg-gray-700 h-2 rounded-full">
@@ -204,7 +204,7 @@ export function SystemManager() {
                         style={{ width: `${systemHealth?.cpu?.usage || 0}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-xs text-text-muted">
+                    <div className="flex justify-between text-xs text-white">
                       <span>0%</span>
                       <span>100%</span>
                     </div>
@@ -237,22 +237,22 @@ export function SystemManager() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-2xl font-bold text-white bebas-neue mb-2">Database Management</h1>
-                <p className="text-text-muted">Monitor and manage your PostgreSQL database</p>
+                <p className="text-white">Monitor and manage your PostgreSQL database</p>
               </div>
 
               <Card className="glass p-6">
                 <h3 className="text-lg font-semibold mb-4 text-white">Database Status</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-text-muted">Connection Status</span>
+                    <span className="text-white">Connection Status</span>
                     {getStatusBadge(systemHealth?.database?.status || 'unknown')}
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-text-muted">Provider</span>
+                    <span className="text-white">Provider</span>
                     <span className="text-white">Neon PostgreSQL</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-text-muted">Environment</span>
+                    <span className="text-white">Environment</span>
                     <Badge variant="outline">Development</Badge>
                   </div>
                 </div>
@@ -286,7 +286,7 @@ export function SystemManager() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-2xl font-bold text-white bebas-neue mb-2">System Logs</h1>
-                <p className="text-text-muted">View and analyze system activity logs</p>
+                <p className="text-white">View and analyze system activity logs</p>
               </div>
 
               <Card className="glass p-6">

@@ -51,8 +51,10 @@ html {
   --glass-bg: rgba(35, 41, 55, 0.4);       /* Glass morphism */
   --glass-border: rgba(255, 255, 255, 0.08); /* Glass borders */
   --text-primary: #FFFFFF;                 /* Primary text */
-  --text-secondary: #E2E8F0;               /* Secondary text */
-  --text-muted: #94A3B8;                   /* Muted text */
+  --text-secondary: #FFFFFF;               /* Secondary text - now white for visibility */
+  --text-muted: #FFFFFF;                   /* Muted text - now white for better visibility */
+  --placeholder-color: #FFFFFF;            /* Placeholder text - white for visibility */
+  --label-color: #FFFFFF;                  /* Form label text - white for visibility */
   --accent-steel: #64748B;                 /* Athletic steel */
   --accent-blue: #3B82F6;                  /* Vibrant blue */
   

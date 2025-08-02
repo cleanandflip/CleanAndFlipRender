@@ -75,7 +75,7 @@ export function UnifiedDropdown({
   return (
     <div className={cn("relative w-full", className)} ref={dropdownRef}>
       {label && (
-        <label className="block text-sm font-medium text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-white mb-2">
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
@@ -98,7 +98,7 @@ export function UnifiedDropdown({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={placeholder}
-            className="bg-transparent outline-none flex-1 placeholder-gray-400 text-input-foreground"
+            className="bg-transparent outline-none flex-1 placeholder:text-placeholder-color text-input-foreground"
             onClick={(e) => e.stopPropagation()}
             autoFocus
           />
@@ -111,7 +111,7 @@ export function UnifiedDropdown({
           className={cn(
             "w-4 h-4 text-gray-400 transition-transform duration-200",
             isOpen && "rotate-180",
-            !disabled && "group-hover:text-gray-300"
+            !disabled && "group-hover:text-white"
           )}
         />
       </button>
@@ -144,7 +144,7 @@ export function UnifiedDropdown({
                     "w-full px-4 py-3 text-left flex items-center justify-between transition-all duration-150",
                     option.disabled 
                       ? 'text-gray-500 cursor-not-allowed' 
-                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-input-foreground cursor-pointer',
+                      : 'text-white hover:bg-gray-700/50 hover:text-input-foreground cursor-pointer',
                     option.value === value && 'bg-gray-700/30 text-input-foreground'
                   )}
                 >

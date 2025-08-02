@@ -170,13 +170,13 @@ export default function AuthPage() {
               <Card className="p-8">
                 <div className="mb-8">
                   <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">WELCOME BACK</h2>
-                  <p className="text-text-secondary">
+                  <p className="text-white">
                     Sign in to your account to continue
                   </p>
                 </div>
                 <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-4">
-                    <Label htmlFor="email" className="text-text-secondary font-medium text-xl">Email</Label>
+                    <Label htmlFor="email" className="text-white font-medium text-xl">Email</Label>
                     <Input
                       id="email"
                       name="email"
@@ -188,7 +188,7 @@ export default function AuthPage() {
                     />
                   </div>
                   <div className="space-y-4">
-                    <Label htmlFor="password" className="text-text-secondary font-medium text-xl">Password</Label>
+                    <Label htmlFor="password" className="text-white font-medium text-xl">Password</Label>
                     <Input
                       id="password"
                       name="password"
@@ -221,7 +221,7 @@ export default function AuthPage() {
               <Card className="p-8">
                 <div className="mb-6">
                   <h2 className="font-bebas text-3xl text-white tracking-wider mb-2">CREATE ACCOUNT</h2>
-                  <p className="text-text-secondary">
+                  <p className="text-white">
                     Join Clean & Flip to buy and sell equipment
                   </p>
                 </div>
