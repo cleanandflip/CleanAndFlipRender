@@ -140,9 +140,14 @@ export default function SearchBar({
   // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        // Add small delay to allow click to process
-        setTimeout(() => setIsOpen(false), 100);
+      // Check if click is on a dropdown button
+      const target = event.target as HTMLElement;
+      if (target.closest('button[data-search-suggestion]')) {
+        return; // Don't close if clicking on suggestion
+      }
+      
+      if (containerRef.current && !containerRef.current.contains(target)) {
+        setIsOpen(false);
       }
     };
 
@@ -233,13 +238,20 @@ export default function SearchBar({
                         <button
                           key={`history-${index}`}
                           type="button"
+                          data-search-suggestion="true"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('MouseDown on history:', term);
+                            handleSuggestionClick(term);
+                          }}
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             console.log('Clicking history:', term);
                             handleSuggestionClick(term);
                           }}
-                          className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
+                          className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center cursor-pointer"
                         >
                           <Clock size={14} className="text-gray-400 mr-3" />
                           <span className="text-primary">{term}</span>
@@ -260,13 +272,20 @@ export default function SearchBar({
                       <button
                         key={`popular-${index}`}
                         type="button"
+                        data-search-suggestion="true"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('MouseDown on popular:', term);
+                          handleSuggestionClick(term);
+                        }}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           console.log('Clicking popular:', term);
                           handleSuggestionClick(term);
                         }}
-                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center"
+                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors flex items-center cursor-pointer"
                       >
                         <TrendingUp size={14} className="text-gray-400 mr-3" />
                         <span className="text-primary">{term}</span>

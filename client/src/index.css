@@ -20,28 +20,39 @@ body {
 }
 
 /* Ensure dropdown buttons are clickable */
+button[data-search-suggestion],
 button:has(.text-primary),
 .hover\:bg-white\/10,
 button.text-left {
   pointer-events: auto !important;
   cursor: pointer !important;
-  z-index: 9999 !important;
+  z-index: 99999 !important;
   position: relative !important;
+  user-select: none !important;
 }
 
 /* Remove any blocking overlays */
-.card:has(button:has(.text-primary)) {
+.card:has(button:has(.text-primary)),
+.card:has(button[data-search-suggestion]) {
   pointer-events: auto !important;
 }
 
-.card * {
+.card *,
+.search-dropdown-portal * {
   pointer-events: auto !important;
 }
 
 /* Force dropdown and buttons to top layer */
-.relative:has(input[placeholder*="Search"]) .card button {
+.relative:has(input[placeholder*="Search"]) .card button,
+button[data-search-suggestion] {
   z-index: 99999 !important;
   position: relative !important;
+}
+
+/* Portal specific fixes */
+div[style*="position: fixed"] button {
+  pointer-events: auto !important;
+  z-index: 99999 !important;
 }
 
 :root {
