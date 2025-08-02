@@ -6,7 +6,7 @@ import { NavigationStateManager } from "@/lib/navigation-state";
 import ProductGrid from "@/components/products/product-grid";
 import ProductList from "@/components/products/ProductList";
 import FilterSidebar from "@/components/products/filter-sidebar";
-import SearchBar from "@/components/search/SearchBar";
+import { SearchBar } from "@/components/products/search-bar";
 import FilterChip from "@/components/products/filter-chip";
 import { Button, Card } from "@/components/shared/AnimatedComponents";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -355,9 +355,7 @@ export default function Products() {
             <div className="flex-1 max-w-md">
               <SearchBar 
                 onSearch={(search) => handleFilterChange({ search })}
-                placeholder="Search weightlifting equipment..."
-                variant="default"
-                showSuggestions={true}
+                placeholder="Search equipment..."
               />
             </div>
             
