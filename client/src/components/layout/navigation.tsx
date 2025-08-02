@@ -273,7 +273,7 @@ export default function Navigation() {
                 </div>
                 
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-primary text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse">
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse">
                     {cartCount}
                   </span>
                 )}
@@ -313,7 +313,7 @@ export default function Navigation() {
                       }}
                       className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
                         isActive(item.href)
-                          ? "bg-slate-500 text-primary cursor-default"
+                          ? "bg-slate-500 text-white cursor-default"
                           : "text-text-secondary hover:bg-white/10 hover:text-primary"
                       }`}
                       disabled={isActive(item.href)}
@@ -329,7 +329,7 @@ export default function Navigation() {
                     }}
                     className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
                       isActive("/dashboard")
-                        ? "bg-slate-500 text-primary cursor-default"
+                        ? "bg-slate-500 text-white cursor-default"
                         : "text-text-secondary hover:bg-white/10 hover:text-primary"
                     }`}
                     disabled={isActive("/dashboard")}
