@@ -1,0 +1,164 @@
+Color Scheme & Visibility Fix Instructions for Replit (Keeping Wishlist Hearts)
+Looking at the circled issues, here's what needs to be fixed (excluding wishlist hearts):
+1. SOLD OUT BADGES - Make Them Subtle & Professional
+css/* Replace harsh red badges with elegant dark ones */
+.sold-out-badge,
+.out-of-stock-badge,
+[class*="sold-out"],
+[class*="out-of-stock"] {
+  @apply bg-gray-900/90 /* Almost black with slight transparency */
+         text-gray-300 /* Light gray text */
+         border border-gray-700/70
+         backdrop-blur-sm
+         text-xs font-semibold
+         px-3 py-1.5 rounded-full
+         absolute top-3 right-3
+         shadow-lg shadow-black/50;
+}
+
+/* Alternative: Very dark red if you prefer keeping red theme */
+.sold-out-badge-dark {
+  @apply bg-gray-950/90 /* Almost black */
+         text-red-300/60 /* Very muted red text */
+         border border-gray-800/80;
+}
+2. PRODUCT TITLES - Fix Blue Links
+css/* Product titles should be white/light, not blue */
+.product-title,
+.product-name,
+.product-card h3,
+.product-card h4,
+.product-card a:not(.wishlist-button) {
+  @apply text-gray-100 !important /* Off-white */
+         font-semibold
+         no-underline
+         hover:text-white /* Pure white on hover */
+         transition-colors duration-200;
+}
+
+/* Remove default link styling */
+.product-card a {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+3. BRAND NAMES - Proper Hierarchy
+css/* Subtle brand names */
+.product-brand,
+.product-manufacturer {
+  @apply text-gray-500 /* Muted gray */
+         text-xs
+         font-medium
+         uppercase 
+         tracking-wider
+         mb-1;
+}
+4. PRICE STYLING - Clean & Clear
+css/* Price consistency */
+.product-price {
+  @apply text-white /* Pure white for maximum readability */
+         font-bold 
+         text-xl
+         tracking-tight;
+}
+
+/* Original/compare price */
+.product-compare-price,
+.original-price {
+  @apply text-gray-500 
+         line-through 
+         text-sm 
+         ml-2;
+}
+5. GLOBAL COLOR VARIABLES
+css/* Set consistent color scheme */
+:root {
+  /* Backgrounds */
+  --card-bg: rgba(17, 24, 39, 0.7);
+  --card-hover: rgba(31, 41, 55, 0.8);
+  
+  /* Text hierarchy */
+  --text-primary: #f9fafb;    /* gray-50 */
+  --text-secondary: #e5e7eb;  /* gray-200 */
+  --text-muted: #6b7280;      /* gray-500 */
+  
+  /* Status colors (muted) */
+  --status-sold-out: #374151;  /* gray-700 */
+  --status-available: #059669; /* green-600 */
+}
+6. COMPLETE CARD STYLING
+css/* Apply consistent styling to all cards */
+.product-card {
+  @apply bg-gray-900/60 
+         border border-gray-800;
+}
+
+/* Ensure text hierarchy */
+.product-card .title,
+.product-card h3 {
+  color: var(--text-primary) !important;
+}
+
+.product-card .subtitle,
+.product-card .brand {
+  color: var(--text-muted) !important;
+}
+
+.product-card .price {
+  color: var(--text-primary) !important;
+}
+7. QUICK OVERRIDE FIXES
+css/* Emergency fixes for immediate implementation */
+/* Fix sold out badges */
+.bg-red-500,
+.bg-red-600,
+span[class*="bg-red"]:not(.wishlist-button) {
+  @apply bg-gray-900/90 !important;
+}
+
+/* Fix blue text on product names */
+.text-blue-500,
+.text-blue-600,
+a.text-blue-500,
+a.text-blue-600 {
+  @apply text-gray-100 !important;
+}
+
+/* Ensure consistent card text */
+.product-card * {
+  color: inherit;
+}
+8. BADGE ALTERNATIVES
+css/* Different badge styles for variety */
+/* Minimal badge */
+.badge-minimal {
+  @apply text-gray-400 
+         text-xs 
+         font-normal
+         uppercase
+         tracking-wider
+         opacity-70;
+}
+
+/* Dark badge with border */
+.badge-dark {
+  @apply bg-black/50 
+         text-gray-400 
+         border border-gray-800
+         px-2 py-1 
+         rounded-md
+         text-xs;
+}
+IMPLEMENTATION PRIORITY:
+
+First: Fix the sold out badges (change from red to dark gray)
+Second: Fix blue product titles (change to off-white)
+Third: Ensure consistent text hierarchy
+Fourth: Apply global color variables
+
+DO NOT CHANGE:
+
+Wishlist heart colors/styling (keep as is)
+Add to cart button colors (keep blue)
+Any other elements not mentioned in the circles
+
+This will create a clean, monochromatic design with excellent readability while preserving the wishlist heart functionality you want to keep!

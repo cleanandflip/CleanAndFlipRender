@@ -59,6 +59,15 @@ html {
   --bg-secondary: hsl(215, 25%, 20%);      /* #334155 */
   --bg-tertiary: hsl(215, 25%, 27%);       /* #475569 */
   --border-color: hsl(215, 20%, 35%);      /* #64748b */
+  
+  /* Enhanced color scheme for better visibility */
+  --card-bg: rgba(17, 24, 39, 0.7);        /* Dark card backgrounds */
+  --card-hover: rgba(31, 41, 55, 0.8);     /* Card hover state */
+  
+  /* Status colors (muted and professional) */
+  --status-sold-out: #374151;              /* gray-700 - subtle dark badge */
+  --status-available: #059669;             /* green-600 */
+  --status-low-stock: #d97706;             /* amber-600 - muted warning */
 }
 
 @layer base {
@@ -119,6 +128,89 @@ html {
   @keyframes gridPulse {
     0%, 100% { opacity: 0.3; }
     50% { opacity: 0.6; }
+  }
+
+  /* Product card styling improvements */
+  .product-card {
+    @apply bg-gray-900/60 border border-gray-800;
+  }
+
+  /* Fix sold out badges - subtle and professional */
+  .sold-out-badge,
+  .out-of-stock-badge,
+  [class*="sold-out"],
+  [class*="out-of-stock"] {
+    @apply bg-gray-900/90 text-gray-300 border border-gray-700/70 backdrop-blur-sm text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg shadow-black/50;
+  }
+
+  /* Product titles - clean white text */
+  .product-title,
+  .product-name,
+  .product-card h3,
+  .product-card h4,
+  .product-card a:not(.wishlist-button) {
+    @apply text-gray-100 font-semibold no-underline hover:text-white transition-colors duration-200;
+  }
+
+  /* Remove default link styling for product cards */
+  .product-card a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  /* Brand names - subtle hierarchy */
+  .product-brand,
+  .product-manufacturer {
+    @apply text-gray-500 text-xs font-medium uppercase tracking-wider mb-1;
+  }
+
+  /* Price styling - clean and clear */
+  .product-price {
+    @apply text-white font-bold text-xl tracking-tight;
+  }
+
+  .product-compare-price,
+  .original-price {
+    @apply text-gray-500 line-through text-sm ml-2;
+  }
+
+  /* Emergency fixes for immediate implementation */
+  .bg-red-500:not(.wishlist-button),
+  .bg-red-600:not(.wishlist-button),
+  span[class*="bg-red"]:not(.wishlist-button) {
+    @apply bg-gray-900/90 !important;
+  }
+
+  /* Fix blue text on product names but preserve accent colors for interactive elements */
+  .text-blue-500:not(.wishlist-button):not([class*="accent"]),
+  .text-blue-600:not(.wishlist-button):not([class*="accent"]),
+  a.text-blue-500:not(.wishlist-button),
+  a.text-blue-600:not(.wishlist-button) {
+    @apply text-gray-100 !important;
+  }
+
+  /* Ensure consistent card text hierarchy */
+  .product-card .title,
+  .product-card h3 {
+    color: var(--text-primary) !important;
+  }
+
+  .product-card .subtitle,
+  .product-card .brand {
+    color: var(--text-muted) !important;
+  }
+
+  .product-card .price {
+    color: var(--text-primary) !important;
+  }
+
+  /* Badge alternatives for variety */
+  .badge-minimal {
+    @apply text-gray-400 text-xs font-normal uppercase tracking-wider opacity-70;
+  }
+
+  .badge-dark {
+    @apply bg-black/50 text-gray-400 border border-gray-800 px-2 py-1 rounded-md text-xs;
   }
 
   /* Ensure all pages inherit athletic background */
