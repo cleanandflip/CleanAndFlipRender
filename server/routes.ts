@@ -1289,7 +1289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin/products/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      await db.delete(products).where(eq(products.id, id));
+      await storage.deleteProduct(id);
       res.json({ success: true });
     } catch (error) {
       Logger.error("Error deleting product", error);
