@@ -14,9 +14,6 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
-      backgroundImage: {
-        'app-gradient': 'linear-gradient(135deg, #1a1f2e 0%, #0f1419 50%, #000000 100%)',
-      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
@@ -68,10 +65,6 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
-        // Global app background colors for consistency
-        'app': '#0f1419', // Main app background
-        'app-light': '#1a1f2e', // Lighter variant
-        'app-dark': '#000000', // Darker variant
         // Custom colors for Clean & Flip
         "text-primary": "var(--text-primary)",
         "text-secondary": "var(--text-secondary)",
