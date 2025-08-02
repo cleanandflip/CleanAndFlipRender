@@ -219,8 +219,210 @@ html {
     50% { opacity: 0.8; }
   }
 }
-
 @layer components {
+  /* Product Grid & Cards - Consistent Layout */
+  .products-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4
+           gap-6
+           p-4 lg:p-0;
+  }
+
+  .product-card {
+    @apply bg-gray-900/60 
+           border border-gray-800
+           rounded-xl 
+           overflow-hidden
+           flex flex-col
+           h-full /* Ensure all cards stretch to same height */
+           transition-all duration-300
+           hover:border-gray-700
+           hover:transform hover:-translate-y-1
+           hover:shadow-xl hover:shadow-black/50;
+  }
+
+  /* Consistent Image Container & Aspect Ratio */
+  .product-image-wrapper {
+    @apply relative 
+           w-full 
+           aspect-square /* Force square aspect ratio */
+           overflow-hidden
+           bg-gray-800;
+  }
+
+  .product-image {
+    @apply absolute inset-0
+           w-full h-full
+           object-cover /* Ensure images fill container */
+           transition-transform duration-500
+           hover:scale-110;
+  }
+
+  .product-image-placeholder {
+    @apply w-full h-full
+           flex items-center justify-center
+           bg-gray-800;
+  }
+
+  .product-image-placeholder svg {
+    @apply w-16 h-16 text-gray-600;
+  }
+
+  /* Standardized Badges & Overlays */
+  .stock-badge {
+    @apply absolute top-3 right-3 z-20
+           px-3 py-1.5
+           text-xs font-semibold
+           rounded-full
+           backdrop-blur-sm
+           shadow-lg;
+  }
+
+  .stock-badge.out-of-stock {
+    @apply bg-red-500/90 text-white
+           border border-red-400/50;
+  }
+
+  .stock-badge.low-stock {
+    @apply bg-yellow-500/90 text-yellow-900
+           border border-yellow-400/50;
+  }
+
+  .stock-badge.in-stock {
+    @apply bg-green-500/90 text-white
+           border border-green-400/50;
+  }
+
+  /* Wishlist Heart - Consistent Positioning */
+  .wishlist-button {
+    @apply absolute top-3 left-3 z-20
+           w-9 h-9
+           rounded-full
+           bg-gray-900/80 backdrop-blur-sm
+           border border-gray-700
+           flex items-center justify-center
+           transition-all duration-200
+           hover:bg-gray-800 
+           hover:border-gray-600
+           hover:scale-110;
+  }
+
+  .wishlist-button svg {
+    @apply w-4 h-4 text-gray-400
+           transition-colors duration-200;
+  }
+
+  .wishlist-button:hover svg {
+    @apply text-white;
+  }
+
+  .wishlist-button.active {
+    @apply bg-red-500/20 border-red-500/50;
+  }
+
+  .wishlist-button.active svg {
+    @apply text-red-500 fill-red-500;
+  }
+
+  /* Product Info Section - Consistent Spacing */
+  .product-info {
+    @apply flex flex-col flex-grow /* Takes remaining space */
+           p-4 space-y-2;
+  }
+
+  .product-brand {
+    @apply text-xs font-medium text-gray-500 uppercase tracking-wider;
+  }
+
+  .product-name {
+    @apply text-base font-semibold text-white 
+           line-clamp-2 /* Limit to 2 lines */
+           min-h-[3rem]; /* Consistent height */
+  }
+
+  .product-price-section {
+    @apply mt-auto /* Push to bottom */
+           space-y-3;
+  }
+
+  .product-price {
+    @apply text-xl font-bold text-white;
+  }
+
+  .product-compare-price {
+    @apply text-sm text-gray-500 line-through ml-2;
+  }
+
+  /* Standardized Buttons */
+  .btn-add-to-cart {
+    @apply w-full
+           px-4 py-2.5
+           bg-blue-500 hover:bg-blue-600
+           text-white text-sm font-semibold
+           rounded-lg
+           transition-all duration-200
+           transform hover:scale-105
+           disabled:opacity-50 
+           disabled:cursor-not-allowed
+           disabled:transform-none
+           disabled:hover:bg-blue-500
+           flex items-center justify-center gap-2;
+  }
+
+  .btn-add-to-cart svg {
+    @apply w-4 h-4;
+  }
+
+  .btn-out-of-stock {
+    @apply w-full
+           px-4 py-2.5
+           bg-gray-800 
+           text-gray-500 text-sm font-semibold
+           rounded-lg
+           cursor-not-allowed
+           border border-gray-700;
+  }
+
+  /* Skeleton Loaders for Consistency */
+  .product-skeleton {
+    @apply bg-gray-900/60 border border-gray-800 
+           rounded-xl overflow-hidden h-full;
+  }
+
+  .skeleton-image {
+    @apply w-full aspect-square bg-gray-800 animate-pulse;
+  }
+
+  .skeleton-info {
+    @apply p-4 space-y-3;
+  }
+
+  .skeleton-text {
+    @apply h-4 bg-gray-800 rounded animate-pulse;
+  }
+
+  /* Mobile Optimizations */
+  @media (max-width: 640px) {
+    .products-grid {
+      @apply grid-cols-2 gap-3;
+    }
+    
+    .product-info {
+      @apply p-3;
+    }
+    
+    .product-name {
+      @apply text-sm min-h-[2.5rem];
+    }
+    
+    .product-price {
+      @apply text-lg;
+    }
+    
+    .btn-add-to-cart {
+      @apply py-2 text-xs;
+    }
+  }
+
   .glass {
     background: var(--glass-bg);
     backdrop-filter: blur(12px);
