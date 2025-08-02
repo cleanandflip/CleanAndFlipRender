@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
-import { SearchBar } from "@/components/products/search-bar";
+import { SearchBar } from "@/components/ui/SearchBar";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package } from "lucide-react";
@@ -130,9 +130,17 @@ export default function Navigation() {
             <div className="hidden lg:block">
               <SearchBar
                 placeholder="Search equipment..."
+                onChange={(query) => {
+                  if (query) {
+                    const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
+                    handleNavigation(searchUrl);
+                  }
+                }}
                 onSearch={(query) => {
-                  const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
-                  handleNavigation(searchUrl);
+                  if (query) {
+                    const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
+                    handleNavigation(searchUrl);
+                  }
                 }}
               />
             </div>
