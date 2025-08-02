@@ -11,15 +11,16 @@ interface ButtonProps extends Omit<HTMLMotionProps<"button">, 'as'> {
   children: React.ReactNode;
 }
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
+export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
   className,
   children,
   ...props
-}, ref) => {
+}) => {
   const buttonStyles = cn(
     componentClasses.button.base,
+    componentClasses.button.variants[variant],
     componentClasses.button.sizes[size],
     'btn-animate',
     className
@@ -27,7 +28,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
 
   return (
     <motion.button
-      ref={ref}
       className={buttonStyles}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -37,9 +37,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
       {children}
     </motion.button>
   );
-});
-
-Button.displayName = 'Button';
+};
 
 // Card Component
 interface CardProps extends HTMLMotionProps<"div"> {
@@ -84,13 +82,13 @@ interface InputProps extends HTMLMotionProps<"input"> {
   error?: string;
 }
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
+export const Input: React.FC<InputProps> = ({
   variant = 'default',
   label,
   error,
   className,
   ...props
-}, ref) => {
+}) => {
   const inputStyles = cn(
     componentClasses.input.base,
     componentClasses.input.variants[variant],
@@ -109,7 +107,6 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
         </label>
       )}
       <motion.input
-        ref={ref}
         className={inputStyles}
         whileFocus={{ scale: 1.01 }}
         transition={{ duration: 0.1 }}
@@ -127,9 +124,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
       )}
     </div>
   );
-});
-
-Input.displayName = 'Input';
+};
 
 // Toggle Component
 interface ToggleProps {
@@ -149,53 +144,96 @@ export const Toggle: React.FC<ToggleProps> = ({
     <div className="flex items-center space-x-3">
       <motion.button
         type="button"
-        onClick={() => !disabled && onChange(!checked)}
-        disabled={disabled}
         className={cn(
-          "relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200",
-          checked ? "bg-blue-600" : "bg-gray-600",
-          disabled && "opacity-50 cursor-not-allowed"
+          'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+          checked ? 'bg-[#3B82F6]' : 'bg-[#374151]',
+          disabled && 'opacity-50 cursor-not-allowed'
         )}
-        whileTap={!disabled ? { scale: 0.95 } : undefined}
+        onClick={() => !disabled && onChange(!checked)}
+        whileTap={{ scale: 0.95 }}
+        disabled={disabled}
       >
         <motion.span
           className="inline-block h-4 w-4 transform rounded-full bg-white shadow-lg"
           animate={{ x: checked ? 24 : 4 }}
-          transition={{ duration: 0.2 }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
         />
       </motion.button>
       {label && (
-        <label 
+        <span 
           className="text-sm font-medium"
           style={{ color: theme.colors.text.secondary }}
         >
           {label}
-        </label>
+        </span>
       )}
     </div>
   );
 };
 
-// Loader Component
-interface LoaderProps {
-  size?: 'sm' | 'md' | 'lg';
-  color?: string;
+// Modal Component
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
 }
 
-export const Loader: React.FC<LoaderProps> = ({
-  size = 'md',
-  color = theme.colors.brand.blue
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center animate-fade-in"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="bg-[#232937] border border-[rgba(255,255,255,0.08)] rounded-xl shadow-2xl max-w-md w-full mx-4 animate-slide-up"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {title && (
+          <div className="px-6 py-4 border-b border-[rgba(255,255,255,0.08)]">
+            <h2 
+              className="text-lg font-semibold"
+              style={{ color: theme.colors.text.primary }}
+            >
+              {title}
+            </h2>
+          </div>
+        )}
+        <div className="p-6">
+          {children}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// Loading Spinner Component
+export const LoadingSpinner: React.FC<{ size?: 'sm' | 'md' | 'lg' }> = ({
+  size = 'md'
 }) => {
   const sizeClasses = {
     sm: 'w-4 h-4',
-    md: 'w-8 h-8',
-    lg: 'w-12 h-12'
+    md: 'w-6 h-6',
+    lg: 'w-8 h-8'
   };
 
   return (
     <motion.div
-      className={cn("animate-spin rounded-full border-2 border-gray-600", sizeClasses[size])}
-      style={{ borderTopColor: color }}
+      className={cn('animate-spin rounded-full border-2 border-gray-300', sizeClasses[size])}
+      style={{ borderTopColor: theme.colors.brand.blue }}
       animate={{ rotate: 360 }}
       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
     />
@@ -204,7 +242,7 @@ export const Loader: React.FC<LoaderProps> = ({
 
 // Badge Component
 interface BadgeProps {
-  variant?: 'default' | 'success' | 'warning' | 'error';
+  variant?: 'default' | 'success' | 'warning' | 'error' | 'info';
   children: React.ReactNode;
   className?: string;
 }
@@ -214,23 +252,24 @@ export const Badge: React.FC<BadgeProps> = ({
   children,
   className
 }) => {
-  const variantStyles = {
-    default: 'bg-gray-600 text-gray-100',
-    success: 'bg-green-600 text-green-100',
-    warning: 'bg-yellow-600 text-yellow-100',
-    error: 'bg-red-600 text-red-100'
+  const variants = {
+    default: 'bg-[#374151] text-[#E5E7EB]',
+    success: 'bg-[#065F46] text-[#A7F3D0]',
+    warning: 'bg-[#92400E] text-[#FDE68A]',
+    error: 'bg-[#991B1B] text-[#FECACA]',
+    info: 'bg-[#1E40AF] text-[#BFDBFE]'
   };
 
   return (
     <motion.span
       className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-        variantStyles[variant],
+        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+        variants[variant],
         className
       )}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.2 }}
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ type: "spring", stiffness: 500, damping: 30 }}
     >
       {children}
     </motion.span>
