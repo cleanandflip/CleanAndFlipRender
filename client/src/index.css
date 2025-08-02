@@ -74,6 +74,28 @@ html {
     min-height: 100vh;
     transition: all 0.3s ease;
   }
+
+  /* Ensure all pages inherit global background */
+  html, body, #root {
+    background: #1A1F2E;
+    background: linear-gradient(135deg, #1A1F2E 0%, #232937 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Remove conflicting backgrounds on page containers */
+  .page-container,
+  .min-h-screen {
+    background: transparent !important;
+  }
+
+  /* Global page background utility */
+  .global-bg {
+    background: #1A1F2E;
+    background: linear-gradient(135deg, #1A1F2E 0%, #232937 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
 }
 
 @layer components {

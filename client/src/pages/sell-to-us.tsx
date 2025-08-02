@@ -100,7 +100,7 @@ export default function SellToUs() {
       
       return await apiRequest("POST", "/api/equipment-submissions", submissionData);
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setIsSubmitted(true);
       // Store reference number for display
       setReferenceNumber(data.referenceNumber);
