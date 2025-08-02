@@ -67,6 +67,12 @@ function Router() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+        {/* Enhanced hexagon pattern overlay */}
+        <div className="gym-hex-pattern" />
+        
+        {/* Subtle glow effect layer */}
+        <div className="hex-glow-effect" />
+        
         <Navigation />
         <CartDrawer />
         <ScrollRestoration />
