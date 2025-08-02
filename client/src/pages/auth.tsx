@@ -93,13 +93,8 @@ export default function AuthPage() {
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
       phone: formData.get("phone") as string,
-      street: addressData.street,
-      city: addressData.city,
-      state: addressData.state,
-      zipCode: addressData.zipCode,
-      latitude: addressData.latitude,
-      longitude: addressData.longitude,
-      isLocalCustomer
+      address: addressData.fullAddress,
+      cityStateZip: `${addressData.city}, ${addressData.state} ${addressData.zipCode}`
     });
   };
 
@@ -174,36 +169,38 @@ export default function AuthPage() {
                     Sign in to your account to continue
                   </p>
                 </div>
-                <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-6">
-                  <div className="space-y-4">
-                    <Label htmlFor="email" className="text-text-secondary font-medium text-xl">Email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      className="glass bg-transparent border-border text-white placeholder:text-text-muted h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                      placeholder="Enter your email"
-                      onFocus={scrollToForm}
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    <Label htmlFor="password" className="text-text-secondary font-medium text-xl">Password</Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      required
-                      className="glass bg-transparent border-border text-white placeholder:text-text-muted h-20 text-2xl px-8 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30"
-                      placeholder="Enter your password"
-                      onFocus={scrollToForm}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-16 text-xl transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl"
-                    disabled={loginMutation.isPending}
-                  >
+                {/* High-Visibility Login Form Section */}
+                <div className="bg-white p-8 rounded-xl shadow-xl">
+                  <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-8">
+                    <div className="space-y-4">
+                      <Label htmlFor="email" className="text-gray-900 text-lg font-bold mb-2 block">Email Address *</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        required
+                        className="w-full p-4 h-16 text-lg text-gray-900 bg-gray-50 border-2 border-gray-400 rounded-lg placeholder:text-gray-500 focus:border-blue-500 focus:bg-white focus:outline-none hover:border-gray-600 transition-colors shadow-lg"
+                        placeholder="Enter your email address"
+                        onFocus={scrollToForm}
+                      />
+                    </div>
+                    <div className="space-y-4">
+                      <Label htmlFor="password" className="text-gray-900 text-lg font-bold mb-2 block">Password *</Label>
+                      <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        required
+                        className="w-full p-4 h-16 text-lg text-gray-900 bg-gray-50 border-2 border-gray-400 rounded-lg placeholder:text-gray-500 focus:border-blue-500 focus:bg-white focus:outline-none hover:border-gray-600 transition-colors shadow-lg"
+                        placeholder="Enter your password"
+                        onFocus={scrollToForm}
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-blue-500 text-white text-xl font-bold px-8 py-4 h-16 rounded-lg border-2 border-blue-600 hover:bg-blue-400 hover:scale-105 transition-all shadow-lg disabled:opacity-50"
+                      disabled={loginMutation.isPending}
+                    >
                     {loginMutation.isPending ? (
                       <>
                         <Loader2 className="mr-4 h-8 w-8 animate-spin" />
@@ -212,8 +209,9 @@ export default function AuthPage() {
                     ) : (
                       "Sign In"
                     )}
-                  </Button>
-                </form>
+                    </Button>
+                  </form>
+                </div>
               </Card>
             </TabsContent>
 
