@@ -162,78 +162,80 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
     );
   }
 
-  // Grid view (default) - Using consistent styling classes
+  // Grid view (default)
   return (
-    <div className="product-card group animate-fade-in">
-      {/* Stock Badge */}
-      {product.stockQuantity === 0 && (
-        <span className="stock-badge out-of-stock">OUT OF STOCK</span>
-      )}
+    <div className="group relative bg-gray-800/30 rounded-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 animate-fade-in">
+      {/* Only show critical stock badge */}
       {product.stockQuantity === 1 && (
-        <span className="stock-badge low-stock">Only 1 left</span>
+        <div className="absolute top-3 left-3 z-20 animate-bounce-subtle">
+          <span className="bg-red-500 text-primary px-2 py-1 rounded text-xs font-medium">
+            Only 1 left
+          </span>
+        </div>
       )}
       
-      {/* Wishlist Button */}
-      <div className="wishlist-button" onClick={(e) => e.stopPropagation()}>
+      {/* Wishlist Button - Always Visible */}
+      <div className="absolute top-3 right-3 z-20" onClick={(e) => e.stopPropagation()}>
         <WishlistButton 
           productId={product.id}
           size="small"
-          className="w-full h-full bg-transparent hover:bg-transparent border-0"
+          className="w-10 h-10 bg-gray-700/80 hover:bg-gray-600 rounded-full transition-all duration-200"
           showTooltip={false}
           initialWishlisted={isWishlisted}
         />
       </div>
       
-      {/* Image Section */}
+      {/* Clickable area for product details */}
       <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
-        <div className="product-image-wrapper cursor-pointer">
-          {hasImage ? (
-            <img 
-              src={mainImage}
-              alt={product.name}
-              className="product-image"
-            />
-          ) : (
-            <div className="product-image-placeholder">
-              <div className="text-center text-text-muted">
-                <div className="text-4xl mb-2">📦</div>
-                <div className="text-xs">No Image</div>
+        <div className="cursor-pointer">
+          {/* Clean Image */}
+          <div className="aspect-square relative bg-gray-900/30 group-hover:bg-gray-900/40 transition-colors overflow-hidden">
+            {hasImage ? (
+              <img 
+                src={mainImage}
+                alt={product.name}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-4xl mb-2 group-hover:animate-bounce-subtle">📦</div>
               </div>
-            </div>
-          )}
+            )}
+            
+            {/* Subtle hover overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
+          
+          {/* Product Info Section */}
+          <div className="p-4 pb-2">
+            {/* Title */}
+            <h3 className="font-medium text-primary mb-1 line-clamp-1 group-hover:text-blue-300 transition-colors duration-200">
+              {product.name}
+            </h3>
+            
+            {/* Brand */}
+            {product.brand && (
+              <p className="text-gray-400 text-sm mb-3 group-hover:text-gray-300 transition-colors">
+                {product.brand}
+              </p>
+            )}
+            
+            {/* Price */}
+            <p className="text-2xl font-bold text-primary mb-4 group-hover:text-blue-200 transition-colors">
+              ${product.price}
+            </p>
+          </div>
         </div>
       </SmartLink>
       
-      {/* Product Info Section */}
-      <div className="product-info">
-        <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
-          {/* Brand */}
-          {product.brand && (
-            <p className="product-brand">{product.brand}</p>
-          )}
-          
-          {/* Title */}
-          <h3 className="product-name cursor-pointer hover:text-blue-300 transition-colors">
-            {product.name}
-          </h3>
-        </SmartLink>
-        
-        <div className="product-price-section">
-          {/* Price */}
-          <div className="flex items-baseline">
-            <span className="product-price">${product.price}</span>
-          </div>
-          
-          {/* Add to Cart Button */}
-          <div onClick={(e) => e.stopPropagation()}>
-            <AddToCartButton
-              productId={product.id}
-              stock={product.stockQuantity}
-              size="sm"
-              className={product.stockQuantity > 0 ? "btn-add-to-cart" : "btn-out-of-stock"}
-            />
-          </div>
-        </div>
+      {/* Static Add to Cart Button */}
+      <div className="px-4 pb-4" onClick={(e) => e.stopPropagation()}>
+        <AddToCartButton
+          productId={product.id}
+          stock={product.stockQuantity}
+          size="sm"
+          className="w-full"
+        />
       </div>
     </div>
   );
