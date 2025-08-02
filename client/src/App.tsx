@@ -66,18 +66,11 @@ function ScrollRestoration() {
 function Router() {
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col">
-        {/* Enhanced Athletic pattern overlay - Larger hexagonal gym flooring */}
-        <div className="athletic-pattern" />
-        {/* Industrial texture overlay for athletic feel */}
-        <div className="texture-overlay" />
-        {/* Gym atmosphere subtle lighting effects */}
-        <div className="gym-atmosphere" />
-        
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
         <Navigation />
         <CartDrawer />
         <ScrollRestoration />
-        <main className="flex-1 relative z-10">
+        <main className="flex-1">
           <Switch>
             {/* Public Routes */}
             <Route path={ROUTES.HOME} component={Home} />
