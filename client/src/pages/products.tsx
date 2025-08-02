@@ -193,11 +193,11 @@ export default function Products() {
         offset: currentPage * itemsPerPage,
       },
     ],
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
-    refetchOnMount: 'always', // Always refetch when component mounts
-    staleTime: 0, // Always fetch fresh data for critical inventory accuracy
-    gcTime: 0, // Don't cache - always get fresh data (v5)
-    refetchInterval: 30000, // Auto-refetch every 30 seconds for live updates
+    refetchOnWindowFocus: false, // Prevent refetch on tab focus to avoid flickering
+    refetchOnMount: false, // Don't refetch on mount if data exists
+    staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    // Remove auto-refetch interval to prevent flickering
   });
 
   // Add global event listener for real-time admin updates
@@ -430,7 +430,7 @@ export default function Products() {
           {/* Results Count */}
           <div className="mt-4 flex items-center justify-between text-sm text-text-secondary">
             <span>
-              {isLoading ? (
+              {isLoading && !data ? (
                 <Skeleton className="h-4 w-32" />
               ) : (
                 `${data?.total || 0} products found`
@@ -460,7 +460,7 @@ export default function Products() {
 
           {/* Products Grid */}
           <div className="flex-1">
-            {isLoading ? (
+            {isLoading && !data ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Card key={i} className="p-4">
