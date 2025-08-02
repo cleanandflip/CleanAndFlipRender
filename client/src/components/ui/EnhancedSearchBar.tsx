@@ -43,6 +43,7 @@ export function EnhancedSearchBar({
   const [query, setQuery] = useState(value);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [isMobile, setIsMobile] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
   
@@ -54,7 +55,7 @@ export function EnhancedSearchBar({
   // Popular search terms
   const popularSearches = ['Barbell', 'Dumbbells', 'Power Rack', 'Bench Press', 'Kettlebell', 'Resistance Bands'];
 
-  // Load recent searches
+  // Load recent searches and detect mobile
   useEffect(() => {
     const saved = localStorage.getItem('cleanflip_recent_searches');
     if (saved) {
@@ -64,6 +65,12 @@ export function EnhancedSearchBar({
         console.error('Failed to load recent searches');
       }
     }
+    
+    // Detect mobile and update on resize
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // Update query when value prop changes
@@ -86,16 +93,38 @@ export function EnhancedSearchBar({
     if (inputRef.current) {
       const rect = inputRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
-      const dropdownWidth = Math.min(rect.width * 1.2, 600); // Slightly wider than input, max 600px
+      const viewportHeight = window.innerHeight;
+      
+      // Calculate dropdown width - wider on desktop, full width on mobile
+      const dropdownWidth = isMobile 
+        ? viewportWidth - 32 // Mobile: full width with padding
+        : Math.min(Math.max(rect.width * 1.2, 400), 600); // Desktop: responsive width
       
       let left = rect.left;
-      if (left + dropdownWidth > viewportWidth) {
-        left = viewportWidth - dropdownWidth - 16; // 16px padding from edge
+      let top = rect.bottom + 8;
+      
+      // Position adjustments for desktop
+      if (!isMobile) {
+        // Ensure dropdown doesn't go off-screen horizontally
+        if (left + dropdownWidth > viewportWidth) {
+          left = viewportWidth - dropdownWidth - 16;
+        }
+        left = Math.max(16, left);
+        
+        // Ensure dropdown doesn't go off-screen vertically
+        const maxDropdownHeight = 400; // Approximate max dropdown height
+        if (top + maxDropdownHeight > viewportHeight) {
+          top = rect.top - maxDropdownHeight - 8; // Show above input
+        }
+      } else {
+        // Mobile positioning - full width with padding, below fixed header
+        left = 16;
+        top = 72; // Fixed position below header
       }
       
       setDropdownPosition({
-        top: rect.bottom + 8,
-        left: Math.max(16, left), // At least 16px from edge
+        top,
+        left,
         width: dropdownWidth,
       });
     }
@@ -121,7 +150,7 @@ export function EnhancedSearchBar({
     queryFn: async () => {
       if (query.length < 2) return { products: [] };
       
-      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=8`);
+      const response = await fetch(`/api/products?search=${encodeURIComponent(query)}&limit=8`);
       if (!response.ok) throw new Error('Search failed');
       return response.json();
     },
@@ -258,7 +287,7 @@ export function EnhancedSearchBar({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, selectedIndex, searchResults, query, recentSearches, isAnimating]);
 
-  // Click outside handler
+  // Click outside handler and mobile body scroll prevention
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -274,9 +303,20 @@ export function EnhancedSearchBar({
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      
+      // Prevent body scroll on mobile when search is open
+      if (isMobile) {
+        document.body.classList.add('search-modal-open');
+      }
+      
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        if (isMobile) {
+          document.body.classList.remove('search-modal-open');
+        }
+      };
     }
-  }, [isOpen]);
+  }, [isOpen, isMobile]);
 
   // Render product item
   const renderProductItem = (product: Product, index: number) => {
@@ -524,19 +564,24 @@ export function EnhancedSearchBar({
         exit={{ opacity: 0, x: -15, y: -15, scale: 0.95 }}
         transition={{ 
           type: "spring",
-          stiffness: 350,
-          damping: 25,
-          mass: 0.5
+          stiffness: 400,
+          damping: 30,
+          mass: 0.8
         }}
-        className="fixed z-[999999]"
+        className={`fixed z-[999999] ${isMobile ? 'search-dropdown-mobile' : ''}`}
         style={{
           top: `${dropdownPosition.top}px`,
           left: `${dropdownPosition.left}px`,
           width: `${dropdownPosition.width}px`,
         }}
       >
-        <div className="bg-gray-900/98 backdrop-blur-2xl border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden">
-          <div className="max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <div className={`
+          bg-gray-900/98 backdrop-blur-2xl border border-gray-700/50 shadow-2xl overflow-hidden
+          ${isMobile ? 'rounded-t-xl' : 'rounded-xl'}
+        `}>
+          <div className={`overflow-y-auto custom-scrollbar ${
+            isMobile ? 'max-h-[80vh]' : 'max-h-[70vh]'
+          }`}>
             {renderDropdownContent()}
           </div>
         </div>
