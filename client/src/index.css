@@ -114,6 +114,47 @@ html {
     caret-color: white !important;
   }
 
+  /* Soft border refinement - elegant form field styling */
+  input,
+  textarea,
+  select,
+  .form-input,
+  [type="text"],
+  [type="email"],
+  [type="password"],
+  [type="tel"],
+  [type="number"] {
+    border: 1px solid rgba(107, 114, 128, 0.25) !important;
+    background: rgba(31, 41, 55, 0.4) !important;
+    backdrop-filter: blur(8px) !important;
+    border-radius: 0.5rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 
+      0 1px 2px 0 rgba(0, 0, 0, 0.05),
+      inset 0 1px 1px 0 rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* Hover state - gentle transition */
+  input:hover,
+  textarea:hover,
+  select:hover {
+    border-color: rgba(107, 114, 128, 0.4) !important;
+    background: rgba(31, 41, 55, 0.6) !important;
+  }
+
+  /* Focus state - smooth glow instead of sharp border */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: rgba(59, 130, 246, 0.4) !important;
+    background: rgba(31, 41, 55, 0.7) !important;
+    outline: none !important;
+    box-shadow: 
+      0 0 0 3px rgba(59, 130, 246, 0.15),
+      0 1px 2px 0 rgba(0, 0, 0, 0.05),
+      inset 0 1px 1px 0 rgba(0, 0, 0, 0.1) !important;
+  }
+
   /* Override component library styles */
   .form-input::placeholder,
   .input::placeholder,
@@ -143,6 +184,36 @@ html {
     position: relative;
     overflow-x: hidden;
     transition: all 0.3s ease;
+  }
+
+  /* Prevent flash of unstyled content */
+  html {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  html.loaded {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.3s ease-out;
+  }
+
+  /* Form fade-in animation */
+  @keyframes fadeInForm {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Apply to form containers */
+  form,
+  .form-container {
+    animation: fadeInForm 0.4s ease-out;
   }
 
   /* Athletic hexagonal pattern overlay (gym floor style) */

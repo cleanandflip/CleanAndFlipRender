@@ -31,6 +31,17 @@ function ScrollRestoration() {
   const [location] = useLocation();
   
   useEffect(() => {
+    // Prevent flash of unstyled content
+    if (typeof document !== 'undefined') {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          document.documentElement.classList.add('loaded');
+        });
+      } else {
+        document.documentElement.classList.add('loaded');
+      }
+    }
+    
     // Don't restore scroll for hash links
     if (location.includes('#')) {
       const hash = location.split('#')[1];
