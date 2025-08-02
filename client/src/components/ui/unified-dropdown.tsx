@@ -150,7 +150,7 @@ export function UnifiedDropdown({
                 >
                   <span>{option.label}</span>
                   {option.value === value && (
-                    <Check className="w-4 h-4 text-accent-blue" />
+                    <Check className="w-4 h-4 text-slate-400" />
                   )}
                 </button>
               ))
@@ -163,7 +163,7 @@ export function UnifiedDropdown({
                       onChange(search.trim());
                       setIsOpen(false);
                     }}
-                    className="text-accent-blue hover:text-white transition-colors"
+                    className="text-slate-300 hover:text-white transition-colors"
                   >
                     Use "{search.trim()}" (custom)
                   </button>

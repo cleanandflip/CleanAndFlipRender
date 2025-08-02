@@ -19,7 +19,7 @@ export const StockIndicator: React.FC<StockIndicatorProps> = ({
   
   if (effectiveStock === 0) {
     return (
-      <div className={`flex items-center gap-1 text-red-500 font-medium ${className}`}>
+      <div className={`flex items-center gap-1 text-red-400 font-medium ${className}`}>
         <XCircle size={iconSize} />
         Out of Stock
       </div>
@@ -28,7 +28,7 @@ export const StockIndicator: React.FC<StockIndicatorProps> = ({
   
   if (effectiveStock <= 3) {
     return (
-      <div className={`flex items-center gap-1 text-orange-500 font-medium ${className}`}>
+      <div className={`flex items-center gap-1 text-amber-400 font-medium ${className}`}>
         <AlertTriangle size={iconSize} />
         Only {effectiveStock} left!
       </div>
@@ -37,7 +37,7 @@ export const StockIndicator: React.FC<StockIndicatorProps> = ({
   
   if (showNumber) {
     return (
-      <div className={`flex items-center gap-1 text-green-500 ${className}`}>
+      <div className={`flex items-center gap-1 text-emerald-400 ${className}`}>
         <CheckCircle size={iconSize} />
         {effectiveStock} in stock
       </div>
@@ -45,7 +45,7 @@ export const StockIndicator: React.FC<StockIndicatorProps> = ({
   }
   
   return (
-    <div className={`flex items-center gap-1 text-green-500 ${className}`}>
+    <div className={`flex items-center gap-1 text-emerald-400 ${className}`}>
       <CheckCircle size={iconSize} />
       In Stock
     </div>

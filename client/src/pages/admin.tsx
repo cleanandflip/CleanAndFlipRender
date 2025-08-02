@@ -65,7 +65,7 @@ function StatCard({ title, value, icon: Icon, trend }: {
           <p className="text-2xl font-bold text-text-primary">{value}</p>
           {trend && <p className="text-sm text-green-400">{trend}</p>}
         </div>
-        <Icon className="w-8 h-8 text-accent-blue" />
+        <Icon className="w-8 h-8 text-slate-400" />
       </div>
     </Card>
   );
@@ -89,7 +89,7 @@ function Analytics() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400"></div>
       </div>
     );
   }
@@ -203,7 +203,7 @@ function UserManagement() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400"></div>
       </div>
     );
   }

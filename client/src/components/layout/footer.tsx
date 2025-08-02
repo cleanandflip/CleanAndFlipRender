@@ -37,7 +37,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           {/* Shop Links */}
           <div>
-            <h4 className="font-bebas text-xl mb-4 text-accent-blue">SHOP</h4>
+            <h4 className="font-bebas text-xl mb-4 text-slate-300">SHOP</h4>
             <div className="space-y-2">
               {shopLinks.map((link) => (
                 <Link key={link.name} href={link.href}>
@@ -51,7 +51,7 @@ export default function Footer() {
 
           {/* Company Info */}
           <div>
-            <h4 className="font-bebas text-xl mb-4 text-accent-blue">COMPANY</h4>
+            <h4 className="font-bebas text-xl mb-4 text-slate-300">COMPANY</h4>
             <div className="space-y-2">
               {companyLinks.map((link) => (
                 <Link key={link.name} href={link.href}>
@@ -65,7 +65,7 @@ export default function Footer() {
 
           {/* Policies */}
           <div>
-            <h4 className="font-bebas text-xl mb-4 text-accent-blue">POLICIES</h4>
+            <h4 className="font-bebas text-xl mb-4 text-slate-300">POLICIES</h4>
             <div className="space-y-2">
               {policyLinks.map((link) => (
                 <Link key={link.name} href={link.href}>
@@ -79,7 +79,7 @@ export default function Footer() {
 
           {/* Connect */}
           <div>
-            <h4 className="font-bebas text-xl mb-4 text-accent-blue">CONNECT</h4>
+            <h4 className="font-bebas text-xl mb-4 text-slate-300">CONNECT</h4>
             <div className="space-y-3">
               <div className="flex items-center text-text-secondary text-sm">
                 <Mail className="mr-2 flex-shrink-0" size={16} />
@@ -116,21 +116,21 @@ export default function Footer() {
             <div className="flex space-x-4 mt-6">
               <a 
                 href="#" 
-                className="text-text-muted-foreground hover:text-accent-blue transition-colors"
+                className="text-text-muted-foreground hover:text-slate-200 transition-colors"
                 aria-label="Facebook"
               >
                 <Facebook size={20} />
               </a>
               <a 
                 href="#" 
-                className="text-text-muted-foreground hover:text-accent-blue transition-colors"
+                className="text-text-muted-foreground hover:text-slate-200 transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={20} />
               </a>
               <a 
                 href="#" 
-                className="text-text-muted-foreground hover:text-accent-blue transition-colors"
+                className="text-text-muted-foreground hover:text-slate-200 transition-colors"
                 aria-label="YouTube"
               >
                 <Youtube size={20} />

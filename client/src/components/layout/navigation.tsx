@@ -114,7 +114,7 @@ export default function Navigation() {
                 }}
                 className={`transition-all duration-200 font-medium cursor-pointer px-3 py-2 rounded-lg hover:bg-white/10 text-base whitespace-nowrap ${
                   isActive(item.href)
-                    ? "text-accent-blue bg-accent-blue/10 cursor-default"
+                    ? "text-slate-300 bg-slate-500/10 cursor-default"
                     : "text-text-secondary hover:text-primary"
                 }`}
                 disabled={isActive(item.href)}
@@ -155,10 +155,10 @@ export default function Navigation() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="group bg-secondary p-2 text-accent-blue w-10 h-10 flex-shrink-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:outline-none border border-primary border-accent-blue/30 relative overflow-hidden transition-all duration-300 hover:border-accent-blue/60 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:bg-accent-blue/10 data-[state=open]:border-accent-blue/60 data-[state=open]:shadow-[0_0_20px_rgba(59,130,246,0.3)] data-[state=open]:bg-accent-blue/10"
+                      className="group bg-secondary p-2 text-slate-300 w-10 h-10 flex-shrink-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:outline-none border border-primary border-slate-500/30 relative overflow-hidden transition-all duration-300 hover:border-slate-400/60 hover:shadow-[0_0_20px_rgba(100,116,139,0.3)] hover:bg-slate-500/10 data-[state=open]:border-slate-400/60 data-[state=open]:shadow-[0_0_20px_rgba(100,116,139,0.3)] data-[state=open]:bg-slate-500/10"
                     >
                       {/* Inner glow effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/0 via-accent-blue/5 to-accent-blue/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/0 via-slate-400/5 to-slate-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <User size={18} className="relative z-10" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -172,8 +172,8 @@ export default function Navigation() {
                   {/* User Info Header */}
                   <div className="px-4 py-3 border-b border-bg-secondary-border">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-accent-blue/20 rounded-full flex items-center justify-center">
-                        <User size={18} className="text-accent-blue" />
+                      <div className="w-10 h-10 bg-slate-500/20 rounded-full flex items-center justify-center">
+                        <User size={18} className="text-slate-300" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-primary truncate">
@@ -184,7 +184,7 @@ export default function Navigation() {
                         </p>
                       </div>
                       {user.isAdmin && (
-                        <span className="text-xs bg-accent-blue px-2 py-1 rounded text-primary font-medium">
+                        <span className="text-xs bg-slate-500 px-2 py-1 rounded text-primary font-medium">
                           ADMIN
                         </span>
                       )}
@@ -214,7 +214,7 @@ export default function Navigation() {
 
                     {(user.role === 'developer' || user.role === 'admin' || user.isAdmin) && (
                       <DropdownMenuItem asChild>
-                        <Link href={ROUTES.ADMIN} className="flex items-center px-4 py-2 text-sm text-accent-blue hover:text-blue-300 hover:bg-accent-blue/10 transition-colors cursor-pointer">
+                        <Link href={ROUTES.ADMIN} className="flex items-center px-4 py-2 text-sm text-slate-300 hover:text-slate-100 hover:bg-slate-500/10 transition-colors cursor-pointer">
                           <Settings className="mr-3 h-4 w-4" />
                           Developer Dashboard
                         </Link>
@@ -241,7 +241,7 @@ export default function Navigation() {
               <Button
                 size="sm"
                 onClick={(e) => handleNavigation(ROUTES.LOGIN, e)}
-                className="bg-accent-blue hover:bg-blue-500 text-primary font-medium px-5 py-2 transition-colors whitespace-nowrap"
+                className="bg-slate-600 hover:bg-slate-500 text-primary font-medium px-5 py-2 transition-colors whitespace-nowrap"
               >
                 <LogIn className="mr-2 h-4 w-4" />
                 Sign In
@@ -256,12 +256,12 @@ export default function Navigation() {
                 onClick={handleCartClick}
                 className={`group bg-secondary relative p-2 w-10 h-10 flex-shrink-0 transition-all duration-300 ${
                   isCartOpen 
-                    ? "text-accent-blue border border-primary border-accent-blue/30 bg-accent-blue/10 shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
-                    : "text-text-secondary border border-primary border-transparent hover:text-accent-blue hover:bg-accent-blue/10 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:border-accent-blue/60"
+                    ? "text-slate-300 border border-primary border-slate-500/30 bg-slate-500/10 shadow-[0_0_20px_rgba(100,116,139,0.3)]" 
+                    : "text-text-secondary border border-primary border-transparent hover:text-slate-300 hover:bg-slate-500/10 hover:shadow-[0_0_20px_rgba(100,116,139,0.3)] hover:border-slate-500/60"
                 }`}
               >
                 {/* Inner glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/0 via-accent-blue/5 to-accent-blue/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-500/0 via-slate-400/5 to-slate-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
                 {/* Toggle between cart and close icon */}
                 <div className="relative z-10 transition-transform duration-200">
@@ -313,7 +313,7 @@ export default function Navigation() {
                       }}
                       className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
                         isActive(item.href)
-                          ? "bg-accent-blue text-primary cursor-default"
+                          ? "bg-slate-500 text-primary cursor-default"
                           : "text-text-secondary hover:bg-white/10 hover:text-primary"
                       }`}
                       disabled={isActive(item.href)}
@@ -329,7 +329,7 @@ export default function Navigation() {
                     }}
                     className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
                       isActive("/dashboard")
-                        ? "bg-accent-blue text-primary cursor-default"
+                        ? "bg-slate-500 text-primary cursor-default"
                         : "text-text-secondary hover:bg-white/10 hover:text-primary"
                     }`}
                     disabled={isActive("/dashboard")}

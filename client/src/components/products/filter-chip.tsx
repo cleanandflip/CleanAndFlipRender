@@ -10,7 +10,7 @@ export default function FilterChip({ label, onRemove }: FilterChipProps) {
   return (
     <Badge 
       variant="secondary" 
-      className="bg-accent-blue/20 text-accent-blue border-accent-blue/30 pr-1 flex items-center gap-1"
+      className="bg-slate-600/20 text-slate-300 border-slate-500/30 pr-1 flex items-center gap-1"
     >
       {label}
       <button 

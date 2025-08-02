@@ -23,8 +23,8 @@ html {
   --border: rgba(255, 255, 255, 0.08);     /* Subtle borders */
   --input: #1A1F2E;                        /* Input backgrounds */
   
-  /* Primary colors - Clean & Flip blue */
-  --primary: #3B82F6;                      /* Brand blue */
+  /* Primary colors - Athletic silver/steel theme */
+  --primary: #64748B;                      /* Steel blue-gray */
   --primary-foreground: #FFFFFF;
   
   /* Secondary colors */
@@ -32,15 +32,15 @@ html {
   --secondary-foreground: #E2E8F0;
   
   /* Accent colors */
-  --accent: #2D3548;                       /* Hover states */
+  --accent: #475569;                       /* Stronger steel-gray */
   --accent-foreground: #E2E8F0;
   
   /* State colors */
-  --destructive: #EF4444;                  /* Error red */
+  --destructive: #DC2626;                  /* Deep red */
   --destructive-foreground: #FFFFFF;
-  --success: #10B981;                      /* Success green */
-  --warning: #F59E0B;                      /* Warning yellow */
-  --info: #3B82F6;                         /* Info blue */
+  --success: #059669;                      /* Forest green */
+  --warning: #D97706;                      /* Amber warning */
+  --info: #0891B2;                         /* Cyan info */
   
   /* Ring and radius */
   --ring: rgba(59, 130, 246, 0.5);         /* Focus rings */
@@ -52,7 +52,8 @@ html {
   --text-primary: #FFFFFF;                 /* Primary text */
   --text-secondary: #E2E8F0;               /* Secondary text */
   --text-muted: #94A3B8;                   /* Muted text */
-  --accent-blue: #3B82F6;                  /* Brand blue */
+  --accent-steel: #64748B;                 /* Athletic steel */
+  --accent-blue: #64748B;                  /* Updated to steel for compatibility */
   
   /* Additional theme variables for consistency */
   --bg-primary: hsl(222, 47%, 11%);        /* #1e293b */
