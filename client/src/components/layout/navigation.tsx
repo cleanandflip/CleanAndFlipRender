@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
-import { EnhancedSearchBar } from "@/components/ui/EnhancedSearchBar";
+import { SearchBar } from "@/components/products/search-bar";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package } from "lucide-react";
@@ -128,10 +128,12 @@ export default function Navigation() {
           <div className="flex items-center space-x-3 flex-shrink-0 min-w-0 overflow-visible p-1">
             {/* Desktop Search */}
             <div className="hidden lg:block">
-              <EnhancedSearchBar
-                context="header"
-                placeholder="Search equipment, brands, categories..."
-                className="w-full max-w-md"
+              <SearchBar
+                placeholder="Search equipment..."
+                onSearch={(query) => {
+                  const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
+                  handleNavigation(searchUrl);
+                }}
               />
             </div>
 
@@ -343,10 +345,13 @@ export default function Navigation() {
         {/* Mobile Search Bar */}
         {isSearchOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-bg-secondary-border">
-            <EnhancedSearchBar
-              context="header"
+            <SearchBar
               placeholder="Search equipment..."
-              className="w-full"
+              onSearch={(query) => {
+                const searchUrl = `/products?search=${encodeURIComponent(query)}`;
+                handleNavigation(searchUrl);
+                setIsSearchOpen(false);
+              }}
             />
           </div>
         )}

@@ -12,48 +12,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Enhanced Search Bar Styles */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.5);
-  border-radius: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(75, 85, 99, 0.5);
-  border-radius: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 0.5);
-}
-
-/* Fix z-index stacking contexts */
-main, section, .card, [class*="card"] {
-  transform: none !important;
-  filter: none !important;
-}
-
-/* Ensure portals work properly */
-body {
-  position: relative;
-  overflow-x: hidden;
-}
-
-/* Search highlight animation */
-@keyframes highlight-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-  70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-}
-
-.search-highlight {
-  animation: highlight-pulse 2s ease-out;
-}
-
 /* Custom scrollbar styling for search dropdown */
 .scrollbar-thin {
   scrollbar-width: thin;
