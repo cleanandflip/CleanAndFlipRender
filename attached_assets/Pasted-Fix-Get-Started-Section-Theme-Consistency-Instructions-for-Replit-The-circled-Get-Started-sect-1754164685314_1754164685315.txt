@@ -1,0 +1,159 @@
+Fix "Get Started" Section Theme Consistency - Instructions for Replit
+The circled "Get Started" section doesn't match the site's theme. Here's how to fix it:
+1. MATCH SECTION BACKGROUND TO GLOBAL THEME
+css/* Get Started section - match site theme */
+.get-started-section,
+.cta-section,
+[class*="get-started"],
+[class*="call-to-action"] {
+  @apply bg-gray-800/50 /* Same as form backgrounds */
+         backdrop-blur-sm
+         border border-gray-700/50
+         rounded-xl /* Less extreme rounding */
+         p-8 md:p-12
+         shadow-lg shadow-black/20;
+}
+
+/* Remove any pill-shaped or overly rounded containers */
+.rounded-full:not(button):not(.icon) {
+  @apply rounded-xl !important;
+}
+2. CONSISTENT CARD STYLING
+css/* Make this section match other cards/panels */
+.get-started-card,
+.cta-card,
+.action-card {
+  @apply bg-gray-900/60 /* Slightly darker than inputs but consistent */
+         border border-gray-800
+         rounded-xl
+         p-8
+         transition-all duration-300
+         hover:border-gray-700;
+}
+
+/* Remove pure black backgrounds */
+.bg-black,
+.bg-gray-950,
+[class*="bg-black"] {
+  @apply bg-gray-900/60 !important;
+}
+3. BUTTON CONSISTENCY
+css/* Ensure buttons match but keep blue primary */
+.get-started-section button,
+.cta-section button {
+  @apply font-semibold
+         py-3 px-6
+         rounded-lg /* Match form elements */
+         transition-all duration-200
+         shadow-md;
+}
+
+/* Primary CTA button - keep blue */
+.btn-primary,
+button.primary {
+  @apply bg-blue-500 hover:bg-blue-600 text-white;
+}
+
+/* Secondary button */
+.btn-secondary,
+button.secondary {
+  @apply bg-gray-800 
+         text-gray-300 
+         border border-gray-700
+         hover:bg-gray-700 
+         hover:text-white;
+}
+4. SECTION-SPECIFIC FIXES
+css/* Target the Get Started section specifically */
+section:has(.get-started),
+div:has(.sell-your-equipment) {
+  @apply bg-gray-900/50 
+         border border-gray-800/50
+         rounded-xl
+         my-8
+         p-8 lg:p-12;
+  
+  /* Remove extreme rounded corners */
+  border-radius: 1rem !important; /* Override any rounded-full */
+}
+
+/* Heading styles */
+.get-started h2,
+.get-started h3 {
+  @apply text-white font-bold mb-4;
+}
+
+/* Description text */
+.get-started p {
+  @apply text-gray-300 mb-6;
+}
+5. REMOVE CONFLICTING STYLES
+css/* Override any custom dark backgrounds */
+.bg-slate-900,
+.bg-slate-950,
+.bg-zinc-900,
+.bg-zinc-950,
+.bg-neutral-900,
+.bg-neutral-950 {
+  @apply bg-gray-900/60 !important;
+}
+
+/* Fix overly rounded containers */
+.rounded-3xl,
+.rounded-full:not(button):not(img):not(svg) {
+  @apply rounded-xl !important;
+}
+6. COMPLETE THEME MATCH
+css/* Comprehensive fix for the Get Started section */
+.get-started-container,
+.cta-container,
+[id*="get-started"],
+[class*="get-started"]:not(button) {
+  /* Match the form field styling but as a container */
+  background: rgba(31, 41, 55, 0.5) !important; /* gray-800 with opacity */
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(55, 65, 81, 0.5) !important;
+  border-radius: 1rem !important;
+  padding: 2rem !important;
+  
+  /* Remove any box shadows that are too dark */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+              0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+@media (min-width: 768px) {
+  .get-started-container {
+    padding: 3rem !important;
+  }
+}
+7. QUICK OVERRIDE
+css/* Immediate fix - add to global CSS */
+section:has(h2:contains("GET STARTED")),
+section:has(button:contains("Sell Your Equipment")) {
+  background: rgba(31, 41, 55, 0.5) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+  border-radius: 1rem !important;
+}
+
+/* Fix the inner content area */
+.get-started-content,
+div:has(> h2:first-child) {
+  background: transparent !important;
+}
+TAILWIND CLASSES TO UPDATE
+Look for these classes in the Get Started section and replace:
+
+bg-black → bg-gray-900/60
+bg-slate-900 → bg-gray-800/50
+rounded-full → rounded-xl
+rounded-3xl → rounded-xl
+
+RESULT
+This will make the Get Started section:
+
+Use the same semi-transparent gray backgrounds as the rest of the site
+Have consistent border styling
+Match the rounded corners of other elements
+Maintain the blue CTA buttons while fitting the overall theme
+
+The section will now blend seamlessly with the rest of your dark theme design!

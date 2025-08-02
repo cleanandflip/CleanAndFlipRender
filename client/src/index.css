@@ -257,6 +257,61 @@ html {
     --dropdown-focus-bg: rgba(75, 85, 99, 0.6) !important;
   }
 
+  /* GET STARTED SECTION THEME CONSISTENCY */
+  /* Match CTA sections to global theme */
+  .get-started-section,
+  .cta-section,
+  [class*="get-started"],
+  [class*="call-to-action"],
+  section:has(h3:contains("GET STARTED")),
+  [id*="get-started"] {
+    background: rgba(31, 41, 55, 0.5) !important; /* Match form field containers */
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(75, 85, 99, 0.5) !important;
+    border-radius: 1rem !important;
+    padding: 2rem !important;
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  }
+
+  /* Remove conflicting dark backgrounds in CTA sections */
+  .bg-black,
+  .bg-gray-950,
+  .bg-slate-900,
+  .bg-slate-950,
+  .bg-zinc-900,
+  .bg-zinc-950,
+  .bg-neutral-900,
+  .bg-neutral-950,
+  [class*="bg-black"],
+  [class*="bg-gray-95"],
+  [class*="bg-slate-9"] {
+    background: rgba(31, 41, 55, 0.5) !important;
+    background-color: rgba(31, 41, 55, 0.5) !important;
+  }
+
+  /* Fix overly rounded containers in CTA sections */
+  .rounded-3xl:not(button):not(img):not(svg),
+  .rounded-full:not(button):not(.icon):not(img):not(svg) {
+    border-radius: 1rem !important;
+  }
+
+  /* CTA section content should be transparent */
+  .get-started-content,
+  .cta-content,
+  div:has(> h3:contains("GET STARTED")) > div {
+    background: transparent !important;
+  }
+
+  /* Ensure buttons in CTA sections maintain theme consistency */
+  .get-started-section button,
+  .cta-section button,
+  section:has(h3:contains("GET STARTED")) button {
+    border-radius: 0.5rem !important; /* Match form elements */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
   /* Dropdown hover states - match input hover exactly */
   select:hover,
   [class*="select"]:hover,
