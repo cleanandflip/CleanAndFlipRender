@@ -174,7 +174,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
                             {/* Stock Warning */}
                             {item.product.stockQuantity && item.product.stockQuantity <= 3 && (
-                              <div className="mt-2 text-orange-400 text-xs">
+                              <div className="mt-2 text-red-400 text-xs">
                                 Only {item.product.stockQuantity} left
                               </div>
                             )}

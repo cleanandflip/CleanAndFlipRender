@@ -187,7 +187,7 @@ export default function ProductDetail() {
     if (!product.stockQuantity || product.stockQuantity === 0) {
       return { text: "Out of Stock", color: "text-gray-400", dot: "bg-gray-400" };
     } else if (product.stockQuantity <= 3) {
-      return { text: `${product.stockQuantity} left`, color: "text-orange-400", dot: "bg-orange-400" };
+      return { text: `${product.stockQuantity} left`, color: "text-red-400", dot: "bg-red-400" };
     } else {
       return { text: "In Stock", color: "text-green-400", dot: "bg-green-400" };
     }

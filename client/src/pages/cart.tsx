@@ -196,7 +196,7 @@ function Cart() {
 
                       {/* Stock Warning */}
                       {item.product.stockQuantity && item.product.stockQuantity <= 3 && (
-                        <div className="mt-3 text-orange-400 text-sm">
+                        <div className="mt-3 text-red-400 text-sm">
                           Only {item.product.stockQuantity} left in stock
                         </div>
                       )}
