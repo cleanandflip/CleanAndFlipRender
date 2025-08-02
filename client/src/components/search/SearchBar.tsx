@@ -88,6 +88,7 @@ export default function SearchBar({
     if (!searchQuery.trim()) return;
     
     saveToHistory(searchQuery);
+    setQuery(searchQuery); // Set the query in the input field
     onSearch?.(searchQuery);
     setIsOpen(false);
     inputRef.current?.blur();

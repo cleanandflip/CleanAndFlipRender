@@ -836,36 +836,47 @@ form [class*="gray-7"] {
    ADVANCED SEARCH SYSTEM Z-INDEX FIXES
    ========================================== */
 
-/* Advanced SearchBar dropdown positioning */
+/* Advanced SearchBar dropdown positioning - CRITICAL Z-INDEX FIXES */
 .search-container {
   position: relative;
-  z-index: 1;
+  z-index: 50;
 }
 
 .search-container .absolute {
-  z-index: 9999 !important;
+  z-index: 99999 !important;
   position: absolute !important;
 }
 
-/* Ensure search dropdown appears above all cards and components */
+/* Ensure search dropdown appears above ALL content */
 .search-container [data-radix-popper-content-wrapper],
 .search-container [data-radix-portal],
 .search-dropdown-overlay {
-  z-index: 9999 !important;
+  z-index: 99999 !important;
 }
 
-/* Fix for any card overlapping issues */
-.card {
+/* Lower z-index for all other components */
+.card,
+.product-card,
+[class*="card"],
+.no-products-card,
+.filter-sidebar,
+.product-grid {
   position: relative;
-  z-index: 1;
+  z-index: 1 !important;
 }
 
 .search-container:focus-within {
-  z-index: 9999;
+  z-index: 99999 !important;
 }
 
 /* Search dropdown specific styling */
 .search-dropdown-portal {
-  z-index: 9999 !important;
-  position: fixed;
+  z-index: 99999 !important;
+  position: fixed !important;
+}
+
+/* Ensure dropdown is always on top */
+.search-container > div:last-child {
+  z-index: 99999 !important;
+  position: absolute !important;
 }
