@@ -39,8 +39,8 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
     specifications: {} as Record<string, string>,
     weight: '',
     dimensions: { length: '', width: '', height: '' },
-    isActive: true,
-    isFeatured: false,
+    status: 'active' as 'active' | 'sold' | 'pending' | 'draft',
+    featured: false,
     tags: [] as string[],
     seoTitle: '',
     seoDescription: '',
@@ -54,7 +54,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
         sku: product.sku || '',
         price: product.price?.toString() || '',
         compareAtPrice: product.compareAtPrice?.toString() || '',
-        stock: product.stock?.toString() || '',
+        stock: product.stockQuantity?.toString() || '',
         categoryId: product.categoryId || '',
         description: product.description || '',
         shortDescription: product.shortDescription || '',
@@ -63,8 +63,8 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
         specifications: product.specifications || {},
         weight: product.weight?.toString() || '',
         dimensions: product.dimensions || { length: '', width: '', height: '' },
-        isActive: product.isActive ?? true,
-        isFeatured: product.isFeatured ?? false,
+        status: product.status || 'active',
+        featured: product.featured ?? false,
         tags: product.tags || [],
         seoTitle: product.seoTitle || '',
         seoDescription: product.seoDescription || '',
@@ -86,8 +86,8 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
         specifications: {},
         weight: '',
         dimensions: { length: '', width: '', height: '' },
-        isActive: true,
-        isFeatured: false,
+        status: 'active',
+        featured: false,
         tags: [],
         seoTitle: '',
         seoDescription: '',
@@ -113,8 +113,11 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
           ...productData,
           price: parseFloat(productData.price),
           compareAtPrice: productData.compareAtPrice ? parseFloat(productData.compareAtPrice) : null,
-          stock: parseInt(productData.stock),
-          weight: productData.weight ? parseFloat(productData.weight) : null
+          stockQuantity: parseInt(productData.stock),
+          weight: productData.weight ? parseFloat(productData.weight) : null,
+          // Ensure correct field names for backend
+          status: productData.status,
+          featured: productData.featured
         })
       });
 
@@ -172,6 +175,14 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
       });
       return;
     }
+    
+    console.log('Submitting product update:', {
+      id: product?.id,
+      formData,
+      status: formData.status,
+      featured: formData.featured,
+      stockQuantity: parseInt(formData.stock)
+    });
     
     saveProductMutation.mutate(formData);
   };
@@ -351,20 +362,35 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
             <div className="flex items-center gap-6">
               <div className="flex items-center space-x-2">
                 <Switch
-                  id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  id="status"
+                  checked={formData.status === 'active'}
+                  onCheckedChange={(checked) => {
+                    console.log('Status toggle changed:', { checked, newStatus: checked ? 'active' : 'draft' });
+                    setFormData(prev => {
+                      const newData = {
+                        ...prev,
+                        status: checked ? 'active' as const : 'draft' as const
+                      };
+                      console.log('New form data status:', newData.status);
+                      return newData;
+                    });
+                  }}
                 />
-                <Label htmlFor="isActive" style={{ color: theme.colors.text.secondary }}>Active</Label>
+                <Label htmlFor="status" style={{ color: theme.colors.text.secondary }}>
+                  Active {formData.status === 'active' ? '(Published)' : '(Draft)'}
+                </Label>
               </div>
               
               <div className="flex items-center space-x-2">
                 <Switch
-                  id="isFeatured"
-                  checked={formData.isFeatured}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isFeatured: checked })}
+                  id="featured"
+                  checked={formData.featured}
+                  onCheckedChange={(checked) => {
+                    console.log('Featured toggle changed:', { checked });
+                    setFormData(prev => ({ ...prev, featured: checked }));
+                  }}
                 />
-                <Label htmlFor="isFeatured" style={{ color: theme.colors.text.secondary }}>Featured</Label>
+                <Label htmlFor="featured" style={{ color: theme.colors.text.secondary }}>Featured</Label>
               </div>
             </div>
           </div>
