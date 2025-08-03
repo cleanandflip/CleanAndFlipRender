@@ -122,9 +122,9 @@ body {
   backdrop-filter: none !important;
 }
 
-/* Remove ANY potential conflicts from dropdown content */
+/* Force dropdown content to appear above everything */
 [data-radix-dropdown-menu-content] {
-  z-index: 100 !important;
+  z-index: 200 !important;
   backdrop-filter: none !important;
 }
 
@@ -534,22 +534,6 @@ body {
 }
 
 @layer components {
-  .glass {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius);
-  }
-  
-  .glass-hover {
-    transition: all 300ms ease-in-out;
-  }
-  
-  .glass-hover:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
-  }
 
   /* Logo styling with enhanced glow effects */
   .logo-glow {
