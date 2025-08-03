@@ -959,27 +959,79 @@ main, section, .card, [class*="card"], .glass, .table-container, .data-table {
   contain: none !important;
 }
 
-/* PREVENT BUTTON LAYOUT SHIFTS - No dimension changes on interaction */
-button, [role="button"], .btn {
+/* COMPREHENSIVE BUTTON LAYOUT SHIFT PREVENTION */
+button, [role="button"], .btn, 
+button *, [role="button"] *, .btn * {
   box-sizing: border-box !important;
-  outline-offset: -2px !important; /* Keep outline inside */
-  border-width: 1px !important; /* Consistent border width */
 }
 
-button:focus, button:active, button:hover,
-[role="button"]:focus, [role="button"]:active, [role="button"]:hover {
-  /* NO dimension changes */
+/* ZERO layout impact on ALL button interactions */
+button, [role="button"], .btn {
+  /* Fixed dimensions - no changes on interaction */
+  outline: 0 !important;
+  border: 1px solid transparent !important;
+  /* Prevent any layout-affecting properties */
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+/* Interaction states - ONLY visual changes, NO layout impact */
+button:hover, button:focus, button:active,
+[role="button"]:hover, [role="button"]:focus, [role="button"]:active {
+  /* NO dimension changes whatsoever */
+  outline: 0 !important;
   border-width: 1px !important;
-  outline-width: 2px !important;
-  outline-offset: -2px !important;
-  /* Use transform for visual effects, not size changes */
+  box-shadow: none !important;
+  text-decoration: none !important;
+  /* NO transforms that affect layout */
+  transform: none !important;
+  /* NO margin/padding changes */
+  margin: inherit !important;
+  padding: inherit !important;
+}
+
+/* Override ALL Tailwind utilities that cause layout shifts */
+.focus-visible\:ring-2:focus-visible,
+.focus-visible\:ring-offset-2:focus-visible,
+.hover\:scale-105:hover,
+.hover\:scale-110:hover,
+.active\:scale-95:active,
+*[class*="ring-"],
+*[class*="scale-"],
+*[class*="translate-"] {
+  transform: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Specifically target admin dashboard buttons to prevent layout shifts */
+.admin-layout button,
+[data-admin-dashboard] button,
+.glass button {
+  /* Prevent all dimension changes */
+  outline: 0 !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
   transform: none !important;
 }
 
-/* Prevent focus ring from affecting layout */
-button:focus-visible {
-  outline: 2px solid var(--ring) !important;
-  outline-offset: -2px !important;
+.admin-layout button:hover,
+.admin-layout button:focus,
+.admin-layout button:active,
+[data-admin-dashboard] button:hover,
+[data-admin-dashboard] button:focus,
+[data-admin-dashboard] button:active,
+.glass button:hover,
+.glass button:focus,
+.glass button:active {
+  /* NO layout-affecting changes */
+  outline: 0 !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+  transform: none !important;
+  margin: inherit !important;
+  padding: inherit !important;
 }
 
 /* Ensure dropdowns escape ALL stacking contexts */

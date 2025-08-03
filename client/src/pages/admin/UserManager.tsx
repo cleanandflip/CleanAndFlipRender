@@ -338,7 +338,7 @@ export function UserManager() {
           <Popover>
             <PopoverTrigger asChild>
               <div className="glass glass-hover rounded-lg p-1">
-                <Button variant="ghost" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <Button variant="ghost" className="gap-2 h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground">
                   <CalendarIcon className="w-4 h-4" />
                   Date Range
                 </Button>

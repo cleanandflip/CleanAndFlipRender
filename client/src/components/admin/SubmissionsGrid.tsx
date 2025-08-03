@@ -35,7 +35,7 @@ export function SubmissionsGrid({
       {submissions.map((submission) => (
         <Card 
           key={submission.id}
-          className={`p-4 hover:bg-gray-800/50 transition-all cursor-pointer ${
+          className={`p-4 hover:bg-gray-800/50 transition-colors cursor-pointer ${
             selectedSubmissions.has(submission.id) ? 'ring-2 ring-blue-500' : ''
           }`}
           onClick={() => onViewDetails(submission)}

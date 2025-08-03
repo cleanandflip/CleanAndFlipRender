@@ -137,7 +137,7 @@ export function SubmissionsList({
                   variant="ghost"
                   size="icon"
                   onClick={() => onViewDetails(submission)}
-                  className="h-8 w-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="h-8 w-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
                 >
                   <Eye className="w-4 h-4" />
                 </Button>
@@ -145,7 +145,7 @@ export function SubmissionsList({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="glass glass-hover rounded-lg p-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground">
                       <MoreVertical className="w-4 h-4" />
                     </Button>
                   </div>

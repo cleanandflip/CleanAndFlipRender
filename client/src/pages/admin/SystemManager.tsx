@@ -180,7 +180,7 @@ export function SystemManager() {
                     </div>
                     <div className="w-full bg-gray-700 h-2 rounded-full">
                       <div 
-                        className="bg-primary h-2 rounded-full transition-all" 
+                        className="bg-primary h-2 rounded-full transition-colors" 
                         style={{ width: `${systemHealth?.memory?.percentage || 0}%` }}
                       />
                     </div>
@@ -200,7 +200,7 @@ export function SystemManager() {
                     </div>
                     <div className="w-full bg-gray-700 h-2 rounded-full">
                       <div 
-                        className="bg-primary h-2 rounded-full transition-all" 
+                        className="bg-primary h-2 rounded-full transition-colors" 
                         style={{ width: `${systemHealth?.cpu?.usage || 0}%` }}
                       />
                     </div>

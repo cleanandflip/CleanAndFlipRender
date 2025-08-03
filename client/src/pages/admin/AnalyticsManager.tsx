@@ -131,7 +131,7 @@ export function AnalyticsManager() {
           <Popover>
             <PopoverTrigger asChild>
               <div className="glass glass-hover rounded-lg p-1">
-                <Button variant="ghost" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <Button variant="ghost" className="gap-2 h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground">
                   <CalendarIcon className="w-4 h-4" />
                   {dateRange.from && dateRange.to 
                     ? `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`
@@ -195,7 +195,7 @@ export function AnalyticsManager() {
           </Select>
           
           <div className="glass glass-hover rounded-lg p-1">
-            <Button variant="ghost" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <Button variant="ghost" className="gap-2 h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground">
               <Download className="w-4 h-4" />
               Compare Period
             </Button>
@@ -212,7 +212,7 @@ export function AnalyticsManager() {
                 setMetric('revenue');
                 setGroupBy('day');
               }}
-              className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
             >
               Reset
             </Button>

@@ -66,6 +66,7 @@ export function DashboardLayout({
       <div 
         className="border-b bg-secondary/80 sticky top-0 z-40"
         style={{ borderColor: theme.colors.border.default }}
+        data-admin-dashboard
       >
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
@@ -86,7 +87,7 @@ export function DashboardLayout({
                   variant="ghost"
                   size="sm"
                   onClick={onRefresh}
-                  className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="gap-2 h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
                   disabled={isLoading}
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
