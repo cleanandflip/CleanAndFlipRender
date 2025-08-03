@@ -401,7 +401,9 @@ function DashboardContent() {
                 data-tab="orders" 
                 role="tab" 
                 aria-selected={activeTab === 'orders'}
-                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className={`h-8 px-4 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  activeTab === 'orders' ? 'bg-primary text-primary-foreground' : ''
+                }`}
               >
                 Orders
               </TabsTrigger>
@@ -410,7 +412,9 @@ function DashboardContent() {
                 data-tab="submissions" 
                 role="tab" 
                 aria-selected={activeTab === 'submissions'}
-                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className={`h-8 px-4 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  activeTab === 'submissions' ? 'bg-primary text-primary-foreground' : ''
+                }`}
               >
                 Submissions
                 {Array.isArray(submissions) && submissions.filter(s => s.status === 'pending').length > 0 && (
@@ -424,7 +428,9 @@ function DashboardContent() {
                 data-tab="wishlist" 
                 role="tab" 
                 aria-selected={activeTab === 'wishlist'}
-                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className={`h-8 px-4 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  activeTab === 'wishlist' ? 'bg-primary text-primary-foreground' : ''
+                }`}
               >
                 Wishlist
               </TabsTrigger>
@@ -433,7 +439,9 @@ function DashboardContent() {
                 data-tab="profile" 
                 role="tab" 
                 aria-selected={activeTab === 'profile'}
-                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className={`h-8 px-4 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  activeTab === 'profile' ? 'bg-primary text-primary-foreground' : ''
+                }`}
               >
                 Profile
               </TabsTrigger>
@@ -442,7 +450,9 @@ function DashboardContent() {
                 data-tab="addresses" 
                 role="tab" 
                 aria-selected={activeTab === 'addresses'}
-                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className={`h-8 px-4 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  activeTab === 'addresses' ? 'bg-primary text-primary-foreground' : ''
+                }`}
               >
                 Addresses
               </TabsTrigger>
@@ -802,18 +812,42 @@ function DashboardContent() {
                     Account Settings
                   </h3>
                   <div className="space-y-3">
-                    <Button variant="outline" className="w-full glass border-border justify-start">
-                      Change Password
-                    </Button>
-                    <Button variant="outline" className="w-full glass border-border justify-start">
-                      Email Preferences
-                    </Button>
-                    <Button variant="outline" className="w-full glass border-border justify-start">
-                      Privacy Settings
-                    </Button>
-                    <Button variant="outline" className="w-full glass border-border justify-start">
-                      Download Data
-                    </Button>
+                    <div className="glass glass-hover rounded-lg p-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="w-full h-8 justify-start transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        Change Password
+                      </Button>
+                    </div>
+                    <div className="glass glass-hover rounded-lg p-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="w-full h-8 justify-start transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        Email Preferences
+                      </Button>
+                    </div>
+                    <div className="glass glass-hover rounded-lg p-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="w-full h-8 justify-start transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        Privacy Settings
+                      </Button>
+                    </div>
+                    <div className="glass glass-hover rounded-lg p-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="w-full h-8 justify-start transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        Download Data
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -846,14 +880,20 @@ function DashboardContent() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="glass border-border">Keep Submission</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => cancelSubmissionMutation.mutate(cancellingSubmission?.id)}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={cancelSubmissionMutation.isPending}
-            >
-              {cancelSubmissionMutation.isPending ? 'Cancelling...' : 'Yes, Cancel Submission'}
-            </AlertDialogAction>
+            <div className="glass glass-hover rounded-lg p-1">
+              <AlertDialogCancel className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                Keep Submission
+              </AlertDialogCancel>
+            </div>
+            <div className="glass glass-hover rounded-lg p-1">
+              <AlertDialogAction
+                onClick={() => cancelSubmissionMutation.mutate(cancellingSubmission?.id)}
+                className="h-8 bg-destructive hover:bg-destructive/90 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                disabled={cancelSubmissionMutation.isPending}
+              >
+                {cancelSubmissionMutation.isPending ? 'Cancelling...' : 'Yes, Cancel Submission'}
+              </AlertDialogAction>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
