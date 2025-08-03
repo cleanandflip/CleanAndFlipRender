@@ -959,56 +959,27 @@ main, section, .card, [class*="card"], .glass, .table-container, .data-table {
   contain: none !important;
 }
 
-/* TOTAL LAYOUT SHIFT ELIMINATION - KILL ALL DIMENSION CHANGES */
-*, *::before, *::after,
-button, [role="button"], .btn, 
-[data-radix-dropdown-menu-trigger],
-[class*="Button"], [class*="button"],
-input, select, textarea {
-  /* PREVENT ALL LAYOUT CHANGES */
+/* PREVENT BUTTON LAYOUT SHIFTS - No dimension changes on interaction */
+button, [role="button"], .btn {
   box-sizing: border-box !important;
-  outline: none !important;
-  box-shadow: none !important;
-  transform: none !important;
-  /* Force consistent margins and padding */
-  margin: 0 !important;
-  /* Remove all ring offsets that cause layout shifts */
-  --tw-ring-offset-width: 0px !important;
-  --tw-ring-offset-color: transparent !important;
-  /* Block all transitions except colors */
-  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
+  outline-offset: -2px !important; /* Keep outline inside */
+  border-width: 1px !important; /* Consistent border width */
 }
 
-/* AGGRESSIVE STATE PREVENTION */
 button:focus, button:active, button:hover,
-[role="button"]:focus, [role="button"]:active, [role="button"]:hover,
-[data-radix-dropdown-menu-trigger]:focus,
-[data-radix-dropdown-menu-trigger]:active,
-[data-radix-dropdown-menu-trigger]:hover,
-*:focus-visible, *:focus, *:active {
-  /* ABSOLUTELY NO LAYOUT CHANGES */
-  outline: none !important;
-  box-shadow: none !important;
-  transform: none !important;
+[role="button"]:focus, [role="button"]:active, [role="button"]:hover {
+  /* NO dimension changes */
   border-width: 1px !important;
-  margin: 0 !important;
-  --tw-ring-offset-width: 0px !important;
-  --tw-ring-offset-color: transparent !important;
-}
-
-/* Glass containers - prevent ANY dimension changes */
-.glass, .glass-hover {
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  padding: 0.25rem !important;
-  margin: 0 !important;
-}
-
-.glass-hover:hover {
-  /* NO transform or dimension changes */
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  padding: 0.25rem !important;
-  margin: 0 !important;
+  outline-width: 2px !important;
+  outline-offset: -2px !important;
+  /* Use transform for visual effects, not size changes */
   transform: none !important;
+}
+
+/* Prevent focus ring from affecting layout */
+button:focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: -2px !important;
 }
 
 /* Ensure dropdowns escape ALL stacking contexts */
