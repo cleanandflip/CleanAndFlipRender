@@ -474,58 +474,70 @@ function AdminDashboard() {
 
           {/* Main Dashboard Tabs */}
           <Tabs defaultValue="products" className="space-y-6">
-            <div className="glass glass-hover rounded-lg p-1">
-              <TabsList className="grid w-full grid-cols-7 bg-transparent">
+            <div className="flex gap-2 flex-wrap">
+              <div className="glass glass-hover rounded-lg p-1">
                 <TabsTrigger 
                   value="products" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Package className="w-4 h-4" />
                   Products
                 </TabsTrigger>
+              </div>
+              <div className="glass glass-hover rounded-lg p-1">
                 <TabsTrigger 
                   value="categories" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Grid3X3 className="w-4 h-4" />
                   Categories
                 </TabsTrigger>
+              </div>
+              <div className="glass glass-hover rounded-lg p-1">
                 <TabsTrigger 
                   value="submissions" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Clipboard className="w-4 h-4" />
                   Submissions
                 </TabsTrigger>
+              </div>
+              <div className="glass glass-hover rounded-lg p-1">
                 <TabsTrigger 
                   value="analytics" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <BarChart3 className="w-4 h-4" />
                   Analytics
                 </TabsTrigger>
+              </div>
+              <div className="glass glass-hover rounded-lg p-1">
                 <TabsTrigger 
                   value="wishlist" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Heart className="w-4 h-4" />
                   Wishlist
                 </TabsTrigger>
+              </div>
+              <div className="glass glass-hover rounded-lg p-1">
                 <TabsTrigger 
                   value="users" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Users className="w-4 h-4" />
                   Users
                 </TabsTrigger>
+              </div>
+              <div className="glass glass-hover rounded-lg p-1">
                 <TabsTrigger 
                   value="system" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Settings className="w-4 h-4" />
                   System
                 </TabsTrigger>
-              </TabsList>
+              </div>
             </div>
 
             <TabsContent value="products">
