@@ -97,7 +97,7 @@ export function DashboardLayout({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="glass glass-hover rounded-lg p-1">
-                    <Button variant="ghost" size="sm" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    <Button variant="ghost" size="sm" className="gap-2 h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground">
                       <Download className="w-4 h-4" />
                       Export
                       <ChevronDown className="w-4 h-4" />
@@ -140,7 +140,7 @@ export function DashboardLayout({
               <Button
                 variant="ghost"
                 onClick={() => setShowFilters(!showFilters)}
-                className="gap-2 relative h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="gap-2 relative h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
               >
                 <Filter className="w-4 h-4" />
                 Filters
@@ -159,7 +159,7 @@ export function DashboardLayout({
                     variant={currentView === 'list' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewChange('list')}
-                    className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="h-8 transition-colors duration-300"
                   >
                     <List className="w-4 h-4" />
                   </Button>
@@ -169,7 +169,7 @@ export function DashboardLayout({
                     variant={currentView === 'grid' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewChange('grid')}
-                    className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="h-8 transition-colors duration-300"
                   >
                     <Grid className="w-4 h-4" />
                   </Button>

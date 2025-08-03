@@ -959,6 +959,29 @@ main, section, .card, [class*="card"], .glass, .table-container, .data-table {
   contain: none !important;
 }
 
+/* PREVENT BUTTON LAYOUT SHIFTS - No dimension changes on interaction */
+button, [role="button"], .btn {
+  box-sizing: border-box !important;
+  outline-offset: -2px !important; /* Keep outline inside */
+  border-width: 1px !important; /* Consistent border width */
+}
+
+button:focus, button:active, button:hover,
+[role="button"]:focus, [role="button"]:active, [role="button"]:hover {
+  /* NO dimension changes */
+  border-width: 1px !important;
+  outline-width: 2px !important;
+  outline-offset: -2px !important;
+  /* Use transform for visual effects, not size changes */
+  transform: none !important;
+}
+
+/* Prevent focus ring from affecting layout */
+button:focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: -2px !important;
+}
+
 /* Ensure dropdowns escape ALL stacking contexts */
 [data-radix-portal] {
   z-index: 999999 !important;

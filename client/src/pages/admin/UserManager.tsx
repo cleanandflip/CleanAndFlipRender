@@ -357,7 +357,7 @@ export function UserManager() {
             <Button 
               variant="ghost" 
               onClick={() => setFilters(defaultFilters)}
-              className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
             >
               Clear Filters
             </Button>
@@ -366,7 +366,7 @@ export function UserManager() {
       }
       actions={
         <div className="glass glass-hover rounded-lg p-1">
-          <Button variant="primary" size="sm" className="gap-2 h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+          <Button variant="primary" size="sm" className="gap-2 h-8 transition-colors duration-300">
             <UserPlus className="w-4 h-4" />
             Invite User
           </Button>
@@ -385,7 +385,7 @@ export function UserManager() {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleBulkAction('export')}
-                className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="gap-2 h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
               >
                 <Download className="w-4 h-4" />
                 Export
@@ -396,7 +396,7 @@ export function UserManager() {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleBulkAction('activate')}
-                className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
               >
                 Activate
               </Button>
@@ -406,7 +406,7 @@ export function UserManager() {
                 variant="destructive"
                 size="sm"
                 onClick={() => handleBulkAction('suspend')}
-                className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="h-8 transition-colors duration-300"
               >
                 Suspend
               </Button>
@@ -436,7 +436,7 @@ export function UserManager() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="glass glass-hover rounded-lg p-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                <Button variant="ghost" size="icon" className="h-8 w-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground">
                   <MoreVertical className="w-4 h-4" />
                 </Button>
               </div>
