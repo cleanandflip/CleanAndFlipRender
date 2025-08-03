@@ -418,6 +418,7 @@ function SystemSettings() {
 }
 
 function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('products');
   const { data: stats, refetch: refetchStats } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
     queryFn: async () => {
@@ -473,101 +474,101 @@ function AdminDashboard() {
           </div>
 
           {/* Main Dashboard Tabs */}
-          <Tabs defaultValue="products" className="space-y-6">
-            <TabsList className="bg-transparent p-0 h-auto justify-start gap-2 flex-wrap">
+          <div className="space-y-6">
+            <div className="flex gap-2 flex-wrap">
               <div className="glass glass-hover rounded-lg p-1">
-                <TabsTrigger 
-                  value="products" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Button
+                  variant={activeTab === 'products' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('products')}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Package className="w-4 h-4" />
                   Products
-                </TabsTrigger>
+                </Button>
               </div>
               <div className="glass glass-hover rounded-lg p-1">
-                <TabsTrigger 
-                  value="categories" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Button
+                  variant={activeTab === 'categories' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('categories')}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Grid3X3 className="w-4 h-4" />
                   Categories
-                </TabsTrigger>
+                </Button>
               </div>
               <div className="glass glass-hover rounded-lg p-1">
-                <TabsTrigger 
-                  value="submissions" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Button
+                  variant={activeTab === 'submissions' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('submissions')}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Clipboard className="w-4 h-4" />
                   Submissions
-                </TabsTrigger>
+                </Button>
               </div>
               <div className="glass glass-hover rounded-lg p-1">
-                <TabsTrigger 
-                  value="analytics" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Button
+                  variant={activeTab === 'analytics' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('analytics')}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <BarChart3 className="w-4 h-4" />
                   Analytics
-                </TabsTrigger>
+                </Button>
               </div>
               <div className="glass glass-hover rounded-lg p-1">
-                <TabsTrigger 
-                  value="wishlist" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Button
+                  variant={activeTab === 'wishlist' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('wishlist')}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Heart className="w-4 h-4" />
                   Wishlist
-                </TabsTrigger>
+                </Button>
               </div>
               <div className="glass glass-hover rounded-lg p-1">
-                <TabsTrigger 
-                  value="users" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Button
+                  variant={activeTab === 'users' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('users')}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Users className="w-4 h-4" />
                   Users
-                </TabsTrigger>
+                </Button>
               </div>
               <div className="glass glass-hover rounded-lg p-1">
-                <TabsTrigger 
-                  value="system" 
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                <Button
+                  variant={activeTab === 'system' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('system')}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Settings className="w-4 h-4" />
                   System
-                </TabsTrigger>
+                </Button>
               </div>
-            </TabsList>
+            </div>
 
-            <TabsContent value="products">
-              <ProductsManager />
-            </TabsContent>
+            {activeTab === 'products' && <ProductsManager />}
 
-            <TabsContent value="categories">
-              <CategoryManager />
-            </TabsContent>
+            {activeTab === 'categories' && <CategoryManager />}
 
-            <TabsContent value="submissions">
-              <SubmissionsManager />
-            </TabsContent>
+            {activeTab === 'submissions' && <SubmissionsManager />}
 
-            <TabsContent value="analytics">
-              <AnalyticsManager />
-            </TabsContent>
+            {activeTab === 'analytics' && <AnalyticsManager />}
 
-            <TabsContent value="wishlist">
-              <WishlistManager />
-            </TabsContent>
+            {activeTab === 'wishlist' && <WishlistManager />}
 
-            <TabsContent value="users">
-              <UserManager />
-            </TabsContent>
+            {activeTab === 'users' && <UserManager />}
 
-            <TabsContent value="system">
-              <SystemManager />
-            </TabsContent>
-          </Tabs>
+            {activeTab === 'system' && <SystemManager />}
+          </div>
         </div>
       </div>
     </ProtectedRoute>

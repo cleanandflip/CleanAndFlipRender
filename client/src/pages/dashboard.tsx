@@ -393,34 +393,24 @@ function DashboardContent() {
         </div>
 
         {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="bg-transparent p-0 h-auto justify-start gap-2 flex-wrap">
+        <div className="space-y-6">
+          <div className="flex gap-2 flex-wrap">
             <div className="glass glass-hover rounded-lg p-1">
-              <TabsTrigger 
-                value="orders" 
-                data-tab="orders" 
-                role="tab" 
-                aria-selected={activeTab === 'orders'}
-                className={`h-8 px-4 transition-all duration-300 border-none ${
-                  activeTab === 'orders' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-transparent hover:bg-accent hover:text-accent-foreground'
-                } focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
+              <Button
+                variant={activeTab === 'orders' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => handleTabChange('orders')}
+                className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Orders
-              </TabsTrigger>
+              </Button>
             </div>
             <div className="glass glass-hover rounded-lg p-1">
-              <TabsTrigger 
-                value="submissions" 
-                data-tab="submissions" 
-                role="tab" 
-                aria-selected={activeTab === 'submissions'}
-                className={`h-8 px-4 transition-all duration-300 border-none ${
-                  activeTab === 'submissions' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-transparent hover:bg-accent hover:text-accent-foreground'
-                } focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
+              <Button
+                variant={activeTab === 'submissions' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => handleTabChange('submissions')}
+                className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Submissions
                 {Array.isArray(submissions) && submissions.filter(s => s.status === 'pending').length > 0 && (
@@ -428,57 +418,42 @@ function DashboardContent() {
                     {submissions.filter(s => s.status === 'pending').length}
                   </Badge>
                 )}
-              </TabsTrigger>
+              </Button>
             </div>
             <div className="glass glass-hover rounded-lg p-1">
-              <TabsTrigger 
-                value="wishlist" 
-                data-tab="wishlist" 
-                role="tab" 
-                aria-selected={activeTab === 'wishlist'}
-                className={`h-8 px-4 transition-all duration-300 border-none ${
-                  activeTab === 'wishlist' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-transparent hover:bg-accent hover:text-accent-foreground'
-                } focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
+              <Button
+                variant={activeTab === 'wishlist' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => handleTabChange('wishlist')}
+                className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Wishlist
-              </TabsTrigger>
+              </Button>
             </div>
             <div className="glass glass-hover rounded-lg p-1">
-              <TabsTrigger 
-                value="profile" 
-                data-tab="profile" 
-                role="tab" 
-                aria-selected={activeTab === 'profile'}
-                className={`h-8 px-4 transition-all duration-300 border-none ${
-                  activeTab === 'profile' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-transparent hover:bg-accent hover:text-accent-foreground'
-                } focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
+              <Button
+                variant={activeTab === 'profile' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => handleTabChange('profile')}
+                className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Profile
-              </TabsTrigger>
+              </Button>
             </div>
             <div className="glass glass-hover rounded-lg p-1">
-              <TabsTrigger 
-                value="addresses" 
-                data-tab="addresses" 
-                role="tab" 
-                aria-selected={activeTab === 'addresses'}
-                className={`h-8 px-4 transition-all duration-300 border-none ${
-                  activeTab === 'addresses' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-transparent hover:bg-accent hover:text-accent-foreground'
-                } focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
+              <Button
+                variant={activeTab === 'addresses' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => handleTabChange('addresses')}
+                className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Addresses
-              </TabsTrigger>
+              </Button>
             </div>
-          </TabsList>
+          </div>
 
           {/* Orders Tab */}
-          <TabsContent value="orders">
+          {activeTab === 'orders' && (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">ORDER HISTORY</h2>
@@ -550,10 +525,10 @@ function DashboardContent() {
                 </div>
               )}
             </Card>
-          </TabsContent>
+          )}
 
           {/* Submissions Tab */}
-          <TabsContent value="submissions">
+          {activeTab === 'submissions' && (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">EQUIPMENT SUBMISSIONS</h2>
@@ -701,10 +676,10 @@ function DashboardContent() {
                 </div>
               )}
             </Card>
-          </TabsContent>
+          )}
 
           {/* Wishlist Tab */}
-          <TabsContent value="wishlist">
+          {activeTab === 'wishlist' && (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">WISHLIST</h2>
@@ -791,10 +766,10 @@ function DashboardContent() {
                 </div>
               )}
             </Card>
-          </TabsContent>
+          )}
 
           {/* Profile Tab */}
-          <TabsContent value="profile">
+          {activeTab === 'profile' && (
             <Card className="p-6">
               <h2 className="font-bebas text-2xl mb-6">PROFILE INFORMATION</h2>
               
@@ -870,13 +845,13 @@ function DashboardContent() {
                 </div>
               </div>
             </Card>
-          </TabsContent>
+          )}
 
           {/* Addresses Tab */}
-          <TabsContent value="addresses">
+          {activeTab === 'addresses' && (
             <AddressesSection />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
 
       {/* Cancellation Confirmation Dialog */}
