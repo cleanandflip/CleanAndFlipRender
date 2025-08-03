@@ -81,42 +81,34 @@ export function DashboardLayout({
             
             <div className="flex items-center gap-3">
               {actions}
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onRefresh}
-                  className="h-8 gap-2 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  disabled={isLoading}
-                >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                className="gap-2"
+                disabled={isLoading}
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
               
-              <div className="glass glass-hover rounded-lg p-1">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 gap-2 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      <Download className="w-4 h-4" />
-                      Export
-                      <ChevronDown className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => onExport('csv')}>
-                      Export as CSV
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onExport('pdf')}>
-                      Export as PDF
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Download className="w-4 h-4" />
+                    Export
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => onExport('csv')}>
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onExport('pdf')}>
+                    Export as PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           
@@ -140,42 +132,38 @@ export function DashboardLayout({
               />
             </div>
             
-            <div className="glass glass-hover rounded-lg p-1">
-              <Button
-                variant="ghost"
-                onClick={() => setShowFilters(!showFilters)}
-                className="h-8 gap-2 relative transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <Filter className="w-4 h-4" />
-                Filters
-                {activeFiltersCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-accent-blue text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2 relative"
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+              {activeFiltersCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-accent-blue text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </Button>
 
             {viewMode === 'both' && onViewChange && (
-              <div className="glass glass-hover rounded-lg p-1">
-                <div className="flex items-center">
-                  <Button
-                    variant={currentView === 'list' ? 'primary' : 'ghost'}
-                    size="sm"
-                    onClick={() => onViewChange('list')}
-                    className="h-8 rounded-r-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={currentView === 'grid' ? 'primary' : 'ghost'}
-                    size="sm"
-                    onClick={() => onViewChange('grid')}
-                    className="h-8 rounded-l-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                </div>
+              <div className="flex border border-primary rounded-lg">
+                <Button
+                  variant={currentView === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => onViewChange('list')}
+                  className="rounded-r-none"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={currentView === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => onViewChange('grid')}
+                  className="rounded-l-none"
+                >
+                  <Grid className="w-4 h-4" />
+                </Button>
               </div>
             )}
 

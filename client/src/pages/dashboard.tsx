@@ -401,7 +401,7 @@ function DashboardContent() {
                 data-tab="orders" 
                 role="tab" 
                 aria-selected={activeTab === 'orders'}
-                className="h-8"
+                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Orders
               </TabsTrigger>
@@ -410,7 +410,7 @@ function DashboardContent() {
                 data-tab="submissions" 
                 role="tab" 
                 aria-selected={activeTab === 'submissions'}
-                className="h-8"
+                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Submissions
                 {Array.isArray(submissions) && submissions.filter(s => s.status === 'pending').length > 0 && (
@@ -424,7 +424,7 @@ function DashboardContent() {
                 data-tab="wishlist" 
                 role="tab" 
                 aria-selected={activeTab === 'wishlist'}
-                className="h-8"
+                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Wishlist
               </TabsTrigger>
@@ -433,7 +433,7 @@ function DashboardContent() {
                 data-tab="profile" 
                 role="tab" 
                 aria-selected={activeTab === 'profile'}
-                className="h-8"
+                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Profile
               </TabsTrigger>
@@ -442,7 +442,7 @@ function DashboardContent() {
                 data-tab="addresses" 
                 role="tab" 
                 aria-selected={activeTab === 'addresses'}
-                className="h-8"
+                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Addresses
               </TabsTrigger>

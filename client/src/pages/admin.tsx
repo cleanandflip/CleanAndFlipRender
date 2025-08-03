@@ -474,59 +474,36 @@ function AdminDashboard() {
 
           {/* Main Dashboard Tabs */}
           <Tabs defaultValue="products" className="space-y-6">
-            <div className="glass glass-hover rounded-lg p-1">
-              <TabsList className="grid w-full grid-cols-7 bg-transparent">
-                <TabsTrigger 
-                  value="products" 
-                  className="flex items-center gap-2 h-8"
-                >
-                  <Package className="w-4 h-4" />
-                  Products
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="categories" 
-                  className="flex items-center gap-2 h-8"
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                  Categories
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="submissions" 
-                  className="flex items-center gap-2 h-8"
-                >
-                  <Clipboard className="w-4 h-4" />
-                  Submissions
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="analytics" 
-                  className="flex items-center gap-2 h-8"
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  Analytics
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="wishlist" 
-                  className="flex items-center gap-2 h-8"
-                >
-                  <Heart className="w-4 h-4" />
-                  Wishlist
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="users" 
-                  className="flex items-center gap-2 h-8"
-                >
-                  <Users className="w-4 h-4" />
-                  Users
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="system" 
-                  className="flex items-center gap-2 h-8"
-                >
-                  <Settings className="w-4 h-4" />
-                  System
-                </TabsTrigger>
-              </TabsList>
-            </div>
+            <TabsList className="grid w-full grid-cols-7">
+              <TabsTrigger value="products" className="flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                Products
+              </TabsTrigger>
+              <TabsTrigger value="categories" className="flex items-center gap-2">
+                <Grid3X3 className="w-4 h-4" />
+                Categories
+              </TabsTrigger>
+              <TabsTrigger value="submissions" className="flex items-center gap-2">
+                <Clipboard className="w-4 h-4" />
+                Submissions
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="wishlist" className="flex items-center gap-2">
+                <Heart className="w-4 h-4" />
+                Wishlist
+              </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Users
+              </TabsTrigger>
+              <TabsTrigger value="system" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                System
+              </TabsTrigger>
+            </TabsList>
 
             <TabsContent value="products">
               <ProductsManager />
