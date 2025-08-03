@@ -959,27 +959,48 @@ main, section, .card, [class*="card"], .glass, .table-container, .data-table {
   contain: none !important;
 }
 
-/* PREVENT BUTTON LAYOUT SHIFTS - No dimension changes on interaction */
-button, [role="button"], .btn {
+/* ELIMINATE ALL LAYOUT SHIFTS - NUCLEAR OPTION */
+button, [role="button"], .btn, 
+[data-radix-dropdown-menu-trigger],
+[class*="Button"], 
+input, select, textarea {
+  /* Prevent ALL dimension changes */
   box-sizing: border-box !important;
-  outline-offset: -2px !important; /* Keep outline inside */
-  border-width: 1px !important; /* Consistent border width */
+  border: 1px solid transparent !important; /* Always reserve border space */
+  outline: none !important; /* Remove all outlines */
+  box-shadow: none !important; /* Remove all shadows */
+  transform: none !important; /* No transforms */
+  margin: 0 !important; /* No margin changes */
+  padding: calc(0.5rem - 1px) calc(0.75rem - 1px) !important; /* Account for border */
 }
 
+/* NO visual state changes that affect layout */
 button:focus, button:active, button:hover,
-[role="button"]:focus, [role="button"]:active, [role="button"]:hover {
-  /* NO dimension changes */
-  border-width: 1px !important;
-  outline-width: 2px !important;
-  outline-offset: -2px !important;
-  /* Use transform for visual effects, not size changes */
+[role="button"]:focus, [role="button"]:active, [role="button"]:hover,
+[data-radix-dropdown-menu-trigger]:focus,
+[data-radix-dropdown-menu-trigger]:active,
+[data-radix-dropdown-menu-trigger]:hover {
+  /* ONLY color changes allowed */
+  border: 1px solid transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
   transform: none !important;
+  margin: 0 !important;
 }
 
-/* Prevent focus ring from affecting layout */
-button:focus-visible {
-  outline: 2px solid var(--ring) !important;
-  outline-offset: -2px !important;
+/* Glass containers - prevent ANY dimension changes */
+.glass, .glass-hover {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 0.25rem !important;
+  margin: 0 !important;
+}
+
+.glass-hover:hover {
+  /* NO transform or dimension changes */
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 0.25rem !important;
+  margin: 0 !important;
+  transform: none !important;
 }
 
 /* Ensure dropdowns escape ALL stacking contexts */
