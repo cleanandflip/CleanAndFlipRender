@@ -962,3 +962,55 @@ main, section, .card, [class*="card"] {
 body.search-modal-open {
   overflow: hidden;
 }
+
+/* Enhanced Search Bar Specific Styles */
+.search-icon-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px; /* Fixed width for stability */
+  transform-origin: center;
+}
+
+.search-input {
+  height: 48px; /* Fixed height */
+  line-height: 1;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Fix autofill styles */
+.search-input:-webkit-autofill,
+.search-input:-webkit-autofill:hover,
+.search-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px rgb(31 41 55) inset !important;
+  -webkit-text-fill-color: rgb(243 244 246) !important;
+}
+
+/* Prevent dropdown flicker and improve performance */
+.search-dropdown {
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  transform: translateZ(0);
+  contain: layout style paint;
+}
+
+/* Mobile specific improvements */
+@media (max-width: 768px) {
+  .search-dropdown-mobile {
+    contain: layout style paint;
+    touch-action: manipulation;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .search-dropdown {
+    animation: none;
+    transition: none;
+  }
+}

@@ -568,11 +568,19 @@ export function EnhancedSearchBar({
           damping: 30,
           mass: 0.8
         }}
-        className={`fixed z-[999999] ${isMobile ? 'search-dropdown-mobile' : ''}`}
+        className={`
+          fixed z-[999999] search-dropdown
+          ${isMobile ? 'search-dropdown-mobile' : ''}
+        `}
         style={{
           top: `${dropdownPosition.top}px`,
           left: `${dropdownPosition.left}px`,
           width: `${dropdownPosition.width}px`,
+          transformOrigin: 'top left',
+          backfaceVisibility: 'hidden',
+          WebkitFontSmoothing: 'antialiased',
+          transform: 'translateZ(0)',
+          willChange: 'transform, opacity'
         }}
       >
         <div className={`
@@ -594,21 +602,29 @@ export function EnhancedSearchBar({
     <>
       <div className={`relative ${className}`}>
         <div className="relative group">
-          <Search 
-            className={`
-              absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 
-              pointer-events-none transition-colors duration-200
-              ${isOpen ? 'text-blue-400' : 'text-gray-400'}
-            `} 
-          />
+          {/* Search Icon Container - Fixed positioning and perfect centering */}
+          <div className="search-icon-container absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center pointer-events-none">
+            <Search 
+              className={`w-4 h-4 transition-colors duration-200 ${
+                isOpen ? 'text-blue-400' : 'text-gray-400'
+              }`} 
+            />
+          </div>
+          
+          {/* Search Input - Fixed height and improved styling */}
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={handleInputChange}
             onFocus={() => {
-              setIsOpen(true);
-              setSelectedIndex(-1);
+              // Add small delay to prevent animation glitches
+              requestAnimationFrame(() => {
+                setTimeout(() => {
+                  setIsOpen(true);
+                  setSelectedIndex(-1);
+                }, 50);
+              });
             }}
             placeholder={placeholder}
             autoFocus={autoFocus}
@@ -617,27 +633,38 @@ export function EnhancedSearchBar({
             autoCapitalize="off"
             spellCheck={false}
             className={`
-              w-full pl-10 pr-10 py-3 
-              bg-gray-800/60 hover:bg-gray-800/70 focus:bg-gray-800/80
+              search-input w-full h-12 pl-12 pr-12 
+              bg-gray-800 hover:bg-gray-800/90 focus:bg-gray-800
               border border-gray-700/50 hover:border-gray-600/50 focus:border-blue-500/50
               rounded-xl text-gray-100 placeholder-gray-500
-              transition-all duration-200 outline-none
-              focus:ring-2 focus:ring-blue-500/20 focus:shadow-[0_0_30px_rgba(59,130,246,0.15)]
+              transition-all duration-200 outline-none line-height-1
+              ring-0 focus:ring-2 focus:ring-blue-500/20 focus:shadow-[0_0_30px_rgba(59,130,246,0.15)]
               ${isOpen ? 'shadow-lg' : ''}
+              -webkit-appearance-none
             `}
+            style={{ 
+              lineHeight: 1,
+              WebkitAppearance: 'none'
+            }}
           />
+          
+          {/* Clear Button - Perfect centering and smooth animation */}
           <AnimatePresence>
             {query && (
-              <motion.button
+              <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-700/50 rounded-md transition-all"
+                className="absolute right-0 top-0 bottom-0 w-12 flex items-center justify-center"
               >
-                <X size={16} className="text-gray-400 hover:text-gray-200" />
-              </motion.button>
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="h-8 w-8 flex items-center justify-center hover:bg-gray-700/50 rounded-md transition-all duration-200 touch-action-manipulation"
+                >
+                  <X size={16} className="text-gray-400 hover:text-gray-200 transition-colors" />
+                </button>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
