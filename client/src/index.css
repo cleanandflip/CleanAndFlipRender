@@ -959,33 +959,41 @@ main, section, .card, [class*="card"], .glass, .table-container, .data-table {
   contain: none !important;
 }
 
-/* ELIMINATE ALL LAYOUT SHIFTS - NUCLEAR OPTION */
+/* TOTAL LAYOUT SHIFT ELIMINATION - KILL ALL DIMENSION CHANGES */
+*, *::before, *::after,
 button, [role="button"], .btn, 
 [data-radix-dropdown-menu-trigger],
-[class*="Button"], 
+[class*="Button"], [class*="button"],
 input, select, textarea {
-  /* Prevent ALL dimension changes */
+  /* PREVENT ALL LAYOUT CHANGES */
   box-sizing: border-box !important;
-  border: 1px solid transparent !important; /* Always reserve border space */
-  outline: none !important; /* Remove all outlines */
-  box-shadow: none !important; /* Remove all shadows */
-  transform: none !important; /* No transforms */
-  margin: 0 !important; /* No margin changes */
-  padding: calc(0.5rem - 1px) calc(0.75rem - 1px) !important; /* Account for border */
+  outline: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  /* Force consistent margins and padding */
+  margin: 0 !important;
+  /* Remove all ring offsets that cause layout shifts */
+  --tw-ring-offset-width: 0px !important;
+  --tw-ring-offset-color: transparent !important;
+  /* Block all transitions except colors */
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
 }
 
-/* NO visual state changes that affect layout */
+/* AGGRESSIVE STATE PREVENTION */
 button:focus, button:active, button:hover,
 [role="button"]:focus, [role="button"]:active, [role="button"]:hover,
 [data-radix-dropdown-menu-trigger]:focus,
 [data-radix-dropdown-menu-trigger]:active,
-[data-radix-dropdown-menu-trigger]:hover {
-  /* ONLY color changes allowed */
-  border: 1px solid transparent !important;
+[data-radix-dropdown-menu-trigger]:hover,
+*:focus-visible, *:focus, *:active {
+  /* ABSOLUTELY NO LAYOUT CHANGES */
   outline: none !important;
   box-shadow: none !important;
   transform: none !important;
+  border-width: 1px !important;
   margin: 0 !important;
+  --tw-ring-offset-width: 0px !important;
+  --tw-ring-offset-color: transparent !important;
 }
 
 /* Glass containers - prevent ANY dimension changes */
