@@ -232,19 +232,7 @@ export function EnhancedSearchBar({
     }, 150);
   };
 
-  // Clear search
-  const clearSearch = () => {
-    setQuery('');
-    setSelectedIndex(-1);
-    setIsOpen(false); // Close dropdown when clearing
-    inputRef.current?.focus();
-    
-    if (context === 'header') {
-      setLocation('/');
-    } else {
-      onSearch?.('');
-    }
-  };
+  // Clear search - moved inline to X button click handler
 
   // Keyboard navigation
   useEffect(() => {
@@ -560,15 +548,12 @@ export function EnhancedSearchBar({
       <motion.div
         ref={dropdownRef}
         key="search-dropdown"
-        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
         transition={{ 
-          type: "spring",
-          stiffness: 400,
-          damping: 30,
-          mass: 0.8,
-          duration: 0.2
+          duration: 0.15,
+          ease: 'easeOut'
         }}
         className={`
           fixed z-[999999] search-dropdown
@@ -606,9 +591,9 @@ export function EnhancedSearchBar({
       <div className={`relative ${className}`}>
         <div className="relative group">
           {/* Search Icon Container - Fixed positioning and perfect centering */}
-          <div className="search-icon-container absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center pointer-events-none">
+          <div className="search-icon-container absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center pointer-events-none z-10">
             <Search 
-              className={`w-4 h-4 transition-colors duration-200 ${
+              className={`w-4 h-4 transition-colors duration-200 z-10 ${
                 isOpen ? 'text-blue-400' : 'text-gray-400'
               }`} 
             />
@@ -663,7 +648,19 @@ export function EnhancedSearchBar({
               >
                 <button
                   type="button"
-                  onClick={clearSearch}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setQuery('');
+                    setIsOpen(false);
+                    inputRef.current?.blur();
+                    
+                    if (context === 'header') {
+                      setLocation('/');
+                    } else {
+                      onSearch?.('');
+                    }
+                  }}
                   className="h-8 w-8 flex items-center justify-center hover:bg-gray-700/50 rounded-md transition-all duration-200 touch-action-manipulation"
                 >
                   <X size={16} className="text-gray-400 hover:text-gray-200 transition-colors" />
