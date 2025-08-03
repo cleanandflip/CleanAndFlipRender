@@ -201,7 +201,7 @@ export function CategoryManager() {
               variant="ghost"
               size="sm"
               onClick={() => setFilters({ ...filters, search: '' })}
-              className="h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
+              className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               Clear Search
             </Button>
@@ -213,7 +213,7 @@ export function CategoryManager() {
           <Button 
             variant="primary"
             size="sm"
-            className="h-8 gap-2 transition-colors duration-300"
+            className="h-8 gap-2 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
             onClick={() => setIsCreateModalOpen(true)}
           >
             <Plus className="w-4 h-4" />
@@ -268,7 +268,7 @@ export function CategoryManager() {
                       size="sm"
                       onClick={() => handleViewCategory(category)}
                       title="View Category"
-                      className="h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground  "
+                      className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
@@ -280,7 +280,7 @@ export function CategoryManager() {
                       size="sm"
                       onClick={() => handleEditCategory(category)}
                       title="Edit Category"
-                      className="h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground  "
+                      className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -293,7 +293,7 @@ export function CategoryManager() {
                       onClick={() => handleDeleteCategory(category)}
                       disabled={category.productCount > 0}
                       title={category.productCount > 0 ? 'Cannot delete - has products' : 'Delete Category'}
-                      className="h-8 text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300 hover:bg-accent  "
+                      className="h-8 text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

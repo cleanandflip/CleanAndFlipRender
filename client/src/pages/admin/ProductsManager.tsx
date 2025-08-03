@@ -332,7 +332,7 @@ export function ProductsManager() {
               variant="ghost" 
               size="sm"
               onClick={() => setFilters(defaultFilters)}
-              className="h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
+              className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               Clear Filters
             </Button>
@@ -344,7 +344,7 @@ export function ProductsManager() {
           <Button 
             variant="primary"
             size="sm"
-            className="h-8 gap-2 transition-colors duration-300"
+            className="h-8 gap-2 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             onClick={() => setIsCreateModalOpen(true)}
           >
             <Plus className="w-4 h-4" />
@@ -366,7 +366,7 @@ export function ProductsManager() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleBulkAction('duplicate')}
-                  className="h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
+                  className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   Duplicate
                 </Button>
@@ -374,7 +374,7 @@ export function ProductsManager() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleBulkAction('deactivate')}
-                  className="h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
+                  className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   Deactivate
                 </Button>
@@ -382,7 +382,7 @@ export function ProductsManager() {
                   variant="destructive"
                   size="sm"
                   onClick={() => handleBulkAction('delete')}
-                  className="h-8 transition-colors duration-300"
+                  className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   Delete
                 </Button>
@@ -408,7 +408,7 @@ export function ProductsManager() {
           {products?.data?.map((product: Product) => (
             <Card 
               key={product.id} 
-              className={`glass p-4 hover:bg-gray-800/50 transition-colors cursor-pointer ${
+              className={`glass p-4 hover:bg-gray-800/50 transition-all cursor-pointer ${
                 selectedProducts.has(product.id) ? 'ring-2 ring-accent-blue' : ''
               }`}
             >
@@ -457,7 +457,7 @@ export function ProductsManager() {
                   <Button 
                     size="sm" 
                     variant="ghost" 
-                    className="flex-1 h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
+                    className="flex-1 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     onClick={() => handleViewProduct(product)}
                     title="View Product"
                   >
@@ -466,7 +466,7 @@ export function ProductsManager() {
                   <Button 
                     size="sm" 
                     variant="ghost" 
-                    className="flex-1 h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
+                    className="flex-1 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     onClick={() => handleEditProduct(product)}
                     title="Edit Product"
                   >
@@ -475,7 +475,7 @@ export function ProductsManager() {
                   <Button 
                     size="sm" 
                     variant="destructive" 
-                    className="flex-1 h-8 transition-colors duration-300"
+                    className="flex-1 h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     onClick={() => handleDeleteProduct(product)}
                     title="Delete Product"
                   >

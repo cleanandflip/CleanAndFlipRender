@@ -66,7 +66,6 @@ export function DashboardLayout({
       <div 
         className="border-b bg-secondary/80 sticky top-0 z-40"
         style={{ borderColor: theme.colors.border.default }}
-        data-admin-dashboard
       >
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
@@ -87,7 +86,7 @@ export function DashboardLayout({
                   variant="ghost"
                   size="sm"
                   onClick={onRefresh}
-                  className="gap-2 h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
+                  className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   disabled={isLoading}
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -98,7 +97,7 @@ export function DashboardLayout({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="glass glass-hover rounded-lg p-1">
-                    <Button variant="ghost" size="sm" className="gap-2 h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground">
+                    <Button variant="ghost" size="sm" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                       <Download className="w-4 h-4" />
                       Export
                       <ChevronDown className="w-4 h-4" />
@@ -141,7 +140,7 @@ export function DashboardLayout({
               <Button
                 variant="ghost"
                 onClick={() => setShowFilters(!showFilters)}
-                className="gap-2 relative h-8 transition-colors duration-300 hover:bg-accent hover:text-accent-foreground"
+                className="gap-2 relative h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <Filter className="w-4 h-4" />
                 Filters
@@ -160,7 +159,7 @@ export function DashboardLayout({
                     variant={currentView === 'list' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewChange('list')}
-                    className="h-8 transition-colors duration-300"
+                    className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <List className="w-4 h-4" />
                   </Button>
@@ -170,7 +169,7 @@ export function DashboardLayout({
                     variant={currentView === 'grid' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewChange('grid')}
-                    className="h-8 transition-colors duration-300"
+                    className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <Grid className="w-4 h-4" />
                   </Button>

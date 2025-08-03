@@ -94,21 +94,22 @@ body {
   --border-color: hsl(215, 20%, 35%);      /* #64748b */
 }
 
-/* ULTIMATE Glass Morphism System - NO stacking contexts on containers */
+/* ULTIMATE Glass Morphism System - Override EVERYTHING */
 .glass {
   background: rgba(35, 41, 55, 0.4) !important;
-  /* REMOVED backdrop-filter to prevent stacking contexts */
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 0.5rem !important;
   padding: 0.25rem !important;
   transition: all 300ms ease-in-out !important;
-  z-index: 1 !important; /* Low z-index for containers */
+  z-index: 50 !important;
 }
 
 .glass-hover:hover {
   background: rgba(35, 41, 55, 0.6) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
-  /* REMOVED transform to prevent stacking context */
+  transform: translateY(-1px) !important;
 }
 
 /* Force ALL child elements to be transparent */
@@ -949,122 +950,15 @@ form [class*="gray-7"] {
   background: rgba(107, 114, 128, 0.8);
 }
 
-/* Fix z-index stacking contexts - ELIMINATE ALL stacking context creators */
-main, section, .card, [class*="card"], .glass, .table-container, .data-table {
+/* Fix z-index stacking contexts */
+main, section, .card, [class*="card"] {
   transform: none !important;
   filter: none !important;
-  backdrop-filter: none !important;
-  will-change: auto !important;
-  perspective: none !important;
-  contain: none !important;
-}
-
-/* COMPREHENSIVE BUTTON LAYOUT SHIFT PREVENTION */
-button, [role="button"], .btn, 
-button *, [role="button"] *, .btn * {
-  box-sizing: border-box !important;
-}
-
-/* ZERO layout impact on ALL button interactions */
-button, [role="button"], .btn {
-  /* Fixed dimensions - no changes on interaction */
-  outline: 0 !important;
-  border: 1px solid transparent !important;
-  /* Prevent any layout-affecting properties */
-  box-shadow: none !important;
-  text-decoration: none !important;
-}
-
-/* Interaction states - ONLY visual changes, NO layout impact */
-button:hover, button:focus, button:active,
-[role="button"]:hover, [role="button"]:focus, [role="button"]:active {
-  /* NO dimension changes whatsoever */
-  outline: 0 !important;
-  border-width: 1px !important;
-  box-shadow: none !important;
-  text-decoration: none !important;
-  /* NO transforms that affect layout */
-  transform: none !important;
-  /* NO margin/padding changes */
-  margin: inherit !important;
-  padding: inherit !important;
-}
-
-/* Override ALL Tailwind utilities that cause layout shifts */
-.focus-visible\:ring-2:focus-visible,
-.focus-visible\:ring-offset-2:focus-visible,
-.hover\:scale-105:hover,
-.hover\:scale-110:hover,
-.active\:scale-95:active,
-*[class*="ring-"],
-*[class*="scale-"],
-*[class*="translate-"] {
-  transform: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-/* Specifically target admin dashboard buttons to prevent layout shifts */
-.admin-layout button,
-[data-admin-dashboard] button,
-.glass button {
-  /* Prevent all dimension changes */
-  outline: 0 !important;
-  border-style: solid !important;
-  border-width: 1px !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-.admin-layout button:hover,
-.admin-layout button:focus,
-.admin-layout button:active,
-[data-admin-dashboard] button:hover,
-[data-admin-dashboard] button:focus,
-[data-admin-dashboard] button:active,
-.glass button:hover,
-.glass button:focus,
-.glass button:active {
-  /* NO layout-affecting changes */
-  outline: 0 !important;
-  border-width: 1px !important;
-  box-shadow: none !important;
-  transform: none !important;
-  margin: inherit !important;
-  padding: inherit !important;
-}
-
-/* Ensure dropdowns escape ALL stacking contexts */
-[data-radix-portal] {
-  z-index: 999999 !important;
-  position: fixed !important;
-}
-
-[data-radix-popper-content-wrapper] {
-  z-index: 999999 !important;
-  position: fixed !important;
 }
 
 /* Search highlight animation */
 .search-highlight-pulse {
   animation: search-glow 2s ease-out;
-}
-
-/* Prevent button click jumping by ensuring stable dimensions */
-button {
-  box-sizing: border-box !important;
-  outline-offset: -2px !important; /* Keep outline inside */
-}
-
-/* Use transform for animations, not size changes */
-button:active {
-  transform: scale(0.98) !important; /* Don't change actual dimensions */
-}
-
-/* Prevent focus styles from changing button dimensions */
-button:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.5) !important;
-  outline-offset: -2px !important; /* Keep inside button */
 }
 
 /* Product highlight animation */
