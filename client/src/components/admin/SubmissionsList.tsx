@@ -132,18 +132,23 @@ export function SubmissionsList({
             </div>
             
             <div className="col-span-1 flex gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onViewDetails(submission)}
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
+              <div className="glass glass-hover rounded-lg p-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onViewDetails(submission)}
+                  className="h-8 w-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+              </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
+                  <div className="glass glass-hover rounded-lg p-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem>

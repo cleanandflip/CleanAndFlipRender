@@ -337,10 +337,12 @@ export function UserManager() {
           
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <CalendarIcon className="w-4 h-4" />
-                Date Range
-              </Button>
+              <div className="glass glass-hover rounded-lg p-1">
+                <Button variant="ghost" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <CalendarIcon className="w-4 h-4" />
+                  Date Range
+                </Button>
+              </div>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 glass border-border">
               <Calendar
@@ -351,19 +353,24 @@ export function UserManager() {
             </PopoverContent>
           </Popover>
           
-          <Button 
-            variant="outline" 
-            onClick={() => setFilters(defaultFilters)}
-          >
-            Clear Filters
-          </Button>
+          <div className="glass glass-hover rounded-lg p-1">
+            <Button 
+              variant="ghost" 
+              onClick={() => setFilters(defaultFilters)}
+              className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              Clear Filters
+            </Button>
+          </div>
         </div>
       }
       actions={
-        <Button className="gap-2">
-          <UserPlus className="w-4 h-4" />
-          Invite User
-        </Button>
+        <div className="glass glass-hover rounded-lg p-1">
+          <Button variant="primary" size="sm" className="gap-2 h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <UserPlus className="w-4 h-4" />
+            Invite User
+          </Button>
+        </div>
       }
     >
       {/* Bulk Actions */}
@@ -373,29 +380,37 @@ export function UserManager() {
             {selectedUsers.size} user{selectedUsers.size > 1 ? 's' : ''} selected
           </p>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleBulkAction('export')}
-              className="gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Export
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleBulkAction('activate')}
-            >
-              Activate
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => handleBulkAction('suspend')}
-            >
-              Suspend
-            </Button>
+            <div className="glass glass-hover rounded-lg p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleBulkAction('export')}
+                className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
+            </div>
+            <div className="glass glass-hover rounded-lg p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleBulkAction('activate')}
+                className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Activate
+              </Button>
+            </div>
+            <div className="glass glass-hover rounded-lg p-1">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleBulkAction('suspend')}
+                className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Suspend
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -420,9 +435,11 @@ export function UserManager() {
         actions={(user) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
+              <div className="glass glass-hover rounded-lg p-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onClick={() => handleViewUser(user)}>
