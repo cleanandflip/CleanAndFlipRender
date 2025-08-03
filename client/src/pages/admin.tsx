@@ -478,49 +478,49 @@ function AdminDashboard() {
               <TabsList className="grid w-full grid-cols-7 bg-transparent">
                 <TabsTrigger 
                   value="products" 
-                  className="flex items-center gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8"
                 >
                   <Package className="w-4 h-4" />
                   Products
                 </TabsTrigger>
                 <TabsTrigger 
                   value="categories" 
-                  className="flex items-center gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8"
                 >
                   <Grid3X3 className="w-4 h-4" />
                   Categories
                 </TabsTrigger>
                 <TabsTrigger 
                   value="submissions" 
-                  className="flex items-center gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8"
                 >
                   <Clipboard className="w-4 h-4" />
                   Submissions
                 </TabsTrigger>
                 <TabsTrigger 
                   value="analytics" 
-                  className="flex items-center gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8"
                 >
                   <BarChart3 className="w-4 h-4" />
                   Analytics
                 </TabsTrigger>
                 <TabsTrigger 
                   value="wishlist" 
-                  className="flex items-center gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8"
                 >
                   <Heart className="w-4 h-4" />
                   Wishlist
                 </TabsTrigger>
                 <TabsTrigger 
                   value="users" 
-                  className="flex items-center gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8"
                 >
                   <Users className="w-4 h-4" />
                   Users
                 </TabsTrigger>
                 <TabsTrigger 
                   value="system" 
-                  className="flex items-center gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex items-center gap-2 h-8"
                 >
                   <Settings className="w-4 h-4" />
                   System
