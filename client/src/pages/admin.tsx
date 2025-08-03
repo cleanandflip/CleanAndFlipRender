@@ -474,7 +474,7 @@ function AdminDashboard() {
 
           {/* Main Dashboard Tabs */}
           <Tabs defaultValue="products" className="space-y-6">
-            <div className="flex gap-2 flex-wrap">
+            <TabsList className="bg-transparent p-0 h-auto justify-start gap-2 flex-wrap">
               <div className="glass glass-hover rounded-lg p-1">
                 <TabsTrigger 
                   value="products" 
@@ -538,7 +538,7 @@ function AdminDashboard() {
                   System
                 </TabsTrigger>
               </div>
-            </div>
+            </TabsList>
 
             <TabsContent value="products">
               <ProductsManager />
