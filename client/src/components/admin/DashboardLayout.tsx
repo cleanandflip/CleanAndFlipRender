@@ -104,7 +104,7 @@ export function DashboardLayout({
                     </Button>
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent className="glass border-border bg-card">
                   <DropdownMenuItem onClick={() => onExport('csv')}>
                     Export as CSV
                   </DropdownMenuItem>

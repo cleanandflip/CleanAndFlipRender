@@ -441,7 +441,7 @@ export function UserManager() {
                 </Button>
               </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent className="glass border-border bg-card">
               <DropdownMenuItem onClick={() => handleViewUser(user)}>
                 View Profile
               </DropdownMenuItem>

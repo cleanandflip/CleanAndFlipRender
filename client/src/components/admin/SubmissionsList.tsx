@@ -150,7 +150,7 @@ export function SubmissionsList({
                     </Button>
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent className="glass border-border bg-card">
                   <DropdownMenuItem>
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
