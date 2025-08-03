@@ -194,32 +194,40 @@ export default function Navigation() {
                   </div>
 
                   {/* Navigation Links */}
-                  <div className="py-2">
+                  <div className="py-2 space-y-1">
                     <DropdownMenuItem asChild>
-                      <Link href={ROUTES.DASHBOARD} className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
-                        <User className="mr-3 h-4 w-4" />
-                        My Dashboard
-                      </Link>
+                      <div className="glass glass-hover rounded-lg mx-2 p-1">
+                        <Link href={ROUTES.DASHBOARD} className="flex items-center px-3 py-2 text-sm text-text-secondary hover:text-primary transition-all duration-300 cursor-pointer rounded-md">
+                          <User className="mr-3 h-4 w-4" />
+                          My Dashboard
+                        </Link>
+                      </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={ROUTES.ORDERS} className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
-                        <ShoppingCart className="mr-3 h-4 w-4" />
-                        Order History
-                      </Link>
+                      <div className="glass glass-hover rounded-lg mx-2 p-1">
+                        <Link href={ROUTES.ORDERS} className="flex items-center px-3 py-2 text-sm text-text-secondary hover:text-primary transition-all duration-300 cursor-pointer rounded-md">
+                          <ShoppingCart className="mr-3 h-4 w-4" />
+                          Order History
+                        </Link>
+                      </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href={`${ROUTES.DASHBOARD}?tab=submissions`} className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-white/5 transition-colors cursor-pointer">
-                        <Package className="mr-3 h-4 w-4" />
-                        My Submissions
-                      </Link>
+                      <div className="glass glass-hover rounded-lg mx-2 p-1">
+                        <Link href={`${ROUTES.DASHBOARD}?tab=submissions`} className="flex items-center px-3 py-2 text-sm text-text-secondary hover:text-primary transition-all duration-300 cursor-pointer rounded-md">
+                          <Package className="mr-3 h-4 w-4" />
+                          My Submissions
+                        </Link>
+                      </div>
                     </DropdownMenuItem>
 
                     {(user.role === 'developer' || user.role === 'admin' || user.isAdmin) && (
                       <DropdownMenuItem asChild>
-                        <Link href={ROUTES.ADMIN} className="flex items-center px-4 py-2 text-sm text-slate-300 hover:text-slate-100 hover:bg-slate-500/10 transition-colors cursor-pointer">
-                          <Settings className="mr-3 h-4 w-4" />
-                          Developer Dashboard
-                        </Link>
+                        <div className="glass glass-hover rounded-lg mx-2 p-1">
+                          <Link href={ROUTES.ADMIN} className="flex items-center px-3 py-2 text-sm text-slate-300 hover:text-slate-100 transition-all duration-300 cursor-pointer rounded-md">
+                            <Settings className="mr-3 h-4 w-4" />
+                            Developer Dashboard
+                          </Link>
+                        </div>
                       </DropdownMenuItem>
                     )}
                   </div>
@@ -228,12 +236,16 @@ export default function Navigation() {
                   
                   {/* Logout */}
                   <div className="py-2">
-                    <DropdownMenuItem 
-                      onClick={() => logoutMutation.mutate()} 
-                      className="flex items-center px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
-                    >
-                      <LogOut className="mr-3 h-4 w-4" />
-                      Sign Out
+                    <DropdownMenuItem asChild>
+                      <div className="glass glass-hover rounded-lg mx-2 p-1">
+                        <button
+                          onClick={() => logoutMutation.mutate()} 
+                          className="flex items-center w-full px-3 py-2 text-sm text-red-400 hover:text-red-300 transition-all duration-300 cursor-pointer rounded-md"
+                        >
+                          <LogOut className="mr-3 h-4 w-4" />
+                          Sign Out
+                        </button>
+                      </div>
                     </DropdownMenuItem>
                   </div>
                   </DropdownMenuContent>

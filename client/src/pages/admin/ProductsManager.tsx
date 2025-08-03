@@ -327,23 +327,30 @@ export function ProductsManager() {
             />
           </div>
           
-          <Button 
-            variant="outline" 
-            onClick={() => setFilters(defaultFilters)}
-            className="glass border-border"
-          >
-            Clear Filters
-          </Button>
+          <div className="glass glass-hover rounded-lg p-1">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setFilters(defaultFilters)}
+              className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              Clear Filters
+            </Button>
+          </div>
         </div>
       }
       actions={
-        <Button 
-          className="gap-2"
-          onClick={() => setIsCreateModalOpen(true)}
-        >
-          <Plus className="w-4 h-4" />
-          Add Product
-        </Button>
+        <div className="glass glass-hover rounded-lg p-1">
+          <Button 
+            variant="primary"
+            size="sm"
+            className="h-8 gap-2 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <Plus className="w-4 h-4" />
+            Add Product
+          </Button>
+        </div>
       }
     >
       {/* Bulk Actions */}
@@ -353,30 +360,33 @@ export function ProductsManager() {
             <p className="text-blue-300">
               {selectedProducts.size} product{selectedProducts.size > 1 ? 's' : ''} selected
             </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkAction('duplicate')}
-                className="glass border-border"
-              >
-                Duplicate
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkAction('deactivate')}
-                className="glass border-border"
-              >
-                Deactivate
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleBulkAction('delete')}
-              >
-                Delete
-              </Button>
+            <div className="glass glass-hover rounded-lg p-1">
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleBulkAction('duplicate')}
+                  className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  Duplicate
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleBulkAction('deactivate')}
+                  className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  Deactivate
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleBulkAction('delete')}
+                  className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  Delete
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -442,34 +452,36 @@ export function ProductsManager() {
                 <span className="text-sm text-text-muted">Stock: {product.stock}</span>
               </div>
               
-              <div className="flex gap-2 mt-3">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1 glass border-border"
-                  onClick={() => handleViewProduct(product)}
-                  title="View Product"
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1 glass border-border"
-                  onClick={() => handleEditProduct(product)}
-                  title="Edit Product"
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="destructive" 
-                  className="flex-1"
-                  onClick={() => handleDeleteProduct(product)}
-                  title="Delete Product"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+              <div className="glass glass-hover rounded-lg p-1 mt-3">
+                <div className="flex gap-1">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="flex-1 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onClick={() => handleViewProduct(product)}
+                    title="View Product"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="flex-1 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onClick={() => handleEditProduct(product)}
+                    title="Edit Product"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="destructive" 
+                    className="flex-1 h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onClick={() => handleDeleteProduct(product)}
+                    title="Delete Product"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}
