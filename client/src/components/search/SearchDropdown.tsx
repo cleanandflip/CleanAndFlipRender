@@ -43,7 +43,7 @@ export default function SearchDropdown({
       className="absolute top-full left-0 right-0 mt-2 z-[99999]"
       style={{ zIndex: 99999, position: 'absolute' }}
     >
-      <div className="bg-gray-900/98 backdrop-blur-xl border border-gray-600/50 rounded-lg shadow-2xl max-h-96 overflow-hidden ring-1 ring-white/10">
+      <div className="bg-gray-900/98 border border-gray-600/50 rounded-lg shadow-2xl max-h-96 overflow-hidden ring-1 ring-white/10">
         <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent">
           {hasQuery ? (
             // Search Results

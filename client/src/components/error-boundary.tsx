@@ -57,14 +57,14 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="flex justify-center mb-8">
                 <div className="relative">
                   <div className="absolute inset-0 bg-red-600 rounded-full blur-2xl opacity-10 animate-pulse"></div>
-                  <div className="relative bg-gray-800/50 backdrop-blur-sm rounded-full p-6 border border-gray-700/50">
+                  <div className="relative bg-gray-800/50 rounded-full p-6 border border-gray-700/50">
                     <AlertTriangle className="w-16 h-16 text-red-400" />
                   </div>
                 </div>
               </div>
 
               {/* Error Message Card */}
-              <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-800/50">
+              <div className="bg-gray-900/50 rounded-2xl p-8 border border-gray-800/50">
                 <h1 className="text-2xl font-bold text-white text-center mb-4">
                   Something went wrong
                 </h1>
@@ -180,7 +180,7 @@ export function ErrorPage({ status = 404, message, title }: ErrorPageProps) {
           <div className="flex justify-center mb-8">
             <div className="relative">
               <div className="absolute inset-0 bg-blue-600 rounded-full blur-2xl opacity-10 animate-pulse"></div>
-              <div className="relative bg-gray-800/50 backdrop-blur-sm rounded-full p-6 border border-gray-700/50">
+              <div className="relative bg-gray-800/50 rounded-full p-6 border border-gray-700/50">
                 <div className="text-6xl">{icon}</div>
               </div>
             </div>
@@ -194,7 +194,7 @@ export function ErrorPage({ status = 404, message, title }: ErrorPageProps) {
           </div>
 
           {/* Error Message Card */}
-          <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-800/50">
+          <div className="bg-gray-900/50 rounded-2xl p-8 border border-gray-800/50">
             <h1 className="text-2xl font-bold text-white text-center mb-4">
               {errorTitle}
             </h1>
@@ -243,12 +243,12 @@ interface ApiErrorProps {
 
 export function ApiError({ status, message, onRetry }: ApiErrorProps) {
   return (
-    <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-800/50 text-center">
+    <div className="bg-gray-900/50 rounded-2xl p-8 border border-gray-800/50 text-center">
       {/* Icon with subtle animation */}
       <div className="flex justify-center mb-6">
         <div className="relative">
           <div className="absolute inset-0 bg-red-600 rounded-full blur-xl opacity-10 animate-pulse"></div>
-          <div className="relative bg-gray-800/50 backdrop-blur-sm rounded-full p-4 border border-gray-700/50">
+          <div className="relative bg-gray-800/50 rounded-full p-4 border border-gray-700/50">
             <AlertTriangle className="h-12 w-12 text-red-400" />
           </div>
         </div>

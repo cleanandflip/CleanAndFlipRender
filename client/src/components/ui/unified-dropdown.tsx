@@ -86,7 +86,7 @@ export function UnifiedDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "w-full px-4 py-3 backdrop-blur-sm rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group",
+          "w-full px-4 py-3 rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group",
           disabled 
             ? "cursor-not-allowed opacity-50" 
             : "cursor-pointer"
@@ -132,7 +132,7 @@ export function UnifiedDropdown({
           />
           
           {/* Menu */}
-          <div className="absolute z-[9999] w-full mt-2 py-1 bg-popover backdrop-blur-md border border-input rounded-lg shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+          <div className="absolute z-[9999] w-full mt-2 py-1 bg-popover border border-input rounded-lg shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <button

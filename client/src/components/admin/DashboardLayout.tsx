@@ -64,7 +64,7 @@ export function DashboardLayout({
     <div className="min-h-screen bg-secondary">
       {/* Header */}
       <div 
-        className="border-b bg-secondary/80 backdrop-blur sticky top-0 z-40"
+        className="border-b bg-secondary/80 sticky top-0 z-40"
         style={{ borderColor: theme.colors.border.default }}
       >
         <div className="px-6 py-4">

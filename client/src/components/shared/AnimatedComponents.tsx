@@ -189,7 +189,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-center animate-fade-in"
+      className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center animate-fade-in"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

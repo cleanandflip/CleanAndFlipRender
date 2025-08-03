@@ -92,7 +92,7 @@ export default function Navigation() {
       {/* Main Navigation - Cleaner Layout with Badge Support */}
       <nav className="fixed top-4 left-4 right-4 z-50 rounded-xl px-6 py-3 max-w-7xl mx-auto overflow-visible" style={{ 
         background: 'rgba(35, 41, 55, 0.4)', 
-        backdropFilter: 'blur(12px)', 
+ 
         border: '1px solid rgba(255, 255, 255, 0.08)' 
       }}>
         <div className="flex items-center justify-between w-full gap-4">
@@ -165,7 +165,7 @@ export default function Navigation() {
                     </DropdownMenuTrigger>
                   </div>
                   <DropdownMenuContent 
-                    className="w-64 bg-secondary border-bg-secondary-border border-primary shadow-2xl backdrop-blur-xl z-[100]"
+                    className="w-64 bg-secondary border-bg-secondary-border border-primary shadow-2xl z-[100]"
                     align="end"
                     sideOffset={8}
                     avoidCollisions={true}

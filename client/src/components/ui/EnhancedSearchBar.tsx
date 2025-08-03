@@ -572,7 +572,7 @@ export function EnhancedSearchBar({
         }}
       >
         <div className={`
-          bg-gray-900/98 backdrop-blur-2xl border border-gray-700/50 shadow-2xl overflow-hidden
+          bg-gray-900/98 border border-gray-700/50 shadow-2xl overflow-hidden
           ${isMobile ? 'rounded-t-xl' : 'rounded-xl'}
         `}>
           <div className={`overflow-y-auto custom-scrollbar ${
