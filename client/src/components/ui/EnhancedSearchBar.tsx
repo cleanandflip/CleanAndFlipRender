@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { Search, X, Clock, TrendingUp, Package, Sparkles, Loader2, ShoppingCart, Heart } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -130,8 +130,8 @@ export function EnhancedSearchBar({
     }
   }, []);
 
-  // Update position when opening
-  useEffect(() => {
+  // Update position when opening - use layoutEffect for sync calculation
+  useLayoutEffect(() => {
     if (isOpen) {
       updateDropdownPosition();
       window.addEventListener('resize', updateDropdownPosition);
@@ -236,6 +236,7 @@ export function EnhancedSearchBar({
   const clearSearch = () => {
     setQuery('');
     setSelectedIndex(-1);
+    setIsOpen(false); // Close dropdown when clearing
     inputRef.current?.focus();
     
     if (context === 'header') {
@@ -559,24 +560,26 @@ export function EnhancedSearchBar({
       <motion.div
         ref={dropdownRef}
         key="search-dropdown"
-        initial={{ opacity: 0, x: -30, y: -30, scale: 0.9 }}
-        animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-        exit={{ opacity: 0, x: -15, y: -15, scale: 0.95 }}
+        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -10, scale: 0.95 }}
         transition={{ 
           type: "spring",
           stiffness: 400,
           damping: 30,
-          mass: 0.8
+          mass: 0.8,
+          duration: 0.2
         }}
         className={`
           fixed z-[999999] search-dropdown
           ${isMobile ? 'search-dropdown-mobile' : ''}
         `}
         style={{
+          position: 'fixed',
           top: `${dropdownPosition.top}px`,
           left: `${dropdownPosition.left}px`,
           width: `${dropdownPosition.width}px`,
-          transformOrigin: 'top left',
+          transformOrigin: '0 0',
           backfaceVisibility: 'hidden',
           WebkitFontSmoothing: 'antialiased',
           transform: 'translateZ(0)',
@@ -618,7 +621,8 @@ export function EnhancedSearchBar({
             value={query}
             onChange={handleInputChange}
             onFocus={() => {
-              // Add small delay to prevent animation glitches
+              // Calculate position first, then open
+              updateDropdownPosition();
               requestAnimationFrame(() => {
                 setTimeout(() => {
                   setIsOpen(true);
