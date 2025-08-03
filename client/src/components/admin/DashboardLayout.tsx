@@ -81,34 +81,42 @@ export function DashboardLayout({
             
             <div className="flex items-center gap-3">
               {actions}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onRefresh}
-                className="gap-2"
-                disabled={isLoading}
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+              <div className="glass glass-hover rounded-lg p-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onRefresh}
+                  className="h-8 gap-2 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Export
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => onExport('csv')}>
-                    Export as CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onExport('pdf')}>
-                    Export as PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="glass glass-hover rounded-lg p-1">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 gap-2 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => onExport('csv')}>
+                      Export as CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onExport('pdf')}>
+                      Export as PDF
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
           
