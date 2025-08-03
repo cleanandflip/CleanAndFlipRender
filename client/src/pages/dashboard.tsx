@@ -455,9 +455,15 @@ function DashboardContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">ORDER HISTORY</h2>
                 <SmartLink href="/orders">
-                  <Button variant="outline" className="glass border-border">
-                    View All Orders
-                  </Button>
+                  <div className="glass glass-hover rounded-lg p-1">
+                    <Button 
+                      variant="primary"
+                      size="sm"
+                      className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      View All Orders
+                    </Button>
+                  </div>
                 </SmartLink>
               </div>
 
@@ -469,9 +475,15 @@ function DashboardContent() {
                     Start shopping to see your order history here.
                   </p>
                   <SmartLink href="/products">
-                    <Button>
-                      Browse Products
-                    </Button>
+                    <div className="glass glass-hover rounded-lg p-1">
+                      <Button 
+                        variant="primary"
+                        size="sm"
+                        className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        Browse Products
+                      </Button>
+                    </div>
                   </SmartLink>
                 </div>
               ) : (
@@ -493,9 +505,15 @@ function DashboardContent() {
                         <div className="text-right">
                           <div className="font-semibold text-lg">${order.total}</div>
                           <SmartLink href={`/orders/${order.id}`}>
-                            <Button variant="outline" size="sm" className="glass border-border mt-2">
-                              View Details
-                            </Button>
+                            <div className="glass glass-hover rounded-lg p-1 mt-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                              >
+                                View Details
+                              </Button>
+                            </div>
                           </SmartLink>
                         </div>
                       </div>
@@ -512,9 +530,15 @@ function DashboardContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">EQUIPMENT SUBMISSIONS</h2>
                 <SmartLink href="/sell-to-us">
-                  <Button className="bg-success hover:bg-green-600">
-                    Sell More Equipment
-                  </Button>
+                  <div className="glass glass-hover rounded-lg p-1">
+                    <Button 
+                      variant="primary"
+                      size="sm"
+                      className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      Sell More Equipment
+                    </Button>
+                  </div>
                 </SmartLink>
               </div>
 
@@ -534,9 +558,15 @@ function DashboardContent() {
                     Have equipment to sell? Submit it for a cash offer.
                   </p>
                   <SmartLink href="/sell-to-us">
-                    <Button className="bg-success hover:bg-green-600">
-                      Sell Equipment
-                    </Button>
+                    <div className="glass glass-hover rounded-lg p-1">
+                      <Button 
+                        variant="primary"
+                        size="sm"
+                        className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        Sell Equipment
+                      </Button>
+                    </div>
                   </SmartLink>
                 </div>
               ) : (
@@ -564,22 +594,30 @@ function DashboardContent() {
                           
                           <div className="flex gap-2">
                             <SmartLink href={`/track-submission?ref=${submission.referenceNumber}`}>
-                              <Button variant="outline" size="sm" className="glass border-border">
-                                <Eye className="w-4 h-4 mr-1" />
-                                Track
-                              </Button>
+                              <div className="glass glass-hover rounded-lg p-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  Track
+                                </Button>
+                              </div>
                             </SmartLink>
                             
                             {canCancelSubmission(submission) && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setCancellingSubmission(submission)}
-                                className="text-red-400 hover:text-red-300 hover:border-red-600 glass border-border"
-                              >
-                                <X className="w-4 h-4 mr-1" />
-                                Cancel
-                              </Button>
+                              <div className="glass glass-hover rounded-lg p-1">
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => setCancellingSubmission(submission)}
+                                  className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                >
+                                  <X className="w-4 h-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -643,9 +681,15 @@ function DashboardContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">WISHLIST</h2>
                 <SmartLink href="/products">
-                  <Button variant="outline" className="glass border-border">
-                    Browse Products
-                  </Button>
+                  <div className="glass glass-hover rounded-lg p-1">
+                    <Button 
+                      variant="primary"
+                      size="sm"
+                      className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      Browse Products
+                    </Button>
+                  </div>
                 </SmartLink>
               </div>
 
@@ -657,9 +701,15 @@ function DashboardContent() {
                     Save items you're interested in to easily find them later.
                   </p>
                   <SmartLink href="/products">
-                    <Button>
-                      Start Shopping
-                    </Button>
+                    <div className="glass glass-hover rounded-lg p-1">
+                      <Button 
+                        variant="primary"
+                        size="sm"
+                        className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        Start Shopping
+                      </Button>
+                    </div>
                   </SmartLink>
                 </div>
               ) : (
@@ -696,9 +746,15 @@ function DashboardContent() {
                         <p className="text-accent-blue font-bold mb-3">${item.product.price}</p>
                         <div className="flex gap-2">
                           <SmartLink href={`/products/${item.product.id}`} className="flex-1">
-                            <Button className="w-full">
-                              View Product
-                            </Button>
+                            <div className="glass glass-hover rounded-lg p-1">
+                              <Button 
+                                variant="primary"
+                                size="sm"
+                                className="w-full h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                              >
+                                View Product
+                              </Button>
+                            </div>
                           </SmartLink>
                         </div>
                       </div>
