@@ -68,8 +68,8 @@ export function DataTable<T extends { id: string }>({
   }
 
   return (
-    <div className="bg-secondary rounded-lg overflow-hidden" style={{ transform: 'none', filter: 'none', perspective: 'none', contain: 'none' }}>
-      <div className="overflow-x-auto" style={{ transform: 'none', filter: 'none' }}>
+    <div className="bg-secondary rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-800/50 border-b border-bg-secondary-border">
             <tr>
