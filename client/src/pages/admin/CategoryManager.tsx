@@ -196,23 +196,30 @@ export function CategoryManager() {
           <p className="text-sm text-text-muted">
             Drag and drop categories to reorder them. Categories with products cannot be deleted.
           </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setFilters({ ...filters, search: '' })}
-          >
-            Clear Search
-          </Button>
+          <div className="glass glass-hover rounded-lg p-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilters({ ...filters, search: '' })}
+              className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              Clear Search
+            </Button>
+          </div>
         </div>
       }
       actions={
-        <Button 
-          className="gap-2" 
-          onClick={() => setIsCreateModalOpen(true)}
-        >
-          <Plus className="w-4 h-4" />
-          Add Category
-        </Button>
+        <div className="glass glass-hover rounded-lg p-1">
+          <Button 
+            variant="primary"
+            size="sm"
+            className="h-8 gap-2 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <Plus className="w-4 h-4" />
+            Add Category
+          </Button>
+        </div>
       }
     >
       <div className="space-y-2">
@@ -254,35 +261,39 @@ export function CategoryManager() {
                 </div>
                 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleViewCategory(category)}
-                    title="View Category"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEditCategory(category)}
-                    title="Edit Category"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteCategory(category)}
-                    disabled={category.productCount > 0}
-                    title={category.productCount > 0 ? 'Cannot delete - has products' : 'Delete Category'}
-                    className="text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                <div className="glass glass-hover rounded-lg p-1">
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewCategory(category)}
+                      title="View Category"
+                      className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditCategory(category)}
+                      title="Edit Category"
+                      className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteCategory(category)}
+                      disabled={category.productCount > 0}
+                      title={category.productCount > 0 ? 'Cannot delete - has products' : 'Delete Category'}
+                      className="h-8 text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -325,13 +336,20 @@ export function CategoryManager() {
           setEditingCategory(null);
         }}
         category={editingCategory}
-        onSave={refetch}
+        onSuccess={() => {
+          refetch();
+          setIsEditModalOpen(false);
+          setEditingCategory(null);
+        }}
       />
       
       <CategoryModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSave={refetch}
+        onSuccess={() => {
+          refetch();
+          setIsCreateModalOpen(false);
+        }}
       />
     </DashboardLayout>
   );

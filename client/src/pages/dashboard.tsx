@@ -394,20 +394,60 @@ function DashboardContent() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="glass w-full justify-start">
-            <TabsTrigger value="orders" data-tab="orders" role="tab" aria-selected={activeTab === 'orders'}>Orders</TabsTrigger>
-            <TabsTrigger value="submissions" data-tab="submissions" role="tab" aria-selected={activeTab === 'submissions'}>
-              Submissions
-              {Array.isArray(submissions) && submissions.filter(s => s.status === 'pending').length > 0 && (
-                <Badge className="ml-2" variant="secondary">
-                  {submissions.filter(s => s.status === 'pending').length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="wishlist" data-tab="wishlist" role="tab" aria-selected={activeTab === 'wishlist'}>Wishlist</TabsTrigger>
-            <TabsTrigger value="profile" data-tab="profile" role="tab" aria-selected={activeTab === 'profile'}>Profile</TabsTrigger>
-            <TabsTrigger value="addresses" data-tab="addresses" role="tab" aria-selected={activeTab === 'addresses'}>Addresses</TabsTrigger>
-          </TabsList>
+          <div className="glass glass-hover rounded-lg p-1">
+            <TabsList className="w-full justify-start bg-transparent">
+              <TabsTrigger 
+                value="orders" 
+                data-tab="orders" 
+                role="tab" 
+                aria-selected={activeTab === 'orders'}
+                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Orders
+              </TabsTrigger>
+              <TabsTrigger 
+                value="submissions" 
+                data-tab="submissions" 
+                role="tab" 
+                aria-selected={activeTab === 'submissions'}
+                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Submissions
+                {Array.isArray(submissions) && submissions.filter(s => s.status === 'pending').length > 0 && (
+                  <Badge className="ml-2" variant="secondary">
+                    {submissions.filter(s => s.status === 'pending').length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="wishlist" 
+                data-tab="wishlist" 
+                role="tab" 
+                aria-selected={activeTab === 'wishlist'}
+                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Wishlist
+              </TabsTrigger>
+              <TabsTrigger 
+                value="profile" 
+                data-tab="profile" 
+                role="tab" 
+                aria-selected={activeTab === 'profile'}
+                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Profile
+              </TabsTrigger>
+              <TabsTrigger 
+                value="addresses" 
+                data-tab="addresses" 
+                role="tab" 
+                aria-selected={activeTab === 'addresses'}
+                className="transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                Addresses
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Orders Tab */}
           <TabsContent value="orders">

@@ -153,17 +153,17 @@ export default function Navigation() {
             {user ? (
               <div className="relative">
                 <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="group bg-secondary p-2 text-slate-300 w-10 h-10 flex-shrink-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:outline-none border border-primary border-slate-500/30 relative overflow-hidden transition-all duration-300 hover:border-slate-400/60 hover:shadow-[0_0_20px_rgba(100,116,139,0.3)] hover:bg-slate-500/10 data-[state=open]:border-slate-400/60 data-[state=open]:shadow-[0_0_20px_rgba(100,116,139,0.3)] data-[state=open]:bg-slate-500/10"
-                    >
-                      {/* Inner glow effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-slate-500/0 via-slate-400/5 to-slate-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <User size={18} className="relative z-10" />
-                    </Button>
-                  </DropdownMenuTrigger>
+                  <div className="glass glass-hover rounded-lg p-1">
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 group text-slate-300 flex-shrink-0 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        <User size={16} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </div>
                   <DropdownMenuContent 
                     className="w-64 bg-secondary border-bg-secondary-border border-primary shadow-2xl backdrop-blur-xl z-[100]"
                     align="end"
@@ -251,26 +251,19 @@ export default function Navigation() {
             )}
 
             {/* Cart - Toggle Button with Fixed Badge Overflow */}
-            <div className="relative overflow-visible p-1">
+            <div className="glass glass-hover rounded-lg p-1 relative overflow-visible">
               <Button
-                variant="ghost"
-                size="icon"
+                variant={isCartOpen ? 'primary' : 'ghost'}
+                size="sm"
                 onClick={handleCartClick}
-                className={`group bg-secondary relative p-2 w-10 h-10 flex-shrink-0 transition-all duration-300 ${
-                  isCartOpen 
-                    ? "text-slate-300 border border-primary border-slate-500/30 bg-slate-500/10 shadow-[0_0_20px_rgba(100,116,139,0.3)]" 
-                    : "text-text-secondary border border-primary border-transparent hover:text-slate-300 hover:bg-slate-500/10 hover:shadow-[0_0_20px_rgba(100,116,139,0.3)] hover:border-slate-500/60"
-                }`}
+                className="h-8 group flex-shrink-0 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                {/* Inner glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-500/0 via-slate-400/5 to-slate-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                
                 {/* Toggle between cart and close icon */}
-                <div className="relative z-10 transition-transform duration-200">
+                <div className="transition-transform duration-200">
                   {isCartOpen ? (
-                    <XCircle size={18} className="animate-in fade-in-0 duration-200" />
+                    <XCircle size={16} className="animate-in fade-in-0 duration-200" />
                   ) : (
-                    <ShoppingCart size={18} className="animate-in fade-in-0 duration-200" />
+                    <ShoppingCart size={16} className="animate-in fade-in-0 duration-200" />
                   )}
                 </div>
                 
