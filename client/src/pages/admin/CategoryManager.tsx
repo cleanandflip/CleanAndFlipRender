@@ -261,8 +261,8 @@ export function CategoryManager() {
                 </div>
                 
                 {/* Actions */}
-                <div className="glass glass-hover rounded-lg p-1">
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1">
+                  <div className="glass glass-hover rounded-lg p-1">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -272,7 +272,9 @@ export function CategoryManager() {
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
-                    
+                  </div>
+                  
+                  <div className="glass glass-hover rounded-lg p-1">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -282,7 +284,9 @@ export function CategoryManager() {
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    
+                  </div>
+                  
+                  <div className="glass glass-hover rounded-lg p-1">
                     <Button
                       variant="ghost"
                       size="sm"

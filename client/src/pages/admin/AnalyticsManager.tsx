@@ -130,13 +130,15 @@ export function AnalyticsManager() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <CalendarIcon className="w-4 h-4" />
-                {dateRange.from && dateRange.to 
-                  ? `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`
-                  : 'Select date range'
-                }
-              </Button>
+              <div className="glass glass-hover rounded-lg p-1">
+                <Button variant="ghost" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <CalendarIcon className="w-4 h-4" />
+                  {dateRange.from && dateRange.to 
+                    ? `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`
+                    : 'Select date range'
+                  }
+                </Button>
+              </div>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 glass border-border">
               <div className="p-3 space-y-2 border-b border-border">
@@ -192,24 +194,29 @@ export function AnalyticsManager() {
             </SelectContent>
           </Select>
           
-          <Button variant="outline" className="gap-2">
-            <Download className="w-4 h-4" />
-            Compare Period
-          </Button>
+          <div className="glass glass-hover rounded-lg p-1">
+            <Button variant="ghost" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <Download className="w-4 h-4" />
+              Compare Period
+            </Button>
+          </div>
           
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setDateRange({
-                from: subDays(new Date(), 30),
-                to: new Date()
-              });
-              setMetric('revenue');
-              setGroupBy('day');
-            }}
-          >
-            Reset
-          </Button>
+          <div className="glass glass-hover rounded-lg p-1">
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setDateRange({
+                  from: subDays(new Date(), 30),
+                  to: new Date()
+                });
+                setMetric('revenue');
+                setGroupBy('day');
+              }}
+              className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              Reset
+            </Button>
+          </div>
         </div>
       }
     >
