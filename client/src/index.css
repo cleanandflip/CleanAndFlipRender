@@ -124,7 +124,7 @@ body {
 
 /* Force dropdown content to appear above everything */
 [data-radix-dropdown-menu-content] {
-  z-index: 200 !important;
+  z-index: 999 !important;
   backdrop-filter: none !important;
 }
 
@@ -187,7 +187,6 @@ body {
   [type="search"] {
     border: 1px solid rgba(156, 163, 175, 0.4) !important; /* gray-400 with 40% opacity */
     background: rgba(75, 85, 99, 0.4) !important; /* gray-600 with 40% opacity - much lighter */
-    backdrop-filter: blur(12px) !important;
     border-radius: 0.5rem !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     font-weight: 500 !important; /* Slightly bolder text for better readability */
@@ -376,7 +375,6 @@ body {
     background: rgba(31, 41, 55, 0.95) !important;
     border: 1px solid rgba(156, 163, 175, 0.3) !important;
     border-radius: 0.5rem !important;
-    backdrop-filter: blur(16px) !important;
     box-shadow: 
       0 10px 25px -5px rgba(0, 0, 0, 0.25),
       0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
@@ -672,7 +670,6 @@ body {
   /* Footer styling */
   .footer-dark {
     background: hsla(222, 84%, 5%, 0.8);
-    backdrop-filter: blur(16px);
     border-top: 1px solid var(--glass-border);
   }
 }
