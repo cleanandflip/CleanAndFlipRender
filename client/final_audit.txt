@@ -1,0 +1,59 @@
+=== FINAL CSS CONFLICT AUDIT ===
+\n--- Remaining Backdrop Filters ---
+100:  backdrop-filter: blur(12px) !important;
+101:  -webkit-backdrop-filter: blur(12px) !important;
+125:  backdrop-filter: none !important;
+126:  -webkit-backdrop-filter: none !important;
+138:  backdrop-filter: none !important;
+139:  -webkit-backdrop-filter: none !important;
+145:  backdrop-filter: none !important;
+146:  -webkit-backdrop-filter: none !important;
+151:  backdrop-filter: none !important;
+152:  -webkit-backdrop-filter: none !important;
+\n--- All Glass Classes ---
+98:.glass {
+109:.glass-hover:hover {
+116:.glass button,
+117:.glass [data-radix-dropdown-menu-trigger],
+118:.glass .bg-transparent,
+119:.glass *[class*="bg-"],
+120:.glass *[class*="backdrop-"] {
+130:.glass .backdrop-blur-sm,
+131:.glass .backdrop-blur,
+132:.glass .backdrop-blur-md,
+133:.glass .backdrop-blur-lg,
+134:.glass .backdrop-blur-xl,
+135:.glass .backdrop-blur-2xl,
+136:.glass .backdrop-blur-3xl,
+137:.glass *[class*="backdrop-blur"] {
+150:*[class*="backdrop-blur"]:not(.glass) {
+269:  select:not(.glass):not(.glass *),
+270:  select.form-select:not(.glass):not(.glass *),
+271:  select.form-control:not(.glass):not(.glass *),
+272:  .select:not(.glass):not(.glass *),
+273:  [role="combobox"]:not(.glass):not(.glass *),
+274:  [data-radix-collection-item]:not(.glass):not(.glass *),
+275:  [class*="select"]:not(option):not(.glass):not(.glass *),
+276:  [class*="dropdown"]:not(.dropdown-menu):not(.glass):not(.glass *),
+277:  button[class*="select"]:not(.glass):not(.glass *),
+278:  button[aria-haspopup="listbox"]:not(.glass):not(.glass *),
+279:  button[aria-haspopup="true"]:not(.glass):not(.glass *),
+280:  button[aria-expanded]:not(.glass):not(.glass *),
+281:  div[class*="select"]:not(.glass):not(.glass *),
+282:  div[class*="dropdown"]:not(.glass):not(.glass *),
+283:  .select-trigger:not(.glass):not(.glass *),
+284:  .dropdown-trigger:not(.glass):not(.glass *),
+285:  [data-radix-select-trigger]:not(.glass):not(.glass *),
+286:  [data-headlessui-component="Listbox.Button"]:not(.glass):not(.glass *),
+287:  [data-state="open"]:not(.glass):not(.glass *),
+288:  [data-state="closed"]:not(.glass):not(.glass *) {
+343:  select:hover:not(.glass):not(.glass *),
+344:  [class*="select"]:hover:not(.glass):not(.glass *),
+345:  [class*="dropdown"]:hover:not(.glass):not(.glass *),
+346:  button[class*="select"]:hover:not(.glass):not(.glass *),
+347:  button[aria-haspopup="true"]:hover:not(.glass):not(.glass *),
+348:  div[class*="select"]:hover:not(.glass):not(.glass *),
+349:  div[class*="dropdown"]:hover:not(.glass):not(.glass *),
+350:  [role="combobox"]:hover:not(.glass):not(.glass *),
+351:  [data-radix-select-trigger]:hover:not(.glass):not(.glass *) {
+\n--- Tailwind Backdrop Classes in Components ---

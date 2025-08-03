@@ -94,10 +94,11 @@ body {
   --border-color: hsl(215, 20%, 35%);      /* #64748b */
 }
 
-/* Clean Glass Morphism Button System - Override ALL conflicts */
+/* ULTIMATE Glass Morphism System - Override EVERYTHING */
 .glass {
   background: rgba(35, 41, 55, 0.4) !important;
   backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 0.5rem !important;
   padding: 0.25rem !important;
@@ -111,21 +112,44 @@ body {
   transform: translateY(-1px) !important;
 }
 
-/* Force buttons inside glass containers to be completely transparent */
+/* Force ALL child elements to be transparent */
 .glass button,
 .glass [data-radix-dropdown-menu-trigger],
-.glass .bg-transparent {
+.glass .bg-transparent,
+.glass *[class*="bg-"],
+.glass *[class*="backdrop-"] {
   background: transparent !important;
   background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Override ALL Tailwind backdrop utilities */
+.glass .backdrop-blur-sm,
+.glass .backdrop-blur,
+.glass .backdrop-blur-md,
+.glass .backdrop-blur-lg,
+.glass .backdrop-blur-xl,
+.glass .backdrop-blur-2xl,
+.glass .backdrop-blur-3xl,
+.glass *[class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* Force dropdown content to appear above everything */
 [data-radix-dropdown-menu-content] {
   z-index: 999 !important;
   backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Override ALL Tailwind backdrop utilities EVERYWHERE */
+*[class*="backdrop-blur"]:not(.glass) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 @layer base {
