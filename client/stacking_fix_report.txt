@@ -1,0 +1,8 @@
+=== STACKING CONTEXT ELIMINATION REPORT ===
+\n--- Changes Made ---
+✓ Removed backdrop-filter from .glass containers
+✓ Removed transform from .glass-hover
+✓ Added container forcing for dropdowns
+✓ Set z-index: 999999 on all portal elements
+\n--- Stacking Context Prevention ---
+main, section, .card, .glass, .table-container now: transform:none, filter:none
