@@ -94,6 +94,46 @@ body {
   --border-color: hsl(215, 20%, 35%);      /* #64748b */
 }
 
+/* GLASS MORPHISM BUTTON SYSTEM - OVERRIDE ALL CONFLICTS */
+.glass {
+  background: rgba(35, 41, 55, 0.4) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.glass-hover:hover {
+  background: rgba(35, 41, 55, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 
+    0 8px 25px -5px rgba(0, 0, 0, 0.2),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Button container overrides */
+.glass .bg-transparent,
+.glass button,
+.glass [data-radix-dropdown-menu-trigger] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Force glass morphism to override conflicting styles */
+.glass button[variant="ghost"],
+.glass button[class*="variant"],
+.glass [data-radix-dropdown-menu-trigger] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -208,27 +248,27 @@ body {
     color: rgba(209, 213, 219, 0.8) !important; /* gray-300 with 80% opacity */
   }
 
-  /* COMPREHENSIVE DROPDOWN STYLING - Force ALL dropdowns to match inputs */
-  select,
-  select.form-select,
-  select.form-control,
-  .select,
-  [role="combobox"],
-  [data-radix-collection-item],
-  [class*="select"]:not(option),
-  [class*="dropdown"]:not(.dropdown-menu),
-  button[class*="select"],
-  button[aria-haspopup="listbox"],
-  button[aria-haspopup="true"],
-  button[aria-expanded],
-  div[class*="select"],
-  div[class*="dropdown"],
-  .select-trigger,
-  .dropdown-trigger,
-  [data-radix-select-trigger],
-  [data-headlessui-component="Listbox.Button"],
-  [data-state="open"],
-  [data-state="closed"] {
+  /* COMPREHENSIVE DROPDOWN STYLING - Force ALL dropdowns to match inputs (EXCEPT glass containers) */
+  select:not(.glass),
+  select.form-select:not(.glass),
+  select.form-control:not(.glass),
+  .select:not(.glass),
+  [role="combobox"]:not(.glass),
+  [data-radix-collection-item]:not(.glass),
+  [class*="select"]:not(option):not(.glass),
+  [class*="dropdown"]:not(.dropdown-menu):not(.glass),
+  button[class*="select"]:not(.glass),
+  button[aria-haspopup="listbox"]:not(.glass),
+  button[aria-haspopup="true"]:not(.glass),
+  button[aria-expanded]:not(.glass),
+  div[class*="select"]:not(.glass),
+  div[class*="dropdown"]:not(.glass),
+  .select-trigger:not(.glass),
+  .dropdown-trigger:not(.glass),
+  [data-radix-select-trigger]:not(.glass),
+  [data-headlessui-component="Listbox.Button"]:not(.glass),
+  [data-state="open"]:not(.glass),
+  [data-state="closed"]:not(.glass) {
     background: rgba(75, 85, 99, 0.4) !important; /* Match input background exactly */
     background-color: rgba(75, 85, 99, 0.4) !important;
     border: 1px solid rgba(156, 163, 175, 0.4) !important; /* Match input border exactly */
@@ -246,15 +286,15 @@ body {
       inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
   }
 
-  /* Remove any conflicting dark styles */
-  .bg-gray-800,
-  .bg-gray-900,
-  .bg-slate-800,
-  .bg-slate-900,
-  [class*="bg-gray-8"],
-  [class*="bg-gray-9"],
-  [class*="bg-slate-8"],
-  [class*="bg-slate-9"] {
+  /* Remove any conflicting dark styles - EXCEPT glass containers */
+  .bg-gray-800:not(.glass),
+  .bg-gray-900:not(.glass),
+  .bg-slate-800:not(.glass),
+  .bg-slate-900:not(.glass),
+  [class*="bg-gray-8"]:not(.glass),
+  [class*="bg-gray-9"]:not(.glass),
+  [class*="bg-slate-8"]:not(.glass),
+  [class*="bg-slate-9"]:not(.glass) {
     background: rgba(75, 85, 99, 0.4) !important;
     background-color: rgba(75, 85, 99, 0.4) !important;
   }
@@ -283,16 +323,16 @@ body {
     --dropdown-focus-bg: rgba(75, 85, 99, 0.6) !important;
   }
 
-  /* Dropdown hover states - match input hover exactly */
-  select:hover,
-  [class*="select"]:hover,
-  [class*="dropdown"]:hover,
-  button[class*="select"]:hover,
-  button[aria-haspopup="true"]:hover,
-  div[class*="select"]:hover,
-  div[class*="dropdown"]:hover,
-  [role="combobox"]:hover,
-  [data-radix-select-trigger]:hover {
+  /* Dropdown hover states - match input hover exactly (EXCEPT glass containers) */
+  select:hover:not(.glass),
+  [class*="select"]:hover:not(.glass),
+  [class*="dropdown"]:hover:not(.glass),
+  button[class*="select"]:hover:not(.glass),
+  button[aria-haspopup="true"]:hover:not(.glass),
+  div[class*="select"]:hover:not(.glass),
+  div[class*="dropdown"]:hover:not(.glass),
+  [role="combobox"]:hover:not(.glass),
+  [data-radix-select-trigger]:hover:not(.glass) {
     border-color: rgba(156, 163, 175, 0.5) !important;
     background: rgba(75, 85, 99, 0.5) !important;
     background-color: rgba(75, 85, 99, 0.5) !important;
