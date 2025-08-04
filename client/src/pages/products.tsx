@@ -362,66 +362,73 @@ export default function Products() {
               />
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               {/* View Mode Toggle */}
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setViewMode('grid');
-                    // Save state immediately when changing view mode
-                    const currentState = {
-                      filters,
-                      currentPage,
-                      viewMode: 'grid' as const,
-                      showFilters,
-                      scrollPosition: window.scrollY
-                    };
-                    NavigationStateManager.saveState('/products', currentState, location);
-                  }}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
-                    viewMode === 'grid' 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
-                >
-                  <Grid className="w-4 h-4" />
-                  Grid
-                </Button>
-              </div>
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setViewMode('list');
-                    // Save state immediately when changing view mode
-                    const currentState = {
-                      filters,
-                      currentPage,
-                      viewMode: 'list' as const,
-                      showFilters,
-                      scrollPosition: window.scrollY
-                    };
-                    NavigationStateManager.saveState('/products', currentState, location);
-                  }}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
-                    viewMode === 'list' 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
-                >
-                  <List className="w-4 h-4" />
-                  List
-                </Button>
+              <div className="flex items-center glass rounded-lg p-1 gap-1">
+                <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
+                  viewMode === 'grid' 
+                    ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                    : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
+                }`}>
+                  <Button
+                    variant={viewMode === 'grid' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => {
+                      setViewMode('grid');
+                      // Save state immediately when changing view mode
+                      const currentState = {
+                        filters,
+                        currentPage,
+                        viewMode: 'grid' as const,
+                        showFilters,
+                        scrollPosition: window.scrollY
+                      };
+                      NavigationStateManager.saveState('/products', currentState, location);
+                    }}
+                    className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
+                      viewMode === 'grid' 
+                        ? 'bg-blue-500/30 text-white shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
+                        : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
+                    }`}
+                  >
+                    <Grid size={16} />
+                  </Button>
+                </div>
+                <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
+                  viewMode === 'list' 
+                    ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                    : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
+                }`}>
+                  <Button
+                    variant={viewMode === 'list' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => {
+                      setViewMode('list');
+                      // Save state immediately when changing view mode
+                      const currentState = {
+                        filters,
+                        currentPage,
+                        viewMode: 'list' as const,
+                        showFilters,
+                        scrollPosition: window.scrollY
+                      };
+                      NavigationStateManager.saveState('/products', currentState, location);
+                    }}
+                    className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
+                      viewMode === 'list' 
+                        ? 'bg-blue-500/30 text-white shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
+                        : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
+                    }`}
+                  >
+                    <List size={16} />
+                  </Button>
+                </div>
               </div>
 
               {/* Filter Toggle */}
-              <div className="glass glass-hover rounded-lg p-1">
+              <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
                 <Button
                   variant="ghost"
-                  size="sm"
                   onClick={() => {
                     const newShowFilters = !showFilters;
                     setShowFilters(newShowFilters);
@@ -436,13 +443,9 @@ export default function Products() {
                     };
                     NavigationStateManager.saveState('/products', currentState, location);
                   }}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 relative text-white hover:bg-blue-500/30 ${
-                    showFilters 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
+                  className="gap-2 relative h-8 transition-all duration-300 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
                 >
-                  <Filter className="w-4 h-4" />
+                  <Filter size={16} />
                   Filters
                   {activeFilterCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-blue-500/30">

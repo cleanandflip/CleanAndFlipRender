@@ -479,14 +479,10 @@ function AdminDashboard() {
             <div className="flex gap-2 flex-wrap">
               <div className="glass glass-hover rounded-lg p-1">
                 <Button
-                  variant="ghost"
+                  variant={activeTab === 'products' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab('products')}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
-                    activeTab === 'products' 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Package className="w-4 h-4" />
                   Products
@@ -494,14 +490,10 @@ function AdminDashboard() {
               </div>
               <div className="glass glass-hover rounded-lg p-1">
                 <Button
-                  variant="ghost"
+                  variant={activeTab === 'categories' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab('categories')}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
-                    activeTab === 'categories' 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Grid3X3 className="w-4 h-4" />
                   Categories
@@ -509,14 +501,10 @@ function AdminDashboard() {
               </div>
               <div className="glass glass-hover rounded-lg p-1">
                 <Button
-                  variant="ghost"
+                  variant={activeTab === 'submissions' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab('submissions')}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
-                    activeTab === 'submissions' 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Clipboard className="w-4 h-4" />
                   Submissions
@@ -524,14 +512,10 @@ function AdminDashboard() {
               </div>
               <div className="glass glass-hover rounded-lg p-1">
                 <Button
-                  variant="ghost"
+                  variant={activeTab === 'analytics' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab('analytics')}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
-                    activeTab === 'analytics' 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <BarChart3 className="w-4 h-4" />
                   Analytics
@@ -539,14 +523,10 @@ function AdminDashboard() {
               </div>
               <div className="glass glass-hover rounded-lg p-1">
                 <Button
-                  variant="ghost"
+                  variant={activeTab === 'wishlist' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab('wishlist')}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
-                    activeTab === 'wishlist' 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Heart className="w-4 h-4" />
                   Wishlist
@@ -554,14 +534,10 @@ function AdminDashboard() {
               </div>
               <div className="glass glass-hover rounded-lg p-1">
                 <Button
-                  variant="ghost"
+                  variant={activeTab === 'users' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab('users')}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
-                    activeTab === 'users' 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Users className="w-4 h-4" />
                   Users
@@ -569,14 +545,10 @@ function AdminDashboard() {
               </div>
               <div className="glass glass-hover rounded-lg p-1">
                 <Button
-                  variant="ghost"
+                  variant={activeTab === 'system' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab('system')}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
-                    activeTab === 'system' 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Settings className="w-4 h-4" />
                   System
@@ -584,14 +556,10 @@ function AdminDashboard() {
               </div>
               <div className="glass glass-hover rounded-lg p-1">
                 <Button
-                  variant="ghost"
+                  variant={activeTab === 'stripe' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setActiveTab('stripe')}
-                  className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
-                    activeTab === 'stripe' 
-                      ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                      : 'hover:bg-blue-500/20'
-                  }`}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <DollarSign className="w-4 h-4" />
                   Stripe

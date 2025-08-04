@@ -395,76 +395,96 @@ function DashboardContent() {
         {/* Main Content */}
         <div className="space-y-6">
           <div className="flex gap-2 flex-wrap">
-            <div className="glass glass-hover rounded-lg p-1">
+            <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
+              activeTab === 'orders' 
+                ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
+            }`}>
               <Button
-                variant="ghost"
+                variant={activeTab === 'orders' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => handleTabChange('orders')}
-                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   activeTab === 'orders' 
-                    ? 'bg-blue-500/40 border-2 border-blue-400 shadow-lg text-white' 
-                    : 'text-white hover:bg-blue-500/30 hover:border hover:border-blue-400/30'
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
+                    : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
                 Orders
               </Button>
             </div>
-            <div className="glass glass-hover rounded-lg p-1">
+            <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
+              activeTab === 'submissions' 
+                ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
+            }`}>
               <Button
-                variant="ghost"
+                variant={activeTab === 'submissions' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => handleTabChange('submissions')}
-                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   activeTab === 'submissions' 
-                    ? 'bg-blue-500/40 border-2 border-blue-400 shadow-lg text-white' 
-                    : 'text-white hover:bg-blue-500/30 hover:border hover:border-blue-400/30'
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
+                    : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
                 Submissions
                 {Array.isArray(submissions) && submissions.filter(s => s.status === 'pending').length > 0 && (
-                  <Badge className="ml-2 bg-blue-500 text-white" variant="secondary">
+                  <Badge className={`ml-2 ${activeTab === 'submissions' ? 'bg-blue-400 text-blue-100' : 'bg-blue-500 text-white'}`} variant="secondary">
                     {submissions.filter(s => s.status === 'pending').length}
                   </Badge>
                 )}
               </Button>
             </div>
-            <div className="glass glass-hover rounded-lg p-1">
+            <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
+              activeTab === 'wishlist' 
+                ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
+            }`}>
               <Button
-                variant="ghost"
+                variant={activeTab === 'wishlist' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => handleTabChange('wishlist')}
-                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   activeTab === 'wishlist' 
-                    ? 'bg-blue-500/40 border-2 border-blue-400 shadow-lg text-white' 
-                    : 'text-white hover:bg-blue-500/30 hover:border hover:border-blue-400/30'
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
+                    : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
                 Wishlist
               </Button>
             </div>
-            <div className="glass glass-hover rounded-lg p-1">
+            <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
+              activeTab === 'profile' 
+                ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
+            }`}>
               <Button
-                variant="ghost"
+                variant={activeTab === 'profile' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => handleTabChange('profile')}
-                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   activeTab === 'profile' 
-                    ? 'bg-blue-500/40 border-2 border-blue-400 shadow-lg text-white' 
-                    : 'text-white hover:bg-blue-500/30 hover:border hover:border-blue-400/30'
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
+                    : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
                 Profile
               </Button>
             </div>
-            <div className="glass glass-hover rounded-lg p-1">
+            <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
+              activeTab === 'addresses' 
+                ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
+            }`}>
               <Button
-                variant="ghost"
+                variant={activeTab === 'addresses' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => handleTabChange('addresses')}
-                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   activeTab === 'addresses' 
-                    ? 'bg-blue-500/40 border-2 border-blue-400 shadow-lg text-white' 
-                    : 'text-white hover:bg-blue-500/30 hover:border hover:border-blue-400/30'
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
+                    : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
                 Addresses
