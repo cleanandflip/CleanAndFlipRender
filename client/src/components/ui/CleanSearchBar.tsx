@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, X, Clock, TrendingUp, Package } from 'lucide-react';
-import { SimpleDropdown, SimpleDropdownItem, SimpleDropdownSection } from './SimpleDropdown';
-import { Input } from './input';
 // Format price utility function
 const formatCurrency = (price: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -43,7 +41,7 @@ export function CleanSearchBar({
     'Barbell', 'Dumbbells', 'Power Rack', 'Bench Press', 'Kettlebell', 'Resistance Bands'
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Mock search function - replace with real API call
   const performSearch = async (searchQuery: string) => {
@@ -124,7 +122,6 @@ export function CleanSearchBar({
   const clearSearch = () => {
     setQuery('');
     setSearchResults([]);
-    inputRef.current?.focus();
   };
 
   const highlightMatch = (text: string, match: string) => {
@@ -143,134 +140,202 @@ export function CleanSearchBar({
   const renderSearchResults = () => {
     if (isLoading) {
       return (
-        <SimpleDropdownSection>
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
-          </div>
-        </SimpleDropdownSection>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+        </div>
       );
     }
 
     if (query && searchResults.length === 0) {
       return (
-        <SimpleDropdownSection>
-          <div className="flex flex-col items-center py-8 text-muted-foreground">
-            <Package size={32} className="mb-2" />
-            <p>No products found</p>
-            <p className="text-sm">Try a different search term</p>
-          </div>
-        </SimpleDropdownSection>
+        <div className="flex flex-col items-center py-8 text-gray-400">
+          <Package size={32} className="mb-2" />
+          <p>No products found</p>
+          <p className="text-sm">Try a different search term</p>
+        </div>
       );
     }
 
     if (searchResults.length > 0) {
       return (
-        <SimpleDropdownSection title="Products">
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+            PRODUCTS
+          </div>
           {searchResults.map(product => (
-            <div
+            <button
               key={product.id}
-              className="search-result-item cursor-pointer"
               onClick={() => handleProductSelect(product)}
+              className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
             >
-              <div className="search-result-image">
+              <div className="w-10 h-10 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0">
                 {product.imageUrl ? (
-                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover rounded" />
+                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover rounded-lg" />
                 ) : (
-                  <Package size={20} className="text-muted-foreground" />
+                  <Package size={20} className="text-gray-400" />
                 )}
               </div>
               
-              <div className="search-result-details">
-                <div className="search-result-title">
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-white truncate">
                   {highlightMatch(product.name, query)}
                 </div>
-                <div className="search-result-meta">
+                <div className="text-sm text-gray-400 flex items-center gap-2">
                   {product.brand && <span>{product.brand}</span>}
                   {product.brand && product.category && <span>•</span>}
                   {product.category && <span>{product.category}</span>}
-                  {product.stock !== undefined && (
-                    <>
-                      <span>•</span>
-                      <span className={product.stock > 0 ? 'text-green-400' : 'text-red-400'}>
-                        {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-                      </span>
-                    </>
-                  )}
                 </div>
               </div>
               
-              <div className="search-result-price">
-                {formatCurrency(product.price)}
+              <div className="text-right">
+                <div className="font-semibold text-white">
+                  {formatCurrency(product.price)}
+                </div>
+                {product.stock !== undefined && (
+                  <div className={`text-xs ${product.stock > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                  </div>
+                )}
               </div>
-            </div>
+            </button>
           ))}
-        </SimpleDropdownSection>
+        </div>
       );
     }
 
     // Show recent and popular searches when no query
     return (
-      <>
+      <div className="space-y-4">
         {recentSearches.length > 0 && (
-          <SimpleDropdownSection title="Recent Searches">
-            {recentSearches.map((search, index) => (
-              <SimpleDropdownItem
-                key={index}
-                icon={<Clock size={16} />}
-                onClick={() => handleSearch(search)}
-              >
-                {search}
-              </SimpleDropdownItem>
-            ))}
-          </SimpleDropdownSection>
+          <div>
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+              RECENT SEARCHES
+            </div>
+            <div className="space-y-1">
+              {recentSearches.map((search, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSearch(search)}
+                  className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0">
+                    <Clock size={16} className="text-gray-400" />
+                  </div>
+                  <span className="text-white font-medium">{search}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         
-        <SimpleDropdownSection title="Popular Searches">
-          {popularSearches.map((search, index) => (
-            <SimpleDropdownItem
-              key={index}
-              icon={<TrendingUp size={16} />}
-              onClick={() => handleSearch(search)}
-            >
-              {search}
-            </SimpleDropdownItem>
-          ))}
-        </SimpleDropdownSection>
-      </>
+        <div>
+          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+            POPULAR SEARCHES
+          </div>
+          <div className="space-y-1">
+            {popularSearches.map((search, index) => (
+              <button
+                key={index}
+                onClick={() => handleSearch(search)}
+                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp size={16} className="text-gray-400" />
+                </div>
+                <span className="text-white font-medium">{search}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     );
   };
 
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+
   return (
-    <div className={`relative ${className}`}>
-      <SimpleDropdown
-        trigger={
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            <Input
-              ref={inputRef}
-              type="text"
-              placeholder={placeholder}
-              value={query}
-              onChange={handleInputChange}
-              onFocus={() => setIsOpen(true)}
-              className="pl-10 pr-10"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-        }
-        align="start"
-        className="w-full max-w-md"
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      {/* Search Trigger */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-3 rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group"
+        style={{
+          background: 'rgba(75, 85, 99, 0.4)',
+          border: '1px solid rgba(156, 163, 175, 0.4)',
+          color: 'white',
+          fontWeight: '500'
+        }}
       >
-        {renderSearchResults()}
-      </SimpleDropdown>
+        {isOpen ? (
+          <input
+            type="text"
+            value={query}
+            onChange={handleInputChange}
+            placeholder={placeholder}
+            className="bg-transparent outline-none flex-1 placeholder:text-white text-white"
+            onClick={(e) => e.stopPropagation()}
+            autoFocus
+          />
+        ) : (
+          <div className="flex items-center gap-3 flex-1">
+            <Search className="w-4 h-4 text-gray-400" />
+            <span className={query ? 'text-white' : 'text-gray-400'}>
+              {query || placeholder}
+            </span>
+          </div>
+        )}
+        {query && !isOpen && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              clearSearch();
+            }}
+            className="w-4 h-4 text-gray-400 hover:text-white transition-colors"
+          >
+            <X size={16} />
+          </button>
+        )}
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/20" 
+            onClick={() => setIsOpen(false)}
+          />
+          
+          {/* Dropdown Content */}
+          <div 
+            className="absolute top-full left-0 right-0 mt-2 z-50 rounded-lg overflow-hidden"
+            style={{
+              background: 'rgba(75, 85, 99, 0.4)',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)'
+            }}
+          >
+            <div className="p-4 max-h-96 overflow-y-auto">
+              {renderSearchResults()}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
