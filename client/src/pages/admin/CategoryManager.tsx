@@ -340,7 +340,7 @@ export function CategoryManager() {
           setEditingCategory(null);
         }}
         category={editingCategory}
-        onSuccess={() => {
+        onCategoryUpdated={() => {
           refetch();
           setIsEditModalOpen(false);
           setEditingCategory(null);
@@ -350,7 +350,7 @@ export function CategoryManager() {
       <CategoryModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => {
+        onCategoryCreated={() => {
           refetch();
           setIsCreateModalOpen(false);
         }}

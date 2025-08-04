@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import type { Category } from '@/shared/schema';
+import type { Category } from '@shared/schema';
 import { globalDesignSystem as theme } from '@/styles/design-system/theme';
 
 interface CategoryModalProps {
@@ -38,13 +38,8 @@ export function CategoryModal({
     name: '',
     slug: '',
     description: '',
-    icon: '',
     displayOrder: 0,
-    isActive: true,
-    featuredImageUrl: '',
-    seoTitle: '',
-    seoDescription: '',
-    customAttributes: {} as Record<string, any>
+    isActive: true
   });
 
   useEffect(() => {
@@ -53,26 +48,16 @@ export function CategoryModal({
         name: category.name || '',
         slug: category.slug || '',
         description: category.description || '',
-        icon: category.icon || '',
         displayOrder: category.displayOrder || 0,
-        isActive: category.isActive ?? true,
-        featuredImageUrl: category.featuredImageUrl || '',
-        seoTitle: category.seoTitle || '',
-        seoDescription: category.seoDescription || '',
-        customAttributes: category.customAttributes || {}
+        isActive: category.isActive ?? true
       });
     } else {
       setFormData({
         name: '',
         slug: '',
         description: '',
-        icon: '',
         displayOrder: 0,
-        isActive: true,
-        featuredImageUrl: '',
-        seoTitle: '',
-        seoDescription: '',
-        customAttributes: {}
+        isActive: true
       });
     }
   }, [category, isOpen]);
@@ -99,21 +84,15 @@ export function CategoryModal({
 
     try {
       if (category) {
-        const updated = await apiRequest(`/api/admin/categories/${category.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(formData)
-        });
-        onCategoryUpdated?.(updated);
+        const updated = await apiRequest(`/api/admin/categories/${category.id}`, 'PUT', formData);
+        onCategoryUpdated?.(updated as Category);
         toast({
           title: "Category Updated",
           description: "Category has been successfully updated."
         });
       } else {
-        const created = await apiRequest('/api/admin/categories', {
-          method: 'POST',
-          body: JSON.stringify(formData)
-        });
-        onCategoryCreated?.(created);
+        const created = await apiRequest('/api/admin/categories', 'POST', formData);
+        onCategoryCreated?.(created as Category);
         toast({
           title: "Category Created",
           description: "New category has been successfully created."

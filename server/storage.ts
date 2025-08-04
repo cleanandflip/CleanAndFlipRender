@@ -239,10 +239,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(categories).orderBy(asc(categories.name));
   }
 
-  async createCategory(category: InsertCategory): Promise<Category> {
-    const [newCategory] = await db.insert(categories).values(category).returning();
-    return newCategory;
-  }
+  // Removed duplicate createCategory function
 
   async getBrands(): Promise<string[]> {
     const result = await db
@@ -527,43 +524,9 @@ export class DatabaseStorage implements IStorage {
       .where(eq(cartItems.sessionId, sessionId));
   }
 
-  // Admin functions
-  async getAdminStats(): Promise<{ 
-    totalProducts: number; 
-    totalUsers: number; 
-    totalOrders: number; 
-    totalRevenue: number; 
-  }> {
-    const [productCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(products);
-    
-    const [userCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(users);
-    
-    const [orderCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(orders);
-    
-    const [revenueResult] = await db
-      .select({ total: sql<number>`coalesce(sum(${orders.total}), 0)` })
-      .from(orders);
-    
-    return {
-      totalProducts: productCount.count,
-      totalUsers: userCount.count,
-      totalOrders: orderCount.count,
-      totalRevenue: parseFloat(revenueResult.total.toString()),
-    };
-  }
+  // Removed duplicate getAdminStats function
 
-  async getAllUsers(): Promise<User[]> {
-    return await db
-      .select()
-      .from(users)
-      .orderBy(desc(users.createdAt));
-  }
+  // Removed duplicate getAllUsers function
 
   async getAnalytics(): Promise<any> {
     // Get REAL page views from last 7 days
@@ -666,10 +629,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async healthCheck(): Promise<void> {
-    // Simple query to check database connectivity
-    await db.select({ count: sql<number>`1` }).from(users).limit(1);
-  }
+  // Removed duplicate healthCheck function
 
   async deleteProduct(productId: string): Promise<void> {
     try {
@@ -1273,63 +1233,15 @@ export class DatabaseStorage implements IStorage {
     await Promise.all(updates);
   }
 
-  async updateUserRole(userId: string, role: string): Promise<void> {
-    await db
-      .update(users)
-      .set({ role, updatedAt: new Date() })
-      .where(eq(users.id, userId));
-  }
+  // Removed duplicate updateUserRole function
 
-  async updateProductStock(productId: string, status: string): Promise<void> {
-    await db
-      .update(products)
-      .set({ status, updatedAt: new Date() })
-      .where(eq(products.id, productId));
-  }
+  // Removed duplicate updateProductStock function
 
-  async exportProductsToCSV(): Promise<string> {
-    const allProducts = await db.select().from(products);
-    const headers = ['ID', 'Name', 'Price', 'Category', 'Brand', 'Condition', 'Status', 'Created'];
-    const rows = allProducts.map(p => [
-      p.id,
-      `"${p.name}"`,
-      p.price,
-      p.categoryId,
-      p.brand || '',
-      p.condition || '',
-      p.status || '',
-      p.createdAt?.toISOString() || ''
-    ]);
-    return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  }
+  // Removed duplicate exportProductsToCSV function
 
-  async exportUsersToCSV(): Promise<string> {
-    const allUsers = await db.select().from(users);
-    const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Created'];
-    const rows = allUsers.map(u => [
-      u.id,
-      u.email,
-      `"${u.firstName || ''}"`,
-      `"${u.lastName || ''}"`,
-      u.role || 'user',
-      u.createdAt?.toISOString() || ''
-    ]);
-    return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  }
+  // Removed duplicate exportUsersToCSV function
 
-  async exportOrdersToCSV(): Promise<string> {
-    const allOrders = await db.select().from(orders);
-    const headers = ['ID', 'User ID', 'Total', 'Status', 'Payment Status', 'Created'];
-    const rows = allOrders.map(o => [
-      o.id,
-      o.userId,
-      o.totalAmount,
-      o.status || '',
-      o.paymentStatus || '',
-      o.createdAt?.toISOString() || ''
-    ]);
-    return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  }
+  // Removed duplicate exportOrdersToCSV function
 
   // Activity tracking for real analytics
   async trackActivity(activity: InsertActivityLog): Promise<ActivityLog> {

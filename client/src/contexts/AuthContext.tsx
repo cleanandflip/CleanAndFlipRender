@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     queryKey: ['/api/user'],
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes - reduce frequent checks
-    cacheTime: 1000 * 60 * 10, // 10 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
     refetchOnWindowFocus: false, // Prevent excessive calls
     refetchOnMount: !authChecked, // Only refetch on mount if not checked
     enabled: !authChecked, // Control when query runs
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const value: AuthContextType = {
-    user: user || null,
+    user: (user as User) || null,
     isLoading: isLoading && !authChecked,
     isAuthenticated: !!user,
     refetchUser: () => {

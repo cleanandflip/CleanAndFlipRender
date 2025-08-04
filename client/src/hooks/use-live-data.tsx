@@ -17,7 +17,7 @@ export function useLiveData(endpoint: string, interval: number = 30000) {
         setError(null);
       } catch (error) {
         console.error('Failed to fetch live data:', error);
-        setError(error);
+        setError(error as any);
       } finally {
         setIsLoading(false);
       }

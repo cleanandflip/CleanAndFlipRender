@@ -27,7 +27,10 @@ export const globalDesignSystem = {
       blueLight: 'rgba(59, 130, 246, 0.1)',
       green: '#10B981',         // Success green (cash offer button)
       greenHover: '#059669',
-      greenLight: 'rgba(16, 185, 129, 0.1)'
+      greenLight: 'rgba(16, 185, 129, 0.1)',
+      purple: '#8B5CF6',        // Purple accent
+      purpleHover: '#7C3AED',
+      purpleLight: 'rgba(139, 92, 246, 0.1)'
     },
     
     // Functional Colors

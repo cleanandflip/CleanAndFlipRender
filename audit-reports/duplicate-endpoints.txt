@@ -1,6 +1,0 @@
-\n=== DUPLICATE ENDPOINTS ===
-  app.get("/api/admin/export/:type", requireAdmin, async (req, res) => {
-  app.get("/api/admin/system/health", requireAdmin, async (req, res) => {
-  app.get("/api/search", apiLimiter, async (req, res) => {
-  app.post("/api/admin/categories/reorder", requireAdmin, async (req, res) => {
-  app.post("/api/wishlist/check-batch", requireAuth, async (req, res) => {

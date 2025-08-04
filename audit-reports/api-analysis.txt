@@ -1,0 +1,3 @@
+\n=== API ENDPOINT ANALYSIS ===
+75
+Total API endpoints defined
