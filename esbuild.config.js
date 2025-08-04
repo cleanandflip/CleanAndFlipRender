@@ -14,7 +14,8 @@ await build({
   packages: 'external',
   external: [
     // Exclude scripts directory from build since it's dev-only
-    '**/scripts/**'
+    './scripts/*',
+    './server/scripts/*'
   ],
   // Handle TypeScript module resolution correctly
   resolveExtensions: ['.ts', '.js'],
