@@ -400,10 +400,10 @@ function DashboardContent() {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleTabChange('orders')}
-                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
+                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   activeTab === 'orders' 
-                    ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                    : 'hover:bg-blue-500/20'
+                    ? 'bg-blue-500/40 border-2 border-blue-400 shadow-lg text-white' 
+                    : 'text-white hover:bg-blue-500/30 hover:border hover:border-blue-400/30'
                 }`}
               >
                 Orders
@@ -414,10 +414,10 @@ function DashboardContent() {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleTabChange('submissions')}
-                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
+                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   activeTab === 'submissions' 
-                    ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                    : 'hover:bg-blue-500/20'
+                    ? 'bg-blue-500/40 border-2 border-blue-400 shadow-lg text-white' 
+                    : 'text-white hover:bg-blue-500/30 hover:border hover:border-blue-400/30'
                 }`}
               >
                 Submissions
@@ -433,10 +433,10 @@ function DashboardContent() {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleTabChange('wishlist')}
-                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
+                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   activeTab === 'wishlist' 
-                    ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                    : 'hover:bg-blue-500/20'
+                    ? 'bg-blue-500/40 border-2 border-blue-400 shadow-lg text-white' 
+                    : 'text-white hover:bg-blue-500/30 hover:border hover:border-blue-400/30'
                 }`}
               >
                 Wishlist
@@ -447,10 +447,10 @@ function DashboardContent() {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleTabChange('profile')}
-                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
+                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   activeTab === 'profile' 
-                    ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                    : 'hover:bg-blue-500/20'
+                    ? 'bg-blue-500/40 border-2 border-blue-400 shadow-lg text-white' 
+                    : 'text-white hover:bg-blue-500/30 hover:border hover:border-blue-400/30'
                 }`}
               >
                 Profile
@@ -461,10 +461,10 @@ function DashboardContent() {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleTabChange('addresses')}
-                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-white hover:bg-blue-500/30 ${
+                className={`flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   activeTab === 'addresses' 
-                    ? 'bg-blue-500/30 border border-blue-400/50 shadow-md' 
-                    : 'hover:bg-blue-500/20'
+                    ? 'bg-blue-500/40 border-2 border-blue-400 shadow-lg text-white' 
+                    : 'text-white hover:bg-blue-500/30 hover:border hover:border-blue-400/30'
                 }`}
               >
                 Addresses
