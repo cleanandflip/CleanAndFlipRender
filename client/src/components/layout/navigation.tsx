@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
-import { CleanSearchBar } from "@/components/ui/CleanSearchBar";
+import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
 import { CleanUserDropdown } from "@/components/ui/CleanUserDropdown";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
@@ -129,12 +129,17 @@ export default function Navigation() {
           <div className="flex items-center space-x-3 flex-shrink-0 min-w-0 overflow-visible p-1">
             {/* Desktop Search */}
             <div className="hidden lg:block">
-              <CleanSearchBar
+              <UnifiedSearchBar
                 placeholder="Search equipment..."
                 onSearch={(query) => {
                   const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
                   handleNavigation(searchUrl);
                 }}
+                onProductSelect={(product) => {
+                  const productUrl = `/products/${product.id}`;
+                  handleNavigation(productUrl);
+                }}
+                context="header"
                 className="w-72"
               />
             </div>
@@ -256,13 +261,19 @@ export default function Navigation() {
         {/* Mobile Search Bar */}
         {isSearchOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-bg-secondary-border">
-            <CleanSearchBar
+            <UnifiedSearchBar
               placeholder="Search equipment..."
               onSearch={(query: string) => {
                 const searchUrl = `/products?search=${encodeURIComponent(query)}`;
                 handleNavigation(searchUrl);
                 setIsSearchOpen(false);
               }}
+              onProductSelect={(product) => {
+                const productUrl = `/products/${product.id}`;
+                handleNavigation(productUrl);
+                setIsSearchOpen(false);
+              }}
+              context="header"
               className="w-full"
             />
           </div>
