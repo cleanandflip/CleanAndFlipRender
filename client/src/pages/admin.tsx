@@ -42,6 +42,7 @@ import { AnalyticsManager } from './admin/AnalyticsManager';
 import { CategoryManager } from './admin/CategoryManager';
 import { SystemManager } from './admin/SystemManager';
 import { WishlistManager } from './admin/WishlistManager';
+import StripeManager from './admin/StripeManager';
 import type { Product, User, Order } from "@shared/schema";
 
 interface AdminStats {
@@ -553,6 +554,17 @@ function AdminDashboard() {
                   System
                 </Button>
               </div>
+              <div className="glass glass-hover rounded-lg p-1">
+                <Button
+                  variant={activeTab === 'stripe' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('stripe')}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Stripe
+                </Button>
+              </div>
             </div>
 
             {activeTab === 'products' && <ProductsManager />}
@@ -568,6 +580,8 @@ function AdminDashboard() {
             {activeTab === 'users' && <UserManager />}
 
             {activeTab === 'system' && <SystemManager />}
+
+            {activeTab === 'stripe' && <StripeManager />}
           </div>
         </div>
       </div>

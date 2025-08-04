@@ -105,6 +105,13 @@ export const products = pgTable("products", {
   stockQuantity: integer("stock_quantity").default(1),
   views: integer("views").default(0),
   featured: boolean("featured").default(false),
+  // Stripe integration fields
+  stripeProductId: varchar("stripe_product_id"),
+  stripePriceId: varchar("stripe_price_id"),
+  stripeSyncStatus: varchar("stripe_sync_status", { length: 50 }).default("pending"),
+  stripeLastSync: timestamp("stripe_last_sync"),
+  sku: varchar("sku"),
+  dimensions: jsonb("dimensions").$type<{length?: number, width?: number, height?: number}>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
