@@ -420,7 +420,7 @@ export default function SellToUs() {
                   variant="primary"
                   size="lg"
                   className="w-full py-3"
-                  loading={submitMutation.isPending}
+
                   disabled={submitMutation.isPending}
                 >
                   {submitMutation.isPending ? "Submitting..." : "Submit for Review"}
