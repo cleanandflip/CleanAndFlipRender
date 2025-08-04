@@ -447,13 +447,14 @@ export default function Products() {
                 >
                   <Filter size={16} />
                   Filters
-                  {hasActiveFilters && (
+                  {activeFilterCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                      {Object.values(filters).filter(v => v && v !== 'all' && (!Array.isArray(v) || v.length > 0)).length}
+                      {activeFilterCount}
                     </span>
                   )}
                 </Button>
               </div>
+            </div>
           </div>
 
           {/* Results Count */}
