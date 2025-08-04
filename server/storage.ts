@@ -1337,9 +1337,7 @@ export class DatabaseStorage implements IStorage {
     return newActivity;
   }
 
-  async healthCheck(): Promise<void> {
-    await db.select({ count: sql<number>`1` }).from(users).limit(1);
-  }
+
 
   // Enhanced wishlist analytics with detailed insights
   async getDetailedWishlistAnalytics(timeRange: string = '30d') {
@@ -1450,11 +1448,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(wishlist.createdAt));
   }
 
-  // Equipment Submission operations
-  async createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
-    const [created] = await db.insert(equipmentSubmissions).values(submission).returning();
-    return created;
-  }
+  // Equipment Submission operations (duplicate removed)
 
   async getEquipmentSubmissions(status?: string): Promise<any[]> {
     let query = db

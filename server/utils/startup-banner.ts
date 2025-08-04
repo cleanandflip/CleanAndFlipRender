@@ -32,7 +32,7 @@ export function displayStartupBanner(config: any) {
   
   if (config.warnings.length > 0) {
     console.log(chalk.yellow('\n⚠️  System Warnings:'));
-    config.warnings.forEach(warn => console.log(chalk.yellow(`  - ${warn}`)));
+    config.warnings.forEach((warn: string) => console.log(chalk.yellow(`  - ${warn}`)));
   } else {
     console.log(chalk.green('\n🎯 All systems operational - no warnings'));
   }

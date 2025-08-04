@@ -63,7 +63,7 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
     },
     enabled: !!user && !!productId && initialWishlisted === undefined, // Only query if no initial data provided
     staleTime: 60000, // 1 minute
-    cacheTime: 300000, // 5 minutes
+    gcTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchInterval: false,

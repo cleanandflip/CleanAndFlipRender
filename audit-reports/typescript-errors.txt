@@ -1,0 +1,362 @@
+\n=== TYPESCRIPT ERRORS ===
+client/src/components/admin/CategoryModal.tsx(17,31): error TS2307: Cannot find module '@/shared/schema' or its corresponding type declarations.
+client/src/components/admin/CategoryModal.tsx(102,82): error TS2345: Argument of type '{ method: string; body: string; }' is not assignable to parameter of type 'string'.
+client/src/components/admin/CategoryModal.tsx(112,67): error TS2345: Argument of type '{ method: string; body: string; }' is not assignable to parameter of type 'string'.
+client/src/components/products/filter-sidebar.tsx(103,11): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ category?: string | undefined; categoryId?: string | undefined; categorySlug?: string | undefined; search?: string | undefined; minPrice?: number | undefined; maxPrice?: number | undefined; ... 6 more ...; sortOrder?: "desc" | ... 1 more ... | undefined; }'.
+  No index signature with a parameter of type 'string' was found on type '{ category?: string | undefined; categoryId?: string | undefined; categorySlug?: string | undefined; search?: string | undefined; minPrice?: number | undefined; maxPrice?: number | undefined; ... 6 more ...; sortOrder?: "desc" | ... 1 more ... | undefined; }'.
+client/src/components/products/filter-sidebar.tsx(103,35): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ category?: string | undefined; categoryId?: string | undefined; categorySlug?: string | undefined; search?: string | undefined; minPrice?: number | undefined; maxPrice?: number | undefined; ... 6 more ...; sortOrder?: "desc" | ... 1 more ... | undefined; }'.
+  No index signature with a parameter of type 'string' was found on type '{ category?: string | undefined; categoryId?: string | undefined; categorySlug?: string | undefined; search?: string | undefined; minPrice?: number | undefined; maxPrice?: number | undefined; ... 6 more ...; sortOrder?: "desc" | ... 1 more ... | undefined; }'.
+client/src/components/products/filter-sidebar.tsx(104,16): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ category?: string | undefined; categoryId?: string | undefined; categorySlug?: string | undefined; search?: string | undefined; minPrice?: number | undefined; maxPrice?: number | undefined; ... 6 more ...; sortOrder?: "desc" | ... 1 more ... | undefined; }'.
+  No index signature with a parameter of type 'string' was found on type '{ category?: string | undefined; categoryId?: string | undefined; categorySlug?: string | undefined; search?: string | undefined; minPrice?: number | undefined; maxPrice?: number | undefined; ... 6 more ...; sortOrder?: "desc" | ... 1 more ... | undefined; }'.
+client/src/components/products/filter-sidebar.tsx(146,25): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ category?: string | undefined; categoryId?: string | undefined; categorySlug?: string | undefined; search?: string | undefined; minPrice?: number | undefined; maxPrice?: number | undefined; ... 6 more ...; sortOrder?: "desc" | ... 1 more ... | undefined; }'.
+  No index signature with a parameter of type 'string' was found on type '{ category?: string | undefined; categoryId?: string | undefined; categorySlug?: string | undefined; search?: string | undefined; minPrice?: number | undefined; maxPrice?: number | undefined; ... 6 more ...; sortOrder?: "desc" | ... 1 more ... | undefined; }'.
+client/src/components/products/filter-sidebar.tsx(146,60): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ category?: string | undefined; categoryId?: string | undefined; categorySlug?: string | undefined; search?: string | undefined; minPrice?: number | undefined; maxPrice?: number | undefined; ... 6 more ...; sortOrder?: "desc" | ... 1 more ... | undefined; }'.
+  No index signature with a parameter of type 'string' was found on type '{ category?: string | undefined; categoryId?: string | undefined; categorySlug?: string | undefined; search?: string | undefined; minPrice?: number | undefined; maxPrice?: number | undefined; ... 6 more ...; sortOrder?: "desc" | ... 1 more ... | undefined; }'.
+client/src/components/ui/WishlistButton.tsx(66,5): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataOptions<any, Error, any, string[]>, queryClient?: QueryClient | undefined): DefinedUseQueryResult<any, Error>', gave the following error.
+    Object literal may only specify known properties, and 'cacheTime' does not exist in type 'DefinedInitialDataOptions<any, Error, any, string[]>'.
+  Overload 2 of 3, '(options: UndefinedInitialDataOptions<any, Error, any, string[]>, queryClient?: QueryClient | undefined): UseQueryResult<any, Error>', gave the following error.
+    Object literal may only specify known properties, and 'cacheTime' does not exist in type 'UndefinedInitialDataOptions<any, Error, any, string[]>'.
+  Overload 3 of 3, '(options: UseQueryOptions<any, Error, any, string[]>, queryClient?: QueryClient | undefined): UseQueryResult<any, Error>', gave the following error.
+    Object literal may only specify known properties, and 'cacheTime' does not exist in type 'UseQueryOptions<any, Error, any, string[]>'.
+client/src/contexts/AuthContext.tsx(21,5): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataOptions<unknown, Error, unknown, string[]>, queryClient?: QueryClient | undefined): DefinedUseQueryResult<unknown, Error>', gave the following error.
+    Object literal may only specify known properties, and 'cacheTime' does not exist in type 'DefinedInitialDataOptions<unknown, Error, unknown, string[]>'.
+  Overload 2 of 3, '(options: UndefinedInitialDataOptions<unknown, Error, unknown, string[]>, queryClient?: QueryClient | undefined): UseQueryResult<unknown, Error>', gave the following error.
+    Object literal may only specify known properties, and 'cacheTime' does not exist in type 'UndefinedInitialDataOptions<unknown, Error, unknown, string[]>'.
+  Overload 3 of 3, '(options: UseQueryOptions<unknown, Error, unknown, string[]>, queryClient?: QueryClient | undefined): UseQueryResult<unknown, Error>', gave the following error.
+    Object literal may only specify known properties, and 'cacheTime' does not exist in type 'UseQueryOptions<unknown, Error, unknown, string[]>'.
+client/src/contexts/AuthContext.tsx(31,5): error TS2322: Type '{} | null' is not assignable to type '{ id: string; email: string; password: string; firstName: string; lastName: string; phone: string | null; street: string | null; city: string | null; state: string | null; zipCode: string | null; ... 8 more ...; updatedAt: Date | null; } | null'.
+  Type '{}' is missing the following properties from type '{ id: string; email: string; password: string; firstName: string; lastName: string; phone: string | null; street: string | null; city: string | null; state: string | null; zipCode: string | null; ... 8 more ...; updatedAt: Date | null; }': id, email, password, firstName, and 15 more.
+client/src/hooks/use-live-data.tsx(20,18): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<null>'.
+client/src/pages/about.tsx(232,52): error TS2339: Property 'purple' does not exist on type '{ blue: string; blueHover: string; blueLight: string; green: string; greenHover: string; greenLight: string; }'.
+client/src/pages/about.tsx(484,52): error TS2339: Property 'purple' does not exist on type '{ blue: string; blueHover: string; blueLight: string; green: string; greenHover: string; greenLight: string; }'.
+client/src/pages/admin/CategoryManager.tsx(343,9): error TS2322: Type '{ isOpen: boolean; onClose: () => void; category: Category | null; onSuccess: () => void; }' is not assignable to type 'IntrinsicAttributes & CategoryModalProps'.
+  Property 'onSuccess' does not exist on type 'IntrinsicAttributes & CategoryModalProps'.
+client/src/pages/admin/CategoryManager.tsx(353,9): error TS2322: Type '{ isOpen: boolean; onClose: () => void; onSuccess: () => void; }' is not assignable to type 'IntrinsicAttributes & CategoryModalProps'.
+  Property 'onSuccess' does not exist on type 'IntrinsicAttributes & CategoryModalProps'.
+client/src/pages/admin/SubmissionsManager.tsx(542,39): error TS2339: Property 'description' does not exist on type 'Submission'.
+client/src/pages/admin/SubmissionsManager.tsx(561,35): error TS2345: Argument of type '{ description: any; images: any; id: string; referenceNumber: string; name: string; brand: string; condition: string; askingPrice: number; status: string; createdAt: string; phoneNumber: string; user?: { firstName?: string; lastName?: string; email?: string; }; viewedByAdmin?: boolean; }' is not assignable to parameter of type 'SetStateAction<Submission | null>'.
+  Type '{ description: any; images: any; id: string; referenceNumber: string; name: string; brand: string; condition: string; askingPrice: number; status: string; createdAt: string; phoneNumber: string; user?: { firstName?: string; lastName?: string; email?: string; }; viewedByAdmin?: boolean; }' is not assignable to type 'Submission'.
+    Types of property 'user' are incompatible.
+      Type '{ firstName?: string | undefined; lastName?: string | undefined; email?: string | undefined; } | undefined' is not assignable to type '{ id: string; email: string; firstName?: string | undefined; lastName?: string | undefined; } | undefined'.
+        Property 'id' is missing in type '{ firstName?: string | undefined; lastName?: string | undefined; email?: string | undefined; }' but required in type '{ id: string; email: string; firstName?: string | undefined; lastName?: string | undefined; }'.
+client/src/pages/admin/SubmissionsManager.tsx(563,39): error TS2339: Property 'description' does not exist on type 'Submission'.
+client/src/pages/admin/SubmissionsManager.tsx(564,34): error TS2339: Property 'images' does not exist on type 'Submission'.
+client/src/pages/admin/UserManager.tsx(445,63): error TS2345: Argument of type '{ id: string; }' is not assignable to parameter of type 'User'.
+  Type '{ id: string; }' is missing the following properties from type 'User': email, role, isAdmin, isLocalCustomer, and 4 more.
+client/src/pages/admin/UserManager.tsx(448,64): error TS2345: Argument of type '{ id: string; }' is not assignable to parameter of type 'User'.
+  Type '{ id: string; }' is missing the following properties from type 'User': email, role, isAdmin, isLocalCustomer, and 4 more.
+client/src/pages/admin/UserManager.tsx(452,66): error TS2345: Argument of type '{ id: string; }' is not assignable to parameter of type 'User'.
+  Type '{ id: string; }' is missing the following properties from type 'User': email, role, isAdmin, isLocalCustomer, and 4 more.
+client/src/pages/admin/UserManager.tsx(454,23): error TS2339: Property 'role' does not exist on type '{ id: string; }'.
+client/src/pages/admin/UserManager.tsx(458,50): error TS2345: Argument of type '{ id: string; }' is not assignable to parameter of type 'User'.
+  Type '{ id: string; }' is missing the following properties from type 'User': email, role, isAdmin, isLocalCustomer, and 4 more.
+client/src/pages/admin/UserManager.tsx(462,23): error TS2339: Property 'status' does not exist on type '{ id: string; }'.
+client/src/pages/auth.tsx(97,7): error TS2353: Object literal may only specify known properties, and 'fullAddress' does not exist in type 'RegisterData'.
+client/src/pages/contact.tsx(367,25): error TS2353: Object literal may only specify known properties, and '':hover'' does not exist in type 'Properties<string | number, string & {}>'.
+client/src/pages/contact.tsx(393,25): error TS2353: Object literal may only specify known properties, and '':hover'' does not exist in type 'Properties<string | number, string & {}>'.
+client/src/pages/orders.tsx(24,5): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataOptions<{ id: string; createdAt: Date | null; updatedAt: Date | null; userId: string | null; status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | null; ... 8 more ...; trackingNumber: string | null; }[], Error, { ...; }[], QueryKey>, queryClient?: QueryClient | undefined): DefinedUseQueryResult<...>', gave the following error.
+    Object literal may only specify known properties, and 'queryParams' does not exist in type 'DefinedInitialDataOptions<{ id: string; createdAt: Date | null; updatedAt: Date | null; userId: string | null; status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | null; ... 8 more ...; trackingNumber: string | null; }[], Error, { ...; }[], QueryKey>'.
+  Overload 2 of 3, '(options: UndefinedInitialDataOptions<{ id: string; createdAt: Date | null; updatedAt: Date | null; userId: string | null; status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | null; ... 8 more ...; trackingNumber: string | null; }[], Error, { ...; }[], QueryKey>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Object literal may only specify known properties, and 'queryParams' does not exist in type 'UndefinedInitialDataOptions<{ id: string; createdAt: Date | null; updatedAt: Date | null; userId: string | null; status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | null; ... 8 more ...; trackingNumber: string | null; }[], Error, { ...; }[], QueryKey>'.
+  Overload 3 of 3, '(options: UseQueryOptions<{ id: string; createdAt: Date | null; updatedAt: Date | null; userId: string | null; status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | null; ... 8 more ...; trackingNumber: string | null; }[], Error, { ...; }[], QueryKey>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Object literal may only specify known properties, and 'queryParams' does not exist in type 'UseQueryOptions<{ id: string; createdAt: Date | null; updatedAt: Date | null; userId: string | null; status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | null; ... 8 more ...; trackingNumber: string | null; }[], Error, { ...; }[], QueryKey>'.
+client/src/pages/orders.tsx(52,6): error TS2339: Property 'filter' does not exist on type 'never[] | TQueryFnData'.
+  Property 'filter' does not exist on type 'TQueryFnData'.
+client/src/pages/orders.tsx(52,13): error TS7006: Parameter 'order' implicitly has an 'any' type.
+client/src/pages/orders.tsx(57,12): error TS7006: Parameter 'a' implicitly has an 'any' type.
+client/src/pages/orders.tsx(57,15): error TS7006: Parameter 'b' implicitly has an 'any' type.
+client/src/pages/orders.tsx(164,50): error TS2339: Property 'length' does not exist on type 'never[] | TQueryFnData'.
+  Property 'length' does not exist on type 'TQueryFnData'.
+client/src/pages/orders.tsx(174,23): error TS2339: Property 'length' does not exist on type 'never[] | TQueryFnData'.
+  Property 'length' does not exist on type 'TQueryFnData'.
+client/src/pages/orders.tsx(177,23): error TS2339: Property 'length' does not exist on type 'never[] | TQueryFnData'.
+  Property 'length' does not exist on type 'TQueryFnData'.
+client/src/pages/orders.tsx(182,21): error TS2339: Property 'length' does not exist on type 'never[] | TQueryFnData'.
+  Property 'length' does not exist on type 'TQueryFnData'.
+client/src/pages/orders.tsx(199,34): error TS7006: Parameter 'order' implicitly has an 'any' type.
+client/src/pages/product-detail.tsx(51,16): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string | URL'.
+client/src/pages/product-detail.tsx(133,24): error TS2322: Type '{ children: Element; to: string; }' is not assignable to type 'IntrinsicAttributes & SmartLinkProps'.
+  Property 'to' does not exist on type 'IntrinsicAttributes & SmartLinkProps'.
+client/src/pages/product-detail.tsx(211,24): error TS2322: Type '{ children: string; to: string; }' is not assignable to type 'IntrinsicAttributes & SmartLinkProps'.
+  Property 'to' does not exist on type 'IntrinsicAttributes & SmartLinkProps'.
+client/src/pages/product-detail.tsx(213,24): error TS2322: Type '{ children: string; to: string; }' is not assignable to type 'IntrinsicAttributes & SmartLinkProps'.
+  Property 'to' does not exist on type 'IntrinsicAttributes & SmartLinkProps'.
+client/src/pages/track-submission.tsx(84,21): error TS2339: Property 'referenceNumber' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(85,48): error TS2339: Property 'referenceNumber' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(152,35): error TS2339: Property 'referenceNumber' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(168,42): error TS2339: Property 'createdAt' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(175,31): error TS2352: Conversion of type 'number' to type '"pending" | "scheduled" | "completed" | "under_review" | "accepted" | "declined"' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+client/src/pages/track-submission.tsx(179,38): error TS2352: Conversion of type 'number' to type '"pending" | "scheduled" | "completed" | "under_review" | "accepted" | "declined"' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+client/src/pages/track-submission.tsx(182,54): error TS2352: Conversion of type 'number' to type '"pending" | "scheduled" | "completed" | "under_review" | "accepted" | "declined"' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+client/src/pages/track-submission.tsx(183,39): error TS2352: Conversion of type 'number' to type '"pending" | "scheduled" | "completed" | "under_review" | "accepted" | "declined"' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+client/src/pages/track-submission.tsx(187,37): error TS2352: Conversion of type 'number' to type '"pending" | "scheduled" | "completed" | "under_review" | "accepted" | "declined"' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+client/src/pages/track-submission.tsx(200,58): error TS2339: Property 'name' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(204,58): error TS2339: Property 'brand' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(208,69): error TS2339: Property 'condition' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(210,29): error TS2339: Property 'offerAmount' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(213,76): error TS2339: Property 'offerAmount' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(220,25): error TS2339: Property 'scheduledPickupDate' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(227,44): error TS2339: Property 'scheduledPickupDate' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(230,31): error TS2339: Property 'pickupWindowStart' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(230,63): error TS2339: Property 'pickupWindowEnd' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(234,37): error TS2339: Property 'pickupWindowStart' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(234,70): error TS2339: Property 'pickupWindowEnd' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(243,14): error TS2367: This comparison appears to be unintentional because the types 'number' and 'string' have no overlap.
+client/src/pages/track-submission.tsx(243,61): error TS2339: Property 'declineReason' does not exist on type 'Response'.
+client/src/pages/track-submission.tsx(246,64): error TS2339: Property 'declineReason' does not exist on type 'Response'.
+server/auth.ts(233,9): error TS2322: Type 'number | undefined' is not assignable to type 'string | null | undefined'.
+  Type 'number' is not assignable to type 'string'.
+server/auth.ts(234,9): error TS2322: Type 'number | undefined' is not assignable to type 'string | null | undefined'.
+  Type 'number' is not assignable to type 'string'.
+server/auth.ts(293,25): error TS2339: Property 'suggestion' does not exist on type '{ error: string; details: any; code: any; }'.
+server/auth.ts(295,25): error TS2339: Property 'suggestion' does not exist on type '{ error: string; details: any; code: any; }'.
+server/config/compression.ts(1,25): error TS7016: Could not find a declaration file for module 'compression'. '/home/runner/workspace/node_modules/compression/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/compression` if it exists or add a new declaration (.d.ts) file containing `declare module 'compression';`
+server/config/compression.ts(6,14): error TS7006: Parameter 'req' implicitly has an 'any' type.
+server/config/compression.ts(6,19): error TS7006: Parameter 'res' implicitly has an 'any' type.
+server/config/health.ts(36,11): error TS18047: 'redis' is possibly 'null'.
+server/config/logger.ts(50,17): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ development: { requests: boolean; auth: boolean; database: boolean; cache: boolean; errors: boolean; performance: boolean; }; production: { requests: boolean; auth: boolean; database: boolean; cache: boolean; errors: boolean; performance: boolean; }; debug: { ...; }; }'.
+  No index signature with a parameter of type 'string' was found on type '{ development: { requests: boolean; auth: boolean; database: boolean; cache: boolean; errors: boolean; performance: boolean; }; production: { requests: boolean; auth: boolean; database: boolean; cache: boolean; errors: boolean; performance: boolean; }; debug: { ...; }; }'.
+server/config/logger.ts(74,25): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'unknown' is not assignable to parameter of type 'string | number'.
+server/config/logger.ts(79,25): error TS18046: 'status' is of type 'unknown'.
+server/config/logger.ts(79,53): error TS18046: 'status' is of type 'unknown'.
+server/config/logger.ts(80,46): error TS18046: 'method' is of type 'unknown'.
+server/config/logger.ts(80,67): error TS18046: 'url' is of type 'unknown'.
+server/config/performance-test.ts(34,19): error TS2339: Property 'set' does not exist on type 'never'.
+server/config/performance-test.ts(35,34): error TS2339: Property 'get' does not exist on type 'never'.
+server/config/performance-test.ts(36,19): error TS2339: Property 'del' does not exist on type 'never'.
+server/middleware/transaction.ts(11,28): error TS2345: Argument of type 'PgTransaction<NeonQueryResultHKT, typeof import("/home/runner/workspace/shared/schema"), ExtractTablesWithRelations<typeof import("/home/runner/workspace/shared/schema")>>' is not assignable to parameter of type 'NeonDatabase<typeof import("/home/runner/workspace/shared/schema")> & { $client: Pool; }'.
+  Property '$client' is missing in type 'PgTransaction<NeonQueryResultHKT, typeof import("/home/runner/workspace/shared/schema"), ExtractTablesWithRelations<typeof import("/home/runner/workspace/shared/schema")>>' but required in type '{ $client: Pool; }'.
+server/middleware/transaction.ts(173,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { subtotal: string | SQL<unknown> | Placeholder<string, any>; total: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 10 more ...; trackingNumber?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'customerId' does not exist in type '{ subtotal: string | SQL<unknown> | Placeholder<string, any>; total: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 10 more ...; trackingNumber?: string | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { subtotal: string | SQL<unknown> | Placeholder<string, any>; total: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 10 more ...; trackingNumber?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'customerId' does not exist in type '{ subtotal: string | SQL<unknown> | Placeholder<string, any>; total: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; ... 10 more ...; trackingNumber?: string | ... 3 more ... | undefined; }[]'.
+server/routes.ts(80,3): error TS2322: Type '"2024-12-18.acacia"' is not assignable to type '"2025-06-30.basil"'.
+server/routes.ts(437,50): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+server/routes.ts(514,40): error TS2551: Property 'createSubmission' does not exist on type 'DatabaseStorage'. Did you mean 'getSubmission'?
+server/routes.ts(586,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+server/routes.ts(598,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{}'.
+server/routes.ts(858,29): error TS2551: Property 'active' does not exist on type 'PgTableWithColumns<{ name: "categories"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "categories"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 9 more ...; updatedAt...'. Did you mean 'isActive'?
+server/routes.ts(964,25): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "role"; tableName: "users"; dataType: "string"; columnType: "PgEnumColumn"; data: "user" | "developer" | "admin"; driverParam: string; notNull: false; hasDefault: true; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>, right: SQLWrapper | ... 2 more ... | "admin"): SQL<...>', gave the following error.
+    Argument of type 'string | string[] | ParsedQs | ParsedQs[]' is not assignable to parameter of type 'SQLWrapper | "user" | "developer" | "admin"'.
+      Type 'string' is not assignable to type 'SQLWrapper | "user" | "developer" | "admin"'.
+  Overload 2 of 3, '(left: Aliased<string | string[] | ParsedQs | ParsedQs[]>, right: string | string[] | SQLWrapper | ParsedQs | ParsedQs[]): SQL<...>', gave the following error.
+    Argument of type 'PgColumn<{ name: "role"; tableName: "users"; dataType: "string"; columnType: "PgEnumColumn"; data: "user" | "developer" | "admin"; driverParam: string; notNull: false; hasDefault: true; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<string | string[] | ParsedQs | ParsedQs[]>'.
+      Type 'PgColumn<{ name: "role"; tableName: "users"; dataType: "string"; columnType: "PgEnumColumn"; data: "user" | "developer" | "admin"; driverParam: string; notNull: false; hasDefault: true; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<string | string[] | ParsedQs | ParsedQs[]>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "role"; tableName: "users"; dataType: "string"; columnType: "PgEnumColumn"; data: "user" | "developer" | "admin"; driverParam: string; notNull: false; hasDefault: true; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+server/routes.ts(1077,18): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number | Date'.
+      Type 'null' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number'.
+      Type 'null' is not assignable to type 'string | number'.
+server/routes.ts(1235,25): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "category_id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'string | string[] | ParsedQs | ParsedQs[]' is not assignable to parameter of type 'string | SQLWrapper'.
+      Type 'string[]' is not assignable to type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<string | string[] | ParsedQs | ParsedQs[]>, right: string | string[] | SQLWrapper | ParsedQs | ParsedQs[]): SQL<...>', gave the following error.
+    Argument of type 'PgColumn<{ name: "category_id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'Aliased<string | string[] | ParsedQs | ParsedQs[]>'.
+      Type 'PgColumn<{ name: "category_id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is missing the following properties from type 'Aliased<string | string[] | ParsedQs | ParsedQs[]>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "category_id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'never'.
+server/routes.ts(1385,20): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number | Date'.
+      Type 'null' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number'.
+      Type 'null' is not assignable to type 'string | number'.
+server/routes.ts(1427,32): error TS2802: Type 'Set<string | null>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+server/routes.ts(1531,41): error TS2339: Property 'v2' does not exist on type 'typeof v2'.
+server/routes.ts(1562,41): error TS2339: Property 'v2' does not exist on type 'typeof v2'.
+server/routes.ts(1573,32): error TS2339: Property 'v2' does not exist on type 'typeof v2'.
+server/routes.ts(1793,31): error TS2339: Property 'passport' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(1794,30): error TS2339: Property 'passport' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(1797,31): error TS2339: Property 'userId' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(1798,30): error TS2339: Property 'userId' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(1862,31): error TS2339: Property 'passport' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(1863,30): error TS2339: Property 'passport' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(1866,31): error TS2339: Property 'userId' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(1867,30): error TS2339: Property 'userId' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(1892,11): error TS2322: Type 'number | null' is not assignable to type 'string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+  Type 'number' is not assignable to type 'string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+server/routes.ts(1893,11): error TS2322: Type 'number | null' is not assignable to type 'string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+  Type 'number' is not assignable to type 'string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+server/routes.ts(1931,29): error TS2339: Property 'passport' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(1932,28): error TS2339: Property 'passport' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(2007,76): error TS18046: 'error' is of type 'unknown'.
+server/routes.ts(2020,32): error TS7006: Parameter 'img' implicitly has an 'any' type.
+server/routes.ts(2044,68): error TS18046: 'error' is of type 'unknown'.
+server/routes.ts(2064,45): error TS7006: Parameter 'img' implicitly has an 'any' type.
+server/routes.ts(2082,68): error TS18046: 'error' is of type 'unknown'.
+server/routes.ts(2118,31): error TS2339: Property 'passport' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(2119,30): error TS2339: Property 'passport' does not exist on type 'Session & Partial<SessionData>'.
+server/routes.ts(2120,28): error TS2339: Property 'claims' does not exist on type 'User'.
+server/routes.ts(2121,27): error TS2339: Property 'claims' does not exist on type 'User'.
+server/routes.ts(2284,18): error TS18046: 'error' is of type 'unknown'.
+server/routes.ts(2368,43): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+server/routes.ts(2376,12): error TS2461: Type '{}' is not an array type.
+server/routes.ts(2533,20): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number | Date'.
+      Type 'null' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number'.
+      Type 'null' is not assignable to type 'string | number'.
+server/routes.ts(2764,59): error TS18046: 'error' is of type 'unknown'.
+server/scripts/create-test-products.ts(1,20): error TS2307: Cannot find module '../db/index.js' or its corresponding type declarations.
+server/services/stripe-sync.ts(7,3): error TS2322: Type '"2024-12-18.acacia"' is not assignable to type '"2025-06-30.basil"'.
+server/services/stripe-sync.ts(61,63): error TS2345: Argument of type 'string[] | null' is not assignable to parameter of type 'any[]'.
+  Type 'null' is not assignable to type 'any[]'.
+server/services/stripe-sync.ts(68,17): error TS18047: 'product.stock' is possibly 'null'.
+server/services/stripe-sync.ts(96,11): error TS2345: Argument of type '{ name: string; description: string; images: string[]; active: boolean; metadata: { product_id: string; brand: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; category: string; stock: string; sku: string; weight: string; dimensions: string; }; shippable: boolean; package_dimensions: { ...; ...' is not assignable to parameter of type 'ProductUpdateParams'.
+  Types of property 'package_dimensions' are incompatible.
+    Type '{ height: number | undefined; length: number | undefined; weight: number; width: number | undefined; } | undefined' is not assignable to type 'Emptyable<PackageDimensions> | undefined'.
+      Type '{ height: number | undefined; length: number | undefined; weight: number; width: number | undefined; }' is not assignable to type 'Emptyable<PackageDimensions> | undefined'.
+        Type '{ height: number | undefined; length: number | undefined; weight: number; width: number | undefined; }' is not assignable to type 'PackageDimensions'.
+          Types of property 'height' are incompatible.
+            Type 'number | undefined' is not assignable to type 'number'.
+              Type 'undefined' is not assignable to type 'number'.
+server/services/stripe-sync.ts(101,54): error TS2345: Argument of type '{ name: string; description: string; images: string[]; active: boolean; metadata: { product_id: string; brand: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; category: string; stock: string; sku: string; weight: string; dimensions: string; }; shippable: boolean; package_dimensions: { ...; ...' is not assignable to parameter of type 'ProductCreateParams'.
+  Types of property 'package_dimensions' are incompatible.
+    Type '{ height: number | undefined; length: number | undefined; weight: number; width: number | undefined; } | undefined' is not assignable to type 'PackageDimensions | undefined'.
+      Type '{ height: number | undefined; length: number | undefined; weight: number; width: number | undefined; }' is not assignable to type 'PackageDimensions'.
+        Types of property 'height' are incompatible.
+          Type 'number | undefined' is not assignable to type 'number'.
+            Type 'undefined' is not assignable to type 'number'.
+server/services/stripe-sync.ts(106,39): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+server/storage.ts(146,14): error TS2420: Class 'DatabaseStorage' incorrectly implements interface 'IStorage'.
+  Property 'createSubmission' is missing in type 'DatabaseStorage' but required in type 'IStorage'.
+server/storage.ts(242,9): error TS2393: Duplicate function implementation.
+server/storage.ts(339,7): error TS2740: Type 'Omit<PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt: PgColumn<...>; }, ...' is missing the following properties from type 'PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt:...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+server/storage.ts(344,7): error TS2740: Type 'Omit<PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt: PgColumn<...>; }, ...' is missing the following properties from type 'PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt:...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+server/storage.ts(348,7): error TS2740: Type 'Omit<PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt: PgColumn<...>; }, ...' is missing the following properties from type 'PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt:...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+server/storage.ts(352,7): error TS2740: Type 'Omit<PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt: PgColumn<...>; }, ...' is missing the following properties from type 'PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt:...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+server/storage.ts(357,7): error TS2740: Type 'Omit<PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt: PgColumn<...>; }, ...' is missing the following properties from type 'PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt:...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+server/storage.ts(360,7): error TS2740: Type 'Omit<PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt: PgColumn<...>; }, ...' is missing the following properties from type 'PgSelectBase<"products", { id: PgColumn<{ name: "id"; tableName: "products"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, { ...; }>; ... 21 more ...; updatedAt:...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+server/storage.ts(380,59): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { name: string | SQL<unknown> | Placeholder<string, any>; price: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | ... 4 more ... | Placeholder<...>; ... 19 more ...; dimensions?: SQL<...> | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type '{ name: string; price: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; description?: string | null | undefined; categoryId?: string | ... 1 more ... | undefined; ... 12 more ...; dimensions?: { ...; } | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ name: string | SQL<unknown> | Placeholder<string, any>; price: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<...>; ... 19 more ...; dimensions?: SQL<...> | ... 3 more ... | undefined; }'.
+      Types of property 'images' are incompatible.
+        Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; } | null | undefined' is not assignable to type 'string[] | SQL<unknown> | Placeholder<string, any> | null | undefined'.
+          Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'string[] | SQL<unknown> | Placeholder<string, any> | null | undefined'.
+            Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'string[]'.
+              The types returned by 'pop()' are incompatible between these types.
+                Type 'unknown' is not assignable to type 'string | undefined'.
+  Overload 2 of 2, '(values: { name: string | SQL<unknown> | Placeholder<string, any>; price: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | ... 4 more ... | Placeholder<...>; ... 19 more ...; dimensions?: SQL<...> | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type '{ name: string; price: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; description?: string | null | undefined; categoryId?: string | ... 1 more ... | undefined; ... 12 more ...; dimensions?: { ...; } | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ name: string | SQL<unknown> | Placeholder<string, any>; price: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<...>; ... 19 more ...; dimensions?: SQL<...> | ... 3 more ... | undefined; }[]'.
+      Type '{ name: string; price: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; description?: string | null | undefined; categoryId?: string | ... 1 more ... | undefined; ... 12 more ...; dimensions?: { ...; } | ... 1 more ... | undefined; }' is missing the following properties from type '{ name: string | SQL<unknown> | Placeholder<string, any>; price: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<...>; ... 19 more ...; dimensions?: SQL<...> | ... 3 more ... | undefined; }[]': length, pop, push, concat, and 35 more.
+server/storage.ts(389,12): error TS2345: Argument of type '{ updatedAt: Date; name?: string | undefined; price?: string | undefined; condition?: "new" | "like_new" | "good" | "fair" | "needs_repair" | undefined; brand?: string | null | undefined; ... 14 more ...; dimensions?: { ...; } | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ name?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; price?: string | SQL<unknown> | PgColumn<...> | undefined; ... 20 more ...; dimensions?: SQL<...> | ... 3 more ... | undefined; }'.
+  Types of property 'images' are incompatible.
+    Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; } | null | undefined' is not assignable to type 'string[] | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+      Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'string[] | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+        Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'string[]'.
+          The types returned by 'pop()' are incompatible between these types.
+            Type 'unknown' is not assignable to type 'string | undefined'.
+server/storage.ts(441,52): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+server/storage.ts(479,5): error TS2322: Type '{ productId: string | null; }[]' is not assignable to type '{ productId: string; }[]'.
+  Type '{ productId: string | null; }' is not assignable to type '{ productId: string; }'.
+    Types of property 'productId' are incompatible.
+      Type 'string | null' is not assignable to type 'string'.
+        Type 'null' is not assignable to type 'string'.
+server/storage.ts(531,9): error TS2393: Duplicate function implementation.
+server/storage.ts(561,9): error TS2393: Duplicate function implementation.
+server/storage.ts(669,9): error TS2393: Duplicate function implementation.
+server/storage.ts(739,9): error TS2393: Duplicate function implementation.
+server/storage.ts(743,14): error TS2353: Object literal may only specify known properties, and 'inventoryCount' does not exist in type '{ name?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; price?: string | SQL<unknown> | PgColumn<...> | undefined; ... 20 more ...; dimensions?: SQL<...> | ... 3 more ... | undefined; }'.
+server/storage.ts(747,9): error TS2393: Duplicate function implementation.
+server/storage.ts(751,14): error TS2322: Type 'string' is not assignable to type 'SQL<unknown> | "user" | "developer" | "admin" | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+server/storage.ts(755,9): error TS2393: Duplicate function implementation.
+server/storage.ts(758,27): error TS2339: Property 'map' does not exist on type '{ products: { id: string; brand: string | null; name: string; createdAt: Date | null; updatedAt: Date | null; description: string | null; price: string; categoryId: string | null; ... 14 more ...; dimensions: { ...; } | null; }[]; total: number; }'.
+server/storage.ts(758,31): error TS7006: Parameter 'p' implicitly has an 'any' type.
+server/storage.ts(769,44): error TS7006: Parameter 'row' implicitly has an 'any' type.
+server/storage.ts(772,9): error TS2393: Duplicate function implementation.
+server/storage.ts(788,9): error TS2393: Duplicate function implementation.
+server/storage.ts(789,11): error TS7022: 'orders' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+server/storage.ts(791,13): error TS2448: Block-scoped variable 'orders' used before its declaration.
+server/storage.ts(792,17): error TS2448: Block-scoped variable 'orders' used before its declaration.
+server/storage.ts(793,16): error TS2448: Block-scoped variable 'orders' used before its declaration.
+server/storage.ts(794,17): error TS2448: Block-scoped variable 'orders' used before its declaration.
+server/storage.ts(795,20): error TS2448: Block-scoped variable 'orders' used before its declaration.
+server/storage.ts(798,13): error TS2448: Block-scoped variable 'orders' used before its declaration.
+server/storage.ts(799,27): error TS2448: Block-scoped variable 'orders' used before its declaration.
+server/storage.ts(800,21): error TS2448: Block-scoped variable 'orders' used before its declaration.
+server/storage.ts(803,29): error TS7006: Parameter 'o' implicitly has an 'any' type.
+server/storage.ts(811,44): error TS7006: Parameter 'row' implicitly has an 'any' type.
+server/storage.ts(828,22): error TS2339: Property 'address' does not exist on type 'PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 17 more ...; updatedAt: PgColum...'.
+server/storage.ts(829,27): error TS2339: Property 'cityStateZip' does not exist on type 'PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 17 more ...; updatedAt: PgColum...'.
+server/storage.ts(938,7): error TS2740: Type 'Omit<PgSelectBase<"equipment_submissions", { id: PgColumn<{ name: "id"; tableName: "equipment_submissions"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 32 more ...; completedAt: PgColumn<....' is missing the following properties from type 'PgSelectBase<"equipment_submissions", { id: PgColumn<{ name: "id"; tableName: "equipment_submissions"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }>; ... 32 more ...; completedAt: PgColumn<...>; ...': config, joinsNotNullableMap, tableName, isPartialSelect, and 5 more.
+server/storage.ts(952,9): error TS2393: Duplicate function implementation.
+server/storage.ts(955,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type '{ name: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; email?: string | null | undefined; userId?: string | null | undefined; ... 19 more ...; assignedTo?: string | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }'.
+      Property 'referenceNumber' is missing in type '{ name: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; email?: string | null | undefined; userId?: string | null | undefined; ... 19 more ...; assignedTo?: string | ... 1 more ... | undefined; }' but required in type '{ name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type '{ name: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; email?: string | null | undefined; userId?: string | null | undefined; ... 19 more ...; assignedTo?: string | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }[]'.
+      Type '{ name: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; email?: string | null | undefined; userId?: string | null | undefined; ... 19 more ...; assignedTo?: string | ... 1 more ... | undefined; }' is missing the following properties from type '{ name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }[]': length, pop, push, concat, and 35 more.
+server/storage.ts(983,12): error TS2345: Argument of type '{ updatedAt: Date; name?: string | undefined; condition?: "new" | "like_new" | "good" | "fair" | "needs_repair" | undefined; brand?: string | null | undefined; email?: string | null | undefined; ... 20 more ...; assignedTo?: string | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ name?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; condition?: SQL<unknown> | ... 6 more ... | undefined; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }'.
+  Types of property 'images' are incompatible.
+    Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; } | null | undefined' is not assignable to type 'string[] | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+      Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'string[] | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+        Type '{ [x: number]: string; length: number; toString: () => string; toLocaleString: { (): string; (locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; }; ... 37 more ...; readonly [Symbol.unscopables]: { ...; }; }' is not assignable to type 'string[]'.
+          The types returned by 'pop()' are incompatible between these types.
+            Type 'unknown' is not assignable to type 'string | undefined'.
+server/storage.ts(1020,7): error TS2353: Object literal may only specify known properties, and 'id' does not exist in type '{ userId?: string | null | undefined; productId?: string | null | undefined; }'.
+server/storage.ts(1061,17): error TS2538: Type 'null' cannot be used as an index type.
+server/storage.ts(1079,9): error TS2393: Duplicate function implementation.
+server/storage.ts(1106,9): error TS2393: Duplicate function implementation.
+server/storage.ts(1150,9): error TS2322: Type '{ productId: string | null; productName: string | null; count: number; }[]' is not assignable to type '{ productId: string; productName: string; count: number; }[]'.
+  Type '{ productId: string | null; productName: string | null; count: number; }' is not assignable to type '{ productId: string; productName: string; count: number; }'.
+    Types of property 'productId' are incompatible.
+      Type 'string | null' is not assignable to type 'string'.
+        Type 'null' is not assignable to type 'string'.
+server/storage.ts(1151,9): error TS2322: Type '{ userId: string | null; userName: string; email: string | null; itemCount: number; }[]' is not assignable to type '{ userId: string; userName: string; email: string; itemCount: number; }[]'.
+  Type '{ userId: string | null; userName: string; email: string | null; itemCount: number; }' is not assignable to type '{ userId: string; userName: string; email: string; itemCount: number; }'.
+    Types of property 'userId' are incompatible.
+      Type 'string | null' is not assignable to type 'string'.
+        Type 'null' is not assignable to type 'string'.
+server/storage.ts(1191,5): error TS2322: Type '{ id: string; name: string; slug: string; imageUrl: string | null; description: string | null; displayOrder: number | null; isActive: boolean | null; productCount: number; createdAt: Date | null; updatedAt: Date | null; }[]' is not assignable to type '{ id: string; name: string; slug: string; imageUrl?: string | undefined; description?: string | undefined; displayOrder: number; isActive: boolean; productCount: number; createdAt: Date; updatedAt: Date; }[]'.
+  Type '{ id: string; name: string; slug: string; imageUrl: string | null; description: string | null; displayOrder: number | null; isActive: boolean | null; productCount: number; createdAt: Date | null; updatedAt: Date | null; }' is not assignable to type '{ id: string; name: string; slug: string; imageUrl?: string | undefined; description?: string | undefined; displayOrder: number; isActive: boolean; productCount: number; createdAt: Date; updatedAt: Date; }'.
+    Types of property 'imageUrl' are incompatible.
+      Type 'string | null' is not assignable to type 'string | undefined'.
+        Type 'null' is not assignable to type 'string | undefined'.
+server/storage.ts(1194,9): error TS2393: Duplicate function implementation.
+server/storage.ts(1262,5): error TS2322: Type '{ id: string; name: string; slug: string; imageUrl: string | null; productCount: number; }[]' is not assignable to type '{ id: string; name: string; slug: string; imageUrl?: string | undefined; productCount: number; }[]'.
+  Type '{ id: string; name: string; slug: string; imageUrl: string | null; productCount: number; }' is not assignable to type '{ id: string; name: string; slug: string; imageUrl?: string | undefined; productCount: number; }'.
+    Types of property 'imageUrl' are incompatible.
+      Type 'string | null' is not assignable to type 'string | undefined'.
+        Type 'null' is not assignable to type 'string | undefined'.
+server/storage.ts(1276,9): error TS2393: Duplicate function implementation.
+server/storage.ts(1279,14): error TS2322: Type 'string' is not assignable to type 'SQL<unknown> | "user" | "developer" | "admin" | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+server/storage.ts(1283,9): error TS2393: Duplicate function implementation.
+server/storage.ts(1286,14): error TS2322: Type 'string' is not assignable to type 'SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | "active" | "sold" | "pending" | "draft" | null | undefined'.
+server/storage.ts(1290,9): error TS2393: Duplicate function implementation.
+server/storage.ts(1306,9): error TS2393: Duplicate function implementation.
+server/storage.ts(1320,9): error TS2393: Duplicate function implementation.
+server/storage.ts(1326,9): error TS2339: Property 'totalAmount' does not exist on type '{ id: string; userId: string | null; status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | null; subtotal: string; tax: string | null; ... 8 more ...; updatedAt: Date | null; }'.
+server/storage.ts(1328,9): error TS2339: Property 'paymentStatus' does not exist on type '{ id: string; userId: string | null; status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | null; subtotal: string; tax: string | null; ... 8 more ...; updatedAt: Date | null; }'.
+server/storage.ts(1340,9): error TS2393: Duplicate function implementation.
+server/storage.ts(1454,9): error TS2393: Duplicate function implementation.
+server/storage.ts(1455,68): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type '{ name: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; email?: string | null | undefined; userId?: string | null | undefined; ... 19 more ...; assignedTo?: string | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }'.
+      Property 'referenceNumber' is missing in type '{ name: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; email?: string | null | undefined; userId?: string | null | undefined; ... 19 more ...; assignedTo?: string | ... 1 more ... | undefined; }' but required in type '{ name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Argument of type '{ name: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; email?: string | null | undefined; userId?: string | null | undefined; ... 19 more ...; assignedTo?: string | ... 1 more ... | undefined; }' is not assignable to parameter of type '{ name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }[]'.
+      Type '{ name: string; condition: "new" | "like_new" | "good" | "fair" | "needs_repair"; brand?: string | null | undefined; email?: string | null | undefined; userId?: string | null | undefined; ... 19 more ...; assignedTo?: string | ... 1 more ... | undefined; }' is missing the following properties from type '{ name: string | SQL<unknown> | Placeholder<string, any>; condition: SQL<unknown> | "new" | "like_new" | "good" | "fair" | "needs_repair" | Placeholder<string, any>; ... 31 more ...; completedAt?: SQL<...> | ... 3 more ... | undefined; }[]': length, pop, push, concat, and 35 more.
+server/storage.ts(1475,7): error TS2741: Property 'where' is missing in type 'Omit<import("/home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"equipment_submissions", { submission: import("/home/runner/workspace/node_modules/drizzle-orm/pg-core/table").PgTableWithColumns<{ name: "equipment_submissions"; schema: undefined; columns: { id: import("/home/...' but required in type 'Omit<import("/home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"equipment_submissions", { submission: import("/home/runner/workspace/node_modules/drizzle-orm/pg-core/table").PgTableWithColumns<{ name: "equipment_submissions"; schema: undefined; columns: { id: import("/home/...'.
+server/utils/startup-banner.ts(35,29): error TS7006: Parameter 'warn' implicitly has an 'any' type.

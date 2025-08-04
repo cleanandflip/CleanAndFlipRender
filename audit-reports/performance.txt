@@ -1,0 +1,3 @@
+\n=== PERFORMANCE AUDIT ===
+41
+Total useEffect hooks found

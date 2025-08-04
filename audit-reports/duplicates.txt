@@ -1,0 +1,76 @@
+\n=== DUPLICATE FUNCTIONS ===
+const bind = (config: BindOpts = {}): Buffer => {
+const cancel = (processID: number, secretKey: number): Buffer => {
+const close = (msg: PortalOpts): Buffer => {
+const codeOnlyBuffer = (code: code): Buffer => Buffer.from([code, 0x00, 0x00, 0x00, 0x04])
+const copyData = (chunk: Buffer): Buffer => {
+const copyFail = (message: string): Buffer => {
+const cstringMessage = (code: code, string: string): Buffer => {
+const describe = (msg: PortalOpts): Buffer => {
+const execute = (config?: ExecOpts): Buffer => {
+const parseBuffers = async (buffers: Buffer[]): Promise<BackendMessage[]> => {
+const parse = (query: ParseOpts): Buffer => {
+const password = (password: string): Buffer => {
+const query = (text: string): Buffer => {
+const requestSsl = (): Buffer => {
+const run = () => {
+const startup = (opts: Record<string, string>): Buffer => {
+const validationSuite = vest.create('form', (data: FormData) => {
+const value = types.arrayParser('{1,2,3}', (num) => parseInt(num));
+export function createPortal(
+export function createRequestLogger() {
+export function createRoot(container: Container, options?: RootOptions): Root;
+export function customAlphabet(
+export function customAlphabet<Type extends string>(
+export function define(mimes: TypeMap): void;
+export function deleteCookie (
+export function disable(): void;
+export function enable(): void;
+export function escapeIdentifier(str: string): string;
+export function escapeLiteral(str: string): string;
+export function extension(mime: string): string | undefined;
+export function fieldsToExpression<IsIterable extends boolean = false>(fields: CronFields, options?: ParserOptions<IsIterable>): CronExpression<IsIterable>;
+export function flushSync<R>(fn: () => R): R;
+export function getCookies (headers: Headers): Record<string, string>
+export function getSetCookies (headers: Headers): Cookie[]
+export function groupSort<TObject, TKey>(
+export function hydrateRoot(
+export function infiniteQueryOptions<
+export function jsx(
+export function jsxDEV(
+export function jsxs(
+export function load(filepath: string): void;
+export function lookup(path: string, fallback?: string): string;
+export function memoryLocation(options?: {
+export function minIndex(iterable: Iterable<unknown>): number;
+export function nanoid(size?: number): string
+export function nanoid<Type extends string>(size?: number): Type
+export function parseExpression<IsIterable extends boolean = false>(expression: string, options?: ParserOptions<IsIterable>): CronExpression<IsIterable>;
+export function parseFile(filePath: string, callback: (err: any, data: StringResult) => any): void;
+export function parseMIMEType (input: string): 'failure' | MIMEType
+export function parse(source: string): string[];
+export function parse(stream: NodeJS.ReadableStream, callback: MessageCallback): Promise<void> {
+export function parseString(data: string): StringResult;
+export function parse<T>(source: string, transform: (value: string) => T): T[];
+export function queryOptions<
+export function random(bytes: number): Uint8Array
+export function renderToPipeableStream(children: ReactNode, options?: RenderToPipeableStreamOptions): PipeableStream;
+export function renderToReadableStream(
+export function renderToStaticMarkup(element: ReactNode, options?: ServerOptions): string;
+export function renderToString(element: ReactNode, options?: ServerOptions): string;
+export function requireAuth(req: any, res: any, next: any) {
+export function resolveBrowserslistConfigFile(
+export function resolveTargets(
+export function scaleOrdinal<Domain extends { toString(): string }, Range, Unknown = never>(
+export function serializeAMimeType (mimeType: MIMEType): string
+export function setCookie (headers: Headers, cookie: Cookie): void
+export function setTheme(theme: any): void;
+export function setTypeParser (id: TypeId, format: TypeFormat, parseFn: (value: string) => any): void;
+export function setTypeParser (id: TypeId, parseFn: ((value: string) => any)): void;
+export function timeInterval(
+export function transformFile(
+export function unstable_batchedUpdates<A, R>(callback: (a: A) => R, a: A): R;
+export function unstable_batchedUpdates<R>(callback: () => R): R;
+export function useAuth() {
+export function useInfiniteQuery<
+export function useQuery<

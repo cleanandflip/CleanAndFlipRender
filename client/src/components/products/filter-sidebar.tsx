@@ -95,13 +95,14 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
   }, [filters]);
 
   // Handle filter changes
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = (key: keyof typeof localFilters, value: any) => {
     const newFilters = { ...localFilters, [key]: value };
     
     // Remove empty values
-    Object.keys(newFilters).forEach(k => {
-      if (newFilters[k] === "" || newFilters[k] === undefined) {
-        delete newFilters[k];
+    Object.keys(newFilters).forEach((k) => {
+      const filterKey = k as keyof typeof newFilters;
+      if (newFilters[filterKey] === "" || newFilters[filterKey] === undefined) {
+        delete newFilters[filterKey];
       }
     });
 
@@ -143,7 +144,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
 
   // Count active filters
   const activeFilterCount = Object.keys(localFilters).filter(key => 
-    key !== 'search' && localFilters[key] !== undefined && localFilters[key] !== ''
+    key !== 'search' && localFilters[key as keyof typeof localFilters] !== undefined && localFilters[key as keyof typeof localFilters] !== ''
   ).length;
 
   const currentSort = localFilters.sortBy && localFilters.sortOrder 
