@@ -153,12 +153,12 @@ export default function Navigation() {
             {user ? (
               <div className="relative">
                 <DropdownMenu modal={false}>
-                  <div className="glass glass-hover rounded-lg p-1">
+                  <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 group text-slate-300 flex-shrink-0 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="h-8 group text-blue-400 hover:text-blue-300 flex-shrink-0 transition-all duration-300 hover:bg-blue-500/10 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
                       >
                         <User size={16} />
                       </Button>
@@ -263,12 +263,14 @@ export default function Navigation() {
             )}
 
             {/* Cart - Toggle Button with Fixed Badge Overflow */}
-            <div className="glass glass-hover rounded-lg p-1 relative overflow-visible">
+            <div className="glass glass-hover rounded-lg p-1 relative overflow-visible ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
               <Button
                 variant={isCartOpen ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={handleCartClick}
-                className="h-8 group flex-shrink-0 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className={`h-8 group flex-shrink-0 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
+                  isCartOpen ? 'text-white' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
+                }`}
               >
                 {/* Toggle between cart and close icon */}
                 <div className="transition-transform duration-200">
@@ -280,7 +282,7 @@ export default function Navigation() {
                 </div>
                 
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse">
+                  <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg shadow-blue-500/30 z-10 animate-pulse">
                     {cartCount}
                   </span>
                 )}

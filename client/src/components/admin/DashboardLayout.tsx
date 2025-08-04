@@ -136,16 +136,16 @@ export function DashboardLayout({
               />
             </div>
             
-            <div className="glass glass-hover rounded-lg p-1">
+            <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
               <Button
                 variant="ghost"
                 onClick={() => setShowFilters(!showFilters)}
-                className="gap-2 relative h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="gap-2 relative h-8 transition-all duration-300 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
               >
                 <Filter className="w-4 h-4" />
                 Filters
                 {activeFiltersCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-accent-blue text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-blue-500/30">
                     {activeFiltersCount}
                   </span>
                 )}
@@ -154,22 +154,26 @@ export function DashboardLayout({
 
             {viewMode === 'both' && onViewChange && (
               <div className="flex gap-1">
-                <div className="glass glass-hover rounded-lg p-1">
+                <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
                   <Button
                     variant={currentView === 'list' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewChange('list')}
-                    className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
+                      currentView === 'list' ? 'text-white' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
+                    }`}
                   >
                     <List className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="glass glass-hover rounded-lg p-1">
+                <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
                   <Button
                     variant={currentView === 'grid' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewChange('grid')}
-                    className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
+                      currentView === 'grid' ? 'text-white' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
+                    }`}
                   >
                     <Grid className="w-4 h-4" />
                   </Button>
