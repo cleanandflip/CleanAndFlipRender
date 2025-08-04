@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, X, Clock, TrendingUp, Package, Sparkles, Loader2, ShoppingCart, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'wouter';
@@ -42,6 +43,7 @@ export function UnifiedSearchBar({
   const [query, setQuery] = useState(value);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -62,6 +64,18 @@ export function UnifiedSearchBar({
       }
     }
   }, []);
+
+  // Calculate dropdown position when opening
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: rect.width
+      });
+    }
+  }, [isOpen]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -497,19 +511,26 @@ export function UnifiedSearchBar({
         </AnimatePresence>
       </div>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
+      {/* Portal Dropdown */}
+      {isOpen && createPortal(
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 z-[9998] bg-black/20" 
+            className="fixed inset-0 bg-black/20" 
+            style={{ zIndex: 999998 }}
             onClick={() => setIsOpen(false)}
           />
           
           {/* Dropdown Content */}
           <div 
-            className="absolute top-full left-0 right-0 mt-2 z-[9999] rounded-lg overflow-hidden max-h-96 overflow-y-auto"
+            ref={dropdownRef}
+            className="rounded-lg overflow-hidden max-h-96 overflow-y-auto"
             style={{
+              position: 'fixed',
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              zIndex: 999999,
               background: 'rgba(75, 85, 99, 0.4)',
               border: '1px solid rgba(156, 163, 175, 0.4)',
               backdropFilter: 'blur(8px)',
@@ -518,7 +539,8 @@ export function UnifiedSearchBar({
           >
             {renderDropdownContent()}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
