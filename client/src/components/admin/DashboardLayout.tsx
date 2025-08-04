@@ -3,20 +3,9 @@ import { globalDesignSystem as theme } from '@/styles/design-system/theme';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Search, Filter, Download, RefreshCw, Grid, List, ArrowUpDown, ChevronDown } from 'lucide-react';
+import { CleanExportDropdown } from '@/components/ui/CleanExportDropdown';
+import { CleanSelectDropdown } from '@/components/ui/CleanSelectDropdown';
+import { Search, Filter, RefreshCw, Grid, List, ArrowUpDown } from 'lucide-react';
 
 interface DashboardLayoutProps {
   title: string;
@@ -92,23 +81,7 @@ export function DashboardLayout({
                 Refresh
               </Button>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 h-8">
-                    <Download className="w-4 h-4" />
-                    Export
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="glass border-border bg-card">
-                  <DropdownMenuItem onClick={() => onExport('csv')}>
-                    Export as CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onExport('pdf')}>
-                    Export as PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <CleanExportDropdown onExport={onExport} />
             </div>
           </div>
           
@@ -170,18 +143,12 @@ export function DashboardLayout({
             {sortOptions && onSort && (
               <div className="flex items-center gap-2">
                 <ArrowUpDown className="w-4 h-4 text-text-muted" />
-                <Select onValueChange={onSort}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Sort by..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sortOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CleanSelectDropdown
+                  options={sortOptions}
+                  placeholder="Sort by..."
+                  onValueChange={onSort}
+                  className="w-40"
+                />
               </div>
             )}
           </div>

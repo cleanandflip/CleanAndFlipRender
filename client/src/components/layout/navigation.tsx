@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
-import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
-import { UnifiedUserDropdown } from "@/components/ui/UnifiedUserDropdown";
+import { CleanSearchBar } from "@/components/ui/CleanSearchBar";
+import { CleanUserDropdown } from "@/components/ui/CleanUserDropdown";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package } from "lucide-react";
@@ -129,8 +129,7 @@ export default function Navigation() {
           <div className="flex items-center space-x-3 flex-shrink-0 min-w-0 overflow-visible p-1">
             {/* Desktop Search */}
             <div className="hidden lg:block">
-              <UnifiedSearchBar
-                context="header"
+              <CleanSearchBar
                 placeholder="Search equipment..."
                 onSearch={(query) => {
                   const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
@@ -152,7 +151,14 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <UnifiedUserDropdown user={user} logoutMutation={logoutMutation} handleNavigation={handleNavigation} />
+              <CleanUserDropdown 
+                user={{
+                  ...user,
+                  isAdmin: user.isAdmin || false
+                }}
+                onNavigate={handleNavigation}
+                onLogout={() => logoutMutation.mutate()}
+              />
             ) : (
               <Button
                 variant="primary"
@@ -249,15 +255,13 @@ export default function Navigation() {
         {/* Mobile Search Bar */}
         {isSearchOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-bg-secondary-border">
-            <UnifiedSearchBar
-              context="header"
+            <CleanSearchBar
               placeholder="Search equipment..."
-              onSearch={(query) => {
+              onSearch={(query: string) => {
                 const searchUrl = `/products?search=${encodeURIComponent(query)}`;
                 handleNavigation(searchUrl);
                 setIsSearchOpen(false);
               }}
-              autoFocus={true}
               className="w-full"
             />
           </div>
