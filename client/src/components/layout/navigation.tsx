@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
-import { EnhancedSearchBar } from "@/components/ui/EnhancedSearchBar";
+import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
+import { UnifiedUserDropdown } from "@/components/ui/UnifiedUserDropdown";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package } from "lucide-react";
@@ -128,7 +129,7 @@ export default function Navigation() {
           <div className="flex items-center space-x-3 flex-shrink-0 min-w-0 overflow-visible p-1">
             {/* Desktop Search */}
             <div className="hidden lg:block">
-              <EnhancedSearchBar
+              <UnifiedSearchBar
                 context="header"
                 placeholder="Search equipment..."
                 onSearch={(query) => {
@@ -151,103 +152,7 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <div className="relative">
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 flex-shrink-0"
-                    >
-                      <User size={16} />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    className="w-64 bg-secondary border-bg-secondary-border border-primary shadow-2xl z-[100]"
-                    align="end"
-                    sideOffset={8}
-                    avoidCollisions={true}
-                    collisionPadding={8}
-                  >
-                  {/* User Info Header */}
-                  <div className="px-4 py-3 border-b border-bg-secondary-border">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-slate-500/20 rounded-full flex items-center justify-center">
-                        <User size={18} className="text-slate-300" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-primary truncate">
-                          {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
-                        </p>
-                        <p className="text-xs text-text-secondary truncate">
-                          {user.firstName ? user.email : 'Clean & Flip Member'}
-                        </p>
-                      </div>
-                      {user.isAdmin && (
-                        <span className="text-xs bg-slate-500 px-2 py-1 rounded text-primary font-medium">
-                          ADMIN
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Navigation Links */}
-                  <div className="py-2 space-y-1">
-                    <DropdownMenuItem asChild>
-                      <div className="glass glass-hover rounded-lg mx-2 p-1">
-                        <Link href={ROUTES.DASHBOARD} className="flex items-center px-3 py-2 text-sm text-text-secondary hover:text-primary transition-all duration-300 cursor-pointer rounded-md">
-                          <User className="mr-3 h-4 w-4" />
-                          My Dashboard
-                        </Link>
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <div className="glass glass-hover rounded-lg mx-2 p-1">
-                        <Link href={ROUTES.ORDERS} className="flex items-center px-3 py-2 text-sm text-text-secondary hover:text-primary transition-all duration-300 cursor-pointer rounded-md">
-                          <ShoppingCart className="mr-3 h-4 w-4" />
-                          Order History
-                        </Link>
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <div className="glass glass-hover rounded-lg mx-2 p-1">
-                        <Link href={`${ROUTES.DASHBOARD}?tab=submissions`} className="flex items-center px-3 py-2 text-sm text-text-secondary hover:text-primary transition-all duration-300 cursor-pointer rounded-md">
-                          <Package className="mr-3 h-4 w-4" />
-                          My Submissions
-                        </Link>
-                      </div>
-                    </DropdownMenuItem>
-
-                    {(user.role === 'developer' || user.role === 'admin' || user.isAdmin) && (
-                      <DropdownMenuItem asChild>
-                        <div className="glass glass-hover rounded-lg mx-2 p-1">
-                          <Link href={ROUTES.ADMIN} className="flex items-center px-3 py-2 text-sm text-slate-300 hover:text-slate-100 transition-all duration-300 cursor-pointer rounded-md">
-                            <Settings className="mr-3 h-4 w-4" />
-                            Developer Dashboard
-                          </Link>
-                        </div>
-                      </DropdownMenuItem>
-                    )}
-                  </div>
-
-                  <DropdownMenuSeparator className="bg-bg-secondary-border" />
-                  
-                  {/* Logout */}
-                  <div className="py-2">
-                    <DropdownMenuItem asChild>
-                      <Button
-                        onClick={() => logoutMutation.mutate()} 
-                        variant="outline"
-                        className="w-full justify-start text-red-400 border-red-400/50 hover:bg-red-500/10 hover:border-red-400 mx-2"
-                      >
-                        <LogOut className="mr-3 h-4 w-4" />
-                        Sign Out
-                      </Button>
-                    </DropdownMenuItem>
-                  </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <UnifiedUserDropdown user={user} logoutMutation={logoutMutation} handleNavigation={handleNavigation} />
             ) : (
               <Button
                 variant="primary"
@@ -344,7 +249,7 @@ export default function Navigation() {
         {/* Mobile Search Bar */}
         {isSearchOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-bg-secondary-border">
-            <EnhancedSearchBar
+            <UnifiedSearchBar
               context="header"
               placeholder="Search equipment..."
               onSearch={(query) => {

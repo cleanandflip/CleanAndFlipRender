@@ -2,6 +2,7 @@
 @import "./styles/dropdown.css";
 @import './styles/button-theme.css';
 @import './styles/outline-theme.css';
+@import './styles/dropdown-theme.css';
 @import './styles/typography.css';
 
 @tailwind base;

@@ -1,8 +1,8 @@
 // Legacy SearchBar - updated to use new enhanced search system
 // This file is maintained for backward compatibility
-// New search functionality is in @/components/ui/EnhancedSearchBar
+// New search functionality is in @/components/ui/UnifiedSearchBar
 
-import { EnhancedSearchBar } from '@/components/ui/EnhancedSearchBar';
+import { UnifiedSearchBar } from '@/components/ui/UnifiedSearchBar';
 
 interface SearchBarProps {
   className?: string;
@@ -24,7 +24,7 @@ export default function SearchBar({
   autoFocus = false
 }: SearchBarProps) {
   return (
-    <EnhancedSearchBar 
+    <UnifiedSearchBar 
       context="header"
       placeholder={placeholder}
       onSearch={onSearch}
