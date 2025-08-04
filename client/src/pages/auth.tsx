@@ -200,17 +200,13 @@ export default function AuthPage() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-16 text-xl transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl"
+                    variant="primary"
+                    size="lg"
+                    className="w-full h-16 text-xl"
+                    loading={loginMutation.isPending}
                     disabled={loginMutation.isPending}
                   >
-                    {loginMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-4 h-8 w-8 animate-spin" />
-                        Signing In...
-                      </>
-                    ) : (
-                      "Sign In"
-                    )}
+                    {loginMutation.isPending ? "Signing In..." : "Sign In"}
                   </Button>
                 </form>
               </Card>
@@ -344,17 +340,13 @@ export default function AuthPage() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-accent-blue hover:bg-blue-500 text-white font-medium h-12 text-lg transition-all duration-200 hover:scale-[1.02] shadow-lg hover:shadow-xl mt-6"
+                    variant="primary"
+                    size="lg"
+                    className="w-full h-12 text-lg mt-6"
+                    loading={registerMutation.isPending}
                     disabled={registerMutation.isPending || !passwordsMatch || (!!password && !isPasswordValid(password))}
                   >
-                    {registerMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-3 h-4 w-4 animate-spin" />
-                        Creating Account...
-                      </>
-                    ) : (
-                      "Create Account"
-                    )}
+                    {registerMutation.isPending ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
 

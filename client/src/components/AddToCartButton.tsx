@@ -169,22 +169,24 @@ export function AddToCartButton({
       <div className="relative group">
         <Button
           onClick={handleViewCart}
-          variant="default"
+          variant="primary"
           size={size}
-          className={`w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${className}`}
+          className={`w-full py-3 px-6 gap-2 ${className}`}
         >
           <Check className="w-5 h-5" />
           In Cart - View
         </Button>
         {/* Small red X remove button - appears on hover */}
-        <button
+        <Button
           onClick={handleRemoveFromCart}
           disabled={loading}
-          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center disabled:opacity-50 z-10"
+          variant="danger"
+          size="icon"
+          className="absolute -top-2 -right-2 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 disabled:opacity-50 z-10"
           title="Remove from cart"
         >
           <X className="w-3 h-3" />
-        </button>
+        </Button>
       </div>
     );
   }
@@ -193,16 +195,14 @@ export function AddToCartButton({
     <Button
       onClick={handleAddToCart}
       disabled={isDisabled}
-      variant={variant}
+      variant={!user ? "secondary" : "primary"}
       size={size}
-      className={`w-full ${!user ? 'bg-gray-600 hover:bg-gray-500' : 'bg-blue-500 hover:bg-blue-600'} text-white py-3 px-6 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${className} ${loading ? 'opacity-50' : ''}`}
+      className={`w-full py-3 px-6 gap-2 ${className}`}
+      loading={loading}
       title={!user ? 'Sign in required to add to cart' : 'Add to cart'}
     >
       {loading ? (
-        <>
-          <LoadingSpinner size="small" color="white" />
-          Adding...
-        </>
+        "Adding..."
       ) : (
         <>
           {!user ? <Lock className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}

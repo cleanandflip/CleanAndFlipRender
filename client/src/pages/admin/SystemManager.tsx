@@ -88,18 +88,15 @@ export function SystemManager() {
             {sections.map((section) => {
               const Icon = section.icon;
               return (
-                <button
+                <Button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                    activeSection === section.id
-                      ? 'bg-primary/20 text-primary border border-primary/30'
-                      : 'text-white hover:text-white hover:bg-gray-800/50'
-                  }`}
+                  variant={activeSection === section.id ? 'primary' : 'ghost'}
+                  className="w-full justify-start gap-3"
                 >
                   <Icon className="w-4 h-4" />
                   {section.label}
-                </button>
+                </Button>
               );
             })}
           </nav>

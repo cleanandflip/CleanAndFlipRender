@@ -385,8 +385,8 @@ export default function Products() {
                       };
                       NavigationStateManager.saveState('/products', currentState, location);
                     }}
-                    icon={<Grid size={16} />}
                   >
+                    <Grid size={16} />
                   </Button>
                 </div>
                 <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
@@ -409,8 +409,8 @@ export default function Products() {
                       };
                       NavigationStateManager.saveState('/products', currentState, location);
                     }}
-                    icon={<List size={16} />}
                   >
+                    <List size={16} />
                   </Button>
                 </div>
               </div>
@@ -434,9 +434,9 @@ export default function Products() {
                     };
                     NavigationStateManager.saveState('/products', currentState, location);
                   }}
-                  className="relative"
-                  icon={<Filter size={16} />}
+                  className="relative gap-2"
                 >
+                  <Filter size={16} />
                   Filters
                   {activeFilterCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-blue-500/30">

@@ -89,8 +89,11 @@ const CheckoutForm = () => {
       
       <Button 
         type="submit" 
+        variant="primary"
+        size="lg"
+        className="w-full py-3"
+        loading={isProcessing}
         disabled={!stripe || isProcessing}
-        className="w-full bg-accent-blue hover:bg-blue-500 text-white py-3"
       >
         {isProcessing ? "Processing..." : "Complete Order"}
       </Button>

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Button, Card, Input } from "@/components/shared/AnimatedComponents";
+import { Card, Input } from "@/components/shared/AnimatedComponents";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -318,10 +319,11 @@ export default function Contact() {
 
                 <Button 
                   type="submit" 
-                  disabled={submitMutation.isPending}
                   variant="primary"
                   size="lg"
                   className="w-full py-3"
+                  loading={submitMutation.isPending}
+                  disabled={submitMutation.isPending}
                 >
                   {submitMutation.isPending ? "Sending..." : "Send Message"}
                 </Button>

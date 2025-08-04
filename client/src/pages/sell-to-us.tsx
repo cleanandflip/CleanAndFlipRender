@@ -417,8 +417,11 @@ export default function SellToUs() {
 
                 <Button 
                   type="submit" 
+                  variant="primary"
+                  size="lg"
+                  className="w-full py-3"
+                  loading={submitMutation.isPending}
                   disabled={submitMutation.isPending}
-                  className="w-full bg-success hover:bg-green-600 text-white py-3"
                 >
                   {submitMutation.isPending ? "Submitting..." : "Submit for Review"}
                 </Button>

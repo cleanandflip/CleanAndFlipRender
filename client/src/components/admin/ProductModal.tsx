@@ -422,7 +422,7 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-primary hover:bg-primary/90">
+            <Button type="submit" variant="primary">
               {product ? 'Update Product' : 'Create Product'}
             </Button>
           </div>
