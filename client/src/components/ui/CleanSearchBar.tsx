@@ -110,13 +110,11 @@ export function CleanSearchBar({
     }
     
     setIsOpen(false);
-    inputRef.current?.blur();
   };
 
   const handleProductSelect = (product: Product) => {
     onProductSelect?.(product);
     setIsOpen(false);
-    inputRef.current?.blur();
   };
 
   const clearSearch = () => {

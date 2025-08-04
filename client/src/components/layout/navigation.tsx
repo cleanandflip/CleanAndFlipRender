@@ -171,29 +171,30 @@ export default function Navigation() {
               </Button>
             )}
 
-            {/* Cart - Toggle Button with Fixed Badge Overflow */}
-            <div className="relative overflow-visible">
-              <Button
-                variant={isCartOpen ? 'primary' : 'outline'}
-                size="sm"
+            {/* Cart */}
+            <div className="relative">
+              <button
                 onClick={handleCartClick}
-                className="h-8 group flex-shrink-0"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 focus:outline-none relative"
+                style={{
+                  background: 'rgba(75, 85, 99, 0.4)',
+                  border: '1px solid rgba(156, 163, 175, 0.4)',
+                  color: 'white',
+                  fontWeight: '500'
+                }}
               >
-                {/* Toggle between cart and close icon */}
-                <div className="transition-transform duration-200">
-                  {isCartOpen ? (
-                    <XCircle size={16} className="animate-in fade-in-0 duration-200" />
-                  ) : (
-                    <ShoppingCart size={16} className="animate-in fade-in-0 duration-200" />
-                  )}
-                </div>
+                {isCartOpen ? (
+                  <XCircle size={20} className="text-white" />
+                ) : (
+                  <ShoppingCart size={20} className="text-white" />
+                )}
                 
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse shadow-blue-500/30">
+                  <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
                     {cartCount}
-                  </span>
+                  </div>
                 )}
-              </Button>
+              </button>
             </div>
 
             {/* Mobile Menu */}
