@@ -27,11 +27,37 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
-  },
-  server: {
-    fs: {
-      strict: true,
-      deny: ["**/.*"],
+    target: "es2020",
+    minify: "terser",
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core vendor chunks
+          "vendor-react": ["react", "react-dom"],
+          "vendor-router": ["wouter"],
+          "vendor-query": ["@tanstack/react-query"],
+
+          // UI library chunks
+          "vendor-ui": [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-select",
+            "@radix-ui/react-toast",
+            "@radix-ui/react-tooltip",
+          ],
+
+          // Form handling
+          "vendor-form": ["react-hook-form", "@hookform/resolvers", "zod"],
+
+          // Utilities
+          "vendor-utils": ["clsx", "tailwind-merge", "date-fns", "lodash-es"],
+
+          // Icons
+          "vendor-icons": ["lucide-react"],
+        },
+      },
     },
   },
 });
