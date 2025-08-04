@@ -165,7 +165,7 @@ export function DashboardLayout({
                     onClick={() => onViewChange('list')}
                     className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                       currentView === 'list' 
-                        ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                        ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
                         : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                     }`}
                   >
@@ -183,7 +183,7 @@ export function DashboardLayout({
                     onClick={() => onViewChange('grid')}
                     className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                       currentView === 'grid' 
-                        ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                        ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
                         : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                     }`}
                   >

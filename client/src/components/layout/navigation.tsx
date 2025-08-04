@@ -274,7 +274,7 @@ export default function Navigation() {
                 onClick={handleCartClick}
                 className={`h-8 group flex-shrink-0 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   isCartOpen 
-                    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
                     : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
@@ -290,7 +290,7 @@ export default function Navigation() {
                 {cartCount > 0 && (
                   <span className={`absolute -top-2 -right-2 text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse ${
                     isCartOpen 
-                      ? 'bg-blue-200 text-blue-800' 
+                      ? 'bg-blue-400 text-blue-100 shadow-blue-400/30' 
                       : 'bg-blue-500 text-white shadow-blue-500/30'
                   }`}>
                     {cartCount}

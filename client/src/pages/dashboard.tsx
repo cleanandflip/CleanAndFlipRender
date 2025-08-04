@@ -406,7 +406,7 @@ function DashboardContent() {
                 onClick={() => handleTabChange('orders')}
                 className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   activeTab === 'orders' 
-                    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
                     : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
@@ -424,13 +424,13 @@ function DashboardContent() {
                 onClick={() => handleTabChange('submissions')}
                 className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   activeTab === 'submissions' 
-                    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
                     : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
                 Submissions
                 {Array.isArray(submissions) && submissions.filter(s => s.status === 'pending').length > 0 && (
-                  <Badge className={`ml-2 ${activeTab === 'submissions' ? 'bg-blue-200 text-blue-800' : 'bg-blue-500 text-white'}`} variant="secondary">
+                  <Badge className={`ml-2 ${activeTab === 'submissions' ? 'bg-blue-400 text-blue-100' : 'bg-blue-500 text-white'}`} variant="secondary">
                     {submissions.filter(s => s.status === 'pending').length}
                   </Badge>
                 )}
@@ -447,7 +447,7 @@ function DashboardContent() {
                 onClick={() => handleTabChange('wishlist')}
                 className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   activeTab === 'wishlist' 
-                    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
                     : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
@@ -465,7 +465,7 @@ function DashboardContent() {
                 onClick={() => handleTabChange('profile')}
                 className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   activeTab === 'profile' 
-                    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
                     : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
@@ -483,7 +483,7 @@ function DashboardContent() {
                 onClick={() => handleTabChange('addresses')}
                 className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
                   activeTab === 'addresses' 
-                    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
                     : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
