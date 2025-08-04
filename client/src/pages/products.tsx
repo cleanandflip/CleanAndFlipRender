@@ -8,7 +8,8 @@ import ProductList from "@/components/products/ProductList";
 import FilterSidebar from "@/components/products/filter-sidebar";
 import { EnhancedSearchBar } from "@/components/ui/EnhancedSearchBar";
 import FilterChip from "@/components/products/filter-chip";
-import { Button, Card } from "@/components/shared/AnimatedComponents";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/shared/AnimatedComponents";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Filter, Grid, List } from "lucide-react";
 import { ApiError } from "@/components/error-boundary";
@@ -337,10 +338,9 @@ export default function Products() {
                 
                 {/* Reset All Filters Button */}
                 <Button 
-                  variant="secondary" 
+                  variant="danger" 
                   size="sm" 
                   onClick={handleResetFilters}
-                  className="bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30"
                 >
                   Reset All
                 </Button>
@@ -385,13 +385,8 @@ export default function Products() {
                       };
                       NavigationStateManager.saveState('/products', currentState, location);
                     }}
-                    className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
-                      viewMode === 'grid' 
-                        ? 'bg-blue-500/30 text-white shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
-                        : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
-                    }`}
+                    icon={<Grid size={16} />}
                   >
-                    <Grid size={16} />
                   </Button>
                 </div>
                 <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
@@ -414,13 +409,8 @@ export default function Products() {
                       };
                       NavigationStateManager.saveState('/products', currentState, location);
                     }}
-                    className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
-                      viewMode === 'list' 
-                        ? 'bg-blue-500/30 text-white shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
-                        : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
-                    }`}
+                    icon={<List size={16} />}
                   >
-                    <List size={16} />
                   </Button>
                 </div>
               </div>
@@ -428,7 +418,8 @@ export default function Products() {
               {/* Filter Toggle */}
               <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
                 <Button
-                  variant="ghost"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     const newShowFilters = !showFilters;
                     setShowFilters(newShowFilters);
@@ -443,9 +434,9 @@ export default function Products() {
                     };
                     NavigationStateManager.saveState('/products', currentState, location);
                   }}
-                  className="gap-2 relative h-8 transition-all duration-300 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+                  className="relative"
+                  icon={<Filter size={16} />}
                 >
-                  <Filter size={16} />
                   Filters
                   {activeFilterCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-blue-500/30">

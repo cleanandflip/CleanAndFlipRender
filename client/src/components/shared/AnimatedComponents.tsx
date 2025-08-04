@@ -19,10 +19,9 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const buttonStyles = cn(
-    componentClasses.button.base,
-    componentClasses.button.variants[variant],
-    componentClasses.button.sizes[size],
-    'btn-animate',
+    'btn',
+    `btn-${variant}`,
+    `btn-${size}`,
     className
   );
 

@@ -1,4 +1,8 @@
+/* Import new theme files first */
 @import "./styles/dropdown.css";
+@import './styles/button-theme.css';
+@import './styles/typography.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -635,13 +639,9 @@ body {
     letter-spacing: 0.05em;
   }
 
-  /* Button hover effects */
-  .btn-glass {
+  /* Button hover effects - using new theme variables */
+  .btn-glass-legacy {
     @apply glass glass-hover px-6 py-3 font-semibold text-white transition-all duration-300;
-  }
-  
-  .btn-glass:hover {
-    @apply bg-primary/20 border-primary/30;
   }
 
   /* Product card styling */

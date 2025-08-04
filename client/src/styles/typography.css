@@ -1,0 +1,128 @@
+/* Global Typography Theme */
+:root {
+  /* Text Colors */
+  --text-primary: #F1F5F9;      /* Main text - light gray */
+  --text-secondary: #94A3B8;     /* Secondary text - muted */
+  --text-tertiary: #64748B;      /* Tertiary text - more muted */
+  --text-accent: #60A5FA;        /* Accent text - blue */
+  --text-success: #34D399;       /* Success text - green */
+  --text-warning: #FBBF24;       /* Warning text - yellow */
+  --text-danger: #F87171;        /* Error text - red */
+  
+  /* Heading Colors */
+  --heading-primary: #FFFFFF;     /* Main headings - white */
+  --heading-secondary: #E2E8F0;   /* Sub headings - off-white */
+  
+  /* Background Text Contrast */
+  --text-on-dark: #F1F5F9;
+  --text-on-light: #1E293B;
+  --text-on-accent: #FFFFFF;
+}
+
+/* Global Text Styles */
+body {
+  color: var(--text-primary);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--heading-primary);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Heading Sizes */
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1.125rem; }
+
+/* Text Utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-accent { color: var(--text-accent); }
+.text-success { color: var(--text-success); }
+.text-warning { color: var(--text-warning); }
+.text-danger { color: var(--text-danger); }
+
+/* Labels and Small Text */
+.label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.375rem;
+}
+
+.caption {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+}
+
+/* Links */
+a {
+  color: var(--text-accent);
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #93BBFC;
+}
+
+/* Form Elements */
+input, textarea, select {
+  color: var(--text-primary);
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: rgba(100, 116, 139, 0.3);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Card Text */
+.card-title {
+  color: var(--heading-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.card-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Dashboard Specific */
+.metric-value {
+  color: var(--heading-primary);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.metric-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Table Text */
+.table-header {
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.table-cell {
+  color: var(--text-primary);
+}
+
+/* Status Colors */
+.status-active { color: var(--text-success); }
+.status-pending { color: var(--text-warning); }
+.status-inactive { color: var(--text-tertiary); }
+.status-error { color: var(--text-danger); }
