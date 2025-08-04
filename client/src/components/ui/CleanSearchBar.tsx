@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, X, Clock, TrendingUp, Package } from 'lucide-react';
 // Format price utility function
 const formatCurrency = (price: number) => {
@@ -41,7 +42,9 @@ export function CleanSearchBar({
     'Barbell', 'Dumbbells', 'Power Rack', 'Bench Press', 'Kettlebell', 'Resistance Bands'
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Mock search function - replace with real API call
   const performSearch = async (searchQuery: string) => {
@@ -249,6 +252,18 @@ export function CleanSearchBar({
     );
   };
 
+  // Calculate dropdown position when opening
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: rect.width
+      });
+    }
+  }, [isOpen]);
+
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -264,15 +279,16 @@ export function CleanSearchBar({
   }, [isOpen]);
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative ${className}`}>
       {/* Search Trigger */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-4 py-3 rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group"
         style={{
           background: 'rgba(75, 85, 99, 0.4)',
-          border: '1px solid rgba(156, 163, 175, 0.4)',
+          border: isOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
           color: 'white',
           fontWeight: '500'
         }}
@@ -309,30 +325,38 @@ export function CleanSearchBar({
         )}
       </button>
 
-      {/* Dropdown Menu */}
-      {isOpen && (
+      {/* Portal Dropdown */}
+      {isOpen && createPortal(
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 z-40 bg-black/20" 
+            className="fixed inset-0 bg-black/20" 
+            style={{ zIndex: 999998 }}
             onClick={() => setIsOpen(false)}
           />
           
           {/* Dropdown Content */}
           <div 
-            className="absolute top-full left-0 right-0 mt-2 z-50 rounded-lg overflow-hidden"
+            ref={dropdownRef}
+            className="rounded-lg overflow-hidden max-h-96 overflow-y-auto"
             style={{
+              position: 'fixed',
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              zIndex: 999999,
               background: 'rgba(75, 85, 99, 0.4)',
               border: '1px solid rgba(156, 163, 175, 0.4)',
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)'
             }}
           >
-            <div className="p-4 max-h-96 overflow-y-auto">
+            <div className="p-4">
               {renderSearchResults()}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
