@@ -104,23 +104,22 @@ export default function Navigation() {
           </div>
 
           {/* Center - Navigation Menu */}
-          <div className="hidden lg:flex items-center space-x-6">
+          <div className="hidden lg:flex items-center space-x-2">
             {navigation.map((item) => (
-              <button
-                key={item.name}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNavigation(item.href, e);
-                }}
-                className={`transition-all duration-300 font-medium cursor-pointer px-3 py-2 rounded-lg text-base whitespace-nowrap ${
-                  isActive(item.href)
-                    ? "text-white bg-blue-500/30 border border-blue-400/50 shadow-md cursor-default"
-                    : "text-text-secondary hover:text-blue-300 hover:bg-blue-500/10"
-                }`}
-                disabled={isActive(item.href)}
-              >
-                {item.name}
-              </button>
+              <div key={item.name} className="glass glass-hover rounded-lg p-1">
+                <Button
+                  variant={isActive(item.href) ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNavigation(item.href, e);
+                  }}
+                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  disabled={isActive(item.href)}
+                >
+                  {item.name}
+                </Button>
+              </div>
             ))}
           </div>
 
@@ -165,28 +164,28 @@ export default function Navigation() {
                     </DropdownMenuTrigger>
                   </div>
                   <DropdownMenuContent 
-                    className="w-64 bg-secondary border-bg-secondary-border border-primary shadow-2xl z-[100]"
+                    className="w-64 bg-[#232937] border border-[rgba(255,255,255,0.12)] shadow-2xl z-[100] backdrop-blur-sm"
                     align="end"
                     sideOffset={8}
                     avoidCollisions={true}
                     collisionPadding={8}
                   >
                   {/* User Info Header */}
-                  <div className="px-4 py-3 border-b border-bg-secondary-border">
+                  <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.08)]">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-slate-500/20 rounded-full flex items-center justify-center">
-                        <User size={18} className="text-slate-300" />
+                      <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                        <User size={18} className="text-blue-300" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-primary truncate">
+                        <p className="text-sm font-semibold text-white truncate">
                           {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
                         </p>
-                        <p className="text-xs text-text-secondary truncate">
+                        <p className="text-xs text-blue-200 truncate">
                           {user.firstName ? user.email : 'Clean & Flip Member'}
                         </p>
                       </div>
                       {user.isAdmin && (
-                        <span className="text-xs bg-slate-500 px-2 py-1 rounded text-primary font-medium">
+                        <span className="text-xs bg-blue-500 px-2 py-1 rounded text-white font-medium">
                           ADMIN
                         </span>
                       )}
@@ -197,7 +196,7 @@ export default function Navigation() {
                   <div className="py-2 space-y-1">
                     <DropdownMenuItem asChild>
                       <div className="glass glass-hover rounded-lg mx-2 p-1">
-                        <Link href={ROUTES.DASHBOARD} className="flex items-center px-3 py-2 text-sm text-text-secondary hover:text-primary transition-all duration-300 cursor-pointer rounded-md">
+                        <Link href={ROUTES.DASHBOARD} className="flex items-center px-3 py-2 text-sm text-blue-200 hover:text-white transition-all duration-300 cursor-pointer rounded-md">
                           <User className="mr-3 h-4 w-4" />
                           My Dashboard
                         </Link>
@@ -205,7 +204,7 @@ export default function Navigation() {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <div className="glass glass-hover rounded-lg mx-2 p-1">
-                        <Link href={ROUTES.ORDERS} className="flex items-center px-3 py-2 text-sm text-text-secondary hover:text-primary transition-all duration-300 cursor-pointer rounded-md">
+                        <Link href={ROUTES.ORDERS} className="flex items-center px-3 py-2 text-sm text-blue-200 hover:text-white transition-all duration-300 cursor-pointer rounded-md">
                           <ShoppingCart className="mr-3 h-4 w-4" />
                           Order History
                         </Link>
@@ -213,7 +212,7 @@ export default function Navigation() {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <div className="glass glass-hover rounded-lg mx-2 p-1">
-                        <Link href={`${ROUTES.DASHBOARD}?tab=submissions`} className="flex items-center px-3 py-2 text-sm text-text-secondary hover:text-primary transition-all duration-300 cursor-pointer rounded-md">
+                        <Link href={`${ROUTES.DASHBOARD}?tab=submissions`} className="flex items-center px-3 py-2 text-sm text-blue-200 hover:text-white transition-all duration-300 cursor-pointer rounded-md">
                           <Package className="mr-3 h-4 w-4" />
                           My Submissions
                         </Link>
@@ -223,7 +222,7 @@ export default function Navigation() {
                     {(user.role === 'developer' || user.role === 'admin' || user.isAdmin) && (
                       <DropdownMenuItem asChild>
                         <div className="glass glass-hover rounded-lg mx-2 p-1">
-                          <Link href={ROUTES.ADMIN} className="flex items-center px-3 py-2 text-sm text-slate-300 hover:text-slate-100 transition-all duration-300 cursor-pointer rounded-md">
+                          <Link href={ROUTES.ADMIN} className="flex items-center px-3 py-2 text-sm text-blue-200 hover:text-white transition-all duration-300 cursor-pointer rounded-md">
                             <Settings className="mr-3 h-4 w-4" />
                             Developer Dashboard
                           </Link>
@@ -232,7 +231,7 @@ export default function Navigation() {
                     )}
                   </div>
 
-                  <DropdownMenuSeparator className="bg-bg-secondary-border" />
+                  <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.08)]" />
                   
                   {/* Logout */}
                   <div className="py-2">
