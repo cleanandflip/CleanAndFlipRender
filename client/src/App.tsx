@@ -11,12 +11,16 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import Navigation from "@/components/layout/navigation";
 import Footer from "@/components/layout/footer";
 import CartDrawer from "@/components/cart/cart-drawer";
+import { PageLoader } from "@/components/ui/page-loader";
 
-// Lazy load all page components for better code splitting
-const Home = lazy(() => import("@/pages/home"));
-const Products = lazy(() => import("@/pages/products"));
-const ProductDetail = lazy(() => import("@/pages/product-detail"));
-const Cart = lazy(() => import("@/pages/cart"));
+// Import critical pages directly to avoid lazy loading issues with routing
+import Home from "@/pages/home";
+import Products from "@/pages/products";
+import ProductDetail from "@/pages/product-detail";
+import Cart from "@/pages/cart";
+import NotFound from "@/pages/not-found";
+
+// Lazy load less critical pages for better code splitting
 const Checkout = lazy(() => import("@/pages/checkout"));
 const SellToUs = lazy(() => import("@/pages/sell-to-us"));
 const TrackSubmission = lazy(() => import("@/pages/track-submission"));
@@ -27,7 +31,6 @@ const Orders = lazy(() => import("@/pages/orders"));
 const About = lazy(() => import("@/pages/about"));
 const Contact = lazy(() => import("@/pages/contact"));
 const AuthPage = lazy(() => import("@/pages/auth"));
-const NotFound = lazy(() => import("@/pages/not-found"));
 
 function ScrollRestoration() {
   const [location] = useLocation();
@@ -86,35 +89,37 @@ function Router() {
         <CartDrawer />
         <ScrollRestoration />
         <main className="flex-1">
-          <Switch>
-            {/* Public Routes */}
-            <Route path={ROUTES.HOME} component={Home} />
-            <Route path={ROUTES.PRODUCTS} component={Products} />
-            <Route path={ROUTES.PRODUCT_DETAIL} component={ProductDetail} />
-            <Route path={ROUTES.ABOUT} component={About} />
-            <Route path={ROUTES.CONTACT} component={Contact} />
-            
-            {/* Shopping Routes */}
-            <Route path={ROUTES.CART} component={Cart} />
-            <Route path={ROUTES.CHECKOUT} component={Checkout} />
-            
-            {/* Auth Routes */}
-            <Route path={ROUTES.LOGIN} component={AuthPage} />
-            
-            {/* User Routes */}
-            <Route path={ROUTES.DASHBOARD} component={Dashboard} />
-            <Route path={ROUTES.ORDERS} component={Orders} />
-            <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />
-            <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
-            
-            {/* Admin Routes */}
-            <Route path={ROUTES.ADMIN} component={AdminDashboard} />
-            <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
-            <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
-            
-            {/* 404 */}
-            <Route component={NotFound} />
-          </Switch>
+          <Suspense fallback={<PageLoader />}>
+            <Switch>
+              {/* Public Routes */}
+              <Route path={ROUTES.HOME} component={Home} />
+              <Route path={ROUTES.PRODUCTS} component={Products} />
+              <Route path={ROUTES.PRODUCT_DETAIL} component={ProductDetail} />
+              <Route path={ROUTES.ABOUT} component={About} />
+              <Route path={ROUTES.CONTACT} component={Contact} />
+              
+              {/* Shopping Routes */}
+              <Route path={ROUTES.CART} component={Cart} />
+              <Route path={ROUTES.CHECKOUT} component={Checkout} />
+              
+              {/* Auth Routes */}
+              <Route path={ROUTES.LOGIN} component={AuthPage} />
+              
+              {/* User Routes */}
+              <Route path={ROUTES.DASHBOARD} component={Dashboard} />
+              <Route path={ROUTES.ORDERS} component={Orders} />
+              <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />
+              <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
+              
+              {/* Admin Routes */}
+              <Route path={ROUTES.ADMIN} component={AdminDashboard} />
+              <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
+              <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
+              
+              {/* 404 */}
+              <Route component={NotFound} />
+            </Switch>
+          </Suspense>
         </main>
         <Footer />
       </div>

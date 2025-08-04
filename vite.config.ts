@@ -60,4 +60,14 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: ["react", "react-dom", "wouter"],
+    exclude: ["@stripe/stripe-js"],
+  },
+  server: {
+    fs: {
+      strict: true,
+      deny: ["**/.*"],
+    },
+  },
 });
