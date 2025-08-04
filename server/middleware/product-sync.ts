@@ -1,4 +1,4 @@
-import { StripeProductSync } from '../services/stripe-sync.js';
+import { StripeProductSync } from '../services/stripe-sync';
 
 // Middleware to auto-sync on product changes
 export const autoSyncProducts = async (req: any, res: any, next: any) => {

@@ -33,6 +33,7 @@ import {
   requestLogging, 
   errorTracking 
 } from "./middleware/monitoring";
+import { autoSyncProducts } from "./middleware/product-sync";
 import { runPenetrationTests } from "./security/penetration-tests";
 import { setupCompression } from "./config/compression";
 import { healthLive, healthReady } from "./config/health";
@@ -76,7 +77,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-06-30.basil",
+  apiVersion: "2024-12-18.acacia",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -111,6 +112,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(preventXSS);
   app.use(preventSQLInjection);
   app.use(transactionMiddleware);
+  
+  // Enable automatic Stripe sync for product operations
+  app.use(autoSyncProducts);
   
   // Setup authentication
   setupAuth(app);

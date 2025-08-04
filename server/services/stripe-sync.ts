@@ -1,10 +1,10 @@
 import Stripe from 'stripe';
-import { db } from '../db/index.js';
+import { db } from '../db.js';
 import { products, categories } from '../../shared/schema.js';
 import { eq, isNull, or } from 'drizzle-orm';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil',
+  apiVersion: '2024-12-18.acacia',
 });
 
 interface ProductSyncData {
