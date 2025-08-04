@@ -5,15 +5,6 @@ import { useLocation } from 'wouter';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash-es';
 import { formatPrice } from '@/lib/utils';
-import { 
-  Dropdown, 
-  DropdownItem, 
-  DropdownSection, 
-  DropdownDivider, 
-  DropdownLoading, 
-  DropdownEmpty, 
-  DropdownError 
-} from './DropdownComponents';
 
 interface Product {
   id: number;
@@ -53,6 +44,7 @@ export function UnifiedSearchBar({
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
@@ -70,6 +62,20 @@ export function UnifiedSearchBar({
       }
     }
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
 
   // Update query when value prop changes
   useEffect(() => {
@@ -235,9 +241,9 @@ export function UnifiedSearchBar({
     const isSelected = selectedIndex === index;
     
     return (
-      <div
+      <button
         key={product.id}
-        className={`dropdown-product-item ${isSelected ? 'selected' : ''} group`}
+        className={`w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3 ${isSelected ? 'bg-white/10' : ''}`}
         onMouseDown={(e) => {
           e.preventDefault();
           handleProductSelect(product);
@@ -245,7 +251,7 @@ export function UnifiedSearchBar({
         onMouseEnter={() => setSelectedIndex(index)}
       >
         {/* Product Image */}
-        <div className="product-image">
+        <div className="w-12 h-12 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
           {product.imageUrl ? (
             <img 
               src={product.imageUrl} 
@@ -254,27 +260,27 @@ export function UnifiedSearchBar({
               loading="lazy"
             />
           ) : (
-            <Package size={24} className="text-muted-foreground" />
+            <Package size={20} className="text-gray-400" />
           )}
           {product.featured && (
-            <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-              <Sparkles size={12} className="text-gray-900" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+              <Sparkles size={8} className="text-gray-900" />
             </div>
           )}
         </div>
 
         {/* Product Details */}
-        <div className="product-details">
-          <h4 className="product-title">
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-white truncate">
             {highlightMatch(product.name, query)}
-          </h4>
-          <div className="product-meta">
-            <span>{product.brand}</span>
-            <span className="text-muted-foreground">•</span>
-            <span>{product.category}</span>
+          </div>
+          <div className="text-sm text-gray-400 truncate">
+            {product.brand && <span>{product.brand}</span>}
+            {product.brand && product.category && <span className="mx-1">•</span>}
+            {product.category && <span>{product.category}</span>}
             {product.condition && (
               <>
-                <span className="text-muted-foreground">•</span>
+                <span className="mx-1">•</span>
                 <span className="text-green-400">{product.condition}</span>
               </>
             )}
@@ -282,25 +288,25 @@ export function UnifiedSearchBar({
         </div>
 
         {/* Price and Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <div className="text-right">
-            <p className="product-price">{formatPrice(product.price)}</p>
+            <div className="font-semibold text-white">{formatPrice(product.price)}</div>
             {product.stock !== undefined && (
-              <p className="product-stock">
+              <div className="text-xs text-gray-400">
                 {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-              </p>
+              </div>
             )}
           </div>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button className="p-1.5 hover:bg-accent rounded-md transition-colors">
-              <Heart size={16} className="text-muted-foreground" />
-            </button>
-            <button className="p-1.5 hover:bg-accent rounded-md transition-colors">
-              <ShoppingCart size={16} className="text-muted-foreground" />
-            </button>
+          <div className="flex items-center gap-1">
+            <div className="w-6 h-6 rounded bg-gray-600 flex items-center justify-center hover:bg-gray-500 transition-colors">
+              <Heart size={12} className="text-gray-400" />
+            </div>
+            <div className="w-6 h-6 rounded bg-gray-600 flex items-center justify-center hover:bg-gray-500 transition-colors">
+              <ShoppingCart size={12} className="text-gray-400" />
+            </div>
           </div>
         </div>
-      </div>
+      </button>
     );
   };
 
@@ -308,103 +314,145 @@ export function UnifiedSearchBar({
   const renderDropdownContent = () => {
     const products = searchResults?.products || [];
     
-    // No query - show recent/popular searches
-    if (!query) {
+    // Empty state or loading
+    if (!query && context === 'products') {
       return (
-        <div className="py-2">
+        <div className="py-6 px-4 text-center">
+          <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Search className="w-6 h-6 text-gray-400" />
+          </div>
+          <p className="text-sm text-gray-400">Start typing to search products</p>
+        </div>
+      );
+    }
+
+    // Recent and popular searches (empty query state)
+    if (!query && context === 'header') {
+      return (
+        <div className="p-2 space-y-1">
           {recentSearches.length > 0 && (
             <>
-              <DropdownSection title="Recent Searches" icon={<Clock size={14} />}>
-                {recentSearches.map((search, idx) => (
-                  <DropdownItem
-                    key={idx}
-                    onSelect={() => handleSearch(search)}
-                    selected={selectedIndex === idx}
-                    icon={<Clock size={14} className="text-muted-foreground" />}
-                  >
-                    {search}
-                  </DropdownItem>
-                ))}
-              </DropdownSection>
-              <DropdownDivider />
+              <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-white/10 mb-2">
+                <Clock size={12} className="inline mr-2" />
+                Recent Searches
+              </div>
+              {recentSearches.map((search: string, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSearch(search)}
+                  className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
+                    <Clock size={16} className="text-gray-400" />
+                  </div>
+                  <span className="text-white font-medium">{search}</span>
+                </button>
+              ))}
+              <div className="border-t border-white/10 pt-2 mt-2" />
             </>
           )}
           
-          <DropdownSection title="Popular Searches" icon={<TrendingUp size={14} />}>
-            {popularSearches.map((term: string, idx: number) => (
-              <DropdownItem
-                key={idx}
-                onSelect={() => handleSearch(term)}
-                icon={<Sparkles size={14} className="text-muted-foreground" />}
-              >
-                {term}
-              </DropdownItem>
-            ))}
-          </DropdownSection>
+          <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <TrendingUp size={12} className="inline mr-2" />
+            Popular Searches
+          </div>
+          {popularSearches.map((term: string, idx: number) => (
+            <button
+              key={idx}
+              onClick={() => handleSearch(term)}
+              className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
+                <Sparkles size={16} className="text-gray-400" />
+              </div>
+              <span className="text-white font-medium">{term}</span>
+            </button>
+          ))}
         </div>
       );
     }
 
     // Loading state
     if (isLoading) {
-      return <DropdownLoading text={`Searching for "${query}"...`} />;
+      return (
+        <div className="py-6 px-4 text-center">
+          <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
+          </div>
+          <p className="text-sm text-gray-400">{`Searching for "${query}"...`}</p>
+        </div>
+      );
     }
 
     // Error state
     if (error) {
-      return <DropdownError title="Search failed" subtitle="Please try again" />;
+      return (
+        <div className="py-6 px-4 text-center">
+          <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <X className="w-6 h-6 text-red-400" />
+          </div>
+          <p className="text-sm text-white font-medium">Search failed</p>
+          <p className="text-xs text-gray-400">Please try again</p>
+        </div>
+      );
     }
 
     // Results
     if (products.length > 0) {
       return (
-        <div className="py-2">
-          <DropdownSection 
-            title="Products" 
-            icon={<Package size={14} />}
-          >
-            <div className="text-xs text-muted-foreground px-4 mb-2">
-              {products.length} result{products.length !== 1 ? 's' : ''}
-            </div>
-            <div className="space-y-1">
-              {products.map((product: Product, idx: number) => renderProductItem(product, idx))}
-            </div>
-            {context === 'header' && products.length >= 8 && (
-              <>
-                <DropdownDivider />
-                <DropdownItem onSelect={() => handleSearch(query)}>
-                  <span className="text-blue-400">View all results →</span>
-                </DropdownItem>
-              </>
-            )}
-          </DropdownSection>
+        <div className="p-2 space-y-1">
+          <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-white/10 mb-2">
+            <Package size={12} className="inline mr-2" />
+            Products ({products.length} result{products.length !== 1 ? 's' : ''})
+          </div>
+          {products.map((product: Product, idx: number) => renderProductItem(product, idx))}
+          {context === 'header' && products.length >= 8 && (
+            <>
+              <div className="border-t border-white/10 pt-2 mt-2" />
+              <button
+                onClick={() => handleSearch(query)}
+                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+              >
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                  <Search size={16} className="text-white" />
+                </div>
+                <span className="text-blue-400 font-medium">View all results →</span>
+              </button>
+            </>
+          )}
         </div>
       );
     }
 
     // No results
     return (
-      <DropdownEmpty 
-        title={`No products found for "${query}"`}
-        subtitle="Try different keywords"
-        icon={<Package className="w-12 h-12 text-muted-foreground" />}
-      />
+      <div className="py-6 px-4 text-center">
+        <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-3">
+          <Package className="w-6 h-6 text-gray-400" />
+        </div>
+        <p className="text-sm text-white font-medium">{`No products found for "${query}"`}</p>
+        <p className="text-xs text-gray-400">Try different keywords</p>
+      </div>
     );
   };
 
-  const searchInput = (
-    <div className={`relative ${className}`}>
+
+
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      {/* Search Input */}
       <div className={`relative group ${isOpen ? 'active' : ''}`} 
            style={{
+             background: 'rgba(75, 85, 99, 0.4)',
              border: isOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
              borderRadius: '0.5rem',
              transition: 'all 0.2s ease'
            }}>
         {/* Search Icon */}
-        <div className="search-icon-container">
+        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
           <Search 
             className={`w-4 h-4 transition-colors duration-200 ${
-              isOpen ? 'text-blue-400' : 'text-muted-foreground'
+              isOpen ? 'text-blue-400' : 'text-gray-400'
             }`} 
           />
         </div>
@@ -425,7 +473,7 @@ export function UnifiedSearchBar({
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
-          className="search-input"
+          className="w-full pl-10 pr-10 py-2 bg-transparent text-white placeholder-gray-400 focus:outline-none"
         />
         
         {/* Clear Button */}
@@ -435,29 +483,43 @@ export function UnifiedSearchBar({
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              className="search-clear-button"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2"
             >
               <button
                 type="button"
                 onClick={handleClear}
+                className="hover:text-white transition-colors"
               >
-                <X size={16} className="text-muted-foreground hover:text-foreground transition-colors" />
+                <X size={16} className="text-gray-400" />
               </button>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-    </div>
-  );
 
-  return (
-    <Dropdown
-      isOpen={isOpen}
-      onClose={() => setIsOpen(false)}
-      trigger={searchInput}
-      modal={true}
-    >
-      {renderDropdownContent()}
-    </Dropdown>
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/20" 
+            onClick={() => setIsOpen(false)}
+          />
+          
+          {/* Dropdown Content */}
+          <div 
+            className="absolute top-full left-0 right-0 mt-2 z-50 rounded-lg overflow-hidden max-h-96 overflow-y-auto"
+            style={{
+              background: 'rgba(75, 85, 99, 0.4)',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)'
+            }}
+          >
+            {renderDropdownContent()}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
