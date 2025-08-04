@@ -263,13 +263,19 @@ export default function Navigation() {
             )}
 
             {/* Cart - Toggle Button with Fixed Badge Overflow */}
-            <div className="glass glass-hover rounded-lg p-1 relative overflow-visible ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
+            <div className={`glass glass-hover rounded-lg p-1 relative overflow-visible transition-all duration-300 ${
+              isCartOpen 
+                ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
+            }`}>
               <Button
                 variant={isCartOpen ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={handleCartClick}
                 className={`h-8 group flex-shrink-0 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
-                  isCartOpen ? 'text-white' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
+                  isCartOpen 
+                    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                    : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                 }`}
               >
                 {/* Toggle between cart and close icon */}
@@ -282,7 +288,11 @@ export default function Navigation() {
                 </div>
                 
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg shadow-blue-500/30 z-10 animate-pulse">
+                  <span className={`absolute -top-2 -right-2 text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse ${
+                    isCartOpen 
+                      ? 'bg-blue-200 text-blue-800' 
+                      : 'bg-blue-500 text-white shadow-blue-500/30'
+                  }`}>
                     {cartCount}
                   </span>
                 )}

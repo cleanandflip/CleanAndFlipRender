@@ -154,25 +154,37 @@ export function DashboardLayout({
 
             {viewMode === 'both' && onViewChange && (
               <div className="flex gap-1">
-                <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
+                <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
+                  currentView === 'list' 
+                    ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                    : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
+                }`}>
                   <Button
                     variant={currentView === 'list' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewChange('list')}
                     className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
-                      currentView === 'list' ? 'text-white' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
+                      currentView === 'list' 
+                        ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                        : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                     }`}
                   >
                     <List className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
+                <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
+                  currentView === 'grid' 
+                    ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
+                    : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
+                }`}>
                   <Button
                     variant={currentView === 'grid' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => onViewChange('grid')}
                     className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
-                      currentView === 'grid' ? 'text-white' : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
+                      currentView === 'grid' 
+                        ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' 
+                        : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
                     }`}
                   >
                     <Grid className="w-4 h-4" />
