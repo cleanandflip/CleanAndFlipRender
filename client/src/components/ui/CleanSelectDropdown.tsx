@@ -62,7 +62,7 @@ export function CleanSelectDropdown({
         )}
         style={{
           background: 'rgba(75, 85, 99, 0.4)',
-          border: '1px solid rgba(156, 163, 175, 0.4)',
+          border: isOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
           color: 'white',
           fontWeight: '500'
         }}

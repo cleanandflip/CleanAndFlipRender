@@ -394,7 +394,12 @@ export function UnifiedSearchBar({
 
   const searchInput = (
     <div className={`relative ${className}`}>
-      <div className="relative group">
+      <div className={`relative group ${isOpen ? 'active' : ''}`} 
+           style={{
+             border: isOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
+             borderRadius: '0.5rem',
+             transition: 'all 0.2s ease'
+           }}>
         {/* Search Icon */}
         <div className="search-icon-container">
           <Search 

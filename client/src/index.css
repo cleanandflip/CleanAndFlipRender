@@ -883,6 +883,15 @@ form [class*="gray-7"] {
   z-index: 50;
 }
 
+/* Blue border effect when dropdown/cart is active */
+.search-container.active {
+  border: 1px solid #3b82f6 !important;
+}
+
+.search-input.active {
+  border: 1px solid #3b82f6 !important;
+}
+
 .search-container .absolute {
   z-index: 99999 !important;
   position: absolute !important;
