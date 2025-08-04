@@ -267,7 +267,7 @@ export default function SellToUs() {
                             <Input 
                               {...field} 
                               placeholder="e.g. Olympic Barbell 45lb"
-                              className="glass border-border"
+                              className="field"
                             />
                           </FormControl>
                           <FormMessage />
@@ -336,7 +336,7 @@ export default function SellToUs() {
                               value={field.value || ""}
                               type="number"
                               placeholder="Total weight in pounds"
-                              className="glass border-border"
+                              className="field"
                               onChange={(e) => field.onChange(e.target.value)}
                             />
                           </FormControl>
@@ -357,7 +357,7 @@ export default function SellToUs() {
                             {...field} 
                             value={field.value || ""}
                             placeholder="50"
-                            className="glass border-border"
+                            className="field"
                             onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
@@ -380,7 +380,7 @@ export default function SellToUs() {
                             {...field} 
                             value={field.value || ""}
                             placeholder="Tell us about the equipment - age, usage, any wear or damage..."
-                            className="glass border-border min-h-[100px]"
+                            className="field min-h-[100px]"
                           />
                         </FormControl>
                         <FormMessage />

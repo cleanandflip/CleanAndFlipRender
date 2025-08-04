@@ -215,6 +215,7 @@ export default function Contact() {
                             <Input 
                               {...field} 
                               placeholder="Your full name"
+                              className="field"
                             />
                           </FormControl>
                           <FormMessage />
@@ -233,6 +234,7 @@ export default function Contact() {
                               {...field} 
                               type="email"
                               placeholder="your@email.com"
+                              className="field"
                             />
                           </FormControl>
                           <FormMessage />
@@ -279,6 +281,7 @@ export default function Contact() {
                             <Input 
                               {...field} 
                               placeholder="Brief subject line"
+                              className="field"
                             />
                           </FormControl>
                           <FormMessage />
@@ -297,7 +300,7 @@ export default function Contact() {
                           <Textarea 
                             {...field} 
                             placeholder="Tell us how we can help you..."
-                            className="min-h-[120px]"
+                            className="field min-h-[120px]"
                           />
                         </FormControl>
                         <FormMessage />

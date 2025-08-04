@@ -13,7 +13,7 @@ const buttonVariants = cva(
         primary: "btn-primary",
         secondary: "btn-secondary",
         destructive: "btn-danger",
-        outline: "btn-secondary",
+        outline: "btn-outline",
         ghost: "btn-ghost",
         link: "btn-ghost underline-offset-4 hover:underline",
         glass: "btn-glass",
