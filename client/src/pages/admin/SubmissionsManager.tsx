@@ -491,32 +491,42 @@ export function SubmissionsManager() {
               {selectedSubmissions.size} submission{selectedSubmissions.size > 1 ? 's' : ''} selected
             </p>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
+              <button
                 onClick={() => handleBulkAction('archive')}
-                className="glass border-border"
+                className="px-4 py-2 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2"
+                style={{
+                  background: 'rgba(75, 85, 99, 0.4)',
+                  border: '1px solid rgba(156, 163, 175, 0.4)',
+                  color: 'white',
+                  fontWeight: '500'
+                }}
               >
-                <Archive className="w-4 h-4 mr-2" />
+                <Archive className="w-4 h-4" />
                 Archive
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
+              </button>
+              <button
                 onClick={() => handleBulkAction('reject')}
-                className="glass border-border"
+                className="px-4 py-2 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2"
+                style={{
+                  background: 'rgba(75, 85, 99, 0.4)',
+                  border: '1px solid rgba(156, 163, 175, 0.4)',
+                  color: 'white',
+                  fontWeight: '500'
+                }}
               >
-                <XCircle className="w-4 h-4 mr-2" />
+                <XCircle className="w-4 h-4" />
                 Reject
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
+              </button>
+              <button
                 onClick={() => handleBulkAction('delete')}
+                className="px-4 py-2 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2 bg-red-600/80 hover:bg-red-600 text-white"
+                style={{
+                  border: '1px solid rgba(220, 38, 38, 0.6)'
+                }}
               >
-                <Trash2 className="w-4 h-4 mr-2" />
+                <Trash2 className="w-4 h-4" />
                 Delete
-              </Button>
+              </button>
             </div>
           </div>
         </div>

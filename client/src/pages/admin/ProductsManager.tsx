@@ -340,17 +340,19 @@ export function ProductsManager() {
         </div>
       }
       actions={
-        <div className="glass glass-hover rounded-lg p-1">
-          <Button 
-            variant="primary"
-            size="sm"
-            className="h-8 gap-2 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            <Plus className="w-4 h-4" />
-            Add Product
-          </Button>
-        </div>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="px-4 py-2 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2"
+          style={{
+            background: 'rgba(75, 85, 99, 0.4)',
+            border: '1px solid rgba(156, 163, 175, 0.4)',
+            color: 'white',
+            fontWeight: '500'
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Add Product
+        </button>
       }
     >
       {/* Bulk Actions */}

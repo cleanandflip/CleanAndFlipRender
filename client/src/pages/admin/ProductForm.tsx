@@ -548,21 +548,35 @@ export function ProductForm() {
         
         {/* Submit Buttons */}
         <div className="flex gap-4">
-          <Button
+          <button
             type="submit"
             disabled={submitMutation.isPending}
-            className=""
+            className={`px-6 py-3 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2 ${
+              submitMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            style={{
+              background: 'rgba(75, 85, 99, 0.4)',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
+              color: 'white',
+              fontWeight: '500'
+            }}
           >
             {submitMutation.isPending ? 'Saving...' : (isEdit ? 'Update Product' : 'Create Product')}
-          </Button>
+          </button>
           
-          <Button
+          <button
             type="button"
-            variant="outline"
             onClick={() => navigate('/admin')}
+            className="px-6 py-3 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
+              color: 'white',
+              fontWeight: '500'
+            }}
           >
             Cancel
-          </Button>
+          </button>
         </div>
       </form>
     </div>

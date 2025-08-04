@@ -419,12 +419,31 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
 
           {/* Form Actions */}
           <div className="flex justify-end gap-3 pt-6 border-t" style={{ borderColor: theme.colors.border.default }}>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="px-6 py-3 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2"
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(156, 163, 175, 0.4)',
+                color: 'white',
+                fontWeight: '500'
+              }}
+            >
               Cancel
-            </Button>
-            <Button type="submit" variant="primary">
+            </button>
+            <button 
+              type="submit"
+              className="px-6 py-3 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2"
+              style={{
+                background: 'rgba(75, 85, 99, 0.4)',
+                border: '1px solid rgba(156, 163, 175, 0.4)',
+                color: 'white',
+                fontWeight: '500'
+              }}
+            >
               {product ? 'Update Product' : 'Create Product'}
-            </Button>
+            </button>
           </div>
         </form>
       </DialogContent>
