@@ -153,17 +153,15 @@ export default function Navigation() {
             {user ? (
               <div className="relative">
                 <DropdownMenu modal={false}>
-                  <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 group text-blue-400 hover:text-blue-300 flex-shrink-0 transition-all duration-300 hover:bg-blue-500/10 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
-                      >
-                        <User size={16} />
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </div>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 flex-shrink-0"
+                    >
+                      <User size={16} />
+                    </Button>
+                  </DropdownMenuTrigger>
                   <DropdownMenuContent 
                     className="w-64 bg-secondary border-bg-secondary-border border-primary shadow-2xl z-[100]"
                     align="end"
@@ -237,48 +235,38 @@ export default function Navigation() {
                   {/* Logout */}
                   <div className="py-2">
                     <DropdownMenuItem asChild>
-                      <div className="glass glass-hover rounded-lg mx-2 p-1">
-                        <button
-                          onClick={() => logoutMutation.mutate()} 
-                          className="flex items-center w-full px-3 py-2 text-sm text-red-400 hover:text-red-300 transition-all duration-300 cursor-pointer rounded-md"
-                        >
-                          <LogOut className="mr-3 h-4 w-4" />
-                          Sign Out
-                        </button>
-                      </div>
+                      <Button
+                        onClick={() => logoutMutation.mutate()} 
+                        variant="outline"
+                        className="w-full justify-start text-red-400 border-red-400/50 hover:bg-red-500/10 hover:border-red-400 mx-2"
+                      >
+                        <LogOut className="mr-3 h-4 w-4" />
+                        Sign Out
+                      </Button>
                     </DropdownMenuItem>
                   </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             ) : (
-              <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
-                <Button
-                  size="sm"
-                  onClick={(e) => handleNavigation(ROUTES.LOGIN, e)}
-                  className="font-medium px-5 py-2 whitespace-nowrap bg-blue-500/20 text-blue-200 hover:bg-blue-500/30 border border-blue-400/50"
-                >
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign In
-                </Button>
-              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={(e) => handleNavigation(ROUTES.LOGIN, e)}
+                className="font-medium px-5 py-2 whitespace-nowrap"
+              >
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In
+              </Button>
             )}
 
             {/* Cart - Toggle Button with Fixed Badge Overflow */}
-            <div className={`glass glass-hover rounded-lg p-1 relative overflow-visible transition-all duration-300 ${
-              isCartOpen 
-                ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
-                : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
-            }`}>
+            <div className="relative overflow-visible">
               <Button
-                variant={isCartOpen ? 'primary' : 'ghost'}
+                variant={isCartOpen ? 'primary' : 'outline'}
                 size="sm"
                 onClick={handleCartClick}
-                className={`h-8 group flex-shrink-0 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
-                  isCartOpen 
-                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
-                    : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
-                }`}
+                className="h-8 group flex-shrink-0"
               >
                 {/* Toggle between cart and close icon */}
                 <div className="transition-transform duration-200">
@@ -290,11 +278,7 @@ export default function Navigation() {
                 </div>
                 
                 {cartCount > 0 && (
-                  <span className={`absolute -top-2 -right-2 text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse ${
-                    isCartOpen 
-                      ? 'bg-blue-400 text-blue-100 shadow-blue-400/30' 
-                      : 'bg-blue-500 text-white shadow-blue-500/30'
-                  }`}>
+                  <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center font-semibold shadow-lg z-10 animate-pulse shadow-blue-500/30">
                     {cartCount}
                   </span>
                 )}
@@ -305,9 +289,9 @@ export default function Navigation() {
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="icon"
-                  className="lg:hidden bg-secondary p-2 w-10 h-10 flex-shrink-0 text-text-secondary border border-primary border-transparent hover:text-primary hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20 transition-all duration-200"
+                  className="lg:hidden w-10 h-10 flex-shrink-0"
                 >
                   <Menu size={18} />
                 </Button>
@@ -316,7 +300,7 @@ export default function Navigation() {
                 <div className="flex items-center justify-between mb-8">
                   <Logo />
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -326,37 +310,31 @@ export default function Navigation() {
                 
                 <nav className="space-y-4">
                   {navigation.map((item) => (
-                    <button
+                    <Button
                       key={item.name}
+                      variant={isActive(item.href) ? "primary" : "outline"}
                       onClick={() => {
                         handleNavigation(item.href);
                         setIsMobileMenuOpen(false);
                       }}
-                      className={`block w-full text-left px-4 py-3 rounded-lg transition-all duration-300 ${
-                        isActive(item.href)
-                          ? "bg-blue-500/30 text-white border border-blue-400/50 shadow-md cursor-default"
-                          : "text-text-secondary hover:bg-blue-500/10 hover:text-blue-300"
-                      }`}
+                      className="w-full justify-start"
                       disabled={isActive(item.href)}
                     >
                       {item.name}
-                    </button>
+                    </Button>
                   ))}
                   
-                  <button
+                  <Button
+                    variant={isActive("/dashboard") ? "primary" : "outline"}
                     onClick={() => {
                       handleNavigation("/dashboard");
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                      isActive("/dashboard")
-                        ? "bg-slate-500 text-white cursor-default"
-                        : "text-text-secondary hover:bg-white/10 hover:text-primary"
-                    }`}
+                    className="w-full justify-start"
                     disabled={isActive("/dashboard")}
                   >
                     Dashboard
-                  </button>
+                  </Button>
                 </nav>
               </SheetContent>
             </Sheet>

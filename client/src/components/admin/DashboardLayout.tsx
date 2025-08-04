@@ -81,28 +81,24 @@ export function DashboardLayout({
             
             <div className="flex items-center gap-3">
               {actions}
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onRefresh}
-                  className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  disabled={isLoading}
-                >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                className="gap-2 h-8"
+                disabled={isLoading}
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <div className="glass glass-hover rounded-lg p-1">
-                    <Button variant="ghost" size="sm" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                      <Download className="w-4 h-4" />
-                      Export
-                      <ChevronDown className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <Button variant="outline" size="sm" className="gap-2 h-8">
+                    <Download className="w-4 h-4" />
+                    Export
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="glass border-border bg-card">
                   <DropdownMenuItem onClick={() => onExport('csv')}>
@@ -136,60 +132,38 @@ export function DashboardLayout({
               />
             </div>
             
-            <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
-              <Button
-                variant="ghost"
-                onClick={() => setShowFilters(!showFilters)}
-                className="gap-2 relative h-8 transition-all duration-300 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
-              >
-                <Filter className="w-4 h-4" />
-                Filters
-                {activeFiltersCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2 relative h-8"
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+              {activeFiltersCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </Button>
 
             {viewMode === 'both' && onViewChange && (
               <div className="flex gap-1">
-                <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
-                  currentView === 'list' 
-                    ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
-                    : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
-                }`}>
-                  <Button
-                    variant={currentView === 'list' ? 'primary' : 'ghost'}
-                    size="sm"
-                    onClick={() => onViewChange('list')}
-                    className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
-                      currentView === 'list' 
-                        ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
-                        : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
-                    }`}
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
-                  currentView === 'grid' 
-                    ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
-                    : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
-                }`}>
-                  <Button
-                    variant={currentView === 'grid' ? 'primary' : 'ghost'}
-                    size="sm"
-                    onClick={() => onViewChange('grid')}
-                    className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
-                      currentView === 'grid' 
-                        ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
-                        : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
-                    }`}
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                </div>
+                <Button
+                  variant={currentView === 'list' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => onViewChange('list')}
+                  className="h-8"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={currentView === 'grid' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => onViewChange('grid')}
+                  className="h-8"
+                >
+                  <Grid className="w-4 h-4" />
+                </Button>
               </div>
             )}
 

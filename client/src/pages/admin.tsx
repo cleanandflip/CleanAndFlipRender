@@ -477,94 +477,78 @@ function AdminDashboard() {
           {/* Main Dashboard Tabs */}
           <div className="space-y-6">
             <div className="flex gap-2 flex-wrap">
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant={activeTab === 'products' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('products')}
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <Package className="w-4 h-4" />
-                  Products
-                </Button>
-              </div>
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant={activeTab === 'categories' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('categories')}
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                  Categories
-                </Button>
-              </div>
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant={activeTab === 'submissions' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('submissions')}
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <Clipboard className="w-4 h-4" />
-                  Submissions
-                </Button>
-              </div>
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant={activeTab === 'analytics' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('analytics')}
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  Analytics
-                </Button>
-              </div>
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant={activeTab === 'wishlist' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('wishlist')}
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <Heart className="w-4 h-4" />
-                  Wishlist
-                </Button>
-              </div>
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant={activeTab === 'users' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('users')}
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <Users className="w-4 h-4" />
-                  Users
-                </Button>
-              </div>
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant={activeTab === 'system' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('system')}
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <Settings className="w-4 h-4" />
-                  System
-                </Button>
-              </div>
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button
-                  variant={activeTab === 'stripe' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveTab('stripe')}
-                  className="flex items-center gap-2 h-8 px-3 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <DollarSign className="w-4 h-4" />
-                  Stripe
-                </Button>
-              </div>
+              <Button
+                variant={activeTab === 'products' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('products')}
+                className="flex items-center gap-2 h-8 px-3"
+              >
+                <Package className="w-4 h-4" />
+                Products
+              </Button>
+              <Button
+                variant={activeTab === 'categories' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('categories')}
+                className="flex items-center gap-2 h-8 px-3"
+              >
+                <Grid3X3 className="w-4 h-4" />
+                Categories
+              </Button>
+              <Button
+                variant={activeTab === 'submissions' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('submissions')}
+                className="flex items-center gap-2 h-8 px-3"
+              >
+                <Clipboard className="w-4 h-4" />
+                Submissions
+              </Button>
+              <Button
+                variant={activeTab === 'analytics' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('analytics')}
+                className="flex items-center gap-2 h-8 px-3"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Analytics
+              </Button>
+              <Button
+                variant={activeTab === 'wishlist' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('wishlist')}
+                className="flex items-center gap-2 h-8 px-3"
+              >
+                <Heart className="w-4 h-4" />
+                Wishlist
+              </Button>
+              <Button
+                variant={activeTab === 'users' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('users')}
+                className="flex items-center gap-2 h-8 px-3"
+              >
+                <Users className="w-4 h-4" />
+                Users
+              </Button>
+              <Button
+                variant={activeTab === 'system' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('system')}
+                className="flex items-center gap-2 h-8 px-3"
+              >
+                <Settings className="w-4 h-4" />
+                System
+              </Button>
+              <Button
+                variant={activeTab === 'stripe' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('stripe')}
+                className="flex items-center gap-2 h-8 px-3"
+              >
+                <DollarSign className="w-4 h-4" />
+                Stripe
+              </Button>
             </div>
 
             {activeTab === 'products' && <ProductsManager />}
