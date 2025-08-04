@@ -279,51 +279,54 @@ export function CleanSearchBar({
   }, [isOpen]);
 
   return (
-    <div className={`relative ${className}`}>
-      {/* Search Trigger */}
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group"
-        style={{
-          background: 'rgba(75, 85, 99, 0.4)',
-          border: isOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
-          color: 'white',
-          fontWeight: '500'
-        }}
-      >
-        {isOpen ? (
-          <input
-            type="text"
-            value={query}
-            onChange={handleInputChange}
-            placeholder={placeholder}
-            className="bg-transparent outline-none flex-1 placeholder:text-white text-white"
-            onClick={(e) => e.stopPropagation()}
-            autoFocus
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      {/* Search Input */}
+      <div className={`relative group ${isOpen ? 'active' : ''}`} 
+           style={{
+             background: 'rgba(75, 85, 99, 0.4)',
+             border: isOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
+             borderRadius: '0.5rem',
+             transition: 'all 0.2s ease'
+           }}>
+        {/* Search Icon */}
+        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+          <Search 
+            className={`w-4 h-4 transition-colors duration-200 ${
+              isOpen ? 'text-blue-400' : 'text-gray-400'
+            }`} 
           />
-        ) : (
-          <div className="flex items-center gap-3 flex-1">
-            <Search className="w-4 h-4 text-gray-400" />
-            <span className={query ? 'text-white' : 'text-gray-400'}>
-              {query || placeholder}
-            </span>
+        </div>
+        
+        {/* Search Input */}
+        <input
+          ref={triggerRef}
+          type="text"
+          value={query}
+          onChange={handleInputChange}
+          onFocus={() => {
+            setIsOpen(true);
+          }}
+          placeholder={placeholder}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          className="w-full pl-10 pr-10 py-2 bg-transparent text-white placeholder-gray-400 focus:outline-none"
+        />
+        
+        {/* Clear Button */}
+        {query && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="hover:text-white transition-colors"
+            >
+              <X size={16} className="text-gray-400" />
+            </button>
           </div>
         )}
-        {query && !isOpen && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              clearSearch();
-            }}
-            className="w-4 h-4 text-gray-400 hover:text-white transition-colors"
-          >
-            <X size={16} />
-          </button>
-        )}
-      </button>
+      </div>
 
       {/* Portal Dropdown */}
       {isOpen && createPortal(
@@ -337,7 +340,6 @@ export function CleanSearchBar({
           
           {/* Dropdown Content */}
           <div 
-            ref={dropdownRef}
             className="rounded-lg overflow-hidden max-h-96 overflow-y-auto"
             style={{
               position: 'fixed',
@@ -351,9 +353,7 @@ export function CleanSearchBar({
               WebkitBackdropFilter: 'blur(8px)'
             }}
           >
-            <div className="p-4">
-              {renderSearchResults()}
-            </div>
+            {renderSearchResults()}
           </div>
         </>,
         document.body
