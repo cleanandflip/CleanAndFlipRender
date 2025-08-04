@@ -241,9 +241,9 @@ export function UnifiedSearchBar({
     const isSelected = selectedIndex === index;
     
     return (
-      <button
+      <div
         key={product.id}
-        className={`w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3 ${isSelected ? 'bg-white/10' : ''}`}
+        className={`w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3 cursor-pointer ${isSelected ? 'bg-white/10' : ''}`}
         onMouseDown={(e) => {
           e.preventDefault();
           handleProductSelect(product);
@@ -306,7 +306,7 @@ export function UnifiedSearchBar({
             </div>
           </div>
         </div>
-      </button>
+      </div>
     );
   };
 
@@ -502,13 +502,13 @@ export function UnifiedSearchBar({
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 z-40 bg-black/20" 
+            className="fixed inset-0 z-[9998] bg-black/20" 
             onClick={() => setIsOpen(false)}
           />
           
           {/* Dropdown Content */}
           <div 
-            className="absolute top-full left-0 right-0 mt-2 z-50 rounded-lg overflow-hidden max-h-96 overflow-y-auto"
+            className="absolute top-full left-0 right-0 mt-2 z-[9999] rounded-lg overflow-hidden max-h-96 overflow-y-auto"
             style={{
               background: 'rgba(75, 85, 99, 0.4)',
               border: '1px solid rgba(156, 163, 175, 0.4)',
