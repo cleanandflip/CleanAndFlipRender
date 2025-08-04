@@ -112,10 +112,10 @@ export default function Navigation() {
                   e.stopPropagation();
                   handleNavigation(item.href, e);
                 }}
-                className={`transition-all duration-200 font-medium cursor-pointer px-3 py-2 rounded-lg hover:bg-white/10 text-base whitespace-nowrap ${
+                className={`transition-all duration-300 font-medium cursor-pointer px-3 py-2 rounded-lg text-base whitespace-nowrap ${
                   isActive(item.href)
-                    ? "text-slate-300 bg-slate-500/10 cursor-default"
-                    : "text-text-secondary hover:text-primary"
+                    ? "text-white bg-blue-500/30 border border-blue-400/50 shadow-md cursor-default"
+                    : "text-text-secondary hover:text-blue-300 hover:bg-blue-500/10"
                 }`}
                 disabled={isActive(item.href)}
               >
@@ -252,14 +252,16 @@ export default function Navigation() {
                 </DropdownMenu>
               </div>
             ) : (
-              <Button
-                size="sm"
-                onClick={(e) => handleNavigation(ROUTES.LOGIN, e)}
-                className="font-medium px-5 py-2 whitespace-nowrap"
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Button>
+              <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
+                <Button
+                  size="sm"
+                  onClick={(e) => handleNavigation(ROUTES.LOGIN, e)}
+                  className="font-medium px-5 py-2 whitespace-nowrap bg-blue-500/20 text-blue-200 hover:bg-blue-500/30 border border-blue-400/50"
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In
+                </Button>
+              </div>
             )}
 
             {/* Cart - Toggle Button with Fixed Badge Overflow */}
@@ -330,10 +332,10 @@ export default function Navigation() {
                         handleNavigation(item.href);
                         setIsMobileMenuOpen(false);
                       }}
-                      className={`block w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                      className={`block w-full text-left px-4 py-3 rounded-lg transition-all duration-300 ${
                         isActive(item.href)
-                          ? "bg-slate-500 text-white cursor-default"
-                          : "text-text-secondary hover:bg-white/10 hover:text-primary"
+                          ? "bg-blue-500/30 text-white border border-blue-400/50 shadow-md cursor-default"
+                          : "text-text-secondary hover:bg-blue-500/10 hover:text-blue-300"
                       }`}
                       disabled={isActive(item.href)}
                     >
