@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceInput } from "@/components/ui/price-input";
@@ -74,6 +74,13 @@ export default function SellToUs() {
   // ALL HOOKS MUST BE AT THE TOP - React Rules of Hooks
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
+  
+  // CRITICAL FIX: Force fresh auth check when accessing sell-to-us
+  useEffect(() => {
+    // Force immediate auth validation on page load
+    queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+  }, [queryClient]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [referenceNumber, setReferenceNumber] = useState<string>("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);

@@ -329,12 +329,35 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  // Logout endpoint
+  // Logout endpoint - CRITICAL FIX for session persistence bug
   app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
-    });
+    try {
+      // Destroy session completely to prevent auto re-authentication
+      req.session.destroy((err) => {
+        if (err) {
+          Logger.error('Session destruction error:', err);
+          return res.status(500).json({ error: 'Logout failed' });
+        }
+        
+        // Clear session cookie completely
+        res.clearCookie('connect.sid', {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+        
+        // Also try alternative cookie names
+        res.clearCookie('sessionId');
+        res.clearCookie('session');
+        
+        Logger.debug('Session destroyed and cookies cleared for logout');
+        res.json({ success: true });
+      });
+    } catch (error) {
+      Logger.error('Logout error:', error);
+      res.status(500).json({ error: 'Logout failed' });
+    }
   });
 
   // Debug endpoint to check account status

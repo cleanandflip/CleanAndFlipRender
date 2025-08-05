@@ -46,10 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     retry: false, // Don't retry 401s for auth checks
     throwOnError: false, // Handle errors gracefully
-    staleTime: 5 * 60 * 1000, // User data is fresh for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    staleTime: 0, // CRITICAL FIX: Don't cache user data after logout
+    gcTime: 0, // CRITICAL FIX: Don't keep in cache
     refetchOnWindowFocus: false, // Don't check auth on window focus
-    refetchOnMount: false, // Don't always refetch on mount
+    refetchOnMount: true, // CRITICAL FIX: Always check fresh auth state
   });
 
   const loginMutation = useMutation({
@@ -168,9 +168,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
-      // Clear all auth-related cache and force a clean state
+      // CRITICAL FIX: Complete client-side cleanup
       queryClient.setQueryData(["/api/user"], null);
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.clear(); // Clear all cached queries to prevent hooks issues
+      
+      // Clear any potential browser storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Force immediate refetch to ensure clean state
+      setTimeout(() => {
+        window.location.href = '/'; // Redirect to home after cleanup
+      }, 100);
+      
       toast({
         title: "Logged out",
         description: "See you next time!",
