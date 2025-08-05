@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMe
 import { Search, X, Clock, TrendingUp, Package, Sparkles, Loader2, ShoppingCart, Heart } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSafePortal } from '@/hooks/useSafePortal';
 import { useLocation } from 'wouter';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash-es';
@@ -51,6 +52,9 @@ export function EnhancedSearchBar({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  
+  // Safe portal hook to prevent removeChild errors
+  const { portalRoot, isReady } = useSafePortal();
 
   // Popular search terms
   const popularSearches = ['Barbell', 'Dumbbells', 'Power Rack', 'Bench Press', 'Kettlebell', 'Resistance Bands'];
@@ -542,48 +546,50 @@ export function EnhancedSearchBar({
     );
   };
 
-  // Render search dropdown
-  const dropdown = isOpen && !isAnimating && createPortal(
+  // Safe portal dropdown rendering
+  const dropdown = isReady && portalRoot && createPortal(
     <AnimatePresence mode="wait">
-      <motion.div
-        ref={dropdownRef}
-        key="search-dropdown"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ 
-          duration: 0.15,
-          ease: 'easeOut'
-        }}
-        className={`
-          fixed z-[999999] search-dropdown
-          ${isMobile ? 'search-dropdown-mobile' : ''}
-        `}
-        style={{
-          position: 'fixed',
-          top: `${dropdownPosition.top}px`,
-          left: `${dropdownPosition.left}px`,
-          width: `${dropdownPosition.width}px`,
-          transformOrigin: '0 0',
-          backfaceVisibility: 'hidden',
-          WebkitFontSmoothing: 'antialiased',
-          transform: 'translateZ(0)',
-          willChange: 'transform, opacity'
-        }}
-      >
-        <div className={`
-          bg-gray-900/98 border border-gray-700/50 shadow-2xl overflow-hidden
-          ${isMobile ? 'rounded-t-xl' : 'rounded-xl'}
-        `}>
-          <div className={`overflow-y-auto custom-scrollbar ${
-            isMobile ? 'max-h-[80vh]' : 'max-h-[70vh]'
-          }`}>
-            {renderDropdownContent()}
+      {isOpen && !isAnimating && (
+        <motion.div
+          ref={dropdownRef}
+          key="search-dropdown"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ 
+            duration: 0.15,
+            ease: 'easeOut'
+          }}
+          className={`
+            fixed z-[999999] search-dropdown
+            ${isMobile ? 'search-dropdown-mobile' : ''}
+          `}
+          style={{
+            position: 'fixed',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
+            transformOrigin: '0 0',
+            backfaceVisibility: 'hidden',
+            WebkitFontSmoothing: 'antialiased',
+            transform: 'translateZ(0)',
+            willChange: 'transform, opacity'
+          }}
+        >
+          <div className={`
+            bg-gray-900/98 border border-gray-700/50 shadow-2xl overflow-hidden
+            ${isMobile ? 'rounded-t-xl' : 'rounded-xl'}
+          `}>
+            <div className={`overflow-y-auto custom-scrollbar ${
+              isMobile ? 'max-h-[80vh]' : 'max-h-[70vh]'
+            }`}>
+              {renderDropdownContent()}
+            </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>,
-    document.body
+    portalRoot
   );
 
   return (

@@ -39,7 +39,11 @@ export function CategoryModal({
     slug: '',
     description: '',
     displayOrder: 0,
-    isActive: true
+    isActive: true,
+    icon: '',
+    seoTitle: '',
+    seoDescription: '',
+    featuredImageUrl: ''
   });
 
   useEffect(() => {
