@@ -146,7 +146,19 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      phone: users.phone,
+      isAdmin: users.isAdmin,
+      role: users.role,
+      isLocalCustomer: users.isLocalCustomer,
+      stripeCustomerId: users.stripeCustomerId,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt
+    }).from(users).where(eq(users.id, id));
     return user;
   }
 
@@ -155,13 +167,39 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const normalizedEmail = normalizeEmail(email);
     try {
-      const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
+      const [user] = await db.select({
+        id: users.id,
+        email: users.email,
+        password: users.password,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        phone: users.phone,
+        isAdmin: users.isAdmin,
+        role: users.role,
+        isLocalCustomer: users.isLocalCustomer,
+        stripeCustomerId: users.stripeCustomerId,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt
+      }).from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
       return user;
     } catch (error: any) {
       Logger.error('Error getting user by email:', error.message);
       if (error.code === '57P01') {
         // Retry once on connection termination
-        const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
+        const [user] = await db.select({
+          id: users.id,
+          email: users.email,
+          password: users.password,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          phone: users.phone,
+          isAdmin: users.isAdmin,
+          role: users.role,
+          isLocalCustomer: users.isLocalCustomer,
+          stripeCustomerId: users.stripeCustomerId,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt
+        }).from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
         return user;
       }
       throw error;

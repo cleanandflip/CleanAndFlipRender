@@ -25,9 +25,14 @@ export class PasswordResetService {
       //   throw new Error('Too many reset attempts. Please try again later.');
       // }
 
-      // Find user (case insensitive email lookup)
+      // Find user (case insensitive email lookup) - only select essential fields
       const [user] = await db
-        .select()
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName
+        })
         .from(users)
         .where(eq(users.email, email.toLowerCase()))
         .limit(1);
@@ -189,9 +194,12 @@ export class PasswordResetService {
       const cutoff = new Date();
       cutoff.setMinutes(cutoff.getMinutes() - this.RESET_COOLDOWN_MINUTES);
 
-      // Find user first
+      // Find user first - only select essential fields
       const [user] = await db
-        .select()
+        .select({
+          id: users.id,
+          email: users.email
+        })
         .from(users)
         .where(eq(users.email, email.toLowerCase()))
         .limit(1);
