@@ -68,7 +68,7 @@ export default function ProductDetail() {
     queryKey: [`/api/products/${id}`],
     enabled: !!id && typeof id === 'string' && id !== '[object Object]',
     refetchOnWindowFocus: true, // Always refetch when user returns to tab
-    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnMount: true, // Always refetch when component mounts
     staleTime: 0, // Always consider data stale for real-time accuracy
     gcTime: 0, // No client-side caching to prevent stale data (v5)
     refetchInterval: 30000, // Auto-refetch every 30 seconds for live updates

@@ -220,12 +220,9 @@ function DashboardContent() {
     enabled: !!user?.id,
     retry: 2,
     staleTime: 30000,
-  });
-
-    staleTime: 0, // Always consider data stale for real-time accuracy
     gcTime: 0, // No client-side caching to prevent stale data
     refetchOnWindowFocus: true, // Always refetch when user returns to tab
-    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnMount: true, // Always refetch when component mounts
   });
 
   const cancelSubmissionMutation = useMutation({
@@ -304,7 +301,8 @@ function DashboardContent() {
   }, [activeTab, saveState]);
 
   useEffect(() => {
-    };
+    // Cleanup effect placeholder
+  }, []);
     
 
   // Update tab change handler
@@ -722,6 +720,7 @@ function DashboardContent() {
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {cartItems.map((item) => (
                     <div key={item.id} className="relative glass rounded-lg overflow-hidden">
                       <SmartLink href={`/products/${item.product.id}`}>
                         <div className="w-full h-48 relative bg-gray-900/30 hover:bg-gray-900/40 transition-colors overflow-hidden">
@@ -742,6 +741,7 @@ function DashboardContent() {
                         </div>
                       </SmartLink>
                       <div className="absolute top-2 right-2">
+                        <WishlistButton
                           productId={item.product.id}
                           size="small"
                           showTooltip={false}

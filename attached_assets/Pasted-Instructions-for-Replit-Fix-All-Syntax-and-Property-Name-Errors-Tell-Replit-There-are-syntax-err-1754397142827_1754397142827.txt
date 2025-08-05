@@ -1,0 +1,161 @@
+Instructions for Replit - Fix All Syntax and Property Name Errors
+Tell Replit:
+"There are syntax errors and incorrect property names throughout the codebase. The specific error shows gcTime which should be cacheTime in React Query v5. Find and fix ALL similar issues.
+IMMEDIATE ISSUE:
+gcTime: 0, // This property doesn't exist - should be cacheTime
+PHASE 1: FIX THE IMMEDIATE ERROR
+In client/src/pages/dashboard.tsx line 226:
+javascript// WRONG
+gcTime: 0,
+
+// CORRECT 
+cacheTime: 0,
+PHASE 2: FIND ALL REACT QUERY PROPERTY ISSUES
+bash# Find all uses of gcTime (incorrect)
+grep -rn "gcTime" --include="*.tsx" --include="*.ts" client/src/
+
+# Find all React Query configurations
+grep -rn "useQuery\|useMutation" -A 5 --include="*.tsx" client/src/ | grep -E "gcTime|staleTime|cacheTime"
+
+# Find potential syntax errors (missing semicolons, etc)
+npx eslint client/src --ext .ts,.tsx --fix
+PHASE 3: COMMON REACT QUERY v5 PROPERTY FIXES
+Replace these throughout the codebase:
+Old (React Query v4) → New (React Query v5):
+
+cacheTime → gcTime (wait, the error shows the opposite!)
+refetchOnMount → accepts boolean, not 'always'
+isLoading → isPending (in some contexts)
+
+But based on your error, it seems you might be using an older version where:
+
+gcTime doesn't exist yet
+Use cacheTime instead
+
+PHASE 4: CHECK REACT QUERY VERSION
+bash# Check which version is installed
+grep -E "react-query|@tanstack/react-query" package.json client/package.json
+PHASE 5: FIX ALL QUERY CONFIGURATIONS
+Find and fix all query configurations:
+javascript// If using @tanstack/react-query v4 or older:
+useQuery({
+  queryKey: ['key'],
+  queryFn: fetchFn,
+  staleTime: 0,
+  cacheTime: 0, // NOT gcTime
+  refetchOnWindowFocus: true,
+  refetchOnMount: true, // boolean, not 'always'
+});
+
+// If somehow using v5 (unlikely based on error):
+useQuery({
+  queryKey: ['key'],
+  queryFn: fetchFn,
+  staleTime: 0,
+  gcTime: 0, // v5 uses gcTime
+  refetchOnWindowFocus: true,
+  refetchOnMount: true,
+});
+PHASE 6: FIX SYNTAX ERRORS
+Run these commands to find and fix syntax issues:
+bash# Run ESLint with autofix
+cd client && npx eslint . --fix
+
+# Check TypeScript for errors
+npx tsc --noEmit
+
+# Find files with potential syntax issues
+grep -rn "^\s*[a-zA-Z_]\+:" --include="*.tsx" client/src/ | grep -v "case\|default\|interface\|type"
+PHASE 7: SYSTEMATIC FIXES
+1. Find all useQuery/useMutation calls:
+bashgrep -rn "useQuery\|useMutation" --include="*.tsx" --include="*.ts" client/src/ > query-usage.txt
+2. Check each for:
+
+Incorrect property names (gcTime vs cacheTime)
+Invalid property values ('always' instead of true)
+Missing commas or semicolons
+Trailing commas in objects
+
+3. Common patterns to fix:
+javascript// WRONG
+{
+  refetchOnMount: 'always', // string not allowed
+  gcTime: 0, // property doesn't exist in v4
+  enabled: user // missing boolean check
+}
+
+// CORRECT
+{
+  refetchOnMount: true, // boolean
+  cacheTime: 0, // correct property name
+  enabled: !!user // explicit boolean
+}
+PHASE 8: PREVENT FUTURE ERRORS
+1. Add TypeScript strict checks:
+json// tsconfig.json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true
+  }
+}
+2. Add ESLint rules:
+json// .eslintrc
+{
+  "rules": {
+    "comma-dangle": ["error", "always-multiline"],
+    "semi": ["error", "always"],
+    "no-unused-vars": "error"
+  }
+}
+PHASE 9: BATCH FIX SCRIPT
+Create a script to fix common issues:
+javascript// fix-query-configs.js
+const fs = require('fs');
+const glob = require('glob');
+
+const files = glob.sync('client/src/**/*.{ts,tsx}');
+
+files.forEach(file => {
+  let content = fs.readFileSync(file, 'utf8');
+  
+  // Fix gcTime -> cacheTime
+  content = content.replace(/gcTime:/g, 'cacheTime:');
+  
+  // Fix refetchOnMount: 'always' -> true
+  content = content.replace(/refetchOnMount:\s*['"]always['"]/g, 'refetchOnMount: true');
+  
+  // Fix other common issues
+  content = content.replace(/staleTime:\s*,/g, 'staleTime: 0,');
+  
+  fs.writeFileSync(file, content);
+});
+PHASE 10: VERIFY ALL FIXES
+After fixing:
+bash# No TypeScript errors
+cd client && npx tsc --noEmit
+
+# No ESLint errors
+npx eslint . --ext .ts,.tsx
+
+# No runtime errors
+npm run dev
+# Check browser console for errors
+IMMEDIATE ACTIONS:
+
+Fix dashboard.tsx line 226: Change gcTime to cacheTime
+Search entire codebase for gcTime and replace with cacheTime
+Fix refetchOnMount: 'always' to refetchOnMount: true
+Run ESLint with autofix
+Check TypeScript compilation
+Test all pages for runtime errors
+
+EXPECTED RESULT:
+
+No syntax errors
+All React Query configs use correct property names
+TypeScript compiles without errors
+No console errors at runtime
+
+The main issue is using gcTime which doesn't exist in React Query v4. Replace ALL instances with cacheTime!"

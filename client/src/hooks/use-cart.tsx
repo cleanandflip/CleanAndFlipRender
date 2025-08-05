@@ -42,7 +42,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     },
     staleTime: 0, // Always fetch fresh
     gcTime: 0, // No client-side caching
-    refetchOnMount: 'always',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
