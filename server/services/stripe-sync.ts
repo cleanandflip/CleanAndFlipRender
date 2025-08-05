@@ -4,7 +4,7 @@ import { products, categories } from '../../shared/schema.js';
 import { eq, isNull, or } from 'drizzle-orm';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-06-30.basil',
 });
 
 interface ProductSyncData {
@@ -58,20 +58,20 @@ export class StripeProductSync {
       }
 
       // Upload images to Stripe first
-      const stripeImageUrls = await this.uploadImagesToStripe(product.images);
+      const stripeImageUrls = await this.uploadImagesToStripe(product.images || []);
 
       // Prepare product data for Stripe
       const stripeProductData = {
         name: product.name,
         description: product.description || `${product.brand || ''} ${product.condition || ''} condition`.trim(),
         images: stripeImageUrls,
-        active: product.stock > 0,
+        active: (product.stock || 0) > 0,
         metadata: {
           product_id: product.id,
           brand: product.brand || '',
           condition: product.condition || '',
           category: product.category || '',
-          stock: String(product.stock),
+          stock: String(product.stock || 0),
           sku: product.sku || '',
           weight: product.weight ? String(product.weight) : '',
           dimensions: product.dimensions ? JSON.stringify(product.dimensions) : ''
@@ -81,10 +81,10 @@ export class StripeProductSync {
           product.dimensions.height && 
           product.dimensions.length && 
           product.dimensions.width ? {
-          height: parseFloat(product.dimensions.height) || 1,
-          length: parseFloat(product.dimensions.length) || 1,
+          height: parseFloat(String(product.dimensions.height)) || 1,
+          length: parseFloat(String(product.dimensions.length)) || 1,
           weight: product.weight || 1000, // Default 1kg
-          width: parseFloat(product.dimensions.width) || 1
+          width: parseFloat(String(product.dimensions.width)) || 1
         } : undefined
       };
 
@@ -106,7 +106,7 @@ export class StripeProductSync {
       }
 
       // Handle price updates
-      const priceInCents = Math.round(product.price * 100);
+      const priceInCents = Math.round(Number(product.price) * 100);
       
       if (product.stripePriceId) {
         // Check if price changed

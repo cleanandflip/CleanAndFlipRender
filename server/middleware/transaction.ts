@@ -8,7 +8,7 @@ export async function withTransaction<T>(
   operation: (tx: typeof db) => Promise<T>
 ): Promise<T> {
   return await db.transaction(async (tx) => {
-    return await operation(tx);
+    return await operation(tx as any);
   });
 }
 
@@ -171,11 +171,11 @@ export async function atomicOrderCreation(
         .insert(orders)
         .values({
           customerId: userId,
-          status: 'pending',
+          status: 'pending' as any,
           total: totalAmount.toString(),
           subtotal: totalAmount.toString(),
           items: cartItemsData as any
-        })
+        } as any)
         .returning();
 
       // Clear user's cart

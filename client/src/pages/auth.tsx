@@ -93,15 +93,12 @@ export default function AuthPage() {
       confirmPassword,
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
-      phone: formData.get("phone") as string,
-      street: addressData.street,
-      city: addressData.city,
-      state: addressData.state,
-      zipCode: addressData.zipCode,
-      latitude: addressData.latitude,
-      longitude: addressData.longitude,
-      isLocalCustomer
-    } as RegisterData);
+      phone: (formData.get("phone") as string) || undefined,
+      latitude: addressData.latitude || undefined,
+      longitude: addressData.longitude || undefined,
+      isLocalCustomer,
+      fullAddress: `${addressData.street}, ${addressData.city}, ${addressData.state} ${addressData.zipCode}`
+    } as any);
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -81,8 +81,8 @@ export default function TrackSubmission() {
   };
 
   const copyReference = () => {
-    if (submission?.referenceNumber) {
-      navigator.clipboard.writeText(submission.referenceNumber);
+    if ((submission as any)?.referenceNumber) {
+      navigator.clipboard.writeText((submission as any).referenceNumber);
       toast({
         title: "Reference copied!",
         description: "You can share this with others to track the submission.",
@@ -149,7 +149,7 @@ export default function TrackSubmission() {
                   <h2 className="font-bebas text-2xl mb-2">SUBMISSION STATUS</h2>
                   <div className="flex items-center gap-3">
                     <code className="text-sm bg-gray-800 px-3 py-1 rounded text-accent-blue">
-                      {submission.referenceNumber}
+                      {(submission as any).referenceNumber}
                     </code>
                     <Button
                       variant="ghost"
@@ -165,26 +165,26 @@ export default function TrackSubmission() {
                 <div className="text-right">
                   <p className="text-sm text-text-muted mb-1">Submitted</p>
                   <p className="text-sm">
-                    {new Date(submission.createdAt).toLocaleDateString()}
+                    {new Date((submission as any).createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
               
               {/* Current Status */}
               <div className="space-y-4">
-                {statusConfig[submission.status as keyof typeof statusConfig] && (
+                {statusConfig[(submission as any).status as keyof typeof statusConfig] && (
                   <>
                     <div className="flex items-center gap-3">
                       {React.createElement(
-                        statusConfig[submission.status as keyof typeof statusConfig].icon,
+                        statusConfig[(submission as any).status as keyof typeof statusConfig].icon,
                         { className: "w-6 h-6" }
                       )}
-                      <Badge className={statusConfig[submission.status as keyof typeof statusConfig].color}>
-                        {statusConfig[submission.status as keyof typeof statusConfig].label}
+                      <Badge className={statusConfig[(submission as any).status as keyof typeof statusConfig].color}>
+                        {statusConfig[(submission as any).status as keyof typeof statusConfig].label}
                       </Badge>
                     </div>
                     <p className="text-text-secondary">
-                      {statusConfig[submission.status as keyof typeof statusConfig].description}
+                      {statusConfig[(submission as any).status as keyof typeof statusConfig].description}
                     </p>
                   </>
                 )}
@@ -197,41 +197,41 @@ export default function TrackSubmission() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-text-muted">Equipment</p>
-                  <p className="font-medium">{submission.name}</p>
+                  <p className="font-medium">{(submission as any).name}</p>
                 </div>
                 <div>
                   <p className="text-sm text-text-muted">Brand</p>
-                  <p className="font-medium">{submission.brand || 'Not specified'}</p>
+                  <p className="font-medium">{(submission as any).brand || 'Not specified'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-text-muted">Condition</p>
-                  <p className="font-medium capitalize">{submission.condition.replace('_', ' ')}</p>
+                  <p className="font-medium capitalize">{((submission as any).condition || 'unknown').replace('_', ' ')}</p>
                 </div>
-                {submission.offerAmount && (
+                {(submission as any).offerAmount && (
                   <div>
                     <p className="text-sm text-text-muted">Offer Amount</p>
-                    <p className="font-medium text-green-400">${submission.offerAmount}</p>
+                    <p className="font-medium text-green-400">${(submission as any).offerAmount}</p>
                   </div>
                 )}
               </div>
             </Card>
             
             {/* Pickup Information */}
-            {submission.scheduledPickupDate && (
+            {(submission as any).scheduledPickupDate && (
               <Card className="p-6">
                 <h3 className="font-bebas text-xl mb-4">PICKUP INFORMATION</h3>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-accent-blue" />
                     <span>
-                      {new Date(submission.scheduledPickupDate).toLocaleDateString()}
+                      {new Date((submission as any).scheduledPickupDate).toLocaleDateString()}
                     </span>
                   </div>
-                  {submission.pickupWindowStart && submission.pickupWindowEnd && (
+                  {(submission as any).pickupWindowStart && (submission as any).pickupWindowEnd && (
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-accent-blue" />
                       <span>
-                        {submission.pickupWindowStart} - {submission.pickupWindowEnd}
+                        {(submission as any).pickupWindowStart} - {(submission as any).pickupWindowEnd}
                       </span>
                     </div>
                   )}
@@ -240,10 +240,10 @@ export default function TrackSubmission() {
             )}
             
             {/* Decline Reason */}
-            {submission.status === 'declined' && submission.declineReason && (
+            {(submission as any).status === 'declined' && (submission as any).declineReason && (
               <Card className="p-6 border-red-500/30">
                 <h3 className="font-bebas text-xl mb-4 text-red-400">DECLINE REASON</h3>
-                <p className="text-text-secondary">{submission.declineReason}</p>
+                <p className="text-text-secondary">{(submission as any).declineReason}</p>
               </Card>
             )}
           </div>

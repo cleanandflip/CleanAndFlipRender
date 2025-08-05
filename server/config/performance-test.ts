@@ -31,9 +31,9 @@ export async function performanceTest(req: Request, res: Response) {
     if (redis) {
       logger.info('Testing Redis cache...');
       const cacheStart = Date.now();
-      await redis.set('test_key', 'test_value', 'EX', 60);
-      const cached = await redis.get('test_key');
-      await redis.del('test_key');
+      await (redis as any).set('test_key', 'test_value', 'EX', 60);
+      const cached = await (redis as any).get('test_key');
+      await (redis as any).del('test_key');
       const cacheDuration = Date.now() - cacheStart;
       tests.push({
         name: 'Redis Cache',

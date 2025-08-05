@@ -199,8 +199,8 @@ export default function Orders() {
               <Card key={order.id} className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg ${getStatusColor(order.status)} text-white`}>
-                      {getStatusIcon(order.status)}
+                    <div className={`p-2 rounded-lg ${getStatusColor(order.status || 'pending')} text-white`}>
+                      {getStatusIcon(order.status || 'pending')}
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">Order #{order.id.slice(-8)}</h3>
@@ -218,8 +218,8 @@ export default function Orders() {
                   
                   <div className="text-right">
                     <div className="text-2xl font-bold">${order.total}</div>
-                    <Badge className={`${getStatusColor(order.status)} text-white mt-1`}>
-                      {order.status.replace('_', ' ').toUpperCase()}
+                    <Badge className={`${getStatusColor(order.status || 'pending')} text-white mt-1`}>
+                      {(order.status || 'pending').replace('_', ' ').toUpperCase()}
                     </Badge>
                   </div>
                 </div>

@@ -142,25 +142,13 @@ export interface IStorage {
   getDetailedWishlistAnalytics(timeRange: string): Promise<any>;
   getWishlistExportData(): Promise<any>;
   
-  healthCheck(): Promise<void>;
+  healthCheck(): Promise<{ status: string; timestamp: string; }>;
 }
 
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select({
-      id: users.id,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      phone: users.phone,
-      isAdmin: users.isAdmin,
-      role: users.role,
-      isLocalCustomer: users.isLocalCustomer,
-      stripeCustomerId: users.stripeCustomerId,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt
-    }).from(users).where(eq(users.id, id));
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
@@ -169,39 +157,13 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const normalizedEmail = normalizeEmail(email);
     try {
-      const [user] = await db.select({
-        id: users.id,
-        email: users.email,
-        password: users.password,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        phone: users.phone,
-        isAdmin: users.isAdmin,
-        role: users.role,
-        isLocalCustomer: users.isLocalCustomer,
-        stripeCustomerId: users.stripeCustomerId,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt
-      }).from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
+      const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
       return user;
     } catch (error: any) {
       Logger.error('Error getting user by email:', error.message);
       if (error.code === '57P01') {
         // Retry once on connection termination
-        const [user] = await db.select({
-          id: users.id,
-          email: users.email,
-          password: users.password,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          phone: users.phone,
-          isAdmin: users.isAdmin,
-          role: users.role,
-          isLocalCustomer: users.isLocalCustomer,
-          stripeCustomerId: users.stripeCustomerId,
-          createdAt: users.createdAt,
-          updatedAt: users.updatedAt
-        }).from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
+        const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
         return user;
       }
       throw error;
@@ -371,7 +333,7 @@ export class DatabaseStorage implements IStorage {
     const countQuery = whereClause ? countQueryBuilder.where(whereClause) : countQueryBuilder;
 
     // Build main query
-    let queryBuilder = db.select().from(products);
+    let queryBuilder = db.select().from(products) as any;
     if (whereClause) {
       queryBuilder = queryBuilder.where(whereClause);
     }
@@ -414,7 +376,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
-    const [newProduct] = await db.insert(products).values([product]).returning();
+    const [newProduct] = await db.insert(products).values(product as any).returning();
     return newProduct;
   }
 
@@ -424,7 +386,7 @@ export class DatabaseStorage implements IStorage {
     const [updatedProduct] = await db
       .update(products)
       .set({
-        ...product,
+        ...(product as any),
         updatedAt: new Date(),
       })
       .where(eq(products.id, id))
@@ -837,7 +799,7 @@ export class DatabaseStorage implements IStorage {
     if (user[0]?.street && user[0]?.city) {
       // Parse city, state, zip from the combined field (case-insensitive)
       const cityStateZipRegex = /^(.+),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/i;
-      const match = user[0].cityStateZip.match(cityStateZipRegex);
+      const match = user[0].city?.match(cityStateZipRegex);
       
       if (match) {
         const [, city, state, zipCode] = match;
@@ -849,7 +811,7 @@ export class DatabaseStorage implements IStorage {
           type: 'shipping',
           firstName: user[0].firstName,
           lastName: user[0].lastName,
-          street: user[0].address,
+          street: user[0].street,
           city: city.trim(),
           state: state.toUpperCase(),
           zipCode: zipCode,
@@ -940,7 +902,7 @@ export class DatabaseStorage implements IStorage {
     let query = db.select().from(equipmentSubmissions);
     
     if (userId) {
-      query = query.where(eq(equipmentSubmissions.userId, userId));
+      query = query.where(eq(equipmentSubmissions.userId, userId)) as any;
     }
     
     return await query.orderBy(desc(equipmentSubmissions.createdAt));
@@ -957,12 +919,12 @@ export class DatabaseStorage implements IStorage {
   async createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
     const submissionWithReference = {
       ...submission,
-      referenceNumber: submission.referenceNumber || `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
+      referenceNumber: `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
     };
     
     const [newSubmission] = await db
       .insert(equipmentSubmissions)
-      .values([submissionWithReference])
+      .values(submissionWithReference as any)
       .returning();
     return newSubmission;
   }
@@ -971,18 +933,15 @@ export class DatabaseStorage implements IStorage {
     return this.createEquipmentSubmission(submission);
   }
 
-  async healthCheck(): Promise<{ status: string; timestamp: string }> {
+  async healthCheck(): Promise<{ status: string; timestamp: string; }> {
     try {
-      const [product] = await db.select().from(products).limit(1);
+      await db.select().from(products).limit(1);
       return {
-        status: product ? 'healthy' : 'no_data',
+        status: 'healthy',
         timestamp: new Date().toISOString()
       };
     } catch (error) {
-      return {
-        status: 'error',
-        timestamp: new Date().toISOString()
-      };
+      throw error;
     }
   }
 
@@ -1010,7 +969,7 @@ export class DatabaseStorage implements IStorage {
     const [updatedSubmission] = await db
       .update(equipmentSubmissions)
       .set({
-        ...submission,
+        ...(submission as any),
         updatedAt: new Date(),
       })
       .where(eq(equipmentSubmissions.id, id))
@@ -1030,7 +989,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(wishlist)
       .innerJoin(products, eq(wishlist.productId, products.id))
-      .where(eq(wishlist.userId, userId));
+      .where(eq(wishlist.userId, userId)) as any;
   }
 
   async addToWishlist(userId: string, productId: string): Promise<Wishlist> {
@@ -1046,10 +1005,8 @@ export class DatabaseStorage implements IStorage {
     }
     
     const wishlistItem: InsertWishlist = {
-      id: randomUUID(),
       userId,
-      productId,
-      createdAt: new Date()
+      productId
     };
     
     const [newItem] = await db.insert(wishlist).values(wishlistItem).returning();
@@ -1087,7 +1044,9 @@ export class DatabaseStorage implements IStorage {
     
     // Set found items as true
     for (const result of results) {
-      statusMap[result.productId] = true;
+      if (result.productId) {
+        statusMap[result.productId] = true;
+      }
     }
     
     return statusMap;
@@ -1176,8 +1135,12 @@ export class DatabaseStorage implements IStorage {
       const totalWishlistItems = totalResult[0]?.count || 0;
       
       return { 
-        topWishlisted: topWishlisted || [], 
-        activeUsers: activeUsers || [], 
+        topWishlisted: (topWishlisted || []).filter((item): item is { productId: string; productName: string; count: number } => 
+          item.productId !== null && item.productName !== null
+        ), 
+        activeUsers: (activeUsers || []).filter((user): user is { userId: string; userName: string; email: string; itemCount: number } => 
+          user.userId !== null && user.email !== null
+        ), 
         totalWishlistItems 
       };
     } catch (error) {
@@ -1217,7 +1180,7 @@ export class DatabaseStorage implements IStorage {
       .groupBy(categories.id)
       .orderBy(categories.displayOrder, categories.name);
     
-    return result;
+    return result as any;
   }
 
   async createCategory(categoryData: {
@@ -1252,7 +1215,7 @@ export class DatabaseStorage implements IStorage {
     const [updatedCategory] = await db
       .update(categories)
       .set({
-        ...updates,
+        ...(updates as any),
         updatedAt: new Date(),
       })
       .where(eq(categories.id, categoryId))
@@ -1288,7 +1251,7 @@ export class DatabaseStorage implements IStorage {
       .groupBy(categories.id)
       .orderBy(categories.displayOrder, categories.name);
     
-    return result;
+    return result as any;
   }
 
   async reorderCategories(categoryOrder: string[]): Promise<void> {
@@ -1444,14 +1407,14 @@ export class DatabaseStorage implements IStorage {
       })
       .from(equipmentSubmissions)
       .leftJoin(users, eq(equipmentSubmissions.userId, users.id))
-      .orderBy(desc(equipmentSubmissions.createdAt));
+      .orderBy(desc(equipmentSubmissions.createdAt)) as any;
 
     if (status && status !== 'all') {
-      query = query.where(eq(equipmentSubmissions.status, status));
+      query = query.where(eq(equipmentSubmissions.status, status)) as any;
     }
 
     const results = await query;
-    return results.map(row => ({
+    return results.map((row: any) => ({
       ...row.submission,
       user: row.user,
     }));

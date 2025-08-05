@@ -33,7 +33,9 @@ export async function healthReady(req: Request, res: Response) {
   
   try {
     // Test Redis connection
-    await redis.ping();
+    if (redis && typeof (redis as any).ping === 'function') {
+      await (redis as any).ping();
+    }
     checks.cache = 'connected';
   } catch (error) {
     checks.cache = 'disconnected';

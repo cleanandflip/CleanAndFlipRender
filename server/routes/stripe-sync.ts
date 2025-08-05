@@ -13,7 +13,7 @@ router.post('/sync-all', async (req, res) => {
     res.json({ success: true, message: 'All products synced to Stripe' });
   } catch (error) {
     console.error('Sync all products error:', error);
-    res.status(500).json({ error: 'Failed to sync products', details: error.message });
+    res.status(500).json({ error: 'Failed to sync products', details: (error as any).message });
   }
 });
 

@@ -368,8 +368,13 @@ export default function Contact() {
                       href="mailto:support@cleanandflip.com"
                       className="transition-colors"
                       style={{ 
-                        color: theme.colors.text.secondary,
-                        ':hover': { color: theme.colors.brand.blue }
+                        color: theme.colors.text.secondary
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLElement).style.color = theme.colors.brand.blue;
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLElement).style.color = theme.colors.text.secondary;
                       }}
                     >
                       support@cleanandflip.com
@@ -394,8 +399,13 @@ export default function Contact() {
                       href="tel:+18285550123"
                       className="transition-colors"
                       style={{ 
-                        color: theme.colors.text.secondary,
-                        ':hover': { color: theme.colors.brand.green }
+                        color: theme.colors.text.secondary
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLElement).style.color = theme.colors.brand.green;
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLElement).style.color = theme.colors.text.secondary;
                       }}
                     >
                       (828) 555-0123
