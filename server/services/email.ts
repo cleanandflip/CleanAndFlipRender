@@ -213,13 +213,13 @@ export class EmailService {
   }
 
   // Specific methods for each email type
-  async sendPasswordReset(email: string, resetToken: string): Promise<boolean> {
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+  async sendPasswordReset(email: string, resetToken: string, resetUrl?: string): Promise<boolean> {
+    const finalResetUrl = resetUrl || `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
     
     return this.send('password_reset', {
       to: email,
       subject: 'Reset Your Clean & Flip Password',
-      resetUrl,
+      resetUrl: finalResetUrl,
       resetToken
     });
   }

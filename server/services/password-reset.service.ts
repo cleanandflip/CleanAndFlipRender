@@ -61,10 +61,17 @@ export class PasswordResetService {
         userAgent,
       });
 
+      // Create reset link with production URL
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://cleanandflip.com'
+        : process.env.FRONTEND_URL || 'http://localhost:5000';
+        
+      const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
+
+      console.log('Generated reset link:', resetLink);
+
       // Send password reset email
-      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${token}`;
-      
-      await emailService.sendPasswordReset(user.email, token);
+      await emailService.sendPasswordReset(user.email, token, resetLink);
 
       // Log security event
       await this.logSecurityEvent(user.id, 'password_reset_requested', ipAddress);
@@ -78,7 +85,7 @@ export class PasswordResetService {
     }
   }
 
-  static async validateToken(token: string) {
+  static async validateToken(token: string, email?: string) {
     try {
       const now = new Date();
       
@@ -97,49 +104,61 @@ export class PasswordResetService {
       for (const resetToken of tokens) {
         const isValid = await bcrypt.compare(token, resetToken.token);
         if (isValid) {
-          // Get user email
+          // Get user details
           const [user] = await db
-            .select()
+            .select({
+              id: users.id,
+              email: users.email,
+              firstName: users.firstName
+            })
             .from(users)
             .where(eq(users.id, resetToken.userId))
             .limit(1);
 
-          return { 
-            valid: true, 
-            email: user?.email,
-            userId: resetToken.userId,
-            tokenId: resetToken.id
+          // Verify email matches if provided
+          if (email && user.email !== email.toLowerCase()) {
+            return { valid: false, error: 'Invalid token or email combination' };
+          }
+
+          return {
+            valid: true,
+            tokenId: resetToken.id,
+            userId: user.id,
+            email: user.email,
+            expiresAt: resetToken.expiresAt
           };
         }
       }
 
-      return { valid: false };
+      return { valid: false, error: 'Invalid or expired token' };
       
     } catch (error) {
       logger.error('Error validating password reset token:', error);
-      return { valid: false };
+      return { valid: false, error: 'Token validation failed' };
     }
   }
 
   static async resetPassword(
     token: string, 
     newPassword: string, 
+    email: string,
     ipAddress: string
   ) {
     try {
-      // Validate token
-      const validation = await this.validateToken(token);
-      if (!validation.valid || !validation.userId) {
-        throw new Error('Invalid or expired token');
+      // Validate token with email
+      const validation = await this.validateToken(token, email);
+      
+      if (!validation.valid) {
+        throw new Error(validation.error || 'Invalid or expired reset token');
       }
 
       // Hash new password
       const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-      // Update password in database
+      // Update user password
       await db
         .update(users)
-        .set({ 
+        .set({
           password: hashedPassword,
           updatedAt: new Date()
         })
@@ -148,36 +167,19 @@ export class PasswordResetService {
       // Mark token as used
       await db
         .update(passwordResetTokens)
-        .set({ 
+        .set({
           used: true,
           usedAt: new Date()
         })
-        .where(eq(passwordResetTokens.id, validation.tokenId!));
-
-      // Send confirmation email
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, validation.userId))
-        .limit(1);
-
-      if (user) {
-        // For now, just log success - email method will be added later
-        logger.info(`Password reset success notification for user: ${user.email}`);
-      }
+        .where(eq(passwordResetTokens.id, validation.tokenId));
 
       // Log security event
-      await this.logSecurityEvent(
-        validation.userId, 
-        'password_reset_completed', 
-        ipAddress
-      );
+      await this.logSecurityEvent(validation.userId, 'password_reset_completed', ipAddress);
 
       logger.info(`Password reset completed for user: ${validation.userId} from IP: ${ipAddress}`);
-      return { message: 'Password reset successful' };
-      
+      return { success: true, message: 'Password successfully reset' };
     } catch (error) {
-      logger.error('Error resetting password:', error);
+      logger.error('Password reset error:', error);
       throw error;
     }
   }
@@ -187,6 +189,7 @@ export class PasswordResetService {
       const cutoff = new Date();
       cutoff.setMinutes(cutoff.getMinutes() - this.RESET_COOLDOWN_MINUTES);
 
+      // Find user first
       const [user] = await db
         .select()
         .from(users)

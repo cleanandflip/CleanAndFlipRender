@@ -2849,30 +2849,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Validate reset token endpoint (POST for email validation)
+  app.post("/api/auth/validate-reset-token", async (req, res) => {
+    try {
+      const { token, email } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ valid: false, error: 'Token is required' });
+      }
+
+      const result = await PasswordResetService.validateToken(token, email);
+      res.json(result);
+    } catch (error: any) {
+      logger.error('Token validation error:', error);
+      res.json({ valid: false, error: 'Token validation failed' });
+    }
+  });
+
   // Reset password with token
   app.post("/api/auth/reset-password", async (req, res) => {
     try {
-      const { token, newPassword } = req.body;
+      const { token, password, newPassword, email } = req.body;
+      const finalPassword = password || newPassword; // Support both field names
       
-      if (!token || !newPassword) {
-        return res.status(400).json({ error: 'Token and new password are required' });
+      if (!token || !finalPassword) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Token and password are required' 
+        });
       }
       
-      if (newPassword.length < 8) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+      if (finalPassword.length < 8) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Password must be at least 8 characters long' 
+        });
       }
 
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
 
       const result = await PasswordResetService.resetPassword(
         token,
-        newPassword,
+        finalPassword,
+        email,
         ipAddress
       );
 
       res.json(result);
     } catch (error: any) {
       logger.error('Password reset error:', error);
+      res.status(400).json({ 
+        success: false, 
+        error: error.message || 'Password reset failed' 
+      });
       
       if (error.message.includes('Invalid or expired token')) {
         return res.status(400).json({ error: error.message });
