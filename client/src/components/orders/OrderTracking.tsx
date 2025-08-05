@@ -146,7 +146,7 @@ export function OrderTracking({ orderId, orderNumber, className = '' }: OrderTra
             </div>
             {currentEvent.carrier && (
               <a
-                href={getCarrierTrackingUrl(currentEvent.carrier, currentEvent.trackingNumber)}
+                href={getCarrierTrackingUrl(currentEvent.carrier, currentEvent.trackingNumber || '')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-accent-blue hover:text-accent-blue/80 text-sm font-medium"

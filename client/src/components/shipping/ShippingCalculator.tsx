@@ -41,7 +41,7 @@ export function ShippingCalculator({
   const calculateShippingMutation = useMutation({
     mutationFn: async (data: { zipCode: string; cartTotal: number; cartWeight: number }) => {
       const response = await apiRequest("POST", "/api/shipping/calculate", data);
-      return response;
+      return response as unknown as ShippingOption[];
     },
     onSuccess: (options: ShippingOption[]) => {
       setShippingOptions(options);

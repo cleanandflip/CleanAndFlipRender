@@ -32,7 +32,7 @@ export function CouponInput({ onCouponApplied, appliedCoupon, orderTotal }: Coup
         code: code.toUpperCase(),
         orderTotal 
       });
-      return response;
+      return response as unknown as Coupon;
     },
     onSuccess: (coupon) => {
       onCouponApplied(coupon);

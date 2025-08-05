@@ -21,10 +21,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     gcTime: 1000 * 60 * 10, // 10 minutes
     refetchOnWindowFocus: false, // Prevent excessive calls
     refetchOnMount: !authChecked, // Only refetch on mount if not checked
-    enabled: !authChecked, // Control when query runs
-    onSettled: () => {
-      setAuthChecked(true);
-    }
+    enabled: !authChecked // Control when query runs
+
   });
 
   const value: AuthContextType = {

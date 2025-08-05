@@ -46,7 +46,7 @@ export function CleanSearchBar({
   const [isLoading, setIsLoading] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLInputElement>(null);
   
   // Safe portal hook to prevent removeChild errors
   const { portalRoot, isReady } = useSafePortal();

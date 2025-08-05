@@ -4,7 +4,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/shared/AnimatedComponents";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Search, Clock, TrendingUp, X } from "lucide-react";
 
 interface SearchSuggestion {
@@ -42,7 +42,7 @@ export function EnhancedSearch({
   const debouncedQuery = useDebounce(query, 300);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   // Get search suggestions
   const { data: suggestions = [] } = useQuery<SearchSuggestion[]>({
@@ -100,7 +100,7 @@ export function EnhancedSearch({
     if (onSearch) {
       onSearch(searchQuery);
     } else {
-      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+      setLocation(`/products?search=${encodeURIComponent(searchQuery)}`);
     }
   };
 

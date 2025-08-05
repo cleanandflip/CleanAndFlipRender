@@ -53,7 +53,11 @@ export function CategoryModal({
         slug: category.slug || '',
         description: category.description || '',
         displayOrder: category.displayOrder || 0,
-        isActive: category.isActive ?? true
+        isActive: category.isActive ?? true,
+        icon: '',
+        seoTitle: '',
+        seoDescription: '',
+        featuredImageUrl: ''
       });
     } else {
       setFormData({
@@ -61,7 +65,11 @@ export function CategoryModal({
         slug: '',
         description: '',
         displayOrder: 0,
-        isActive: true
+        isActive: true,
+        icon: '',
+        seoTitle: '',
+        seoDescription: '',
+        featuredImageUrl: ''
       });
     }
   }, [category, isOpen]);
@@ -89,14 +97,14 @@ export function CategoryModal({
     try {
       if (category) {
         const updated = await apiRequest(`/api/admin/categories/${category.id}`, 'PUT', formData);
-        onCategoryUpdated?.(updated as Category);
+        onCategoryUpdated?.(updated as unknown as Category);
         toast({
           title: "Category Updated",
           description: "Category has been successfully updated."
         });
       } else {
         const created = await apiRequest('/api/admin/categories', 'POST', formData);
-        onCategoryCreated?.(created as Category);
+        onCategoryCreated?.(created as unknown as Category);
         toast({
           title: "Category Created",
           description: "New category has been successfully created."
