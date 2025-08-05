@@ -82,7 +82,7 @@ export default function Home() {
                 <DollarSign 
                   className="mb-6 mx-auto" 
                   size={64} 
-                  style={{ color: theme.colors.brand.green }}
+                  style={{ color: '#10B981' }}
                 />
                 <h2 
                   className="font-bebas text-4xl mb-3"
