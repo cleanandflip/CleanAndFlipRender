@@ -28,8 +28,9 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, viewMode = 'grid', compact = false, isWishlisted = false }: ProductCardProps) {
-  // All logic now handled by unified components
-  const mainImage = product.images?.[0];
+  // Handle both string URLs and image objects with url property
+  const imageData = product.images?.[0];
+  const mainImage = typeof imageData === 'string' ? imageData : (imageData as any)?.url;
   const hasImage = mainImage && mainImage.length > 0;
 
   if (compact) {
@@ -194,8 +195,11 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
               />
             ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-4xl mb-2 group-hover:animate-bounce-subtle">📦</div>
+              <div className="flex flex-col items-center justify-center h-full bg-gray-900/50">
+                <div className="text-center text-gray-400">
+                  <div className="text-4xl mb-2 group-hover:animate-bounce-subtle">📦</div>
+                  <div className="text-xs font-medium">No Image</div>
+                </div>
               </div>
             )}
             

@@ -114,13 +114,16 @@ export default function Wishlist() {
                     <div className="aspect-square bg-gray-900/30 overflow-hidden">
                       {product.images && product.images.length > 0 ? (
                         <img 
-                          src={product.images[0]}
+                          src={typeof product.images[0] === 'string' ? product.images[0] : (product.images[0] as any)?.url}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <div className="text-4xl">📦</div>
+                        <div className="flex items-center justify-center h-full bg-gray-900/50">
+                          <div className="text-center text-gray-400">
+                            <div className="text-4xl mb-2">📦</div>
+                            <div className="text-xs font-medium">No Image</div>
+                          </div>
                         </div>
                       )}
                     </div>
