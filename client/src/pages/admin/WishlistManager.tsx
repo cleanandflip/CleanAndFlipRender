@@ -129,7 +129,12 @@ export function WishlistManager() {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        // Safe removal with timeout to prevent race conditions
+        setTimeout(() => {
+          if (a.parentNode === document.body) {
+            document.body.removeChild(a);
+          }
+        }, 100);
       }
     } catch (error) {
       toast({ title: "Export failed", variant: "destructive" });

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom';
 import { Search, X, Clock, TrendingUp, Package, Sparkles, Loader2, ShoppingCart, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSafePortal } from '@/hooks/useSafePortal';
 import { useLocation } from 'wouter';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash-es';
@@ -49,6 +50,9 @@ export function UnifiedSearchBar({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  
+  // Safe portal hook to prevent removeChild errors
+  const { portalRoot, isReady } = useSafePortal();
 
   // Popular search terms
   const popularSearches = ['Barbell', 'Dumbbells', 'Power Rack', 'Bench Press', 'Kettlebell', 'Resistance Bands'];
@@ -511,36 +515,49 @@ export function UnifiedSearchBar({
         </AnimatePresence>
       </div>
 
-      {/* Portal Dropdown */}
-      {isOpen && createPortal(
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/20" 
-            style={{ zIndex: 999998 }}
-            onClick={() => setIsOpen(false)}
-          />
-          
-          {/* Dropdown Content */}
-          <div 
-            ref={dropdownRef}
-            className="rounded-lg overflow-hidden max-h-96 overflow-y-auto"
-            style={{
-              position: 'fixed',
-              top: dropdownPosition.top,
-              left: dropdownPosition.left,
-              width: dropdownPosition.width,
-              zIndex: 999999,
-              background: 'rgba(75, 85, 99, 0.4)',
-              border: '1px solid rgba(156, 163, 175, 0.4)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)'
-            }}
-          >
-            {renderDropdownContent()}
-          </div>
-        </>,
-        document.body
+      {/* Safe Portal Dropdown */}
+      {isReady && portalRoot && createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div 
+                key="backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/20" 
+                style={{ zIndex: 999998 }}
+                onClick={() => setIsOpen(false)}
+              />
+              
+              {/* Dropdown Content */}
+              <motion.div 
+                key="dropdown"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                ref={dropdownRef}
+                className="rounded-lg overflow-hidden max-h-96 overflow-y-auto"
+                style={{
+                  position: 'fixed',
+                  top: dropdownPosition.top,
+                  left: dropdownPosition.left,
+                  width: dropdownPosition.width,
+                  zIndex: 999999,
+                  background: 'rgba(75, 85, 99, 0.4)',
+                  border: '1px solid rgba(156, 163, 175, 0.4)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)'
+                }}
+              >
+                {renderDropdownContent()}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        portalRoot
       )}
     </div>
   );

@@ -307,8 +307,13 @@ function SystemSettings() {
       a.download = `${type}-export-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      // Safe removal with timeout to prevent race conditions
+      setTimeout(() => {
+        if (a.parentNode === document.body) {
+          document.body.removeChild(a);
+        }
+      }, 100);
       
       toast({ description: `${type} data exported successfully` });
     } catch (error) {

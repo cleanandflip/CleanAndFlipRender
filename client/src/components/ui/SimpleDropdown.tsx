@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSafePortal } from '@/hooks/useSafePortal';
 
 interface SimpleDropdownProps {
   trigger: ReactNode;
@@ -21,6 +22,9 @@ export function SimpleDropdown({
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Safe portal hook to prevent removeChild errors
+  const { portalRoot, isReady } = useSafePortal();
 
   useEffect(() => {
     if (isOpen && triggerRef.current) {
@@ -68,27 +72,30 @@ export function SimpleDropdown({
         {trigger}
       </div>
       
-      {isOpen && createPortal(
+      {isReady && portalRoot && createPortal(
         <AnimatePresence>
-          <motion.div
-            ref={dropdownRef}
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className={`fixed z-[999999] ${className}`}
-            style={{
-              top: `${position.top}px`,
-              left: `${position.left}px`,
-              width: `${position.width}px`,
-            }}
-          >
-            <div className="simple-dropdown-content">
-              {children}
-            </div>
-          </motion.div>
+          {isOpen && (
+            <motion.div
+              ref={dropdownRef}
+              key="dropdown"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15 }}
+              className={`fixed z-[999999] ${className}`}
+              style={{
+                top: `${position.top}px`,
+                left: `${position.left}px`,
+                width: `${position.width}px`,
+              }}
+            >
+              <div className="simple-dropdown-content">
+                {children}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>,
-        document.body
+        portalRoot
       )}
     </>
   );

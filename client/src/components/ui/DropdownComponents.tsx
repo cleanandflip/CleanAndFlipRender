@@ -1,6 +1,7 @@
 import React, { ReactNode, useRef, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSafePortal } from '@/hooks/useSafePortal';
 
 interface DropdownProps {
   isOpen: boolean;
@@ -31,6 +32,9 @@ export function Dropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Safe portal hook to prevent removeChild errors
+  const { portalRoot, isReady } = useSafePortal();
 
   // Update position when opening
   const updatePosition = useCallback(() => {
@@ -119,31 +123,33 @@ export function Dropdown({
     }
   }, [isOpen, isMobile, modal, onClose]);
 
-  const dropdown = isOpen && createPortal(
+  const dropdown = isReady && portalRoot && createPortal(
     <AnimatePresence mode="wait">
-      <motion.div
-        ref={dropdownRef}
-        key="dropdown"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.15, ease: 'easeOut' }}
-        className={`fixed z-[999999] ${className}`}
-        style={{
-          top: `${position.top}px`,
-          left: `${position.left}px`,
-          width: `${position.width}px`,
-          transformOrigin: '0 0',
-        }}
-      >
-        <div className={`dropdown-container ${isMobile ? 'dropdown-container-mobile' : ''}`}>
-          <div className="dropdown-scrollbar overflow-y-auto max-h-[70vh]">
-            {children}
+      {isOpen && (
+        <motion.div
+          ref={dropdownRef}
+          key="dropdown"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+          className={`fixed z-[999999] ${className}`}
+          style={{
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+            width: `${position.width}px`,
+            transformOrigin: '0 0',
+          }}
+        >
+          <div className={`dropdown-container ${isMobile ? 'dropdown-container-mobile' : ''}`}>
+            <div className="dropdown-scrollbar overflow-y-auto max-h-[70vh]">
+              {children}
+            </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>,
-    document.body
+    portalRoot
   );
 
   return (

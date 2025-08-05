@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X, Clock, TrendingUp, Package } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSafePortal } from '@/hooks/useSafePortal';
 // Format price utility function
 const formatCurrency = (price: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -45,6 +47,9 @@ export function CleanSearchBar({
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  
+  // Safe portal hook to prevent removeChild errors
+  const { portalRoot, isReady } = useSafePortal();
 
   // Mock search function - replace with real API call
   const performSearch = async (searchQuery: string) => {
@@ -328,35 +333,48 @@ export function CleanSearchBar({
         )}
       </div>
 
-      {/* Portal Dropdown */}
-      {isOpen && createPortal(
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/20" 
-            style={{ zIndex: 999998 }}
-            onClick={() => setIsOpen(false)}
-          />
-          
-          {/* Dropdown Content */}
-          <div 
-            className="rounded-lg overflow-hidden max-h-96 overflow-y-auto"
-            style={{
-              position: 'fixed',
-              top: dropdownPosition.top,
-              left: dropdownPosition.left,
-              width: dropdownPosition.width,
-              zIndex: 999999,
-              background: 'rgba(75, 85, 99, 0.4)',
-              border: '1px solid rgba(156, 163, 175, 0.4)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)'
-            }}
-          >
-            {renderSearchResults()}
-          </div>
-        </>,
-        document.body
+      {/* Safe Portal Dropdown */}
+      {isReady && portalRoot && createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div 
+                key="backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/20" 
+                style={{ zIndex: 999998 }}
+                onClick={() => setIsOpen(false)}
+              />
+              
+              {/* Dropdown Content */}
+              <motion.div 
+                key="dropdown"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                className="rounded-lg overflow-hidden max-h-96 overflow-y-auto"
+                style={{
+                  position: 'fixed',
+                  top: dropdownPosition.top,
+                  left: dropdownPosition.left,
+                  width: dropdownPosition.width,
+                  zIndex: 999999,
+                  background: 'rgba(75, 85, 99, 0.4)',
+                  border: '1px solid rgba(156, 163, 175, 0.4)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)'
+                }}
+              >
+                {renderSearchResults()}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        portalRoot
       )}
     </div>
   );
