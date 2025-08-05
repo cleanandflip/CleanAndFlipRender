@@ -45,7 +45,8 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { apiRequest } from "@/lib/queryClient";
-import WishlistButton from "@/components/ui/WishlistButton";
+import { WishlistButton } from "@/components/ui/WishlistButton";
+import type { Order, EquipmentSubmission } from "@shared/schema";
 
 function AddressesSection() {
   const { user } = useAuth();
@@ -224,6 +225,11 @@ function DashboardContent() {
     gcTime: 0, // No client-side caching to prevent stale data
     refetchOnWindowFocus: true, // Always refetch when user returns to tab
     refetchOnMount: true, // Always refetch when component mounts
+  });
+
+  const { data: wishlistItems = [] } = useQuery<any[]>({
+    queryKey: ["/api/wishlist"],
+    enabled: !!user?.id,
   });
 
   const cancelSubmissionMutation = useMutation({
@@ -704,7 +710,7 @@ function DashboardContent() {
                 </SmartLink>
               </div>
 
-              {cartItems.length === 0 ? (
+              {wishlistItems.length === 0 ? (
                 <div className="text-center py-12">
                   <Heart className="mx-auto mb-4 text-gray-400" size={48} />
                   <p className="text-text-secondary mb-6">
@@ -724,7 +730,7 @@ function DashboardContent() {
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {cartItems.map((item) => (
+                  {wishlistItems.map((item) => (
                     <div key={item.id} className="relative glass rounded-lg overflow-hidden">
                       <SmartLink href={`/products/${item.product.id}`}>
                         <div className="w-full h-48 relative bg-gray-900/30 hover:bg-gray-900/40 transition-colors overflow-hidden">
@@ -747,7 +753,7 @@ function DashboardContent() {
                       <div className="absolute top-2 right-2">
                         <WishlistButton
                           productId={item.product.id}
-                          size="small"
+                          size="sm"
                           showTooltip={false}
                         />
                       </div>
