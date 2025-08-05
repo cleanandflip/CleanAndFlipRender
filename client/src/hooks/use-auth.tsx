@@ -168,7 +168,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
+      // Clear all auth-related cache and force a clean state
       queryClient.setQueryData(["/api/user"], null);
+      queryClient.clear(); // Clear all cached queries to prevent hooks issues
       toast({
         title: "Logged out",
         description: "See you next time!",

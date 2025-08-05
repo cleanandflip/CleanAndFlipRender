@@ -71,46 +71,11 @@ const EQUIPMENT_BRANDS = [
 ];
 
 export default function SellToUs() {
+  // ALL HOOKS MUST BE AT THE TOP - React Rules of Hooks
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [referenceNumber, setReferenceNumber] = useState<string>("");
-  
-  // Show login prompt for unauthenticated users
-  if (!authLoading && !user) {
-    return (
-      <div className="min-h-screen pt-32 px-6">
-        <div className="max-w-4xl mx-auto">
-          <Card className="p-12 text-center">
-            <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <h2 className="font-bebas text-3xl mb-4">LOGIN REQUIRED</h2>
-            <p className="text-text-secondary mb-8">
-              Please log in to sell your equipment to Clean & Flip. This helps us track your submissions and provide updates.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                onClick={() => window.location.href = '/auth'}
-                className="bg-accent-blue hover:bg-blue-600"
-              >
-                Sign In
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.href = '/auth'}
-                className="glass border-border"
-              >
-                Create Account
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </div>
-    );
-  }
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   const form = useForm<SubmissionForm>({
@@ -180,6 +145,42 @@ export default function SellToUs() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [isSubmitted]);
+
+  // Show login prompt for unauthenticated users (AFTER all hooks are defined)
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-screen pt-32 px-6">
+        <div className="max-w-4xl mx-auto">
+          <Card className="p-12 text-center">
+            <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h2 className="font-bebas text-3xl mb-4">LOGIN REQUIRED</h2>
+            <p className="text-text-secondary mb-8">
+              Please log in to sell your equipment to Clean & Flip. This helps us track your submissions and provide updates.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                onClick={() => window.location.href = '/auth'}
+                className="bg-accent-blue hover:bg-blue-600"
+              >
+                Sign In
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.href = '/auth'}
+                className="glass border-border"
+              >
+                Create Account
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (isSubmitted) {
     return (
