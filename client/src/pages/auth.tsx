@@ -187,14 +187,7 @@ export default function AuthPage() {
                     />
                   </div>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <Label htmlFor="password" className="text-white font-medium text-xl">Password</Label>
-                      <Link href="/forgot-password">
-                        <button type="button" className="text-accent-blue hover:text-blue-300 text-sm underline transition-colors">
-                          Forgot Password?
-                        </button>
-                      </Link>
-                    </div>
+                    <Label htmlFor="password" className="text-white font-medium text-xl">Password</Label>
                     <Input
                       id="password"
                       name="password"
@@ -204,6 +197,13 @@ export default function AuthPage() {
                       placeholder="Enter your password"
                       onFocus={scrollToForm}
                     />
+                    <div className="text-right">
+                      <Link href="/forgot-password">
+                        <button type="button" className="text-accent-blue hover:text-blue-300 text-sm underline transition-colors">
+                          Forgot Password?
+                        </button>
+                      </Link>
+                    </div>
                   </div>
                   <Button
                     type="submit"
