@@ -1,0 +1,305 @@
+Instructions for Replit - Update Wishlist Button Theme & Sync
+Tell Replit:
+"Update ALL wishlist buttons across the site to use this exact theme and ensure perfect synchronization. The wishlist button should show tooltips and login prompts as specified.
+PHASE 1: UPDATE WISHLIST BUTTON COMPONENT
+Replace the existing WishlistButton component with this exact implementation:
+typescript// client/src/components/ui/WishlistButton.tsx
+import { useState } from 'react';
+import { Heart } from 'lucide-react';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
+
+interface WishlistButtonProps {
+  productId: number;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+  showTooltip?: boolean;
+}
+
+const sizeClasses = {
+  sm: 'w-8 h-8',
+  md: 'w-10 h-10',
+  lg: 'w-12 h-12'
+};
+
+const iconSizes = {
+  sm: 16,
+  md: 20,
+  lg: 24
+};
+
+export function WishlistButton({ 
+  productId, 
+  size = 'md', 
+  className = '',
+  showTooltip = true 
+}: WishlistButtonProps) {
+  const { user } = useAuth();
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  
+  const isInWishlist = isWishlisted(productId);
+  const loading = toggleWishlist.isLoading;
+  
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      setShowLoginPrompt(true);
+      setTimeout(() => setShowLoginPrompt(false), 3000);
+      return;
+    }
+    
+    toggleWishlist.mutate(productId);
+  };
+  
+  return (
+    <div className="relative group">
+      <button
+        onClick={handleWishlistToggle}
+        disabled={loading}
+        className={`
+          ${sizeClasses[size]}
+          rounded-full flex items-center justify-center
+          transition-all duration-300 transform
+          ${isInWishlist 
+            ? 'bg-red-500/90 text-white scale-110 shadow-lg shadow-red-500/25' 
+            : 'bg-gray-700/80 text-gray-300 hover:bg-gray-600 hover:shadow-md hover:scale-110'
+          }
+          ${loading ? 'opacity-50 cursor-not-allowed animate-pulse' : 'cursor-pointer'}
+          ${className}
+        `}
+        aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+      >
+        <Heart 
+          size={iconSizes[size]}
+          className={`transition-all duration-300 ${loading ? 'animate-pulse' : ''}`}
+          fill={isInWishlist ? 'currentColor' : 'none'}
+        />
+      </button>
+      
+      {/* Tooltip */}
+      {showTooltip && !showLoginPrompt && (
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 
+                        opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+          <div className="bg-gray-800/95 text-white text-xs px-2 py-1 rounded whitespace-nowrap border border-gray-600">
+            {loading ? 'Updating...' : isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+          </div>
+        </div>
+      )}
+      
+      {/* Login prompt */}
+      {showLoginPrompt && !user && (
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
+          <div className="bg-red-500/90 text-white text-xs px-3 py-2 rounded whitespace-nowrap animate-pulse">
+            Please log in to save items
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+PHASE 2: UPDATE WISHLIST HOOK FOR PERFECT SYNC
+Update client/src/hooks/useWishlist.ts:
+typescriptimport { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { useAuth } from './useAuth';
+
+export function useWishlist() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  // Fetch wishlist with real-time sync
+  const { data: wishlist = [], isLoading } = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: async () => {
+      if (!user) return [];
+      const response = await api.get('/api/wishlist');
+      return response.wishlist || [];
+    },
+    enabled: !!user,
+    staleTime: 0, // Always check for updates
+    cacheTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
+  
+  // Toggle wishlist with optimistic updates
+  const toggleWishlist = useMutation({
+    mutationFn: async (productId: number) => {
+      const isCurrentlyWishlisted = wishlist.some(item => item.productId === productId);
+      
+      if (isCurrentlyWishlisted) {
+        await api.delete(`/api/wishlist/${productId}`);
+        return { action: 'removed', productId };
+      } else {
+        await api.post('/api/wishlist', { productId });
+        return { action: 'added', productId };
+      }
+    },
+    onMutate: async (productId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['wishlist'] });
+      
+      // Snapshot the previous value
+      const previousWishlist = queryClient.getQueryData(['wishlist']);
+      
+      // Optimistically update
+      queryClient.setQueryData(['wishlist'], (old: any[]) => {
+        const exists = old.some(item => item.productId === productId);
+        if (exists) {
+          return old.filter(item => item.productId !== productId);
+        } else {
+          return [...old, { productId, addedAt: new Date() }];
+        }
+      });
+      
+      // Return context with snapshot
+      return { previousWishlist };
+    },
+    onError: (err, productId, context) => {
+      // Rollback on error
+      if (context?.previousWishlist) {
+        queryClient.setQueryData(['wishlist'], context.previousWishlist);
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+    },
+  });
+  
+  // Helper function to check if product is wishlisted
+  const isWishlisted = (productId: number) => {
+    return wishlist.some(item => item.productId === productId);
+  };
+  
+  return {
+    wishlist,
+    isLoading,
+    toggleWishlist,
+    isWishlisted,
+    wishlistCount: wishlist.length,
+  };
+}
+PHASE 3: FIND AND REPLACE ALL WISHLIST BUTTONS
+bash# Find all wishlist button implementations
+grep -rn "Heart.*button\|wishlist.*icon\|favorite.*button" --include="*.tsx" client/src/
+
+# Common locations to update:
+- client/src/components/ProductCard.tsx
+- client/src/pages/products/[id].tsx
+- client/src/components/ProductGrid.tsx
+- client/src/pages/wishlist.tsx
+Replace EVERY wishlist button with:
+jsx<WishlistButton 
+  productId={product.id} 
+  size="md"
+  showTooltip={true}
+/>
+PHASE 4: ADD CROSS-TAB SYNCHRONIZATION
+Add to the wishlist hook:
+typescript// Listen for cross-tab wishlist changes
+useEffect(() => {
+  const handleStorageChange = (e: StorageEvent) => {
+    if (e.key === 'wishlist-update') {
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+    }
+  };
+  
+  window.addEventListener('storage', handleStorageChange);
+  return () => window.removeEventListener('storage', handleStorageChange);
+}, [queryClient]);
+
+// In mutation onSuccess, broadcast the change
+onSuccess: () => {
+  // Broadcast to other tabs
+  window.localStorage.setItem('wishlist-update', Date.now().toString());
+}
+PHASE 5: UPDATE NAVIGATION WISHLIST ICON
+In the navigation bar, show wishlist count:
+jsx// Navigation component
+const { wishlistCount } = useWishlist();
+
+<Link to="/wishlist" className="relative">
+  <Heart className="w-6 h-6" />
+  {wishlistCount > 0 && (
+    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+      {wishlistCount}
+    </span>
+  )}
+</Link>
+PHASE 6: ENSURE CONSISTENT STYLING
+Make sure these styles are globally available:
+css/* Add to global CSS */
+.wishlist-button-enter {
+  animation: wishlist-pop 0.3s ease-out;
+}
+
+@keyframes wishlist-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1.1); }
+}
+
+/* Ensure tooltips appear above everything */
+.group:hover .tooltip {
+  z-index: 9999;
+}
+PHASE 7: TEST SYNCHRONIZATION
+Create test scenarios:
+
+Single Tab Test:
+
+Click wishlist button as logged-out user → See login prompt
+Log in and click wishlist → Heart fills and turns red
+Click again → Heart empties and turns gray
+
+
+Multi-Tab Test:
+
+Open product in two tabs
+Add to wishlist in tab 1
+Tab 2 should update within 1 second
+
+
+Navigation Test:
+
+Add item to wishlist
+Navigate to different page
+Navigate back → Wishlist state persists
+
+
+
+PHASE 8: REMOVE OLD IMPLEMENTATIONS
+Delete these patterns:
+
+Local wishlist state in components
+Custom heart icons without the theme
+Inconsistent wishlist buttons
+Non-synced wishlist implementations
+
+IMMEDIATE ACTIONS:
+
+Replace WishlistButton component with the exact code provided
+Update useWishlist hook for perfect synchronization
+Find ALL wishlist buttons and replace with new component
+Test login prompt appears for non-authenticated users
+Verify real-time sync across tabs and pages
+Check tooltips appear correctly on hover
+Ensure loading states show properly
+
+EXPECTED BEHAVIOR:
+
+Gray button with empty heart when not wishlisted
+Red button with filled heart when wishlisted
+Scale animation on hover and when wishlisted
+"Please log in to save items" prompt for logged-out users
+Tooltips showing current action
+Instant sync across all pages and tabs
+Loading animation during updates
+Consistent styling everywhere
+
+The wishlist should work perfectly with beautiful animations and instant synchronization!
