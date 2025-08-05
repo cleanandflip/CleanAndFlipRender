@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useWishlist } from "@/hooks/useWishlist";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,14 +12,7 @@ import type { Product } from "@shared/schema";
 
 export default function Wishlist() {
   const { user } = useAuth();
-  
-  const { data: wishlistItems, isLoading, error } = useQuery({
-    queryKey: ['/api/wishlist'],
-    enabled: !!user,
-    refetchOnWindowFocus: true,
-    refetchOnMount: 'always',
-    staleTime: 0,
-  });
+  const { wishlist, isLoading } = useWishlist();
 
   if (!user) {
     return (
@@ -63,23 +56,8 @@ export default function Wishlist() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background pt-24">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center py-16">
-            <h1 className="text-2xl font-bold mb-4">Error Loading Wishlist</h1>
-            <p className="text-text-muted mb-8">
-              Something went wrong while loading your wishlist. Please try again.
-            </p>
-            <Button onClick={() => window.location.reload()}>Retry</Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const products = (wishlistItems as any)?.products || [];
+  // Extract products from wishlist items
+  const products = wishlist.map((item: any) => item.product).filter(Boolean);
 
   return (
     <div className="min-h-screen bg-background pt-24">
