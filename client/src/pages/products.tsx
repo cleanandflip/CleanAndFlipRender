@@ -195,10 +195,16 @@ export default function Products() {
       },
     ],
     refetchOnWindowFocus: false, // Prevent refetch on tab focus to avoid flickering
-    refetchOnMount: false, // Don't refetch on mount if data exists
-    staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
-    // Remove auto-refetch interval to prevent flickering
+    refetchOnMount: true, // Refetch on mount to ensure fresh data
+    staleTime: 2 * 60 * 1000, // Data is fresh for 2 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    retry: (failureCount, error) => {
+      // More intelligent retry logic
+      if (error instanceof Error && error.message.includes('401')) {
+        return false; // Don't retry auth errors
+      }
+      return failureCount < 2; // Only retry twice for other errors
+    },
   });
 
   // Add global event listener for real-time admin updates
@@ -244,14 +250,35 @@ export default function Products() {
   const totalPages = data ? Math.ceil(data.total / itemsPerPage) : 0;
 
   if (error) {
+    // Better error handling - don't block the entire page
+    console.error('Products loading error:', error);
+    
     return (
       <div className="min-h-screen pt-32 px-6">
         <div className="max-w-6xl mx-auto">
-          <ApiError 
-            status={500} 
-            message="Failed to load products. Please try again later."
-            onRetry={() => window.location.reload()}
-          />
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">Products Temporarily Unavailable</h3>
+            <p className="text-gray-400 mb-6">We're experiencing technical difficulties. Please try again in a moment.</p>
+            <div className="space-y-3">
+              <button
+                onClick={() => refetch()}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mr-3"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={() => window.location.href = '/'}
+                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Return Home
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );

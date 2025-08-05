@@ -105,7 +105,7 @@ function Router() {
               {/* Auth Routes */}
               <Route path={ROUTES.LOGIN} component={AuthPage} />
               
-              {/* User Routes */}
+              {/* User Routes - No longer wrapped in ProtectedRoute, pages handle auth internally */}
               <Route path={ROUTES.DASHBOARD} component={Dashboard} />
               <Route path={ROUTES.ORDERS} component={Orders} />
               <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />

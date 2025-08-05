@@ -2109,20 +2109,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Equipment Submissions Management (for authenticated users)
-  app.post("/api/equipment-submissions", async (req, res) => {
+  app.post("/api/equipment-submissions", requireAuth, async (req, res) => {
     try {
-      // Check authentication - support multiple auth methods
-      let userId = null;
-      if (req.isAuthenticated && req.isAuthenticated()) {
-        userId = req.user?.id;
-      } else if (req.session?.passport?.user?.id) {
-        userId = req.session.passport.user.id;
-      } else if (req.user?.claims?.sub) {
-        userId = req.user.claims.sub;
-      }
+      // Use simplified authentication from middleware
+      const userId = req.user?.id || req.userId || (req.session as any)?.userId;
 
       if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
+        return res.status(401).json({ 
+          error: "Authentication required", 
+          message: "Please log in to submit equipment" 
+        });
       }
       
       // Import reference generator
