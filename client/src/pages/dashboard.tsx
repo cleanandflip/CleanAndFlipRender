@@ -45,6 +45,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { apiRequest } from "@/lib/queryClient";
+import WishlistButton from "@/components/ui/WishlistButton";
 
 function AddressesSection() {
   const { user } = useAuth();
@@ -685,6 +686,8 @@ function DashboardContent() {
             </Card>
           )}
 
+          {/* Wishlist Tab */}
+          {activeTab === 'wishlist' && (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">WISHLIST</h2>
@@ -701,6 +704,7 @@ function DashboardContent() {
                 </SmartLink>
               </div>
 
+              {cartItems.length === 0 ? (
                 <div className="text-center py-12">
                   <Heart className="mx-auto mb-4 text-gray-400" size={48} />
                   <p className="text-text-secondary mb-6">

@@ -48,7 +48,7 @@ export default function ProductDetail() {
     
     // Check if we came from a previous page
     if (window.history.length > 1) {
-      navigate(-1); // Go back
+      navigate(-1 as any); // Go back
     } else {
       navigate('/products'); // Fallback to products page
     }
@@ -130,7 +130,7 @@ export default function ProductDetail() {
             <p className="text-text-secondary mb-6">
               The product you're looking for doesn't exist or has been removed.
             </p>
-            <SmartLink to="/products">
+            <SmartLink href="/products">
               <Button className="bg-accent-blue hover:bg-blue-500">
                 Browse Products
               </Button>
@@ -208,9 +208,9 @@ export default function ProductDetail() {
             Back to Products
           </button>
           <div className="flex items-center space-x-2 text-sm text-text-secondary">
-            <SmartLink to="/">Home</SmartLink>
+            <SmartLink href="/">Home</SmartLink>
             <span>/</span>
-            <SmartLink to="/products">Products</SmartLink>
+            <SmartLink href="/products">Products</SmartLink>
             <span>/</span>
             <span className="text-white">{product.name}</span>
           </div>
