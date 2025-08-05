@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UnifiedDropdown } from "@/components/ui/unified-dropdown";
 import { Card } from "@/components/ui/card";
 import { Package, Search, Calendar, Truck, ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -20,8 +20,7 @@ export default function Orders() {
   const [sortBy, setSortBy] = useState("newest");
 
   const { data: orders = [], isLoading, error } = useQuery<Order[]>({
-    queryKey: ["/api/orders"],
-    queryParams: { userId: mockUser.id },
+    queryKey: ["/api/orders", { userId: mockUser.id }],
   });
 
   const getStatusColor = (status: string) => {
@@ -48,13 +47,13 @@ export default function Orders() {
   };
 
   // Filter and sort orders
-  const filteredOrders = orders
-    .filter(order => {
+  const filteredOrders = (orders || [])
+    .filter((order: Order) => {
       const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || order.status === statusFilter;
       return matchesSearch && matchesStatus;
     })
-    .sort((a, b) => {
+    .sort((a: Order, b: Order) => {
       switch (sortBy) {
         case 'newest':
           return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
@@ -131,37 +130,37 @@ export default function Orders() {
             </div>
 
             {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="glass border-border">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Orders</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="shipped">Shipped</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+            <UnifiedDropdown
+              value={statusFilter}
+              onChange={setStatusFilter}
+              placeholder="Filter by status"
+              options={[
+                { value: "all", label: "All Orders" },
+                { value: "pending", label: "Pending" },
+                { value: "confirmed", label: "Confirmed" },
+                { value: "processing", label: "Processing" },
+                { value: "shipped", label: "Shipped" },
+                { value: "delivered", label: "Delivered" },
+                { value: "cancelled", label: "Cancelled" }
+              ]}
+            />
 
             {/* Sort */}
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="glass border-border">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-                <SelectItem value="amount-high">Amount: High to Low</SelectItem>
-                <SelectItem value="amount-low">Amount: Low to High</SelectItem>
-              </SelectContent>
-            </Select>
+            <UnifiedDropdown
+              value={sortBy}
+              onChange={setSortBy}
+              placeholder="Sort by"
+              options={[
+                { value: "newest", label: "Newest First" },
+                { value: "oldest", label: "Oldest First" },
+                { value: "amount-high", label: "Amount: High to Low" },
+                { value: "amount-low", label: "Amount: Low to High" }
+              ]}
+            />
 
             {/* Results Count */}
             <div className="flex items-center text-sm text-text-secondary">
-              {filteredOrders.length} of {orders.length} orders
+              {filteredOrders.length} of {(orders || []).length} orders
             </div>
           </div>
         </Card>
@@ -171,15 +170,15 @@ export default function Orders() {
           <Card className="p-12 text-center">
             <Package className="mx-auto mb-6 text-gray-400" size={64} />
             <h2 className="text-2xl font-semibold mb-4">
-              {orders.length === 0 ? "No orders yet" : "No orders found"}
+              {(orders || []).length === 0 ? "No orders yet" : "No orders found"}
             </h2>
             <p className="text-text-secondary mb-8">
-              {orders.length === 0 
+              {(orders || []).length === 0 
                 ? "Start shopping to see your order history here."
                 : "Try adjusting your search or filter criteria."
               }
             </p>
-            {orders.length === 0 ? (
+            {(orders || []).length === 0 ? (
               <Link href="/products">
                 <Button className="bg-accent-blue hover:bg-blue-500">
                   Browse Products
@@ -196,7 +195,7 @@ export default function Orders() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {filteredOrders.map((order) => (
+            {filteredOrders.map((order: Order) => (
               <Card key={order.id} className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
