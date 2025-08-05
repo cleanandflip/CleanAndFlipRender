@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Package, Heart, Settings, ShieldCheck, LogOut } from 'lucide-react';
+import { User, Package, Heart, ShieldCheck, LogOut, LayoutDashboard } from 'lucide-react';
 
 interface UnifiedUserDropdownProps {
   user: {
@@ -118,6 +118,16 @@ export function UnifiedUserDropdown({ user, onNavigate, onLogout }: UnifiedUserD
 
             <div className="p-2 space-y-1">
               <button
+                onClick={() => handleItemClick(() => onNavigate('/dashboard'))}
+                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
+                  <LayoutDashboard size={16} className="text-gray-400" />
+                </div>
+                <span className="text-white font-medium">Dashboard</span>
+              </button>
+              
+              <button
                 onClick={() => handleItemClick(() => onNavigate('/orders'))}
                 className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
               >
@@ -135,16 +145,6 @@ export function UnifiedUserDropdown({ user, onNavigate, onLogout }: UnifiedUserD
                   <Heart size={16} className="text-gray-400" />
                 </div>
                 <span className="text-white font-medium">Wishlist</span>
-              </button>
-              
-              <button
-                onClick={() => handleItemClick(() => onNavigate('/settings'))}
-                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
-              >
-                <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
-                  <Settings size={16} className="text-gray-400" />
-                </div>
-                <span className="text-white font-medium">Settings</span>
               </button>
 
               {user.isAdmin && (
