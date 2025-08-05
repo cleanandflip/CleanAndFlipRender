@@ -79,6 +79,8 @@ export interface IStorage {
   deleteProduct(id: string): Promise<void>;
   incrementProductViews(id: string): Promise<void>;
   getFeaturedProducts(limit?: number): Promise<Product[]>;
+  createSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission>;
+  healthCheck(): Promise<{ status: string; timestamp: string }>;
 
   // Cart operations
   getCartItems(userId: string): Promise<(CartItem & { product: Product })[]>;
@@ -753,9 +755,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async exportProductsToCSV(): Promise<string> {
-    const products = await this.getProducts();
+    const productResults = await this.getProducts();
+    const products = productResults.products || productResults;
     const headers = ['ID', 'Name', 'Brand', 'Price', 'Category', 'Condition', 'Inventory', 'Created'];
-    const rows = products.map(p => [
+    const rows = products.map((p: any) => [
       p.id,
       p.name,
       p.brand || '',
@@ -766,7 +769,7 @@ export class DatabaseStorage implements IStorage {
       p.createdAt?.toISOString() || ''
     ]);
     
-    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    return [headers.join(','), ...rows.map((row: any) => row.join(','))].join('\n');
   }
 
   async exportUsersToCSV(): Promise<string> {
@@ -786,7 +789,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async exportOrdersToCSV(): Promise<string> {
-    const orders = await db
+    const orderData = await db
       .select({
         id: orders.id,
         userId: orders.userId,
@@ -800,15 +803,15 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(orders.createdAt));
 
     const headers = ['Order ID', 'User Email', 'Total', 'Status', 'Created'];
-    const rows = orders.map(o => [
+    const rows = orderData.map((o: any) => [
       o.id,
       o.userEmail || '',
-      o.total.toString(),
+      o.total?.toString() || '0',
       o.status,
       o.createdAt?.toISOString() || ''
     ]);
     
-    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    return [headers.join(','), ...rows.map((row: any) => row.join(','))].join('\n');
   }
 
   // Address operations
@@ -825,11 +828,13 @@ export class DatabaseStorage implements IStorage {
       id: users.id,
       firstName: users.firstName,
       lastName: users.lastName,
-      address: users.address,
-      cityStateZip: users.cityStateZip
+      street: users.street,
+      city: users.city,
+      state: users.state,
+      zipCode: users.zipCode
     }).from(users).where(eq(users.id, userId));
     
-    if (user[0]?.address && user[0]?.cityStateZip) {
+    if (user[0]?.street && user[0]?.city) {
       // Parse city, state, zip from the combined field (case-insensitive)
       const cityStateZipRegex = /^(.+),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/i;
       const match = user[0].cityStateZip.match(cityStateZipRegex);
@@ -950,11 +955,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
+    const submissionWithReference = {
+      ...submission,
+      referenceNumber: submission.referenceNumber || `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
+    };
+    
     const [newSubmission] = await db
       .insert(equipmentSubmissions)
-      .values([submission])
+      .values([submissionWithReference])
       .returning();
     return newSubmission;
+  }
+
+  async createSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
+    return this.createEquipmentSubmission(submission);
+  }
+
+  async healthCheck(): Promise<{ status: string; timestamp: string }> {
+    try {
+      const [product] = await db.select().from(products).limit(1);
+      return {
+        status: product ? 'healthy' : 'no_data',
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        timestamp: new Date().toISOString()
+      };
+    }
   }
 
   async getSubmissionByReference(reference: string): Promise<EquipmentSubmission | undefined> {
