@@ -215,7 +215,9 @@ export default function Navigation() {
                 }}
               >
                 {isCartOpen ? (
-                  <XCircle size={20} className="text-white" />
+                  <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <X size={12} className="text-white" />
+                  </div>
                 ) : (
                   <ShoppingCart size={20} className="text-white" />
                 )}
