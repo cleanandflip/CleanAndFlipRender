@@ -32,11 +32,15 @@ export class PasswordResetService {
         .where(eq(users.email, email.toLowerCase()))
         .limit(1);
 
-      // Security: Don't send emails to non-existent users (prevents enumeration)
+      // Check if user exists - provide helpful feedback while maintaining security
       if (!user) {
         logger.info(`Password reset requested for non-existent email: ${email}`);
-        // Return success message but don't send email - this prevents email enumeration attacks
-        return { message: 'If an account exists, reset email sent' };
+        // Provide clear feedback for non-existent accounts
+        return { 
+          error: 'No account found with this email address',
+          message: 'Please check your email address or create a new account if you haven\'t registered yet.',
+          suggestion: 'Make sure you\'re using the same email address you used to register.'
+        };
       }
 
       // Cancel any existing tokens for this user

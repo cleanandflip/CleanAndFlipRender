@@ -42,6 +42,15 @@ export default function ForgotPasswordPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle specific error cases with helpful messages
+        if (response.status === 404) {
+          throw new Error(errorData.error + '\n\n' + errorData.message);
+        }
+        if (response.status === 429) {
+          throw new Error('Too many reset attempts. Please wait 15 minutes before trying again.');
+        }
+        
         throw new Error(errorData.error || 'Failed to send reset email');
       }
 
@@ -139,7 +148,7 @@ export default function ForgotPasswordPage() {
 
               {forgotPasswordMutation.error && (
                 <Alert className="bg-red-500/20 border-red-500/30">
-                  <AlertDescription className="text-red-300">
+                  <AlertDescription className="text-red-300 whitespace-pre-line">
                     {forgotPasswordMutation.error.message}
                   </AlertDescription>
                 </Alert>
