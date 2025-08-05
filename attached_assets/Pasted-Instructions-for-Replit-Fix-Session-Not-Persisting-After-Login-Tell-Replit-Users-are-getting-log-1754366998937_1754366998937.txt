@@ -1,0 +1,291 @@
+Instructions for Replit - Fix Session Not Persisting After Login
+Tell Replit:
+"Users are getting logged out immediately after successful login when navigating to protected pages. This indicates the session isn't persisting properly. Fix this critical authentication flow issue.
+THE BUG:
+
+User logs in successfully
+Navigates to protected page (sell-to-us, dashboard, etc.)
+Gets immediately logged out
+Prompted to sign in again
+
+PHASE 1: DIAGNOSE SESSION ISSUES
+Check these critical areas:
+bash# Check session configuration
+grep -rn "session({" server/
+grep -rn "saveUninitialized\|resave" server/
+
+# Check CORS configuration
+grep -rn "cors({" server/
+grep -rn "credentials.*true" server/
+
+# Check cookie settings
+grep -rn "cookie.*{" server/
+grep -rn "sameSite\|secure\|httpOnly" server/
+
+# Check API client credentials
+grep -rn "credentials.*include" client/src/
+grep -rn "fetch.*{" client/src/lib/
+PHASE 2: COMMON CAUSES
+1. Session Not Saving After Login:
+javascript// WRONG - Response sent before session saves
+app.post('/api/login', async (req, res) => {
+  // ... validate user ...
+  req.session.userId = user.id;
+  res.json({ user }); // Session might not be saved yet!
+});
+
+// CORRECT - Wait for session to save
+app.post('/api/login', async (req, res) => {
+  // ... validate user ...
+  req.session.userId = user.id;
+  req.session.save((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Session save failed' });
+    }
+    res.json({ user });
+  });
+});
+2. CORS Not Allowing Credentials:
+javascript// WRONG
+app.use(cors());
+
+// CORRECT
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true, // MUST be true for cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+3. Cookie Configuration Issues:
+javascript// Check these settings
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false, // Must be false for localhost
+    httpOnly: true,
+    sameSite: 'lax', // or 'none' for cross-origin
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/'
+  }
+}));
+4. API Client Not Sending Cookies:
+javascript// WRONG - No credentials
+fetch('/api/user');
+
+// CORRECT - Include credentials
+fetch('/api/user', {
+  credentials: 'include' // CRITICAL!
+});
+
+// Or in your API client
+const api = {
+  get: (url) => fetch(url, {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }),
+  post: (url, data) => fetch(url, {
+    method: 'POST',
+    credentials: 'include', // MUST have this
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  })
+};
+PHASE 3: CHECK AUTH FLOW
+1. Login Response Timing:
+javascript// In login endpoint, add logging
+app.post('/api/login', async (req, res) => {
+  console.log('Login attempt for:', req.body.email);
+  
+  // ... validate user ...
+  
+  req.session.userId = user.id;
+  console.log('Session before save:', req.session);
+  
+  req.session.save((err) => {
+    if (err) {
+      console.error('Session save error:', err);
+      return res.status(500).json({ error: 'Session save failed' });
+    }
+    console.log('Session after save:', req.session);
+    console.log('Session ID:', req.sessionID);
+    res.json({ user });
+  });
+});
+2. User Query Timing:
+javascript// The user query might be firing too early
+const { data: user, isLoading, refetch } = useQuery({
+  queryKey: ['user'],
+  queryFn: fetchUser,
+  enabled: true, // Always enabled
+  retry: 1, // Only retry once
+  staleTime: 5000, // Give session time to establish
+});
+
+// After login, wait before navigation
+const handleLogin = async (credentials) => {
+  const result = await login(credentials);
+  if (result.success) {
+    // Wait a moment for session to propagate
+    await new Promise(resolve => setTimeout(resolve, 100));
+    await refetch(); // Force refetch user
+    navigate('/dashboard');
+  }
+};
+PHASE 4: SESSION MIDDLEWARE ORDER
+CRITICAL: Middleware order matters!
+javascript// CORRECT ORDER
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Session BEFORE routes
+app.use(session({
+  // ... session config
+}));
+
+// CORS AFTER session
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
+
+// Routes LAST
+app.use('/api', routes);
+PHASE 5: CHECK FOR RACE CONDITIONS
+1. Protected Route Check:
+javascript// In protected components
+useEffect(() => {
+  // Don't check immediately
+  const checkAuth = async () => {
+    // Small delay to ensure session is ready
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    if (!user && !isLoading) {
+      navigate('/login');
+    }
+  };
+  
+  checkAuth();
+}, [user, isLoading]);
+2. Navigation After Login:
+javascript// Don't navigate immediately
+const login = async (credentials) => {
+  const response = await api.post('/api/login', credentials);
+  
+  if (response.user) {
+    // Force session to be ready
+    await queryClient.invalidateQueries(['user']);
+    await queryClient.refetchQueries(['user']);
+    
+    // Then navigate
+    setTimeout(() => {
+      navigate(from || '/dashboard');
+    }, 100);
+  }
+};
+PHASE 6: ADD DEBUGGING
+Add these debug points:
+javascript// Server - Log all session operations
+app.use((req, res, next) => {
+  console.log('Request:', req.method, req.url);
+  console.log('Session ID:', req.sessionID);
+  console.log('Session:', req.session);
+  console.log('Cookies:', req.headers.cookie);
+  next();
+});
+
+// Client - Log auth state changes
+useEffect(() => {
+  console.log('Auth state changed:', { user, isLoading });
+}, [user, isLoading]);
+
+// API client - Log requests
+const apiWithLogging = {
+  get: async (url) => {
+    console.log('GET request to:', url);
+    const response = await fetch(url, { credentials: 'include' });
+    console.log('Response status:', response.status);
+    return response;
+  }
+};
+PHASE 7: SPECIFIC FIXES TO IMPLEMENT
+1. Update Session Configuration:
+javascriptconst sessionConfig = {
+  secret: process.env.SESSION_SECRET || 'dev-secret-change-this',
+  resave: false,
+  saveUninitialized: false,
+  rolling: true, // Reset expiry on activity
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/'
+  },
+  store: // Your PostgreSQL store
+};
+2. Fix API Client:
+javascript// Ensure ALL requests include credentials
+const apiClient = axios.create({
+  baseURL: '/api',
+  withCredentials: true, // For axios
+  timeout: 10000
+});
+
+// Or for fetch
+const defaultOptions = {
+  credentials: 'include' as const,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+};
+3. Fix Login Flow:
+javascript// Complete login flow
+const performLogin = async (email, password) => {
+  try {
+    // 1. Call login API
+    const { user } = await api.post('/api/login', { email, password });
+    
+    // 2. Wait for session
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // 3. Verify authentication
+    const verifyResponse = await api.get('/api/user');
+    
+    if (verifyResponse.user) {
+      // 4. Update local state
+      setUser(verifyResponse.user);
+      
+      // 5. Navigate
+      navigate('/dashboard');
+    }
+  } catch (error) {
+    console.error('Login failed:', error);
+  }
+};
+PHASE 8: TEST SEQUENCE
+
+Clear all cookies/storage
+Log in
+Check network tab - session cookie set
+Wait 2 seconds
+Navigate to protected page
+Should remain logged in
+Refresh page
+Should still be logged in
+
+IMMEDIATE ACTIONS:
+
+Add session.save() to login endpoint
+Ensure credentials: 'include' on ALL requests
+Fix CORS to allow credentials
+Add small delay after login before navigation
+Check middleware order
+Verify cookie settings for localhost
+
+This is blocking users from using the site. Fix immediately!"

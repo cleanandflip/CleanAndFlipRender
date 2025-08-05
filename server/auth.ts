@@ -83,8 +83,11 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
+      sameSite: 'lax', // CRITICAL: Allow cross-origin cookies  
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/' // CRITICAL: Ensure cookie available for all paths
     },
+    rolling: true, // CRITICAL: Reset expiry on activity
   };
 
   app.set("trust proxy", 1);
@@ -244,14 +247,26 @@ export function setupAuth(app: Express) {
       };
       req.login(userForSession, (err) => {
         if (err) return next(err);
-        res.status(201).json({
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role || 'user',
-          isAdmin: user.isAdmin,
-          isLocalCustomer: user.isLocalCustomer,
+        
+        // CRITICAL FIX: Ensure session is saved before responding
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            Logger.error('Registration session save error:', saveErr);
+            return res.status(500).json({ 
+              error: "Session persistence failed",
+              details: "Registration successful but session could not be saved. Please try logging in."
+            });
+          }
+          
+          res.status(201).json({
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role || 'user',
+            isAdmin: user.isAdmin,
+            isLocalCustomer: user.isLocalCustomer,
+          });
         });
       });
     } catch (error) {
@@ -313,17 +328,30 @@ export function setupAuth(app: Express) {
           });
         }
         
-        Logger.debug(`Login successful for: ${email}`);
-        res.status(200).json({
-          success: true,
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role || 'user',
-            isAdmin: user.isAdmin || false,
+        // CRITICAL FIX: Ensure session is saved before responding
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            Logger.error('Session save error:', saveErr);
+            return res.status(500).json({ 
+              error: "Session persistence failed",
+              details: "Login successful but session could not be saved. Please try again."
+            });
           }
+          
+          Logger.debug(`Login successful and session saved for: ${email}`);
+          Logger.debug(`Session ID: ${req.sessionID}`);
+          
+          res.status(200).json({
+            success: true,
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              role: user.role || 'user',
+              isAdmin: user.isAdmin || false,
+            }
+          });
         });
       });
     })(req, res, next);

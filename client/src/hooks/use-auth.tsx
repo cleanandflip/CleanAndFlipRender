@@ -78,8 +78,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return result.user || result;
     },
-    onSuccess: (user: SelectUser) => {
+    onSuccess: async (user: SelectUser) => {
+      // CRITICAL FIX: Wait for session to propagate before updating cache
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Update query cache with new user data
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Force refetch to verify session persistence  
+      await queryClient.refetchQueries({ queryKey: ["/api/user"] });
+      
       toast({
         title: "Welcome back!",
         description: `Logged in as ${user.email}`,
@@ -124,8 +132,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return result.user || result;
     },
-    onSuccess: (user: SelectUser) => {
+    onSuccess: async (user: SelectUser) => {
+      // CRITICAL FIX: Wait for session to propagate after registration
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Update query cache with new user data
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Force refetch to verify session persistence
+      await queryClient.refetchQueries({ queryKey: ["/api/user"] });
+      
       toast({
         title: "Account created!",
         description: `Welcome to Clean & Flip, ${user.firstName || user.email}!`,
