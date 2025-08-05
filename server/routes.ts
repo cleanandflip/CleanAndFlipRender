@@ -127,17 +127,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/health/live', healthLive);
   app.get('/health/ready', healthReady);
   
-  // Debug session endpoint for troubleshooting
-  app.get('/api/debug/session', (req, res) => {
-    res.json({
-      sessionID: req.sessionID,
-      session: req.session,
-      passport: req.session?.passport,
-      user: req.user,
-      isAuthenticated: req.isAuthenticated(),
-      cookies: req.headers.cookie
+  // Debug session endpoint for troubleshooting (development only)
+  if (process.env.NODE_ENV === 'development') {
+    app.get('/api/debug/session', (req, res) => {
+      res.json({
+        sessionID: req.sessionID,
+        session: req.session,
+        passport: req.session?.passport,
+        user: req.user,
+        isAuthenticated: req.isAuthenticated(),
+        cookies: req.headers.cookie
+      });
     });
-  });
+  }
   
   // Performance testing endpoint (development only)
   // Performance monitoring endpoint removed for production
@@ -1902,26 +1904,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User endpoint (protected) - CRITICAL FIX using proper Passport authentication
+  // User endpoint (protected) - Using proper Passport authentication
   app.get("/api/user", (req, res) => {
-    Logger.debug(`[AUTH DEBUG] Session ID: ${req.sessionID}`);
-    Logger.debug(`[AUTH DEBUG] Session passport: ${JSON.stringify(req.session?.passport)}`);
-    Logger.debug(`[AUTH DEBUG] Is authenticated: ${req.isAuthenticated()}`);
-    Logger.debug(`[AUTH DEBUG] User object: ${JSON.stringify(req.user)}`);
-    
     // Use Passport's built-in authentication check
     if (!req.isAuthenticated()) {
-      Logger.debug(`[AUTH DEBUG] Not authenticated via Passport`);
       return res.status(401).json({ error: "Not authenticated" });
     }
     
     // req.user is automatically populated by Passport deserializeUser
     if (!req.user) {
-      Logger.debug(`[AUTH DEBUG] No user object in request`);
       return res.status(401).json({ error: "Not authenticated" });
     }
-    
-    Logger.debug(`[AUTH DEBUG] Successfully authenticated user: ${(req.user as any).email}`);
     
     // Remove sensitive data before sending user info
     const { password, ...userWithoutPassword } = req.user as any;
