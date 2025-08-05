@@ -74,9 +74,9 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "returnNull" }),
       refetchInterval: false, // Disable automatic polling to prevent issues
-      refetchOnWindowFocus: true, // Enable for wishlist sync
+      refetchOnWindowFocus: false, // Prevent constant refetching
       refetchOnMount: true, // Refetch on mount but not 'always'
-      staleTime: 0, // Wishlist always fresh for real-time sync
+      staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
       gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes (v5)
       retry: (failureCount, error) => {
         // Don't retry 4xx errors (client errors) but retry 5xx errors (server errors)
@@ -123,20 +123,4 @@ export const broadcastProductUpdate = (productId: string, action: string, update
   // Force immediate refetch for critical queries
   queryClient.refetchQueries({ queryKey: ['/api/products'] });
   queryClient.refetchQueries({ queryKey: ['/api/products/featured'] });
-};
-
-// Global function to broadcast wishlist updates
-export const broadcastWishlistUpdate = (productId: string, action: 'added' | 'removed') => {
-  // Dispatch custom events for cross-component synchronization
-  window.dispatchEvent(
-    new CustomEvent('wishlistUpdated', { 
-      detail: { productId, action, timestamp: Date.now() } 
-    })
-  );
-  
-  // Immediately invalidate ALL wishlist-related queries
-  queryClient.invalidateQueries({ queryKey: ['/api/wishlist'] });
-  
-  // Force immediate refetch for real-time sync
-  queryClient.refetchQueries({ queryKey: ['/api/wishlist'] });
 };

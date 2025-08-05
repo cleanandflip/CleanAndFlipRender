@@ -780,7 +780,7 @@ function DashboardContent() {
                       <div className="absolute top-2 right-2">
                         <WishlistButton 
                           productId={item.product.id}
-                          size="sm"
+                          size="small"
                           showTooltip={false}
                         />
                       </div>
