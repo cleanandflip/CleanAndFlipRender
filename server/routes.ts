@@ -1895,33 +1895,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // CRITICAL: Strict session validation to prevent auto re-authentication
     Logger.debug(`[AUTH DEBUG] Session exists: ${!!req.session}`);
     Logger.debug(`[AUTH DEBUG] Session ID: ${req.sessionID}`);
+    Logger.debug(`[AUTH DEBUG] Session passport: ${JSON.stringify(req.session?.passport)}`);
     Logger.debug(`[AUTH DEBUG] Is authenticated: ${req.isAuthenticated?.()}`);
+    Logger.debug(`[AUTH DEBUG] req.user: ${JSON.stringify(req.user)}`);
     
-    // SECURITY FIX: Only accept authentication through active session
-    if (!req.session || !req.session.passport || !req.session.passport.user) {
-      Logger.debug(`[AUTH DEBUG] No valid session - user not authenticated`);
+    // Use Passport's built-in authentication check
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      Logger.debug(`[AUTH DEBUG] Not authenticated via Passport`);
       return res.status(401).json({ error: "Not authenticated" });
     }
     
-    const userId = req.session.passport.user.id;
-    if (!userId) {
-      Logger.debug(`[AUTH DEBUG] No userId in session - user not authenticated`);
+    // req.user is automatically populated by Passport
+    const user = req.user;
+    if (!user) {
+      Logger.debug(`[AUTH DEBUG] No user object in request`);
       return res.status(401).json({ error: "Not authenticated" });
     }
     
-    try {
-      const user = await storage.getUser(userId);
-      if (!user) {
-        Logger.debug(`[AUTH DEBUG] User not found in database: ${userId}`);
-        return res.status(401).json({ error: "User not found" });
-      }
-      
-      Logger.debug(`[AUTH DEBUG] Successfully authenticated user: ${user.email}`);
-      res.json(user);
-    } catch (error) {
-      Logger.error("Error fetching user", error);
-      res.status(500).json({ error: "Server error" });
-    }
+    Logger.debug(`[AUTH DEBUG] Successfully authenticated user: ${(user as any).email}`);
+    res.json(user);
   });
 
   // Activity tracking endpoint for real analytics

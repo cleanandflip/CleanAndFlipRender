@@ -136,16 +136,31 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, (user as any).id));
-  passport.deserializeUser(async (id: string, done) => {
+  // CRITICAL FIX: Proper serialization for session persistence
+  passport.serializeUser((user, done) => {
+    Logger.debug(`[PASSPORT] Serializing user: ${(user as any).id}`);
+    done(null, { id: (user as any).id });
+  });
+  
+  passport.deserializeUser(async (sessionData: any, done) => {
     try {
-      const user = await storage.getUser(id);
-      done(null, user ? {
+      Logger.debug(`[PASSPORT] Deserializing user ID: ${sessionData.id}`);
+      const user = await storage.getUser(sessionData.id);
+      if (!user) {
+        Logger.debug(`[PASSPORT] User not found for ID: ${sessionData.id}`);
+        return done(null, null);
+      }
+      
+      const userForSession = {
         ...user,
         role: user.role || 'user',
         isAdmin: user.isAdmin || false
-      } : null);
+      };
+      
+      Logger.debug(`[PASSPORT] Successfully deserialized user: ${user.email}`);
+      done(null, userForSession);
     } catch (error) {
+      Logger.error(`[PASSPORT] Deserialization error:`, error);
       done(error);
     }
   });
