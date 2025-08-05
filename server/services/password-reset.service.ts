@@ -3,8 +3,9 @@ import bcrypt from 'bcryptjs';
 import { db } from '../db';
 import { users, passwordResetTokens, activityLogs } from '../../shared/schema';
 import { emailService } from './email';
-import { eq, and, gt } from 'drizzle-orm';
+import { eq, and, gt, sql } from 'drizzle-orm';
 import { logger } from '../config/logger';
+import { normalizeEmail } from '../utils/email';
 
 export class PasswordResetService {
   private static readonly TOKEN_LENGTH = 32;
@@ -26,6 +27,7 @@ export class PasswordResetService {
       // }
 
       // Find user (case insensitive email lookup) - only select essential fields
+      const normalizedEmail = normalizeEmail(email);
       const [user] = await db
         .select({
           id: users.id,
@@ -34,7 +36,7 @@ export class PasswordResetService {
           lastName: users.lastName
         })
         .from(users)
-        .where(eq(users.email, email))
+        .where(sql`LOWER(${users.email}) = ${normalizedEmail}`)
         .limit(1);
 
       // Check if user exists - provide helpful feedback while maintaining security

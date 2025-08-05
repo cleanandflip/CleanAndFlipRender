@@ -1,0 +1,322 @@
+COMPREHENSIVE EMAIL CASE-INSENSITIVE IMPLEMENTATION
+Yes! Emails should absolutely be case-insensitive. Here's how to ensure this throughout your entire system:
+
+REPLIT: IMPLEMENT CASE-INSENSITIVE EMAILS EVERYWHERE
+1. Database Schema Update
+Create migration /server/db/migrations/fix-email-case-sensitivity.sql:
+sql-- Convert all existing emails to lowercase
+UPDATE users SET email = LOWER(email) WHERE email != LOWER(email);
+
+-- Add unique constraint on lowercase email
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email));
+
+-- If you have newsletter_subscribers table
+UPDATE newsletter_subscribers SET email = LOWER(email) WHERE email != LOWER(email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_newsletter_email_lower ON newsletter_subscribers (LOWER(email));
+
+-- If you have equipment_submissions table
+UPDATE equipment_submissions SET email = LOWER(email) WHERE email != LOWER(email);
+2. Update User Model/Schema
+Update /server/db/schema.ts:
+typescriptimport { sql } from 'drizzle-orm';
+
+// Add a custom lower-case email type
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  email: varchar('email', { length: 255 })
+    .notNull()
+    .unique()
+    .$defaultFn(() => sql`LOWER(email)`), // Always store as lowercase
+  password: varchar('password', { length: 255 }).notNull(),
+  name: varchar('name', { length: 255 }),
+  role: varchar('role', { length: 50 }).default('user'),
+  // ... other fields
+}, (table) => {
+  return {
+    // Ensure unique constraint on lowercase
+    emailLowerIdx: uniqueIndex('idx_users_email_lower').on(sql`LOWER(${table.email})`),
+  };
+});
+3. Update Authentication Service
+Update /server/routes/auth.ts:
+typescript// Login endpoint
+router.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // ALWAYS convert email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(sql`LOWER(${users.email})`, normalizedEmail))
+      .limit(1);
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    
+    // ... rest of login logic
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Registration endpoint
+router.post('/api/register', async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+    
+    // Normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // Check if user exists (case-insensitive)
+    const [existingUser] = await db
+      .select()
+      .from(users)
+      .where(eq(sql`LOWER(${users.email})`, normalizedEmail))
+      .limit(1);
+    
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+    
+    // Create user with lowercase email
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email: normalizedEmail, // Store as lowercase
+        password: hashedPassword,
+        name: name?.trim(),
+      })
+      .returning();
+    
+    // ... rest of registration logic
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Registration failed' });
+  }
+});
+4. Update Password Reset Service
+Update /server/services/password-reset.service.ts:
+typescriptexport class PasswordResetService {
+  static async requestPasswordReset(
+    email: string, 
+    ipAddress: string, 
+    userAgent: string
+  ) {
+    try {
+      // Normalize email
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Find user with case-insensitive search
+      const [user] = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+        })
+        .from(users)
+        .where(eq(sql`LOWER(${users.email})`, normalizedEmail))
+        .limit(1);
+
+      // Always return generic message
+      if (!user) {
+        console.log('Password reset requested for non-existent email:', normalizedEmail);
+        return { success: true, message: 'If an account exists, reset email sent' };
+      }
+      
+      // ... rest of password reset logic
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  }
+  
+  static async resetPassword(
+    token: string,
+    newPassword: string,
+    email: string,
+    ipAddress: string
+  ) {
+    try {
+      // Normalize email for validation
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Validate token with normalized email
+      const validation = await this.validateResetToken(token, normalizedEmail);
+      
+      // ... rest of reset logic
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  }
+}
+5. Update All Email-Related Queries
+Create a utility function for email normalization:
+typescript// /server/utils/email.ts
+export function normalizeEmail(email: string): string {
+  return email.toLowerCase().trim();
+}
+
+export function createEmailCondition(email: string) {
+  return eq(sql`LOWER(${users.email})`, normalizeEmail(email));
+}
+Use throughout your codebase:
+typescriptimport { normalizeEmail, createEmailCondition } from '../utils/email';
+
+// Example: Finding user by email
+const [user] = await db
+  .select()
+  .from(users)
+  .where(createEmailCondition(email))
+  .limit(1);
+
+// Example: Newsletter subscription
+await db.insert(newsletterSubscribers).values({
+  email: normalizeEmail(email),
+  // ... other fields
+});
+6. Update Frontend Validation
+Update /client/src/utils/validation.ts:
+typescript// Email validation that normalizes
+export const emailSchema = z
+  .string()
+  .email('Invalid email address')
+  .transform(email => email.toLowerCase().trim());
+
+// Use in forms
+const loginSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(8),
+});
+7. Update Email Service
+Update /server/services/email.service.ts:
+typescriptimport { normalizeEmail } from '../utils/email';
+
+export class EmailService {
+  async send(templateType: string, data: any) {
+    // Normalize recipient email
+    const normalizedTo = data.to ? normalizeEmail(data.to) : data.to;
+    
+    try {
+      const result = await resend.emails.send({
+        from: routing.from,
+        to: normalizedTo,
+        // ... rest of email options
+      });
+      
+      // Log with normalized email
+      await this.logEmail({
+        to: normalizedTo,
+        // ... rest of log data
+      });
+      
+      return result;
+    } catch (error) {
+      console.error(`Failed to send ${templateType} email:`, error);
+      throw error;
+    }
+  }
+}
+8. Add Data Migration Script
+Create /server/scripts/normalize-emails.ts:
+typescriptimport { db } from '../db';
+import { sql } from 'drizzle-orm';
+
+async function normalizeAllEmails() {
+  console.log('Starting email normalization...');
+  
+  try {
+    // Update users table
+    const usersResult = await db.execute(sql`
+      UPDATE users 
+      SET email = LOWER(email) 
+      WHERE email != LOWER(email)
+      RETURNING id, email
+    `);
+    
+    console.log(`Updated ${usersResult.rowCount} user emails`);
+    
+    // Update newsletter_subscribers if exists
+    try {
+      const newsletterResult = await db.execute(sql`
+        UPDATE newsletter_subscribers 
+        SET email = LOWER(email) 
+        WHERE email != LOWER(email)
+        RETURNING id, email
+      `);
+      console.log(`Updated ${newsletterResult.rowCount} newsletter emails`);
+    } catch (e) {
+      console.log('Newsletter table not found or already normalized');
+    }
+    
+    // Update equipment_submissions if exists
+    try {
+      const submissionsResult = await db.execute(sql`
+        UPDATE equipment_submissions 
+        SET email = LOWER(email) 
+        WHERE email != LOWER(email)
+        RETURNING id, email
+      `);
+      console.log(`Updated ${submissionsResult.rowCount} submission emails`);
+    } catch (e) {
+      console.log('Submissions table not found or already normalized');
+    }
+    
+    console.log('Email normalization complete!');
+  } catch (error) {
+    console.error('Normalization error:', error);
+  }
+}
+
+normalizeAllEmails();
+9. Update Admin Dashboard
+For user management, ensure case-insensitive search:
+typescript// /server/routes/admin.ts
+router.get('/api/admin/users', requireAdmin, async (req, res) => {
+  const { search } = req.query;
+  
+  let query = db.select().from(users);
+  
+  if (search) {
+    // Case-insensitive search
+    query = query.where(
+      or(
+        sql`LOWER(${users.email}) LIKE ${`%${search.toLowerCase()}%`}`,
+        sql`LOWER(${users.name}) LIKE ${`%${search.toLowerCase()}%`}`
+      )
+    );
+  }
+  
+  const results = await query;
+  res.json(results);
+});
+10. Testing Commands
+After implementing, test with:
+bash# Test case-insensitive login
+curl -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "ADMIN@CleanAndFlip.com", "password": "password"}'
+
+# Should work the same as:
+curl -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@cleanandflip.com", "password": "password"}'
+
+# Run normalization script
+npm run normalize-emails
+Summary of Changes:
+
+✅ All emails stored as lowercase in database
+✅ All email comparisons are case-insensitive
+✅ Email input normalized on frontend and backend
+✅ Unique constraints work on lowercase values
+✅ Existing data migrated to lowercase
+✅ Email searches are case-insensitive
+
+This ensures users can login with John@Example.com, JOHN@EXAMPLE.COM, or john@example.com - all will work correctly!
