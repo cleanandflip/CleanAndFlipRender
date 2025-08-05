@@ -448,24 +448,24 @@ export function UserManager() {
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="glass border-border bg-card">
-              <DropdownMenuItem onClick={() => handleViewUser(user)}>
+              <DropdownMenuItem onClick={() => handleViewUser(user as any)}>
                 View Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleEmailUser(user)}>
+              <DropdownMenuItem onClick={() => handleEmailUser(user as any)}>
                 <Mail className="w-4 h-4 mr-2" />
                 Email User
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleToggleAdmin(user)}>
+              <DropdownMenuItem onClick={() => handleToggleAdmin(user as any)}>
                 <Shield className="w-4 h-4 mr-2" />
-                {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                {(user as any).role === 'admin' ? 'Remove Admin' : 'Make Admin'}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onClick={() => handleSuspendUser(user)}
+                onClick={() => handleSuspendUser(user as any)}
                 className="text-red-400"
               >
                 <Ban className="w-4 h-4 mr-2" />
-                {user.status === 'suspended' ? 'Unsuspend' : 'Suspend'} User
+                {(user as any).status === 'suspended' ? 'Unsuspend' : 'Suspend'} User
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

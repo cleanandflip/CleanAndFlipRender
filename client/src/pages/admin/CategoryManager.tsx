@@ -339,7 +339,7 @@ export function CategoryManager() {
           setIsEditModalOpen(false);
           setEditingCategory(null);
         }}
-        category={editingCategory}
+        category={editingCategory as any}
         onCategoryUpdated={() => {
           refetch();
           setIsEditModalOpen(false);

@@ -549,9 +549,9 @@ export function SubmissionsManager() {
           onViewDetails={(submission) => {
             setSelectedSubmission({
               ...submission,
-              description: submission.description || '',
-              images: submission.images || []
-            });
+              description: (submission as any).description || '',
+              images: (submission as any).images || []
+            } as any);
           }}
         />
       ) : (
@@ -570,9 +570,9 @@ export function SubmissionsManager() {
           onViewDetails={(submission) => {
             setSelectedSubmission({
               ...submission,
-              description: submission.description || '',
-              images: submission.images || []
-            });
+              description: (submission as any).description || '',
+              images: (submission as any).images || []
+            } as any);
           }}
         />
       )}
