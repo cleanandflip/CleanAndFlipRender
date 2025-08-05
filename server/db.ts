@@ -42,23 +42,30 @@ pool.on('connect', () => {
   // Database connection success handled by logger
 });
 
-// Keep-alive function to prevent connection timeouts
+// Enhanced keep-alive function with better error handling
 const keepAlive = async () => {
   try {
     const client = await pool.connect();
     await client.query('SELECT 1');
     client.release();
   } catch (error: any) {
-    console.error('Keep-alive query failed:', error.message);
-    if (error.code === '57P01' || error.message?.includes('connection')) {
-      console.log('Recreating pool due to connection issues...');
-      pool = new Pool(poolConfig);
+    // For serverless databases like Neon, connection timeouts are normal
+    // Only log in development to avoid production log spam
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Keep-alive query failed:', error.message);
+      if (error.code === '57P01' || error.message?.includes('connection')) {
+        console.log('Recreating pool due to connection issues...');
+        pool = new Pool(poolConfig);
+      }
     }
   }
 };
 
-// Run keep-alive every 60 seconds
-setInterval(keepAlive, 60000);
+// Keep-alive ping - different intervals for dev vs production
+// Production: Every 10 minutes (serverless databases auto-disconnect)
+// Development: Every 5 minutes
+const keepAliveInterval = process.env.NODE_ENV === 'production' ? 10 * 60 * 1000 : 5 * 60 * 1000;
+setInterval(keepAlive, keepAliveInterval);
 
 // Database wrapper with retry logic
 const withRetry = async (operation: () => Promise<any>, maxRetries = 3): Promise<any> => {
