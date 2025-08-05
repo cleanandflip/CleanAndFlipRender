@@ -26,7 +26,9 @@ import {
   AlertCircle,
   Heart,
   Grid3X3,
-  Clipboard
+  Clipboard,
+  Building2,
+  Ruler
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -43,6 +45,8 @@ import { CategoryManager } from './admin/CategoryManager';
 import { SystemManager } from './admin/SystemManager';
 import { WishlistManager } from './admin/WishlistManager';
 import StripeManager from './admin/StripeManager';
+import { BrandManager } from '@/components/admin/BrandManager';
+import { SizeManager } from '@/components/admin/SizeManager';
 import type { Product, User, Order } from "@shared/schema";
 
 interface AdminStats {
@@ -501,6 +505,24 @@ function AdminDashboard() {
                 Categories
               </Button>
               <Button
+                variant={activeTab === 'brands' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('brands')}
+                className="flex items-center gap-2 h-8 px-3"
+              >
+                <Building2 className="w-4 h-4" />
+                Brands
+              </Button>
+              <Button
+                variant={activeTab === 'sizes' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab('sizes')}
+                className="flex items-center gap-2 h-8 px-3"
+              >
+                <Ruler className="w-4 h-4" />
+                Sizes
+              </Button>
+              <Button
                 variant={activeTab === 'submissions' ? 'primary' : 'outline'}
                 size="sm"
                 onClick={() => setActiveTab('submissions')}
@@ -559,6 +581,10 @@ function AdminDashboard() {
             {activeTab === 'products' && <ProductsManager />}
 
             {activeTab === 'categories' && <CategoryManager />}
+
+            {activeTab === 'brands' && <BrandManager />}
+
+            {activeTab === 'sizes' && <SizeManager />}
 
             {activeTab === 'submissions' && <SubmissionsManager />}
 
