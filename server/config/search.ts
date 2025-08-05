@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { db } from './database';
+import { Logger } from '../utils/logger';
 
 // Initialize full-text search
 export async function initializeSearchIndexes() {
@@ -46,9 +47,9 @@ export async function initializeSearchIndexes() {
         FOR EACH ROW EXECUTE FUNCTION update_product_search_vector();
     `);
 
-    console.log('Full-text search indexes initialized successfully');
+    Logger.info('Full-text search indexes initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize search indexes:', error);
+    Logger.error('Failed to initialize search indexes:', error);
   }
 }
 
@@ -68,11 +69,11 @@ export async function searchProducts(query: string, limit: number = 20, offset: 
     `);
 
     const duration = Date.now() - start;
-    console.log(`Search query "${query}" completed in ${duration}ms`);
+    Logger.info(`Search query "${query}" completed in ${duration}ms`);
 
     return results.rows;
   } catch (error) {
-    console.error('Search query failed:', error);
+    Logger.error('Search query failed:', error);
     return [];
   }
 }
@@ -91,7 +92,7 @@ export async function getSearchSuggestions(query: string, limit: number = 5) {
 
     return results.rows.map(row => row.name);
   } catch (error) {
-    console.error('Search suggestions failed:', error);
+    Logger.error('Search suggestions failed:', error);
     return [];
   }
 }

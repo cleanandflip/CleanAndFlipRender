@@ -1,0 +1,375 @@
+server/config/search.ts-49-    console.log('Full-text search indexes initialized successfully');
+server/config/search.ts:50:  } catch (error) {
+server/config/search.ts-51-    console.error('Failed to initialize search indexes:', error);
+server/config/search.ts-52-  }
+server/config/search.ts-53-}
+--
+server/config/search.ts-73-    return results.rows;
+server/config/search.ts:74:  } catch (error) {
+server/config/search.ts-75-    console.error('Search query failed:', error);
+server/config/search.ts-76-    return [];
+server/config/search.ts-77-  }
+--
+server/config/search.ts-92-    return results.rows.map(row => row.name);
+server/config/search.ts:93:  } catch (error) {
+server/config/search.ts-94-    console.error('Search suggestions failed:', error);
+server/config/search.ts-95-    return [];
+server/config/search.ts-96-  }
+--
+server/config/database.ts-43-    console.log('Database initialized with optimized settings');
+server/config/database.ts:44:  } catch (error) {
+server/config/database.ts-45-    console.error('Database initialization error:', error);
+server/config/database.ts-46-  }
+server/config/database.ts-47-}
+--
+server/config/redis.ts-48-    return redisClient;
+server/config/redis.ts:49:  } catch (error) {
+server/config/redis.ts-50-    if (!hasLoggedWarning) {
+--
+--
+server/config/redis.ts-67-    return cached ? JSON.parse(cached) : null;
+server/config/redis.ts:68:  } catch (error) {
+server/config/redis.ts-69-    return null;
+server/config/redis.ts-70-  }
+server/config/redis.ts-71-}
+--
+--
+server/middleware/product-sync.ts-13-        if (data.id) {
+server/middleware/product-sync.ts:14:          StripeProductSync.syncProduct(data.id).catch(console.error);
+server/middleware/product-sync.ts-15-        } else if (data.products && Array.isArray(data.products)) {
+server/middleware/product-sync.ts-16-          // Bulk operations
+server/middleware/product-sync.ts-17-          data.products.forEach((product: any) => {
+server/middleware/product-sync.ts-18-            if (product.id) {
+server/middleware/product-sync.ts:19:              StripeProductSync.syncProduct(product.id).catch(console.error);
+server/middleware/product-sync.ts-20-            }
+server/middleware/product-sync.ts-21-          });
+server/middleware/product-sync.ts-22-        }
+--
+server/middleware/transaction.ts-53-    return { success: true, availableStock: currentStock - quantityToReduce };
+server/middleware/transaction.ts:54:  } catch (error) {
+server/middleware/transaction.ts-55-    console.error('Atomic stock update error:', error);
+server/middleware/transaction.ts-56-    return { success: false, error: 'Database error during stock update' };
+server/middleware/transaction.ts-57-  }
+--
+server/middleware/transaction.ts-145-      return { success: false, error: 'Invalid operation' };
+server/middleware/transaction.ts:146:    } catch (error) {
+server/middleware/transaction.ts-147-      console.error('Atomic cart operation error:', error);
+server/middleware/transaction.ts-148-      return { success: false, error: 'Database error during cart operation' };
+server/middleware/transaction.ts-149-    }
+--
+server/middleware/transaction.ts-186-      return { success: true, orderId: order.id };
+server/middleware/transaction.ts:187:    } catch (error) {
+server/middleware/transaction.ts-188-      console.error('Atomic order creation error:', error);
+server/middleware/transaction.ts-189-      return { success: false, error: 'Failed to create order' };
+server/middleware/transaction.ts-190-    }
+--
+server/middleware/transaction.ts-215-      return await operation();
+server/middleware/transaction.ts:216:    } catch (error: any) {
+server/middleware/transaction.ts-217-      lastError = error;
+server/middleware/transaction.ts-218-      
+--
+--
+server/utils/safe-query.ts-27-    return columns;
+server/utils/safe-query.ts:28:  } catch (error) {
+server/utils/safe-query.ts-29-    console.error(`Failed to get columns for table ${tableName}:`, error);
+server/utils/safe-query.ts-30-    return new Set();
+server/utils/safe-query.ts-31-  }
+--
+server/utils/safe-query.ts-93-    }
+server/utils/safe-query.ts:94:  } catch (error) {
+server/utils/safe-query.ts-95-    console.error('Schema validation error:', error);
+server/utils/safe-query.ts-96-  }
+server/utils/safe-query.ts-97-}
+--
+--
+server/utils/user-lookup.ts:39:    } catch (error) {
+server/utils/user-lookup.ts-40-      console.error('[DEBUG] Query error for variant:', emailVariant, (error as Error).message);
+server/utils/user-lookup.ts-41-    }
+server/utils/user-lookup.ts-42-  }
+--
+--
+server/utils/user-lookup.ts:57:  } catch (error) {
+server/utils/user-lookup.ts-58-    console.error('[DEBUG] Case-insensitive search error:', (error as Error).message);
+server/utils/user-lookup.ts-59-  }
+server/utils/user-lookup.ts-60-  
+--
+--
+server/utils/user-lookup.ts:74:    } catch (error) {
+server/utils/user-lookup.ts-75-      console.error('[DEBUG] Partial match error:', (error as Error).message);
+server/utils/user-lookup.ts-76-    }
+server/utils/user-lookup.ts-77-  }
+--
+server/utils/user-lookup.ts-94-    return result.rows.map(r => `${r.email} (length: ${r.len})`);
+server/utils/user-lookup.ts:95:  } catch (error) {
+server/utils/user-lookup.ts-96-    console.error('[DEBUG] Error listing emails:', error);
+server/utils/user-lookup.ts-97-    return [];
+server/utils/user-lookup.ts-98-  }
+--
+server/lib/cache.ts-48-      return cached ? JSON.parse(cached) : null;
+server/lib/cache.ts:49:    } catch {
+server/lib/cache.ts-50-      return null;
+server/lib/cache.ts-51-    }
+server/lib/cache.ts-52-  }
+--
+--
+server/services/password-reset.service.ts:122:      } catch (emailError) {
+server/services/password-reset.service.ts-123-        console.error('[PASSWORD_RESET] Email send error:', emailError);
+server/services/password-reset.service.ts-124-        // Don't expose email errors to user
+server/services/password-reset.service.ts-125-      }
+--
+--
+server/services/password-reset.service.ts:133:      } catch (logError) {
+server/services/password-reset.service.ts-134-        console.log('[DEBUG] Activity log failed, continuing without logging:', logError);
+server/services/password-reset.service.ts-135-      }
+server/services/password-reset.service.ts-136-      
+--
+--
+server/services/password-reset.service.ts:149:    } catch (error) {
+server/services/password-reset.service.ts-150-      console.error('[PASSWORD_RESET] Unexpected error:', error);
+server/services/password-reset.service.ts-151-      // Still return success to prevent information leakage
+server/services/password-reset.service.ts-152-      return { 
+--
+server/services/password-reset.service.ts-207-      
+server/services/password-reset.service.ts:208:    } catch (error) {
+server/services/password-reset.service.ts-209-      console.error('[TOKEN_VALIDATION] Error:', error);
+server/services/password-reset.service.ts-210-      return { valid: false, error: 'Token validation failed' };
+server/services/password-reset.service.ts-211-    }
+--
+server/services/password-reset.service.ts-257-        // await emailService.sendPasswordResetConfirmation(validation.email!, ipAddress);
+server/services/password-reset.service.ts:258:      } catch (emailError) {
+server/services/password-reset.service.ts-259-        console.error('[PASSWORD_RESET] Confirmation email error:', emailError);
+server/services/password-reset.service.ts-260-      }
+server/services/password-reset.service.ts-261-      
+--
+--
+server/services/password-reset.service.ts:267:    } catch (error) {
+server/services/password-reset.service.ts-268-      console.error('[PASSWORD_RESET] Reset error:', error);
+server/services/password-reset.service.ts-269-      return { 
+server/services/password-reset.service.ts-270-        success: false, 
+--
+server/services/password-reset.service.ts-286-      return result.rowCount || 0;
+server/services/password-reset.service.ts:287:    } catch (error) {
+server/services/password-reset.service.ts-288-      console.error('[PASSWORD_RESET] Cleanup error:', error);
+server/services/password-reset.service.ts-289-      return 0;
+server/services/password-reset.service.ts-290-    }
+--
+--
+--
+server/services/email.ts-205-      return true;
+server/services/email.ts:206:    } catch (error) {
+server/services/email.ts-208-      
+--
+--
+server/services/email.ts-377-      return true;
+server/services/email.ts:378:    } catch (error) {
+server/services/email.ts-380-      return false;
+server/services/email.ts-381-    }
+--
+server/services/stripe-sync.ts-155-      console.log(`Successfully synced product ${productId} to Stripe`);
+server/services/stripe-sync.ts:156:    } catch (error) {
+server/services/stripe-sync.ts-157-      console.error(`Failed to sync product ${productId}:`, error);
+server/services/stripe-sync.ts-158-      
+server/services/stripe-sync.ts-159-      // Update sync status to failed
+--
+--
+server/services/stripe-sync.ts-235-        failCount++;
+server/services/stripe-sync.ts-236-        console.error(`Failed to sync product ${product.id}:`, error);
+server/services/stripe-sync.ts-237-      }
+--
+server/services/stripe-sync.ts-278-            await new Promise(resolve => setTimeout(resolve, 100));
+server/services/stripe-sync.ts:279:          } catch (error) {
+server/services/stripe-sync.ts-280-            console.error(`Failed to archive ${stripeProduct.name}:`, error);
+server/services/stripe-sync.ts-281-          }
+server/services/stripe-sync.ts-282-        }
+--
+--
+server/services/stripe-sync.ts:291:    } catch (error) {
+server/services/stripe-sync.ts-292-      console.error('Failed to cleanup orphaned products:', error);
+server/services/stripe-sync.ts-293-      // Don't throw - this is cleanup, not critical
+server/services/stripe-sync.ts-294-    }
+--
+server/scripts/create-test-products.ts-145-        console.log(`✅ Successfully synced ${newProduct.name} to Stripe`);
+server/scripts/create-test-products.ts:146:      } catch (error) {
+server/scripts/create-test-products.ts-147-        console.error(`❌ Failed to sync ${newProduct.name} to Stripe:`, error);
+server/scripts/create-test-products.ts-148-      }
+server/scripts/create-test-products.ts-149-      
+--
+--
+server/scripts/create-test-products.ts:157:  } catch (error) {
+server/scripts/create-test-products.ts-158-    console.error('Failed to create test products:', error);
+server/scripts/create-test-products.ts-159-  }
+server/scripts/create-test-products.ts-160-}
+--
+server/scripts/check-schema-issues.ts-14-      console.log('✅ Subcategory column exists in products');
+server/scripts/check-schema-issues.ts:15:    } catch (error: any) {
+server/scripts/check-schema-issues.ts-16-      if (error.message.includes('column "subcategory" does not exist')) {
+server/scripts/check-schema-issues.ts-17-        console.log('❌ Subcategory column missing from products table');
+server/scripts/check-schema-issues.ts-18-        issues.push('products.subcategory');
+--
+server/scripts/check-schema-issues.ts-26-      console.log('✅ Street column exists in users');
+server/scripts/check-schema-issues.ts:27:    } catch (error: any) {
+server/scripts/check-schema-issues.ts-28-      if (error.message.includes('column "street" does not exist')) {
+server/scripts/check-schema-issues.ts-29-        console.log('❌ Street column missing from users table');
+server/scripts/check-schema-issues.ts-30-        issues.push('users.street');
+--
+server/scripts/check-schema-issues.ts-91-    
+server/scripts/check-schema-issues.ts:92:  } catch (error) {
+server/scripts/check-schema-issues.ts-93-    console.error('Schema check failed:', error);
+server/scripts/check-schema-issues.ts-94-  }
+server/scripts/check-schema-issues.ts-95-}
+--
+--
+--
+server/scripts/normalize-emails.ts-35-      console.log(`✅ Updated ${emailLogsResult.rowCount || 0} email log entries`);
+server/scripts/normalize-emails.ts:36:    } catch (e) {
+server/scripts/normalize-emails.ts-37-      console.log('ℹ️  Email logs table not found or already normalized');
+server/scripts/normalize-emails.ts-38-    }
+server/scripts/normalize-emails.ts-39-    
+--
+server/scripts/normalize-emails.ts-50-      console.log(`✅ Updated ${submissionsResult.rowCount || 0} submission emails`);
+server/scripts/normalize-emails.ts:51:    } catch (e) {
+server/scripts/normalize-emails.ts-52-      console.log('ℹ️  Equipment submissions table not found or already normalized');
+server/scripts/normalize-emails.ts-53-    }
+server/scripts/normalize-emails.ts-54-    
+--
+--
+server/scripts/normalize-emails.ts:79:  } catch (error) {
+server/scripts/normalize-emails.ts-80-    console.error('❌ Email normalization failed:', error);
+server/scripts/normalize-emails.ts-81-    Logger.error('Email normalization error:', error);
+server/scripts/normalize-emails.ts-82-    throw error;
+--
+server/scripts/normalize-emails.ts-92-    })
+server/scripts/normalize-emails.ts:93:    .catch((error) => {
+server/scripts/normalize-emails.ts-94-      console.error('❌ Email normalization failed:', error);
+server/scripts/normalize-emails.ts-95-      process.exit(1);
+server/scripts/normalize-emails.ts-96-    });
+--
+--
+server/routes/stripe-sync.ts:14:  } catch (error) {
+server/routes/stripe-sync.ts-15-    console.error('Sync all products error:', error);
+server/routes/stripe-sync.ts-16-    res.status(500).json({ error: 'Failed to sync products', details: (error as any).message });
+server/routes/stripe-sync.ts-17-  }
+--
+--
+server/routes/stripe-sync.ts:26:  } catch (error) {
+server/routes/stripe-sync.ts-27-    console.error('Sync product error:', error);
+server/routes/stripe-sync.ts-28-    res.status(500).json({ error: 'Failed to sync product' });
+server/routes/stripe-sync.ts-29-  }
+--
+--
+server/routes/stripe-sync.ts:37:  } catch (error) {
+server/routes/stripe-sync.ts-38-    console.error('Create test products error:', error);
+server/routes/stripe-sync.ts-39-    res.status(500).json({ error: 'Failed to create test products' });
+server/routes/stripe-sync.ts-40-  }
+--
+--
+server/routes/stripe-sync.ts:60:  } catch (error) {
+server/routes/stripe-sync.ts-61-    console.error('Webhook error:', error);
+server/routes/stripe-sync.ts-62-    res.status(400).json({ error: 'Webhook failed' });
+server/routes/stripe-sync.ts-63-  }
+--
+--
+server/auth.ts-131-        Logger.error('Login authentication error:', error.message);
+server/auth.ts-132-        return done(error, false, { 
+server/auth.ts-133-          message: "System error during login. Please try again."
+--
+server/auth.ts-166-      done(null, userForSession);
+--
+server/index.ts:60:    } catch (error) {
+server/index.ts-61-      console.error('[CLEANUP] Error cleaning up tokens:', error);
+server/index.ts-62-    }
+server/index.ts-63-  }, 60 * 60 * 1000); // Every hour
+--
+--
+--
+server/db.ts-74-      return await operation();
+server/db.ts:75:    } catch (error: any) {
+server/db.ts-76-      console.error(`Database operation attempt ${attempt} failed:`, error.message);
+server/db.ts-77-      
+server/db.ts-78-      if (error.code === '57P01' || error.message?.includes('terminating connection')) {
+--
+--
+server/routes.ts-1102-            Logger.error(`Error fetching stats for user ${user.id}`, error);
+server/routes.ts-1103-            return {
+server/routes.ts-1104-              ...user,
+--
+server/routes.ts-1124-      
+--
+server/routes.ts-1920-      Logger.error("Error fetching addresses", error);
+server/routes.ts-1921-      return res.status(500).json({ error: "Failed to fetch addresses" });
+server/routes.ts-1922-    }
+--
+server/routes.ts-1969-      });
+--
+server/routes.ts:2814:    } catch (error) {
+server/routes.ts-2815-      console.error('Sync all products error:', error);
+server/routes.ts-2816-      res.status(500).json({ error: 'Failed to sync products' });
+server/routes.ts-2817-    }
+--
+--
+server/routes.ts:2826:    } catch (error) {
+server/routes.ts-2827-      console.error('Sync product error:', error);
+server/routes.ts-2828-      res.status(500).json({ error: 'Failed to sync product' });
+server/routes.ts-2829-    }
+--
+--
+server/routes.ts:2837:    } catch (error) {
+server/routes.ts-2838-      console.error('Create test products error:', error);
+server/routes.ts-2839-      res.status(500).json({ error: 'Failed to create test products' });
+server/routes.ts-2840-    }
+--
+--
+server/routes.ts:2888:    } catch (error: any) {
+server/routes.ts-2889-      console.error('[API] Password reset error:', error);
+server/routes.ts-2890-      // Still return success to prevent information leakage
+server/routes.ts-2891-      res.json({ 
+--
+server/routes.ts-2908-      res.json(validation);
+server/routes.ts:2909:    } catch (error: any) {
+server/routes.ts-2910-      console.error('[API] Token validation error:', error);
+server/routes.ts-2911-      res.status(500).json({ valid: false, error: 'Failed to validate token' });
+server/routes.ts-2912-    }
+--
+--
+server/routes.ts:2922:    } catch (error: any) {
+server/routes.ts-2923-      console.error('[API] Token validation error:', error);
+server/routes.ts-2924-      res.json({ valid: false, error: 'Validation failed' });
+server/routes.ts-2925-    }
+--
+--
+server/routes.ts:2958:    } catch (error: any) {
+server/routes.ts-2959-      console.error('[API] Password reset error:', error);
+server/routes.ts-2960-      res.status(500).json({ 
+server/routes.ts-2961-        success: false, 
+--
+server/storage.ts-161-      return user;
+server/storage.ts:162:    } catch (error: any) {
+server/storage.ts-163-      Logger.error('Error getting user by email:', error.message);
+server/storage.ts-164-      if (error.code === '57P01') {
+--
+--
+server/storage.ts-185-      return user;
+server/storage.ts:186:    } catch (error: any) {
+server/storage.ts-187-      Logger.error('Error creating user:', error.message);
+server/storage.ts-188-      if (error.code === '57P01') {
+--
+server/storage.ts-698-      Logger.error('Error deleting product:', error);
+server/storage.ts-699-      throw error;
+server/storage.ts-700-    }
+--
+server/storage.ts-942-      };
+server/storage.ts:943:    } catch (error) {
+server/storage.ts-944-      throw error;
+server/storage.ts-945-    }
+server/storage.ts-946-  }
+--
+--
+server/storage.ts-1089-      Logger.error('Error fetching admin stats:', error);
+server/storage.ts-1090-      throw error;
+server/storage.ts-1091-    }
+--
+server/storage.ts-1145-      };
+--
+server/storage.ts-1147-      Logger.error('Error getting wishlist analytics:', error);
+server/storage.ts-1148-      return { topWishlisted: [], activeUsers: [], totalWishlistItems: 0 };
+server/storage.ts-1149-    }

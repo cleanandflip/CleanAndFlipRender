@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool } from "@neondatabase/serverless";
 import { sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
+import { Logger } from '../utils/logger';
 
 // Optimized connection pool configuration
 const pool = new Pool({
@@ -16,23 +17,23 @@ export const db = drizzle(pool, { schema });
 
 // Connection health monitoring
 pool.on('connect', () => {
-  console.log('Database connection established');
+  Logger.info('Database connection established');
 });
 
 pool.on('error', (err) => {
-  console.error('Database pool error:', err);
+  Logger.error('Database pool error:', err);
 });
 
 // Graceful shutdown handler
 export async function closeDatabasePool() {
-  console.log('Closing database connection pool...');
+  Logger.info('Closing database connection pool...');
   await pool.end();
 }
 
 // Query performance monitoring
 export function logSlowQuery(query: string, duration: number) {
   if (duration > 1000) { // Log queries slower than 1 second
-    console.warn(`SLOW QUERY (${duration}ms): ${query.substring(0, 100)}...`);
+    Logger.warn(`SLOW QUERY (${duration}ms): ${query.substring(0, 100)}...`);
   }
 }
 
@@ -40,8 +41,8 @@ export function logSlowQuery(query: string, duration: number) {
 export async function initializeDatabase() {
   try {
     await db.execute(sql`SET statement_timeout = '30s'`);
-    console.log('Database initialized with optimized settings');
+    Logger.info('Database initialized with optimized settings');
   } catch (error) {
-    console.error('Database initialization error:', error);
+    Logger.error('Database initialization error:', error);
   }
 }
