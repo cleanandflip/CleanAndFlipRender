@@ -2857,29 +2857,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email } = req.body;
       
       if (!email || typeof email !== 'string') {
-        return res.status(400).json({ error: 'Email is required' });
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Email is required' 
+        });
       }
 
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
       const userAgent = req.headers['user-agent'] || 'unknown';
 
+      console.log(`[API] Password reset request from ${ipAddress} for ${email}`);
+
       const result = await PasswordResetService.requestPasswordReset(
-        email.toLowerCase().trim(),
+        email,
         ipAddress,
         userAgent
       );
 
-      // Always return success for security (don't reveal if email exists)
-      // The service handles sending emails internally if user exists
-      res.json({ message: "If an account exists, reset email sent" });
-    } catch (error: any) {
-      logger.error('Password reset request error:', error);
-      
-      if (error.message.includes('Too many reset attempts')) {
-        return res.status(429).json({ error: error.message });
+      // In development, include debug info
+      if (process.env.NODE_ENV === 'development' && result.debugInfo) {
+        console.log('[API] Debug info:', result.debugInfo);
       }
+
+      // Always return the same response to prevent email enumeration
+      res.json({ 
+        success: true, 
+        message: result.message 
+      });
       
-      res.status(500).json({ error: 'Failed to process password reset request' });
+    } catch (error: any) {
+      console.error('[API] Password reset error:', error);
+      // Still return success to prevent information leakage
+      res.json({ 
+        success: true, 
+        message: 'If an account exists, reset email sent' 
+      });
     }
   });
 
@@ -2892,10 +2904,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ valid: false, error: 'Token is required' });
       }
 
-      const validation = await PasswordResetService.validateToken(token);
+      const validation = await PasswordResetService.validateResetToken(token);
       res.json(validation);
     } catch (error: any) {
-      logger.error('Token validation error:', error);
+      console.error('[API] Token validation error:', error);
       res.status(500).json({ valid: false, error: 'Failed to validate token' });
     }
   });
@@ -2905,91 +2917,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { token, email } = req.body;
       
-      if (!token) {
-        return res.status(400).json({ valid: false, error: 'Token is required' });
-      }
-
-      const result = await PasswordResetService.validateToken(token, email);
+      const result = await PasswordResetService.validateResetToken(token, email);
       res.json(result);
     } catch (error: any) {
-      logger.error('Token validation error:', error);
-      res.json({ valid: false, error: 'Token validation failed' });
+      console.error('[API] Token validation error:', error);
+      res.json({ valid: false, error: 'Validation failed' });
     }
   });
 
   // Reset password with token
   app.post("/api/auth/reset-password", async (req, res) => {
     try {
-      const { token, password, newPassword, email } = req.body;
-      const finalPassword = password || newPassword; // Support both field names
+      const { token, email, password } = req.body;
       
-      if (!token || !finalPassword) {
+      // Validate inputs
+      if (!token || !email || !password) {
         return res.status(400).json({ 
-          success: false,
-          error: 'Token and password are required' 
+          success: false, 
+          error: 'All fields are required' 
         });
       }
       
-      if (finalPassword.length < 8) {
+      if (password.length < 8) {
         return res.status(400).json({ 
-          success: false,
-          error: 'Password must be at least 8 characters long' 
+          success: false, 
+          error: 'Password must be at least 8 characters' 
         });
       }
-
+      
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
-
+      
       const result = await PasswordResetService.resetPassword(
         token,
-        finalPassword,
+        password,
         email,
         ipAddress
       );
-
+      
       res.json(result);
     } catch (error: any) {
-      logger.error('Password reset error:', error);
-      res.status(400).json({ 
+      console.error('[API] Password reset error:', error);
+      res.status(500).json({ 
         success: false, 
-        error: error.message || 'Password reset failed' 
+        error: 'Failed to reset password' 
       });
-      
-      if (error.message.includes('Invalid or expired token')) {
-        return res.status(400).json({ error: error.message });
-      }
-      
-      res.status(500).json({ error: 'Failed to reset password' });
     }
   });
 
-  // Test email endpoint (development only)
-  if (process.env.NODE_ENV === 'development') {
-    app.post("/api/test/email", async (req, res) => {
-      try {
-        const { type, data } = req.body;
-        
-        switch (type) {
-          case 'welcome':
-            await emailService.sendWelcomeEmail(data);
-            break;
-          case 'password_reset':
-            await emailService.sendPasswordResetEmail(data);
-            break;
-          case 'password_reset_success':
-            await emailService.sendPasswordResetSuccessEmail(data);
-            break;
-          case 'order_confirmation':
-            await emailService.sendOrderConfirmationEmail(data);
-            break;
-          default:
-            return res.status(400).json({ error: 'Invalid email type' });
-        }
-        
-        res.json({ message: 'Test email sent successfully' });
-      } catch (error: any) {
-        logger.error('Test email error:', error);
-        res.status(500).json({ error: 'Failed to send test email', details: error.message });
-      }
+  // Debug endpoint (remove in production)
+  if (process.env.NODE_ENV !== 'production') {
+    app.get('/api/debug/list-emails', async (req, res) => {
+      const { debugListEmails } = await import('./utils/user-lookup.js');
+      const emails = await debugListEmails();
+      res.json({ emails });
     });
   }
 

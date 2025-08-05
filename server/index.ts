@@ -49,6 +49,19 @@ app.use((req, res, next) => {
 
   const server = await registerRoutes(app);
 
+  // Run cleanup every hour for password reset tokens
+  setInterval(async () => {
+    try {
+      const { PasswordResetService } = await import('./services/password-reset.service.js');
+      const deleted = await PasswordResetService.cleanupExpiredTokens();
+      if (deleted > 0) {
+        console.log(`[CLEANUP] Removed ${deleted} expired password reset tokens`);
+      }
+    } catch (error) {
+      console.error('[CLEANUP] Error cleaning up tokens:', error);
+    }
+  }, 60 * 60 * 1000); // Every hour
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
