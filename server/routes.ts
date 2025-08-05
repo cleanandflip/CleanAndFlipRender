@@ -3276,6 +3276,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ END NEW E-COMMERCE FEATURES ============
+
+  // ============ EMAIL SERVICE TEST ENDPOINT (DEVELOPMENT ONLY) ============
+  if (process.env.NODE_ENV === 'development') {
+    app.post('/api/test/email', requireAuth, async (req, res) => {
+      try {
+        const { type } = req.body;
+        const testEmail = req.user?.email;
+        
+        if (!testEmail) {
+          return res.status(400).json({ error: 'User email not found' });
+        }
+        
+        switch (type) {
+          case 'order':
+            const testOrderData = {
+              orderId: 'TEST-' + Date.now(),
+              orderNumber: 'ORD-TEST-123',
+              customerEmail: testEmail,
+              customerName: req.user?.firstName ? `${req.user.firstName} ${req.user.lastName}` : 'Test Customer',
+              items: [
+                { name: 'Competition Kettlebell 16kg', quantity: 1, price: 89.99 },
+                { name: 'Adjustable Dumbbells Set', quantity: 1, price: 199.99 }
+              ],
+              subtotal: 289.98,
+              tax: 23.20,
+              shipping: 15.99,
+              total: 329.17,
+              shippingAddress: {
+                firstName: req.user?.firstName || 'Test',
+                lastName: req.user?.lastName || 'Customer',
+                street: '123 Test Street',
+                city: 'Asheville',
+                state: 'NC',
+                zipCode: '28801'
+              }
+            };
+            await emailService.sendOrderConfirmation(testOrderData);
+            break;
+            
+          case 'welcome':
+            await emailService.sendWelcomeEmail(testEmail, req.user?.firstName || 'Test User');
+            break;
+            
+          case 'shipping':
+            const testShippingData = {
+              orderId: 'TEST-' + Date.now(),
+              orderNumber: 'ORD-TEST-456',
+              customerEmail: testEmail,
+              customerName: req.user?.firstName ? `${req.user.firstName} ${req.user.lastName}` : 'Test Customer',
+              items: [{ name: 'Test Product', quantity: 1, price: 99.99 }],
+              subtotal: 99.99,
+              tax: 8.00,
+              shipping: 12.99,
+              total: 120.98,
+              shippingAddress: {
+                firstName: req.user?.firstName || 'Test',
+                lastName: req.user?.lastName || 'Customer',
+                street: '123 Test Street',
+                city: 'Asheville',
+                state: 'NC',
+                zipCode: '28801'
+              }
+            };
+            await emailService.sendShippingNotification(testShippingData, '1Z999AA1234567890', 'UPS');
+            break;
+            
+          case 'password-reset':
+            await emailService.sendPasswordReset(testEmail, 'test-reset-token-123');
+            break;
+            
+          default:
+            return res.status(400).json({ error: 'Invalid test type. Use: order, welcome, shipping, password-reset' });
+        }
+        
+        res.json({ 
+          success: true, 
+          message: `Test ${type} email sent to ${testEmail}`,
+          note: 'Check your email inbox (and spam folder) for the test email'
+        });
+      } catch (error) {
+        Logger.error('Test email error:', error);
+        res.status(500).json({ 
+          error: 'Failed to send test email',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+  }
   
   return httpServer;
 }
