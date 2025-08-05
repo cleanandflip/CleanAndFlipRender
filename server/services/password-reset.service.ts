@@ -34,7 +34,7 @@ export class PasswordResetService {
           lastName: users.lastName
         })
         .from(users)
-        .where(eq(users.email, email.toLowerCase()))
+        .where(eq(users.email, email))
         .limit(1);
 
       // Check if user exists - provide helpful feedback while maintaining security
