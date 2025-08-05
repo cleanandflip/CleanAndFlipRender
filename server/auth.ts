@@ -300,7 +300,7 @@ export function setupAuth(app: Express) {
   });
 
   // Login endpoint with detailed error messages and rate limiting
-  app.post("/api/login", authLimiter, (req, res, next) => {
+  app.post("/api/login", (req, res, next) => {
     const { email, password } = req.body;
     
     // Basic validation

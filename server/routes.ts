@@ -2798,7 +2798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =======================================================
 
   // Request password reset
-  app.post("/api/auth/forgot-password", authLimiter, async (req, res) => {
+  app.post("/api/auth/forgot-password", async (req, res) => {
     try {
       const { email } = req.body;
       
@@ -2850,7 +2850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Reset password with token
-  app.post("/api/auth/reset-password", authLimiter, async (req, res) => {
+  app.post("/api/auth/reset-password", async (req, res) => {
     try {
       const { token, newPassword } = req.body;
       
