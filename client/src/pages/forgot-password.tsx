@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Mail, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Mail, CheckCircle, X } from 'lucide-react';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -134,12 +134,27 @@ export default function ForgotPasswordPage() {
                   <FormItem>
                     <FormLabel className="text-white">Email Address</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="Enter your email address"
-                        className="bg-white/10 border-white/30 text-white placeholder-gray-400 focus:border-blue-400"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type="email"
+                          placeholder="Enter your email address"
+                          className="bg-white/10 border-white/30 text-white placeholder-gray-400 focus:border-blue-400 pr-10"
+                          {...field}
+                        />
+                        {field.value && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              field.onChange('');
+                              form.clearErrors('email');
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                            tabIndex={-1}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </FormControl>
                     <FormMessage className="text-red-400" />
                   </FormItem>
