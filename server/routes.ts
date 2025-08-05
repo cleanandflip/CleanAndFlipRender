@@ -2027,7 +2027,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if ('images' in req.body) {
         if (req.body.images && req.body.images.length > 0) {
           const images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-          updateData.images = images.filter(img => img && img.trim() !== '');
+          updateData.images = images.filter(img => {
+            if (typeof img === 'string') {
+              return img.trim() !== '';
+            } else if (img && typeof img === 'object' && img.url) {
+              return img.url.trim() !== '';
+            }
+            return false;
+          });
         } else {
           // Explicitly set to empty array when no images
           updateData.images = [];
