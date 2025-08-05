@@ -136,23 +136,28 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  // CRITICAL FIX: Proper serialization for session persistence
+  // CRITICAL FIX: Proper Passport serialization - store only user ID
   passport.serializeUser((user, done) => {
-    Logger.debug(`[PASSPORT] Serializing user: ${(user as any).id}`);
-    done(null, { id: (user as any).id });
+    const userId = (user as any).id;
+    Logger.debug(`[PASSPORT] Serializing user ID: ${userId}`);
+    done(null, userId); // Store only the ID, not an object
   });
   
-  passport.deserializeUser(async (sessionData: any, done) => {
+  passport.deserializeUser(async (id: string, done) => {
     try {
-      Logger.debug(`[PASSPORT] Deserializing user ID: ${sessionData.id}`);
-      const user = await storage.getUser(sessionData.id);
+      Logger.debug(`[PASSPORT] Deserializing user with ID: ${id}`);
+      
+      // Query database for user
+      const user = await storage.getUser(id);
       if (!user) {
-        Logger.debug(`[PASSPORT] User not found for ID: ${sessionData.id}`);
-        return done(null, null);
+        Logger.debug(`[PASSPORT] User not found for ID: ${id}`);
+        return done(null, false); // User not found
       }
       
+      // Remove password from user object for security
+      const { password, ...userWithoutPassword } = user;
       const userForSession = {
-        ...user,
+        ...userWithoutPassword,
         role: user.role || 'user',
         isAdmin: user.isAdmin || false
       };
@@ -161,7 +166,7 @@ export function setupAuth(app: Express) {
       done(null, userForSession);
     } catch (error) {
       Logger.error(`[PASSPORT] Deserialization error:`, error);
-      done(error);
+      done(error, null);
     }
   });
 
@@ -260,7 +265,8 @@ export function setupAuth(app: Express) {
         role: user.role || 'user',
         isAdmin: user.isAdmin || false
       };
-      req.login(userForSession, (err) => {
+      // CRITICAL: Use req.logIn to establish Passport session properly
+      req.logIn(userForSession, (err) => {
         if (err) return next(err);
         
         // CRITICAL FIX: Ensure session is saved before responding
@@ -272,6 +278,9 @@ export function setupAuth(app: Express) {
               details: "Registration successful but session could not be saved. Please try logging in."
             });
           }
+          
+          Logger.debug(`Registration successful and session saved for: ${user.email}`);
+          Logger.debug(`Session passport user: ${JSON.stringify(req.session.passport)}`);
           
           res.status(201).json({
             id: user.id,
@@ -334,7 +343,8 @@ export function setupAuth(app: Express) {
         isAdmin: user.isAdmin || false
       };
       
-      req.login(userForSession, (loginErr) => {
+      // CRITICAL: Use req.logIn to establish Passport session properly
+      req.logIn(userForSession, (loginErr) => {
         if (loginErr) {
           Logger.error('Session creation error:', loginErr);
           return res.status(500).json({ 
@@ -355,6 +365,8 @@ export function setupAuth(app: Express) {
           
           Logger.debug(`Login successful and session saved for: ${email}`);
           Logger.debug(`Session ID: ${req.sessionID}`);
+          Logger.debug(`Session passport user: ${JSON.stringify(req.session.passport)}`);
+          Logger.debug(`Is authenticated: ${req.isAuthenticated()}`);
           
           res.status(200).json({
             success: true,
