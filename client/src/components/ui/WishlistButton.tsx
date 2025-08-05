@@ -40,12 +40,23 @@ export function WishlistButton({
     e.preventDefault();
     e.stopPropagation();
     
+    console.log('Wishlist button clicked for product:', productId);
+    console.log('User:', user);
+    console.log('Loading:', loading);
+    
     if (!user) {
+      console.log('No user, showing login prompt');
       setShowLoginPrompt(true);
       setTimeout(() => setShowLoginPrompt(false), 3000);
       return;
     }
     
+    if (loading) {
+      console.log('Already loading, skipping');
+      return;
+    }
+    
+    console.log('Calling toggleWishlist.mutate with productId:', productId);
     toggleWishlist.mutate(productId);
   };
   

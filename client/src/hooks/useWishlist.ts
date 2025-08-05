@@ -45,24 +45,32 @@ export function useWishlist() {
   // Toggle wishlist without optimistic updates to prevent instability
   const toggleWishlist = useMutation({
     mutationFn: async (productId: string) => {
+      console.log('toggleWishlist mutationFn called with productId:', productId);
+      console.log('Current wishlist:', wishlist);
+      
       const isCurrentlyWishlisted = wishlist.some((item: WishlistItem) => item.productId === productId);
+      console.log('Is currently wishlisted:', isCurrentlyWishlisted);
       
       if (isCurrentlyWishlisted) {
+        console.log('Removing from wishlist...');
         const response = await fetch('/api/wishlist', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ productId })
         });
+        console.log('Delete response:', response.status, response.ok);
         if (!response.ok) throw new Error('Failed to remove from wishlist');
         return { action: 'removed', productId };
       } else {
+        console.log('Adding to wishlist...');
         const response = await fetch('/api/wishlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ productId })
         });
+        console.log('Add response:', response.status, response.ok);
         if (!response.ok) throw new Error('Failed to add to wishlist');
         return { action: 'added', productId };
       }
