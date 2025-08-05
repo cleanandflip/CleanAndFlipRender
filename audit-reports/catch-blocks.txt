@@ -1,27 +1,3 @@
-server/config/search.ts-49-    console.log('Full-text search indexes initialized successfully');
-server/config/search.ts:50:  } catch (error) {
-server/config/search.ts-51-    console.error('Failed to initialize search indexes:', error);
-server/config/search.ts-52-  }
-server/config/search.ts-53-}
---
-server/config/search.ts-73-    return results.rows;
-server/config/search.ts:74:  } catch (error) {
-server/config/search.ts-75-    console.error('Search query failed:', error);
-server/config/search.ts-76-    return [];
-server/config/search.ts-77-  }
---
-server/config/search.ts-92-    return results.rows.map(row => row.name);
-server/config/search.ts:93:  } catch (error) {
-server/config/search.ts-94-    console.error('Search suggestions failed:', error);
-server/config/search.ts-95-    return [];
-server/config/search.ts-96-  }
---
-server/config/database.ts-43-    console.log('Database initialized with optimized settings');
-server/config/database.ts:44:  } catch (error) {
-server/config/database.ts-45-    console.error('Database initialization error:', error);
-server/config/database.ts-46-  }
-server/config/database.ts-47-}
---
 server/config/redis.ts-48-    return redisClient;
 server/config/redis.ts:49:  } catch (error) {
 server/config/redis.ts-50-    if (!hasLoggedWarning) {
@@ -33,6 +9,21 @@ server/config/redis.ts-69-    return null;
 server/config/redis.ts-70-  }
 server/config/redis.ts-71-}
 --
+--
+--
+server/config/search.ts-74-    return results.rows;
+server/config/search.ts:75:  } catch (error) {
+server/config/search.ts-76-    Logger.error('Search query failed:', error);
+server/config/search.ts-77-    return [];
+server/config/search.ts-78-  }
+--
+server/config/search.ts-93-    return results.rows.map(row => row.name);
+server/config/search.ts:94:  } catch (error) {
+server/config/search.ts-95-    Logger.error('Search suggestions failed:', error);
+server/config/search.ts-96-    return [];
+server/config/search.ts-97-  }
+--
+server/config/database.ts-44-    Logger.info('Database initialized with optimized settings');
 --
 server/middleware/product-sync.ts-13-        if (data.id) {
 server/middleware/product-sync.ts:14:          StripeProductSync.syncProduct(data.id).catch(console.error);

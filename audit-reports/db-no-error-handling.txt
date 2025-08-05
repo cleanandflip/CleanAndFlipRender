@@ -1,20 +1,20 @@
-server/config/search.ts-6-  try {
-server/config/search.ts-7-    // Add search vector column if it doesn't exist
-server/config/search.ts:8:    await db.execute(sql`
-server/config/search.ts-9-      ALTER TABLE products 
-server/config/search.ts-10-      ADD COLUMN IF NOT EXISTS search_vector tsvector
-server/config/search.ts-11-    `);
-server/config/search.ts-12-
-server/config/search.ts-13-    // Create GIN index for full-text search
-server/config/search.ts:14:    await db.execute(sql`
-server/config/search.ts-15-      CREATE INDEX IF NOT EXISTS idx_products_search 
-server/config/search.ts-16-      ON products USING GIN(search_vector)
-server/config/search.ts-17-    `);
-server/config/search.ts-18-
-server/config/search.ts-19-    // Update search vectors for existing products
-server/config/search.ts:20:    await db.execute(sql`
-server/config/search.ts-21-      UPDATE products SET search_vector = 
-server/config/search.ts-22-        setweight(to_tsvector('english', coalesce(name,'')), 'A') ||
-server/config/search.ts-23-        setweight(to_tsvector('english', coalesce(description,'')), 'B') ||
-server/config/search.ts-24-        setweight(to_tsvector('english', coalesce(brand,'')), 'C')
-server/config/search.ts-25-      WHERE search_vector IS NULL
+server/config/health.ts-25-  try {
+server/config/health.ts-26-    // Test database connection
+server/config/health.ts:27:    await db.execute(sql`SELECT 1`);
+server/config/health.ts-28-    checks.database = 'connected';
+server/config/health.ts-29-  } catch (error) {
+server/config/health.ts-30-    checks.database = 'disconnected';
+server/config/health.ts-31-    overallStatus = 'not ready';
+server/config/health.ts-32-  }
+--
+server/config/performance-test.ts-19-    logger.info('Testing database connection pool...');
+server/config/performance-test.ts-20-    const dbStart = Date.now();
+server/config/performance-test.ts:21:    await db.execute(sql`SELECT 1 as test`);
+server/config/performance-test.ts-22-    const dbDuration = Date.now() - dbStart;
+server/config/performance-test.ts-23-    tests.push({
+server/config/performance-test.ts-24-      name: 'Database Connection Pool',
+server/config/performance-test.ts-25-      duration: dbDuration,
+server/config/performance-test.ts-26-      status: dbDuration < 100 ? 'EXCELLENT' : dbDuration < 500 ? 'GOOD' : 'NEEDS_IMPROVEMENT',
+--
+server/config/performance-test.ts-54-    logger.info('Testing search indexes...');
+server/config/performance-test.ts-55-    const searchStart = Date.now();
