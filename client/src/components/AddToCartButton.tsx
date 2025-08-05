@@ -176,11 +176,11 @@ export function AddToCartButton({
           <Check className="w-5 h-5" />
           In Cart - View
         </Button>
-        {/* Small red X remove button - appears on hover */}
+        {/* Small blue X remove button - appears on hover */}
         <Button
           onClick={handleRemoveFromCart}
           disabled={loading}
-          variant="danger"
+          variant="primary"
           size="icon"
           className="absolute -top-2 -right-2 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 disabled:opacity-50 z-10"
           title="Remove from cart"

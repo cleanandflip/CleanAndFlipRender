@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { db } from '../db';
 import { users, passwordResetTokens, activityLogs } from '../../shared/schema';
-import { emailService } from './email.service';
+import { emailService } from './email';
 import { eq, and, gt } from 'drizzle-orm';
 import { logger } from '../config/logger';
 
@@ -59,14 +59,7 @@ export class PasswordResetService {
       // Send password reset email
       const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${token}`;
       
-      await emailService.sendPasswordResetEmail({
-        to: user.email,
-        userName: `${user.firstName} ${user.lastName}`.trim() || 'Customer',
-        resetLink,
-        ipAddress,
-        userAgent,
-        expiresIn: '1 hour',
-      });
+      await emailService.sendPasswordReset(user.email, token);
 
       // Log security event
       await this.logSecurityEvent(user.id, 'password_reset_requested', ipAddress);
@@ -164,12 +157,8 @@ export class PasswordResetService {
         .limit(1);
 
       if (user) {
-        await emailService.sendPasswordResetSuccessEmail({
-          to: user.email,
-          userName: `${user.firstName} ${user.lastName}`.trim() || 'Customer',
-          ipAddress,
-          timestamp: new Date().toISOString()
-        });
+        // For now, just log success - email method will be added later
+        logger.info(`Password reset success notification for user: ${user.email}`);
       }
 
       // Log security event
@@ -242,12 +231,14 @@ export class PasswordResetService {
     try {
       await db.insert(activityLogs).values({
         userId,
-        eventType: event,
-        metadata: { ipAddress },
+        eventType: 'security',  // Required field
+        action: event,  // The specific action performed
+        metadata: { ipAddress, event, timestamp: new Date().toISOString() },
         createdAt: new Date()
       });
     } catch (error) {
       logger.error('Error logging security event:', error);
+      // Don't throw - logging shouldn't break the main flow
     }
   }
 }

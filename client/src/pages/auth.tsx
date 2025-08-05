@@ -94,12 +94,14 @@ export default function AuthPage() {
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
       phone: formData.get("phone") as string,
-      fullAddress: addressData.fullAddress,
+      street: addressData.street,
+      city: addressData.city,
+      state: addressData.state,
       zipCode: addressData.zipCode,
       latitude: addressData.latitude,
       longitude: addressData.longitude,
       isLocalCustomer
-    });
+    } as RegisterData);
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
