@@ -830,6 +830,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health Check Endpoint
   app.get("/health", createHealthCheck());
 
+  // Schema diagnostic endpoint
+  app.get("/api/health/schema-check", async (req, res) => {
+    const results = {
+      status: 'checking',
+      issues: [] as string[],
+      tables: {} as Record<string, string>,
+      hasAddressesTable: false
+    };
+    
+    try {
+      // Test products.subcategory
+      try {
+        await db.execute(sql`SELECT subcategory FROM products LIMIT 1`);
+        results.tables['products.subcategory'] = 'exists';
+      } catch (e: any) {
+        results.tables['products.subcategory'] = 'missing';
+        results.issues.push('products.subcategory column missing');
+      }
+      
+      // Test users.street
+      try {
+        await db.execute(sql`SELECT street FROM users LIMIT 1`);
+        results.tables['users.street'] = 'exists';
+      } catch (e: any) {
+        results.tables['users.street'] = 'missing';
+        results.issues.push('users.street column missing');
+      }
+      
+      // Check if using separate addresses table
+      const addressCheck = await db.execute(sql`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'addresses'
+        )
+      `);
+      
+      results.hasAddressesTable = addressCheck.rows[0].exists;
+      results.status = results.issues.length === 0 ? 'healthy' : 'issues_found';
+      
+      res.json({
+        ...results,
+        timestamp: new Date().toISOString(),
+        database_status: 'connected'
+      });
+    } catch (error: any) {
+      logger.error('Schema health check failed:', error);
+      res.status(500).json({
+        status: 'error',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // ==========================================
   // SEARCH API ENDPOINTS
   // ==========================================
