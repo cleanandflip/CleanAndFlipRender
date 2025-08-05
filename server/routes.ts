@@ -2869,12 +2869,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent
       );
 
-      // Handle different response types
-      if (result.error) {
-        return res.status(404).json(result);
-      }
-
-      res.json(result);
+      // Always return success for security (don't reveal if email exists)
+      // The service handles sending emails internally if user exists
+      res.json({ message: "If an account exists, reset email sent" });
     } catch (error: any) {
       logger.error('Password reset request error:', error);
       
