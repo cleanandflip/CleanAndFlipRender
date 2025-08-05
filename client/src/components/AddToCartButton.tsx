@@ -169,20 +169,20 @@ export function AddToCartButton({
       <div className="relative group">
         <Button
           onClick={handleViewCart}
-          variant="default"
+          variant="success"
           size={size}
-          className={`w-full py-3 px-6 gap-2 bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 ${className}`}
+          className={`w-full py-3 px-6 gap-2 ${className}`}
         >
           <Check className="w-5 h-5" />
           In Cart - View
         </Button>
-        {/* Small blue X remove button - appears on hover */}
+        {/* Small red X remove button - appears on hover */}
         <Button
           onClick={handleRemoveFromCart}
           disabled={loading}
-          variant="outline"
+          variant="danger"
           size="icon"
-          className="absolute -top-2 -right-2 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 disabled:opacity-50 z-10 bg-blue-600 hover:bg-blue-700 text-white border-blue-600 hover:border-blue-700"
+          className="absolute -top-2 -right-2 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 disabled:opacity-50 z-10"
           title="Remove from cart"
         >
           <X className="w-3 h-3" />

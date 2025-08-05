@@ -8,13 +8,6 @@
       "when": 1753991214175,
       "tag": "0000_clear_stature",
       "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1754403679872,
-      "tag": "0001_certain_jack_power",
-      "breakpoints": true
     }
   ]
 }

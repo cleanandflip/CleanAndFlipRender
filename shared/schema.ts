@@ -71,7 +71,7 @@ export const categories = pgTable("categories", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Enums
+// Product condition enum
 export const productConditionEnum = pgEnum("product_condition", [
   "new",
   "like_new",
@@ -80,6 +80,7 @@ export const productConditionEnum = pgEnum("product_condition", [
   "needs_repair",
 ]);
 
+// Product status enum
 export const productStatusEnum = pgEnum("product_status", [
   "active",
   "sold",
@@ -87,185 +88,33 @@ export const productStatusEnum = pgEnum("product_status", [
   "draft",
 ]);
 
-export const sportCategoryEnum = pgEnum("sport_category", [
-  "basketball",
-  "football",
-  "soccer",
-  "baseball",
-  "tennis",
-  "golf",
-  "running",
-  "cycling",
-  "fitness",
-  "swimming",
-  "hockey",
-  "volleyball",
-  "wrestling",
-  "boxing",
-  "mma",
-  "general",
-]);
-
-export const sizeTypeEnum = pgEnum("size_type", [
-  "numeric",      // 8, 9, 10, 11
-  "letter",       // XS, S, M, L, XL
-  "custom",       // Custom measurements
-  "one_size",     // One size fits all
-]);
-
-export const notificationTypeEnum = pgEnum("notification_type", [
-  "order_confirmation",
-  "shipping_update", 
-  "delivery_confirmation",
-  "price_drop",
-  "back_in_stock",
-  "newsletter",
-  "promotional",
-]);
-
-export const returnStatusEnum = pgEnum("return_status", [
-  "requested",
-  "approved", 
-  "rejected",
-  "in_transit",
-  "received",
-  "processed",
-  "refunded",
-]);
-
-export const discountTypeEnum = pgEnum("discount_type", [
-  "percentage",
-  "fixed_amount",
-  "free_shipping",
-  "buy_one_get_one",
-]);
-
-// Brands table for dedicated brand management
-export const brands = pgTable("brands", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name").notNull().unique(),
-  slug: varchar("slug").notNull().unique(),
-  description: text("description"),
-  logoUrl: text("logo_url"),
-  website: varchar("website"),
-  isActive: boolean("is_active").default(true),
-  productCount: integer("product_count").default(0),
-  featured: boolean("featured").default(false),
-  displayOrder: integer("display_order").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_brands_slug").on(table.slug),
-  index("idx_brands_active").on(table.isActive),
-]);
-
-// Size management system
-export const sizes = pgTable("sizes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  brandId: varchar("brand_id").references(() => brands.id),
-  categoryId: varchar("category_id").references(() => categories.id),
-  sizeType: sizeTypeEnum("size_type").notNull(),
-  value: varchar("value").notNull(), // "10", "M", "32x34"
-  displayName: varchar("display_name").notNull(),
-  sortOrder: integer("sort_order").default(0),
-  measurements: jsonb("measurements").$type<{
-    length?: number,
-    width?: number, 
-    height?: number,
-    chest?: number,
-    waist?: number,
-    inseam?: number
-  }>(),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_sizes_brand_category").on(table.brandId, table.categoryId),
-  index("idx_sizes_type").on(table.sizeType),
-]);
-
-// Product sizes junction table  
-export const productSizes = pgTable("product_sizes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  productId: varchar("product_id").references(() => products.id),
-  sizeId: varchar("size_id").references(() => sizes.id),
-  stockQuantity: integer("stock_quantity").default(0),
-  price: decimal("price", { precision: 10, scale: 2 }), // Size-specific pricing
-  sku: varchar("sku"),
-  isAvailable: boolean("is_available").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_product_sizes").on(table.productId, table.sizeId),
-]);
-
-// Products (Enhanced)
+// Products
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  originalPrice: decimal("original_price", { precision: 10, scale: 2 }), // For sale pricing
   categoryId: varchar("category_id").references(() => categories.id),
-  brandId: varchar("brand_id").references(() => brands.id),
   subcategory: text("subcategory"),
-  brand: varchar("brand"), // Legacy field, will migrate to brandId
+  brand: varchar("brand"),
   weight: integer("weight"), // in pounds
   condition: productConditionEnum("condition").notNull(),
   status: productStatusEnum("status").default("active"),
   images: jsonb("images").$type<string[]>().default([]),
   specifications: jsonb("specifications").$type<Record<string, any>>().default({}),
   stockQuantity: integer("stock_quantity").default(1),
-  lowStockThreshold: integer("low_stock_threshold").default(5),
   views: integer("views").default(0),
   featured: boolean("featured").default(false),
-  
-  // Enhanced e-commerce fields
-  sportCategory: sportCategoryEnum("sport_category"),
-  materials: jsonb("materials").$type<string[]>().default([]), // ["waterproof", "breathable"]
-  features: jsonb("features").$type<string[]>().default([]), // ["compression", "moisture-wicking"]
-  targetGender: varchar("target_gender"), // "men", "women", "unisex", "youth"
-  ageGroup: varchar("age_group"), // "adult", "youth", "child"
-  seasonality: jsonb("seasonality").$type<string[]>().default([]), // ["summer", "winter"]
-  
-  // Quality & condition details
-  conditionNotes: text("condition_notes"),
-  qualityGrade: integer("quality_grade"), // 1-10 scale
-  hasDefects: boolean("has_defects").default(false),
-  defectDescription: text("defect_description"),
-  
-  // SEO and content
-  metaTitle: varchar("meta_title"),
-  metaDescription: text("meta_description"),
-  tags: jsonb("tags").$type<string[]>().default([]),
-  
-  // Pricing and promotions
-  isOnSale: boolean("is_on_sale").default(false),
-  saleStartDate: timestamp("sale_start_date"),
-  saleEndDate: timestamp("sale_end_date"),
-  costPrice: decimal("cost_price", { precision: 10, scale: 2 }), // For profit calculations
-  
-  // Shipping and logistics
-  requiresShipping: boolean("requires_shipping").default(true),
-  localPickupOnly: boolean("local_pickup_only").default(false),
-  shippingWeight: decimal("shipping_weight", { precision: 5, scale: 2 }),
-  shippingDimensions: jsonb("shipping_dimensions").$type<{length: number, width: number, height: number}>(),
-  
   // Stripe integration fields
   stripeProductId: varchar("stripe_product_id"),
   stripePriceId: varchar("stripe_price_id"),
   stripeSyncStatus: varchar("stripe_sync_status", { length: 50 }).default("pending"),
   stripeLastSync: timestamp("stripe_last_sync"),
-  sku: varchar("sku").unique(),
+  sku: varchar("sku"),
   dimensions: jsonb("dimensions").$type<{length?: number, width?: number, height?: number}>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_products_category_brand").on(table.categoryId, table.brandId),
-  index("idx_products_condition").on(table.condition),
-  index("idx_products_sport_category").on(table.sportCategory),
-  index("idx_products_price").on(table.price),
-  index("idx_products_featured").on(table.featured),
-  index("idx_products_sale").on(table.isOnSale),
-]);
+});
 
 // Addresses
 export const addresses = pgTable("addresses", {
@@ -415,171 +264,6 @@ export const activityLogs = pgTable("activity_logs", {
   index("idx_activity_logs_type").on(table.eventType),
 ]);
 
-// Product Reviews System
-export const reviews = pgTable("reviews", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  productId: varchar("product_id").references(() => products.id),
-  userId: varchar("user_id").references(() => users.id),
-  orderId: varchar("order_id").references(() => orders.id), // Verified purchase
-  rating: integer("rating").notNull(), // 1-5 stars
-  title: varchar("title"),
-  content: text("content"),
-  isVerifiedPurchase: boolean("is_verified_purchase").default(false),
-  helpfulVotes: integer("helpful_votes").default(0),
-  isApproved: boolean("is_approved").default(true),
-  adminNotes: text("admin_notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_reviews_product").on(table.productId),
-  index("idx_reviews_rating").on(table.rating),
-]);
-
-// Inventory Management
-export const inventory = pgTable("inventory", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  productId: varchar("product_id").references(() => products.id),
-  sizeId: varchar("size_id").references(() => sizes.id),
-  location: varchar("location"), // "warehouse", "showroom", "storage-a"
-  stockQuantity: integer("stock_quantity").default(0),
-  reservedQuantity: integer("reserved_quantity").default(0), // Pending orders
-  lowStockThreshold: integer("low_stock_threshold").default(5),
-  lastRestocked: timestamp("last_restocked"),
-  cost: decimal("cost", { precision: 10, scale: 2 }),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_inventory_product").on(table.productId),
-  index("idx_inventory_low_stock").on(table.stockQuantity),
-]);
-
-// Discount/Coupon System
-export const coupons = pgTable("coupons", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  code: varchar("code").notNull().unique(),
-  name: varchar("name").notNull(),
-  description: text("description"),
-  discountType: discountTypeEnum("discount_type").notNull(),
-  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
-  minimumOrderAmount: decimal("minimum_order_amount", { precision: 10, scale: 2 }),
-  maximumDiscountAmount: decimal("maximum_discount_amount", { precision: 10, scale: 2 }),
-  usageLimit: integer("usage_limit"), // Total usage limit
-  usageCount: integer("usage_count").default(0),
-  userUsageLimit: integer("user_usage_limit").default(1), // Per user limit
-  validFrom: timestamp("valid_from").defaultNow(),
-  validUntil: timestamp("valid_until"),
-  isActive: boolean("is_active").default(true),
-  applicableCategories: jsonb("applicable_categories").$type<string[]>().default([]),
-  applicableBrands: jsonb("applicable_brands").$type<string[]>().default([]),
-  excludedProducts: jsonb("excluded_products").$type<string[]>().default([]),
-  firstTimeCustomerOnly: boolean("first_time_customer_only").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_coupons_code").on(table.code),
-  index("idx_coupons_active").on(table.isActive),
-]);
-
-// Coupon Usage Tracking
-export const couponUsage = pgTable("coupon_usage", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  couponId: varchar("coupon_id").references(() => coupons.id),
-  userId: varchar("user_id").references(() => users.id),
-  orderId: varchar("order_id").references(() => orders.id),
-  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).notNull(),
-  usedAt: timestamp("used_at").defaultNow(),
-}, (table) => [
-  index("idx_coupon_usage_coupon").on(table.couponId),
-  index("idx_coupon_usage_user").on(table.userId),
-]);
-
-// Email Notifications System
-export const emailNotifications = pgTable("email_notifications", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id),
-  email: varchar("email").notNull(),
-  type: notificationTypeEnum("type").notNull(),
-  subject: varchar("subject").notNull(),
-  content: text("content").notNull(),
-  templateId: varchar("template_id"),
-  status: varchar("status").default("pending"), // pending, sent, failed
-  sentAt: timestamp("sent_at"),
-  errorMessage: text("error_message"),
-  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_email_notifications_user").on(table.userId),
-  index("idx_email_notifications_type").on(table.type),
-  index("idx_email_notifications_status").on(table.status),
-]);
-
-// Return/Refund System
-export const returnRequests = pgTable("return_requests", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar("order_id").references(() => orders.id),
-  orderItemId: varchar("order_item_id").references(() => orderItems.id),
-  userId: varchar("user_id").references(() => users.id),
-  reason: varchar("reason").notNull(), // "defective", "not_as_described", "changed_mind"
-  description: text("description"),
-  images: jsonb("images").$type<string[]>().default([]),
-  status: returnStatusEnum("status").default("requested"),
-  refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }),
-  restockingFee: decimal("restocking_fee", { precision: 10, scale: 2 }).default("0"),
-  adminNotes: text("admin_notes"),
-  trackingNumber: varchar("tracking_number"),
-  processedBy: varchar("processed_by").references(() => users.id),
-  processedAt: timestamp("processed_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_return_requests_order").on(table.orderId),
-  index("idx_return_requests_status").on(table.status),
-]);
-
-// Shipping Rates and Methods
-export const shippingRates = pgTable("shipping_rates", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name").notNull(),
-  carrier: varchar("carrier").notNull(), // "ups", "fedex", "usps"
-  serviceType: varchar("service_type").notNull(), // "ground", "express", "overnight"
-  minWeight: decimal("min_weight", { precision: 5, scale: 2 }),
-  maxWeight: decimal("max_weight", { precision: 5, scale: 2 }),
-  minDistance: integer("min_distance"),
-  maxDistance: integer("max_distance"),
-  baseRate: decimal("base_rate", { precision: 10, scale: 2 }).notNull(),
-  perPoundRate: decimal("per_pound_rate", { precision: 10, scale: 2 }),
-  estimatedDays: integer("estimated_days"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_shipping_rates_carrier").on(table.carrier),
-  index("idx_shipping_rates_active").on(table.isActive),
-]);
-
-// Newsletter Subscriptions
-export const newsletterSubscriptions = pgTable("newsletter_subscriptions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").notNull().unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  isActive: boolean("is_active").default(true),
-  preferences: jsonb("preferences").$type<{
-    newArrivals?: boolean,
-    sales?: boolean,
-    restockAlerts?: boolean,
-    tips?: boolean
-  }>().default({}),
-  source: varchar("source"), // "homepage", "checkout", "popup"
-  unsubscribeToken: varchar("unsubscribe_token"),
-  confirmedAt: timestamp("confirmed_at"),
-  unsubscribedAt: timestamp("unsubscribed_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => [
-  index("idx_newsletter_email").on(table.email),
-  index("idx_newsletter_active").on(table.isActive),
-]);
-
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
@@ -588,31 +272,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   submissions: many(equipmentSubmissions),
   wishlist: many(wishlist),
   activities: many(activityLogs),
-  reviews: many(reviews),
-  returnRequests: many(returnRequests),
-}));
-
-export const brandsRelations = relations(brands, ({ many }) => ({
-  products: many(products),
-  sizes: many(sizes),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
   products: many(products),
-  sizes: many(sizes),
-}));
-
-export const sizesRelations = relations(sizes, ({ one, many }) => ({
-  brand: one(brands, {
-    fields: [sizes.brandId],
-    references: [brands.id],
-  }),
-  category: one(categories, {
-    fields: [sizes.categoryId],
-    references: [categories.id],
-  }),
-  productSizes: many(productSizes),
-  inventory: many(inventory),
 }));
 
 export const productsRelations = relations(products, ({ one, many }) => ({
@@ -620,31 +283,9 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     fields: [products.categoryId],
     references: [categories.id],
   }),
-  brand: one(brands, {
-    fields: [products.brandId],
-    references: [brands.id],
-  }),
   orderItems: many(orderItems),
   cartItems: many(cartItems),
   wishlist: many(wishlist),
-  reviews: many(reviews),
-  productSizes: many(productSizes),
-  inventory: many(inventory),
-}));
-
-export const reviewsRelations = relations(reviews, ({ one }) => ({
-  product: one(products, {
-    fields: [reviews.productId],
-    references: [products.id],
-  }),
-  user: one(users, {
-    fields: [reviews.userId],
-    references: [users.id],
-  }),
-  order: one(orders, {
-    fields: [reviews.orderId],
-    references: [orders.id],
-  }),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -817,109 +458,118 @@ export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
-// New table schemas
-export const insertBrandSchema = createInsertSchema(brands).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  productCount: true,
-});
-
-export const insertSizeSchema = createInsertSchema(sizes).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertProductSizeSchema = createInsertSchema(productSizes).omit({
-  id: true,
-  createdAt: true,
-});
+// Reviews Schema
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  rating: integer("rating").notNull(),
+  title: varchar("title").notNull(),
+  content: text("content").notNull(),
+  verified: boolean("verified").default(false),
+  helpful: integer("helpful").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_reviews_product").on(table.productId),
+  index("idx_reviews_user").on(table.userId),
+  index("idx_reviews_rating").on(table.rating),
+]);
 
 export const insertReviewSchema = createInsertSchema(reviews).omit({
   id: true,
+  helpful: true,
   createdAt: true,
   updatedAt: true,
-  helpfulVotes: true,
-  isApproved: true,
 });
 
-export const insertInventorySchema = createInsertSchema(inventory).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+// Coupons Schema
+export const coupons = pgTable("coupons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code").unique().notNull(),
+  description: text("description").notNull(),
+  discountType: varchar("discount_type").notNull(), // 'percentage' | 'fixed'
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  minOrderAmount: decimal("min_order_amount", { precision: 10, scale: 2 }),
+  maxDiscount: decimal("max_discount", { precision: 10, scale: 2 }),
+  usageLimit: integer("usage_limit"),
+  usageCount: integer("usage_count").default(0),
+  isActive: boolean("is_active").default(true),
+  validFrom: timestamp("valid_from").defaultNow(),
+  validUntil: timestamp("valid_until"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_coupons_code").on(table.code),
+  index("idx_coupons_active").on(table.isActive),
+]);
 
 export const insertCouponSchema = createInsertSchema(coupons).omit({
   id: true,
+  usageCount: true,
   createdAt: true,
   updatedAt: true,
-  usageCount: true,
 });
 
-export const insertCouponUsageSchema = createInsertSchema(couponUsage).omit({
-  id: true,
-  usedAt: true,
-});
+// Order Tracking Schema
+export const orderTracking = pgTable("order_tracking", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").references(() => orders.id, { onDelete: 'cascade' }).notNull(),
+  status: varchar("status").notNull(),
+  location: varchar("location"),
+  description: text("description"),
+  trackingNumber: varchar("tracking_number"),
+  carrier: varchar("carrier"),
+  estimatedDelivery: timestamp("estimated_delivery"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_order_tracking_order").on(table.orderId),
+  index("idx_order_tracking_status").on(table.status),
+]);
 
-export const insertEmailNotificationSchema = createInsertSchema(emailNotifications).omit({
+export const insertOrderTrackingSchema = createInsertSchema(orderTracking).omit({
   id: true,
   createdAt: true,
-  sentAt: true,
 });
+
+// Return Requests Schema
+export const returnRequests = pgTable("return_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").references(() => orders.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  reason: varchar("reason").notNull(),
+  description: text("description"),
+  preferredResolution: varchar("preferred_resolution").notNull(), // 'refund' | 'exchange'
+  status: varchar("status").default("pending"), // 'pending' | 'approved' | 'rejected' | 'completed'
+  returnNumber: varchar("return_number").unique().notNull(),
+  images: jsonb("images").$type<string[]>().default([]),
+  adminNotes: text("admin_notes"),
+  refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_return_requests_order").on(table.orderId),
+  index("idx_return_requests_user").on(table.userId),
+  index("idx_return_requests_status").on(table.status),
+]);
 
 export const insertReturnRequestSchema = createInsertSchema(returnRequests).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  processedAt: true,
 });
 
-export const insertShippingRateSchema = createInsertSchema(shippingRates).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertNewsletterSubscriptionSchema = createInsertSchema(newsletterSubscriptions).omit({
-  id: true,
-  createdAt: true,
-  unsubscribeToken: true,
-  confirmedAt: true,
-  unsubscribedAt: true,
-});
-
-// Enhanced type exports
-export type Brand = typeof brands.$inferSelect;
-export type InsertBrand = z.infer<typeof insertBrandSchema>;
-
-export type Size = typeof sizes.$inferSelect;
-export type InsertSize = z.infer<typeof insertSizeSchema>;
-
-export type ProductSize = typeof productSizes.$inferSelect;
-export type InsertProductSize = z.infer<typeof insertProductSizeSchema>;
-
+// Type exports
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
-
-export type Inventory = typeof inventory.$inferSelect;
-export type InsertInventory = z.infer<typeof insertInventorySchema>;
 
 export type Coupon = typeof coupons.$inferSelect;
 export type InsertCoupon = z.infer<typeof insertCouponSchema>;
 
-export type CouponUsage = typeof couponUsage.$inferSelect;
-export type InsertCouponUsage = z.infer<typeof insertCouponUsageSchema>;
-
-export type EmailNotification = typeof emailNotifications.$inferSelect;
-export type InsertEmailNotification = z.infer<typeof insertEmailNotificationSchema>;
+export type OrderTracking = typeof orderTracking.$inferSelect;
+export type InsertOrderTracking = z.infer<typeof insertOrderTrackingSchema>;
 
 export type ReturnRequest = typeof returnRequests.$inferSelect;
-export type InsertReturnRequest = z.infer<typeof insertReturnRequestSchema>;
-
-export type ShippingRate = typeof shippingRates.$inferSelect;
-export type InsertShippingRate = z.infer<typeof insertShippingRateSchema>;
-
-export type NewsletterSubscription = typeof newsletterSubscriptions.$inferSelect;
-export type InsertNewsletterSubscription = z.infer<typeof insertNewsletterSubscriptionSchema>;
 export type InsertReturnRequest = z.infer<typeof insertReturnRequestSchema>;
 
 // Type for status history tracking

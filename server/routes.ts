@@ -52,20 +52,15 @@ import {
   activityLogs,
   reviews,
   coupons,
+  orderTracking,
   returnRequests,
-  brands,
-  sizes,
-  productSizes,
-  inventory,
   type User,
   type Product,
   type Category,
   type Review,
   type Coupon,
-  type ReturnRequest,
-  type Brand,
-  type Size,
-  type Inventory
+  type OrderTracking,
+  type ReturnRequest
 } from "@shared/schema";
 import { convertSubmissionsToCSV } from './utils/exportHelpers';
 import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not, count, sum } from "drizzle-orm";
@@ -85,10 +80,8 @@ import {
   insertWishlistSchema,
   insertReviewSchema,
   insertCouponSchema,
-  insertReturnRequestSchema,
-  insertBrandSchema,
-  insertSizeSchema,
-  insertInventorySchema
+  insertOrderTrackingSchema,
+  insertReturnRequestSchema
 } from "@shared/schema";
 import { emailService } from "./services/email";
 
@@ -2832,225 +2825,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(requestConsolidator.middleware());
 
   // ============ NEW E-COMMERCE FEATURES API ROUTES ============
-
-  // Brand Management API
-  app.get("/api/brands", apiLimiter, async (req, res) => {
-    try {
-      const { active, featured } = req.query;
-      
-      let query = db.select().from(brands);
-      const conditions = [];
-      
-      if (active !== undefined) {
-        conditions.push(eq(brands.isActive, active === 'true'));
-      }
-      if (featured !== undefined) {
-        conditions.push(eq(brands.featured, featured === 'true'));
-      }
-      
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
-      
-      const brandList = await query.orderBy(brands.displayOrder, brands.name);
-      res.json(brandList);
-    } catch (error) {
-      Logger.error("Error fetching brands", error);
-      res.status(500).json({ error: "Failed to fetch brands" });
-    }
-  });
-
-  app.post("/api/brands", requireAdmin, apiLimiter, async (req, res) => {
-    try {
-      const brandData = insertBrandSchema.parse(req.body);
-      
-      // Generate slug from name if not provided
-      if (!brandData.slug) {
-        brandData.slug = brandData.name.toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '');
-      }
-      
-      const [newBrand] = await db.insert(brands).values(brandData).returning();
-      res.status(201).json(newBrand);
-    } catch (error) {
-      Logger.error("Error creating brand", error);
-      res.status(500).json({ error: "Failed to create brand" });
-    }
-  });
-
-  app.put("/api/brands/:id", requireAdmin, apiLimiter, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const brandData = insertBrandSchema.parse(req.body);
-      
-      const [updatedBrand] = await db
-        .update(brands)
-        .set(brandData)
-        .where(eq(brands.id, id))
-        .returning();
-        
-      if (!updatedBrand) {
-        return res.status(404).json({ error: "Brand not found" });
-      }
-      
-      res.json(updatedBrand);
-    } catch (error) {
-      Logger.error("Error updating brand", error);
-      res.status(500).json({ error: "Failed to update brand" });
-    }
-  });
-
-  app.delete("/api/brands/:id", requireAdmin, apiLimiter, async (req, res) => {
-    try {
-      const { id } = req.params;
-      
-      // Check if brand has associated products
-      const productCount = await db
-        .select({ count: count() })
-        .from(products)
-        .where(eq(products.brandId, id));
-        
-      if (productCount[0]?.count > 0) {
-        return res.status(400).json({ 
-          error: "Cannot delete brand with associated products" 
-        });
-      }
-      
-      await db.delete(brands).where(eq(brands.id, id));
-      res.json({ success: true });
-    } catch (error) {
-      Logger.error("Error deleting brand", error);
-      res.status(500).json({ error: "Failed to delete brand" });
-    }
-  });
-
-  // Size Management API
-  app.get("/api/sizes", apiLimiter, async (req, res) => {
-    try {
-      const { brandId, categoryId, sizeType } = req.query;
-      
-      let query = db.select({
-        id: sizes.id,
-        brandId: sizes.brandId,
-        categoryId: sizes.categoryId,
-        sizeType: sizes.sizeType,
-        value: sizes.value,
-        displayName: sizes.displayName,
-        sortOrder: sizes.sortOrder,
-        measurements: sizes.measurements,
-        isActive: sizes.isActive,
-        brandName: brands.name,
-        categoryName: categories.name,
-        createdAt: sizes.createdAt
-      })
-      .from(sizes)
-      .leftJoin(brands, eq(sizes.brandId, brands.id))
-      .leftJoin(categories, eq(sizes.categoryId, categories.id));
-      
-      const conditions = [];
-      if (brandId) conditions.push(eq(sizes.brandId, brandId as string));
-      if (categoryId) conditions.push(eq(sizes.categoryId, categoryId as string));
-      if (sizeType) conditions.push(eq(sizes.sizeType, sizeType as any));
-      
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
-      
-      const sizeList = await query.orderBy(sizes.sortOrder, sizes.displayName);
-      res.json(sizeList);
-    } catch (error) {
-      Logger.error("Error fetching sizes", error);
-      res.status(500).json({ error: "Failed to fetch sizes" });
-    }
-  });
-
-  app.post("/api/sizes", requireAdmin, apiLimiter, async (req, res) => {
-    try {
-      const sizeData = insertSizeSchema.parse(req.body);
-      const [newSize] = await db.insert(sizes).values(sizeData).returning();
-      res.status(201).json(newSize);
-    } catch (error) {
-      Logger.error("Error creating size", error);
-      res.status(500).json({ error: "Failed to create size" });
-    }
-  });
-
-  // Inventory Management API
-  app.get("/api/inventory", requireAdmin, apiLimiter, async (req, res) => {
-    try {
-      const { productId, lowStock } = req.query;
-      
-      let query = db.select({
-        id: inventory.id,
-        productId: inventory.productId,
-        sizeId: inventory.sizeId,
-        location: inventory.location,
-        stockQuantity: inventory.stockQuantity,
-        reservedQuantity: inventory.reservedQuantity,
-        lowStockThreshold: inventory.lowStockThreshold,
-        lastRestocked: inventory.lastRestocked,
-        cost: inventory.cost,
-        notes: inventory.notes,
-        productName: products.name,
-        sizeName: sizes.displayName,
-        createdAt: inventory.createdAt,
-        updatedAt: inventory.updatedAt
-      })
-      .from(inventory)
-      .leftJoin(products, eq(inventory.productId, products.id))
-      .leftJoin(sizes, eq(inventory.sizeId, sizes.id));
-      
-      const conditions = [];
-      if (productId) conditions.push(eq(inventory.productId, productId as string));
-      if (lowStock === 'true') {
-        conditions.push(lte(inventory.stockQuantity, inventory.lowStockThreshold));
-      }
-      
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
-      
-      const inventoryList = await query.orderBy(desc(inventory.updatedAt));
-      res.json(inventoryList);
-    } catch (error) {
-      Logger.error("Error fetching inventory", error);
-      res.status(500).json({ error: "Failed to fetch inventory" });
-    }
-  });
-
-  app.post("/api/inventory", requireAdmin, apiLimiter, async (req, res) => {
-    try {
-      const inventoryData = insertInventorySchema.parse(req.body);
-      const [newInventory] = await db.insert(inventory).values(inventoryData).returning();
-      res.status(201).json(newInventory);
-    } catch (error) {
-      Logger.error("Error creating inventory record", error);
-      res.status(500).json({ error: "Failed to create inventory record" });
-    }
-  });
-
-  app.put("/api/inventory/:id", requireAdmin, apiLimiter, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const inventoryData = insertInventorySchema.parse(req.body);
-      
-      const [updatedInventory] = await db
-        .update(inventory)
-        .set({ ...inventoryData, updatedAt: new Date() })
-        .where(eq(inventory.id, id))
-        .returning();
-        
-      if (!updatedInventory) {
-        return res.status(404).json({ error: "Inventory record not found" });
-      }
-      
-      res.json(updatedInventory);
-    } catch (error) {
-      Logger.error("Error updating inventory", error);
-      res.status(500).json({ error: "Failed to update inventory" });
-    }
-  });
 
   // Product Reviews API
   app.get("/api/products/:productId/reviews", apiLimiter, async (req, res) => {
