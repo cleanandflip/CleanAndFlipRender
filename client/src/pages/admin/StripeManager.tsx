@@ -142,7 +142,8 @@ export default function StripeManager() {
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Synchronize all existing products in your database with Stripe. This will create
-              or update product listings and pricing information. Currently 11 products ready to sync.
+              or update product listings and pricing information. Also automatically archives
+              any orphaned products in Stripe that no longer exist in your database.
             </p>
             
             <div className="flex items-center justify-between">

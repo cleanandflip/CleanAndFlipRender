@@ -189,14 +189,31 @@ export class StripeProductSync {
     return uploadedUrls.slice(0, 8); // Stripe allows max 8 images
   }
 
-  // Sync all products (force re-sync all products regardless of status)
+  // Sync all products with cleanup of deleted products
   static async syncAllProducts(): Promise<void> {
-    console.log('Starting full product sync to Stripe...');
+    console.log('Starting comprehensive product sync to Stripe...');
     
-    // Get ALL products, not just unsynced ones
+    // Get ALL products with complete data
     const allProducts = await db
-      .select({ id: products.id, name: products.name })
-      .from(products);
+      .select({
+        id: products.id,
+        name: products.name,
+        description: products.description,
+        price: products.price,
+        images: products.images,
+        brand: products.brand,
+        condition: products.condition,
+        stock: products.stockQuantity,
+        stripeProductId: products.stripeProductId,
+        stripePriceId: products.stripePriceId,
+        sku: products.sku,
+        weight: products.weight,
+        dimensions: products.dimensions,
+        category: categories.name
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .orderBy(products.name);
     
     console.log(`Found ${allProducts.length} products to sync`);
     
@@ -216,8 +233,62 @@ export class StripeProductSync {
         console.error(`Failed to sync product ${product.id}:`, error);
       }
     }
+
+    // Clean up orphaned products in Stripe
+    await this.cleanupOrphanedStripeProducts(allProducts);
     
     console.log(`Sync complete: ${successCount} succeeded, ${failCount} failed`);
+  }
+
+  // Clean up products in Stripe that no longer exist in database
+  static async cleanupOrphanedStripeProducts(databaseProducts: any[]): Promise<void> {
+    try {
+      console.log('🧹 Cleaning up orphaned Stripe products...');
+      
+      // Get all active products from Stripe
+      const stripeProducts = await stripe.products.list({ 
+        active: true, 
+        limit: 100 
+      });
+      
+      if (stripeProducts.data.length === 0) {
+        console.log('No active Stripe products to clean up');
+        return;
+      }
+      
+      // Create map of database product IDs for quick lookup
+      const databaseProductIds = new Set(databaseProducts.map(p => p.id));
+      
+      let archivedCount = 0;
+      
+      for (const stripeProduct of stripeProducts.data) {
+        const productId = stripeProduct.metadata?.product_id;
+        
+        if (productId && !databaseProductIds.has(productId)) {
+          try {
+            // Archive the orphaned product
+            await stripe.products.update(stripeProduct.id, { active: false });
+            console.log(`📦 Archived orphaned product: ${stripeProduct.name} (${stripeProduct.id})`);
+            archivedCount++;
+            
+            // Rate limiting
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } catch (error) {
+            console.error(`Failed to archive ${stripeProduct.name}:`, error);
+          }
+        }
+      }
+      
+      if (archivedCount > 0) {
+        console.log(`✅ Archived ${archivedCount} orphaned products in Stripe`);
+      } else {
+        console.log('✅ No orphaned products found - Stripe is clean');
+      }
+      
+    } catch (error) {
+      console.error('Failed to cleanup orphaned products:', error);
+      // Don't throw - this is cleanup, not critical
+    }
   }
 
   // Delete product from Stripe
