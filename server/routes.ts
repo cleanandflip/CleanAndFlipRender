@@ -1983,7 +1983,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let images = [];
       if (req.body.images) {
         images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-        images = images.filter(img => img && img.trim() !== '');
+        images = images.filter(img => {
+          if (typeof img === 'string') {
+            return img.trim() !== '';
+          } else if (img && typeof img === 'object' && img.url) {
+            return img.url.trim() !== '';
+          }
+          return false;
+        });
       }
       
       // Add new images if uploaded via multer
