@@ -69,9 +69,7 @@ export class PasswordResetService {
       });
 
       // Create reset link with production URL
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://cleanandflip.com'
-        : process.env.FRONTEND_URL || 'http://localhost:5000';
+      const baseUrl = process.env.FRONTEND_URL || 'https://cleanandflip.com';
         
       const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
 

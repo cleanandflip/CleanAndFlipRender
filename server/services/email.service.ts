@@ -367,7 +367,7 @@ export class EmailService {
               </div>
               
               <div style="text-align: center;">
-                <a href="${data.loginLink || process.env.FRONTEND_URL || 'http://localhost:5000'}" class="button">Start Shopping</a>
+                <a href="${data.loginLink || process.env.FRONTEND_URL || 'https://cleanandflip.com'}" class="button">Start Shopping</a>
               </div>
               
               <p>Questions? Our support team is here to help at support@cleanandflip.com</p>

@@ -214,7 +214,7 @@ export class EmailService {
 
   // Specific methods for each email type
   async sendPasswordReset(email: string, resetToken: string, resetUrl?: string): Promise<boolean> {
-    const finalResetUrl = resetUrl || `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    const finalResetUrl = resetUrl || `${process.env.FRONTEND_URL || 'https://cleanandflip.com'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
     
     return this.send('password_reset', {
       to: email,
@@ -433,7 +433,7 @@ export class EmailService {
   }
 
   private getShippingNotificationTemplate(orderData: OrderEmailData, trackingNumber: string, carrier: string): string {
-    const trackingUrl = `${process.env.APP_URL || 'http://localhost:5000'}/track/${orderData.orderNumber}`;
+    const trackingUrl = `${process.env.APP_URL || 'https://cleanandflip.com'}/track/${orderData.orderNumber}`;
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
@@ -467,7 +467,7 @@ export class EmailService {
   }
 
   private getAbandonedCartTemplate(cartItems: any[]): string {
-    const cartUrl = `${process.env.APP_URL || 'http://localhost:5000'}/cart`;
+    const cartUrl = `${process.env.APP_URL || 'https://cleanandflip.com'}/cart`;
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
@@ -501,7 +501,7 @@ export class EmailService {
   }
 
   private getWelcomeEmailTemplate(userName: string): string {
-    const shopUrl = `${process.env.APP_URL || 'http://localhost:5000'}/products`;
+    const shopUrl = `${process.env.APP_URL || 'https://cleanandflip.com'}/products`;
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
