@@ -40,12 +40,10 @@ function Cart() {
     }
   };
   
-  // Force fresh images with cache-busting
-  const getImageUrl = (url: string | null | undefined) => {
-    if (!url) return null;
-    // Add cache-busting parameter
-    const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}t=${Date.now()}`;
+  // Get image URL with fallback handling
+  const getImageUrl = (imageData: any) => {
+    if (!imageData) return null;
+    return typeof imageData === 'string' ? imageData : imageData?.url;
   };
 
   if (isLoading) {
@@ -120,24 +118,13 @@ function Cart() {
                           src={getImageUrl(item.product.images[0]) || ''}
                           alt={item.product.name}
                           className="w-24 h-24 object-cover rounded-lg"
-                          key={`${item.product.id}-${Date.now()}`} // Force reload on updates
-                          onError={(e) => {
-                            // Show placeholder on error
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const parent = target.parentElement;
-                            if (parent) {
-                              parent.innerHTML = `
-                                <div class="w-24 h-24 bg-gray-800 rounded-lg flex items-center justify-center">
-                                  <div class="text-2xl">📦</div>
-                                </div>
-                              `;
-                            }
-                          }}
                         />
                       ) : (
                         <div className="w-24 h-24 bg-gray-800 rounded-lg flex items-center justify-center">
-                          <div className="text-2xl">📦</div>
+                          <div className="text-center text-gray-400">
+                            <div className="text-2xl mb-1">📦</div>
+                            <div className="text-xs">No Image</div>
+                          </div>
                         </div>
                       )}
                     </div>
