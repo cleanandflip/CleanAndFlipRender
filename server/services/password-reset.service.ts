@@ -167,7 +167,7 @@ export class PasswordResetService {
           password: hashedPassword,
           updatedAt: new Date()
         })
-        .where(eq(users.id, validation.userId));
+        .where(eq(users.id, validation.userId!));
 
       // Mark token as used
       await db
@@ -176,10 +176,10 @@ export class PasswordResetService {
           used: true,
           usedAt: new Date()
         })
-        .where(eq(passwordResetTokens.id, validation.tokenId));
+        .where(eq(passwordResetTokens.id, validation.tokenId!));
 
       // Log security event
-      await this.logSecurityEvent(validation.userId, 'password_reset_completed', ipAddress);
+      await this.logSecurityEvent(validation.userId!, 'password_reset_completed', ipAddress);
 
       logger.info(`Password reset completed for user: ${validation.userId} from IP: ${ipAddress}`);
       return { success: true, message: 'Password successfully reset' };
