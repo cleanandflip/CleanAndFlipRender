@@ -1,0 +1,192 @@
+2025-08-05 13:25:02.34
+5d999a66
+User
+[ERROR] Error fetching featured products error: column "subcategory" does not exist
+2025-08-05 13:25:02.34
+5d999a66
+User
+at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+2025-08-05 13:25:02.34
+5d999a66
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-08-05 13:25:02.34
+5d999a66
+User
+at async NeonPreparedQuery.execute (file:///home/runner/workspace/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+2025-08-05 13:25:02.34
+5d999a66
+User
+at async DatabaseStorage.getFeaturedProducts (file:///home/runner/workspace/dist/index.js:975:16)
+2025-08-05 13:25:02.34
+5d999a66
+User
+at async file:///home/runner/workspace/dist/index.js:4363:25 {
+2025-08-05 13:25:02.34
+5d999a66
+User
+length: 111,
+2025-08-05 13:25:02.34
+5d999a66
+User
+severity: 'ERROR',
+2025-08-05 13:25:02.34
+5d999a66
+User
+code: '42703',
+2025-08-05 13:25:02.34
+5d999a66
+User
+detail: undefined,
+2025-08-05 13:25:02.34
+5d999a66
+User
+hint: undefined,
+2025-08-05 13:25:02.34
+5d999a66
+User
+position: '61',
+2025-08-05 13:25:02.34
+5d999a66
+User
+internalPosition: undefined,
+2025-08-05 13:25:02.34
+5d999a66
+User
+internalQuery: undefined,
+2025-08-05 13:25:02.34
+5d999a66
+User
+where: undefined,
+2025-08-05 13:25:02.34
+5d999a66
+User
+schema: undefined,
+2025-08-05 13:25:02.34
+5d999a66
+User
+table: undefined,
+2025-08-05 13:25:02.34
+5d999a66
+User
+column: undefined,
+2025-08-05 13:25:02.34
+5d999a66
+User
+dataType: undefined,
+2025-08-05 13:25:02.34
+5d999a66
+User
+constraint: undefined,
+2025-08-05 13:25:02.34
+5d999a66
+User
+file: 'parse_relation.c',
+2025-08-05 13:25:02.34
+5d999a66
+User
+line: '3722',
+2025-08-05 13:25:02.34
+5d999a66
+User
+routine: 'errorMissingColumn'
+2025-08-05 13:25:02.34
+5d999a66
+User
+}
+2025-08-05 13:25:02.38
+5d999a66
+User
+[ERROR] Error fetching categories error: column categories.image_url does not exist
+2025-08-05 13:25:02.38
+5d999a66
+User
+at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+2025-08-05 13:25:02.38
+5d999a66
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-08-05 13:25:02.38
+5d999a66
+User
+at async NeonPreparedQuery.execute (file:///home/runner/workspace/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+2025-08-05 13:25:02.38
+5d999a66
+User
+at async DatabaseStorage.getActiveCategoriesForHomepage (file:///home/runner/workspace/dist/index.js:1441:24)
+2025-08-05 13:25:02.38
+5d999a66
+User
+at async file:///home/runner/workspace/dist/index.js:4285:29 {
+2025-08-05 13:25:02.38
+5d999a66
+User
+length: 118,
+2025-08-05 13:25:02.38
+5d999a66
+User
+severity: 'ERROR',
+2025-08-05 13:25:02.38
+5d999a66
+User
+code: '42703',
+2025-08-05 13:25:02.38
+5d999a66
+User
+detail: undefined,
+2025-08-05 13:25:02.38
+5d999a66
+User
+hint: undefined,
+2025-08-05 13:25:02.38
+5d999a66
+User
+position: '69',
+2025-08-05 13:25:02.38
+5d999a66
+User
+internalPosition: undefined,
+2025-08-05 13:25:02.38
+5d999a66
+User
+internalQuery: undefined,
+2025-08-05 13:25:02.38
+5d999a66
+User
+where: undefined,
+2025-08-05 13:25:02.38
+5d999a66
+User
+schema: undefined,
+2025-08-05 13:25:02.38
+5d999a66
+User
+table: undefined,
+2025-08-05 13:25:02.38
+5d999a66
+User
+column: undefined,
+2025-08-05 13:25:02.38
+5d999a66
+User
+dataType: undefined,
+2025-08-05 13:25:02.38
+5d999a66
+User
+constraint: undefined,
+2025-08-05 13:25:02.38
+5d999a66
+User
+file: 'parse_relation.c',
+2025-08-05 13:25:02.38
+5d999a66
+User
+line: '3722',
+2025-08-05 13:25:02.38
+5d999a66
+User
+routine: 'errorMissingColumn'
+2025-08-05 13:25:02.38
+5d999a66
+User
+}
