@@ -7,11 +7,13 @@ const router = Router();
 // Sync all products to Stripe
 router.post('/sync-all', async (req, res) => {
   try {
+    console.log('API: Starting sync-all request...');
     await StripeProductSync.syncAllProducts();
+    console.log('API: Sync-all completed successfully');
     res.json({ success: true, message: 'All products synced to Stripe' });
   } catch (error) {
     console.error('Sync all products error:', error);
-    res.status(500).json({ error: 'Failed to sync products' });
+    res.status(500).json({ error: 'Failed to sync products', details: error.message });
   }
 });
 

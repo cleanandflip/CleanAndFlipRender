@@ -189,33 +189,28 @@ export class StripeProductSync {
     return uploadedUrls.slice(0, 8); // Stripe allows max 8 images
   }
 
-  // Sync all products
+  // Sync all products (force re-sync all products regardless of status)
   static async syncAllProducts(): Promise<void> {
     console.log('Starting full product sync to Stripe...');
     
-    const unsyncedProducts = await db
-      .select({ id: products.id })
-      .from(products)
-      .where(
-        or(
-          isNull(products.stripeProductId),
-          eq(products.stripeSyncStatus, 'pending'),
-          eq(products.stripeSyncStatus, 'failed')
-        )
-      );
+    // Get ALL products, not just unsynced ones
+    const allProducts = await db
+      .select({ id: products.id, name: products.name })
+      .from(products);
     
-    console.log(`Found ${unsyncedProducts.length} products to sync`);
+    console.log(`Found ${allProducts.length} products to sync`);
     
     let successCount = 0;
     let failCount = 0;
     
-    for (const product of unsyncedProducts) {
+    for (const product of allProducts) {
       try {
+        console.log(`Syncing product: ${product.name} (${product.id})`);
         await this.syncProduct(String(product.id));
         successCount++;
         
         // Add delay to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
       } catch (error) {
         failCount++;
         console.error(`Failed to sync product ${product.id}:`, error);

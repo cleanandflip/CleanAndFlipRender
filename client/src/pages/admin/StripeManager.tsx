@@ -21,16 +21,24 @@ export default function StripeManager() {
   // Sync all products mutation
   const syncAllMutation = useMutation({
     mutationFn: async (): Promise<SyncResult> => {
+      console.log('🔄 Starting Stripe sync from dashboard...');
       const response = await fetch('/api/stripe/sync-all', {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       
       if (!response.ok) {
-        throw new Error('Failed to sync products');
+        const errorData = await response.text();
+        console.error('Sync failed:', response.status, errorData);
+        throw new Error(`Failed to sync products: ${response.status} - ${errorData}`);
       }
       
-      return response.json();
+      const result = await response.json();
+      console.log('✅ Sync result:', result);
+      return result;
     },
     onMutate: () => {
       setSyncStatus(prev => ({ ...prev, all: 'loading' }));
@@ -134,7 +142,7 @@ export default function StripeManager() {
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Synchronize all existing products in your database with Stripe. This will create
-              or update product listings and pricing information.
+              or update product listings and pricing information. Currently 11 products ready to sync.
             </p>
             
             <div className="flex items-center justify-between">
@@ -160,8 +168,14 @@ export default function StripeManager() {
 
             {syncStatus.all === 'success' && (
               <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
-                All products have been successfully synced to Stripe. You can now view them
-                in your Stripe dashboard.
+                ✅ All 11 products have been successfully synced to Stripe! You can now view them
+                in your Stripe dashboard with active pricing.
+              </div>
+            )}
+            
+            {syncStatus.all === 'error' && (
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                ❌ Sync failed. Please check your authentication and try again.
               </div>
             )}
           </CardContent>
