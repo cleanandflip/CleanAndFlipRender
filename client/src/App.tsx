@@ -28,6 +28,7 @@ const Dashboard = lazy(() => import("@/pages/dashboard"));
 const AdminDashboard = lazy(() => import("@/pages/admin"));
 const ProductForm = lazy(() => import("@/pages/admin/ProductForm").then(module => ({ default: module.ProductForm })));
 const Orders = lazy(() => import("@/pages/orders"));
+const Wishlist = lazy(() => import("@/pages/wishlist"));
 const About = lazy(() => import("@/pages/about"));
 const Contact = lazy(() => import("@/pages/contact"));
 const AuthPage = lazy(() => import("@/pages/auth"));
@@ -108,6 +109,7 @@ function Router() {
               {/* User Routes - No longer wrapped in ProtectedRoute, pages handle auth internally */}
               <Route path={ROUTES.DASHBOARD} component={Dashboard} />
               <Route path={ROUTES.ORDERS} component={Orders} />
+              <Route path={ROUTES.WISHLIST} component={Wishlist} />
               <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />
               <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
               

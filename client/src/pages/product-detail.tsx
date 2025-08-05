@@ -391,7 +391,8 @@ export default function ProductDetail() {
               <div className="flex gap-3 mt-4">
                 <WishlistButton
                   productId={product.id}
-                  className="glass border-border"
+                  size="lg"
+                  showTooltip={true}
                 />
                 
                 <Button

@@ -20,6 +20,7 @@ export const ROUTES = {
   // User routes
   DASHBOARD: '/dashboard',
   ORDERS: '/orders',
+  WISHLIST: '/wishlist',
   SUBMIT_EQUIPMENT: '/sell-to-us',
   TRACK_SUBMISSION: '/track-submission',
   
