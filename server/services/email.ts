@@ -28,8 +28,17 @@ export interface OrderEmailData {
   };
 }
 
-// Email routing configuration
-const EMAIL_ROUTING = {
+// Email routing configuration with proper typing
+interface EmailRoute {
+  from: string;
+  to?: string;
+  replyTo: string;
+  bcc?: string;
+  category: string;
+  priority?: string;
+}
+
+const EMAIL_ROUTING: Record<string, EmailRoute> = {
   // Support emails (from support@cleanandflip.com)
   password_reset: {
     from: 'Clean & Flip Support <support@cleanandflip.com>',

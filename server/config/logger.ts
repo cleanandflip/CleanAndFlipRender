@@ -20,7 +20,17 @@ const logColors = {
 winston.addColors(logColors);
 
 // Log profiles for different environments
-const logProfiles = {
+interface LogProfile {
+  requests: boolean;
+  auth: boolean;
+  database: boolean;
+  cache: boolean;
+  errors: boolean;
+  performance: boolean;
+  [key: string]: boolean;
+}
+
+const logProfiles: Record<string, LogProfile> = {
   development: {
     requests: true,
     auth: true,
@@ -47,7 +57,7 @@ const logProfiles = {
   }
 };
 
-const profile = logProfiles[process.env.LOG_PROFILE || process.env.NODE_ENV || 'development'];
+const profile = logProfiles[process.env.LOG_PROFILE || process.env.NODE_ENV || 'development'] || logProfiles.development;
 
 export function shouldLog(category: string): boolean {
   return profile[category] ?? false;
@@ -58,7 +68,7 @@ let dbConnectionLogged = false;
 let redisConnectionLogged = false;
 
 // Custom format for cleaner output
-const customFormat = winston.format.printf(({ level, message, timestamp, ...metadata }) => {
+const customFormat = winston.format.printf(({ level, message, timestamp, ...metadata }: any) => {
   // Convert message to string if it's an object
   const messageStr = typeof message === 'string' ? message : JSON.stringify(message);
   
@@ -71,13 +81,13 @@ const customFormat = winston.format.printf(({ level, message, timestamp, ...meta
   if (messageStr?.includes('Database connected successfully')) dbConnectionLogged = true;
   if (messageStr?.includes('Redis connected successfully')) redisConnectionLogged = true;
   
-  const time = new Date(timestamp).toLocaleTimeString();
+  const time = new Date(timestamp as string).toLocaleTimeString();
   
   // Format based on log type
   if (metadata.type === 'request') {
-    const { method, url, status, duration, ip } = metadata;
-    const statusColor = status >= 400 ? chalk.red : status >= 300 ? chalk.yellow : chalk.green;
-    return `${chalk.gray(time)} ${chalk.cyan(method.padEnd(7))} ${url.padEnd(40)} ${statusColor(status)} ${chalk.gray(duration + 'ms')}`;
+    const { method, url, status, duration } = metadata as any;
+    const statusColor = Number(status) >= 400 ? chalk.red : Number(status) >= 300 ? chalk.yellow : chalk.green;
+    return `${chalk.gray(time)} ${chalk.cyan(String(method).padEnd(7))} ${String(url).padEnd(40)} ${statusColor(status)} ${chalk.gray(duration + 'ms')}`;
   }
   
   if (metadata.type === 'auth') {

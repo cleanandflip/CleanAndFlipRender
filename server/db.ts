@@ -1,10 +1,10 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
-import * as schema from "@shared/schema";
+import { WebSocket } from "ws";
+import * as schema from "../shared/schema";
 
 // Configure Neon with better connection handling
-neonConfig.webSocketConstructor = ws;
+neonConfig.webSocketConstructor = WebSocket;
 neonConfig.pipelineConnect = false;
 neonConfig.useSecureWebSocket = true;
 
