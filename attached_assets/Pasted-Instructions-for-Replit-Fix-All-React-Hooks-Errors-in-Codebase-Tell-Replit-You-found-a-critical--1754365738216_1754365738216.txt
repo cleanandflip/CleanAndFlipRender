@@ -1,0 +1,174 @@
+Instructions for Replit - Fix All React Hooks Errors in Codebase
+Tell Replit:
+"You found a critical React hooks ordering error in the sell-to-us page. This same error likely exists in OTHER components. You need to audit the ENTIRE codebase and fix ALL hooks violations.
+THE PROBLEM:
+Hooks are being called AFTER conditional returns, which violates React's Rules of Hooks. This causes "Rendered fewer hooks than expected" errors.
+PHASE 1: FIND ALL HOOKS VIOLATIONS
+Run these searches to find all potential issues:
+bash# Find all components with early returns
+grep -rn "return.*<\|return null\|return undefined" --include="*.tsx" --include="*.jsx" client/src/ -B 10 | grep -E "useState|useEffect|useQuery|useAuth|useMemo|useCallback"
+
+# Find hooks after conditionals
+grep -rn "if.*{" --include="*.tsx" -A 10 client/src/ | grep -E "useState|useEffect|useQuery"
+
+# Find all custom hooks usage
+grep -rn "use[A-Z]" --include="*.tsx" client/src/
+
+# Find components with multiple returns
+grep -rn "return" --include="*.tsx" client/src/ | awk -F: '{print $1}' | sort | uniq -c | sort -nr | head -20
+PHASE 2: COMMON PATTERNS TO FIX
+Look for these violation patterns:
+1. Hooks After Early Returns:
+javascript// WRONG - Hooks after conditional return
+if (!user) {
+  return <Navigate to="/login" />;
+}
+const [state, setState] = useState(); // ERROR!
+
+// CORRECT - Hooks before conditions
+const [state, setState] = useState();
+if (!user) {
+  return <Navigate to="/login" />;
+}
+2. Hooks Inside Conditions:
+javascript// WRONG
+if (condition) {
+  const [state, setState] = useState(); // ERROR!
+}
+
+// CORRECT
+const [state, setState] = useState();
+// Use state conditionally, not the hook
+3. Hooks After Guard Clauses:
+javascript// WRONG
+if (loading) return <Spinner />;
+if (error) return <Error />;
+const [form, setForm] = useState(); // ERROR!
+
+// CORRECT
+const [form, setForm] = useState();
+if (loading) return <Spinner />;
+if (error) return <Error />;
+PHASE 3: FILES TO CHECK IMMEDIATELY
+Based on common patterns, check these files:
+
+All pages in client/src/pages/
+All components with authentication checks
+All components with loading states
+All form components
+All dashboard components
+
+Priority files:
+client/src/pages/sell-to-us.tsx
+client/src/pages/dashboard.tsx
+client/src/pages/admin/*.tsx
+client/src/pages/checkout.tsx
+client/src/pages/products.tsx
+client/src/components/forms/*.tsx
+PHASE 4: SYSTEMATIC FIX APPROACH
+For EACH component:
+Step 1: Move ALL hooks to the top
+javascriptfunction Component() {
+  // ALL hooks MUST be here at the top
+  const { user, loading } = useAuth();
+  const [state, setState] = useState();
+  const [form, setForm] = useState();
+  const query = useQuery();
+  const navigate = useNavigate();
+  
+  // THEN conditionals and early returns
+  if (loading) return <Loading />;
+  if (!user) return <Navigate to="/login" />;
+  
+  // Rest of component
+}
+Step 2: Check custom hooks
+javascript// Custom hooks must also follow rules
+function useCustomHook() {
+  // Hooks at top
+  const [state, setState] = useState();
+  const ref = useRef();
+  
+  // Then logic
+  if (condition) {
+    // logic, but no new hooks
+  }
+  
+  return state;
+}
+PHASE 5: OTHER REACT ERRORS TO FIX
+While you're at it, check for:
+1. Missing dependency arrays:
+bashgrep -rn "useEffect(" --include="*.tsx" -A 3 client/src/ | grep -v "\[\]"
+2. Incorrect dependency arrays:
+bash# Find effects with complex dependencies
+grep -rn "useEffect.*\[.*,.*,.*\]" --include="*.tsx" client/src/
+3. Missing keys in lists:
+bashgrep -rn "\.map(" --include="*.tsx" -A 2 client/src/ | grep -v "key="
+PHASE 6: SPECIFIC COMPONENTS TO FIX
+Based on the sell-to-us error, these likely have the same issue:
+
+Pages with auth checks:
+
+dashboard.tsx
+admin pages
+checkout.tsx
+submit equipment pages
+
+
+Components with loading states:
+
+Product lists
+Order history
+User submissions
+
+
+Form components:
+
+Login form
+Register form
+Product edit forms
+
+
+
+PHASE 7: TESTING AFTER FIXES
+Create a test checklist:
+bash# Navigate through all pages and check console for:
+- "Rendered fewer hooks than expected"
+- "Rendered more hooks than during the previous render"
+- "Invalid hook call"
+- Any React warnings
+PHASE 8: PREVENTION RULES
+Implement these rules going forward:
+
+ALWAYS declare hooks at the top of components
+NEVER call hooks inside conditions
+NEVER call hooks inside loops
+NEVER call hooks inside nested functions
+ALWAYS call hooks in the same order
+
+ESLINT RULE TO ADD:
+Add to .eslintrc:
+json{
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  }
+}
+IMMEDIATE ACTION ITEMS:
+
+Fix sell-to-us.tsx pattern in ALL similar components
+Move ALL hooks to component tops
+Remove conditional hook calls
+Test every page for console errors
+Add ESLint rules to prevent future issues
+
+PRIORITY ORDER:
+
+Fix all authentication-protected pages
+Fix all form components
+Fix all dashboard components
+Fix all list/map components
+Run full site test
+
+This is a CRITICAL fix. Hooks violations cause unpredictable React behavior and crashes. Fix EVERY instance across the ENTIRE codebase."
