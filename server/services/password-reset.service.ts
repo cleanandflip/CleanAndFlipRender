@@ -19,39 +19,57 @@ export class PasswordResetService {
     userAgent: string
   ) {
     try {
-      // Rate limiting check (temporarily disabled for testing)
-      // const recentAttempts = await this.getRecentResetAttempts(email);
-      // if (recentAttempts >= this.MAX_RESET_ATTEMPTS) {
-      //   logger.warn(`Too many password reset attempts for email: ${email} from IP: ${ipAddress}`);
-      //   throw new Error('Too many reset attempts. Please try again later.');
-      // }
-
-      // Find user (case insensitive email lookup) - only select essential fields
+      // Add detailed logging
+      console.log(`[DEBUG] Password reset requested for email: "${email}"`);
+      console.log(`[DEBUG] Email length: ${email.length}`);
+      
       const normalizedEmail = normalizeEmail(email);
-      const [user] = await db
-        .select({
-          id: users.id,
-          email: users.email,
-          firstName: users.firstName,
-          lastName: users.lastName
-        })
-        .from(users)
-        .where(sql`LOWER(${users.email}) = ${normalizedEmail}`)
-        .limit(1);
-
-      // Check if user exists - provide helpful feedback while maintaining security
-      if (!user) {
-        logger.info(`Password reset requested for non-existent email: ${email}`);
-        // Provide clear feedback for non-existent accounts
-        return { 
-          error: 'No account found with this email address',
-          message: 'Please check your email address or create a new account if you haven\'t registered yet.',
-          suggestion: 'Make sure you\'re using the same email address you used to register.'
-        };
+      console.log(`[DEBUG] Normalized email: "${normalizedEmail}"`);
+      
+      // Try raw SQL query first to isolate any schema issues
+      try {
+        const countResult = await db.execute(sql`
+          SELECT COUNT(*) as count 
+          FROM users 
+          WHERE LOWER(email) = ${normalizedEmail}
+        `);
+        console.log(`[DEBUG] User count for email: ${countResult.rows[0]?.count || 0}`);
+        
+        const simpleResult = await db.execute(sql`
+          SELECT id, email, first_name, last_name
+          FROM users 
+          WHERE LOWER(email) = ${normalizedEmail}
+          LIMIT 1
+        `);
+        console.log(`[DEBUG] Simple query result:`, simpleResult.rows[0] || 'No user found');
+        
+      } catch (debugError) {
+        console.error('[DEBUG] Query debug error:', debugError);
       }
 
-      // Cancel any existing tokens for this user
-      await this.cancelUserTokens(user.id);
+      // Use simplified query to avoid schema issues
+      const result = await db.execute(sql`
+        SELECT id, email, first_name, last_name
+        FROM users
+        WHERE LOWER(email) = ${normalizedEmail}
+        LIMIT 1
+      `);
+
+      if (result.rows.length === 0) {
+        console.log(`[DEBUG] No user found for normalized email: ${normalizedEmail}`);
+        logger.info(`Password reset requested for non-existent email: ${email}`);
+        return { message: 'If an account exists, reset email sent' };
+      }
+
+      const user = result.rows[0];
+      console.log(`[DEBUG] User found - ID: ${user.id}, Email: ${user.email}`);
+
+      // Cancel any existing tokens for this user using raw SQL
+      await db.execute(sql`
+        UPDATE password_reset_tokens
+        SET used = true
+        WHERE user_id = ${user.id} AND used = false
+      `);
 
       // Generate secure token
       const token = crypto.randomBytes(this.TOKEN_LENGTH).toString('hex');
@@ -59,14 +77,11 @@ export class PasswordResetService {
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + this.TOKEN_EXPIRY_HOURS);
 
-      // Save token to database
-      await db.insert(passwordResetTokens).values({
-        userId: user.id,
-        token: hashedToken,
-        expiresAt,
-        ipAddress,
-        userAgent,
-      });
+      // Save token to database using raw SQL
+      await db.execute(sql`
+        INSERT INTO password_reset_tokens (user_id, token, expires_at, ip_address, user_agent, created_at)
+        VALUES (${String(user.id)}, ${hashedToken}, ${expiresAt.toISOString()}, ${ipAddress}, ${userAgent}, NOW())
+      `);
 
       // Create reset link with production URL
       const baseUrl = process.env.FRONTEND_URL || 'https://cleanandflip.com';
@@ -78,10 +93,18 @@ export class PasswordResetService {
       // Send password reset email
       await emailService.sendPasswordReset(user.email, token, resetLink);
 
-      // Log security event
-      await this.logSecurityEvent(user.id, 'password_reset_requested', ipAddress);
+      // Log security event using correct activity_logs schema
+      try {
+        await db.execute(sql`
+          INSERT INTO activity_logs (user_id, action, metadata, created_at)
+          VALUES (${String(user.id)}, 'password_reset_requested', ${JSON.stringify({ email: String(user.email), ip: ipAddress })}, NOW())
+        `);
+      } catch (logError) {
+        console.log('[DEBUG] Activity log failed, continuing without logging:', logError);
+      }
 
       logger.info(`Password reset email sent for user: ${user.id} from IP: ${ipAddress}`);
+      console.log(`[DEBUG] Password reset completed successfully for: ${user.email}`);
       return { message: 'If an account exists, reset email sent' };
       
     } catch (error) {
