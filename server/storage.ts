@@ -412,7 +412,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
-    const [newProduct] = await db.insert(products).values(product).returning();
+    const [newProduct] = await db.insert(products).values([product]).returning();
     return newProduct;
   }
 
@@ -473,7 +473,7 @@ export class DatabaseStorage implements IStorage {
     // Then fetch fresh product data for each item
     const cartWithProducts = await Promise.all(
       cartItemsData.map(async (item) => {
-        const freshProduct = await this.getProduct(item.productId);
+        const freshProduct = await this.getProduct(item.productId!);
         
         // If product deleted or not available, remove from cart
         if (!freshProduct || freshProduct.status !== 'active') {
@@ -511,13 +511,15 @@ export class DatabaseStorage implements IStorage {
 
   // Batch wishlist check for performance optimization
   async getWishlistedProducts(userId: string, productIds: string[]): Promise<Array<{ productId: string }>> {
-    return await db
+    const result = await db
       .select({ productId: wishlist.productId })
       .from(wishlist)
       .where(and(
         eq(wishlist.userId, userId),
         inArray(wishlist.productId, productIds)
       ));
+    
+    return result.filter(item => item.productId !== null).map(item => ({ productId: item.productId! }));
   }
 
   async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
@@ -735,10 +737,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateProductStock(productId: string, status: string): Promise<void> {
-    const inventoryCount = status === 'in_stock' ? 10 : 0;
+    const stockQuantity = status === 'in_stock' ? 10 : 0;
     await db
       .update(products)
-      .set({ inventoryCount })
+      .set({ stockQuantity })
       .where(eq(products.id, productId));
   }
 
@@ -746,7 +748,7 @@ export class DatabaseStorage implements IStorage {
     const isAdmin = role === 'admin' || role === 'developer';
     await db
       .update(users)
-      .set({ role, isAdmin })
+      .set({ role: role as any, isAdmin })
       .where(eq(users.id, userId));
   }
 
@@ -760,7 +762,7 @@ export class DatabaseStorage implements IStorage {
       p.price,
       p.categoryId || '',
       p.condition,
-      p.inventoryCount?.toString() || '0',
+      p.stockQuantity?.toString() || '0',
       p.createdAt?.toISOString() || ''
     ]);
     
@@ -950,7 +952,7 @@ export class DatabaseStorage implements IStorage {
   async createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
     const [newSubmission] = await db
       .insert(equipmentSubmissions)
-      .values(submission)
+      .values([submission])
       .returning();
     return newSubmission;
   }
