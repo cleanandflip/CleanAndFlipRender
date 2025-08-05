@@ -126,7 +126,7 @@ export class EmailService {
 
   // Generic send method that uses routing configuration
   async send(templateType: string, data: any): Promise<boolean> {
-    const routing = EMAIL_ROUTING[templateType];
+    const routing = EMAIL_ROUTING[templateType as keyof typeof EMAIL_ROUTING];
     
     if (!routing) {
       logger.error(`Unknown email template type: ${templateType}`);
@@ -204,7 +204,7 @@ export class EmailService {
         subject: data.subject || this.getDefaultSubject(templateType),
         templateType,
         status: 'failed',
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         metadata: { category: routing.category }
       });
 
@@ -286,7 +286,7 @@ export class EmailService {
       abandoned_cart: 'Complete Your Purchase - Clean & Flip'
     };
 
-    return subjects[templateType] || 'Clean & Flip Notification';
+    return subjects[templateType as keyof typeof subjects] || 'Clean & Flip Notification';
   }
 
   private async logEmail(logData: any): Promise<void> {
@@ -352,7 +352,7 @@ export class EmailService {
       const emailHtml = this.getReturnStatusTemplate(returnRequest, status);
 
       const { data, error } = await this.resend.emails.send({
-        from: this.fromEmail,
+        from: 'Clean & Flip Support <support@cleanandflip.com>',
         to: userEmail,
         subject: `Return Request Update - #${returnRequest.returnNumber}`,
         html: emailHtml,
