@@ -24,7 +24,7 @@ Preferred communication style: Simple, everyday language.
 - **Language**: TypeScript with ES modules
 - **API Design**: RESTful endpoints with JSON responses
 - **Middleware**: Logging, JSON parsing, error handling.
-- **Authentication**: Express sessions stored in PostgreSQL using `connect-pg-simple`, bcrypt for password hashing (12 salt rounds), role-based access control. Comprehensive authentication security with session persistence and secure token-based password reset system. Case-insensitive email handling.
+- **Authentication**: Express sessions stored in PostgreSQL using `connect-pg-simple`, bcrypt for password hashing (12 salt rounds), role-based access control. Comprehensive authentication security with session persistence and enterprise-grade case-insensitive email system. Secure token-based password reset with production domain URLs (cleanandflip.com).
 - **Security**: OWASP Top 10 compliance, advanced security headers (`helmet.js`), multi-tier rate limiting, input validation and sanitization, atomic transaction management.
 - **Performance**: Redis caching, Gzip compression, WebSocket for real-time updates, optimized PostgreSQL full-text search with GIN indexes, request consolidation middleware.
 
@@ -54,4 +54,4 @@ Preferred communication style: Simple, everyday language.
 - **File Storage**: Cloudinary (for image handling and transformations, uploads up to 12MB and 12 images per product).
 - **Caching**: Redis.
 - **Address Autocomplete**: Geoapify.
-- **Email Service**: Resend (for transactional emails like order confirmations, password resets, etc.).
+- **Email Service**: Resend (for transactional emails like order confirmations, password resets, etc.). Production-ready with cleanandflip.com domain verification and case-insensitive email handling.
