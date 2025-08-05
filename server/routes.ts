@@ -50,9 +50,17 @@ import {
   equipmentSubmissions,
   wishlist,
   activityLogs,
+  reviews,
+  coupons,
+  orderTracking,
+  returnRequests,
   type User,
   type Product,
-  type Category
+  type Category,
+  type Review,
+  type Coupon,
+  type OrderTracking,
+  type ReturnRequest
 } from "@shared/schema";
 import { convertSubmissionsToCSV } from './utils/exportHelpers';
 import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not, count, sum } from "drizzle-orm";
@@ -69,8 +77,13 @@ import {
   insertAddressSchema,
   insertOrderSchema,
   insertEquipmentSubmissionSchema,
-  insertWishlistSchema
+  insertWishlistSchema,
+  insertReviewSchema,
+  insertCouponSchema,
+  insertOrderTrackingSchema,
+  insertReturnRequestSchema
 } from "@shared/schema";
+import { emailService } from "./services/email";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -2810,6 +2823,459 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup advanced request consolidation middleware
   const { requestConsolidator } = await import('./middleware/request-consolidator');
   app.use(requestConsolidator.middleware());
+
+  // ============ NEW E-COMMERCE FEATURES API ROUTES ============
+
+  // Product Reviews API
+  app.get("/api/products/:productId/reviews", apiLimiter, async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const productReviews = await db
+        .select({
+          id: reviews.id,
+          userId: reviews.userId,
+          userName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          rating: reviews.rating,
+          title: reviews.title,
+          content: reviews.content,
+          verified: reviews.verified,
+          helpful: reviews.helpful,
+          createdAt: reviews.createdAt,
+          updatedAt: reviews.updatedAt,
+        })
+        .from(reviews)
+        .leftJoin(users, eq(reviews.userId, users.id))
+        .where(eq(reviews.productId, productId))
+        .orderBy(desc(reviews.createdAt));
+
+      res.json(productReviews);
+    } catch (error) {
+      Logger.error("Error fetching reviews", error);
+      res.status(500).json({ error: "Failed to fetch reviews" });
+    }
+  });
+
+  app.post("/api/products/:productId/reviews", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const userId = req.userId;
+      const { rating, title, content } = req.body;
+
+      // Validate input
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Rating must be between 1 and 5" });
+      }
+      if (!title?.trim() || !content?.trim()) {
+        return res.status(400).json({ error: "Title and content are required" });
+      }
+
+      // Check if user already reviewed this product
+      const existingReview = await db
+        .select()
+        .from(reviews)
+        .where(and(eq(reviews.productId, productId), eq(reviews.userId, userId)))
+        .limit(1);
+
+      if (existingReview.length > 0) {
+        return res.status(400).json({ error: "You have already reviewed this product" });
+      }
+
+      // Create new review
+      const newReview = await db
+        .insert(reviews)
+        .values({
+          productId,
+          userId,
+          rating: parseInt(rating),
+          title: title.trim(),
+          content: content.trim(),
+          verified: false, // TODO: Check if user actually purchased this product
+        })
+        .returning();
+
+      // Update product average rating
+      const avgRating = await db
+        .select({ avg: sql<number>`AVG(${reviews.rating})` })
+        .from(reviews)
+        .where(eq(reviews.productId, productId));
+
+      await db
+        .update(products)
+        .set({ 
+          averageRating: avgRating[0]?.avg || 0,
+          updatedAt: new Date()
+        })
+        .where(eq(products.id, productId));
+
+      res.json(newReview[0]);
+    } catch (error) {
+      Logger.error("Error creating review", error);
+      res.status(500).json({ error: "Failed to create review" });
+    }
+  });
+
+  app.post("/api/reviews/:reviewId/helpful", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const { reviewId } = req.params;
+      
+      await db
+        .update(reviews)
+        .set({ 
+          helpful: sql`${reviews.helpful} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(reviews.id, reviewId));
+
+      res.json({ success: true });
+    } catch (error) {
+      Logger.error("Error marking review helpful", error);
+      res.status(500).json({ error: "Failed to mark review helpful" });
+    }
+  });
+
+  // Coupons API
+  app.post("/api/coupons/validate", apiLimiter, async (req, res) => {
+    try {
+      const { code, orderTotal } = req.body;
+
+      if (!code?.trim()) {
+        return res.status(400).json({ error: "Coupon code is required" });
+      }
+
+      const coupon = await db
+        .select()
+        .from(coupons)
+        .where(and(
+          eq(coupons.code, code.toUpperCase()),
+          eq(coupons.isActive, true)
+        ))
+        .limit(1);
+
+      if (coupon.length === 0) {
+        return res.status(400).json({ error: "Invalid coupon code" });
+      }
+
+      const couponData = coupon[0];
+
+      // Check validity dates
+      const now = new Date();
+      if (couponData.validUntil && new Date(couponData.validUntil) < now) {
+        return res.status(400).json({ error: "This coupon has expired" });
+      }
+      if (couponData.validFrom && new Date(couponData.validFrom) > now) {
+        return res.status(400).json({ error: "This coupon is not yet valid" });
+      }
+
+      // Check usage limits
+      if (couponData.usageLimit && couponData.usageCount >= couponData.usageLimit) {
+        return res.status(400).json({ error: "This coupon has reached its usage limit" });
+      }
+
+      // Check minimum order amount
+      if (couponData.minOrderAmount && orderTotal < parseFloat(couponData.minOrderAmount)) {
+        return res.status(400).json({ 
+          error: `Minimum order amount of $${couponData.minOrderAmount} required` 
+        });
+      }
+
+      res.json({
+        id: couponData.id,
+        code: couponData.code,
+        description: couponData.description,
+        discountType: couponData.discountType,
+        discountValue: parseFloat(couponData.discountValue),
+        minOrderAmount: couponData.minOrderAmount ? parseFloat(couponData.minOrderAmount) : null,
+        maxDiscount: couponData.maxDiscount ? parseFloat(couponData.maxDiscount) : null,
+      });
+    } catch (error) {
+      Logger.error("Error validating coupon", error);
+      res.status(500).json({ error: "Failed to validate coupon" });
+    }
+  });
+
+  // Order Tracking API
+  app.get("/api/orders/:orderId/tracking", apiLimiter, async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      
+      const trackingEvents = await db
+        .select()
+        .from(orderTracking)
+        .where(eq(orderTracking.orderId, orderId))
+        .orderBy(desc(orderTracking.createdAt));
+
+      res.json(trackingEvents);
+    } catch (error) {
+      Logger.error("Error fetching order tracking", error);
+      res.status(500).json({ error: "Failed to fetch tracking information" });
+    }
+  });
+
+  app.post("/api/orders/:orderId/tracking", requireRole(['admin']), async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const trackingData = req.body;
+
+      const newEvent = await db
+        .insert(orderTracking)
+        .values({
+          orderId,
+          ...trackingData,
+        })
+        .returning();
+
+      // Send shipping notification email if status is 'shipped'
+      if (trackingData.status === 'shipped' && trackingData.trackingNumber) {
+        const order = await db
+          .select({
+            orderNumber: orders.orderNumber,
+            userEmail: users.email,
+            userName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          })
+          .from(orders)
+          .leftJoin(users, eq(orders.userId, users.id))
+          .where(eq(orders.id, orderId))
+          .limit(1);
+
+        if (order.length > 0) {
+          await emailService.sendShippingNotification({
+            orderId,
+            orderNumber: order[0].orderNumber,
+            customerEmail: order[0].userEmail,
+            customerName: order[0].userName,
+            items: [], // TODO: Get order items
+            subtotal: 0,
+            tax: 0,
+            shipping: 0,
+            total: 0,
+            shippingAddress: {} as any,
+          }, trackingData.trackingNumber);
+        }
+      }
+
+      res.json(newEvent[0]);
+    } catch (error) {
+      Logger.error("Error creating tracking event", error);
+      res.status(500).json({ error: "Failed to create tracking event" });
+    }
+  });
+
+  // Enhanced Search API
+  app.get("/api/search/suggestions", apiLimiter, async (req, res) => {
+    try {
+      const { q } = req.query;
+      
+      if (!q || typeof q !== 'string' || q.length < 2) {
+        return res.json([]);
+      }
+
+      const suggestions = [];
+      
+      // Product name suggestions
+      const productSuggestions = await db
+        .select({
+          id: sql<string>`'product-' || ${products.id}`,
+          text: products.name,
+          type: sql<string>`'product'`,
+          count: sql<number>`1`,
+        })
+        .from(products)
+        .where(ilike(products.name, `%${q}%`))
+        .limit(5);
+
+      suggestions.push(...productSuggestions);
+
+      // Category suggestions
+      const categorySuggestions = await db
+        .select({
+          id: sql<string>`'category-' || ${categories.id}`,
+          text: categories.name,
+          type: sql<string>`'category'`,
+          count: sql<number>`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`,
+        })
+        .from(categories)
+        .where(ilike(categories.name, `%${q}%`))
+        .limit(3);
+
+      suggestions.push(...categorySuggestions);
+
+      // Brand suggestions
+      const brandSuggestions = await db
+        .select({
+          id: sql<string>`'brand-' || ${products.brand}`,
+          text: products.brand,
+          type: sql<string>`'brand'`,
+          count: sql<number>`COUNT(*)`,
+        })
+        .from(products)
+        .where(and(
+          ilike(products.brand, `%${q}%`),
+          ne(products.brand, '')
+        ))
+        .groupBy(products.brand)
+        .limit(3);
+
+      suggestions.push(...brandSuggestions);
+
+      res.json(suggestions.slice(0, 10));
+    } catch (error) {
+      Logger.error("Error fetching search suggestions", error);
+      res.status(500).json({ error: "Failed to fetch suggestions" });
+    }
+  });
+
+  app.get("/api/search/popular", apiLimiter, async (req, res) => {
+    try {
+      // Mock popular searches - in production, track actual searches
+      const popularSearches = [
+        { query: "dumbbells", count: 45 },
+        { query: "kettlebells", count: 38 },
+        { query: "barbell", count: 32 },
+        { query: "weight plates", count: 28 },
+        { query: "resistance bands", count: 24 },
+      ];
+
+      res.json(popularSearches);
+    } catch (error) {
+      Logger.error("Error fetching popular searches", error);
+      res.status(500).json({ error: "Failed to fetch popular searches" });
+    }
+  });
+
+  // Shipping Calculator API
+  app.post("/api/shipping/calculate", apiLimiter, async (req, res) => {
+    try {
+      const { zipCode, cartTotal, cartWeight } = req.body;
+
+      if (!zipCode || zipCode.length < 5) {
+        return res.status(400).json({ error: "Valid ZIP code required" });
+      }
+
+      // Mock shipping calculations - integrate with real carriers in production
+      const shippingOptions = [];
+
+      // Free shipping over $50
+      if (cartTotal >= 50) {
+        shippingOptions.push({
+          id: 'free-shipping',
+          name: 'Free Standard Shipping',
+          description: 'Free shipping on orders over $50',
+          price: 0,
+          estimatedDays: '5-7 business days',
+          carrier: 'USPS',
+          service: 'Ground'
+        });
+      }
+
+      // Standard shipping
+      const standardPrice = cartTotal >= 50 ? 0 : Math.max(5.99, cartWeight * 0.5);
+      shippingOptions.push({
+        id: 'standard',
+        name: 'Standard Shipping',
+        description: 'Reliable delivery to your door',
+        price: standardPrice,
+        estimatedDays: '5-7 business days',
+        carrier: 'USPS',
+        service: 'Ground'
+      });
+
+      // Express shipping
+      shippingOptions.push({
+        id: 'express',
+        name: 'Express Shipping',
+        description: 'Faster delivery',
+        price: 12.99,
+        estimatedDays: '2-3 business days',
+        carrier: 'FedEx',
+        service: 'Express'
+      });
+
+      // Overnight shipping
+      shippingOptions.push({
+        id: 'overnight',
+        name: 'Overnight Shipping',
+        description: 'Next business day delivery',
+        price: 24.99,
+        estimatedDays: '1 business day',
+        carrier: 'FedEx',
+        service: 'Overnight'
+      });
+
+      res.json(shippingOptions);
+    } catch (error) {
+      Logger.error("Error calculating shipping", error);
+      res.status(500).json({ error: "Failed to calculate shipping" });
+    }
+  });
+
+  // Return Requests API
+  app.post("/api/orders/:orderId/returns", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const userId = req.userId;
+      const returnData = req.body;
+
+      // Verify order belongs to user
+      const order = await db
+        .select()
+        .from(orders)
+        .where(and(eq(orders.id, orderId), eq(orders.userId, userId)))
+        .limit(1);
+
+      if (order.length === 0) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Generate return number
+      const returnNumber = `RET-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
+      const newReturn = await db
+        .insert(returnRequests)
+        .values({
+          orderId,
+          userId,
+          returnNumber,
+          reason: returnData.reason,
+          description: returnData.description,
+          preferredResolution: returnData.preferredResolution,
+          images: returnData.images || [],
+        })
+        .returning();
+
+      res.json(newReturn[0]);
+    } catch (error) {
+      Logger.error("Error creating return request", error);
+      res.status(500).json({ error: "Failed to create return request" });
+    }
+  });
+
+  app.get("/api/admin/returns", requireAdmin, async (req, res) => {
+    try {
+      const returns = await db
+        .select({
+          returnRequest: returnRequests,
+          order: {
+            orderNumber: orders.orderNumber,
+            totalAmount: orders.totalAmount,
+          },
+          user: {
+            email: users.email,
+            name: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          },
+        })
+        .from(returnRequests)
+        .leftJoin(orders, eq(returnRequests.orderId, orders.id))
+        .leftJoin(users, eq(returnRequests.userId, users.id))
+        .orderBy(desc(returnRequests.createdAt));
+
+      res.json(returns);
+    } catch (error) {
+      Logger.error("Error fetching return requests", error);
+      res.status(500).json({ error: "Failed to fetch return requests" });
+    }
+  });
+
+  // ============ END NEW E-COMMERCE FEATURES ============
   
   return httpServer;
 }

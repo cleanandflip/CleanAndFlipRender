@@ -458,6 +458,120 @@ export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
+// Reviews Schema
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").references(() => products.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  rating: integer("rating").notNull(),
+  title: varchar("title").notNull(),
+  content: text("content").notNull(),
+  verified: boolean("verified").default(false),
+  helpful: integer("helpful").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_reviews_product").on(table.productId),
+  index("idx_reviews_user").on(table.userId),
+  index("idx_reviews_rating").on(table.rating),
+]);
+
+export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+  helpful: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Coupons Schema
+export const coupons = pgTable("coupons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code").unique().notNull(),
+  description: text("description").notNull(),
+  discountType: varchar("discount_type").notNull(), // 'percentage' | 'fixed'
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  minOrderAmount: decimal("min_order_amount", { precision: 10, scale: 2 }),
+  maxDiscount: decimal("max_discount", { precision: 10, scale: 2 }),
+  usageLimit: integer("usage_limit"),
+  usageCount: integer("usage_count").default(0),
+  isActive: boolean("is_active").default(true),
+  validFrom: timestamp("valid_from").defaultNow(),
+  validUntil: timestamp("valid_until"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_coupons_code").on(table.code),
+  index("idx_coupons_active").on(table.isActive),
+]);
+
+export const insertCouponSchema = createInsertSchema(coupons).omit({
+  id: true,
+  usageCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Order Tracking Schema
+export const orderTracking = pgTable("order_tracking", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").references(() => orders.id, { onDelete: 'cascade' }).notNull(),
+  status: varchar("status").notNull(),
+  location: varchar("location"),
+  description: text("description"),
+  trackingNumber: varchar("tracking_number"),
+  carrier: varchar("carrier"),
+  estimatedDelivery: timestamp("estimated_delivery"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_order_tracking_order").on(table.orderId),
+  index("idx_order_tracking_status").on(table.status),
+]);
+
+export const insertOrderTrackingSchema = createInsertSchema(orderTracking).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Return Requests Schema
+export const returnRequests = pgTable("return_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").references(() => orders.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  reason: varchar("reason").notNull(),
+  description: text("description"),
+  preferredResolution: varchar("preferred_resolution").notNull(), // 'refund' | 'exchange'
+  status: varchar("status").default("pending"), // 'pending' | 'approved' | 'rejected' | 'completed'
+  returnNumber: varchar("return_number").unique().notNull(),
+  images: jsonb("images").$type<string[]>().default([]),
+  adminNotes: text("admin_notes"),
+  refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_return_requests_order").on(table.orderId),
+  index("idx_return_requests_user").on(table.userId),
+  index("idx_return_requests_status").on(table.status),
+]);
+
+export const insertReturnRequestSchema = createInsertSchema(returnRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Type exports
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+
+export type Coupon = typeof coupons.$inferSelect;
+export type InsertCoupon = z.infer<typeof insertCouponSchema>;
+
+export type OrderTracking = typeof orderTracking.$inferSelect;
+export type InsertOrderTracking = z.infer<typeof insertOrderTrackingSchema>;
+
+export type ReturnRequest = typeof returnRequests.$inferSelect;
+export type InsertReturnRequest = z.infer<typeof insertReturnRequestSchema>;
+
 // Type for status history tracking
 export type StatusHistoryEntry = {
   status: string;
