@@ -139,10 +139,8 @@ export class EmailService {
     }
 
     try {
-      // Use domain-verified from address or fallback to onboarding
-      const fromEmail = process.env.NODE_ENV === 'production' 
-        ? routing.from 
-        : 'Clean & Flip <onboarding@resend.dev>';
+      // Use domain-verified cleanandflip.com addresses
+      const fromEmail = routing.from;
 
       logger.info(`Sending ${templateType} email:`, {
         from: fromEmail,
@@ -386,27 +384,51 @@ export class EmailService {
 
   private getPasswordResetTemplate(resetUrl: string): string {
     return `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
-        <div style="background: white; padding: 30px; border-radius: 8px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #1e40af; margin: 0;">Clean & Flip</h1>
-            <h2 style="color: #333; margin: 10px 0;">Password Reset Request</h2>
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Password Reset - Clean & Flip</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .support-header { color: rgba(255,255,255,0.8); font-size: 14px; margin-bottom: 10px; }
+            .content { padding: 30px; background: #f9f9f9; border-radius: 0 0 8px 8px; }
+            .button { display: inline-block; background: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; }
+            .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="support-header">Support Team</div>
+              <h1 style="margin: 0;">Clean & Flip</h1>
+              <p style="margin: 10px 0;">Password Reset Request</p>
+            </div>
+            <div class="content">
+              <h2>Reset Your Password</h2>
+              <p>We received a request to reset your password for your Clean & Flip account.</p>
+              <p>Click the button below to reset your password:</p>
+              
+              <div style="text-align: center;">
+                <a href="${resetUrl}" class="button">Reset Password</a>
+              </div>
+              
+              <p style="color: #666; font-size: 14px; margin-top: 20px;">
+                <strong>Security Notice:</strong> This link will expire in 1 hour for your security.
+              </p>
+              <p style="color: #666; font-size: 14px;">
+                If you didn't request this password reset, please ignore this email or contact our support team if you have concerns.
+              </p>
+            </div>
+            <div class="footer">
+              <p>© 2025 Clean & Flip. All rights reserved.</p>
+              <p>Asheville, NC | <a href="mailto:support@cleanandflip.com">support@cleanandflip.com</a></p>
+            </div>
           </div>
-          
-          <p>You requested a password reset for your Clean & Flip account.</p>
-          <p>Click the link below to reset your password:</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" style="background: #1e40af; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Reset Password</a>
-          </div>
-          
-          <p style="color: #666; font-size: 14px; margin-top: 20px;">This link will expire in 1 hour. If you didn't request this reset, please ignore this email.</p>
-          
-          <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
-            <p>Thank you for choosing Clean & Flip!</p>
-          </div>
-        </div>
-      </div>
+        </body>
+      </html>
     `;
   }
 
