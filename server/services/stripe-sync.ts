@@ -77,11 +77,14 @@ export class StripeProductSync {
           dimensions: product.dimensions ? JSON.stringify(product.dimensions) : ''
         },
         shippable: true,
-        package_dimensions: product.dimensions ? {
-          height: product.dimensions.height,
-          length: product.dimensions.length,
+        package_dimensions: product.dimensions && 
+          product.dimensions.height && 
+          product.dimensions.length && 
+          product.dimensions.width ? {
+          height: parseFloat(product.dimensions.height) || 1,
+          length: parseFloat(product.dimensions.length) || 1,
           weight: product.weight || 1000, // Default 1kg
-          width: product.dimensions.width
+          width: parseFloat(product.dimensions.width) || 1
         } : undefined
       };
 
