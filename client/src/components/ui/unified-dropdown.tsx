@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +36,8 @@ export function UnifiedDropdown({
 }: UnifiedDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Normalize options to DropdownOption format
@@ -49,10 +52,23 @@ export function UnifiedDropdown({
       )
     : normalizedOptions;
 
+  // Calculate dropdown position when opening
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  }, [isOpen]);
+
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setSearch('');
       }
@@ -82,6 +98,7 @@ export function UnifiedDropdown({
       
       {/* Dropdown Trigger */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
@@ -122,17 +139,27 @@ export function UnifiedDropdown({
         />
       </button>
 
-      {/* Dropdown Menu */}
-      {isOpen && !disabled && (
+      {/* Dropdown Menu with Portal */}
+      {isOpen && !disabled && createPortal(
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 z-40 bg-black/20" 
+            className="fixed inset-0 z-[9998] bg-black/20" 
             onClick={() => setIsOpen(false)}
           />
           
           {/* Menu */}
-          <div className="absolute z-[9999] w-full mt-2 py-1 bg-popover border border-input rounded-lg shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+          <div 
+            ref={dropdownRef}
+            className="py-1 bg-popover border border-input rounded-lg shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+            style={{
+              position: 'fixed',
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              width: `${dropdownPosition.width}px`,
+              zIndex: 9999
+            }}
+          >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <button
@@ -179,7 +206,8 @@ export function UnifiedDropdown({
               </div>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
