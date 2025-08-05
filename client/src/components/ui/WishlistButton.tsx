@@ -1,83 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useWishlist } from '@/hooks/use-wishlist';
+import { cn } from '@/lib/utils';
 
 interface WishlistButtonProps {
   productId: string;
-  size?: 'small' | 'default';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
   showTooltip?: boolean;
-  initialWishlisted?: boolean; // NEW: Pass wishlist status to prevent API calls (undefined = fetch needed)
 }
+
+const sizeClasses = {
+  sm: 'w-8 h-8',
+  md: 'w-10 h-10',
+  lg: 'w-12 h-12'
+};
+
+const iconSizes = {
+  sm: 16,
+  md: 20,
+  lg: 24
+};
 
 export const WishlistButton: React.FC<WishlistButtonProps> = ({ 
   productId, 
-  size = 'default',
+  size = 'md',
   className = '',
-  showTooltip = true,
-  initialWishlisted
+  showTooltip = true
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isWishlisted, setIsWishlisted] = useState(initialWishlisted || false);
-  const [loading, setLoading] = useState(false);
+  const { isInWishlist, toggleWishlist, isToggling } = useWishlist();
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   
-  // Reset state when user logs out
-  useEffect(() => {
-    if (!user) {
-      setIsWishlisted(false);
-    }
-  }, [user]);
-
-  // Listen for global wishlist updates
-  useEffect(() => {
-    const handleWishlistUpdate = (event: CustomEvent<{ productId: string; action: string }>) => {
-      if (event.detail.productId === productId) {
-        setIsWishlisted(event.detail.action === 'added');
-      }
-    };
-
-    window.addEventListener('wishlistUpdated', handleWishlistUpdate as EventListener);
-    return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate as EventListener);
-  }, [productId]);
+  const isWishlistItem = isInWishlist(productId);
+  const loading = isToggling;
   
-  // Only fetch if we don't have initial data and user is authenticated
-  const { data: wishlistData } = useQuery({
-    queryKey: ['wishlist', productId],
-    queryFn: async () => {
-      const response = await fetch('/api/wishlist/check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ productId })
-      });
-      
-      if (!response.ok) throw new Error('Failed to check wishlist');
-      return response.json();
-    },
-    enabled: !!user && !!productId && initialWishlisted === undefined, // Only query if no initial data provided
-    staleTime: 60000, // 1 minute
-    gcTime: 300000, // 5 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-    refetchOnReconnect: false,
-  });
-  
-  // Update local state when query data changes (only if no initial data provided)
-  useEffect(() => {
-    if (wishlistData && initialWishlisted === undefined) {
-      setIsWishlisted(wishlistData.isWishlisted);
-    }
-  }, [wishlistData, initialWishlisted]);
-  
-  const handleWishlistToggle = async (e: React.MouseEvent) => {
+  const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -94,79 +55,38 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
     
     if (loading) return;
     
-    setLoading(true);
-    
-    try {
-      const method = isWishlisted ? 'DELETE' : 'POST';
-      const response = await fetch('/api/wishlist', {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ productId })
-      });
-      
-      if (response.ok) {
-        const newStatus = !isWishlisted;
-        setIsWishlisted(newStatus);
-        
-        toast({
-          title: newStatus ? "Added to wishlist" : "Removed from wishlist",
-          description: newStatus ? "Item saved to your wishlist" : "Item removed from your wishlist"
-        });
-        
-        // Invalidate React Query cache for this product
-        queryClient.invalidateQueries({ queryKey: ['wishlist', productId] });
-        
-        // Dispatch event for other components
-        window.dispatchEvent(new CustomEvent('wishlistUpdated', {
-          detail: { productId, action: newStatus ? 'added' : 'removed' }
-        }));
-      } else {
-        throw new Error('Failed to update wishlist');
-      }
-    } catch (error) {
-      // Error handled via toast notification
-      toast({
-        title: "Error",
-        description: "Failed to update wishlist. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    toggleWishlist(productId);
   };
-  
-  const sizeClasses = {
-    small: 'w-8 h-8',
-    default: 'w-10 h-10'
-  };
-  
-  const iconSize = size === 'small' ? 16 : 20;
+
+  // Show loading skeleton if not authenticated
+  if (!user) {
+    return (
+      <div className={cn(sizeClasses[size], "rounded-full bg-gray-700/50 animate-pulse")} />
+    );
+  }
   
   return (
     <div className="relative group">
       <button
         onClick={handleWishlistToggle}
         disabled={loading}
-        className={`
-          ${sizeClasses[size]}
-          rounded-full flex items-center justify-center
-          transition-all duration-300 transform
-          ${isWishlisted 
-            ? 'bg-red-500/90 text-white scale-110 shadow-lg shadow-red-500/25' 
-            : 'bg-gray-700/80 text-gray-300 hover:bg-gray-600 hover:shadow-md hover:scale-110'
-          }
-          ${loading ? 'opacity-50 cursor-not-allowed animate-pulse' : 'cursor-pointer'}
-          ${className}
-        `}
-        aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+        className={cn(
+          sizeClasses[size],
+          "rounded-full flex items-center justify-center",
+          "transition-all duration-300 transform",
+          isWishlistItem 
+            ? "bg-red-500/90 text-white scale-110 shadow-lg shadow-red-500/25" 
+            : "bg-gray-700/80 text-gray-300 hover:bg-gray-600 hover:shadow-md hover:scale-110",
+          loading && "opacity-50 cursor-not-allowed animate-pulse",
+          !loading && "cursor-pointer",
+          className
+        )}
+        aria-label={isWishlistItem ? 'Remove from wishlist' : 'Add to wishlist'}
       >
         <Heart 
-          size={iconSize}
-          className={`transition-all duration-300 ${loading ? 'animate-pulse' : ''}`}
-          fill={isWishlisted ? 'currentColor' : 'none'}
+          size={iconSizes[size]}
+          className={cn("transition-all duration-300", loading && "animate-pulse")}
+          fill={isWishlistItem ? 'currentColor' : 'none'}
         />
       </button>
       
@@ -175,16 +95,17 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 
                         opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
           <div className="bg-gray-800/95 text-white text-xs px-2 py-1 rounded whitespace-nowrap border border-gray-600">
-            {loading ? 'Updating...' : isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+            {loading ? 'Updating...' : isWishlistItem ? 'Remove from wishlist' : 'Add to wishlist'}
           </div>
         </div>
       )}
       
       {/* Login prompt */}
       {showLoginPrompt && !user && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
-          <div className="bg-red-500/90 text-white text-xs px-3 py-2 rounded whitespace-nowrap animate-pulse">
-            Please log in to save items
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 
+                        opacity-100 transition-opacity pointer-events-none z-50">
+          <div className="bg-red-600/95 text-white text-xs px-2 py-1 rounded whitespace-nowrap border border-red-500">
+            Login required
           </div>
         </div>
       )}

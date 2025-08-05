@@ -125,9 +125,8 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 <div className="flex items-center gap-2">
                   <WishlistButton 
                     productId={product.id}
-                    size="small"
+                    size="sm"
                     className="bg-card border-bg-card-border"
-                    initialWishlisted={isWishlisted}
                   />
                   
                   <AddToCartButton
@@ -178,10 +177,9 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       <div className="absolute top-3 right-3 z-20" onClick={(e) => e.stopPropagation()}>
         <WishlistButton 
           productId={product.id}
-          size="small"
+          size="sm"
           className="w-10 h-10 bg-gray-700/80 hover:bg-gray-600 rounded-full transition-all duration-200"
           showTooltip={false}
-          initialWishlisted={isWishlisted}
         />
       </div>
       
