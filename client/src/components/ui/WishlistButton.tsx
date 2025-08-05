@@ -36,27 +36,22 @@ export function WishlistButton({
   const isInWishlist = isWishlisted(productId);
   const loading = toggleWishlist.isPending;
   
+  // Remove debug logging after fix
+  // console.log(`WishlistButton render - Product: ${productId}, isInWishlist: ${isInWishlist}, loading: ${loading}`);
+  
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('Wishlist button clicked for product:', productId);
-    console.log('User:', user);
-    console.log('Loading:', loading);
-    
     if (!user) {
-      console.log('No user, showing login prompt');
       setShowLoginPrompt(true);
       setTimeout(() => setShowLoginPrompt(false), 3000);
       return;
     }
     
     if (loading) {
-      console.log('Already loading, skipping');
       return;
     }
-    
-    console.log('Calling toggleWishlist.mutate with productId:', productId);
     toggleWishlist.mutate(productId);
   };
   

@@ -12,7 +12,7 @@ export function useWishlist() {
   const { user } = useAuth();
   
   // Fetch wishlist with real-time sync
-  const { data: wishlist = [], isLoading } = useQuery({
+  const { data: wishlist = [], isLoading, refetch } = useQuery({
     queryKey: ['wishlist'],
     queryFn: async () => {
       if (!user) return [];
@@ -21,7 +21,8 @@ export function useWishlist() {
       });
       if (!response.ok) throw new Error('Failed to fetch wishlist');
       const data = await response.json();
-      return data.wishlist || [];
+      // API returns array directly, not wrapped in wishlist property
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!user,
     staleTime: 0, // Always check for updates
@@ -45,39 +46,31 @@ export function useWishlist() {
   // Toggle wishlist without optimistic updates to prevent instability
   const toggleWishlist = useMutation({
     mutationFn: async (productId: string) => {
-      console.log('toggleWishlist mutationFn called with productId:', productId);
-      console.log('Current wishlist:', wishlist);
-      
       const isCurrentlyWishlisted = wishlist.some((item: WishlistItem) => item.productId === productId);
-      console.log('Is currently wishlisted:', isCurrentlyWishlisted);
       
       if (isCurrentlyWishlisted) {
-        console.log('Removing from wishlist...');
         const response = await fetch('/api/wishlist', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ productId })
         });
-        console.log('Delete response:', response.status, response.ok);
         if (!response.ok) throw new Error('Failed to remove from wishlist');
         return { action: 'removed', productId };
       } else {
-        console.log('Adding to wishlist...');
         const response = await fetch('/api/wishlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ productId })
         });
-        console.log('Add response:', response.status, response.ok);
         if (!response.ok) throw new Error('Failed to add to wishlist');
         return { action: 'added', productId };
       }
     },
     onSuccess: () => {
-      // Simply invalidate and refetch - no optimistic updates
-      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      // Force immediate refetch instead of just invalidating
+      queryClient.refetchQueries({ queryKey: ['wishlist'] });
       // Cross-tab update signal
       localStorage.setItem('wishlist-update', Date.now().toString());
       // Broadcast global event
@@ -91,7 +84,7 @@ export function useWishlist() {
   
   // Helper function to check if product is wishlisted
   const isWishlisted = (productId: string) => {
-    return wishlist.some((item: WishlistItem) => item.productId === productId);
+    return wishlist.some((item: any) => item.productId === productId);
   };
   
   return {
