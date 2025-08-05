@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { WishlistButton } from "@/components/ui";
 import { Card } from "@/components/shared/AnimatedComponents";
 import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import { useToast } from "@/hooks/use-toast";
@@ -46,7 +45,6 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { apiRequest } from "@/lib/queryClient";
-import type { Order, EquipmentSubmission, Wishlist, Product, Address } from "@shared/schema";
 
 function AddressesSection() {
   const { user } = useAuth();
@@ -224,8 +222,6 @@ function DashboardContent() {
     staleTime: 30000,
   });
 
-  const { data: wishlist = [], refetch: refetchWishlist } = useQuery<(Wishlist & { product: Product })[]>({
-    queryKey: ["/api/wishlist"],
     staleTime: 0, // Always consider data stale for real-time accuracy
     gcTime: 0, // No client-side caching to prevent stale data
     refetchOnWindowFocus: true, // Always refetch when user returns to tab
@@ -307,16 +303,9 @@ function DashboardContent() {
     };
   }, [activeTab, saveState]);
 
-  // Listen for wishlist updates from product cards
   useEffect(() => {
-    const handleWishlistUpdate = () => {
-      // Refetch data on wishlist updates
-      refetchWishlist();
     };
     
-    window.addEventListener('wishlistUpdated', handleWishlistUpdate);
-    return () => window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
-  }, [refetchWishlist]);
 
   // Update tab change handler
   const handleTabChange = (tab: string) => {
@@ -327,7 +316,6 @@ function DashboardContent() {
     window.history.replaceState({}, '', url.toString());
   };
 
-  // Wishlist removal is now handled by the unified WishlistButton component
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -387,8 +375,6 @@ function DashboardContent() {
           
           <Card className="p-6 text-center">
             <Heart className="mx-auto mb-3 text-red-400" size={32} />
-            <div className="text-2xl font-bold">{Array.isArray(wishlist) ? wishlist.length : 0}</div>
-            <div className="text-sm text-text-muted">Wishlist Items</div>
           </Card>
         </div>
 
@@ -436,24 +422,7 @@ function DashboardContent() {
                 )}
               </Button>
             </div>
-            <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
-              activeTab === 'wishlist' 
-                ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
-                : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
-            }`}>
-              <Button
-                variant={activeTab === 'wishlist' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => handleTabChange('wishlist')}
-                className={`h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
-                  activeTab === 'wishlist' 
-                    ? 'bg-blue-500/30 text-blue-200 shadow-md hover:bg-blue-500/40 border border-blue-400/50' 
-                    : 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/10'
-                }`}
-              >
-                Wishlist
-              </Button>
-            </div>
+
             <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
               activeTab === 'profile' 
                 ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
@@ -718,8 +687,6 @@ function DashboardContent() {
             </Card>
           )}
 
-          {/* Wishlist Tab */}
-          {activeTab === 'wishlist' && (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">WISHLIST</h2>
@@ -736,10 +703,8 @@ function DashboardContent() {
                 </SmartLink>
               </div>
 
-              {!wishlist || wishlist.length === 0 ? (
                 <div className="text-center py-12">
                   <Heart className="mx-auto mb-4 text-gray-400" size={48} />
-                  <h3 className="text-xl font-semibold mb-2">Your wishlist is empty</h3>
                   <p className="text-text-secondary mb-6">
                     Save items you're interested in to easily find them later.
                   </p>
@@ -757,7 +722,6 @@ function DashboardContent() {
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {wishlist?.map((item) => (
                     <div key={item.id} className="relative glass rounded-lg overflow-hidden">
                       <SmartLink href={`/products/${item.product.id}`}>
                         <div className="w-full h-48 relative bg-gray-900/30 hover:bg-gray-900/40 transition-colors overflow-hidden">
@@ -778,7 +742,6 @@ function DashboardContent() {
                         </div>
                       </SmartLink>
                       <div className="absolute top-2 right-2">
-                        <WishlistButton 
                           productId={item.product.id}
                           size="small"
                           showTooltip={false}

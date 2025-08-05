@@ -42,7 +42,7 @@ export function useWishlist() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [queryClient]);
   
-  // Toggle wishlist with optimistic updates
+  // Toggle wishlist without optimistic updates to prevent instability
   const toggleWishlist = useMutation({
     mutationFn: async (productId: string) => {
       const isCurrentlyWishlisted = wishlist.some((item: WishlistItem) => item.productId === productId);
@@ -67,46 +67,18 @@ export function useWishlist() {
         return { action: 'added', productId };
       }
     },
-    onMutate: async (productId) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['wishlist'] });
-      
-      // Snapshot the previous value
-      const previousWishlist = queryClient.getQueryData(['wishlist']);
-      
-      // Optimistically update
-      queryClient.setQueryData(['wishlist'], (old: WishlistItem[] = []) => {
-        const exists = old.some(item => item.productId === productId);
-        if (exists) {
-          return old.filter(item => item.productId !== productId);
-        } else {
-          return [...old, { productId, addedAt: new Date().toISOString() }];
-        }
-      });
-      
-      // Return context with snapshot
-      return { previousWishlist };
-    },
-    onError: (err, productId, context) => {
-      // Rollback on error
-      if (context?.previousWishlist) {
-        queryClient.setQueryData(['wishlist'], context.previousWishlist);
-      }
-    },
     onSuccess: () => {
-      // Broadcast to other tabs
-      window.localStorage.setItem('wishlist-update', Date.now().toString());
-      
+      // Simply invalidate and refetch - no optimistic updates
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      // Cross-tab update signal
+      localStorage.setItem('wishlist-update', Date.now().toString());
       // Broadcast global event
       window.dispatchEvent(new CustomEvent('wishlistUpdated'));
-      
-      // Always refetch after success
-      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
     },
-    onSettled: () => {
-      // Always refetch after error or success
-      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+    onError: (error) => {
+      console.error('Wishlist toggle error:', error);
     },
+    retry: 0, // Don't retry to prevent double mutations
   });
   
   // Helper function to check if product is wishlisted

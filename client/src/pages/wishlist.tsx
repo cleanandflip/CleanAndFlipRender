@@ -31,9 +31,9 @@ export default function Wishlist() {
             <p className="text-text-muted mb-8">
               Save your favorite equipment and never lose track of what you want.
             </p>
-            <Button asChild variant="primary" size="lg">
-              <SmartLink href="/auth">Sign In</SmartLink>
-            </Button>
+            <SmartLink href="/auth">
+              <Button variant="primary" size="lg">Sign In</Button>
+            </SmartLink>
           </div>
         </div>
       </div>
@@ -87,11 +87,11 @@ export default function Wishlist() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
-            <Button variant="ghost" asChild className="p-2">
-              <SmartLink href="/products">
+            <SmartLink href="/products">
+              <Button variant="ghost" className="p-2">
                 <ArrowLeft size={20} />
-              </SmartLink>
-            </Button>
+              </Button>
+            </SmartLink>
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-3">
                 <Heart className="text-red-500" size={32} />
@@ -112,9 +112,9 @@ export default function Wishlist() {
             <p className="text-text-muted mb-8">
               Start browsing our equipment and save your favorites here.
             </p>
-            <Button asChild variant="primary" size="lg">
-              <SmartLink href="/products">Browse Equipment</SmartLink>
-            </Button>
+            <SmartLink href="/products">
+              <Button variant="primary" size="lg">Browse Equipment</Button>
+            </SmartLink>
           </div>
         ) : (
           /* Products Grid */
@@ -168,12 +168,12 @@ export default function Wishlist() {
                       size="large"
                     />
                     
-                    <Button variant="primary" size="sm" asChild>
-                      <SmartLink href={routes.productDetail(product.id)}>
+                    <SmartLink href={routes.productDetail(product.id)}>
+                      <Button variant="primary" size="sm">
                         <ShoppingCart size={16} className="mr-2" />
                         View
-                      </SmartLink>
-                    </Button>
+                      </Button>
+                    </SmartLink>
                   </div>
                 </div>
               </Card>

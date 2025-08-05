@@ -139,15 +139,7 @@ export function CleanUserDropdown({ user, onNavigate, onLogout }: CleanUserDropd
                 <span className="text-white font-medium">My Orders</span>
               </button>
               
-              <button
-                onClick={() => handleItemClick(() => onNavigate('/wishlist'))}
-                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
-              >
-                <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
-                  <Heart size={16} className="text-gray-400" />
-                </div>
-                <span className="text-white font-medium">Wishlist</span>
-              </button>
+
 
               {user.isAdmin && (
                 <button
