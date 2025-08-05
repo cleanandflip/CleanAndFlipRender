@@ -253,8 +253,8 @@ export function setupAuth(app: Express) {
         city: city || undefined,
         state: state || undefined,
         zipCode: zipCode || undefined,
-        latitude: latitude ? Number(latitude) : undefined,
-        longitude: longitude ? Number(longitude) : undefined,
+        latitude: latitude ? String(latitude) : undefined,
+        longitude: longitude ? String(longitude) : undefined,
         role,
         isAdmin: role === "admin" || role === "developer",
         isLocalCustomer: isLocalCustomer || false,
@@ -280,7 +280,7 @@ export function setupAuth(app: Express) {
           }
           
           Logger.debug(`Registration successful and session saved for: ${user.email}`);
-          Logger.debug(`Session passport user: ${JSON.stringify(req.session.passport)}`);
+          Logger.debug(`Session passport user: ${JSON.stringify((req.session as any).passport)}`);
           
           res.status(201).json({
             id: user.id,
@@ -329,9 +329,9 @@ export function setupAuth(app: Express) {
         
         // Add helpful suggestions based on error type
         if (info?.code === "USER_NOT_FOUND") {
-          errorResponse.suggestion = "Try creating a new account or check your email spelling.";
+          (errorResponse as any).suggestion = "Try creating a new account or check your email spelling.";
         } else if (info?.code === "INVALID_PASSWORD") {
-          errorResponse.suggestion = "Double-check your password or consider password reset.";
+          (errorResponse as any).suggestion = "Double-check your password or consider password reset.";
         }
         
         return res.status(401).json(errorResponse);
@@ -365,7 +365,7 @@ export function setupAuth(app: Express) {
           
           Logger.debug(`Login successful and session saved for: ${email}`);
           Logger.debug(`Session ID: ${req.sessionID}`);
-          Logger.debug(`Session passport user: ${JSON.stringify(req.session.passport)}`);
+          Logger.debug(`Session passport user: ${JSON.stringify((req.session as any).passport)}`);
           Logger.debug(`Is authenticated: ${req.isAuthenticated()}`);
           
           res.status(200).json({
