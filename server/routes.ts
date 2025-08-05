@@ -472,9 +472,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Orders
-  app.get("/api/orders", async (req, res) => {
+  app.get("/api/orders", requireAuth, async (req, res) => {
     try {
-      const userId = req.query.userId as string;
+      // SECURITY FIX: Use authenticated userId from middleware
+      const userId = req.userId; // Set by requireAuth middleware
       const limit = req.query.limit ? Number(req.query.limit) : 50;
       const offset = req.query.offset ? Number(req.query.offset) : 0;
       
@@ -486,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/orders/:id", async (req, res) => {
+  app.get("/api/orders/:id", requireAuth, async (req, res) => {
     try {
       const order = await storage.getOrder(req.params.id);
       if (!order) {
@@ -730,7 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe payment intent
-  app.post("/api/create-payment-intent", async (req, res) => {
+  app.post("/api/create-payment-intent", requireAuth, async (req, res) => {
     try {
       const { amount, currency = "usd", metadata } = req.body;
       
@@ -754,7 +755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create order
-  app.post("/api/orders", async (req, res) => {
+  app.post("/api/orders", requireAuth, async (req, res) => {
     try {
       const validatedData = insertOrderSchema.parse(req.body);
       const order = await storage.createOrder(validatedData);
@@ -1781,25 +1782,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // UNIFIED ADDRESS SYSTEM - Single definitive endpoint
-  app.get("/api/addresses", async (req, res) => {
+  app.get("/api/addresses", requireAuth, async (req, res) => {
     try {
-
+      // SECURITY FIX: Use authenticated userId from middleware
+      const userId = req.userId; // Set by requireAuth middleware
+      
       Logger.info("=== /api/addresses DEBUG ===");
-      Logger.info("1. Request user:", req.user);
-      Logger.info("2. Session:", req.session);
-      Logger.info("3. Is authenticated:", req.isAuthenticated?.());
-      
-      // SECURITY FIX: Strict authentication validation to prevent session persistence bugs
-      if (!req.session || !req.session.passport || !req.session.passport.user) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-      
-      const userId = req.session.passport.user.id;
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-      
-      Logger.info("4. Extracted userId:", userId);
+      Logger.info("Authenticated userId:", userId);
       
       // Fetch user with address data directly from database using Drizzle
       const userWithAddress = await db
@@ -1850,17 +1839,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/addresses", async (req, res) => {
+  app.post("/api/addresses", requireAuth, async (req, res) => {
     try {
-      // SECURITY FIX: Strict authentication validation to prevent session persistence bugs
-      if (!req.session || !req.session.passport || !req.session.passport.user) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-      
-      const userId = req.session.passport.user.id;
-      if (!userId) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
+      // SECURITY FIX: Use authenticated userId from middleware
+      const userId = req.userId; // Set by requireAuth middleware
 
       const { street, city, state, zipCode, latitude, longitude } = req.body;
 
