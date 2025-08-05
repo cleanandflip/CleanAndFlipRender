@@ -286,7 +286,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart operations - Always fetch fresh product data
   app.get("/api/cart", requireAuth, async (req, res) => {
     try {
-      const userId = req.user?.id || req.userId || (req.session as any)?.userId;
+      // SECURITY FIX: Only use authenticated userId from middleware
+      const userId = req.userId; // Set by requireAuth middleware
       const sessionId = req.sessionID;
       
       Logger.debug(`Get cart - userId: ${userId}, sessionId: ${sessionId}`);
@@ -314,7 +315,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cart", requireAuth, async (req, res) => {
     try {
       const { productId, quantity = 1 } = req.body;
-      const userId = req.user?.id || req.userId || (req.session as any)?.userId;
+      // SECURITY FIX: Only use authenticated userId from middleware
+      const userId = req.userId; // Set by requireAuth middleware
       const sessionId = req.sessionID;
       
       Logger.debug(`Cart request - userId: ${userId}, sessionId: ${sessionId}`);
@@ -423,7 +425,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart validation endpoint - cleans up invalid cart items
   app.post("/api/cart/validate", requireAuth, async (req, res) => {
     try {
-      const userId = req.user?.id || req.userId || (req.session as any)?.userId;
+      // SECURITY FIX: Only use authenticated userId from middleware
+      const userId = req.userId; // Set by requireAuth middleware
       const sessionId = req.sessionID;
       
       const cartItems = await storage.getCartItems(
@@ -1786,23 +1789,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Logger.info("2. Session:", req.session);
       Logger.info("3. Is authenticated:", req.isAuthenticated?.());
       
-      // Get authenticated user using comprehensive auth check
-      let userId = null;
-      if (req.isAuthenticated && req.isAuthenticated()) {
-        userId = req.user?.id;
-      } else if (req.session?.passport?.user?.id) {
-        userId = req.session.passport.user.id;
-      } else if (req.user?.id) {
-        userId = req.user.id;
-      } else if (req.session?.userId) {
-        userId = req.session.userId;
+      // SECURITY FIX: Strict authentication validation to prevent session persistence bugs
+      if (!req.session || !req.session.passport || !req.session.passport.user) {
+        return res.status(401).json({ error: "Authentication required" });
       }
       
-      Logger.info("4. Extracted userId:", userId);
-      
+      const userId = req.session.passport.user.id;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
+      
+      Logger.info("4. Extracted userId:", userId);
       
       // Fetch user with address data directly from database using Drizzle
       const userWithAddress = await db
@@ -1855,18 +1852,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/addresses", async (req, res) => {
     try {
-      // Get authenticated user using comprehensive auth check
-      let userId = null;
-      if (req.isAuthenticated && req.isAuthenticated()) {
-        userId = req.user?.id;
-      } else if (req.session?.passport?.user?.id) {
-        userId = req.session.passport.user.id;
-      } else if (req.user?.id) {
-        userId = req.user.id;
-      } else if (req.session?.userId) {
-        userId = req.session.userId;
+      // SECURITY FIX: Strict authentication validation to prevent session persistence bugs
+      if (!req.session || !req.session.passport || !req.session.passport.user) {
+        return res.status(401).json({ error: "Authentication required" });
       }
       
+      const userId = req.session.passport.user.id;
       if (!userId) {
         return res.status(401).json({ error: "Authentication required" });
       }
@@ -2107,8 +2098,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Equipment Submissions Management (for authenticated users)
   app.post("/api/equipment-submissions", requireAuth, async (req, res) => {
     try {
-      // Use simplified authentication from middleware
-      const userId = req.user?.id || req.userId || (req.session as any)?.userId;
+      // SECURITY FIX: Only use authenticated userId from middleware
+      const userId = req.userId; // Set by requireAuth middleware
 
       if (!userId) {
         return res.status(401).json({ 
@@ -2283,17 +2274,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's own submissions  
   app.get("/api/my-submissions", requireAuth, async (req: any, res) => {
     try {
-      // Check multiple authentication sources
-      let userId = null;
-      if (req.isAuthenticated && req.isAuthenticated()) {
-        userId = req.user?.id;
-      } else if (req.session?.passport?.user?.id) {
-        userId = req.session.passport.user.id;
-      } else if (req.user?.claims?.sub) {
-        userId = req.user.claims.sub;
-      } else if (req.session?.userId) {
-        userId = req.session.userId;
-      }
+      // SECURITY FIX: Only use authenticated userId from middleware
+      const userId = req.userId; // Set by requireAuth middleware
 
       if (!userId) {
         Logger.error("No userId found in authentication sources");
@@ -2320,17 +2302,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { reason } = req.body;
       
-      // Check multiple authentication sources
-      let userId = null;
-      if (req.isAuthenticated && req.isAuthenticated()) {
-        userId = req.user?.id;
-      } else if (req.session?.passport?.user?.id) {
-        userId = req.session.passport.user.id;
-      } else if (req.user?.claims?.sub) {
-        userId = req.user.claims.sub;
-      } else if (req.session?.userId) {
-        userId = req.session.userId;
-      }
+      // SECURITY FIX: Only use authenticated userId from middleware
+      const userId = req.userId; // Set by requireAuth middleware
 
       if (!userId) {
         Logger.error("No userId found in authentication sources for cancellation");
