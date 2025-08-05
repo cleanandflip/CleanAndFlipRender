@@ -23,7 +23,7 @@ interface AddToCartButtonProps {
   productId: string;
   stock: number | null;
   className?: string;
-  variant?: "default" | "ghost" | "outline";
+  variant?: "default" | "ghost" | "outline" | "success";
   size?: "sm" | "default" | "lg";
   quantity?: number;
 }
@@ -169,7 +169,7 @@ export function AddToCartButton({
       <div className="relative group">
         <Button
           onClick={handleViewCart}
-          variant="primary"
+          variant="success"
           size={size}
           className={`w-full py-3 px-6 gap-2 ${className}`}
         >

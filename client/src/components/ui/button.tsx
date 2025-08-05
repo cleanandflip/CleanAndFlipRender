@@ -18,6 +18,7 @@ const buttonVariants = cva(
         link: "btn-ghost underline-offset-4 hover:underline",
         glass: "btn-glass",
         danger: "btn-danger",
+        success: "btn-success",
       },
       size: {
         default: "btn-md",
