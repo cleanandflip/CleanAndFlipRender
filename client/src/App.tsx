@@ -32,6 +32,8 @@ const Wishlist = lazy(() => import("@/pages/wishlist"));
 const About = lazy(() => import("@/pages/about"));
 const Contact = lazy(() => import("@/pages/contact"));
 const AuthPage = lazy(() => import("@/pages/auth"));
+const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
+const ResetPassword = lazy(() => import("@/pages/reset-password"));
 
 function ScrollRestoration() {
   const [location] = useLocation();
@@ -105,6 +107,8 @@ function Router() {
               
               {/* Auth Routes */}
               <Route path={ROUTES.LOGIN} component={AuthPage} />
+              <Route path="/forgot-password" component={ForgotPassword} />
+              <Route path="/reset-password" component={ResetPassword} />
               
               {/* User Routes - No longer wrapped in ProtectedRoute, pages handle auth internally */}
               <Route path={ROUTES.DASHBOARD} component={Dashboard} />

@@ -16,7 +16,10 @@ export function registerGracefulShutdown(httpServer: Server) {
   });
   process.on('unhandledRejection', (reason, promise) => {
     logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    handleShutdown();
+    // In development, log the error but don't shutdown immediately
+    if (process.env.NODE_ENV === 'production') {
+      handleShutdown();
+    }
   });
 }
 

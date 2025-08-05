@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -187,7 +187,14 @@ export default function AuthPage() {
                     />
                   </div>
                   <div className="space-y-4">
-                    <Label htmlFor="password" className="text-white font-medium text-xl">Password</Label>
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="password" className="text-white font-medium text-xl">Password</Label>
+                      <Link href="/forgot-password">
+                        <button type="button" className="text-accent-blue hover:text-blue-300 text-sm underline transition-colors">
+                          Forgot Password?
+                        </button>
+                      </Link>
+                    </div>
                     <Input
                       id="password"
                       name="password"

@@ -572,6 +572,102 @@ export type InsertOrderTracking = z.infer<typeof insertOrderTrackingSchema>;
 export type ReturnRequest = typeof returnRequests.$inferSelect;
 export type InsertReturnRequest = z.infer<typeof insertReturnRequestSchema>;
 
+// Email logs table
+export const emailLogs = pgTable("email_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  toEmail: varchar("to_email").notNull(),
+  fromEmail: varchar("from_email").notNull(),
+  subject: varchar("subject").notNull(),
+  templateType: varchar("template_type").notNull(),
+  status: varchar("status").default("pending"),
+  sentAt: timestamp("sent_at"),
+  error: text("error"),
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_email_logs_status").on(table.status),
+  index("idx_email_logs_created_at").on(table.createdAt),
+  index("idx_email_logs_to_email").on(table.toEmail),
+]);
+
+// Newsletter subscribers table
+export const newsletterSubscribers = pgTable("newsletter_subscribers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique().notNull(),
+  subscribed: boolean("subscribed").default(true),
+  unsubscribeToken: varchar("unsubscribe_token").unique(),
+  subscribedAt: timestamp("subscribed_at").defaultNow(),
+  unsubscribedAt: timestamp("unsubscribed_at"),
+}, (table) => [
+  index("idx_newsletter_email").on(table.email),
+  index("idx_newsletter_subscribed").on(table.subscribed),
+]);
+
+// User email preferences
+export const userEmailPreferences = pgTable("user_email_preferences", {
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).primaryKey(),
+  orderUpdates: boolean("order_updates").default(true),
+  marketing: boolean("marketing").default(true),
+  priceAlerts: boolean("price_alerts").default(true),
+  newsletter: boolean("newsletter").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Password reset tokens table
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  token: varchar("token").unique().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  usedAt: timestamp("used_at"),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+}, (table) => [
+  index("idx_password_reset_tokens_token").on(table.token),
+  index("idx_password_reset_tokens_user_id").on(table.userId),
+  index("idx_password_reset_tokens_expires_at").on(table.expiresAt),
+]);
+
+// Schema for email logs
+export const insertEmailLogSchema = createInsertSchema(emailLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Schema for newsletter subscribers
+export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSubscribers).omit({
+  id: true,
+  subscribedAt: true,
+  unsubscribedAt: true,
+});
+
+// Schema for user email preferences
+export const insertUserEmailPreferencesSchema = createInsertSchema(userEmailPreferences).omit({
+  updatedAt: true,
+});
+
+// Schema for password reset tokens
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({
+  id: true,
+  createdAt: true,
+  usedAt: true,
+});
+
+// Type exports
+export type EmailLog = typeof emailLogs.$inferSelect;
+export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
+
+export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
+export type InsertNewsletterSubscriber = z.infer<typeof insertNewsletterSubscriberSchema>;
+
+export type UserEmailPreferences = typeof userEmailPreferences.$inferSelect;
+export type InsertUserEmailPreferences = z.infer<typeof insertUserEmailPreferencesSchema>;
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+
 // Type for status history tracking
 export type StatusHistoryEntry = {
   status: string;

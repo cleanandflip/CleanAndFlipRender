@@ -2793,6 +2793,654 @@ export async function registerRoutes(app: Express): Promise<Server> {
   Logger.info('Clean & Flip Security Hardening Complete');
   Logger.info('Production-grade security measures now active');
 
+  const httpServer = createServer(app);
+  
+  // Initialize WebSocket support
+  const io = initializeWebSocket(httpServer);
+  
+  // Register graceful shutdown handlers
+  registerGracefulShutdown(httpServer);
+  
+  // Display professional startup banner with connection info
+  const endTime = Date.now() - startupTime;
+  displayStartupBanner({
+    port: process.env.PORT || 5000,
+    db: true, // Database is connected at this point
+    redis: redisConnected,
+    ws: true, // WebSocket initialized
+    startupTime: endTime,
+    warnings,
+  });
+  
+  // Initialize consolidated logger with environment-based log level
+  const LOG_LEVEL = process.env.LOG_LEVEL || 'INFO';
+  Logger.setLogLevel(LogLevel[LOG_LEVEL as keyof typeof LogLevel]);
+  
+  // Log database connection success only once using new logger
+  if (!process.env.DB_CONNECTION_LOGGED) {
+    Logger.info('Database connected successfully');
+    process.env.DB_CONNECTION_LOGGED = 'true';
+  }
+  
+  // Setup advanced request consolidation middleware
+  const { requestConsolidator } = await import('./middleware/request-consolidator');
+  app.use(requestConsolidator.middleware());
+
+  // ============ NEW E-COMMERCE FEATURES API ROUTES ============
+
+  // Product Reviews API
+  app.get("/api/products/:productId/reviews", apiLimiter, async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const productReviews = await db
+        .select({
+          id: reviews.id,
+          userId: reviews.userId,
+          userName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          rating: reviews.rating,
+          title: reviews.title,
+          content: reviews.content,
+          verified: reviews.verified,
+          helpful: reviews.helpful,
+          createdAt: reviews.createdAt,
+          updatedAt: reviews.updatedAt,
+        })
+        .from(reviews)
+        .leftJoin(users, eq(reviews.userId, users.id))
+        .where(eq(reviews.productId, productId))
+        .orderBy(desc(reviews.createdAt));
+
+      res.json(productReviews);
+    } catch (error) {
+      Logger.error("Error fetching reviews", error);
+      res.status(500).json({ error: "Failed to fetch reviews" });
+    }
+  });
+
+  app.post("/api/products/:productId/reviews", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const userId = req.userId;
+      const { rating, title, content } = req.body;
+
+      // Validate input
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Rating must be between 1 and 5" });
+      }
+      if (!title?.trim() || !content?.trim()) {
+        return res.status(400).json({ error: "Title and content are required" });
+      }
+
+      // Check if user already reviewed this product
+      const existingReview = await db
+        .select()
+        .from(reviews)
+        .where(and(eq(reviews.productId, productId), eq(reviews.userId, userId)))
+        .limit(1);
+
+      if (existingReview.length > 0) {
+        return res.status(400).json({ error: "You have already reviewed this product" });
+      }
+
+      // Create new review
+      const newReview = await db
+        .insert(reviews)
+        .values({
+          productId,
+          userId,
+          rating: parseInt(rating),
+          title: title.trim(),
+          content: content.trim(),
+          verified: false, // TODO: Check if user actually purchased this product
+        })
+        .returning();
+
+      // Update product average rating
+      const avgRating = await db
+        .select({ avg: sql<number>`AVG(${reviews.rating})` })
+        .from(reviews)
+        .where(eq(reviews.productId, productId));
+
+      await db
+        .update(products)
+        .set({ 
+          averageRating: avgRating[0]?.avg || 0,
+          updatedAt: new Date()
+        })
+        .where(eq(products.id, productId));
+
+      res.json(newReview[0]);
+    } catch (error) {
+      Logger.error("Error creating review", error);
+      res.status(500).json({ error: "Failed to create review" });
+    }
+  });
+
+  app.post("/api/reviews/:reviewId/helpful", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const { reviewId } = req.params;
+      
+      await db
+        .update(reviews)
+        .set({ 
+          helpful: sql`${reviews.helpful} + 1`,
+          updatedAt: new Date()
+        })
+        .where(eq(reviews.id, reviewId));
+
+      res.json({ success: true });
+    } catch (error) {
+      Logger.error("Error marking review helpful", error);
+      res.status(500).json({ error: "Failed to mark review helpful" });
+    }
+  });
+
+  // Coupons API
+  app.post("/api/coupons/validate", apiLimiter, async (req, res) => {
+    try {
+      const { code, orderTotal } = req.body;
+
+      if (!code?.trim()) {
+        return res.status(400).json({ error: "Coupon code is required" });
+      }
+
+      const coupon = await db
+        .select()
+        .from(coupons)
+        .where(and(
+          eq(coupons.code, code.toUpperCase()),
+          eq(coupons.isActive, true)
+        ))
+        .limit(1);
+
+      if (coupon.length === 0) {
+        return res.status(400).json({ error: "Invalid coupon code" });
+      }
+
+      const couponData = coupon[0];
+
+      // Check validity dates
+      const now = new Date();
+      if (couponData.validUntil && new Date(couponData.validUntil) < now) {
+        return res.status(400).json({ error: "This coupon has expired" });
+      }
+      if (couponData.validFrom && new Date(couponData.validFrom) > now) {
+        return res.status(400).json({ error: "This coupon is not yet valid" });
+      }
+
+      // Check usage limits
+      if (couponData.usageLimit && couponData.usageCount >= couponData.usageLimit) {
+        return res.status(400).json({ error: "This coupon has reached its usage limit" });
+      }
+
+      // Check minimum order amount
+      if (couponData.minOrderAmount && orderTotal < parseFloat(couponData.minOrderAmount)) {
+        return res.status(400).json({ 
+          error: `Minimum order amount of $${couponData.minOrderAmount} required` 
+        });
+      }
+
+      res.json({
+        id: couponData.id,
+        code: couponData.code,
+        description: couponData.description,
+        discountType: couponData.discountType,
+        discountValue: parseFloat(couponData.discountValue),
+        minOrderAmount: couponData.minOrderAmount ? parseFloat(couponData.minOrderAmount) : null,
+        maxDiscount: couponData.maxDiscount ? parseFloat(couponData.maxDiscount) : null,
+      });
+    } catch (error) {
+      Logger.error("Error validating coupon", error);
+      res.status(500).json({ error: "Failed to validate coupon" });
+    }
+  });
+
+  // Order Tracking API
+  app.get("/api/orders/:orderId/tracking", apiLimiter, async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      
+      const trackingEvents = await db
+        .select()
+        .from(orderTracking)
+        .where(eq(orderTracking.orderId, orderId))
+        .orderBy(desc(orderTracking.createdAt));
+
+      res.json(trackingEvents);
+    } catch (error) {
+      Logger.error("Error fetching order tracking", error);
+      res.status(500).json({ error: "Failed to fetch tracking information" });
+    }
+  });
+
+  app.post("/api/orders/:orderId/tracking", requireRole(['admin']), async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const trackingData = req.body;
+
+      const newEvent = await db
+        .insert(orderTracking)
+        .values({
+          orderId,
+          ...trackingData,
+        })
+        .returning();
+
+      // Send shipping notification email if status is 'shipped'
+      if (trackingData.status === 'shipped' && trackingData.trackingNumber) {
+        const order = await db
+          .select({
+            orderNumber: orders.orderNumber,
+            userEmail: users.email,
+            userName: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          })
+          .from(orders)
+          .leftJoin(users, eq(orders.userId, users.id))
+          .where(eq(orders.id, orderId))
+          .limit(1);
+
+        if (order.length > 0) {
+          await emailService.sendShippingNotification({
+            orderId,
+            orderNumber: order[0].orderNumber,
+            customerEmail: order[0].userEmail,
+            customerName: order[0].userName,
+            items: [], // TODO: Get order items
+            subtotal: 0,
+            tax: 0,
+            shipping: 0,
+            total: 0,
+            shippingAddress: {} as any,
+          }, trackingData.trackingNumber);
+        }
+      }
+
+      res.json(newEvent[0]);
+    } catch (error) {
+      Logger.error("Error creating tracking event", error);
+      res.status(500).json({ error: "Failed to create tracking event" });
+    }
+  });
+
+  // Enhanced Search API
+  app.get("/api/search/suggestions", apiLimiter, async (req, res) => {
+    try {
+      const { q } = req.query;
+      
+      if (!q || typeof q !== 'string' || q.length < 2) {
+        return res.json([]);
+      }
+
+      const suggestions = [];
+      
+      // Product name suggestions
+      const productSuggestions = await db
+        .select({
+          id: sql<string>`'product-' || ${products.id}`,
+          text: products.name,
+          type: sql<string>`'product'`,
+          count: sql<number>`1`,
+        })
+        .from(products)
+        .where(ilike(products.name, `%${q}%`))
+        .limit(5);
+
+      suggestions.push(...productSuggestions);
+
+      // Category suggestions
+      const categorySuggestions = await db
+        .select({
+          id: sql<string>`'category-' || ${categories.id}`,
+          text: categories.name,
+          type: sql<string>`'category'`,
+          count: sql<number>`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`,
+        })
+        .from(categories)
+        .where(ilike(categories.name, `%${q}%`))
+        .limit(3);
+
+      suggestions.push(...categorySuggestions);
+
+      // Brand suggestions
+      const brandSuggestions = await db
+        .select({
+          id: sql<string>`'brand-' || ${products.brand}`,
+          text: products.brand,
+          type: sql<string>`'brand'`,
+          count: sql<number>`COUNT(*)`,
+        })
+        .from(products)
+        .where(and(
+          ilike(products.brand, `%${q}%`),
+          ne(products.brand, '')
+        ))
+        .groupBy(products.brand)
+        .limit(3);
+
+      suggestions.push(...brandSuggestions);
+
+      res.json(suggestions.slice(0, 10));
+    } catch (error) {
+      Logger.error("Error fetching search suggestions", error);
+      res.status(500).json({ error: "Failed to fetch suggestions" });
+    }
+  });
+
+  app.get("/api/search/popular", apiLimiter, async (req, res) => {
+    try {
+      // Mock popular searches - in production, track actual searches
+      const popularSearches = [
+        { query: "dumbbells", count: 45 },
+        { query: "kettlebells", count: 38 },
+        { query: "barbell", count: 32 },
+        { query: "weight plates", count: 28 },
+        { query: "resistance bands", count: 24 },
+      ];
+
+      res.json(popularSearches);
+    } catch (error) {
+      Logger.error("Error fetching popular searches", error);
+      res.status(500).json({ error: "Failed to fetch popular searches" });
+    }
+  });
+
+  // Shipping Calculator API
+  app.post("/api/shipping/calculate", apiLimiter, async (req, res) => {
+    try {
+      const { zipCode, cartTotal, cartWeight } = req.body;
+
+      if (!zipCode || zipCode.length < 5) {
+        return res.status(400).json({ error: "Valid ZIP code required" });
+      }
+
+      // Mock shipping calculations - integrate with real carriers in production
+      const shippingOptions = [];
+
+      // Free shipping over $50
+      if (cartTotal >= 50) {
+        shippingOptions.push({
+          id: 'free-shipping',
+          name: 'Free Standard Shipping',
+          description: 'Free shipping on orders over $50',
+          price: 0,
+          estimatedDays: '5-7 business days',
+          carrier: 'USPS',
+          service: 'Ground'
+        });
+      }
+
+      // Standard shipping
+      const standardPrice = cartTotal >= 50 ? 0 : Math.max(5.99, cartWeight * 0.5);
+      shippingOptions.push({
+        id: 'standard',
+        name: 'Standard Shipping',
+        description: 'Reliable delivery to your door',
+        price: standardPrice,
+        estimatedDays: '5-7 business days',
+        carrier: 'USPS',
+        service: 'Ground'
+      });
+
+      // Express shipping
+      shippingOptions.push({
+        id: 'express',
+        name: 'Express Shipping',
+        description: 'Faster delivery',
+        price: 12.99,
+        estimatedDays: '2-3 business days',
+        carrier: 'FedEx',
+        service: 'Express'
+      });
+
+      // Overnight shipping
+      shippingOptions.push({
+        id: 'overnight',
+        name: 'Overnight Shipping',
+        description: 'Next business day delivery',
+        price: 24.99,
+        estimatedDays: '1 business day',
+        carrier: 'FedEx',
+        service: 'Overnight'
+      });
+
+      res.json(shippingOptions);
+    } catch (error) {
+      Logger.error("Error calculating shipping", error);
+      res.status(500).json({ error: "Failed to calculate shipping" });
+    }
+  });
+
+  // Return Requests API
+  app.post("/api/orders/:orderId/returns", requireAuth, apiLimiter, async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const userId = req.userId;
+      const returnData = req.body;
+
+      // Verify order belongs to user
+      const order = await db
+        .select()
+        .from(orders)
+        .where(and(eq(orders.id, orderId), eq(orders.userId, userId)))
+        .limit(1);
+
+      if (order.length === 0) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Generate return number
+      const returnNumber = `RET-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+
+      const newReturn = await db
+        .insert(returnRequests)
+        .values({
+          orderId,
+          userId,
+          returnNumber,
+          reason: returnData.reason,
+          description: returnData.description,
+          preferredResolution: returnData.preferredResolution,
+          images: returnData.images || [],
+        })
+        .returning();
+
+      res.json(newReturn[0]);
+    } catch (error) {
+      Logger.error("Error creating return request", error);
+      res.status(500).json({ error: "Failed to create return request" });
+    }
+  });
+
+  app.get("/api/admin/returns", requireAdmin, async (req, res) => {
+    try {
+      const returns = await db
+        .select({
+          returnRequest: returnRequests,
+          order: {
+            orderNumber: orders.orderNumber,
+            totalAmount: orders.totalAmount,
+          },
+          user: {
+            email: users.email,
+            name: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          },
+        })
+        .from(returnRequests)
+        .leftJoin(orders, eq(returnRequests.orderId, orders.id))
+        .leftJoin(users, eq(returnRequests.userId, users.id))
+        .orderBy(desc(returnRequests.createdAt));
+
+      res.json(returns);
+    } catch (error) {
+      Logger.error("Error fetching return requests", error);
+      res.status(500).json({ error: "Failed to fetch return requests" });
+    }
+  });
+
+  // ============ END NEW E-COMMERCE FEATURES ============
+
+  // ============ EMAIL SERVICE TEST ENDPOINT (DEVELOPMENT ONLY) ============
+  if (process.env.NODE_ENV === 'development') {
+    app.post('/api/test/email', requireAuth, async (req, res) => {
+      try {
+        const { type } = req.body;
+        const testEmail = req.user?.email;
+        
+        if (!testEmail) {
+          return res.status(400).json({ error: 'User email not found' });
+        }
+        
+        switch (type) {
+          case 'order':
+            const testOrderData = {
+              orderId: 'TEST-' + Date.now(),
+              orderNumber: 'ORD-TEST-123',
+              customerEmail: testEmail,
+              customerName: req.user?.firstName ? `${req.user.firstName} ${req.user.lastName}` : 'Test Customer',
+              items: [
+                { name: 'Competition Kettlebell 16kg', quantity: 1, price: 89.99 },
+                { name: 'Adjustable Dumbbells Set', quantity: 1, price: 199.99 }
+              ],
+              subtotal: 289.98,
+              tax: 23.20,
+              shipping: 15.99,
+              total: 329.17,
+              shippingAddress: {
+                firstName: req.user?.firstName || 'Test',
+                lastName: req.user?.lastName || 'Customer',
+                street: '123 Test Street',
+                city: 'Asheville',
+                state: 'NC',
+                zipCode: '28801'
+              }
+            };
+            await emailService.sendOrderConfirmation(testOrderData);
+            break;
+            
+          case 'welcome':
+            await emailService.sendWelcomeEmail(testEmail, req.user?.firstName || 'Test User');
+            break;
+            
+          case 'shipping':
+            const testShippingData = {
+              orderId: 'TEST-' + Date.now(),
+              orderNumber: 'ORD-TEST-456',
+              customerEmail: testEmail,
+              customerName: req.user?.firstName ? `${req.user.firstName} ${req.user.lastName}` : 'Test Customer',
+              items: [{ name: 'Test Product', quantity: 1, price: 99.99 }],
+              subtotal: 99.99,
+              tax: 8.00,
+              shipping: 12.99,
+              total: 120.98,
+              shippingAddress: {
+                firstName: req.user?.firstName || 'Test',
+                lastName: req.user?.lastName || 'Customer',
+                street: '123 Test Street',
+                city: 'Asheville',
+                state: 'NC',
+                zipCode: '28801'
+              }
+            };
+            await emailService.sendShippingNotification(testShippingData, '1Z999AA1234567890', 'UPS');
+            break;
+            
+          case 'password-reset':
+            await emailService.sendPasswordReset(testEmail, 'test-reset-token-123');
+            break;
+            
+          default:
+            return res.status(400).json({ error: 'Invalid test type. Use: order, welcome, shipping, password-reset' });
+        }
+        
+        res.json({ 
+          success: true, 
+          message: `Test ${type} email sent to ${testEmail}`,
+          note: 'Check your email inbox (and spam folder) for the test email'
+        });
+      } catch (error) {
+        Logger.error('Test email error:', error);
+        res.status(500).json({ 
+          error: 'Failed to send test email',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+  }
+  
+  return httpServer;
+}
+
+// Helper function to generate actionable insights
+function generateWishlistInsights(analytics: any) {
+  const insights = [];
+  
+  // High-demand products
+  const highDemand = analytics.topProducts?.filter((p: any) => p.wishlistCount > 5) || [];
+  if (highDemand.length > 0) {
+    insights.push({
+      title: `${highDemand.length} products in high demand`,
+      description: 'Consider restocking or featuring these items prominently',
+      action: 'View products',
+      type: 'opportunity'
+    });
+  }
+  
+  // Low conversion products
+  const lowConversion = analytics.topProducts?.filter((p: any) => 
+    p.wishlistCount > 3 && p.conversionRate < 10
+  ) || [];
+  if (lowConversion.length > 0) {
+    insights.push({
+      title: 'Products with low conversion',
+      description: `${lowConversion.length} wishlisted items rarely purchased`,
+      action: 'Review pricing',
+      type: 'warning'
+    });
+  }
+  
+  // User engagement insights
+  if (analytics.stats?.avgDaysInWishlist > 30) {
+    insights.push({
+      title: 'Long wishlist duration',
+      description: 'Items stay in wishlists for over a month on average',
+      action: 'Send reminder emails',
+      type: 'info'
+    });
+  }
+  
+  // Power user opportunities
+  if (analytics.stats?.powerUsers > 0) {
+    insights.push({
+      title: `${analytics.stats.powerUsers} power users identified`,
+      description: 'Users with 10+ wishlist items - potential for VIP program',
+      action: 'Create segments',
+      type: 'opportunity'
+    });
+  }
+  
+  return insights;
+}
+
+// Helper function to convert data to CSV format
+function convertToCSV(data: any[]) {
+  if (!data.length) return '';
+  
+  const headers = Object.keys(data[0]);
+  const csvContent = [
+    headers.join(','),
+    ...data.map(row => 
+      headers.map(header => {
+        const value = row[header] || '';
+        return typeof value === 'string' && value.includes(',') 
+          ? `"${value}"` 
+          : value;
+      }).join(',')
+    )
+  ].join('\n');
+  
+  return csvContent;
+}
+
   // =======================================================
   // PASSWORD RESET API ROUTES
   // =======================================================
@@ -2908,45 +3556,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
-  const httpServer = createServer(app);
-  
-  // Initialize WebSocket support
-  const io = initializeWebSocket(httpServer);
-  
-  // Register graceful shutdown handlers
-  registerGracefulShutdown(httpServer);
-  
-  // Display professional startup banner with connection info
-  const endTime = Date.now() - startupTime;
+  // Server initialization (HTTP server already exists at line 2796)
+  const endTime = Date.now();
+  const startupDuration = endTime - startupTime;
+
   displayStartupBanner({
     port: process.env.PORT || 5000,
-    db: true, // Database is connected at this point
+    db: true,
     redis: redisConnected,
-    ws: true, // WebSocket initialized
-    startupTime: endTime,
+    ws: true,
+    startupTime: startupDuration,
     warnings,
   });
-  
-  // Initialize consolidated logger with environment-based log level
-  const LOG_LEVEL = process.env.LOG_LEVEL || 'INFO';
-  Logger.setLogLevel(LogLevel[LOG_LEVEL as keyof typeof LogLevel]);
-  
-  // Log database connection success only once using new logger
-  if (!process.env.DB_CONNECTION_LOGGED) {
-    Logger.info('Database connected successfully');
-    process.env.DB_CONNECTION_LOGGED = 'true';
-  }
-  
-  // Start the HTTP server
-  const server = httpServer.listen(process.env.PORT || 5000, '0.0.0.0', () => {
-    logger.info(`🚀 Server started on port ${process.env.PORT || 5000}`, {
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      port: process.env.PORT || 5000,
-      redis: redisConnected ? 'Connected' : 'Disabled',
-      websocket: 'Enabled'
-    });
-  });
 
-  return server;
+  return httpServer;
 }
