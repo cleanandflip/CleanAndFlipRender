@@ -1,5 +1,7 @@
 import { Resend } from 'resend';
 import { logger } from '../config/logger';
+import { db } from '../db';
+import { emailLogs } from '../../shared/schema';
 
 export interface OrderEmailData {
   orderId: string;
@@ -26,9 +28,70 @@ export interface OrderEmailData {
   };
 }
 
+// Email routing configuration
+const EMAIL_ROUTING = {
+  // Support emails (from support@cleanandflip.com)
+  password_reset: {
+    from: 'Clean & Flip Support <support@cleanandflip.com>',
+    replyTo: 'support@cleanandflip.com',
+    category: 'support'
+  },
+  password_reset_success: {
+    from: 'Clean & Flip Support <support@cleanandflip.com>',
+    replyTo: 'support@cleanandflip.com',
+    category: 'support'
+  },
+  welcome: {
+    from: 'Clean & Flip Support <support@cleanandflip.com>',
+    replyTo: 'support@cleanandflip.com',
+    category: 'support'
+  },
+  equipment_submission: {
+    from: 'Clean & Flip Support <support@cleanandflip.com>',
+    replyTo: 'support@cleanandflip.com',
+    category: 'support'
+  },
+  abandoned_cart: {
+    from: 'Clean & Flip Support <support@cleanandflip.com>',
+    replyTo: 'support@cleanandflip.com',
+    category: 'marketing'
+  },
+
+  // Order emails (from orders@cleanandflip.com)
+  order_confirmation: {
+    from: 'Clean & Flip Orders <orders@cleanandflip.com>',
+    replyTo: 'orders@cleanandflip.com',
+    bcc: 'admin@cleanandflip.com',
+    category: 'transactional'
+  },
+  order_status_update: {
+    from: 'Clean & Flip Orders <orders@cleanandflip.com>',
+    replyTo: 'orders@cleanandflip.com',
+    category: 'transactional'
+  },
+  shipping_notification: {
+    from: 'Clean & Flip Orders <orders@cleanandflip.com>',
+    replyTo: 'orders@cleanandflip.com',
+    category: 'transactional'
+  },
+
+  // Admin emails (from admin@cleanandflip.com)
+  admin_notification: {
+    from: 'Clean & Flip Admin <admin@cleanandflip.com>',
+    to: 'admin@cleanandflip.com',
+    replyTo: 'admin@cleanandflip.com',
+    category: 'admin'
+  },
+  low_stock_alert: {
+    from: 'Clean & Flip Admin <admin@cleanandflip.com>',
+    to: 'admin@cleanandflip.com',
+    replyTo: 'admin@cleanandflip.com',
+    category: 'admin'
+  }
+};
+
 export class EmailService {
   private resend!: Resend;
-  private fromEmail!: string;
   private isInitialized: boolean = false;
 
   constructor() {
@@ -45,8 +108,6 @@ export class EmailService {
       }
       
       this.resend = new Resend(apiKey);
-      // For now, use onboarding@resend.dev until domain is verified
-      this.fromEmail = 'Clean & Flip <onboarding@resend.dev>';
       this.isInitialized = true;
       
       logger.info('Resend email service initialized successfully');
@@ -56,153 +117,233 @@ export class EmailService {
   }
 
   async sendOrderConfirmation(orderData: OrderEmailData): Promise<boolean> {
+    return this.send('order_confirmation', {
+      to: orderData.customerEmail,
+      subject: `Order Confirmation - #${orderData.orderNumber}`,
+      ...orderData
+    });
+  }
+
+  // Generic send method that uses routing configuration
+  async send(templateType: string, data: any): Promise<boolean> {
+    const routing = EMAIL_ROUTING[templateType];
+    
+    if (!routing) {
+      logger.error(`Unknown email template type: ${templateType}`);
+      return false;
+    }
+
     if (!this.isInitialized) {
-      logger.warn('Email service not available - order confirmation not sent');
+      logger.warn('Email service not available');
       return false;
     }
 
     try {
-      const emailHtml = this.generateOrderConfirmationHTML(orderData);
-      
-      const { data, error } = await this.resend.emails.send({
-        from: this.fromEmail,
-        to: orderData.customerEmail,
-        subject: `Order Confirmation - #${orderData.orderNumber}`,
-        html: emailHtml,
+      // Use domain-verified from address or fallback to onboarding
+      const fromEmail = process.env.NODE_ENV === 'production' 
+        ? routing.from 
+        : 'Clean & Flip <onboarding@resend.dev>';
+
+      logger.info(`Sending ${templateType} email:`, {
+        from: fromEmail,
+        to: data.to || routing.to,
+        category: routing.category
       });
 
+      const emailOptions = {
+        from: fromEmail,
+        to: data.to || routing.to,
+        replyTo: routing.replyTo,
+        bcc: routing.bcc,
+        subject: data.subject || this.getDefaultSubject(templateType),
+        html: this.getEmailTemplate(templateType, data),
+        tags: [
+          { name: 'category', value: routing.category },
+          { name: 'type', value: templateType }
+        ]
+      };
+
+      // Send via Resend
+      const { data: result, error } = await this.resend.emails.send(emailOptions);
+
       if (error) {
-        logger.error('Failed to send order confirmation via Resend:', error);
-        this.handleEmailError(error, 'order confirmation');
+        logger.error(`Failed to send ${templateType} email via Resend:`, error);
+        await this.logEmail({
+          toEmail: emailOptions.to,
+          fromEmail: emailOptions.from,
+          subject: emailOptions.subject,
+          templateType,
+          status: 'failed',
+          error: error.message || JSON.stringify(error),
+          metadata: { category: routing.category }
+        });
         return false;
       }
 
-      logger.info(`Order confirmation email sent for order ${orderData.orderId}. Email ID: ${data?.id}`);
+      // Log success
+      await this.logEmail({
+        toEmail: emailOptions.to,
+        fromEmail: emailOptions.from,
+        subject: emailOptions.subject,
+        templateType,
+        status: 'sent',
+        sentAt: new Date(),
+        metadata: { 
+          resendId: result?.id,
+          category: routing.category 
+        }
+      });
+
+      logger.info(`${templateType} email sent successfully. Email ID: ${result?.id}`);
       return true;
     } catch (error) {
-      logger.error('Failed to send order confirmation email:', error);
+      logger.error(`Error sending ${templateType} email:`, error);
+      
+      // Log failure
+      await this.logEmail({
+        toEmail: data.to || routing.to,
+        fromEmail: routing.from,
+        subject: data.subject || this.getDefaultSubject(templateType),
+        templateType,
+        status: 'failed',
+        error: error.message,
+        metadata: { category: routing.category }
+      });
+
       return false;
     }
   }
 
+  // Specific methods for each email type
   async sendPasswordReset(email: string, resetToken: string): Promise<boolean> {
-    if (!this.isInitialized) {
-      logger.warn('Email service not available - password reset not sent');
-      return false;
-    }
-
-    try {
-      const resetUrl = `${process.env.APP_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
-      
-      const emailHtml = this.getPasswordResetTemplate(resetUrl);
-
-      const { data, error } = await this.resend.emails.send({
-        from: this.fromEmail,
-        to: email,
-        subject: 'Reset Your Password - Clean & Flip',
-        html: emailHtml,
-      });
-
-      if (error) {
-        logger.error('Failed to send password reset via Resend:', error);
-        this.handleEmailError(error, 'password reset');
-        return false;
-      }
-
-      logger.info(`Password reset email sent to ${email}. Email ID: ${data?.id}`);
-      return true;
-    } catch (error) {
-      logger.error('Failed to send password reset email:', error);
-      return false;
-    }
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+    
+    return this.send('password_reset', {
+      to: email,
+      subject: 'Reset Your Clean & Flip Password',
+      resetUrl,
+      resetToken
+    });
   }
 
   async sendShippingNotification(orderData: OrderEmailData, trackingNumber: string, carrier: string = 'USPS'): Promise<boolean> {
-    if (!this.isInitialized) {
-      return false;
-    }
+    return this.send('shipping_notification', {
+      to: orderData.customerEmail,
+      subject: `Your Order Has Shipped - #${orderData.orderNumber}`,
+      trackingNumber,
+      carrier,
+      ...orderData
+    });
+  }
 
-    try {
-      const emailHtml = this.getShippingNotificationTemplate(orderData, trackingNumber, carrier);
+  async sendWelcomeEmail(data: { to: string; userName: string; discountCode?: string }): Promise<boolean> {
+    return this.send('welcome', {
+      ...data,
+      subject: 'Welcome to Clean & Flip!'
+    });
+  }
 
-      const { data, error } = await this.resend.emails.send({
-        from: this.fromEmail,
-        to: orderData.customerEmail,
-        subject: `Your Order Has Shipped - #${orderData.orderNumber}`,
-        html: emailHtml,
-      });
-
-      if (error) {
-        logger.error('Failed to send shipping notification via Resend:', error);
-        this.handleEmailError(error, 'shipping notification');
-        return false;
-      }
-
-      logger.info(`Shipping notification sent for order ${orderData.orderId}. Email ID: ${data?.id}`);
-      return true;
-    } catch (error) {
-      logger.error('Failed to send shipping notification:', error);
-      return false;
-    }
+  async sendAdminNotification(data: { type: string; message: string; metadata?: any }): Promise<boolean> {
+    return this.send('admin_notification', {
+      ...data,
+      subject: `Admin Alert: ${data.type}`
+    });
   }
 
   async sendAbandonedCartReminder(email: string, cartItems: any[]): Promise<boolean> {
-    if (!this.isInitialized) {
-      return false;
-    }
+    return this.send('abandoned_cart', {
+      to: email,
+      subject: 'Complete Your Purchase - Clean & Flip',
+      cartItems
+    });
+  }
 
-    try {
-      const emailHtml = this.getAbandonedCartTemplate(cartItems);
-
-      const { data, error } = await this.resend.emails.send({
-        from: this.fromEmail,
-        to: email,
-        subject: 'Complete Your Purchase - Clean & Flip',
-        html: emailHtml,
-      });
-
-      if (error) {
-        logger.error('Failed to send abandoned cart email via Resend:', error);
-        this.handleEmailError(error, 'abandoned cart reminder');
-        return false;
-      }
-
-      logger.info(`Abandoned cart email sent to ${email}. Email ID: ${data?.id}`);
-      return true;
-    } catch (error) {
-      logger.error('Failed to send abandoned cart email:', error);
-      return false;
+  // Helper methods
+  private getEmailTemplate(templateType: string, data: any): string {
+    switch (templateType) {
+      case 'password_reset':
+        return this.getPasswordResetTemplate(data.resetUrl);
+      case 'order_confirmation':
+        return this.generateOrderConfirmationHTML(data);
+      case 'shipping_notification':
+        return this.getShippingNotificationTemplate(data, data.trackingNumber, data.carrier);
+      case 'welcome':
+        return this.getWelcomeEmailTemplate(data.userName);
+      case 'admin_notification':
+        return this.getAdminNotificationTemplate(data.type, data.message, data.metadata);
+      case 'abandoned_cart':
+        return this.getAbandonedCartTemplate(data.cartItems);
+      default:
+        return this.getDefaultTemplate(templateType, data);
     }
   }
 
-  async sendWelcomeEmail(userEmail: string, userName: string): Promise<boolean> {
-    if (!this.isInitialized) {
-      return false;
-    }
+  private getDefaultSubject(templateType: string): string {
+    const subjects = {
+      password_reset: 'Reset Your Password - Clean & Flip',
+      welcome: 'Welcome to Clean & Flip!',
+      order_confirmation: 'Order Confirmation - Clean & Flip',
+      shipping_notification: 'Your Order Has Shipped - Clean & Flip',
+      admin_notification: 'Admin Notification - Clean & Flip',
+      abandoned_cart: 'Complete Your Purchase - Clean & Flip'
+    };
 
+    return subjects[templateType] || 'Clean & Flip Notification';
+  }
+
+  private async logEmail(logData: any): Promise<void> {
     try {
-      const emailHtml = this.getWelcomeEmailTemplate(userName);
-
-      const { data, error } = await this.resend.emails.send({
-        from: this.fromEmail,
-        to: userEmail,
-        subject: 'Welcome to Clean & Flip!',
-        html: emailHtml,
+      await db.insert(emailLogs).values({
+        toEmail: logData.toEmail,
+        fromEmail: logData.fromEmail,
+        subject: logData.subject,
+        templateType: logData.templateType,
+        status: logData.status,
+        sentAt: logData.sentAt || null,
+        error: logData.error || null,
+        metadata: logData.metadata || {}
       });
-
-      if (error) {
-        logger.error('Failed to send welcome email via Resend:', error);
-        this.handleEmailError(error, 'welcome email');
-        return false;
-      }
-
-      logger.info(`Welcome email sent to ${userEmail}. Email ID: ${data?.id}`);
-      return true;
     } catch (error) {
-      logger.error('Failed to send welcome email:', error);
-      return false;
+      logger.error('Failed to log email:', error);
     }
   }
+
+  private getDefaultTemplate(templateType: string, data: any): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+        <div style="background: white; padding: 30px; border-radius: 8px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #1e40af; margin: 0;">Clean & Flip</h1>
+            <h2 style="color: #333; margin: 10px 0;">${templateType.replace('_', ' ').toUpperCase()}</h2>
+          </div>
+          <p>This is a ${templateType} notification from Clean & Flip.</p>
+          <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
+            <p>Thank you for choosing Clean & Flip!</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private getAdminNotificationTemplate(type: string, message: string, metadata?: any): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 20px;">
+        <div style="background: white; padding: 30px; border-radius: 8px; border-left: 4px solid #dc2626;">
+          <div style="margin-bottom: 20px;">
+            <h1 style="color: #dc2626; margin: 0; font-size: 18px;">🚨 ADMIN ALERT</h1>
+            <h2 style="color: #333; margin: 10px 0;">${type}</h2>
+          </div>
+          <p style="background: #fef2f2; padding: 15px; border-radius: 6px; margin: 15px 0;">${message}</p>
+          ${metadata ? `<pre style="background: #f3f4f6; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 12px;">${JSON.stringify(metadata, null, 2)}</pre>` : ''}
+          <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
+            <p>Clean & Flip Admin System</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+
 
   async sendReturnStatusUpdate(userEmail: string, returnRequest: any, status: string): Promise<boolean> {
     if (!this.isInitialized) {

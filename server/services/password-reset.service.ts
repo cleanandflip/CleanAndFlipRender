@@ -32,9 +32,10 @@ export class PasswordResetService {
         .where(eq(users.email, email.toLowerCase()))
         .limit(1);
 
-      // Always return success to prevent email enumeration
+      // Security: Don't send emails to non-existent users (prevents enumeration)
       if (!user) {
         logger.info(`Password reset requested for non-existent email: ${email}`);
+        // Return success message but don't send email - this prevents email enumeration attacks
         return { message: 'If an account exists, reset email sent' };
       }
 
