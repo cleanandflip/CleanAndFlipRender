@@ -1,0 +1,293 @@
+# Emergency Production Fixes for Clean & Flip
+
+## 1. Fix Server Crash Loop (CRITICAL - Do This First!)
+
+The server is crashing because it's trying to import a non-existent module. Fix this immediately:
+
+### Find and Remove the Bad Import
+
+Look in `/server/index.ts` or `/server/app.ts` for this line:
+```typescript
+import { validateStartup } from './scripts/startup-validation';
+// OR
+import './scripts/startup-validation';
+```
+
+**Remove or comment out this import and any calls to it.**
+
+### Alternative Quick Fix
+
+If you can't find the import, create a dummy file to prevent the crash:
+
+```typescript
+// /server/scripts/startup-validation.ts
+export async function validateStartup() {
+  console.log('Startup validation placeholder');
+  return true;
+}
+
+export default validateStartup;
+```
+
+## 2. Fix Database Schema Issues
+
+### Issue: Missing 'subcategory' Column
+
+Create migration file `/server/db/migrations/fix-subcategory.sql`:
+```sql
+-- Add subcategory column if it doesn't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'products' AND column_name = 'subcategory'
+  ) THEN
+    ALTER TABLE products ADD COLUMN subcategory VARCHAR(100);
+    UPDATE products SET subcategory = 'General' WHERE subcategory IS NULL;
+  END IF;
+END $$;
+```
+
+### Issue: Missing 'street' Column for Users
+
+The password reset is trying to access address fields. Fix options:
+
+**Option A - Quick Fix (Recommended)**
+Update `/server/services/password-reset.service.ts`:
+```typescript
+// When fetching user, only select fields that exist
+const [user] = await db
+  .select({
+    id: users.id,
+    email: users.email,
+    name: users.name,
+    // Remove these lines:
+    // street: users.street,
+    // city: users.city,
+    // state: users.state,
+  })
+  .from(users)
+  .where(eq(users.email, email.toLowerCase()))
+  .limit(1);
+```
+
+**Option B - Add Address Fields**
+Create migration `/server/db/migrations/fix-user-addresses.sql`:
+```sql
+-- Check if using separate addresses table
+DO $$ 
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_name = 'addresses'
+  ) THEN
+    -- Addresses are in separate table, no action needed
+    RAISE NOTICE 'Using separate addresses table';
+  ELSE
+    -- Add address columns to users if they don't exist
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name = 'street'
+    ) THEN
+      ALTER TABLE users 
+      ADD COLUMN street VARCHAR(255),
+      ADD COLUMN city VARCHAR(100),
+      ADD COLUMN state VARCHAR(50),
+      ADD COLUMN zip VARCHAR(20);
+    END IF;
+  END IF;
+END $$;
+```
+
+## 3. Fix All Product Queries
+
+Update `/server/storage/database.ts` or wherever products are queried:
+
+```typescript
+// Safe product selection that handles missing columns
+async function getProductSelection() {
+  // Check which columns exist
+  const columns = await db.execute(sql`
+    SELECT column_name 
+    FROM information_schema.columns 
+    WHERE table_name = 'products'
+  `);
+  
+  const columnNames = columns.rows.map(row => row.column_name);
+  const hasSubcategory = columnNames.includes('subcategory');
+  
+  // Build selection object dynamically
+  return {
+    id: productsTable.id,
+    name: productsTable.name,
+    description: productsTable.description,
+    price: productsTable.price,
+    images: productsTable.images,
+    category: productsTable.category,
+    ...(hasSubcategory && { subcategory: productsTable.subcategory }),
+    featured: productsTable.featured,
+    stock: productsTable.stock,
+    createdAt: productsTable.createdAt,
+  };
+}
+
+// Use in queries
+async getFeaturedProducts() {
+  try {
+    const selection = await getProductSelection();
+    return await db
+      .select(selection)
+      .from(productsTable)
+      .where(eq(productsTable.featured, true))
+      .limit(8);
+  } catch (error) {
+    console.error('Error fetching featured products:', error);
+    return [];
+  }
+}
+```
+
+## 4. Emergency Deployment Steps
+
+### Step 1: Fix the Import (CRITICAL)
+```bash
+# Find the bad import
+grep -r "startup-validation" server/
+grep -r "startup-validation" src/
+
+# Remove or comment it out
+```
+
+### Step 2: Rebuild and Deploy
+```bash
+# Clean build
+rm -rf dist/
+
+# Rebuild
+npm run build
+
+# Deploy
+npm run start
+```
+
+### Step 3: Run Migrations (After Server Starts)
+```bash
+# Run the schema fixes
+psql $DATABASE_URL < server/db/migrations/fix-subcategory.sql
+psql $DATABASE_URL < server/db/migrations/fix-user-addresses.sql
+```
+
+## 5. Add Error Recovery
+
+Add this to your main server file to prevent future crashes:
+
+```typescript
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Don't exit in production, try to recover
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Wrap startup in try-catch
+async function startServer() {
+  try {
+    // Your server startup code
+    await app.listen(PORT);
+    console.log(`Server started on port ${PORT}`);
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    // Try again in 5 seconds
+    setTimeout(startServer, 5000);
+  }
+}
+```
+
+## 6. Create Health Check Endpoint
+
+Add this to monitor issues:
+
+```typescript
+router.get('/api/health', async (req, res) => {
+  const health = {
+    status: 'checking',
+    timestamp: new Date().toISOString(),
+    issues: []
+  };
+
+  // Test database
+  try {
+    await db.execute(sql`SELECT 1`);
+    health.database = 'connected';
+  } catch (error) {
+    health.database = 'error';
+    health.issues.push('Database connection failed');
+  }
+
+  // Test critical tables
+  const tables = ['users', 'products', 'orders'];
+  for (const table of tables) {
+    try {
+      await db.execute(sql`SELECT COUNT(*) FROM ${sql.identifier(table)}`);
+    } catch (error) {
+      health.issues.push(`Table ${table}: ${error.message}`);
+    }
+  }
+
+  health.status = health.issues.length === 0 ? 'healthy' : 'unhealthy';
+  res.status(health.status === 'healthy' ? 200 : 503).json(health);
+});
+```
+
+## 7. Temporary Workarounds
+
+If you need the site running immediately while fixing properly:
+
+### Disable Featured Products (if causing issues)
+```typescript
+// Return empty array temporarily
+async getFeaturedProducts() {
+  console.warn('Featured products temporarily disabled');
+  return [];
+}
+```
+
+### Disable Password Reset (if causing issues)
+```typescript
+// In password reset endpoint
+router.post('/api/auth/forgot-password', async (req, res) => {
+  // Temporary disable
+  res.json({ 
+    success: true, 
+    message: 'Password reset temporarily disabled. Please contact support.' 
+  });
+});
+```
+
+## 8. Monitoring Commands
+
+Run these to check status:
+
+```bash
+# Check if server is running
+curl https://cleanandflip.com/api/health
+
+# Check logs for errors
+tail -f server.log | grep -i error
+
+# Check database schema
+psql $DATABASE_URL -c "\d products"
+psql $DATABASE_URL -c "\d users"
+```
+
+## Priority Order:
+
+1. **IMMEDIATE**: Fix the module import issue (Step 1)
+2. **URGENT**: Fix database queries to handle missing columns
+3. **IMPORTANT**: Run migrations to add missing columns
+4. **ONGOING**: Add health checks and monitoring
+
+The site should be back online after fixing the import issue!
