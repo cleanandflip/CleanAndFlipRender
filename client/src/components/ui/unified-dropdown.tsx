@@ -66,14 +66,7 @@ export function UnifiedDropdown({
 
   const selectedOption = normalizedOptions.find(opt => opt.value === value);
 
-  // Test dropdown is working
-  console.log('UnifiedDropdown render:', { 
-    isOpen, 
-    disabled, 
-    optionsLength: normalizedOptions.length,
-    filteredOptionsLength: filteredOptions.length,
-    dropdownPosition 
-  });
+  // Remove debug logs for production
 
   return (
     <div className={cn("relative w-full", className)}>
@@ -87,7 +80,6 @@ export function UnifiedDropdown({
         ref={triggerRef}
         type="button"
         onClick={() => {
-          console.log('Dropdown button clicked, current isOpen:', isOpen);
           if (!disabled) {
             setIsOpen(!isOpen);
           }
@@ -132,13 +124,15 @@ export function UnifiedDropdown({
         />
       </button>
 
-      {/* Simple dropdown without portal - testing */}
+      {/* Dropdown Menu - Matching UnifiedSearchBar styling exactly */}
       {isOpen && !disabled && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-50 py-1 rounded-lg shadow-2xl max-h-64 overflow-y-auto"
+        <div 
+          className="absolute top-full left-0 right-0 mt-2 z-50 rounded-lg shadow-2xl max-h-64 overflow-y-auto"
           style={{
-            background: 'rgba(75, 85, 99, 0.9)',
-            border: '2px solid rgba(156, 163, 175, 0.8)',
-            backdropFilter: 'blur(8px)',
+            background: 'rgba(30, 41, 59, 0.95)',
+            border: '1px solid rgba(71, 85, 105, 0.6)',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
           }}
         >
           {filteredOptions.length > 0 ? (
@@ -147,7 +141,6 @@ export function UnifiedDropdown({
                 key={option.value}
                 type="button"
                 onClick={() => {
-                  console.log('Option clicked:', option.value);
                   onChange(option.value);
                   setIsOpen(false);
                   if (searchable) {
@@ -157,22 +150,26 @@ export function UnifiedDropdown({
                 }}
                 disabled={option.disabled}
                 className={cn(
-                  "w-full px-4 py-3 text-left flex items-center justify-between transition-all duration-150",
+                  "w-full px-4 py-3 text-left flex items-center justify-between transition-all duration-200 hover:scale-[1.02] group",
+                  "first:rounded-t-lg last:rounded-b-lg",
                   option.disabled 
-                    ? 'text-gray-500 cursor-not-allowed' 
-                    : 'text-white hover:bg-white/10 cursor-pointer',
-                  option.value === value && 'bg-white/5 text-white',
-                  selectedIndex === index && 'bg-white/10'
+                    ? 'text-gray-500 cursor-not-allowed opacity-50' 
+                    : 'text-white hover:bg-gradient-to-r hover:from-slate-700/50 hover:to-slate-600/30 cursor-pointer',
+                  option.value === value && 'bg-gradient-to-r from-blue-600/20 to-blue-500/10 text-blue-200',
+                  selectedIndex === index && 'bg-gradient-to-r from-slate-600/40 to-slate-500/20'
                 )}
+                style={{
+                  borderBottom: index < filteredOptions.length - 1 ? '1px solid rgba(71, 85, 105, 0.3)' : 'none'
+                }}
               >
-                <span>{option.label}</span>
+                <span className="font-medium">{option.label}</span>
                 {option.value === value && (
-                  <Check className="w-4 h-4 text-gray-400" />
+                  <Check className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
                 )}
               </button>
             ))
           ) : (
-            <div className="px-4 py-3 text-center">
+            <div className="px-6 py-4 text-center">
               {allowCustom && search.trim() ? (
                 <button
                   type="button"
@@ -182,12 +179,12 @@ export function UnifiedDropdown({
                     setSearch('');
                     setSelectedIndex(-1);
                   }}
-                  className="text-gray-300 hover:text-white transition-colors"
+                  className="text-blue-300 hover:text-blue-200 transition-colors font-medium hover:scale-105 transform duration-200"
                 >
                   Use "{search.trim()}" (custom)
                 </button>
               ) : (
-                <span className="text-gray-400">No options found</span>
+                <span className="text-slate-400 font-medium">No options found</span>
               )}
             </div>
           )}
@@ -199,7 +196,6 @@ export function UnifiedDropdown({
         <div 
           className="fixed inset-0 z-10" 
           onClick={() => {
-            console.log('Outside click detected');
             setIsOpen(false);
             setSearch('');
             setSelectedIndex(-1);
