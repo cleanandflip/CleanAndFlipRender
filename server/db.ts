@@ -1,6 +1,8 @@
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
-import WebSocket from "ws";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const WebSocket = require("ws");
 import * as schema from "../shared/schema";
 import { sql } from "drizzle-orm";
 

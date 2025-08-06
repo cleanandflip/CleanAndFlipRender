@@ -96,8 +96,9 @@ The application is now optimized for deployment on Google Cloud Run and other co
   - Added required terser dependency for production builds
   - Fixed pnpm package resolution issues
 - **IMPORT ERROR RESOLVED**: Fixed WebSocket import in `server/db.ts`
-  - Changed from `import { WebSocket } from "ws"` to `import WebSocket from "ws"`
-  - Resolved ES module compatibility issue with ws package
+  - ES module import issues with `ws` package resolved using CommonJS require pattern
+  - Final solution: `import { createRequire } from "module"; const require = createRequire(import.meta.url); const WebSocket = require("ws");`
+  - Ensures compatibility between ES modules and CommonJS packages
 - **FRONTEND BUILD**: Successfully built frontend assets to `dist/public` directory
 - **ERROR HANDLING IMPROVED**: Fixed unhandled promise rejections in address autocomplete component
   - Changed console.error to console.warn to prevent unhandled rejections
