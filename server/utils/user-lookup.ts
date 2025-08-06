@@ -95,13 +95,14 @@ export class UserService {
     console.log(`[UserService] Creating reset token for user ${userId}`);
 
     try {
-      // Invalidate ALL old tokens for this user
+      // ENHANCED: Invalidate ALL old tokens for this user (both unused and unexpired)
       const invalidated = await db
         .update(passwordResetTokens)
         .set({ used: true })
         .where(and(
           eq(passwordResetTokens.userId, userId),
-          eq(passwordResetTokens.used, false)
+          eq(passwordResetTokens.used, false),
+          gt(passwordResetTokens.expiresAt, new Date()) // Only invalidate non-expired tokens
         ))
         .returning();
       
