@@ -40,7 +40,7 @@ import { healthLive, healthReady } from "./config/health";
 import { initializeWebSocket, broadcastProductUpdate, broadcastCartUpdate, broadcastStockUpdate } from "./config/websocket";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
-import { db } from "./db/index.js";
+import { db } from "./db";
 import { 
   users, 
   products, 
