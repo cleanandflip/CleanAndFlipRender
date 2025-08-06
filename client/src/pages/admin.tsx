@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UnifiedDropdown } from "@/components/ui/unified-dropdown";
 import { Input } from "@/components/ui/input";
 import { 
   Settings, 
@@ -250,15 +250,18 @@ function UserManagement() {
                     <Button size="sm" variant="outline">
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Select defaultValue={user.role || "user"}>
-                      <SelectTrigger className="w-24">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="developer">Developer</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <UnifiedDropdown
+                      options={[
+                        { value: "user", label: "User" },
+                        { value: "developer", label: "Developer" }
+                      ]}
+                      value={user.role || "user"}
+                      onChange={(value) => {
+                        // Role change logic would go here
+                        console.log(`Changed ${user.email} role to ${value}`);
+                      }}
+                      className="w-24"
+                    />
                   </div>
                 </TableCell>
               </TableRow>

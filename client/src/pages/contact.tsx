@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, Input } from "@/components/shared/AnimatedComponents";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UnifiedDropdown } from "@/components/ui/unified-dropdown";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -249,23 +249,24 @@ export default function Contact() {
                       name="category"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Category *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="What can we help with?" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="selling">Selling Equipment</SelectItem>
-                              <SelectItem value="buying">Buying Equipment</SelectItem>
-                              <SelectItem value="order">Order Support</SelectItem>
-                              <SelectItem value="shipping">Shipping & Delivery</SelectItem>
-                              <SelectItem value="returns">Returns & Refunds</SelectItem>
-                              <SelectItem value="general">General Question</SelectItem>
-                              <SelectItem value="partnership">Partnership Inquiry</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <UnifiedDropdown
+                              label="Category"
+                              required={true}
+                              options={[
+                                { value: "selling", label: "Selling Equipment" },
+                                { value: "buying", label: "Buying Equipment" },
+                                { value: "order", label: "Order Support" },
+                                { value: "shipping", label: "Shipping & Delivery" },
+                                { value: "returns", label: "Returns & Refunds" },
+                                { value: "general", label: "General Question" },
+                                { value: "partnership", label: "Partnership Inquiry" }
+                              ]}
+                              value={field.value || ""}
+                              placeholder="What can we help with?"
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
