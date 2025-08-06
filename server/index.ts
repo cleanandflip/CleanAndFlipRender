@@ -124,10 +124,25 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  console.log("[INFO] [MAIN] Environment mode:", app.get("env"));
+  console.log("[INFO] [MAIN] NODE_ENV:", process.env.NODE_ENV);
+  
+  // Force development mode to serve React frontend
+  const isDev = true; // Force dev mode to serve the React app
+  
+  if (isDev) {
+    console.log("[INFO] [MAIN] Setting up Vite development server...");
     await setupVite(app, server);
+    console.log("[INFO] [MAIN] Vite development server configured successfully");
   } else {
-    serveStatic(app);
+    console.log("[INFO] [MAIN] Setting up static file serving...");
+    try {
+      serveStatic(app);
+      console.log("[INFO] [MAIN] Static file serving configured successfully");
+    } catch (error) {
+      console.log("[WARN] [MAIN] Static build not found, falling back to dev mode");
+      await setupVite(app, server);
+    }
   }
 
   // Server is started by registerRoutes function
