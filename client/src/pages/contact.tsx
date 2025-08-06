@@ -250,23 +250,20 @@ export default function Contact() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Category *</FormLabel>
-                          <FormControl>
-                            <UnifiedDropdown
-                              options={[
-                                { value: "selling", label: "Selling Equipment" },
-                                { value: "buying", label: "Buying Equipment" },
-                                { value: "order", label: "Order Support" },
-                                { value: "shipping", label: "Shipping & Delivery" },
-                                { value: "returns", label: "Returns & Refunds" },
-                                { value: "general", label: "General Question" },
-                                { value: "partnership", label: "Partnership Inquiry" }
-                              ]}
-                              value={field.value}
-                              onChange={field.onChange}
-                              placeholder="What can we help with?"
-                              className="field"
-                            />
-                          </FormControl>
+                          <UnifiedDropdown
+                            options={[
+                              { value: "selling", label: "Selling Equipment" },
+                              { value: "buying", label: "Buying Equipment" },
+                              { value: "order", label: "Order Support" },
+                              { value: "shipping", label: "Shipping & Delivery" },
+                              { value: "returns", label: "Returns & Refunds" },
+                              { value: "general", label: "General Question" },
+                              { value: "partnership", label: "Partnership Inquiry" }
+                            ]}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="What can we help with?"
+                          />
                           <FormMessage />
                         </FormItem>
                       )}

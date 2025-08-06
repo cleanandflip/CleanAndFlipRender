@@ -338,17 +338,15 @@ export default function SellToUs() {
                       name="brand"
                       render={({ field }) => (
                         <FormItem>
-                          <FormControl>
-                            <UnifiedDropdown
-                              label="Brand"
-                              options={EQUIPMENT_BRANDS}
-                              value={field.value || ""}
-                              placeholder="Search or select a brand..."
-                              onChange={field.onChange}
-                              searchable={true}
-                              allowCustom={true}
-                            />
-                          </FormControl>
+                          <FormLabel>Brand</FormLabel>
+                          <UnifiedDropdown
+                            options={EQUIPMENT_BRANDS}
+                            value={field.value || ""}
+                            placeholder="Search or select a brand..."
+                            onChange={field.onChange}
+                            searchable={true}
+                            allowCustom={true}
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
@@ -361,22 +359,19 @@ export default function SellToUs() {
                       name="condition"
                       render={({ field }) => (
                         <FormItem>
-                          <FormControl>
-                            <UnifiedDropdown
-                              label="Condition"
-                              options={[
-                                { value: "new", label: "New" },
-                                { value: "like_new", label: "Like New" },
-                                { value: "good", label: "Good" },
-                                { value: "fair", label: "Fair" },
-                                { value: "needs_repair", label: "Needs Repair" }
-                              ]}
-                              value={field.value || ""}
-                              placeholder="Select condition"
-                              onChange={field.onChange}
-                              required={true}
-                            />
-                          </FormControl>
+                          <FormLabel>Condition *</FormLabel>
+                          <UnifiedDropdown
+                            options={[
+                              { value: "new", label: "New" },
+                              { value: "like_new", label: "Like New" },
+                              { value: "good", label: "Good" },
+                              { value: "fair", label: "Fair" },
+                              { value: "needs_repair", label: "Needs Repair" }
+                            ]}
+                            value={field.value || ""}
+                            placeholder="Select condition"
+                            onChange={field.onChange}
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
