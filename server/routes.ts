@@ -66,7 +66,10 @@ import {
 import { convertSubmissionsToCSV } from './utils/exportHelpers';
 import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not, count, sum } from "drizzle-orm";
 import { displayStartupBanner } from "./utils/startup-banner";
+import { initRedis } from "./config/redis";
+import { initializeCache } from "./lib/cache";
 import { initializeSearchIndexes, searchProducts } from "./config/search";
+import { getCachedCategories, setCachedCategories, getCachedFeaturedProducts, setCachedFeaturedProducts, getCachedProduct, setCachedProduct, clearProductCache } from "./config/cache";
 import { registerGracefulShutdown } from "./config/graceful-shutdown";
 import { performanceTest } from "./config/performance-test";
 import { 
@@ -95,7 +98,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const startupTime = Date.now();
   const warnings: string[] = [];
   
-  // Caching disabled - direct database access for optimal performance
+  // Initialize caching system (Redis or Memory)
+  const redisClient = await initRedis().catch(() => null);
+  const redisConnected = !!redisClient;
+  initializeCache(redisClient);
+  
+  if (!redisConnected && process.env.ENABLE_REDIS === 'true') {
+    warnings.push('Redis caching disabled - using memory cache');
+  }
   
   // Setup performance optimizations first
   setupCompression(app);
@@ -165,13 +175,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Categories (public endpoint with rate limiting)
+  // Categories (public endpoint with rate limiting and caching)
   app.get("/api/categories", apiLimiter, async (req, res) => {
     try {
       const activeOnly = req.query.active === 'true';
       
+      // Try cache first for active categories
       if (activeOnly) {
+        const cached = await getCachedCategories();
+        if (cached) {
+          return res.json(cached);
+        }
+        
         const categories = await storage.getActiveCategoriesForHomepage();
+        
+        // Cache the results for 5 minutes
+        if (categories) {
+          await setCachedCategories(categories);
+        }
+        
         res.json(categories);
       } else {
         const categories = await storage.getCategories();
