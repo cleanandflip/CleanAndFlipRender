@@ -127,7 +127,7 @@ export function UnifiedDropdown({
       {/* Dropdown Menu - Matching UnifiedSearchBar styling exactly */}
       {isOpen && !disabled && (
         <div 
-          className="absolute top-full left-0 right-0 mt-2 z-50 rounded-lg shadow-2xl max-h-64 overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-2 z-50 rounded-lg shadow-2xl max-h-64 overflow-y-auto overflow-x-hidden"
           style={{
             background: 'rgba(30, 41, 59, 0.95)',
             border: '1px solid rgba(71, 85, 105, 0.6)',
@@ -151,7 +151,7 @@ export function UnifiedDropdown({
                 disabled={option.disabled}
                 className={cn(
                   "w-full px-4 py-3 text-left flex items-center justify-between transition-all duration-200 hover:scale-[1.02] group",
-                  "first:rounded-t-lg last:rounded-b-lg",
+                  "first:rounded-t-lg last:rounded-b-lg min-w-0", // Added min-w-0 to prevent overflow
                   option.disabled 
                     ? 'text-gray-500 cursor-not-allowed opacity-50' 
                     : 'text-white hover:bg-gradient-to-r hover:from-slate-700/50 hover:to-slate-600/30 cursor-pointer',
@@ -162,7 +162,7 @@ export function UnifiedDropdown({
                   borderBottom: index < filteredOptions.length - 1 ? '1px solid rgba(71, 85, 105, 0.3)' : 'none'
                 }}
               >
-                <span className="font-medium">{option.label}</span>
+                <span className="font-medium truncate flex-1 pr-2">{option.label}</span>
                 {option.value === value && (
                   <Check className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
                 )}
