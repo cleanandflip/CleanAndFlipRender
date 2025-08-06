@@ -7,7 +7,7 @@
     "noEmit": true,
     "target": "ES2022",
     "module": "ESNext",
-    "lib": ["ES2022", "dom", "dom.iterable", "ES2022.Object"],
+    "lib": ["ES2022", "dom", "dom.iterable"],
     "moduleResolution": "bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
