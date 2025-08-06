@@ -1,6 +1,6 @@
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
-import ws from "ws"; // Changed from { WebSocket } to default import
+import { WebSocket } from "ws";
 import * as schema from "../shared/schema";
 import { sql } from "drizzle-orm";
 
@@ -16,7 +16,7 @@ class Logger {
 
 // Configure Neon WebSocket for Node.js environment
 if (typeof window === "undefined") {
-  neonConfig.webSocketConstructor = ws;
+  neonConfig.webSocketConstructor = WebSocket;
   neonConfig.pipelineConnect = false;
   neonConfig.useSecureWebSocket = true;
 }

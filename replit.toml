@@ -1,12 +1,10 @@
-[workflows]
+[deployment]
+run = ["sh", "-c", "npm run dev"]
 
-  [workflows."Start application"]
-  enabled = true
-  requires = ["nodejs"]
-  
-  [workflows."Start application".runner]
-  name = "Start application"
-  command = "npm run dev"
-  
-[workspace]
-entrypoint = "server/index.ts"
+[languages]
+
+[languages.typescript]
+pattern = "**/{*.ts,*.js,*.tsx,*.jsx}"
+
+  [languages.typescript.languageServer]
+  start = "typescript-language-server --stdio"
