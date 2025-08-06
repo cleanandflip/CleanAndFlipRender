@@ -1,12 +1,18 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { log } from "./vite";
 import { Logger } from './utils/logger';
 import { validateEnvironmentVariables, getEnvironmentInfo } from './config/env-validation';
 import { db } from './db';
 import { sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
+
+// Prevent multiple server instances
+if (global.serverInstance) {
+  Logger.info('[MAIN] Server already running, exiting...');
+  process.exit(0);
+}
+global.serverInstance = true;
 
 const app = express();
 app.use(express.json());
@@ -35,7 +41,7 @@ app.use((req, res, next) => {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      log(logLine);
+      console.log(logLine);
     }
   });
 
@@ -43,49 +49,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Enhanced startup logging with environment validation
-  Logger.info(`[MAIN] Starting Clean & Flip API Server`);
-  
   try {
-    // Validate environment configuration before starting
+    Logger.info(`[MAIN] Starting Clean & Flip API Server`);
+    
+    // Validate environment
     const envConfig = validateEnvironmentVariables();
     const envInfo = getEnvironmentInfo();
-    
     Logger.info(`[MAIN] Environment validation passed`);
-    Logger.info(`[MAIN] System Info:`, envInfo);
-  } catch (error) {
-    Logger.error(`[MAIN] Environment validation failed:`, error);
-    process.exit(1);
-  }
-
-  // Global error handlers to prevent crashes
-  process.on('uncaughtException', (error) => {
-    Logger.error('[MAIN] Uncaught Exception - Server may be unstable:', error);
-    if (process.env.NODE_ENV === 'production') {
-      Logger.error('[MAIN] In production mode - attempting graceful recovery');
-      // Don't exit in production, try to recover
-    } else {
-      Logger.error('[MAIN] In development mode - exiting process');
-      process.exit(1);
-    }
-  });
-
-  process.on('unhandledRejection', (reason, promise) => {
-    Logger.error(`[MAIN] Unhandled Promise Rejection:`, {
-      reason: reason,
-      promise: promise,
-      stack: reason instanceof Error ? reason.stack : 'No stack trace available'
-    });
-  });
-
-  // Add signal handlers for graceful shutdown
-  process.on('SIGTERM', () => {
-    Logger.info('[MAIN] Received SIGTERM signal - initiating graceful shutdown');
-  });
-
-  process.on('SIGINT', () => {
-    Logger.info('[MAIN] Received SIGINT signal - initiating graceful shutdown');
-  });
 
   let server;
   try {
@@ -203,37 +173,70 @@ app.use((req, res, next) => {
 
   const httpServer = await registerRoutes(app);
   
-  // Simple static file serving for the frontend
-  const distPath = path.resolve(process.cwd(), "client");
-  const indexPath = path.join(distPath, "index.html");
+  // Check if we should serve static files or use Vite dev server
+  const isProductionBuild = fs.existsSync(path.resolve(import.meta.dirname, "public"));
   
-  if (fs.existsSync(indexPath)) {
-    app.use(express.static(distPath));
+  if (isProductionBuild) {
+    // Production: serve static files
+    const publicPath = path.resolve(import.meta.dirname, "public");
+    app.use(express.static(publicPath));
     app.get("*", (req, res) => {
       if (!req.path.startsWith("/api")) {
-        res.sendFile(indexPath);
+        res.sendFile(path.join(publicPath, "index.html"));
       }
     });
-    Logger.info(`[MAIN] Serving static files from ${distPath}`);
   } else {
-    app.get("*", (req, res) => {
-      if (!req.path.startsWith("/api")) {
-        res.json({
-          message: "Clean & Flip API Server",
-          status: "operational", 
-          frontend: "temporarily unavailable",
-          database: "connected",
-          endpoints: [
-            "GET /api/products",
-            "GET /api/categories", 
-            "POST /api/auth/login",
-            "POST /api/auth/forgot-password"
-          ]
-        });
-      }
-    });
-    Logger.info(`[MAIN] Frontend files not found, serving API only`);
+    // Development: serve frontend from client directory
+    const clientPath = path.resolve(process.cwd(), "client");
+    const indexPath = path.join(clientPath, "index.html");
+    
+    if (fs.existsSync(indexPath)) {
+      app.use(express.static(clientPath));
+      app.get("*", (req, res) => {
+        if (!req.path.startsWith("/api")) {
+          res.sendFile(indexPath);
+        }
+      });
+    } else {
+      // Fallback for when frontend is not built
+      app.get("*", (req, res) => {
+        if (!req.path.startsWith("/api")) {
+          res.json({
+            message: "Clean & Flip API Server - Development Mode",
+            status: "operational",
+            note: "Frontend not built - run 'npm run build' or start Vite dev server"
+          });
+        }
+      });
+    }
   }
 
   Logger.info(`[MAIN] Server setup completed successfully`);
+  
+  // Graceful shutdown handlers
+  process.on('SIGTERM', () => {
+    Logger.info('[SHUTDOWN] SIGTERM received, closing server...');
+    httpServer?.close(() => {
+      Logger.info('[SHUTDOWN] Server closed successfully');
+      process.exit(0);
+    });
+  });
+  
+  process.on('SIGINT', () => {
+    Logger.info('[SHUTDOWN] SIGINT received, closing server...');
+    httpServer?.close(() => {
+      Logger.info('[SHUTDOWN] Server closed successfully');
+      process.exit(0);
+    });
+  });
+  
+  // Keep process alive while server is running
+  process.on('exit', () => {
+    Logger.info('[SHUTDOWN] Process exiting...');
+  });
+  
+} catch (error) {
+  Logger.error('[MAIN] Server startup failed:', error);
+  process.exit(1);
+}
 })();
