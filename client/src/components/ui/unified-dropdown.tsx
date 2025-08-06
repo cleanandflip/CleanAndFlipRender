@@ -38,7 +38,7 @@ export function UnifiedDropdown({
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
 
   // Normalize options to DropdownOption format
   const normalizedOptions: DropdownOption[] = options.map(opt => 
@@ -99,21 +99,19 @@ export function UnifiedDropdown({
         </label>
       )}
       
-      <button
+      <div
         ref={triggerRef}
-        type="button"
         onClick={() => {
-          if (!disabled) {
+          if (!disabled && !searchable) {
             setIsOpen(!isOpen);
           }
         }}
-        disabled={disabled}
         className={cn(
-          "w-full px-4 py-3 rounded-lg text-left transition-all duration-200 focus:outline-none flex items-center justify-between group",
-          "hover:bg-white/10 focus:border-blue-500",
+          "w-full px-4 py-3 rounded-lg text-left transition-all duration-200 flex items-center justify-between group",
+          "hover:bg-white/10",
           disabled 
             ? "cursor-not-allowed opacity-50" 
-            : "cursor-pointer"
+            : searchable ? "cursor-text" : "cursor-pointer"
         )}
         style={{
           background: 'rgba(75, 85, 99, 0.4)',
@@ -130,8 +128,7 @@ export function UnifiedDropdown({
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="bg-transparent outline-none flex-1 placeholder:text-gray-400 text-white w-full"
-            onClick={(e) => e.stopPropagation()}
+            className="bg-transparent border-none outline-none flex-1 placeholder:text-gray-400 text-white w-full focus:ring-0"
             onFocus={() => setIsOpen(true)}
             onBlur={() => {
               // If allowCustom and we have a search value, use it
@@ -152,7 +149,7 @@ export function UnifiedDropdown({
             !disabled && "group-hover:text-white"
           )}
         />
-      </button>
+      </div>
 
       {/* Dropdown Menu - Matching UnifiedSearchBar styling exactly */}
       {isOpen && !disabled && (
