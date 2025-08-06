@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { Logger } from './utils/logger';
 import { validateEnvironmentVariables, getEnvironmentInfo } from './config/env-validation';
-import { db } from './db';
+import { db } from './db/index.js';
 import { sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
