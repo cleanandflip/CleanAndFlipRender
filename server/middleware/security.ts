@@ -99,37 +99,38 @@ export function setupSecurityHeaders(app: Express) {
         },
       };
 
-  app.use(helmet({
-    contentSecurityPolicy: cspConfig,
-    crossOriginEmbedderPolicy: false, // Required for Stripe
-    hsts: {
-      maxAge: 31536000, // 1 year
-      includeSubDomains: true,
-      preload: true
-    },
-    noSniff: true,
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-    permittedCrossDomainPolicies: false,
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
-    crossOriginResourcePolicy: { policy: "cross-origin" }
-  }));
+  // Only use helmet in production to avoid development conflicts
+  if (process.env.NODE_ENV === 'production') {
+    app.use(helmet({
+      contentSecurityPolicy: cspConfig,
+      crossOriginEmbedderPolicy: false, // Required for Stripe
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+      }
+    }));
+  }
+  // Skip helmet completely in development
 
-  // Additional security headers
-  app.use((req, res, next) => {
-    // Prevent clickjacking
-    res.setHeader('X-Frame-Options', 'DENY');
-    
-    // Prevent MIME type sniffing
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    
-    // Enable XSS protection
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    
-    // Remove server header for security
-    res.removeHeader('X-Powered-By');
-    
-    next();
-  });
+  // Additional security headers - only in production to avoid conflicts
+  if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+      // Prevent clickjacking
+      res.setHeader('X-Frame-Options', 'DENY');
+      
+      // Prevent MIME type sniffing
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      
+      // Enable XSS protection
+      res.setHeader('X-XSS-Protection', '1; mode=block');
+      
+      // Remove server header for security
+      res.removeHeader('X-Powered-By');
+      
+      next();
+    });
+  }
 }
 
 // Input validation middleware
@@ -166,14 +167,55 @@ export function sanitizeInput(req: any, res: any, next: any) {
   next();
 }
 
-// CORS configuration for production security
+// CORS configuration for production security with Vercel support
+const productionOrigins = [
+  'https://cleanandflip.com',
+  'https://www.cleanandflip.com',
+  'https://clean-and-flip.vercel.app',
+  /^https:\/\/clean-and-flip-.+\.vercel\.app$/  // Vercel preview URLs
+];
+
+const developmentOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5000',
+  /\.replit\.dev$/,
+  /\.replit\.app$/
+];
+
 export const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL || 'https://your-domain.com'
-    : true, // Allow all origins in development
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps, Postman, or same-origin)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const allowedOrigins = process.env.NODE_ENV === 'production' 
+      ? productionOrigins
+      : [...productionOrigins, ...developmentOrigins];
+
+    // Check exact matches first
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Check regex patterns (for Vercel and Replit domains)
+    const isAllowed = allowedOrigins.some((allowedOrigin) => {
+      if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return false;
+    });
+
+    if (isAllowed) {
+      return callback(null, true);
+    }
+
+    console.warn(`CORS blocked origin: ${origin}`);
+    callback(new Error(`CORS policy violation: Origin ${origin} not allowed`));
+  },
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: [
     'Origin',
     'X-Requested-With',

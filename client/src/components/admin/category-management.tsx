@@ -276,7 +276,7 @@ export default function CategoryManagement() {
   const { data: categories = [], isLoading } = useQuery<Category[]>({
     queryKey: ['/api/admin/categories'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/categories', { credentials: 'include' });
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/categories`, { credentials: 'include' });
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }

@@ -16,7 +16,7 @@ export default function CategoryGrid() {
   const { data: categories = [], isLoading } = useQuery<Category[]>({
     queryKey: ['/api/categories', 'active'],
     queryFn: async () => {
-      const response = await fetch('/api/categories?active=true');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/categories?active=true`);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }

@@ -35,7 +35,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
     queryFn: async () => {
-      const response = await fetch('/api/categories?active=true');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/categories?active=true`);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
@@ -47,7 +47,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
   const { data: brandsData = [] } = useQuery<string[]>({
     queryKey: ["/api/brands"],
     queryFn: async () => {
-      const response = await fetch('/api/brands');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/brands`);
       if (!response.ok) {
         throw new Error('Failed to fetch brands');
       }
