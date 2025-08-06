@@ -1,0 +1,43 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Development files
+.env.local
+.env.development
+*.log
+
+# Build artifacts (will be created during build)
+dist
+client/dist
+
+# Development tools
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+
+# Test files
+tests/
+*.test.js
+*.test.ts
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development scripts
+server/scripts/
+*.development.*
+
+# Cache directories
+.npm
+.cache

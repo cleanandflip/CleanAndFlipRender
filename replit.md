@@ -28,6 +28,7 @@ Preferred communication style: Simple, everyday language.
 - **Authentication**: Express sessions stored in PostgreSQL using `connect-pg-simple`, bcrypt for password hashing (12 salt rounds), role-based access control. Comprehensive authentication security with session persistence and enterprise-grade case-insensitive email system. Secure token-based password reset with production domain URLs (cleanandflip.com).
 - **Security**: OWASP Top 10 compliance, advanced security headers (`helmet.js`), multi-tier rate limiting, input validation and sanitization, atomic transaction management.
 - **Performance**: Redis caching, Gzip compression, WebSocket for real-time updates, optimized PostgreSQL full-text search with GIN indexes, request consolidation middleware.
+- **Deployment**: Production-ready configuration with 0.0.0.0 host binding for Cloud Run, enhanced startup logging, environment variable validation, Docker support, graceful shutdown handling, and comprehensive health checks (/health, /health/ready).
 
 ### Data Storage
 - **Database**: PostgreSQL (configured for Neon serverless)
@@ -56,3 +57,39 @@ Preferred communication style: Simple, everyday language.
 - **Caching**: Redis.
 - **Address Autocomplete**: Geoapify.
 - **Email Service**: Resend (for transactional emails like order confirmations, password resets, etc.). Production-ready with cleanandflip.com domain verification and case-insensitive email handling.
+
+## Deployment Configuration
+
+### Cloud Run Readiness
+The application is now optimized for deployment on Google Cloud Run and other container platforms:
+
+- **Host Binding**: Server correctly binds to `0.0.0.0` (required for Cloud Run)
+- **Port Configuration**: Uses `PORT` environment variable with fallback to 5000
+- **Build Process**: Optimized esbuild configuration with minification and Node.js 18 compatibility
+- **Docker Support**: Multi-stage Dockerfile with production optimizations and security best practices
+- **Health Checks**: Comprehensive endpoints (`/health`, `/health/ready`) for container orchestration
+- **Environment Validation**: Startup-time validation of required environment variables
+- **Enhanced Logging**: Detailed startup and error logging for debugging deployment issues
+- **Graceful Shutdown**: Proper signal handling for container lifecycle management
+
+### Required Environment Variables
+- `DATABASE_URL`: PostgreSQL connection string
+- `STRIPE_SECRET_KEY`: Stripe payment processing key
+- `NODE_ENV`: Should be set to 'production' for deployment
+
+### Optional Environment Variables  
+- `REDIS_URL`: Redis caching (improves performance)
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: Image storage
+- `RESEND_API_KEY`: Email service
+
+### Deployment Scripts
+- `npm run build`: Builds frontend and backend for production
+- `npm start`: Starts production server
+- `server/scripts/deployment-check.ts`: Validates deployment readiness
+
+### Recent Changes (August 6, 2025)
+- Fixed Cloud Run deployment issues with proper host binding and startup logging
+- Added comprehensive environment variable validation
+- Enhanced error handling and graceful shutdown support
+- Created production-ready Docker configuration
+- Implemented deployment readiness validation script

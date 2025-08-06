@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { Logger } from './utils/logger';
+import { validateEnvironmentVariables, getEnvironmentInfo } from './config/env-validation';
 
 const app = express();
 app.use(express.json());
@@ -38,17 +39,59 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Enhanced startup logging with environment validation
+  Logger.info(`[MAIN] Starting Clean & Flip API Server`);
+  
+  try {
+    // Validate environment configuration before starting
+    const envConfig = validateEnvironmentVariables();
+    const envInfo = getEnvironmentInfo();
+    
+    Logger.info(`[MAIN] Environment validation passed`);
+    Logger.info(`[MAIN] System Info:`, envInfo);
+  } catch (error) {
+    Logger.error(`[MAIN] Environment validation failed:`, error);
+    process.exit(1);
+  }
+
   // Global error handlers to prevent crashes
   process.on('uncaughtException', (error) => {
-    Logger.error('Uncaught Exception:', error);
-    // Don't exit in production, try to recover
+    Logger.error('[MAIN] Uncaught Exception - Server may be unstable:', error);
+    if (process.env.NODE_ENV === 'production') {
+      Logger.error('[MAIN] In production mode - attempting graceful recovery');
+      // Don't exit in production, try to recover
+    } else {
+      Logger.error('[MAIN] In development mode - exiting process');
+      process.exit(1);
+    }
   });
 
   process.on('unhandledRejection', (reason, promise) => {
-    Logger.error(`Unhandled Rejection at: ${promise} reason: ${reason}`);
+    Logger.error(`[MAIN] Unhandled Promise Rejection:`, {
+      reason: reason,
+      promise: promise,
+      stack: reason instanceof Error ? reason.stack : 'No stack trace available'
+    });
   });
 
-  const server = await registerRoutes(app);
+  // Add signal handlers for graceful shutdown
+  process.on('SIGTERM', () => {
+    Logger.info('[MAIN] Received SIGTERM signal - initiating graceful shutdown');
+  });
+
+  process.on('SIGINT', () => {
+    Logger.info('[MAIN] Received SIGINT signal - initiating graceful shutdown');
+  });
+
+  let server;
+  try {
+    Logger.info('[MAIN] Initializing server...');
+    server = await registerRoutes(app);
+    Logger.info('[MAIN] Server initialization completed successfully');
+  } catch (error) {
+    Logger.error('[MAIN] Failed to start server:', error);
+    process.exit(1);
+  }
 
   // Run cleanup every hour for password reset tokens
   setInterval(async () => {

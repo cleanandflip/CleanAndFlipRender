@@ -3002,15 +3002,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     process.env.DB_CONNECTION_LOGGED = 'true';
   }
   
-  // Start the HTTP server
-  const server = httpServer.listen(Number(process.env.PORT) || 5000, '0.0.0.0', () => {
-    logger.info(`🚀 Server started on port ${process.env.PORT || 5000}`, {
+  // Start the HTTP server with enhanced startup logging
+  const port = Number(process.env.PORT) || 5000;
+  const host = '0.0.0.0'; // Required for Cloud Run deployments
+  
+  Logger.info(`[STARTUP] Attempting to start server on ${host}:${port}`);
+  Logger.info(`[STARTUP] Environment: ${process.env.NODE_ENV || 'development'}`);
+  Logger.info(`[STARTUP] Node version: ${process.version}`);
+  
+  const server = httpServer.listen(port, host, () => {
+    const address = server.address();
+    Logger.info(`🚀 Server successfully started and listening`, {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
-      port: process.env.PORT || 5000,
+      host: host,
+      port: port,
+      actualAddress: address,
+      redis: redisConnected ? 'Connected' : 'Disabled',
+      websocket: 'Enabled',
+      process: {
+        pid: process.pid,
+        memory: process.memoryUsage()
+      }
+    });
+    
+    // Legacy logger for backward compatibility
+    logger.info(`🚀 Server started on port ${port}`, {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      port: port,
       redis: redisConnected ? 'Connected' : 'Disabled',
       websocket: 'Enabled'
     });
+  });
+  
+  // Enhanced error handling for server startup
+  server.on('error', (error: any) => {
+    Logger.error(`[STARTUP] Server failed to start:`, error);
+    if (error.code === 'EADDRINUSE') {
+      Logger.error(`[STARTUP] Port ${port} is already in use`);
+    } else if (error.code === 'EACCES') {
+      Logger.error(`[STARTUP] Permission denied to bind to port ${port}`);
+    }
+    process.exit(1);
+  });
+  
+  server.on('listening', () => {
+    Logger.info(`[STARTUP] Server is now accepting connections on ${host}:${port}`);
   });
 
   return server;
