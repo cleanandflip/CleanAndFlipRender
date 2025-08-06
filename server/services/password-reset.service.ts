@@ -1,28 +1,22 @@
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
-import { db } from '../db';
-import { sql } from 'drizzle-orm';
+import { UserService } from '../utils/user-lookup';
 import { emailService } from './email';
-import { findUserByEmail } from '../utils/user-lookup';
-import { Logger } from '../utils/logger';
 
 export class PasswordResetService {
-  private static readonly TOKEN_LENGTH = 32;
   private static readonly TOKEN_EXPIRY_HOURS = 1;
   private static readonly RATE_LIMIT_MINUTES = 1;
   
   // In-memory rate limiting (replace with Redis in production)
   private static rateLimitMap = new Map<string, Date>();
-  
+
   /**
-   * Request password reset with deduplication
+   * Request password reset with the new UserService
    */
   static async requestPasswordReset(
     email: string, 
     ipAddress: string, 
     userAgent: string
   ): Promise<{ success: boolean; message: string; debugInfo?: any }> {
-    const startTime = Date.now();
+    console.log(`[PasswordResetService] Starting reset process for: ${email}`);
     
     try {
       // Rate limiting check
@@ -32,7 +26,7 @@ export class PasswordResetService {
       if (lastRequest) {
         const minutesSinceLastRequest = (Date.now() - lastRequest.getTime()) / 60000;
         if (minutesSinceLastRequest < this.RATE_LIMIT_MINUTES) {
-          Logger.info(`[RATE_LIMIT] Too many requests for ${email} from ${ipAddress}`);
+          console.log(`[PasswordResetService] Rate limited: ${email} from ${ipAddress}`);
           return { 
             success: true, 
             message: 'If an account exists, reset email sent',
@@ -44,13 +38,11 @@ export class PasswordResetService {
       // Update rate limit
       this.rateLimitMap.set(rateLimitKey, new Date());
       
-      // Find user with improved lookup
-      Logger.info(`[PASSWORD_RESET] Starting reset process for: ${email}`);
-      const user = await findUserByEmail(email);
+      // Find user with the new UserService
+      const user = await UserService.findUserByEmail(email);
       
       if (!user) {
-        Logger.info(`[PASSWORD_RESET] No user found for email: ${email}`);
-        // Still return success to prevent email enumeration
+        console.log(`[PasswordResetService] No user found for email: ${email}`);
         return { 
           success: true, 
           message: 'If an account exists, reset email sent',
@@ -58,112 +50,76 @@ export class PasswordResetService {
         };
       }
       
-      Logger.info(`[PASSWORD_RESET] User found: ID ${user.id}, Email: ${user.email}`);
+      console.log(`[PasswordResetService] User found: ID ${user.id}, Email: ${user.email}`);
       
-      // Check for existing valid token to prevent duplicates
-      const existingTokenResult = await db.execute(sql`
-        SELECT id, created_at 
-        FROM password_reset_tokens
-        WHERE user_id = ${user.id}
-          AND used = false
-          AND expires_at > NOW()
-        ORDER BY created_at DESC
-        LIMIT 1
-      `);
-      
-      if (existingTokenResult.rows.length > 0) {
-        const tokenAge = (Date.now() - new Date(existingTokenResult.rows[0].created_at as string).getTime()) / 60000;
-        if (tokenAge < 5) { // Token created less than 5 minutes ago
-          Logger.info(`[PASSWORD_RESET] Recent token exists, skipping email`);
-          return { 
-            success: true, 
-            message: 'If an account exists, reset email sent',
-            debugInfo: { recentTokenExists: true, tokenAge }
-          };
-        }
-      }
-      
-      // Invalidate all old tokens for this user
-      await db.execute(sql`
-        UPDATE password_reset_tokens
-        SET used = true, used_at = NOW()
-        WHERE user_id = ${user.id} AND used = false
-      `);
-      
-      // Generate new token
-      const rawToken = crypto.randomBytes(this.TOKEN_LENGTH).toString('hex');
-      const hashedToken = await bcrypt.hash(rawToken, 10);
-      
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + this.TOKEN_EXPIRY_HOURS);
-      
-      // Insert new token
-      await db.execute(sql`
-        INSERT INTO password_reset_tokens (user_id, token, expires_at, ip_address, user_agent)
-        VALUES (${user.id}, ${hashedToken}, ${expiresAt}, ${ipAddress}, ${userAgent})
-      `);
+      // Create password reset token
+      const token = await UserService.createPasswordResetToken(
+        user.id, 
+        ipAddress, 
+        userAgent
+      );
       
       // Generate reset link
       const baseUrl = process.env.NODE_ENV === 'production' 
         ? 'https://cleanandflip.com'
         : process.env.FRONTEND_URL || 'http://localhost:5173';
         
-      const resetLink = `${baseUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
+      const resetLink = `${baseUrl}/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`;
       
-      Logger.info(`[PASSWORD_RESET] Generated reset link for user ${user.id}`);
-      Logger.info(`Generated reset link: ${resetLink}`);
-      
-      // Send email immediately
+      // Send email using the existing email service
       try {
-        await emailService.sendPasswordReset(user.email, rawToken, resetLink);
+        await emailService.sendPasswordResetEmail({
+          to: user.email,
+          firstName: user.firstName || 'User',
+          resetLink,
+          expiresIn: '1 hour',
+          ipAddress,
+          userAgent
+        });
         
-        const elapsed = Date.now() - startTime;
-        Logger.info(`[PASSWORD_RESET] Email sent successfully in ${elapsed}ms`);
+        console.log(`[PasswordResetService] ✅ Reset email sent successfully to ${user.email}`);
         
+        return { 
+          success: true, 
+          message: 'If an account exists, reset email sent',
+          debugInfo: { 
+            emailSent: true, 
+            userId: user.id,
+            tokenCreated: true 
+          }
+        };
       } catch (emailError) {
-        Logger.error('[PASSWORD_RESET] Email send error:', emailError);
-        // Don't expose email errors to user
+        console.error('[PasswordResetService] ❌ Email sending failed:', emailError);
+        
+        return { 
+          success: true, 
+          message: 'If an account exists, reset email sent',
+          debugInfo: { 
+            emailError: true, 
+            errorMessage: (emailError as Error).message 
+          }
+        };
       }
       
-      // Log activity
-      try {
-        await db.execute(sql`
-          INSERT INTO activity_logs (user_id, action, metadata, created_at)
-          VALUES (${String(user.id)}, 'password_reset_requested', ${JSON.stringify({ email: String(user.email), ip: ipAddress })}, NOW())
-        `);
-      } catch (logError) {
-        Logger.info('[DEBUG] Activity log failed, continuing without logging:', logError);
-      }
-      
-      Logger.info(`[DEBUG] Password reset completed successfully for: ${user.email}`);
-      
+    } catch (error) {
+      console.error('[PasswordResetService] 🔥 Reset process error:', error);
       return { 
         success: true, 
         message: 'If an account exists, reset email sent',
         debugInfo: { 
-          userFound: true, 
-          emailSent: true,
-          elapsed: Date.now() - startTime 
+          systemError: true, 
+          errorMessage: (error as Error).message 
         }
-      };
-      
-    } catch (error) {
-      Logger.error('[PASSWORD_RESET] Unexpected error:', error);
-      // Still return success to prevent information leakage
-      return { 
-        success: true, 
-        message: 'If an account exists, reset email sent',
-        debugInfo: { error: (error as Error).message }
       };
     }
   }
-  
+
   /**
-   * Validate reset token
+   * Validate reset token using UserService
    */
   static async validateResetToken(token: string, email?: string): Promise<{
     valid: boolean;
-    userId?: number;
+    userId?: string;
     email?: string;
     error?: string;
   }> {
@@ -172,48 +128,39 @@ export class PasswordResetService {
         return { valid: false, error: 'No token provided' };
       }
       
-      // Get all non-expired, unused tokens
-      const tokensResult = await db.execute(sql`
-        SELECT 
-          prt.id,
-          prt.user_id,
-          prt.token,
-          prt.expires_at,
-          u.email
-        FROM password_reset_tokens prt
-        JOIN users u ON u.id = prt.user_id
-        WHERE prt.used = false
-          AND prt.expires_at > NOW()
-      `);
+      const tokenData = await UserService.validateResetToken(token);
       
-      // Check each token
-      for (const row of tokensResult.rows) {
-        const isValid = await bcrypt.compare(token, row.token as string);
-        
-        if (isValid) {
-          // If email provided, verify it matches
-          if (email && (row.email as string).toLowerCase() !== email.toLowerCase()) {
-            return { valid: false, error: 'Token and email mismatch' };
-          }
-          
-          return {
-            valid: true,
-            userId: row.user_id as number,
-            email: row.email as string
-          };
-        }
+      if (!tokenData) {
+        return { valid: false, error: 'Invalid or expired token' };
       }
       
-      return { valid: false, error: 'Invalid or expired token' };
+      // If email provided, find user and verify it matches
+      if (email) {
+        const user = await UserService.findUserByEmail(email);
+        if (!user || user.id !== tokenData.userId) {
+          return { valid: false, error: 'Token and email mismatch' };
+        }
+        
+        return {
+          valid: true,
+          userId: tokenData.userId,
+          email: user.email
+        };
+      }
+      
+      return {
+        valid: true,
+        userId: tokenData.userId
+      };
       
     } catch (error) {
-      Logger.error('[TOKEN_VALIDATION] Error:', error);
+      console.error('[PasswordResetService] Token validation error:', error);
       return { valid: false, error: 'Token validation failed' };
     }
   }
-  
+
   /**
-   * Reset password
+   * Reset password using UserService
    */
   static async resetPassword(
     token: string,
@@ -222,72 +169,56 @@ export class PasswordResetService {
     ipAddress: string
   ): Promise<{ success: boolean; message: string }> {
     try {
+      console.log(`[PasswordResetService] Attempting password reset for email: ${email}`);
+      
       // Validate token
       const validation = await this.validateResetToken(token, email);
       
       if (!validation.valid || !validation.userId) {
+        console.log(`[PasswordResetService] Token validation failed: ${validation.error}`);
         return { 
           success: false, 
           message: validation.error || 'Invalid or expired token' 
         };
       }
       
-      // Hash new password
-      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      // Reset password using UserService
+      const resetSuccess = await UserService.resetPassword(token, newPassword);
       
-      // Update password
-      await db.execute(sql`
-        UPDATE users
-        SET password = ${hashedPassword}, updated_at = NOW()
-        WHERE id = ${validation.userId}
-      `);
-      
-      // Mark token as used
-      await db.execute(sql`
-        UPDATE password_reset_tokens
-        SET used = true, used_at = NOW()
-        WHERE user_id = ${validation.userId} AND used = false
-      `);
-      
-      Logger.info(`[PASSWORD_RESET] Password successfully reset for user ${validation.userId}`);
-      
-      // Send confirmation email
-      try {
-        // Note: Add this method to email service if needed
-        Logger.info(`[PASSWORD_RESET] Password reset confirmed for ${validation.email}`);
-        // await emailService.sendPasswordResetConfirmation(validation.email!, ipAddress);
-      } catch (emailError) {
-        Logger.error('[PASSWORD_RESET] Confirmation email error:', emailError);
+      if (resetSuccess) {
+        console.log(`[PasswordResetService] ✅ Password successfully reset for user ${validation.userId}`);
+        
+        // Send confirmation email
+        try {
+          const user = await UserService.findUserByEmail(email);
+          if (user) {
+            await emailService.sendPasswordResetConfirmationEmail({
+              to: user.email,
+              firstName: user.firstName || 'User',
+              ipAddress
+            });
+          }
+        } catch (emailError) {
+          console.error('[PasswordResetService] Confirmation email error:', emailError);
+        }
+        
+        return { 
+          success: true, 
+          message: 'Password successfully reset' 
+        };
+      } else {
+        return { 
+          success: false, 
+          message: 'Failed to reset password' 
+        };
       }
       
-      return { 
-        success: true, 
-        message: 'Password successfully reset' 
-      };
-      
     } catch (error) {
-      Logger.error('[PASSWORD_RESET] Reset error:', error);
+      console.error('[PasswordResetService] Reset error:', error);
       return { 
         success: false, 
         message: 'Failed to reset password' 
       };
-    }
-  }
-  
-  /**
-   * Clean up expired tokens (run periodically)
-   */
-  static async cleanupExpiredTokens(): Promise<number> {
-    try {
-      const result = await db.execute(sql`
-        DELETE FROM password_reset_tokens
-        WHERE expires_at < NOW() OR used = true
-      `);
-      
-      return result.rowCount || 0;
-    } catch (error) {
-      Logger.error('[PASSWORD_RESET] Cleanup error:', error);
-      return 0;
     }
   }
 }

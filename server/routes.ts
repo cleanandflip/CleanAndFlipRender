@@ -2967,9 +2967,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Debug endpoint (remove in production)
   if (process.env.NODE_ENV !== 'production') {
     app.get('/api/debug/list-emails', async (req, res) => {
-      const { debugListEmails } = await import('./utils/user-lookup.js');
-      const emails = await debugListEmails();
-      res.json({ emails });
+      try {
+        const allEmails = await db
+          .select({
+            id: users.id,
+            email: users.email,
+            created: users.createdAt,
+          })
+          .from(users);
+        res.json({ emails: allEmails });
+      } catch (error: any) {
+        res.status(500).json({ error: error.message });
+      }
     });
   }
 

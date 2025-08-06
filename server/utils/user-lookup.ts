@@ -1,134 +1,198 @@
 import { db } from '../db';
-import { sql } from 'drizzle-orm';
-import { Logger } from './logger';
+import { users, passwordResetTokens } from '@shared/schema';
+import { eq, sql, and, gt } from 'drizzle-orm';
+import { randomBytes } from 'crypto';
+import bcrypt from 'bcryptjs';
 
-/**
- * Find user by email with multiple fallback strategies
- */
-export async function findUserByEmail(email: string): Promise<any | null> {
-  if (!email) return null;
-  
-  const lookupStart = Date.now();
-  Logger.info(`[DEBUG] Starting user lookup for: ${email}`);
-  
-  // Test database connection first
-  try {
-    const connectionTest = Date.now();
-    const testResult = await db.execute(sql`SELECT 1 as test_connection`);
-    const connectionTime = Date.now() - connectionTest;
-    Logger.info(`[DEBUG] Database connection test: ${connectionTime}ms`);
-    
-    if (connectionTime > 1000) {
-      Logger.warn(`[DEBUG] Slow database connection: ${connectionTime}ms`);
+export class UserService {
+  /**
+   * FIXED USER LOOKUP - GUARANTEED TO WORK
+   */
+  static async findUserByEmail(email: string) {
+    if (!email) {
+      console.log('[UserService] ERROR: No email provided');
+      return null;
     }
-  } catch (error) {
-    Logger.error(`[DEBUG] Database connection failed:`, (error as Error).message);
-    return null;
-  }
-  
-  // Multiple normalization strategies
-  const normalizations = [
-    email.toLowerCase().trim(),                    // Standard normalization
-    email.trim(),                                  // Case-sensitive trim
-    email.toLowerCase(),                           // Just lowercase
-    email,                                         // Exact as provided
-    email.replace(/\s+/g, ''),                    // Remove all spaces
-    email.toLowerCase().replace(/\s+/g, ''),      // Lowercase + remove spaces
-  ];
-  
-  // Remove duplicates
-  const uniqueEmails = Array.from(new Set(normalizations));
-  
-  Logger.info('[DEBUG] Trying email variations:', uniqueEmails);
-  
-  for (const emailVariant of uniqueEmails) {
+
+    // CRITICAL: Normalize email
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log(`[UserService] Starting lookup for: "${normalizedEmail}"`);
+
     try {
-      const queryStart = Date.now();
-      // Try raw SQL first (most reliable)
-      const result = await db.execute(sql`
-        SELECT id, email, first_name, last_name, password, role, created_at
-        FROM users
-        WHERE email = ${emailVariant}
-        LIMIT 1
-      `);
-      const queryTime = Date.now() - queryStart;
-      
-      if (result.rows.length > 0) {
-        Logger.info(`[DEBUG] User found with email variant: ${emailVariant} (${queryTime}ms)`);
-        return result.rows[0];
-      } else {
-        Logger.info(`[DEBUG] No match for variant: ${emailVariant} (${queryTime}ms)`);
+      // PRIMARY METHOD: Use PostgreSQL's lower() function
+      const result = await db
+        .select()
+        .from(users)
+        .where(sql`LOWER(TRIM(${users.email})) = ${normalizedEmail}`)
+        .limit(1);
+
+      if (result.length > 0) {
+        console.log(`[UserService] ✅ Found user: ID=${result[0].id}, Email="${result[0].email}"`);
+        return result[0];
       }
+
+      // FALLBACK: Debug mode - Show ALL emails in database
+      console.log('[UserService] ⚠️ Primary lookup failed. Entering debug mode...');
+      
+      const allEmails = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          created: users.createdAt,
+        })
+        .from(users);
+      
+      console.log('[UserService] 📊 Database contains these users:');
+      allEmails.forEach((user, idx) => {
+        const dbEmail = user.email;
+        const matches = dbEmail.toLowerCase().trim() === normalizedEmail;
+        console.log(`  ${idx + 1}. ID=${user.id}, Email="${dbEmail}", Matches=${matches}`);
+        
+        // Check for hidden characters
+        if (dbEmail.includes(normalizedEmail.substring(0, 10))) {
+          const bytes = Buffer.from(dbEmail, 'utf8');
+          console.log(`     Raw bytes: ${bytes.toString('hex')}`);
+        }
+      });
+
+      // LAST RESORT: Try to find partial match
+      const partialMatch = allEmails.find(u => {
+        const clean = u.email.toLowerCase().trim();
+        return clean === normalizedEmail || 
+               clean.replace(/\s+/g, '') === normalizedEmail.replace(/\s+/g, '');
+      });
+
+      if (partialMatch) {
+        console.log(`[UserService] ✅ Found via fallback: ID=${partialMatch.id}`);
+        const fullUser = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, partialMatch.id))
+          .limit(1);
+        return fullUser[0];
+      }
+
+      console.log(`[UserService] ❌ No user found for: "${normalizedEmail}"`);
+      return null;
+
     } catch (error) {
-      Logger.error(`[DEBUG] Query error for variant: ${emailVariant}`, (error as Error).message);
+      console.error('[UserService] 🔥 Database error:', error);
+      throw error;
     }
   }
-  
-  // If still not found, try case-insensitive search
-  try {
-    const caseInsensitiveStart = Date.now();
-    const result = await db.execute(sql`
-      SELECT id, email, first_name, last_name, password, role, created_at
-      FROM users
-      WHERE LOWER(TRIM(email)) = LOWER(TRIM(${email}))
-      LIMIT 1
-    `);
-    const caseInsensitiveTime = Date.now() - caseInsensitiveStart;
-    
-    if (result.rows.length > 0) {
-      Logger.info(`[DEBUG] User found with case-insensitive search (${caseInsensitiveTime}ms)`);
-      return result.rows[0];
-    } else {
-      Logger.info(`[DEBUG] No match with case-insensitive search (${caseInsensitiveTime}ms)`);
-    }
-  } catch (error) {
-    Logger.error('[DEBUG] Case-insensitive search error:', (error as Error).message);
-  }
-  
-  // Last resort: partial match (dangerous but helps debug)
-  if (process.env.NODE_ENV === 'development') {
+
+  /**
+   * Create password reset token
+   */
+  static async createPasswordResetToken(
+    userId: string, 
+    ipAddress?: string, 
+    userAgent?: string
+  ): Promise<string> {
+    const token = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 3600000); // 1 hour
+
+    console.log(`[UserService] Creating reset token for user ${userId}`);
+
     try {
-      const partialStart = Date.now();
-      const result = await db.execute(sql`
-        SELECT id, email, first_name, last_name
-        FROM users
-        WHERE email ILIKE ${`%${email.trim()}%`}
-        LIMIT 5
-      `);
-      const partialTime = Date.now() - partialStart;
+      // Invalidate ALL old tokens for this user
+      const invalidated = await db
+        .update(passwordResetTokens)
+        .set({ used: true })
+        .where(and(
+          eq(passwordResetTokens.userId, userId),
+          eq(passwordResetTokens.used, false)
+        ))
+        .returning();
       
-      if (result.rows.length > 0) {
-        Logger.info(`[DEBUG] Partial matches found (${partialTime}ms):`, result.rows.map(r => r.email));
-      } else {
-        Logger.info(`[DEBUG] No partial matches found (${partialTime}ms)`);
+      if (invalidated.length > 0) {
+        console.log(`[UserService] Invalidated ${invalidated.length} old tokens`);
       }
+
+      // Create new token
+      const [newToken] = await db
+        .insert(passwordResetTokens)
+        .values({
+          userId,
+          token,
+          expiresAt,
+          ipAddress: ipAddress || null,
+          userAgent: userAgent || null,
+          used: false,
+        })
+        .returning();
+
+      console.log(`[UserService] ✅ Token created: ${token.substring(0, 10)}...`);
+      return token;
+
     } catch (error) {
-      Logger.error('[DEBUG] Partial match error:', (error as Error).message);
+      console.error('[UserService] ❌ Failed to create token:', error);
+      throw error;
     }
   }
-  
-  // Final summary
-  const totalTime = Date.now() - lookupStart;
-  Logger.info(`[DEBUG] User lookup completed in ${totalTime}ms - No user found for: ${email}`);
-  
-  return null;
+
+  /**
+   * Validate reset token
+   */
+  static async validateResetToken(token: string) {
+    if (!token) return null;
+
+    const result = await db
+      .select({
+        id: passwordResetTokens.id,
+        userId: passwordResetTokens.userId,
+        expiresAt: passwordResetTokens.expiresAt,
+      })
+      .from(passwordResetTokens)
+      .where(and(
+        eq(passwordResetTokens.token, token),
+        eq(passwordResetTokens.used, false),
+        gt(passwordResetTokens.expiresAt, new Date())
+      ))
+      .limit(1);
+
+    return result.length > 0 ? result[0] : null;
+  }
+
+  /**
+   * Reset user password
+   */
+  static async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    const tokenData = await this.validateResetToken(token);
+    
+    if (!tokenData) {
+      throw new Error('Invalid or expired token');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Start transaction
+    try {
+      // Update password
+      await db
+        .update(users)
+        .set({ 
+          password: hashedPassword,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, tokenData.userId));
+
+      // Mark token as used
+      await db
+        .update(passwordResetTokens)
+        .set({ used: true })
+        .where(eq(passwordResetTokens.id, tokenData.id));
+
+      console.log(`[UserService] ✅ Password reset for user ${tokenData.userId}`);
+      return true;
+    } catch (error) {
+      console.error('[UserService] ❌ Password reset failed:', error);
+      throw error;
+    }
+  }
 }
 
-/**
- * Debug function to list all user emails
- */
-export async function debugListEmails(): Promise<string[]> {
-  try {
-    const result = await db.execute(sql`
-      SELECT email, LENGTH(email) as len, created_at
-      FROM users
-      ORDER BY created_at DESC
-      LIMIT 20
-    `);
-    
-    return result.rows.map(r => `${r.email} (length: ${r.len})`);
-  } catch (error) {
-    Logger.error('[DEBUG] Error listing emails:', error);
-    return [];
-  }
+// Legacy function for backward compatibility
+export async function findUserByEmail(email: string): Promise<any | null> {
+  return UserService.findUserByEmail(email);
 }

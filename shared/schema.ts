@@ -4,6 +4,7 @@ import {
   varchar,
   text,
   integer,
+  serial,
   decimal,
   boolean,
   timestamp,
@@ -615,19 +616,20 @@ export const userEmailPreferences = pgTable("user_email_preferences", {
 
 // Password reset tokens table
 export const passwordResetTokens = pgTable("password_reset_tokens", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-  token: varchar("token").unique().notNull(),
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  token: varchar("token", { length: 255 }).notNull().unique(),
   expiresAt: timestamp("expires_at").notNull(),
   used: boolean("used").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-  usedAt: timestamp("used_at"),
-  ipAddress: varchar("ip_address"),
+  ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
 }, (table) => [
-  index("idx_password_reset_tokens_token").on(table.token),
-  index("idx_password_reset_tokens_user_id").on(table.userId),
-  index("idx_password_reset_tokens_expires_at").on(table.expiresAt),
+  index("idx_prt_token").on(table.token),
+  index("idx_prt_user_id").on(table.userId),
+  index("idx_prt_expires").on(table.expiresAt),
 ]);
 
 // Schema for email logs
@@ -652,7 +654,6 @@ export const insertUserEmailPreferencesSchema = createInsertSchema(userEmailPref
 export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({
   id: true,
   createdAt: true,
-  usedAt: true,
 });
 
 // Type exports

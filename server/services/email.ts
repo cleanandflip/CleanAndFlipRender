@@ -265,6 +265,25 @@ export class EmailService {
     });
   }
 
+  async sendPasswordResetEmail(data: { to: string; firstName: string; resetLink: string; expiresIn: string; ipAddress?: string; userAgent?: string }): Promise<boolean> {
+    return this.send('password_reset', {
+      to: data.to,
+      subject: 'Reset Your Clean & Flip Password',
+      resetUrl: data.resetLink,
+      firstName: data.firstName,
+      expiresIn: data.expiresIn
+    });
+  }
+
+  async sendPasswordResetConfirmationEmail(data: { to: string; firstName: string; ipAddress?: string }): Promise<boolean> {
+    return this.send('password_reset_success', {
+      to: data.to,
+      subject: 'Password Reset Successful - Clean & Flip',
+      firstName: data.firstName,
+      ipAddress: data.ipAddress
+    });
+  }
+
   // Helper methods
   private getEmailTemplate(templateType: string, data: any): string {
     switch (templateType) {
@@ -280,6 +299,8 @@ export class EmailService {
         return this.getAdminNotificationTemplate(data.type, data.message, data.metadata);
       case 'abandoned_cart':
         return this.getAbandonedCartTemplate(data.cartItems);
+      case 'password_reset_success':
+        return this.getPasswordResetSuccessTemplate(data.firstName);
       default:
         return this.getDefaultTemplate(templateType, data);
     }
@@ -292,7 +313,8 @@ export class EmailService {
       order_confirmation: 'Order Confirmation - Clean & Flip',
       shipping_notification: 'Your Order Has Shipped - Clean & Flip',
       admin_notification: 'Admin Notification - Clean & Flip',
-      abandoned_cart: 'Complete Your Purchase - Clean & Flip'
+      abandoned_cart: 'Complete Your Purchase - Clean & Flip',
+      password_reset_success: 'Password Reset Successful - Clean & Flip'
     };
 
     return subjects[templateType as keyof typeof subjects] || 'Clean & Flip Notification';
@@ -430,6 +452,43 @@ export class EmailService {
               <p style="color: #666; font-size: 14px;">
                 If you didn't request this password reset, please ignore this email or contact our support team if you have concerns.
               </p>
+            </div>
+            <div class="footer">
+              <p>© 2025 Clean & Flip. All rights reserved.</p>
+              <p>Asheville, NC | <a href="mailto:support@cleanandflip.com">support@cleanandflip.com</a></p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  private getPasswordResetSuccessTemplate(firstName: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Password Reset Successful - Clean & Flip</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { padding: 30px; background: #f9f9f9; border-radius: 0 0 8px 8px; }
+            .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin: 0;">Clean & Flip</h1>
+              <p style="margin: 10px 0;">Password Reset Successful</p>
+            </div>
+            <div class="content">
+              <h2>Hi ${firstName}!</h2>
+              <p>Your password has been successfully reset for your Clean & Flip account.</p>
+              <p>If you didn't make this change, please contact our support team immediately at support@cleanandflip.com</p>
+              <p>Thank you for using Clean & Flip!</p>
             </div>
             <div class="footer">
               <p>© 2025 Clean & Flip. All rights reserved.</p>
