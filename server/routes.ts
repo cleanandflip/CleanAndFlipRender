@@ -1705,7 +1705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const update of categoryUpdates) {
         await db
           .update(categories)
-          .set({ displayOrder: update.order })
+          .set({ displayOrder: update.displayOrder })
           .where(eq(categories.id, update.id));
       }
 
@@ -1924,7 +1924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/addresses", requireAuth, async (req, res) => {
     try {
       // SECURITY FIX: Use authenticated userId from middleware
-      const userId = req.userId; // Set by requireAuth middleware
+      const userId = (req as any).userId; // Set by requireAuth middleware
 
       const { street, city, state, zipCode, latitude, longitude } = req.body;
 
@@ -2412,7 +2412,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db
         .update(equipmentSubmissions)
         .set({
-          status: 'cancelled',
           statusHistory: newHistory,
           updatedAt: new Date(),
           adminNotes: `User cancelled: ${reason || 'No reason provided'}`
