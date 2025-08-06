@@ -56,7 +56,7 @@ const EQUIPMENT_BRANDS = [
 
 export function ProductForm() {
   const params = useParams();
-  const id = params?.id;
+  const id = params?.id as string | undefined;
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();

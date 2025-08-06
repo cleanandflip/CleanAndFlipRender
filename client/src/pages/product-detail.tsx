@@ -30,7 +30,8 @@ import {
 import type { Product } from "@shared/schema";
 
 export default function ProductDetail() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string | undefined;
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
