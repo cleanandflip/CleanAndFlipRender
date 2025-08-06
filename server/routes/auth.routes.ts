@@ -67,7 +67,7 @@ router.post('/api/auth/reset-password', async (req, res) => {
     console.error('[API] Reset error:', error);
     res.status(400).json({
       success: false,
-      message: error.message
+      message: error instanceof Error ? error.message : 'Password reset failed'
     });
   }
 });

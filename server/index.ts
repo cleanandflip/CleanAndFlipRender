@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { Logger } from './utils/logger';
 import { validateEnvironmentVariables, getEnvironmentInfo } from './config/env-validation';
+import { db } from './db';
+import { sql } from 'drizzle-orm';
 
 const app = express();
 app.use(express.json());
@@ -96,10 +98,12 @@ app.use((req, res, next) => {
   // Run cleanup every hour for password reset tokens
   setInterval(async () => {
     try {
-      const { PasswordResetService } = await import('./services/password-reset.service.js');
-      const deleted = await PasswordResetService.cleanupExpiredTokens();
-      if (deleted > 0) {
-        Logger.info(`[CLEANUP] Removed ${deleted} expired password reset tokens`);
+      // Clean up expired tokens directly with SQL
+      const deleted = await db.execute(
+        sql`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
+      );
+      if (deleted.rowCount && deleted.rowCount > 0) {
+        Logger.info(`[CLEANUP] Removed ${deleted.rowCount} expired password reset tokens`);
       }
     } catch (error) {
       Logger.error('[CLEANUP] Error cleaning up tokens:', error);
