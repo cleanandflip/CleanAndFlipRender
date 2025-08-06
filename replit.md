@@ -17,6 +17,7 @@ Preferred communication style: Simple, everyday language.
 - **Form Handling**: React Hook Form with Zod validation
 - **Design Principles**: Focus on professional, clean, consistent UI/UX with a unified design system. Optimized for performance with aggressive code splitting and lazy loading.
 - **Search System**: Portal-based search implementation ensuring search bars appear above all content.
+- **Unified Dropdown System**: Glass morphism dropdown component (`UnifiedDropdown`) with consistent styling matching the search bar, replacing all legacy Select components across Contact, Sell-to-Us, and Admin pages.
 - **Error Handling**: App-wide ErrorBoundary, dynamic error pages (404, 403, 500), ApiError component with retry functionality.
 
 ### Backend
