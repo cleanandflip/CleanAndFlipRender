@@ -372,7 +372,10 @@ export const wishlistRelations = relations(wishlist, ({ one }) => ({
 }));
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).omit({
+export const insertUserSchema = createInsertSchema(users, {
+  email: z.string().email(),
+  password: z.string().min(6),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
