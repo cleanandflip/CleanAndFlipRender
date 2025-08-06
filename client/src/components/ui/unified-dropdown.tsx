@@ -52,28 +52,15 @@ export function UnifiedDropdown({
       )
     : normalizedOptions;
 
-  // Calculate dropdown position when opening and on scroll
+  // Calculate dropdown position when opening
   useEffect(() => {
-    const updatePosition = () => {
-      if (isOpen && triggerRef.current) {
-        const rect = triggerRef.current.getBoundingClientRect();
-        setDropdownPosition({
-          top: rect.bottom + window.scrollY + 8,
-          left: rect.left + window.scrollX,
-          width: rect.width
-        });
-      }
-    };
-
-    if (isOpen) {
-      updatePosition();
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
-      
-      return () => {
-        window.removeEventListener('scroll', updatePosition, true);
-        window.removeEventListener('resize', updatePosition);
-      };
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
     }
   }, [isOpen]);
 
@@ -127,35 +114,31 @@ export function UnifiedDropdown({
           borderRadius: '0.5rem',
           color: 'white',
           fontWeight: '500',
-          minHeight: '44px',
-          padding: '10px 12px',
+          minHeight: '2.75rem',
+          padding: '0.75rem 1rem',
           boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05), inset 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
         onFocus={(e) => {
-          const target = e.target as HTMLButtonElement;
-          target.style.borderColor = 'rgba(148, 163, 184, 0.6)';
-          target.style.background = 'rgba(75, 85, 99, 0.6)';
-          target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.05), inset 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.08)';
+          e.target.style.borderColor = 'rgba(148, 163, 184, 0.6)';
+          e.target.style.background = 'rgba(75, 85, 99, 0.6)';
+          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.05), inset 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.08)';
         }}
         onBlur={(e) => {
-          const target = e.target as HTMLButtonElement;
-          target.style.borderColor = 'rgba(156, 163, 175, 0.4)';
-          target.style.background = 'rgba(75, 85, 99, 0.4)';
-          target.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05), inset 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05)';
+          e.target.style.borderColor = 'rgba(156, 163, 175, 0.4)';
+          e.target.style.background = 'rgba(75, 85, 99, 0.4)';
+          e.target.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05), inset 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05)';
         }}
         onMouseEnter={(e) => {
           if (!disabled) {
-            const target = e.target as HTMLButtonElement;
-            target.style.borderColor = 'rgba(156, 163, 175, 0.5)';
-            target.style.background = 'rgba(75, 85, 99, 0.5)';
+            e.target.style.borderColor = 'rgba(156, 163, 175, 0.5)';
+            e.target.style.background = 'rgba(75, 85, 99, 0.5)';
           }
         }}
         onMouseLeave={(e) => {
           if (!disabled && !isOpen) {
-            const target = e.target as HTMLButtonElement;
-            target.style.borderColor = 'rgba(156, 163, 175, 0.4)';
-            target.style.background = 'rgba(75, 85, 99, 0.4)';
+            e.target.style.borderColor = 'rgba(156, 163, 175, 0.4)';
+            e.target.style.background = 'rgba(75, 85, 99, 0.4)';
           }
         }}
       >
