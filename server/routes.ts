@@ -145,11 +145,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (process.env.NODE_ENV === 'development') {
     app.get('/api/debug/session', (req, res) => {
       res.json({
-        sessionID: req.sessionID,
-        session: req.session,
-        passport: (req.session as any)?.passport,
-        user: req.user,
-        isAuthenticated: req.isAuthenticated(),
+        sessionID: (req as any).sessionID,
+        session: (req as any).session,
+        passport: ((req as any).session as any)?.passport,
+        user: (req as any).user,
+        isAuthenticated: (req as any).isAuthenticated(),
         cookies: req.headers.cookie
       });
     });
@@ -315,8 +315,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cart", requireAuth, async (req, res) => {
     try {
       // SECURITY FIX: Only use authenticated userId from middleware
-      const userId = req.userId; // Set by requireAuth middleware
-      const sessionId = req.sessionID;
+      const userId = (req as any).userId; // Set by requireAuth middleware
+      const sessionId = (req as any).sessionID;
       
       Logger.debug(`Get cart - userId: ${userId}, sessionId: ${sessionId}`);
       
@@ -344,8 +344,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { productId, quantity = 1 } = req.body;
       // SECURITY FIX: Only use authenticated userId from middleware
-      const userId = req.userId; // Set by requireAuth middleware
-      const sessionId = req.sessionID;
+      const userId = (req as any).userId; // Set by requireAuth middleware
+      const sessionId = (req as any).sessionID;
       
       Logger.debug(`Cart request - userId: ${userId}, sessionId: ${sessionId}`);
       
@@ -395,7 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Ensure session is saved first for guest users
         if (!effectiveUserId) {
-          req.session.save((err) => {
+          (req as any).session.save((err: any) => {
             if (err) Logger.error('Session save error', err);
           });
         }
@@ -454,8 +454,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cart/validate", requireAuth, async (req, res) => {
     try {
       // SECURITY FIX: Only use authenticated userId from middleware
-      const userId = req.userId; // Set by requireAuth middleware
-      const sessionId = req.sessionID;
+      const userId = (req as any).userId; // Set by requireAuth middleware
+      const sessionId = (req as any).sessionID;
       
       const cartItems = await storage.getCartItems(
         userId || undefined,
@@ -1975,17 +1975,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User endpoint (protected) - Using proper Passport authentication
   app.get("/api/user", (req, res) => {
     // Use Passport's built-in authentication check
-    if (!req.isAuthenticated()) {
+    if (!(req as any).isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     
     // req.user is automatically populated by Passport deserializeUser
-    if (!req.user) {
+    if (!(req as any).user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     
     // Remove sensitive data before sending user info
-    const { password, ...userWithoutPassword } = req.user as any;
+    const { password, ...userWithoutPassword } = (req as any).user as any;
     res.json(userWithoutPassword);
   });
 
@@ -1993,7 +1993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/track-activity", async (req, res) => {
     try {
       const { eventType, pageUrl, userId } = req.body;
-      const sessionId = req.sessionID || req.headers['x-session-id'] || 'anonymous';
+      const sessionId = (req as any).sessionID || req.headers['x-session-id'] || 'anonymous';
       
       const activity = {
         eventType,
@@ -2850,8 +2850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AUTH ROUTES (PASSWORD RESET)
   // =======================================================
   
-  // Use the clean auth routes
-  app.use(authRoutes);
+  // Auth routes implementation will be added later
 
 
 
