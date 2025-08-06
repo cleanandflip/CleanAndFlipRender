@@ -84,7 +84,7 @@ import {
   insertOrderTrackingSchema,
   insertReturnRequestSchema
 } from "@shared/schema";
-import authRoutes from './routes/auth.routes';
+// Auth routes moved to main server file for simple password reset implementation
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -2850,8 +2850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AUTH ROUTES (PASSWORD RESET)
   // =======================================================
   
-  // Use the clean auth routes
-  app.use(authRoutes);
+  // Auth routes moved to main server file for simple implementation
 
 
 
