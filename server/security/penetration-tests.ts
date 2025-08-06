@@ -1,6 +1,6 @@
 // Phase 1: OWASP Top 10 Security Penetration Tests
 import { Request, Response } from 'express';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 // A01: Broken Access Control Tests
 export const accessControlTests = {

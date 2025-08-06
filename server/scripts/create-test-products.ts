@@ -2,7 +2,7 @@ import { db } from '../db.js';
 import { products, categories } from '../../shared/schema.js';
 import { StripeProductSync } from '../services/stripe-sync.js';
 import { eq } from 'drizzle-orm';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 const testProducts = [
   {

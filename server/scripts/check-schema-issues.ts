@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 async function checkSchemaIssues() {
   console.info('🔍 Checking for current schema issues...\n');

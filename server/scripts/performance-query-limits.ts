@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { readFileSync, writeFileSync } from 'fs';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 // Add query limits to improve performance
 function addQueryLimits(filePath: string): void {

@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 /**
  * Script to normalize all emails in the database to lowercase

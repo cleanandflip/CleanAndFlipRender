@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { db } from '../db';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 // Cache for table columns to avoid repeated queries
 const tableColumnsCache = new Map<string, Set<string>>();

@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 import { db } from '../db.js';
 import { products, categories } from '../../shared/schema.js';
 import { eq, isNull, or } from 'drizzle-orm';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-06-30.basil',

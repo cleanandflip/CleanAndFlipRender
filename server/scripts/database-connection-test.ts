@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 async function testDatabaseConnection() {
   console.log('🔍 Testing database connection...');

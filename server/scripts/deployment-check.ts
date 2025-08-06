@@ -7,7 +7,7 @@
 
 import { existsSync } from 'fs';
 import { resolve } from 'path';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 interface CheckResult {
   name: string;
