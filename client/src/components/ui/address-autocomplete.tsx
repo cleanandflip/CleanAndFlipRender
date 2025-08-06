@@ -61,9 +61,11 @@ export default function AddressAutocomplete({
         const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
         if (!apiKey) {
           console.error('VITE_GEOAPIFY_API_KEY not found in environment variables');
+          console.log('Available env vars:', Object.keys(import.meta.env));
           return;
         }
 
+        console.log('Making address search request for:', debouncedInput);
         const response = await fetch(
           `https://api.geoapify.com/v1/geocode/autocomplete?` +
           `text=${encodeURIComponent(debouncedInput)}&` +
@@ -72,9 +74,21 @@ export default function AddressAutocomplete({
           `apiKey=${apiKey}`
         );
         
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        }
+        
         const data = await response.json();
-        setSuggestions(data.results || []);
-        setShowDropdown(true);
+        console.log('API response:', data);
+        
+        if (data.results && Array.isArray(data.results)) {
+          setSuggestions(data.results);
+          setShowDropdown(true);
+          console.log(`Found ${data.results.length} suggestions`);
+        } else {
+          console.log('No results in API response');
+          setSuggestions([]);
+        }
       } catch (error) {
         console.error('Address search error:', error);
         setSuggestions([]);
