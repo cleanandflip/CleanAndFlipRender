@@ -11,10 +11,18 @@ import {
   jsonb,
   index,
   pgEnum,
+  customType,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Custom tsvector type for PostgreSQL full-text search
+const tsvector = customType<{ data: string; notNull: false; default: false }>({
+  dataType() {
+    return "tsvector";
+  },
+});
 
 // Session storage table (required for auth)
 export const sessions = pgTable(
@@ -106,6 +114,8 @@ export const products = pgTable("products", {
   stockQuantity: integer("stock_quantity").default(1),
   views: integer("views").default(0),
   featured: boolean("featured").default(false),
+  // Search functionality
+  searchVector: tsvector("search_vector"),
   // Stripe integration fields
   stripeProductId: varchar("stripe_product_id"),
   stripePriceId: varchar("stripe_price_id"),
@@ -115,7 +125,16 @@ export const products = pgTable("products", {
   dimensions: jsonb("dimensions").$type<{length?: number, width?: number, height?: number}>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_products_search").using("gin", table.searchVector),
+  index("idx_products_category").on(table.categoryId),
+  index("idx_products_status").on(table.status),
+  index("idx_products_featured").on(table.featured),
+  index("idx_products_created_at").on(table.createdAt),
+  index("idx_products_price").on(table.price),
+  index("idx_stripe_product_id").on(table.stripeProductId),
+  index("idx_stripe_sync_status").on(table.stripeSyncStatus),
+]);
 
 // Addresses
 export const addresses = pgTable("addresses", {

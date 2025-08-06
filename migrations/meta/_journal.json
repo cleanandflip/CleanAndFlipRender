@@ -15,6 +15,13 @@
       "when": 1754406194071,
       "tag": "0001_groovy_the_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754488424074,
+      "tag": "0002_sad_nightcrawler",
+      "breakpoints": true
     }
   ]
 }
