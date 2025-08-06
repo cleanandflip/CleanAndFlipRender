@@ -5,6 +5,8 @@ import { Logger } from './utils/logger';
 import { validateEnvironmentVariables, getEnvironmentInfo } from './config/env-validation';
 import { db } from './db';
 import { sql } from 'drizzle-orm';
+import fs from 'fs';
+import path from 'path';
 
 const app = express();
 app.use(express.json());
@@ -124,10 +126,15 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
+  
+  // Check if we should serve static files or use Vite dev server
+  const isProductionBuild = fs.existsSync(path.resolve(import.meta.dirname, "public"));
+  
+  if (isProductionBuild) {
     serveStatic(app);
+  } else {
+    // Use Vite dev server even in production NODE_ENV for development workflow
+    await setupVite(app, server);
   }
 
   // Server is started by registerRoutes function
