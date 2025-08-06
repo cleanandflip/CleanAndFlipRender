@@ -1,23 +1,14 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { randomBytes } from 'crypto';
 import Logger from '../utils/logger';
 
 export class EmailService {
-  private transporter;
+  private resend: Resend;
 
   constructor() {
-    // Use environment variables for production
-    this.transporter = nodemailer.createTransporter({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-
-    Logger.info('[EmailService] Nodemailer email service initialized');
+    // Use Resend API (already configured in the system)
+    this.resend = new Resend(process.env.RESEND_API_KEY);
+    Logger.info('[EmailService] Resend email service initialized');
   }
 
   generateResetToken(): string {
@@ -25,8 +16,8 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(email: string, resetLink: string): Promise<void> {
-    const mailOptions = {
-      from: process.env.SMTP_FROM || 'noreply@cleanandflip.com',
+    const emailData = {
+      from: 'Clean & Flip <no-reply@cleanandflip.com>',
       to: email,
       subject: 'Password Reset Request - Clean & Flip',
       html: `
@@ -69,8 +60,8 @@ export class EmailService {
     };
 
     try {
-      const info = await this.transporter.sendMail(mailOptions);
-      Logger.info(`[EmailService] Password reset email sent successfully to ${email}. Message ID: ${info.messageId}`);
+      const result = await this.resend.emails.send(emailData);
+      Logger.info(`[EmailService] Password reset email sent successfully to ${email}. Email ID: ${result.data?.id}`);
     } catch (error) {
       Logger.error(`[EmailService] Failed to send password reset email to ${email}:`, (error as Error).message);
       throw error;
