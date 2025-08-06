@@ -110,7 +110,7 @@ export const products = pgTable("products", {
   condition: productConditionEnum("condition").notNull(),
   status: productStatusEnum("status").default("active"),
   images: jsonb("images").$type<string[]>().default([]),
-  specifications: jsonb("specifications").$type<{[key: string]: any}>().default({}),
+  specifications: jsonb("specifications").$type<Record<string, any>>().default({}),
   stockQuantity: integer("stock_quantity").default(1),
   views: integer("views").default(0),
   featured: boolean("featured").default(false),
@@ -602,7 +602,7 @@ export const emailLogs = pgTable("email_logs", {
   status: varchar("status").default("pending"),
   sentAt: timestamp("sent_at"),
   error: text("error"),
-  metadata: jsonb("metadata").$type<{[key: string]: any}>().default({}),
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_email_logs_status").on(table.status),
