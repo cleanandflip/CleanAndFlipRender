@@ -38,8 +38,7 @@ import { runPenetrationTests } from "./security/penetration-tests";
 import { setupCompression } from "./config/compression";
 import { healthLive, healthReady } from "./config/health";
 import { initializeWebSocket, broadcastProductUpdate, broadcastCartUpdate, broadcastStockUpdate } from "./config/websocket";
-import { createRequestLogger, logger, shouldLog } from "./config/logger";
-import { Logger, LogLevel } from "./utils/logger";
+import { requestLogger, logger, shouldLog, Logger } from "./config/logger";
 import { db } from "./db";
 import { 
   users, 
@@ -111,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupCompression(app);
   
   // Enhanced logging with spam reduction
-  app.use(createRequestLogger());
+  app.use(requestLogger);
   
   // Setup security headers
   setupSecurityHeaders(app);
@@ -2893,9 +2892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     warnings,
   });
   
-  // Initialize consolidated logger with environment-based log level
-  const LOG_LEVEL = process.env.LOG_LEVEL || 'INFO';
-  Logger.setLogLevel(LogLevel[LOG_LEVEL as keyof typeof LogLevel]);
+  // Logger initialization (simplified)
   
   // Log database connection success only once using new logger
   if (!process.env.DB_CONNECTION_LOGGED) {

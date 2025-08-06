@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { Logger } from './utils/logger';
+import { Logger } from './config/logger';
 import { validateEnvironmentVariables, getEnvironmentInfo } from './config/env-validation';
 import { db } from './db';
 import { sql } from 'drizzle-orm';

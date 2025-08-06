@@ -1,6 +1,14 @@
-import winston from 'winston';
-import chalk from 'chalk';
+import winston from "winston";
+import * as path from "path";
+import * as fs from "fs";
 
+// Ensure logs directory exists
+const logsDir = path.join(process.cwd(), "logs");
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
+
+// Log levels
 const logLevels = {
   error: 0,
   warn: 1,
@@ -9,17 +17,19 @@ const logLevels = {
   debug: 4,
 };
 
-const logColors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  debug: 'blue',
+// ANSI color codes (no external dependency needed)
+const colors = {
+  reset: "\x1b[0m",
+  red: "\x1b[31m",
+  yellow: "\x1b[33m",
+  green: "\x1b[32m",
+  blue: "\x1b[34m",
+  magenta: "\x1b[35m",
+  gray: "\x1b[90m",
+  cyan: "\x1b[36m",
 };
 
-winston.addColors(logColors);
-
-// Log profiles for different environments
+// Log profiles
 interface LogProfile {
   requests: boolean;
   auth: boolean;
@@ -34,15 +44,15 @@ const logProfiles: Record<string, LogProfile> = {
   development: {
     requests: true,
     auth: true,
-    database: false, // Reduce database spam
-    cache: false, // Disable Redis spam in dev
+    database: false,
+    cache: false,
     errors: true,
     performance: true,
   },
   production: {
-    requests: false, // Only log errors and slow requests
-    auth: false, // Only log failures
-    database: false, // Only log errors
+    requests: false,
+    auth: false,
+    database: false,
     cache: false,
     errors: true,
     performance: true,
@@ -54,121 +64,195 @@ const logProfiles: Record<string, LogProfile> = {
     cache: true,
     errors: true,
     performance: true,
-  }
+  },
 };
 
-const profile = logProfiles[process.env.LOG_PROFILE || process.env.NODE_ENV || 'development'] || logProfiles.development;
+const currentProfile =
+  logProfiles[
+    process.env.LOG_PROFILE || process.env.NODE_ENV || "development"
+  ] || logProfiles.development;
 
 export function shouldLog(category: string): boolean {
-  return profile[category] ?? false;
+  return currentProfile[category] ?? false;
 }
 
-// Track connection status to prevent duplicate logs
-let dbConnectionLogged = false;
-let redisConnectionLogged = false;
+// Track to prevent duplicate logs
+const loggedOnce = new Set<string>();
 
-// Custom format for cleaner output
-const customFormat = winston.format.printf(({ level, message, timestamp, ...metadata }: any) => {
-  // Convert message to string if it's an object
-  const messageStr = typeof message === 'string' ? message : JSON.stringify(message);
-  
-  // Skip noisy logs
-  if (messageStr?.includes('Redis connection error')) return '';
-  if (messageStr?.includes('Database connected successfully') && dbConnectionLogged) return '';
-  if (messageStr?.includes('Redis connected successfully') && redisConnectionLogged) return '';
-  
-  // Mark as logged
-  if (messageStr?.includes('Database connected successfully')) dbConnectionLogged = true;
-  if (messageStr?.includes('Redis connected successfully')) redisConnectionLogged = true;
-  
-  const time = new Date(timestamp as string).toLocaleTimeString();
-  
-  // Format based on log type
-  if (metadata.type === 'request') {
-    const { method, url, status, duration } = metadata as any;
-    const statusColor = Number(status) >= 400 ? chalk.red : Number(status) >= 300 ? chalk.yellow : chalk.green;
-    return `${chalk.gray(time)} ${chalk.cyan(String(method).padEnd(7))} ${String(url).padEnd(40)} ${statusColor(status)} ${chalk.gray(duration + 'ms')}`;
-  }
-  
-  if (metadata.type === 'auth') {
-    return `${chalk.gray(time)} ${chalk.blue('AUTH')} ${messageStr}`;
-  }
-  
-  if (metadata.type === 'system') {
-    return `${chalk.gray(time)} ${level === 'info' ? '✅' : '⚠️ '} ${messageStr}`;
-  }
-  
-  return `${chalk.gray(time)} ${level}: ${messageStr}`;
-});
+// Custom format without chalk
+const customFormat = winston.format.printf(
+  ({ level, message, timestamp, ...metadata }: any) => {
+    const messageStr =
+      typeof message === "string" ? message : JSON.stringify(message);
 
+    // Skip duplicate connection logs
+    const logKey = `${level}:${messageStr}`;
+    if (messageStr?.includes("connected successfully")) {
+      if (loggedOnce.has(logKey)) return "";
+      loggedOnce.add(logKey);
+    }
+
+    // Skip noisy logs
+    if (messageStr?.includes("Redis connection error") && !shouldLog("cache"))
+      return "";
+    if (messageStr?.includes("Keep-alive") && !shouldLog("database")) return "";
+
+    const time = new Date(timestamp).toLocaleTimeString();
+
+    // Format based on log type
+    if (metadata.type === "request") {
+      const { method, url, status, duration } = metadata;
+      const statusColor =
+        status >= 400
+          ? colors.red
+          : status >= 300
+            ? colors.yellow
+            : colors.green;
+      return `${colors.gray}${time}${colors.reset} ${colors.cyan}${String(method).padEnd(7)}${colors.reset} ${String(url).padEnd(40)} ${statusColor}${status}${colors.reset} ${colors.gray}${duration}ms${colors.reset}`;
+    }
+
+    if (metadata.type === "auth") {
+      return `${colors.gray}${time}${colors.reset} ${colors.blue}[AUTH]${colors.reset} ${messageStr}`;
+    }
+
+    if (metadata.type === "system") {
+      const icon = level === "error" ? "❌" : level === "warn" ? "⚠️" : "✅";
+      return `${colors.gray}${time}${colors.reset} ${icon} ${messageStr}`;
+    }
+
+    // Default format
+    const levelColor =
+      level === "error"
+        ? colors.red
+        : level === "warn"
+          ? colors.yellow
+          : level === "info"
+            ? colors.green
+            : colors.gray;
+
+    return `${colors.gray}${time}${colors.reset} ${levelColor}${level}${colors.reset}: ${messageStr}`;
+  },
+);
+
+// Simple format for production (no colors)
+const simpleFormat = winston.format.printf(
+  ({ level, message, timestamp }: any) => {
+    const messageStr =
+      typeof message === "string" ? message : JSON.stringify(message);
+    return `[${timestamp}] ${level.toUpperCase()}: ${messageStr}`;
+  },
+);
+
+// Create logger
 export const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+  level:
+    process.env.LOG_LEVEL ||
+    (process.env.NODE_ENV === "production" ? "info" : "debug"),
   levels: logLevels,
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format.errors({ stack: false }), // Disable stack traces in logs
-    customFormat
+    winston.format.errors({ stack: false }),
+    process.env.NODE_ENV === "production" ? simpleFormat : customFormat,
   ),
   transports: [
-    new winston.transports.Console(),
-    // File transport for production
-    ...(process.env.NODE_ENV === 'production' ? [
-      new winston.transports.File({ 
-        filename: 'logs/error.log', 
-        level: 'error',
-        maxsize: 5242880, // 5MB
-        maxFiles: 5,
-      }),
-      new winston.transports.File({ 
-        filename: 'logs/combined.log',
-        maxsize: 10485760, // 10MB
-        maxFiles: 10,
-      })
-    ] : [])
+    new winston.transports.Console({
+      format:
+        process.env.NODE_ENV === "production" ? simpleFormat : customFormat,
+    }),
+    // File transports for production
+    ...(process.env.NODE_ENV === "production"
+      ? [
+          new winston.transports.File({
+            filename: path.join(logsDir, "error.log"),
+            level: "error",
+            maxsize: 5242880, // 5MB
+            maxFiles: 5,
+            format: simpleFormat,
+          }),
+          new winston.transports.File({
+            filename: path.join(logsDir, "combined.log"),
+            maxsize: 10485760, // 10MB
+            maxFiles: 10,
+            format: simpleFormat,
+          }),
+        ]
+      : []),
   ],
 });
 
 // Request logger middleware
 export const requestLogger = (req: any, res: any, next: any) => {
   const start = Date.now();
-  
-  // Skip static files, health checks, and favicon
-  if (req.url.includes('.') || req.url === '/health' || req.url === '/favicon.ico') {
+
+  // Skip static files and health checks
+  if (
+    req.url.includes(".") ||
+    req.url === "/health" ||
+    req.url === "/favicon.ico" ||
+    req.url.startsWith("/@") || // Vite HMR
+    req.url.startsWith("/node_modules")
+  ) {
     return next();
   }
-  
-  res.on('finish', () => {
+
+  res.on("finish", () => {
     const duration = Date.now() - start;
-    
-    // Only log slow requests and errors in production
-    if (process.env.NODE_ENV === 'production' && duration < 1000 && res.statusCode < 400) {
+
+    // Skip fast successful requests in production
+    if (
+      process.env.NODE_ENV === "production" &&
+      duration < 1000 &&
+      res.statusCode < 400
+    ) {
       return;
     }
-    
-    // Skip logging successful quick requests in development
-    if (!shouldLog('requests') && res.statusCode < 400 && duration < 500) {
+
+    // Skip in development if disabled
+    if (!shouldLog("requests") && res.statusCode < 400 && duration < 500) {
       return;
     }
-    
-    logger.http('Request', {
-      type: 'request',
+
+    logger.http("Request", {
+      type: "request",
       method: req.method,
       url: req.originalUrl || req.url,
       status: res.statusCode,
       duration,
       ip: req.ip,
     });
-    
+
     // Warn about slow requests
-    if (duration > (parseInt(process.env.LOG_SLOW_REQUESTS || '1000'))) {
-      logger.warn(`Slow request detected: ${req.method} ${req.url} took ${duration}ms`);
+    const slowThreshold = parseInt(process.env.LOG_SLOW_REQUESTS || "1000");
+    if (duration > slowThreshold) {
+      logger.warn(`Slow request: ${req.method} ${req.url} took ${duration}ms`);
     }
   });
-  
+
   next();
 };
 
-// Performance monitoring middleware
-export function createRequestLogger() {
-  return requestLogger;
+// Simplified Logger class for backward compatibility
+export class Logger {
+  static info(message: string, ...args: any[]) {
+    logger.info(message, ...args);
+  }
+
+  static error(message: string, ...args: any[]) {
+    logger.error(message, ...args);
+  }
+
+  static warn(message: string, ...args: any[]) {
+    logger.warn(message, ...args);
+  }
+
+  static debug(message: string, ...args: any[]) {
+    logger.debug(message, ...args);
+  }
+
+  static http(message: string, metadata?: any) {
+    logger.http(message, metadata);
+  }
 }
+
+// Export for convenience
+export default logger;
