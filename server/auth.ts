@@ -458,11 +458,7 @@ export function requireAuth(req: any, res: any, next: any) {
   
   // Check if user is authenticated via passport
   if (!req.isAuthenticated || !req.isAuthenticated()) {
-    Logger.consolidate(
-      `auth-fail-${endpoint}`,
-      `Authentication failed for ${endpoint}`,
-      LogLevel.DEBUG
-    );
+    Logger.debug(`Authentication failed for ${endpoint}`);
     return res.status(401).json({ 
       error: 'Authentication required',
       message: 'Please log in to continue'
@@ -471,11 +467,7 @@ export function requireAuth(req: any, res: any, next: any) {
   
   const user = req.user;
   if (!user) {
-    Logger.consolidate(
-      `auth-fail-nouser-${endpoint}`,
-      `No user object for ${endpoint}`,
-      LogLevel.DEBUG
-    );
+    Logger.debug(`No user object for ${endpoint}`);
     return res.status(401).json({ 
       error: 'Authentication required',
       message: 'Please log in to continue'
@@ -484,11 +476,7 @@ export function requireAuth(req: any, res: any, next: any) {
   
   // Set userId for consistent access in route handlers
   req.userId = user.id;
-  Logger.consolidate(
-    `auth-success-${user.id}-${endpoint}`,
-    `Auth successful for user ${user.id} on ${endpoint}`,
-    LogLevel.DEBUG
-  );
+  Logger.debug(`Auth successful for user ${user.id} on ${endpoint}`);
   next();
 }
 

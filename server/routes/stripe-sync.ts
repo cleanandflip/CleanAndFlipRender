@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { StripeProductSync } from '../services/stripe-sync.js';
 import { createTestProducts } from '../scripts/create-test-products.js';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 const router = Router();
 

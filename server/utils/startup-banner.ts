@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { logger } from '../config/logger';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 export function displayStartupBanner(config: any) {
   console.clear(); // Clear console for clean start

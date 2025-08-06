@@ -2,7 +2,7 @@ import { db } from "../db";
 import { Request, Response, NextFunction } from 'express';
 import { eq, and } from "drizzle-orm";
 import { products, cartItems, orders } from "@shared/schema";
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 // Database transaction wrapper for race condition prevention
 export async function withTransaction<T>(

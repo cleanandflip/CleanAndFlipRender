@@ -1,4 +1,4 @@
-import { Logger } from '../utils/logger';
+import { Logger } from './logger';
 
 interface EnvironmentConfig {
   NODE_ENV: string;

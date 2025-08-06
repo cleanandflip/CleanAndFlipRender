@@ -1,0 +1,12 @@
+[workflows]
+
+  [workflows."Start application"]
+  enabled = true
+  requires = ["nodejs"]
+  
+  [workflows."Start application".runner]
+  name = "Start application"
+  command = "npm run dev"
+  
+[workspace]
+entrypoint = "server/index.ts"

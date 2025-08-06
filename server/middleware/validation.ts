@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 // Validation middleware factory
 export function validateRequest(schema: ZodSchema, target: 'body' | 'query' | 'params' = 'body') {

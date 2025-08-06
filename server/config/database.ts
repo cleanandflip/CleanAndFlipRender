@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool } from "@neondatabase/serverless";
 import { sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
-import { Logger } from '../utils/logger';
+import { Logger } from './logger';
 
 // Optimized connection pool configuration
 const pool = new Pool({

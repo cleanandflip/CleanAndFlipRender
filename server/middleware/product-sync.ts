@@ -1,5 +1,5 @@
 import { StripeProductSync } from '../services/stripe-sync';
-import { Logger } from '../utils/logger';
+import { Logger } from '../config/logger';
 
 // Middleware to auto-sync on product changes
 export const autoSyncProducts = async (req: any, res: any, next: any) => {

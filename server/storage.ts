@@ -33,7 +33,7 @@ import {
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike, isNotNull } from "drizzle-orm";
 import { normalizeEmail, normalizeSearchTerm, normalizeBrand } from "@shared/utils";
-import { Logger } from "./utils/logger";
+import { Logger } from "./config/logger";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
