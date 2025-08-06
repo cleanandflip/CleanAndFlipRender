@@ -84,7 +84,7 @@ import {
   insertOrderTrackingSchema,
   insertReturnRequestSchema
 } from "@shared/schema";
-import authRoutes from './routes/auth.routes';
+// Authentication routes are handled directly in auth.ts
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
