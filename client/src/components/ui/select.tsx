@@ -81,8 +81,6 @@ const SelectContent = React.forwardRef<
         className
       )}
       position={position}
-      sideOffset={4}
-      collisionBoundary={typeof window !== "undefined" ? window.document.body : undefined}
       {...props}
     >
       <SelectScrollUpButton />

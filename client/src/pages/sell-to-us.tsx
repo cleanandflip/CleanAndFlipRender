@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { PriceInput } from "@/components/ui/price-input";
 import { UnifiedDropdown } from "@/components/ui/unified-dropdown";
 import { Textarea } from "@/components/ui/textarea";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card } from "@/components/shared/AnimatedComponents";
 import { globalDesignSystem as theme } from "@/styles/design-system/theme";
