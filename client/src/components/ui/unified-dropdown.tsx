@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useSafePortal } from '@/hooks/useSafePortal';
 
 interface DropdownOption {
   value: string;
@@ -43,9 +42,6 @@ export function UnifiedDropdown({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Safe portal hook to prevent removeChild errors (same as UnifiedSearchBar)
-  const { portalRoot, isReady } = useSafePortal();
-
   // Normalize options to DropdownOption format
   const normalizedOptions: DropdownOption[] = options.map(opt => 
     typeof opt === 'string' ? { value: opt, label: opt } : opt
@@ -58,22 +54,26 @@ export function UnifiedDropdown({
       )
     : normalizedOptions;
 
-  // Calculate dropdown position when opening (same logic as UnifiedSearchBar)
+  // Calculate dropdown position when opening
   useEffect(() => {
     if (isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
+      const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+      const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+      
       setDropdownPosition({
-        top: rect.bottom + 8,
-        left: rect.left,
+        top: rect.bottom + scrollY + 8,
+        left: rect.left + scrollX,
         width: rect.width
       });
     }
   }, [isOpen]);
 
-  // Close dropdown on outside click (enhanced version from UnifiedSearchBar)
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setSearch('');
         setSelectedIndex(-1);
@@ -86,7 +86,7 @@ export function UnifiedDropdown({
     }
   }, [isOpen]);
 
-  // Keyboard navigation (same as UnifiedSearchBar)
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isOpen) return;
@@ -137,7 +137,7 @@ export function UnifiedDropdown({
   const selectedOption = normalizedOptions.find(opt => opt.value === value);
 
   return (
-    <div className={cn("relative w-full", className)} ref={dropdownRef}>
+    <div className={cn("relative w-full", className)}>
       {label && (
         <label className="block text-sm font-medium text-white mb-2">
           {label} {required && <span className="text-red-500">*</span>}
@@ -189,9 +189,9 @@ export function UnifiedDropdown({
         />
       </button>
 
-      {/* Dropdown Menu with Portal - Glass morphism styling matching UnifiedSearchBar */}
+      {/* Dropdown Menu with Portal - Glass morphism styling */}
       <AnimatePresence>
-        {isOpen && !disabled && isReady && portalRoot && createPortal(
+        {isOpen && !disabled && createPortal(
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -225,7 +225,8 @@ export function UnifiedDropdown({
                 background: 'rgba(75, 85, 99, 0.4)',
                 border: '1px solid rgba(156, 163, 175, 0.4)',
                 backdropFilter: 'blur(8px)',
-                zIndex: 999999
+                zIndex: 999999,
+                minWidth: '200px'
               }}
             >
               {filteredOptions.length > 0 ? (
@@ -279,7 +280,7 @@ export function UnifiedDropdown({
               )}
             </motion.div>
           </motion.div>,
-          portalRoot
+          document.body
         )}
       </AnimatePresence>
     </div>
