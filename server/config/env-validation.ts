@@ -8,19 +8,19 @@ interface EnvironmentConfig {
   [key: string]: string | undefined;
 }
 
-const REQUIRED_ENV_VARS = [
+const REQUIRED_ENV_VARS: string[] = [
   'DATABASE_URL',
   'STRIPE_SECRET_KEY'
-] as const;
+];
 
-const OPTIONAL_ENV_VARS = [
+const OPTIONAL_ENV_VARS: string[] = [
   'REDIS_URL',
   'CLOUDINARY_CLOUD_NAME',
   'CLOUDINARY_API_KEY',
   'CLOUDINARY_API_SECRET',
   'RESEND_API_KEY',
   'ENABLE_REDIS'
-] as const;
+];
 
 export function validateEnvironmentVariables(): EnvironmentConfig {
   Logger.info('[ENV] Validating environment configuration...');
