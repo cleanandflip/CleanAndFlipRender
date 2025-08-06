@@ -19,7 +19,7 @@ async function emergencyFix() {
           ORDER BY ordinal_position
         `);
         console.log(`Columns in ${table}:`, result.rows?.map(r => r.column_name) || 'No rows returned');
-      } catch (e) {
+      } catch (e: any) {
         console.error(`Error checking ${table}:`, e.message);
       }
     }
@@ -37,7 +37,7 @@ async function emergencyFix() {
         ADD COLUMN IF NOT EXISTS size VARCHAR(50)
       `);
       console.log('✅ Products table columns added');
-    } catch (e) {
+    } catch (e: any) {
       console.error('❌ Products table fix failed:', e.message);
     }
 
@@ -50,7 +50,7 @@ async function emergencyFix() {
         ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true
       `);
       console.log('✅ Categories table columns added');
-    } catch (e) {
+    } catch (e: any) {
       console.error('❌ Categories table fix failed:', e.message);
     }
 
@@ -80,7 +80,7 @@ async function emergencyFix() {
       } else {
         console.log('✅ Password reset tokens table already exists');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('❌ Password reset table check failed:', e.message);
     }
 
@@ -90,14 +90,14 @@ async function emergencyFix() {
     try {
       const productTest = await db.execute(sql`SELECT id, name, price FROM products LIMIT 1`);
       console.log('✅ Products query working');
-    } catch (e) {
+    } catch (e: any) {
       console.error('❌ Products query failed:', e.message);
     }
 
     try {
       const categoryTest = await db.execute(sql`SELECT id, name FROM categories LIMIT 1`);
       console.log('✅ Categories query working');
-    } catch (e) {
+    } catch (e: any) {
       console.error('❌ Categories query failed:', e.message);
     }
 

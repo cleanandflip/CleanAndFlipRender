@@ -19,7 +19,7 @@ async function healthCheck() {
     await db.execute(sql`SELECT 1`);
     results.database = true;
     console.log('✅ Database connection: OK');
-  } catch (e) {
+  } catch (e: any) {
     console.error('❌ Database connection failed:', e.message);
   }
 
@@ -29,7 +29,7 @@ async function healthCheck() {
     const sampleProduct = await db.execute(sql`SELECT id, name, price FROM products LIMIT 1`);
     results.products = true;
     console.log(`✅ Products table: OK (${productCount.rows?.[0]?.count || 0} products)`);
-  } catch (e) {
+  } catch (e: any) {
     console.error('❌ Products query failed:', e.message);
   }
 
@@ -39,7 +39,7 @@ async function healthCheck() {
     const sampleCategory = await db.execute(sql`SELECT id, name FROM categories LIMIT 1`);
     results.categories = true;
     console.log(`✅ Categories table: OK (${categoryCount.rows?.[0]?.count || 0} categories)`);
-  } catch (e) {
+  } catch (e: any) {
     console.error('❌ Categories query failed:', e.message);
   }
 
@@ -48,7 +48,7 @@ async function healthCheck() {
     const userCount = await db.execute(sql`SELECT COUNT(*) as count FROM users`);
     results.users = true;
     console.log(`✅ Users table: OK (${userCount.rows?.[0]?.count || 0} users)`);
-  } catch (e) {
+  } catch (e: any) {
     console.error('❌ Users table check failed:', e.message);
   }
 
@@ -57,7 +57,7 @@ async function healthCheck() {
     const resetCount = await db.execute(sql`SELECT COUNT(*) as count FROM password_reset_tokens`);
     results.passwordReset = true;
     console.log(`✅ Password reset tokens: OK (${resetCount.rows?.[0]?.count || 0} tokens)`);
-  } catch (e) {
+  } catch (e: any) {
     console.error('❌ Password reset tokens check failed:', e.message);
   }
 
@@ -68,7 +68,7 @@ async function healthCheck() {
     await db.execute(sql`SELECT id FROM password_reset_tokens LIMIT 1`);
     results.auth = true;
     console.log('✅ Auth tables: OK');
-  } catch (e) {
+  } catch (e: any) {
     console.error('❌ Auth tables check failed:', e.message);
   }
 

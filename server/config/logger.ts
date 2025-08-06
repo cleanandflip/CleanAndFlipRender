@@ -252,6 +252,11 @@ export class Logger {
   static http(message: string, metadata?: any) {
     logger.http(message, metadata);
   }
+
+  static consolidate(key: string, message: string, level: string = 'debug') {
+    // Simple consolidation - just log with debug level
+    logger.debug(`[CONSOLIDATED:${key}] ${message}`);
+  }
 }
 
 // Export for convenience
