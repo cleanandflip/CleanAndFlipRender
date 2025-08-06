@@ -25,7 +25,7 @@ const OPTIONAL_ENV_VARS = [
 export function validateEnvironmentVariables(): EnvironmentConfig {
   Logger.info('[ENV] Validating environment configuration...');
   
-  const config: {[K in keyof EnvironmentConfig]?: EnvironmentConfig[K]} = {
+  const config: Partial<EnvironmentConfig> = {
     NODE_ENV: process.env.NODE_ENV || 'development',
     PORT: process.env.PORT || '5000'
   };
@@ -65,13 +65,13 @@ export function validateEnvironmentVariables(): EnvironmentConfig {
   if (missing.length > 0) {
     Logger.error('[ENV] Missing required environment variables:');
     missing.forEach(variable => Logger.error(`[ENV] - ${variable}`));
-    throw new globalThis.Error(`Missing required environment variables: ${missing.join(', ')}`);
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 
   // Validate PORT is a valid number
-  const port = globalThis.parseInt(config.PORT!, 10);
-  if (globalThis.isNaN(port) || port < 1 || port > 65535) {
-    throw new globalThis.Error(`Invalid PORT value: ${config.PORT}. Must be a number between 1-65535`);
+  const port = parseInt(config.PORT!, 10);
+  if (isNaN(port) || port < 1 || port > 65535) {
+    throw new Error(`Invalid PORT value: ${config.PORT}. Must be a number between 1-65535`);
   }
 
   // Environment-specific validations
@@ -80,11 +80,11 @@ export function validateEnvironmentVariables(): EnvironmentConfig {
     
     // In production, ensure we have essential services configured
     if (!process.env.DATABASE_URL) {
-      throw new globalThis.Error('DATABASE_URL is required in production');
+      throw new Error('DATABASE_URL is required in production');
     }
     
     if (!process.env.STRIPE_SECRET_KEY) {
-      throw new globalThis.Error('STRIPE_SECRET_KEY is required in production');
+      throw new Error('STRIPE_SECRET_KEY is required in production');
     }
   }
 
@@ -94,17 +94,17 @@ export function validateEnvironmentVariables(): EnvironmentConfig {
   return config as EnvironmentConfig;
 }
 
-export function getEnvironmentInfo(): {[key: string]: any} {
+export function getEnvironmentInfo(): Record<string, any> {
   return {
     nodeVersion: process.version,
     platform: process.platform,
     architecture: process.arch,
     memory: {
-      total: globalThis.Math.round(process.memoryUsage().rss / 1024 / 1024),
-      heap: globalThis.Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-      external: globalThis.Math.round(process.memoryUsage().external / 1024 / 1024)
+      total: Math.round(process.memoryUsage().rss / 1024 / 1024),
+      heap: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      external: Math.round(process.memoryUsage().external / 1024 / 1024)
     },
-    uptime: globalThis.Math.round(process.uptime()),
+    uptime: Math.round(process.uptime()),
     environment: process.env.NODE_ENV || 'development',
     port: process.env.PORT || 5000
   };

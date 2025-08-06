@@ -5,6 +5,8 @@ import { Logger } from './utils/logger';
 import { validateEnvironmentVariables, getEnvironmentInfo } from './config/env-validation';
 import { db } from './db';
 import { sql } from 'drizzle-orm';
+import fs from 'fs';
+import path from 'path';
 
 const app = express();
 app.use(express.json());
@@ -124,25 +126,89 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  console.log("[INFO] [MAIN] Environment mode:", app.get("env"));
-  console.log("[INFO] [MAIN] NODE_ENV:", process.env.NODE_ENV);
   
-  // Force development mode to serve React frontend
-  const isDev = true; // Force dev mode to serve the React app
-  
-  if (isDev) {
-    console.log("[INFO] [MAIN] Setting up Vite development server...");
-    await setupVite(app, server);
-    console.log("[INFO] [MAIN] Vite development server configured successfully");
-  } else {
-    console.log("[INFO] [MAIN] Setting up static file serving...");
+  // Import and setup simple password reset
+  const { SimplePasswordReset } = await import('./services/simple-password-reset.js');
+  const passwordReset = new SimplePasswordReset();
+
+  // REQUEST PASSWORD RESET
+  app.post('/api/auth/forgot-password', async (req, res) => {
     try {
-      serveStatic(app);
-      console.log("[INFO] [MAIN] Static file serving configured successfully");
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Email is required' 
+        });
+      }
+      
+      const result = await passwordReset.requestReset(email);
+      res.json(result);
+      
     } catch (error) {
-      console.log("[WARN] [MAIN] Static build not found, falling back to dev mode");
-      await setupVite(app, server);
+      console.error('Password reset error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'An error occurred' 
+      });
     }
+  });
+
+  // VALIDATE TOKEN
+  app.get('/api/auth/validate-token/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const valid = await passwordReset.validateToken(token);
+      
+      res.json({ 
+        valid: !!valid,
+        message: valid ? 'Token is valid' : 'Invalid or expired token'
+      });
+      
+    } catch (error) {
+      res.status(400).json({ 
+        valid: false, 
+        message: 'Invalid token' 
+      });
+    }
+  });
+
+  // RESET PASSWORD
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password || password.length < 8) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Invalid request' 
+        });
+      }
+      
+      const success = await passwordReset.resetPassword(token, password);
+      
+      res.json({ 
+        success,
+        message: success ? 'Password reset successfully' : 'Failed to reset password'
+      });
+      
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        message: 'An error occurred' 
+      });
+    }
+  });
+
+  // Check if we should serve static files or use Vite dev server
+  const isProductionBuild = fs.existsSync(path.resolve(import.meta.dirname, "public"));
+  
+  if (isProductionBuild) {
+    serveStatic(app);
+  } else {
+    // Use Vite dev server even in production NODE_ENV for development workflow
+    await setupVite(app, server);
   }
 
   // Server is started by registerRoutes function
