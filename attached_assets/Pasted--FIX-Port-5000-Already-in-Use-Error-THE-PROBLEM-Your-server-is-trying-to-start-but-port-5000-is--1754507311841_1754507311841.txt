@@ -1,0 +1,154 @@
+🔧 FIX: Port 5000 Already in Use Error
+THE PROBLEM:
+Your server is trying to start but port 5000 is already occupied by another process (likely an old instance of your server).
+
+🚀 IMMEDIATE FIX
+STEP 1: Kill the Process Using Port 5000
+In Replit Shell, run:
+bash# Find what's using port 5000
+lsof -i :5000
+
+# Kill ALL Node processes
+pkill -f node
+
+# Or kill specific process
+kill -9 $(lsof -t -i:5000)
+
+# Alternative: Kill all tsx processes
+pkill -f tsx
+STEP 2: Clear and Restart
+bash# Clear any hanging processes
+pkill -9 node
+pkill -9 tsx
+
+# Wait a moment
+sleep 2
+
+# Start fresh
+npm run dev
+
+🔄 IF THAT DOESN'T WORK
+Option A: Use Replit's Stop/Run Button
+
+Click the Stop button (⏹️) in Replit
+Wait 5 seconds
+Click Run button (▶️)
+
+Option B: Change Port Temporarily
+In your .env or Secrets:
+envPORT=5001
+Then restart:
+bashnpm run dev
+Option C: Force Kill Everything
+bash# Nuclear option - kill everything
+killall -9 node
+killall -9 tsx
+killall -9 npm
+
+# Clear npm cache
+rm -rf node_modules/.cache
+
+# Restart
+npm run dev
+
+🛠️ PERMANENT FIX: Add Process Cleanup
+Update server/index.ts to handle cleanup better:
+Add this at the top of your server file:
+typescript// Cleanup on startup
+const cleanup = async () => {
+  try {
+    // Check if port is in use
+    const { exec } = require('child_process');
+    exec(`lsof -t -i:${process.env.PORT || 5000}`, (error, stdout) => {
+      if (stdout) {
+        const pid = stdout.trim();
+        if (pid && pid !== process.pid.toString()) {
+          console.log(`[CLEANUP] Killing old process ${pid} on port ${process.env.PORT || 5000}`);
+          exec(`kill -9 ${pid}`);
+        }
+      }
+    });
+  } catch (error) {
+    // Ignore errors
+  }
+};
+
+// Run cleanup before starting
+cleanup();
+
+// Add better shutdown handling
+process.on('SIGTERM', () => {
+  console.log('[SHUTDOWN] SIGTERM received, closing server...');
+  server.close(() => {
+    console.log('[SHUTDOWN] Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('[SHUTDOWN] SIGINT received, closing server...');
+  server.close(() => {
+    console.log('[SHUTDOWN] Server closed');
+    process.exit(0);
+  });
+});
+
+📋 COMPLETE RESTART SEQUENCE
+Run these commands in order:
+bash# 1. Stop everything
+pkill -f node
+pkill -f tsx
+
+# 2. Check nothing is running
+ps aux | grep node
+# Should show nothing or only grep itself
+
+# 3. Check port is free
+lsof -i :5000
+# Should show nothing
+
+# 4. Start fresh
+npm run dev
+
+# 5. If still fails, use different port
+PORT=5001 npm run dev
+
+✅ VERIFY IT'S WORKING
+After restart, you should see:
+[INFO] 🚀 Server successfully started and listening
+[INFO] Server started on port 5000
+Then test:
+bash# Test locally
+curl http://localhost:5000/api/health
+
+# Should return:
+{"status":"healthy"}
+
+🎯 QUICK FIX SCRIPT
+Create scripts/restart-server.sh:
+bash#!/bin/bash
+echo "🔧 Restarting server..."
+
+# Kill existing processes
+pkill -f node 2>/dev/null
+pkill -f tsx 2>/dev/null
+
+# Wait for ports to be released
+sleep 2
+
+# Start server
+npm run dev
+Make it executable:
+bashchmod +x scripts/restart-server.sh
+./scripts/restart-server.sh
+
+🚨 IF NOTHING WORKS
+Nuclear Reset in Replit:
+
+Click Shell tab
+Type: kill 1
+This will restart the entire Replit container
+Wait for it to come back online
+Run npm run dev
+
+This port conflict is common in Replit. Just kill the old process and restart!
