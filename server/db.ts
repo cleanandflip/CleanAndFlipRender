@@ -9,10 +9,31 @@ neonConfig.webSocketConstructor = WebSocket;
 neonConfig.pipelineConnect = false;
 neonConfig.useSecureWebSocket = true;
 
+// Enhanced database connection logging for production deployment
+console.log('[DB] Initializing database connection...');
+console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
+console.log('[DB] Has DATABASE_URL:', !!process.env.DATABASE_URL);
+
 if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+  console.error('[DB] ❌ CRITICAL: DATABASE_URL is not set!');
+  console.error('[DB] Available env vars (non-sensitive):', 
+    Object.keys(process.env).filter(k => 
+      !k.includes('SECRET') && 
+      !k.includes('KEY') && 
+      !k.includes('TOKEN') && 
+      !k.includes('PASSWORD')
+    ).join(', ')
   );
+  throw new Error('DATABASE_URL environment variable is not set');
+}
+
+// Log database host (safe to log)
+try {
+  const dbUrl = new URL(process.env.DATABASE_URL);
+  console.log('[DB] Connecting to host:', dbUrl.hostname);
+  console.log('[DB] Database name:', dbUrl.pathname.substring(1));
+} catch (e) {
+  console.error('[DB] Invalid DATABASE_URL format');
 }
 
 // Enhanced pool configuration with error handling
@@ -95,6 +116,20 @@ const withRetry = async (operation: () => Promise<any>, maxRetries = 3): Promise
 
 export { pool, withRetry };
 export const db = drizzle({ client: pool, schema });
+
+// Test connection on startup and log results for deployment verification
+import { sql } from 'drizzle-orm';
+db.execute(sql`SELECT current_database() as db, current_user as user, version() as version`)
+  .then((result) => {
+    const info = result.rows[0];
+    console.log('[DB] ✅ Database connected successfully');
+    console.log(`[DB] Database: ${info.db}, User: ${info.user}`);
+    console.log(`[DB] PostgreSQL Version: ${info.version.split(',')[0]}`);
+  })
+  .catch((err) => {
+    console.error('[DB] ❌ Database connection failed:', err.message);
+    console.error('[DB] This will cause authentication and other database features to fail');
+  });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
