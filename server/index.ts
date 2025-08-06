@@ -238,38 +238,44 @@ async function startServer() {
         });
       }
     } else {
-      // Development: setup Vite dev server
-      try {
-        const viteModule = await import("./vite");
-        await viteModule.setupVite(app, httpServer);
-        Logger.info(`[MAIN] Vite development server initialized`);
-      } catch (error) {
-        Logger.warn(`[MAIN] Vite not available, serving fallback:`, error);
-
-        // Fallback for development without Vite
-        const clientPath = path.resolve(process.cwd(), "client");
-        if (fs.existsSync(clientPath)) {
-          app.use(express.static(clientPath));
-          const indexPath = path.join(clientPath, "index.html");
-          if (fs.existsSync(indexPath)) {
-            app.get("*", (req, res) => {
-              if (!req.path.startsWith("/api")) {
-                res.sendFile(indexPath);
-              }
-            });
-            Logger.info(`[MAIN] Serving client files from ${clientPath}`);
+      // Development: serve built files directly (simpler approach)
+      const publicPath = path.resolve(process.cwd(), "dist/public");
+      const clientPath = path.resolve(process.cwd(), "client");
+      
+      if (fs.existsSync(publicPath)) {
+        // Use built files if available
+        app.use(express.static(publicPath));
+        app.get("*", (req, res) => {
+          if (!req.path.startsWith("/api")) {
+            res.sendFile(path.join(publicPath, "index.html"));
           }
-        } else {
+        });
+        Logger.info(`[MAIN] Development mode: serving built files from ${publicPath}`);
+      } else if (fs.existsSync(clientPath)) {
+        // Fallback to client directory
+        app.use(express.static(clientPath));
+        const indexPath = path.join(clientPath, "index.html");
+        if (fs.existsSync(indexPath)) {
           app.get("*", (req, res) => {
             if (!req.path.startsWith("/api")) {
-              res.json({
-                message: "Clean & Flip API Server",
-                status: "development",
-                api: "operational",
-              });
+              res.sendFile(indexPath);
             }
           });
+          Logger.info(`[MAIN] Development mode: serving client files from ${clientPath}`);
         }
+      } else {
+        // Final fallback
+        app.get("*", (req, res) => {
+          if (!req.path.startsWith("/api")) {
+            res.json({
+              message: "Clean & Flip API Server",
+              status: "development",
+              note: "Please run 'npm run build' to build the frontend",
+              api: "operational",
+            });
+          }
+        });
+        Logger.warn(`[MAIN] No frontend files found - serving API-only mode`);
       }
     }
 
