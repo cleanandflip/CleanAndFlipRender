@@ -116,9 +116,9 @@ export function UnifiedDropdown({
             : "cursor-pointer"
         )}
         style={{
-          background: 'rgba(75, 85, 99, 0.4)',
-          border: '1px solid rgba(156, 163, 175, 0.4)',
-          backdropFilter: 'blur(8px)',
+          background: searchable ? 'rgba(30, 41, 59, 0.95)' : 'rgba(75, 85, 99, 0.4)',
+          border: searchable ? '1px solid rgba(71, 85, 105, 0.6)' : '1px solid rgba(156, 163, 175, 0.4)',
+          backdropFilter: searchable ? 'blur(12px)' : 'blur(8px)',
           color: 'white',
           fontWeight: '500'
         }}
