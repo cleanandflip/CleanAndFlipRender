@@ -240,7 +240,7 @@ async function startServer() {
     } else {
       // Development: setup Vite dev server
       try {
-        const viteModule = await import("./vite.js");
+        const viteModule = await import("./vite");
         await viteModule.setupVite(app, httpServer);
         Logger.info(`[MAIN] Vite development server initialized`);
       } catch (error) {

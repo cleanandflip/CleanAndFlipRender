@@ -58,7 +58,7 @@ export default function AddressAutocomplete({
     const searchAddresses = async () => {
       setLoading(true);
       try {
-        const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
+        const apiKey = (import.meta as any).env?.VITE_GEOAPIFY_API_KEY;
         if (!apiKey) {
           console.warn('VITE_GEOAPIFY_API_KEY not found - address autocomplete disabled');
           setSuggestions([]);
