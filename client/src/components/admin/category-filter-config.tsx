@@ -31,7 +31,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
   const { data: filterOptions } = useQuery({
     queryKey: ['/api/admin/products/filter-options'],
     queryFn: async () => {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/products/filter-options`);
+      const response = await fetch('/api/admin/products/filter-options');
       if (!response.ok) throw new Error('Failed to fetch filter options');
       return response.json();
     }

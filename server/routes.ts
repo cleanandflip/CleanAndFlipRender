@@ -107,11 +107,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     warnings.push('Redis caching disabled - using memory cache');
   }
   
-  // Skip compression middleware to prevent conflicts
-  // setupCompression(app); // DISABLED
+  // Setup performance optimizations first
+  setupCompression(app);
   
-  // Skip duplicate logging - using main server logger to prevent conflicts
-  // app.use(createRequestLogger()); // DISABLED to prevent middleware conflicts
+  // Enhanced logging with spam reduction
+  app.use(createRequestLogger());
   
   // Setup security headers
   setupSecurityHeaders(app);

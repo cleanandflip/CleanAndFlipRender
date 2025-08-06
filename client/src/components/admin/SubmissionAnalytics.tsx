@@ -6,7 +6,7 @@ export function SubmissionAnalytics() {
   const { data: analytics } = useQuery({
     queryKey: ['submission-analytics'],
     queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/submissions/analytics`, {
+      const res = await fetch('/api/admin/submissions/analytics', {
         credentials: 'include'
       });
       if (!res.ok) throw new Error('Failed to fetch analytics');

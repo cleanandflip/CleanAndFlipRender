@@ -16,7 +16,7 @@ export function useWishlist() {
     queryKey: ['wishlist'],
     queryFn: async () => {
       if (!user) return [];
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/wishlist`, {
+      const response = await fetch('/api/wishlist', {
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch wishlist');
@@ -49,7 +49,7 @@ export function useWishlist() {
       const isCurrentlyWishlisted = wishlist.some((item: WishlistItem) => item.productId === productId);
       
       if (isCurrentlyWishlisted) {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/wishlist`, {
+        const response = await fetch('/api/wishlist', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -58,7 +58,7 @@ export function useWishlist() {
         if (!response.ok) throw new Error('Failed to remove from wishlist');
         return { action: 'removed', productId };
       } else {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/wishlist`, {
+        const response = await fetch('/api/wishlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
