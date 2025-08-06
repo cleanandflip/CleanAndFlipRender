@@ -2742,7 +2742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Processing upload: removed console.log for clean logging
+      // Processing upload: clean logging implemented
       Logger.debug(`Processing upload: ${req.file.originalname}, size: ${req.file.size}, type: ${req.file.mimetype}`);
       
       // Convert buffer to base64

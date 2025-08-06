@@ -84,7 +84,7 @@ const testProducts = [
 
 async function createTestProducts() {
   try {
-    Logger.info('Creating test products with Stripe sync...');
+    console.info('Creating test products with Stripe sync...');
     
     // Get or create categories
     const categoryMap = new Map();
@@ -138,25 +138,25 @@ async function createTestProducts() {
         })
         .returning();
       
-      Logger.info(`Created product: ${newProduct.name} (ID: ${newProduct.id})`);
+      console.info(`Created product: ${newProduct.name} (ID: ${newProduct.id})`);
       
       // Sync to Stripe
       try {
         await StripeProductSync.syncProduct(newProduct.id);
-        Logger.info(`✅ Successfully synced ${newProduct.name} to Stripe`);
+        console.info(`✅ Successfully synced ${newProduct.name} to Stripe`);
       } catch (error) {
-        Logger.error(`❌ Failed to sync ${newProduct.name} to Stripe:`, error);
+        console.error(`❌ Failed to sync ${newProduct.name} to Stripe:`, error);
       }
       
       // Add delay between products
       await new Promise(resolve => setTimeout(resolve, 200));
     }
     
-    Logger.info('\n🎉 All test products created and synced to Stripe!');
-    Logger.info('You can now view them in your Stripe dashboard and on the website.');
+    console.info('\n🎉 All test products created and synced to Stripe!');
+    console.info('You can now view them in your Stripe dashboard and on the website.');
     
   } catch (error) {
-    Logger.error('Failed to create test products:', error);
+    console.error('Failed to create test products:', error);
   }
 }
 

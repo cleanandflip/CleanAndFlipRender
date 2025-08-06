@@ -9,7 +9,6 @@ import connectPg from "connect-pg-simple";
 import { normalizeEmail, parseCityStateZip, isLocalZip, validateCityStateZip, normalizePhone } from "@shared/utils";
 import { authLimiter } from "./middleware/security";
 import { Logger, LogLevel } from "./utils/logger";
-import { Logger } from './utils/logger';
 
 declare global {
   namespace Express {

@@ -45,16 +45,16 @@ function addLoggerImport(content: string, filePath: string): string {
 
 function replaceConsoleLogs(content: string): string {
   return content
-    .replace(/console\.log\(/g, 'Logger.info(')
-    .replace(/console\.error\(/g, 'Logger.error(')
-    .replace(/console\.warn\(/g, 'Logger.warn(')
-    .replace(/console\.debug\(/g, 'Logger.debug(')
-    .replace(/console\.info\(/g, 'Logger.info(');
+    .replace(/console\.log\(/g, 'console.info(')
+    .replace(/console\.error\(/g, 'console.error(')
+    .replace(/console\.warn\(/g, 'console.warn(')
+    .replace(/console\.debug\(/g, 'console.debug(')
+    .replace(/console\.info\(/g, 'console.info(');
 }
 
 async function fixFile(filePath: string): Promise<void> {
   try {
-    Logger.info(`Fixing ${filePath}...`);
+    console.info(`Fixing ${filePath}...`);
     
     const content = readFileSync(filePath, 'utf-8');
     
@@ -67,23 +67,23 @@ async function fixFile(filePath: string): Promise<void> {
     // Write back if changes were made
     if (updatedContent !== content) {
       writeFileSync(filePath, updatedContent, 'utf-8');
-      Logger.info(`✓ Fixed ${filePath}`);
+      console.info(`✓ Fixed ${filePath}`);
     } else {
-      Logger.info(`- No changes needed in ${filePath}`);
+      console.info(`- No changes needed in ${filePath}`);
     }
   } catch (error) {
-    Logger.error(`Error fixing ${filePath}:`, error);
+    console.error(`Error fixing ${filePath}:`, error);
   }
 }
 
 async function main() {
-  Logger.info('🔧 Systematically fixing all console.log usage...\n');
+  console.info('🔧 Systematically fixing all console.log usage...\n');
   
   for (const file of targetFiles) {
     await fixFile(file);
   }
   
-  Logger.info('\n✅ All console.log fixes completed!');
+  console.info('\n✅ All console.log fixes completed!');
 }
 
 main().catch(console.error);

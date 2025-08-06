@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import { Logger } from '../utils/logger';
 
 async function validateStartupSchema() {
-  Logger.info('🔍 Running startup schema validation...');
+  console.info('🔍 Running startup schema validation...');
   
   const schemaIssues = [];
   
@@ -44,19 +44,19 @@ async function validateStartupSchema() {
   for (const test of tests) {
     try {
       await db.execute(test.query);
-      Logger.info(`✅ ${test.name}: OK`);
+      console.info(`✅ ${test.name}: OK`);
     } catch (error: any) {
       if (error.code === '42703') { // Column does not exist
         const issue = `${test.name}: ${error.message}`;
         if (test.critical) {
-          Logger.error(`❌ CRITICAL: ${issue}`);
+          console.error(`❌ CRITICAL: ${issue}`);
           schemaIssues.push({ ...test, error: error.message, level: 'critical' });
         } else {
-          Logger.warn(`⚠️  WARNING: ${issue}`);
+          console.warn(`⚠️  WARNING: ${issue}`);
           schemaIssues.push({ ...test, error: error.message, level: 'warning' });
         }
       } else {
-        Logger.error(`❌ Database error for ${test.name}:`, error.message);
+        console.error(`❌ Database error for ${test.name}:`, error.message);
         schemaIssues.push({ ...test, error: error.message, level: 'error' });
       }
     }
@@ -70,9 +70,9 @@ async function validateStartupSchema() {
       LEFT JOIN categories c ON p.category_id = c.id
       LIMIT 1
     `);
-    Logger.info('✅ Product-Category relationship: OK');
+    console.info('✅ Product-Category relationship: OK');
   } catch (error: any) {
-    Logger.error('❌ Product-Category relationship failed:', error.message);
+    console.error('❌ Product-Category relationship failed:', error.message);
     schemaIssues.push({
       name: 'Product-Category relationship',
       error: error.message,
@@ -85,15 +85,15 @@ async function validateStartupSchema() {
   const warnings = schemaIssues.filter(issue => issue.level === 'warning');
   
   if (criticalIssues.length > 0) {
-    Logger.error(`💥 ${criticalIssues.length} CRITICAL schema issues detected:`);
-    criticalIssues.forEach(issue => Logger.error(`   - ${issue.name}: ${issue.error}`));
-    Logger.error('   🚨 Application may not function correctly!');
+    console.error(`💥 ${criticalIssues.length} CRITICAL schema issues detected:`);
+    criticalIssues.forEach(issue => console.error(`   - ${issue.name}: ${issue.error}`));
+    console.error('   🚨 Application may not function correctly!');
   } else if (warnings.length > 0) {
-    Logger.warn(`⚠️  ${warnings.length} schema warnings detected:`);
-    warnings.forEach(issue => Logger.warn(`   - ${issue.name}: ${issue.error}`));
-    Logger.warn('   📝 Consider running migrations to resolve warnings');
+    console.warn(`⚠️  ${warnings.length} schema warnings detected:`);
+    warnings.forEach(issue => console.warn(`   - ${issue.name}: ${issue.error}`));
+    console.warn('   📝 Consider running migrations to resolve warnings');
   } else {
-    Logger.info('✅ All schema validations passed - system is healthy');
+    console.info('✅ All schema validations passed - system is healthy');
   }
   
   return {

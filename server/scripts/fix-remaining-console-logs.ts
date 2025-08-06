@@ -32,7 +32,7 @@ function fixConsoleLogsInFile(filePath: string): boolean {
     
     // Check if file has console.log but not Logger import
     if (content.includes('console.') && !content.includes('import { Logger }')) {
-      Logger.info(`Adding Logger import to ${filePath}`);
+      console.info(`Adding Logger import to ${filePath}`);
       
       // Determine relative path to logger
       const parts = filePath.split('/');
@@ -56,42 +56,42 @@ function fixConsoleLogsInFile(filePath: string): boolean {
       
       // Replace console calls
       let updatedContent = lines.join('\n')
-        .replace(/console\.log\(/g, 'Logger.info(')
-        .replace(/console\.error\(/g, 'Logger.error(')
-        .replace(/console\.warn\(/g, 'Logger.warn(')
-        .replace(/console\.debug\(/g, 'Logger.debug(')
-        .replace(/console\.info\(/g, 'Logger.info(');
+        .replace(/console\.log\(/g, 'console.info(')
+        .replace(/console\.error\(/g, 'console.error(')
+        .replace(/console\.warn\(/g, 'console.warn(')
+        .replace(/console\.debug\(/g, 'console.debug(')
+        .replace(/console\.info\(/g, 'console.info(');
       
       writeFileSync(filePath, updatedContent, 'utf-8');
-      Logger.info(`✅ Fixed ${filePath}`);
+      console.info(`✅ Fixed ${filePath}`);
       return true;
     }
     
     // Just replace console calls if Logger import exists
     if (content.includes('console.') && content.includes('import { Logger }')) {
       const updatedContent = content
-        .replace(/console\.log\(/g, 'Logger.info(')
-        .replace(/console\.error\(/g, 'Logger.error(')
-        .replace(/console\.warn\(/g, 'Logger.warn(')
-        .replace(/console\.debug\(/g, 'Logger.debug(')
-        .replace(/console\.info\(/g, 'Logger.info(');
+        .replace(/console\.log\(/g, 'console.info(')
+        .replace(/console\.error\(/g, 'console.error(')
+        .replace(/console\.warn\(/g, 'console.warn(')
+        .replace(/console\.debug\(/g, 'console.debug(')
+        .replace(/console\.info\(/g, 'console.info(');
       
       if (updatedContent !== content) {
         writeFileSync(filePath, updatedContent, 'utf-8');
-        Logger.info(`✅ Updated console calls in ${filePath}`);
+        console.info(`✅ Updated console calls in ${filePath}`);
         return true;
       }
     }
     
     return false;
   } catch (error) {
-    Logger.error(`Error processing ${filePath}:`, error);
+    console.error(`Error processing ${filePath}:`, error);
     return false;
   }
 }
 
 async function main() {
-  Logger.info('🔧 Finding and fixing ALL remaining console.log instances...\n');
+  console.info('🔧 Finding and fixing ALL remaining console.log instances...\n');
   
   const allTsFiles = findAllTsFiles('server');
   let fixedCount = 0;
@@ -102,15 +102,15 @@ async function main() {
     }
   }
   
-  Logger.info(`\n✅ Fixed ${fixedCount} files with console.log issues!`);
+  console.info(`\n✅ Fixed ${fixedCount} files with console.log issues!`);
   
   // Check remaining count
   const { execSync } = require('child_process');
   try {
     const remaining = execSync(`grep -r "console\\." server/ --include="*.ts" | grep -v "logger" | wc -l`, { encoding: 'utf-8' });
-    Logger.info(`📊 Remaining console.log instances: ${remaining.trim()}`);
+    console.info(`📊 Remaining console.log instances: ${remaining.trim()}`);
   } catch (error) {
-    Logger.info('Could not count remaining instances');
+    console.info('Could not count remaining instances');
   }
 }
 

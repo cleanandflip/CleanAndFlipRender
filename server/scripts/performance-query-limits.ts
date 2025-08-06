@@ -6,7 +6,7 @@ import { Logger } from '../utils/logger';
 // Add query limits to improve performance
 function addQueryLimits(filePath: string): void {
   try {
-    Logger.info(`Adding query limits to ${filePath}...`);
+    console.info(`Adding query limits to ${filePath}...`);
     
     let content = readFileSync(filePath, 'utf-8');
     
@@ -37,22 +37,22 @@ function addQueryLimits(filePath: string): void {
     
     if (hasChanges) {
       writeFileSync(filePath, content, 'utf-8');
-      Logger.info(`✓ Added performance limits to ${filePath}`);
+      console.info(`✓ Added performance limits to ${filePath}`);
     } else {
-      Logger.info(`- No performance improvements needed in ${filePath}`);
+      console.info(`- No performance improvements needed in ${filePath}`);
     }
   } catch (error) {
-    Logger.error(`Error processing ${filePath}:`, error);
+    console.error(`Error processing ${filePath}:`, error);
   }
 }
 
 async function main() {
-  Logger.info('🚀 Adding performance query limits...\n');
+  console.info('🚀 Adding performance query limits...\n');
   
   // Add limits to key routes
   addQueryLimits('server/routes.ts');
   
-  Logger.info('\n✅ Performance improvements completed!');
+  console.info('\n✅ Performance improvements completed!');
 }
 
 main().catch(console.error);
