@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import { logger } from '../config/logger';
 import { Logger } from '../utils/logger';
 
-export function displayStartupBanner(config: any) {
+export function displayStartupBanner(config: {[key: string]: any}) {
   console.clear(); // Clear console for clean start
   
   Logger.info(chalk.cyan('\n================================================'));
@@ -22,7 +22,7 @@ export function displayStartupBanner(config: any) {
     { name: 'Performance', value: 'Optimized', status: 'success' },
   ];
   
-  status.forEach(item => {
+  status.forEach((item: {name: string; value: any; status: string}) => {
     const statusIcon = item.status === 'success' ? '✅' : item.status === 'error' ? '❌' : '⚠️ ';
     const color = item.status === 'success' ? chalk.green : item.status === 'error' ? chalk.red : chalk.yellow;
     Logger.info(`  ${statusIcon} ${chalk.gray(item.name.padEnd(15))} ${color(item.value)}`);

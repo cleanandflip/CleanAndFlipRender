@@ -84,10 +84,10 @@ import {
   insertOrderTrackingSchema,
   insertReturnRequestSchema
 } from "@shared/schema";
-// Auth routes moved to main server file for simple password reset implementation
+// Authentication routes are handled directly in auth.ts
 
 if (!process.env.STRIPE_SECRET_KEY) {
-  throw new globalThis.Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -2850,7 +2850,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AUTH ROUTES (PASSWORD RESET)
   // =======================================================
   
-  // Auth routes moved to main server file for simple implementation
+  // Use the clean auth routes
+  app.use(authRoutes);
 
 
 
