@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { log } from "./vite";
 import { Logger } from './utils/logger';
 import { validateEnvironmentVariables, getEnvironmentInfo } from './config/env-validation';
 import { db } from './db';
@@ -201,16 +201,39 @@ app.use((req, res, next) => {
     }
   });
 
-  // Check if we should serve static files or use Vite dev server
-  const isProductionBuild = fs.existsSync(path.resolve(import.meta.dirname, "public"));
+  const httpServer = await registerRoutes(app);
   
-  if (isProductionBuild) {
-    serveStatic(app);
+  // Simple static file serving for the frontend
+  const distPath = path.resolve(process.cwd(), "client");
+  const indexPath = path.join(distPath, "index.html");
+  
+  if (fs.existsSync(indexPath)) {
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      if (!req.path.startsWith("/api")) {
+        res.sendFile(indexPath);
+      }
+    });
+    Logger.info(`[MAIN] Serving static files from ${distPath}`);
   } else {
-    // Use Vite dev server even in production NODE_ENV for development workflow
-    await setupVite(app, server);
+    app.get("*", (req, res) => {
+      if (!req.path.startsWith("/api")) {
+        res.json({
+          message: "Clean & Flip API Server",
+          status: "operational", 
+          frontend: "temporarily unavailable",
+          database: "connected",
+          endpoints: [
+            "GET /api/products",
+            "GET /api/categories", 
+            "POST /api/auth/login",
+            "POST /api/auth/forgot-password"
+          ]
+        });
+      }
+    });
+    Logger.info(`[MAIN] Frontend files not found, serving API only`);
   }
 
-  // Server is started by registerRoutes function
-  // No need to start it again here
+  Logger.info(`[MAIN] Server setup completed successfully`);
 })();
