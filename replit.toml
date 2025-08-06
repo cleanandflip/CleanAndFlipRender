@@ -1,5 +1,8 @@
 [deployment]
-run = ["sh", "-c", "npm run dev"]
+run = ["npm", "run", "dev"]
+
+[workspace]
+entrypoint = "server/index.ts"
 
 [languages]
 

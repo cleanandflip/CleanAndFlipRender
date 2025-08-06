@@ -4,6 +4,7 @@ run = "npm run dev"
 
 [nix]
 channel = "stable-24_05"
+packages = ["psmisc", "lsof"]
 
 [unitTest]
 language = "nodejs"

@@ -4,16 +4,16 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "tsx server/index.ts",
-    "build": "vite build && node esbuild.config.js",
-    "start": "NODE_ENV=production node dist/index.js",
+    "dev": "tsx watch server/index.ts",
+    "build": "vite build",
+    "start": "NODE_ENV=production node dist/server/index.js",
+    "clean": "rm -rf dist node_modules/.cache",
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "clean": "rm -rf dist node_modules/.vite",
     "postinstall": "npx update-browserslist-db@latest"
   },
   "dependencies": {
