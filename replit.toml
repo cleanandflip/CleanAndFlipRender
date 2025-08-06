@@ -1,13 +1,14 @@
+[run]
+command = "npm run dev"
+
 [deployment]
-run = ["npm", "run", "dev"]
+run = "npm start"
+publicDir = "dist/public"
+deploymentTarget = "cloudrun"
 
-[workspace]
-entrypoint = "server/index.ts"
+[env]
+NODE_ENV = "production"
+PORT = "5000"
 
-[languages]
-
-[languages.typescript]
-pattern = "**/{*.ts,*.js,*.tsx,*.jsx}"
-
-  [languages.typescript.languageServer]
-  start = "typescript-language-server --stdio"
+[development]
+publicDir = "dist/public"
