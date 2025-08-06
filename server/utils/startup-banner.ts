@@ -13,7 +13,6 @@ export function displayStartupBanner(config: any) {
     { name: 'Environment', value: process.env.NODE_ENV || 'development', status: 'info' },
     { name: 'Port', value: config.port, status: 'info' },
     { name: 'Database', value: config.db ? 'Connected' : 'Failed', status: config.db ? 'success' : 'error' },
-    { name: 'Redis Cache', value: config.redis ? 'Connected' : 'Disabled', status: config.redis ? 'success' : 'warning' },
     { name: 'Session Store', value: 'PostgreSQL', status: 'success' },
     { name: 'File Storage', value: 'Cloudinary', status: 'success' },
     { name: 'Payment System', value: 'Stripe', status: 'success' },
@@ -41,11 +40,6 @@ export function displayStartupBanner(config: any) {
   Logger.info(chalk.cyan('================================================\n'));
   
   // Performance tips
-  if (config.redis) {
-    Logger.info(chalk.green('🚀 Performance: Redis caching active'));
-  } else {
-    Logger.info(chalk.yellow('💡 Performance: Enable Redis for better caching'));
-  }
-  
-  Logger.info(chalk.gray('📝 Logs: Optimized logging active - Redis spam eliminated\n'));
+  Logger.info(chalk.green('💡 Performance: Direct database access for optimal performance'));
+  Logger.info(chalk.gray('📝 Logs: Optimized logging active\n'));
 }

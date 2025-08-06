@@ -14,12 +14,10 @@ const REQUIRED_ENV_VARS = [
 ] as const;
 
 const OPTIONAL_ENV_VARS = [
-  'REDIS_URL',
   'CLOUDINARY_CLOUD_NAME',
   'CLOUDINARY_API_KEY',
   'CLOUDINARY_API_SECRET',
-  'RESEND_API_KEY',
-  'ENABLE_REDIS'
+  'RESEND_API_KEY'
 ] as const;
 
 export function validateEnvironmentVariables(): EnvironmentConfig {
