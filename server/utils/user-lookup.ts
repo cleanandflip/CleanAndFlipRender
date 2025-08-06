@@ -8,6 +8,24 @@ import { Logger } from './logger';
 export async function findUserByEmail(email: string): Promise<any | null> {
   if (!email) return null;
   
+  const lookupStart = Date.now();
+  Logger.info(`[DEBUG] Starting user lookup for: ${email}`);
+  
+  // Test database connection first
+  try {
+    const connectionTest = Date.now();
+    const testResult = await db.execute(sql`SELECT 1 as test_connection`);
+    const connectionTime = Date.now() - connectionTest;
+    Logger.info(`[DEBUG] Database connection test: ${connectionTime}ms`);
+    
+    if (connectionTime > 1000) {
+      Logger.warn(`[DEBUG] Slow database connection: ${connectionTime}ms`);
+    }
+  } catch (error) {
+    Logger.error(`[DEBUG] Database connection failed:`, (error as Error).message);
+    return null;
+  }
+  
   // Multiple normalization strategies
   const normalizations = [
     email.toLowerCase().trim(),                    // Standard normalization
@@ -70,20 +88,28 @@ export async function findUserByEmail(email: string): Promise<any | null> {
   // Last resort: partial match (dangerous but helps debug)
   if (process.env.NODE_ENV === 'development') {
     try {
+      const partialStart = Date.now();
       const result = await db.execute(sql`
         SELECT id, email, first_name, last_name
         FROM users
         WHERE email ILIKE ${`%${email.trim()}%`}
         LIMIT 5
       `);
+      const partialTime = Date.now() - partialStart;
       
       if (result.rows.length > 0) {
-        Logger.info('[DEBUG] Partial matches found:', result.rows.map(r => r.email));
+        Logger.info(`[DEBUG] Partial matches found (${partialTime}ms):`, result.rows.map(r => r.email));
+      } else {
+        Logger.info(`[DEBUG] No partial matches found (${partialTime}ms)`);
       }
     } catch (error) {
       Logger.error('[DEBUG] Partial match error:', (error as Error).message);
     }
   }
+  
+  // Final summary
+  const totalTime = Date.now() - lookupStart;
+  Logger.info(`[DEBUG] User lookup completed in ${totalTime}ms - No user found for: ${email}`);
   
   return null;
 }
