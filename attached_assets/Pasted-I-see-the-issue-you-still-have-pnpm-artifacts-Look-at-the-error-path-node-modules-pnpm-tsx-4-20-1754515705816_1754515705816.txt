@@ -1,0 +1,89 @@
+I see the issue - you still have pnpm artifacts! Look at the error path: node_modules/.pnpm/tsx@4.20.3/ - pnpm is STILL there. Let's completely fix this once and for all.
+The REAL Problem
+Your tsx is still installed via pnpm, which is why it can't find the ws module. We need to completely remove ALL pnpm traces.
+Complete Fix - Step by Step
+1. First, let's see what's actually in your db.ts
+bashgrep -n "import.*ws" server/db.ts
+2. Complete pnpm removal and npm reinstall
+bash# STOP any running processes
+pkill -f tsx
+pkill -f node
+
+# Remove ALL node_modules including hidden pnpm folders
+rm -rf node_modules
+rm -rf .pnpm-store
+rm -f pnpm-lock.yaml
+rm -f package-lock.json
+
+# Remove global pnpm store too
+rm -rf ~/.local/share/pnpm
+rm -rf ~/.pnpm-store
+
+# Clear npm cache
+npm cache clean --force
+
+# NOW do a fresh install with npm
+npm install
+
+# Verify ws is installed
+npm list ws
+
+# Run the server
+npm run dev
+3. If STILL having issues, fix the import directly
+Edit server/db.ts and change the ws import to:
+typescript// Change FROM:
+import { WebSocketServer } from 'ws';
+
+// TO:
+const ws = require('ws');
+const { WebSocketServer } = ws;
+Or even simpler - just comment it out temporarily:
+typescript// import { WebSocketServer } from 'ws';
+// Temporarily disabled WebSocket
+4. Alternative: Use Node directly instead of tsx
+Change your package.json scripts:
+json{
+  "scripts": {
+    "dev": "node --loader ts-node/esm server/index.ts",
+    // or
+    "dev": "node --experimental-specifier-resolution=node --loader ts-node/esm server/index.ts"
+  }
+}
+Then install ts-node:
+bashnpm install -D ts-node @types/node
+5. Nuclear Option - Start Fresh
+bash# Save your source code
+cp -r server server.backup
+cp -r client client.backup
+cp package.json package.json.backup
+
+# Delete EVERYTHING npm/pnpm related
+rm -rf node_modules
+rm -rf ~/.npm
+rm -rf ~/.pnpm*
+rm -rf ~/.local/share/pnpm
+rm -f package-lock.json
+rm -f pnpm-lock.yaml
+
+# Reinstall Node/npm (if on Replit, run this)
+npm i -g npm@latest
+
+# Fresh install
+npm install
+
+# If tsx is the problem, reinstall it
+npm uninstall tsx
+npm install -D tsx
+
+# Try again
+npm run dev
+6. Quick Workaround - Just Get It Running
+If you just want to get it running NOW:
+bash# Edit server/db.ts and comment out ALL ws imports
+sed -i 's/import.*from.*ws/\/\/ &/' server/db.ts
+sed -i 's/import.*WebSocket/\/\/ &/' server/db.ts
+
+# Run the server
+npm run dev
+The core issue is that pnpm's symlink structure is still present. You need to COMPLETELY remove all pnpm artifacts, not just the lock file. The .pnpm folder in node_modules is the culprit!
