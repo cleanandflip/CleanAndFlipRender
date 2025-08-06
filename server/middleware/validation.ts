@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodSchema, ZodError } from 'zod';
+import { Logger } from '../utils/logger';
 
 // Validation middleware factory
 export function validateRequest(schema: ZodSchema, target: 'body' | 'query' | 'params' = 'body') {
@@ -24,7 +25,7 @@ export function validateRequest(schema: ZodSchema, target: 'body' | 'query' | 'p
       }
       
       // Handle unexpected validation errors
-      console.error('Unexpected validation error:', error);
+      Logger.error('Unexpected validation error:', error);
       return res.status(500).json({
         error: 'Internal server error',
         message: 'An unexpected error occurred during validation'
@@ -65,7 +66,7 @@ export function validateWithCustomErrors(
         });
       }
       
-      console.error('Unexpected validation error:', error);
+      Logger.error('Unexpected validation error:', error);
       return res.status(500).json({
         error: 'Internal server error',
         message: 'An unexpected error occurred during validation'

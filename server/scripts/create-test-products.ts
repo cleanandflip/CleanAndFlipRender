@@ -2,6 +2,7 @@ import { db } from '../db.js';
 import { products, categories } from '../../shared/schema.js';
 import { StripeProductSync } from '../services/stripe-sync.js';
 import { eq } from 'drizzle-orm';
+import { Logger } from '../utils/logger';
 
 const testProducts = [
   {
@@ -83,7 +84,7 @@ const testProducts = [
 
 async function createTestProducts() {
   try {
-    console.log('Creating test products with Stripe sync...');
+    Logger.info('Creating test products with Stripe sync...');
     
     // Get or create categories
     const categoryMap = new Map();
@@ -137,25 +138,25 @@ async function createTestProducts() {
         })
         .returning();
       
-      console.log(`Created product: ${newProduct.name} (ID: ${newProduct.id})`);
+      Logger.info(`Created product: ${newProduct.name} (ID: ${newProduct.id})`);
       
       // Sync to Stripe
       try {
         await StripeProductSync.syncProduct(newProduct.id);
-        console.log(`✅ Successfully synced ${newProduct.name} to Stripe`);
+        Logger.info(`✅ Successfully synced ${newProduct.name} to Stripe`);
       } catch (error) {
-        console.error(`❌ Failed to sync ${newProduct.name} to Stripe:`, error);
+        Logger.error(`❌ Failed to sync ${newProduct.name} to Stripe:`, error);
       }
       
       // Add delay between products
       await new Promise(resolve => setTimeout(resolve, 200));
     }
     
-    console.log('\n🎉 All test products created and synced to Stripe!');
-    console.log('You can now view them in your Stripe dashboard and on the website.');
+    Logger.info('\n🎉 All test products created and synced to Stripe!');
+    Logger.info('You can now view them in your Stripe dashboard and on the website.');
     
   } catch (error) {
-    console.error('Failed to create test products:', error);
+    Logger.error('Failed to create test products:', error);
   }
 }
 

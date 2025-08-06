@@ -1,5 +1,6 @@
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
+import { Logger } from './logger';
 
 /**
  * Find user by email with multiple fallback strategies
@@ -20,7 +21,7 @@ export async function findUserByEmail(email: string): Promise<any | null> {
   // Remove duplicates
   const uniqueEmails = Array.from(new Set(normalizations));
   
-  console.log('[DEBUG] Trying email variations:', uniqueEmails);
+  Logger.info('[DEBUG] Trying email variations:', uniqueEmails);
   
   for (const emailVariant of uniqueEmails) {
     try {
@@ -33,11 +34,11 @@ export async function findUserByEmail(email: string): Promise<any | null> {
       `);
       
       if (result.rows.length > 0) {
-        console.log('[DEBUG] User found with email variant:', emailVariant);
+        Logger.info('[DEBUG] User found with email variant:', emailVariant);
         return result.rows[0];
       }
     } catch (error) {
-      console.error('[DEBUG] Query error for variant:', emailVariant, (error as Error).message);
+      Logger.error(`[DEBUG] Query error for variant: ${emailVariant}`, (error as Error).message);
     }
   }
   
@@ -51,11 +52,11 @@ export async function findUserByEmail(email: string): Promise<any | null> {
     `);
     
     if (result.rows.length > 0) {
-      console.log('[DEBUG] User found with case-insensitive search');
+      Logger.info('[DEBUG] User found with case-insensitive search');
       return result.rows[0];
     }
   } catch (error) {
-    console.error('[DEBUG] Case-insensitive search error:', (error as Error).message);
+    Logger.error('[DEBUG] Case-insensitive search error:', (error as Error).message);
   }
   
   // Last resort: partial match (dangerous but helps debug)
@@ -69,10 +70,10 @@ export async function findUserByEmail(email: string): Promise<any | null> {
       `);
       
       if (result.rows.length > 0) {
-        console.log('[DEBUG] Partial matches found:', result.rows.map(r => r.email));
+        Logger.info('[DEBUG] Partial matches found:', result.rows.map(r => r.email));
       }
     } catch (error) {
-      console.error('[DEBUG] Partial match error:', (error as Error).message);
+      Logger.error('[DEBUG] Partial match error:', (error as Error).message);
     }
   }
   
@@ -93,7 +94,7 @@ export async function debugListEmails(): Promise<string[]> {
     
     return result.rows.map(r => `${r.email} (length: ${r.len})`);
   } catch (error) {
-    console.error('[DEBUG] Error listing emails:', error);
+    Logger.error('[DEBUG] Error listing emails:', error);
     return [];
   }
 }

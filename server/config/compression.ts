@@ -1,5 +1,6 @@
 import compression from 'compression';
 import { Express } from 'express';
+import { Logger } from '../utils/logger';
 
 export function setupCompression(app: Express) {
   app.use(compression({
@@ -15,5 +16,5 @@ export function setupCompression(app: Express) {
     threshold: 1024, // Only compress responses larger than 1KB
   }));
   
-  console.log('✅ Response compression configured');
+  Logger.info('✅ Response compression configured');
 }

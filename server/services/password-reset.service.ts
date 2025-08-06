@@ -4,6 +4,7 @@ import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import { emailService } from './email';
 import { findUserByEmail } from '../utils/user-lookup';
+import { Logger } from '../utils/logger';
 
 export class PasswordResetService {
   private static readonly TOKEN_LENGTH = 32;
@@ -31,7 +32,7 @@ export class PasswordResetService {
       if (lastRequest) {
         const minutesSinceLastRequest = (Date.now() - lastRequest.getTime()) / 60000;
         if (minutesSinceLastRequest < this.RATE_LIMIT_MINUTES) {
-          console.log(`[RATE_LIMIT] Too many requests for ${email} from ${ipAddress}`);
+          Logger.info(`[RATE_LIMIT] Too many requests for ${email} from ${ipAddress}`);
           return { 
             success: true, 
             message: 'If an account exists, reset email sent',
@@ -44,11 +45,11 @@ export class PasswordResetService {
       this.rateLimitMap.set(rateLimitKey, new Date());
       
       // Find user with improved lookup
-      console.log(`[PASSWORD_RESET] Starting reset process for: ${email}`);
+      Logger.info(`[PASSWORD_RESET] Starting reset process for: ${email}`);
       const user = await findUserByEmail(email);
       
       if (!user) {
-        console.log(`[PASSWORD_RESET] No user found for email: ${email}`);
+        Logger.info(`[PASSWORD_RESET] No user found for email: ${email}`);
         // Still return success to prevent email enumeration
         return { 
           success: true, 
@@ -57,7 +58,7 @@ export class PasswordResetService {
         };
       }
       
-      console.log(`[PASSWORD_RESET] User found: ID ${user.id}, Email: ${user.email}`);
+      Logger.info(`[PASSWORD_RESET] User found: ID ${user.id}, Email: ${user.email}`);
       
       // Check for existing valid token to prevent duplicates
       const existingTokenResult = await db.execute(sql`
@@ -73,7 +74,7 @@ export class PasswordResetService {
       if (existingTokenResult.rows.length > 0) {
         const tokenAge = (Date.now() - new Date(existingTokenResult.rows[0].created_at as string).getTime()) / 60000;
         if (tokenAge < 5) { // Token created less than 5 minutes ago
-          console.log(`[PASSWORD_RESET] Recent token exists, skipping email`);
+          Logger.info(`[PASSWORD_RESET] Recent token exists, skipping email`);
           return { 
             success: true, 
             message: 'If an account exists, reset email sent',
@@ -109,18 +110,18 @@ export class PasswordResetService {
         
       const resetLink = `${baseUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
       
-      console.log(`[PASSWORD_RESET] Generated reset link for user ${user.id}`);
-      console.log(`Generated reset link: ${resetLink}`);
+      Logger.info(`[PASSWORD_RESET] Generated reset link for user ${user.id}`);
+      Logger.info(`Generated reset link: ${resetLink}`);
       
       // Send email immediately
       try {
         await emailService.sendPasswordReset(user.email, rawToken, resetLink);
         
         const elapsed = Date.now() - startTime;
-        console.log(`[PASSWORD_RESET] Email sent successfully in ${elapsed}ms`);
+        Logger.info(`[PASSWORD_RESET] Email sent successfully in ${elapsed}ms`);
         
       } catch (emailError) {
-        console.error('[PASSWORD_RESET] Email send error:', emailError);
+        Logger.error('[PASSWORD_RESET] Email send error:', emailError);
         // Don't expose email errors to user
       }
       
@@ -131,10 +132,10 @@ export class PasswordResetService {
           VALUES (${String(user.id)}, 'password_reset_requested', ${JSON.stringify({ email: String(user.email), ip: ipAddress })}, NOW())
         `);
       } catch (logError) {
-        console.log('[DEBUG] Activity log failed, continuing without logging:', logError);
+        Logger.info('[DEBUG] Activity log failed, continuing without logging:', logError);
       }
       
-      console.log(`[DEBUG] Password reset completed successfully for: ${user.email}`);
+      Logger.info(`[DEBUG] Password reset completed successfully for: ${user.email}`);
       
       return { 
         success: true, 
@@ -147,7 +148,7 @@ export class PasswordResetService {
       };
       
     } catch (error) {
-      console.error('[PASSWORD_RESET] Unexpected error:', error);
+      Logger.error('[PASSWORD_RESET] Unexpected error:', error);
       // Still return success to prevent information leakage
       return { 
         success: true, 
@@ -206,7 +207,7 @@ export class PasswordResetService {
       return { valid: false, error: 'Invalid or expired token' };
       
     } catch (error) {
-      console.error('[TOKEN_VALIDATION] Error:', error);
+      Logger.error('[TOKEN_VALIDATION] Error:', error);
       return { valid: false, error: 'Token validation failed' };
     }
   }
@@ -248,15 +249,15 @@ export class PasswordResetService {
         WHERE user_id = ${validation.userId} AND used = false
       `);
       
-      console.log(`[PASSWORD_RESET] Password successfully reset for user ${validation.userId}`);
+      Logger.info(`[PASSWORD_RESET] Password successfully reset for user ${validation.userId}`);
       
       // Send confirmation email
       try {
         // Note: Add this method to email service if needed
-        console.log(`[PASSWORD_RESET] Password reset confirmed for ${validation.email}`);
+        Logger.info(`[PASSWORD_RESET] Password reset confirmed for ${validation.email}`);
         // await emailService.sendPasswordResetConfirmation(validation.email!, ipAddress);
       } catch (emailError) {
-        console.error('[PASSWORD_RESET] Confirmation email error:', emailError);
+        Logger.error('[PASSWORD_RESET] Confirmation email error:', emailError);
       }
       
       return { 
@@ -265,7 +266,7 @@ export class PasswordResetService {
       };
       
     } catch (error) {
-      console.error('[PASSWORD_RESET] Reset error:', error);
+      Logger.error('[PASSWORD_RESET] Reset error:', error);
       return { 
         success: false, 
         message: 'Failed to reset password' 
@@ -285,7 +286,7 @@ export class PasswordResetService {
       
       return result.rowCount || 0;
     } catch (error) {
-      console.error('[PASSWORD_RESET] Cleanup error:', error);
+      Logger.error('[PASSWORD_RESET] Cleanup error:', error);
       return 0;
     }
   }

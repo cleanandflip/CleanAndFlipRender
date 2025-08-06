@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { db } from '../db';
+import { Logger } from '../utils/logger';
 
 // Cache for table columns to avoid repeated queries
 const tableColumnsCache = new Map<string, Set<string>>();
@@ -26,7 +27,7 @@ export async function getTableColumns(tableName: string): Promise<Set<string>> {
     
     return columns;
   } catch (error) {
-    console.error(`Failed to get columns for table ${tableName}:`, error);
+    Logger.error(`Failed to get columns for table ${tableName}:`, error);
     return new Set();
   }
 }
@@ -48,7 +49,7 @@ export async function buildSafeSelect(
     if (existingColumns.has(columnName)) {
       safeSelect[alias] = column;
     } else {
-      console.warn(`Column '${columnName}' does not exist in table '${tableName}', skipping...`);
+      Logger.warn(`Column '${columnName}' does not exist in table '${tableName}', skipping...`);
     }
   }
   
@@ -70,7 +71,7 @@ export function clearColumnsCache(tableName?: string) {
  * Validate database schema on startup
  */
 export async function validateDatabaseSchema(): Promise<void> {
-  console.log('🔍 Validating database schema...');
+  Logger.info('🔍 Validating database schema...');
   
   try {
     const productColumns = await getTableColumns('products');
@@ -78,9 +79,9 @@ export async function validateDatabaseSchema(): Promise<void> {
     const missingRequired = requiredColumns.filter(col => !productColumns.has(col));
     
     if (missingRequired.length > 0) {
-      console.error(`❌ Missing required columns in products table: ${missingRequired.join(', ')}`);
+      Logger.error(`❌ Missing required columns in products table: ${missingRequired.join(', ')}`);
     } else {
-      console.log('✅ Database schema validation passed');
+      Logger.info('✅ Database schema validation passed');
     }
     
     // Log optional missing columns
@@ -88,10 +89,10 @@ export async function validateDatabaseSchema(): Promise<void> {
     const missingOptional = optionalColumns.filter(col => !productColumns.has(col));
     
     if (missingOptional.length > 0) {
-      console.warn(`⚠️  Missing optional columns: ${missingOptional.join(', ')}`);
-      console.warn('   These columns exist in schema but may need migration verification');
+      Logger.warn(`⚠️  Missing optional columns: ${missingOptional.join(', ')}`);
+      Logger.warn('   These columns exist in schema but may need migration verification');
     }
   } catch (error) {
-    console.error('Schema validation error:', error);
+    Logger.error('Schema validation error:', error);
   }
 }

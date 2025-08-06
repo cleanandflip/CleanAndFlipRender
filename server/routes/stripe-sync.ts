@@ -1,18 +1,19 @@
 import { Router } from 'express';
 import { StripeProductSync } from '../services/stripe-sync.js';
 import { createTestProducts } from '../scripts/create-test-products.js';
+import { Logger } from '../utils/logger';
 
 const router = Router();
 
 // Sync all products to Stripe
 router.post('/sync-all', async (req, res) => {
   try {
-    console.log('API: Starting sync-all request...');
+    Logger.info('API: Starting sync-all request...');
     await StripeProductSync.syncAllProducts();
-    console.log('API: Sync-all completed successfully');
+    Logger.info('API: Sync-all completed successfully');
     res.json({ success: true, message: 'All products synced to Stripe' });
   } catch (error) {
-    console.error('Sync all products error:', error);
+    Logger.error('Sync all products error:', error);
     res.status(500).json({ error: 'Failed to sync products', details: (error as any).message });
   }
 });
@@ -24,7 +25,7 @@ router.post('/sync/:productId', async (req, res) => {
     await StripeProductSync.syncProduct(productId);
     res.json({ success: true, message: 'Product synced to Stripe' });
   } catch (error) {
-    console.error('Sync product error:', error);
+    Logger.error('Sync product error:', error);
     res.status(500).json({ error: 'Failed to sync product' });
   }
 });
@@ -35,7 +36,7 @@ router.post('/create-test-products', async (req, res) => {
     await createTestProducts();
     res.json({ success: true, message: 'Test products created and synced' });
   } catch (error) {
-    console.error('Create test products error:', error);
+    Logger.error('Create test products error:', error);
     res.status(500).json({ error: 'Failed to create test products' });
   }
 });
@@ -53,12 +54,12 @@ router.post('/webhook', async (req, res) => {
         // Handle product deletion if needed
         break;
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        Logger.info(`Unhandled event type ${event.type}`);
     }
     
     res.json({ received: true });
   } catch (error) {
-    console.error('Webhook error:', error);
+    Logger.error('Webhook error:', error);
     res.status(400).json({ error: 'Webhook failed' });
   }
 });

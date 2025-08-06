@@ -1,4 +1,5 @@
 import { StripeProductSync } from '../services/stripe-sync';
+import { Logger } from '../utils/logger';
 
 // Middleware to auto-sync on product changes
 export const autoSyncProducts = async (req: any, res: any, next: any) => {
@@ -11,12 +12,12 @@ export const autoSyncProducts = async (req: any, res: any, next: any) => {
       if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
         // Sync product after successful create/update
         if (data.id) {
-          StripeProductSync.syncProduct(data.id).catch(console.error);
+          StripeProductSync.syncProduct(data.id).catch(err => Logger.error('Stripe sync error:', err));
         } else if (data.products && Array.isArray(data.products)) {
           // Bulk operations
           data.products.forEach((product: any) => {
             if (product.id) {
-              StripeProductSync.syncProduct(product.id).catch(console.error);
+              StripeProductSync.syncProduct(product.id).catch(err => Logger.error('Stripe sync error:', err));
             }
           });
         }

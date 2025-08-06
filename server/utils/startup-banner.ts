@@ -1,12 +1,13 @@
 import chalk from 'chalk';
 import { logger } from '../config/logger';
+import { Logger } from '../utils/logger';
 
 export function displayStartupBanner(config: any) {
   console.clear(); // Clear console for clean start
   
-  console.log(chalk.cyan('\n================================================'));
-  console.log(chalk.cyan.bold('        🏋️  CLEAN & FLIP - SERVER READY 🏋️        '));
-  console.log(chalk.cyan('================================================\n'));
+  Logger.info(chalk.cyan('\n================================================'));
+  Logger.info(chalk.cyan.bold('        🏋️  CLEAN & FLIP - SERVER READY 🏋️        '));
+  Logger.info(chalk.cyan('================================================\n'));
   
   const status = [
     { name: 'Environment', value: process.env.NODE_ENV || 'development', status: 'info' },
@@ -24,27 +25,27 @@ export function displayStartupBanner(config: any) {
   status.forEach(item => {
     const statusIcon = item.status === 'success' ? '✅' : item.status === 'error' ? '❌' : '⚠️ ';
     const color = item.status === 'success' ? chalk.green : item.status === 'error' ? chalk.red : chalk.yellow;
-    console.log(`  ${statusIcon} ${chalk.gray(item.name.padEnd(15))} ${color(item.value)}`);
+    Logger.info(`  ${statusIcon} ${chalk.gray(item.name.padEnd(15))} ${color(item.value)}`);
   });
   
-  console.log(chalk.cyan('\n================================================'));
-  console.log(chalk.gray(`  Startup completed in ${config.startupTime}ms`));
+  Logger.info(chalk.cyan('\n================================================'));
+  Logger.info(chalk.gray(`  Startup completed in ${config.startupTime}ms`));
   
   if (config.warnings.length > 0) {
-    console.log(chalk.yellow('\n⚠️  System Warnings:'));
-    config.warnings.forEach((warn: string) => console.log(chalk.yellow(`  - ${warn}`)));
+    Logger.info(chalk.yellow('\n⚠️  System Warnings:'));
+    config.warnings.forEach((warn: string) => Logger.info(chalk.yellow(`  - ${warn}`)));
   } else {
-    console.log(chalk.green('\n🎯 All systems operational - no warnings'));
+    Logger.info(chalk.green('\n🎯 All systems operational - no warnings'));
   }
   
-  console.log(chalk.cyan('================================================\n'));
+  Logger.info(chalk.cyan('================================================\n'));
   
   // Performance tips
   if (config.redis) {
-    console.log(chalk.green('🚀 Performance: Redis caching active'));
+    Logger.info(chalk.green('🚀 Performance: Redis caching active'));
   } else {
-    console.log(chalk.yellow('💡 Performance: Enable Redis for better caching'));
+    Logger.info(chalk.yellow('💡 Performance: Enable Redis for better caching'));
   }
   
-  console.log(chalk.gray('📝 Logs: Optimized logging active - Redis spam eliminated\n'));
+  Logger.info(chalk.gray('📝 Logs: Optimized logging active - Redis spam eliminated\n'));
 }

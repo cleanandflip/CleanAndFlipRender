@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { Logger } from './utils/logger';
 
 const app = express();
 app.use(express.json());
@@ -39,12 +40,12 @@ app.use((req, res, next) => {
 (async () => {
   // Global error handlers to prevent crashes
   process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
+    Logger.error('Uncaught Exception:', error);
     // Don't exit in production, try to recover
   });
 
   process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    Logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
   });
 
   const server = await registerRoutes(app);
@@ -55,10 +56,10 @@ app.use((req, res, next) => {
       const { PasswordResetService } = await import('./services/password-reset.service.js');
       const deleted = await PasswordResetService.cleanupExpiredTokens();
       if (deleted > 0) {
-        console.log(`[CLEANUP] Removed ${deleted} expired password reset tokens`);
+        Logger.info(`[CLEANUP] Removed ${deleted} expired password reset tokens`);
       }
     } catch (error) {
-      console.error('[CLEANUP] Error cleaning up tokens:', error);
+      Logger.error('[CLEANUP] Error cleaning up tokens:', error);
     }
   }, 60 * 60 * 1000); // Every hour
 

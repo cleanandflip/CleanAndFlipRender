@@ -1,5 +1,6 @@
 // Phase 1: OWASP Top 10 Security Penetration Tests
 import { Request, Response } from 'express';
+import { Logger } from '../utils/logger';
 
 // A01: Broken Access Control Tests
 export const accessControlTests = {
@@ -12,14 +13,14 @@ export const accessControlTests = {
       '/api/products/:id (PUT/DELETE)'
     ];
     
-    console.log('🔒 Testing admin endpoint access control...');
+    Logger.info('🔒 Testing admin endpoint access control...');
     // These would normally return 403 Forbidden for non-admin users
     return { test: 'Admin Access Control', status: 'PROTECTED' };
   },
 
   // Test 2: IDOR (Insecure Direct Object Reference) prevention
   testIDORPrevention: async () => {
-    console.log('🔒 Testing IDOR prevention...');
+    Logger.info('🔒 Testing IDOR prevention...');
     // Test cases:
     // - Try accessing another user's cart: /api/cart with different user session
     // - Try modifying another user's wishlist items
@@ -32,7 +33,7 @@ export const accessControlTests = {
 export const cryptographicTests = {
   // Test password hashing
   testPasswordSecurity: () => {
-    console.log('🔒 Testing password security...');
+    Logger.info('🔒 Testing password security...');
     // Verify:
     // - Passwords are hashed with bcrypt
     // - Salt rounds >= 12
@@ -42,7 +43,7 @@ export const cryptographicTests = {
 
   // Test session security
   testSessionSecurity: () => {
-    console.log('🔒 Testing session security...');
+    Logger.info('🔒 Testing session security...');
     // Verify:
     // - Secure flag on cookies in production
     // - HttpOnly flag set
@@ -70,13 +71,13 @@ export const injectionTests = {
   ],
 
   testSQLInjection: async () => {
-    console.log('🔒 Testing SQL injection prevention...');
+    Logger.info('🔒 Testing SQL injection prevention...');
     // Test search endpoints with malicious patterns
     return { test: 'SQL Injection Prevention', status: 'PROTECTED' };
   },
 
   testXSSPrevention: async () => {
-    console.log('🔒 Testing XSS prevention...');
+    Logger.info('🔒 Testing XSS prevention...');
     // Test form inputs with malicious scripts
     return { test: 'XSS Prevention', status: 'PROTECTED' };
   }
@@ -85,7 +86,7 @@ export const injectionTests = {
 // A04: Insecure Design Tests
 export const designSecurityTests = {
   testBusinessLogicFlaws: async () => {
-    console.log('🔒 Testing business logic security...');
+    Logger.info('🔒 Testing business logic security...');
     // Test cases:
     // - Negative quantity in cart
     // - Price manipulation attempts
@@ -97,7 +98,7 @@ export const designSecurityTests = {
 // A05: Security Misconfiguration Tests
 export const configurationTests = {
   testSecurityHeaders: (req: Request, res: Response) => {
-    console.log('🔒 Testing security headers...');
+    Logger.info('🔒 Testing security headers...');
     const requiredHeaders = [
       'X-Frame-Options',
       'X-Content-Type-Options', 
@@ -114,7 +115,7 @@ export const configurationTests = {
   },
 
   testCORSConfiguration: () => {
-    console.log('🔒 Testing CORS configuration...');
+    Logger.info('🔒 Testing CORS configuration...');
     return { test: 'CORS Configuration', status: 'SECURE' };
   }
 };
@@ -122,7 +123,7 @@ export const configurationTests = {
 // A06: Vulnerable Components Tests
 export const componentTests = {
   testDependencyVulnerabilities: async () => {
-    console.log('🔒 Testing dependency vulnerabilities...');
+    Logger.info('🔒 Testing dependency vulnerabilities...');
     // This would run npm audit in a real scenario
     return { test: 'Dependency Security', status: 'CHECKING' };
   }
@@ -131,13 +132,13 @@ export const componentTests = {
 // A07: Authentication Failures Tests
 export const authenticationTests = {
   testBruteForceProtection: async () => {
-    console.log('🔒 Testing brute force protection...');
+    Logger.info('🔒 Testing brute force protection...');
     // Test rate limiting on login endpoint
     return { test: 'Brute Force Protection', status: 'PROTECTED' };
   },
 
   testPasswordPolicy: () => {
-    console.log('🔒 Testing password policy...');
+    Logger.info('🔒 Testing password policy...');
     return { 
       test: 'Password Policy', 
       status: 'ENFORCED',
@@ -149,7 +150,7 @@ export const authenticationTests = {
 // A08: Software Integrity Tests
 export const integrityTests = {
   testFileUploadSecurity: () => {
-    console.log('🔒 Testing file upload security...');
+    Logger.info('🔒 Testing file upload security...');
     return { 
       test: 'File Upload Security', 
       status: 'SECURE',
@@ -161,7 +162,7 @@ export const integrityTests = {
 // A09: Logging and Monitoring Tests
 export const monitoringTests = {
   testSecurityLogging: () => {
-    console.log('🔒 Testing security event logging...');
+    Logger.info('🔒 Testing security event logging...');
     return { test: 'Security Logging', status: 'ACTIVE' };
   }
 };
@@ -169,14 +170,14 @@ export const monitoringTests = {
 // A10: Server-Side Request Forgery Tests
 export const ssrfTests = {
   testSSRFPrevention: () => {
-    console.log('🔒 Testing SSRF prevention...');
+    Logger.info('🔒 Testing SSRF prevention...');
     return { test: 'SSRF Prevention', status: 'PROTECTED' };
   }
 };
 
 // Comprehensive penetration test runner
 export const runPenetrationTests = async () => {
-  console.log('🚀 Starting comprehensive security penetration tests...');
+  Logger.info('🚀 Starting comprehensive security penetration tests...');
   
   const results = {
     timestamp: new Date().toISOString(),
@@ -197,26 +198,26 @@ export const runPenetrationTests = async () => {
     ]
   };
 
-  console.log('✅ Penetration tests completed');
+  Logger.info('✅ Penetration tests completed');
   return results;
 };
 
 // Race condition tests for concurrent operations
 export const raceConditionTests = {
   testConcurrentCartOperations: async () => {
-    console.log('🔒 Testing concurrent cart operations...');
+    Logger.info('🔒 Testing concurrent cart operations...');
     // Simulate multiple users adding same item simultaneously
     return { test: 'Concurrent Cart Operations', status: 'PROTECTED' };
   },
 
   testStockManagement: async () => {
-    console.log('🔒 Testing stock management race conditions...');
+    Logger.info('🔒 Testing stock management race conditions...');
     // Test multiple users buying last item
     return { test: 'Stock Management Race Conditions', status: 'PROTECTED' };
   },
 
   testWishlistToggle: async () => {
-    console.log('🔒 Testing wishlist toggle race conditions...');
+    Logger.info('🔒 Testing wishlist toggle race conditions...');
     return { test: 'Wishlist Race Conditions', status: 'PROTECTED' };
   }
 };
@@ -224,12 +225,12 @@ export const raceConditionTests = {
 // Performance and scalability tests
 export const performanceTests = {
   testDatabasePerformance: async () => {
-    console.log('⚡ Testing database performance...');
+    Logger.info('⚡ Testing database performance...');
     return { test: 'Database Performance', status: 'OPTIMIZED' };
   },
 
   testAPIResponseTimes: async () => {
-    console.log('⚡ Testing API response times...');
+    Logger.info('⚡ Testing API response times...');
     return { test: 'API Performance', status: 'FAST' };
   }
 };

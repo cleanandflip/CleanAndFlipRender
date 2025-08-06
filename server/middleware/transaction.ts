@@ -2,6 +2,7 @@ import { db } from "../db";
 import { Request, Response, NextFunction } from 'express';
 import { eq, and } from "drizzle-orm";
 import { products, cartItems, orders } from "@shared/schema";
+import { Logger } from '../utils/logger';
 
 // Database transaction wrapper for race condition prevention
 export async function withTransaction<T>(
@@ -52,7 +53,7 @@ export async function atomicStockUpdate(
 
     return { success: true, availableStock: currentStock - quantityToReduce };
   } catch (error) {
-    console.error('Atomic stock update error:', error);
+    Logger.error('Atomic stock update error:', error);
     return { success: false, error: 'Database error during stock update' };
   }
 }
@@ -144,7 +145,7 @@ export async function atomicCartOperation(
 
       return { success: false, error: 'Invalid operation' };
     } catch (error) {
-      console.error('Atomic cart operation error:', error);
+      Logger.error('Atomic cart operation error:', error);
       return { success: false, error: 'Database error during cart operation' };
     }
   });
@@ -185,7 +186,7 @@ export async function atomicOrderCreation(
 
       return { success: true, orderId: order.id };
     } catch (error) {
-      console.error('Atomic order creation error:', error);
+      Logger.error('Atomic order creation error:', error);
       return { success: false, error: 'Failed to create order' };
     }
   });

@@ -2,6 +2,7 @@ import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { WebSocket } from "ws";
 import * as schema from "../shared/schema";
+import { Logger } from './utils/logger';
 
 // Configure Neon with better connection handling
 neonConfig.webSocketConstructor = WebSocket;
@@ -30,10 +31,10 @@ let pool = new Pool(poolConfig);
 
 // Pool error handling
 pool.on('error', (err: any) => {
-  console.error('Database pool error:', err.message);
+  Logger.error('Database pool error:', err.message);
   // Don't exit the application, just log the error
   if (err.code === '57P01' || err.message?.includes('terminating connection')) {
-    console.log('Connection terminated, creating new pool...');
+    Logger.info('Connection terminated, creating new pool...');
     pool = new Pool(poolConfig);
   }
 });
@@ -52,9 +53,9 @@ const keepAlive = async () => {
     // For serverless databases like Neon, connection timeouts are normal
     // Only log in development to avoid production log spam
     if (process.env.NODE_ENV !== 'production') {
-      console.error('Keep-alive query failed:', error.message);
+      Logger.error('Keep-alive query failed:', error.message);
       if (error.code === '57P01' || error.message?.includes('connection')) {
-        console.log('Recreating pool due to connection issues...');
+        Logger.info('Recreating pool due to connection issues...');
         pool = new Pool(poolConfig);
       }
     }
@@ -73,11 +74,11 @@ const withRetry = async (operation: () => Promise<any>, maxRetries = 3): Promise
     try {
       return await operation();
     } catch (error: any) {
-      console.error(`Database operation attempt ${attempt} failed:`, error.message);
+      Logger.error(`Database operation attempt ${attempt} failed:`, error.message);
       
       if (error.code === '57P01' || error.message?.includes('terminating connection')) {
         if (attempt < maxRetries) {
-          console.log(`Retrying operation (attempt ${attempt + 1})...`);
+          Logger.info(`Retrying operation (attempt ${attempt + 1})...`);
           pool = new Pool(poolConfig);
           // Exponential backoff
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
@@ -97,13 +98,13 @@ export const db = drizzle({ client: pool, schema });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('Gracefully shutting down database connections...');
+  Logger.info('Gracefully shutting down database connections...');
   await pool.end();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('Gracefully shutting down database connections...');
+  Logger.info('Gracefully shutting down database connections...');
   await pool.end();
   process.exit(0);
 });

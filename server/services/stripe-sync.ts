@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import { db } from '../db.js';
 import { products, categories } from '../../shared/schema.js';
 import { eq, isNull, or } from 'drizzle-orm';
+import { Logger } from '../utils/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-06-30.basil',
@@ -28,7 +29,7 @@ export class StripeProductSync {
   // Sync single product with all details
   static async syncProduct(productId: string): Promise<void> {
     try {
-      console.log(`Starting sync for product ${productId}`);
+      Logger.info(`Starting sync for product ${productId}`);
       
       // Get complete product data
       const [product] = await db
@@ -98,11 +99,11 @@ export class StripeProductSync {
           product.stripeProductId,
           stripeProductData
         );
-        console.log(`Updated Stripe product ${stripeProduct.id}`);
+        Logger.info(`Updated Stripe product ${stripeProduct.id}`);
       } else {
         // Create new product
         stripeProduct = await stripe.products.create(stripeProductData);
-        console.log(`Created new Stripe product ${stripeProduct.id}`);
+        Logger.info(`Created new Stripe product ${stripeProduct.id}`);
       }
 
       // Handle price updates
@@ -124,7 +125,7 @@ export class StripeProductSync {
               product_id: product.id
             }
           });
-          console.log(`Created new price ${stripePrice.id} (${priceInCents} cents)`);
+          Logger.info(`Created new price ${stripePrice.id} (${priceInCents} cents)`);
         } else {
           stripePrice = currentPrice;
         }
@@ -138,7 +139,7 @@ export class StripeProductSync {
             product_id: product.id
           }
         });
-        console.log(`Created price ${stripePrice.id} (${priceInCents} cents)`);
+        Logger.info(`Created price ${stripePrice.id} (${priceInCents} cents)`);
       }
 
       // Update database with Stripe IDs and sync status
@@ -152,9 +153,9 @@ export class StripeProductSync {
         })
         .where(eq(products.id, productId));
 
-      console.log(`Successfully synced product ${productId} to Stripe`);
+      Logger.info(`Successfully synced product ${productId} to Stripe`);
     } catch (error) {
-      console.error(`Failed to sync product ${productId}:`, error);
+      Logger.error(`Failed to sync product ${productId}:`, error);
       
       // Update sync status to failed
       await db
@@ -194,7 +195,7 @@ export class StripeProductSync {
 
   // Sync all products with cleanup of deleted products
   static async syncAllProducts(): Promise<void> {
-    console.log('Starting comprehensive product sync to Stripe...');
+    Logger.info('Starting comprehensive product sync to Stripe...');
     
     // Get ALL products with complete data
     const allProducts = await db
@@ -218,14 +219,14 @@ export class StripeProductSync {
       .leftJoin(categories, eq(products.categoryId, categories.id))
       .orderBy(products.name);
     
-    console.log(`Found ${allProducts.length} products to sync`);
+    Logger.info(`Found ${allProducts.length} products to sync`);
     
     let successCount = 0;
     let failCount = 0;
     
     for (const product of allProducts) {
       try {
-        console.log(`Syncing product: ${product.name} (${product.id})`);
+        Logger.info(`Syncing product: ${product.name} (${product.id})`);
         await this.syncProduct(String(product.id));
         successCount++;
         
@@ -233,20 +234,20 @@ export class StripeProductSync {
         await new Promise(resolve => setTimeout(resolve, 200));
       } catch (error) {
         failCount++;
-        console.error(`Failed to sync product ${product.id}:`, error);
+        Logger.error(`Failed to sync product ${product.id}:`, error);
       }
     }
 
     // Clean up orphaned products in Stripe
     await this.cleanupOrphanedStripeProducts(allProducts);
     
-    console.log(`Sync complete: ${successCount} succeeded, ${failCount} failed`);
+    Logger.info(`Sync complete: ${successCount} succeeded, ${failCount} failed`);
   }
 
   // Clean up products in Stripe that no longer exist in database
   static async cleanupOrphanedStripeProducts(databaseProducts: any[]): Promise<void> {
     try {
-      console.log('🧹 Cleaning up orphaned Stripe products...');
+      Logger.info('🧹 Cleaning up orphaned Stripe products...');
       
       // Get all active products from Stripe
       const stripeProducts = await stripe.products.list({ 
@@ -255,7 +256,7 @@ export class StripeProductSync {
       });
       
       if (stripeProducts.data.length === 0) {
-        console.log('No active Stripe products to clean up');
+        Logger.info('No active Stripe products to clean up');
         return;
       }
       
@@ -271,25 +272,25 @@ export class StripeProductSync {
           try {
             // Archive the orphaned product
             await stripe.products.update(stripeProduct.id, { active: false });
-            console.log(`📦 Archived orphaned product: ${stripeProduct.name} (${stripeProduct.id})`);
+            Logger.info(`📦 Archived orphaned product: ${stripeProduct.name} (${stripeProduct.id})`);
             archivedCount++;
             
             // Rate limiting
             await new Promise(resolve => setTimeout(resolve, 100));
           } catch (error) {
-            console.error(`Failed to archive ${stripeProduct.name}:`, error);
+            Logger.error(`Failed to archive ${stripeProduct.name}:`, error);
           }
         }
       }
       
       if (archivedCount > 0) {
-        console.log(`✅ Archived ${archivedCount} orphaned products in Stripe`);
+        Logger.info(`✅ Archived ${archivedCount} orphaned products in Stripe`);
       } else {
-        console.log('✅ No orphaned products found - Stripe is clean');
+        Logger.info('✅ No orphaned products found - Stripe is clean');
       }
       
     } catch (error) {
-      console.error('Failed to cleanup orphaned products:', error);
+      Logger.error('Failed to cleanup orphaned products:', error);
       // Don't throw - this is cleanup, not critical
     }
   }
@@ -304,7 +305,7 @@ export class StripeProductSync {
     
     if (product?.stripeProductId) {
       await stripe.products.update(product.stripeProductId, { active: false });
-      console.log(`Deactivated Stripe product ${product.stripeProductId}`);
+      Logger.info(`Deactivated Stripe product ${product.stripeProductId}`);
     }
   }
 

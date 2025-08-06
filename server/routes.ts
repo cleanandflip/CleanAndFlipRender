@@ -2812,7 +2812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await StripeProductSync.syncAllProducts();
       res.json({ success: true, message: 'All products synced to Stripe' });
     } catch (error) {
-      console.error('Sync all products error:', error);
+      Logger.error('Sync all products error:', error);
       res.status(500).json({ error: 'Failed to sync products' });
     }
   });
@@ -2824,7 +2824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await StripeProductSync.syncProduct(productId);
       res.json({ success: true, message: 'Product synced to Stripe' });
     } catch (error) {
-      console.error('Sync product error:', error);
+      Logger.error('Sync product error:', error);
       res.status(500).json({ error: 'Failed to sync product' });
     }
   });
@@ -2835,7 +2835,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await createTestProducts();
       res.json({ success: true, message: 'Test products created and synced' });
     } catch (error) {
-      console.error('Create test products error:', error);
+      Logger.error('Create test products error:', error);
       res.status(500).json({ error: 'Failed to create test products' });
     }
   });
@@ -2866,7 +2866,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
       const userAgent = req.headers['user-agent'] || 'unknown';
 
-      console.log(`[API] Password reset request from ${ipAddress} for ${email}`);
+      Logger.info(`[API] Password reset request from ${ipAddress} for ${email}`);
 
       const result = await PasswordResetService.requestPasswordReset(
         email,
@@ -2876,7 +2876,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // In development, include debug info
       if (process.env.NODE_ENV === 'development' && result.debugInfo) {
-        console.log('[API] Debug info:', result.debugInfo);
+        Logger.info('[API] Debug info:', result.debugInfo);
       }
 
       // Always return the same response to prevent email enumeration
@@ -2886,7 +2886,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error: any) {
-      console.error('[API] Password reset error:', error);
+      Logger.error('[API] Password reset error:', error);
       // Still return success to prevent information leakage
       res.json({ 
         success: true, 
@@ -2907,7 +2907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validation = await PasswordResetService.validateResetToken(token);
       res.json(validation);
     } catch (error: any) {
-      console.error('[API] Token validation error:', error);
+      Logger.error('[API] Token validation error:', error);
       res.status(500).json({ valid: false, error: 'Failed to validate token' });
     }
   });
@@ -2920,7 +2920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await PasswordResetService.validateResetToken(token, email);
       res.json(result);
     } catch (error: any) {
-      console.error('[API] Token validation error:', error);
+      Logger.error('[API] Token validation error:', error);
       res.json({ valid: false, error: 'Validation failed' });
     }
   });
@@ -2956,7 +2956,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(result);
     } catch (error: any) {
-      console.error('[API] Password reset error:', error);
+      Logger.error('[API] Password reset error:', error);
       res.status(500).json({ 
         success: false, 
         error: 'Failed to reset password' 
