@@ -84,8 +84,7 @@ import {
   insertOrderTrackingSchema,
   insertReturnRequestSchema
 } from "@shared/schema";
-import { emailService } from "./services/email";
-import { PasswordResetService } from "./services/password-reset.service";
+import authRoutes from './routes/auth.routes';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -2848,121 +2847,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   Logger.info('Production-grade security measures now active');
 
   // =======================================================
-  // PASSWORD RESET API ROUTES
+  // AUTH ROUTES (PASSWORD RESET)
   // =======================================================
+  
+  // Use the clean auth routes
+  app.use(authRoutes);
 
-  // Request password reset
-  app.post("/api/auth/forgot-password", async (req, res) => {
-    try {
-      const { email } = req.body;
-      
-      if (!email || typeof email !== 'string') {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Email is required' 
-        });
-      }
 
-      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
-      const userAgent = req.headers['user-agent'] || 'unknown';
 
-      Logger.info(`[API] Password reset request from ${ipAddress} for ${email}`);
 
-      const result = await PasswordResetService.requestPasswordReset(
-        email,
-        ipAddress,
-        userAgent
-      );
-
-      // In development, include debug info
-      if (process.env.NODE_ENV === 'development' && result.debugInfo) {
-        Logger.info('[API] Debug info:', result.debugInfo);
-      }
-
-      // Always return the same response to prevent email enumeration
-      res.json({ 
-        success: true, 
-        message: result.message 
-      });
-      
-    } catch (error: any) {
-      Logger.error('[API] Password reset error:', error);
-      // Still return success to prevent information leakage
-      res.json({ 
-        success: true, 
-        message: 'If an account exists, reset email sent' 
-      });
-    }
-  });
-
-  // Validate password reset token
-  app.get("/api/auth/reset-password/:token", async (req, res) => {
-    try {
-      const { token } = req.params;
-      
-      if (!token) {
-        return res.status(400).json({ valid: false, error: 'Token is required' });
-      }
-
-      const validation = await PasswordResetService.validateResetToken(token);
-      res.json(validation);
-    } catch (error: any) {
-      Logger.error('[API] Token validation error:', error);
-      res.status(500).json({ valid: false, error: 'Failed to validate token' });
-    }
-  });
-
-  // Validate reset token endpoint (POST for email validation)
-  app.post("/api/auth/validate-reset-token", async (req, res) => {
-    try {
-      const { token, email } = req.body;
-      
-      const result = await PasswordResetService.validateResetToken(token, email);
-      res.json(result);
-    } catch (error: any) {
-      Logger.error('[API] Token validation error:', error);
-      res.json({ valid: false, error: 'Validation failed' });
-    }
-  });
-
-  // Reset password with token
-  app.post("/api/auth/reset-password", async (req, res) => {
-    try {
-      const { token, email, password } = req.body;
-      
-      // Validate inputs
-      if (!token || !email || !password) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'All fields are required' 
-        });
-      }
-      
-      if (password.length < 8) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Password must be at least 8 characters' 
-        });
-      }
-      
-      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
-      
-      const result = await PasswordResetService.resetPassword(
-        token,
-        password,
-        email,
-        ipAddress
-      );
-      
-      res.json(result);
-    } catch (error: any) {
-      Logger.error('[API] Password reset error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to reset password' 
-      });
-    }
-  });
 
   // Debug endpoint (remove in production)
   if (process.env.NODE_ENV !== 'production') {
