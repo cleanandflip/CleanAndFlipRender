@@ -9,7 +9,7 @@ import { Logger } from '../utils/logger';
 export class PasswordResetService {
   private static readonly TOKEN_LENGTH = 32;
   private static readonly TOKEN_EXPIRY_HOURS = 1;
-  private static readonly RATE_LIMIT_MINUTES = 2;
+  private static readonly RATE_LIMIT_MINUTES = 1;
   
   // In-memory rate limiting (replace with Redis in production)
   private static rateLimitMap = new Map<string, Date>();

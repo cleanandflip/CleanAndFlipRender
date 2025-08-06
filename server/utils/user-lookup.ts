@@ -25,6 +25,7 @@ export async function findUserByEmail(email: string): Promise<any | null> {
   
   for (const emailVariant of uniqueEmails) {
     try {
+      const queryStart = Date.now();
       // Try raw SQL first (most reliable)
       const result = await db.execute(sql`
         SELECT id, email, first_name, last_name, password, role, created_at
@@ -32,10 +33,13 @@ export async function findUserByEmail(email: string): Promise<any | null> {
         WHERE email = ${emailVariant}
         LIMIT 1
       `);
+      const queryTime = Date.now() - queryStart;
       
       if (result.rows.length > 0) {
-        Logger.info('[DEBUG] User found with email variant:', emailVariant);
+        Logger.info(`[DEBUG] User found with email variant: ${emailVariant} (${queryTime}ms)`);
         return result.rows[0];
+      } else {
+        Logger.info(`[DEBUG] No match for variant: ${emailVariant} (${queryTime}ms)`);
       }
     } catch (error) {
       Logger.error(`[DEBUG] Query error for variant: ${emailVariant}`, (error as Error).message);
@@ -44,16 +48,20 @@ export async function findUserByEmail(email: string): Promise<any | null> {
   
   // If still not found, try case-insensitive search
   try {
+    const caseInsensitiveStart = Date.now();
     const result = await db.execute(sql`
       SELECT id, email, first_name, last_name, password, role, created_at
       FROM users
       WHERE LOWER(TRIM(email)) = LOWER(TRIM(${email}))
       LIMIT 1
     `);
+    const caseInsensitiveTime = Date.now() - caseInsensitiveStart;
     
     if (result.rows.length > 0) {
-      Logger.info('[DEBUG] User found with case-insensitive search');
+      Logger.info(`[DEBUG] User found with case-insensitive search (${caseInsensitiveTime}ms)`);
       return result.rows[0];
+    } else {
+      Logger.info(`[DEBUG] No match with case-insensitive search (${caseInsensitiveTime}ms)`);
     }
   } catch (error) {
     Logger.error('[DEBUG] Case-insensitive search error:', (error as Error).message);
