@@ -205,10 +205,19 @@ async function startServer() {
 
     // Setup frontend serving based on environment
     if (process.env.NODE_ENV === "production") {
-      // Production: serve static files from dist
+      // Production: serve static files from dist/public
+      const publicPath = path.resolve(process.cwd(), "dist/public");
       const distPath = path.resolve(process.cwd(), "dist");
 
-      if (fs.existsSync(distPath)) {
+      if (fs.existsSync(publicPath)) {
+        app.use(express.static(publicPath));
+        app.get("*", (req, res) => {
+          if (!req.path.startsWith("/api")) {
+            res.sendFile(path.join(publicPath, "index.html"));
+          }
+        });
+        Logger.info(`[MAIN] Serving static files from ${publicPath}`);
+      } else if (fs.existsSync(distPath)) {
         app.use(express.static(distPath));
         app.get("*", (req, res) => {
           if (!req.path.startsWith("/api")) {
