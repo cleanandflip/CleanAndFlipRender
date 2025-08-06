@@ -103,44 +103,11 @@ export function UnifiedDropdown({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          "w-full text-left focus:outline-none flex items-center justify-between group hover:bg-gray-600/50 focus:bg-gray-600/60 focus:border-gray-300/60",
+          "unified-dropdown-trigger w-full text-left focus:outline-none flex items-center justify-between group",
           disabled 
             ? "cursor-not-allowed opacity-50" 
             : "cursor-pointer"
         )}
-        style={{
-          background: 'rgba(75, 85, 99, 0.4)',
-          border: '1px solid rgba(156, 163, 175, 0.4)',
-          borderRadius: '0.5rem',
-          color: 'white',
-          fontWeight: '500',
-          minHeight: '2.75rem',
-          padding: '0.75rem 1rem',
-          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05), inset 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-        }}
-        onFocus={(e) => {
-          e.target.style.borderColor = 'rgba(148, 163, 184, 0.6)';
-          e.target.style.background = 'rgba(75, 85, 99, 0.6)';
-          e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.05), inset 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.08)';
-        }}
-        onBlur={(e) => {
-          e.target.style.borderColor = 'rgba(156, 163, 175, 0.4)';
-          e.target.style.background = 'rgba(75, 85, 99, 0.4)';
-          e.target.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05), inset 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05)';
-        }}
-        onMouseEnter={(e) => {
-          if (!disabled) {
-            e.target.style.borderColor = 'rgba(156, 163, 175, 0.5)';
-            e.target.style.background = 'rgba(75, 85, 99, 0.5)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!disabled && !isOpen) {
-            e.target.style.borderColor = 'rgba(156, 163, 175, 0.4)';
-            e.target.style.background = 'rgba(75, 85, 99, 0.4)';
-          }
-        }}
       >
         {searchable && isOpen ? (
           <input
