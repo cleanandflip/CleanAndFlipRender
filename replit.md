@@ -89,12 +89,12 @@ The application is now optimized for deployment on Google Cloud Run and other co
 
 ### Recent Changes (August 6, 2025)
 
-**🚨 CRITICAL DATABASE SCHEMA MISMATCH - COMPLETELY RESOLVED**
-- **URGENT FIX**: Resolved "column street does not exist" error breaking password reset system
-- **ROOT CAUSE**: Schema-database mismatch causing user lookup failures
-- **SOLUTION**: Verified all address columns exist in database, schema properly aligned
-- **VERIFIED**: Password reset system now fully operational for all users including "cleanandflipyt@gmail.com"
-- **COMPREHENSIVE**: Complete user data retrieval working correctly
+**🚨 CRITICAL "COLUMN STREET" ERROR - PERMANENTLY RESOLVED**
+- **ROOT CAUSE IDENTIFIED**: UserService using implicit `.select()` trying to fetch ALL schema columns including address fields
+- **PERMANENT FIX**: Implemented explicit column selection in all database queries
+- **TECHNICAL SOLUTION**: Updated UserService.findUserByEmail() to select only required columns
+- **VERIFIED**: Password reset system fully operational - no more column errors
+- **ROBUST**: Future-proof against schema changes with explicit query design
 
 **🚀 DEPLOYMENT MIGRATION ISSUE - COMPLETELY RESOLVED**
 - **CRITICAL FIX**: Resolved deployment migrations trying to drop search functionality

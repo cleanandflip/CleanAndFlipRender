@@ -19,9 +19,23 @@ export class UserService {
     console.log(`[UserService] Starting lookup for: "${normalizedEmail}"`);
 
     try {
-      // PRIMARY METHOD: Use PostgreSQL's lower() function
+      // PRIMARY METHOD: Use PostgreSQL's lower() function with EXPLICIT column selection
       const result = await db
-        .select()
+        .select({
+          id: users.id,
+          email: users.email,
+          password: users.password,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+          isAdmin: users.isAdmin,
+          isLocalCustomer: users.isLocalCustomer,
+          stripeCustomerId: users.stripeCustomerId,
+          stripeSubscriptionId: users.stripeSubscriptionId,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          phone: users.phone
+        })
         .from(users)
         .where(sql`LOWER(TRIM(${users.email})) = ${normalizedEmail}`)
         .limit(1);
@@ -65,7 +79,21 @@ export class UserService {
       if (partialMatch) {
         console.log(`[UserService] ✅ Found via fallback: ID=${partialMatch.id}`);
         const fullUser = await db
-          .select()
+          .select({
+            id: users.id,
+            email: users.email,
+            password: users.password,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            role: users.role,
+            isAdmin: users.isAdmin,
+            isLocalCustomer: users.isLocalCustomer,
+            stripeCustomerId: users.stripeCustomerId,
+            stripeSubscriptionId: users.stripeSubscriptionId,
+            createdAt: users.createdAt,
+            updatedAt: users.updatedAt,
+            phone: users.phone
+          })
           .from(users)
           .where(eq(users.id, partialMatch.id))
           .limit(1);
