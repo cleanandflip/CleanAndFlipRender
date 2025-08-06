@@ -66,6 +66,29 @@ export function UnifiedDropdown({
 
   const selectedOption = normalizedOptions.find(opt => opt.value === value);
 
+  // Initialize search with current value
+  useEffect(() => {
+    if (!searchable) return;
+    if (selectedOption) {
+      setSearch(selectedOption.label);
+    } else if (value) {
+      // Handle custom values that aren't in options
+      setSearch(value);
+    } else {
+      setSearch('');
+    }
+  }, [value, selectedOption, searchable]);
+
+  // Handle Enter key to save custom values
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchable && allowCustom && search.trim()) {
+      e.preventDefault();
+      onChange(search.trim());
+      setIsOpen(false);
+      setSelectedIndex(-1);
+    }
+  };
+
   // Remove debug logs for production
 
   return (
@@ -100,15 +123,22 @@ export function UnifiedDropdown({
           fontWeight: '500'
         }}
       >
-        {searchable && isOpen ? (
+        {searchable ? (
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="bg-transparent outline-none flex-1 placeholder:text-gray-400 text-white"
+            className="bg-transparent outline-none flex-1 placeholder:text-gray-400 text-white w-full"
             onClick={(e) => e.stopPropagation()}
-            autoFocus
+            onFocus={() => setIsOpen(true)}
+            onBlur={() => {
+              // If allowCustom and we have a search value, use it
+              if (allowCustom && search.trim() && !normalizedOptions.find(opt => opt.label === search.trim())) {
+                onChange(search.trim());
+              }
+            }}
           />
         ) : (
           <span className={selectedOption ? 'text-white' : 'text-gray-400'}>
@@ -135,6 +165,24 @@ export function UnifiedDropdown({
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
           }}
         >
+          {/* Show custom option first if applicable */}
+          {allowCustom && search.trim() && !normalizedOptions.find(opt => opt.label.toLowerCase() === search.trim().toLowerCase()) && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange(search.trim());
+                setIsOpen(false);
+                setSelectedIndex(-1);
+              }}
+              className="w-full px-4 py-3 text-left flex items-center justify-between transition-all duration-200 hover:scale-[1.02] group border-b border-slate-600/40"
+            >
+              <span className="font-medium text-blue-300 flex items-center gap-2">
+                <span>Create "{search.trim()}"</span>
+                <span className="text-xs bg-blue-500/20 px-2 py-1 rounded">Custom</span>
+              </span>
+            </button>
+          )}
+          
           {filteredOptions.length > 0 ? (
             filteredOptions.map((option, index) => (
               <button
@@ -170,22 +218,9 @@ export function UnifiedDropdown({
             ))
           ) : (
             <div className="px-6 py-4 text-center">
-              {allowCustom && search.trim() ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onChange(search.trim());
-                    setIsOpen(false);
-                    setSearch('');
-                    setSelectedIndex(-1);
-                  }}
-                  className="text-blue-300 hover:text-blue-200 transition-colors font-medium hover:scale-105 transform duration-200"
-                >
-                  Use "{search.trim()}" (custom)
-                </button>
-              ) : (
-                <span className="text-slate-400 font-medium">No options found</span>
-              )}
+              <span className="text-slate-400 font-medium">
+                {allowCustom ? 'Type to create custom option' : 'No options found'}
+              </span>
             </div>
           )}
         </div>
@@ -197,7 +232,6 @@ export function UnifiedDropdown({
           className="fixed inset-0 z-10" 
           onClick={() => {
             setIsOpen(false);
-            setSearch('');
             setSelectedIndex(-1);
           }} 
         />
