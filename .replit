@@ -1,23 +1,4 @@
-modules = ["nodejs-20", "postgresql-16"]
-hidden = [".config", "package-lock.json"]
-run = "npm run dev"
+modules = ["nodejs-20"]
 
 [nix]
-channel = "stable-24_05"
-packages = ["psmisc", "lsof"]
-
-[unitTest]
-language = "nodejs"
-
-[deployment]
-run = ["sh", "-c", "npm start"]
-deploymentTarget = "cloudrun"
-ignorePorts = false
-
-[env]
-PATH = "/home/runner/workspace/node_modules/.bin:/home/runner/workspace/.npm-prefix/bin:$PATH"
-NODE_ENV = "development"
-
-[[ports]]
-localPort = 5000
-externalPort = 80
+channel = "stable-25_05"

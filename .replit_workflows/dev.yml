@@ -1,5 +1,0 @@
-name: "Clean & Flip Development"
-steps:
-  - name: "Start Development Server"
-    type: "shell"
-    command: "npm run dev"
