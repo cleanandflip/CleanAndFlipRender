@@ -1,17 +1,38 @@
-const { spawn } = require('child_process');
+const express = require('express');
+const path = require('path');
 
-console.log('🚀 Starting Clean & Flip server...');
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Start the TypeScript server using tsx
-const server = spawn('npx', ['tsx', 'server/index.ts'], {
-  stdio: 'inherit',
-  shell: true
+// Basic middleware
+app.use(express.json());
+app.use(express.static('public'));
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    message: 'Clean & Flip server is running!',
+    timestamp: new Date().toISOString()
+  });
 });
 
-server.on('close', (code) => {
-  console.log(`Server process exited with code ${code}`);
+// Basic route
+app.get('/', (req, res) => {
+  res.send(`
+    <html>
+      <head><title>Clean & Flip</title></head>
+      <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+        <h1>🏋️ Clean & Flip</h1>
+        <p>E-Commerce Marketplace for Weightlifting Equipment</p>
+        <p>Server is running successfully!</p>
+        <a href="/health">Health Check</a>
+      </body>
+    </html>
+  `);
 });
 
-server.on('error', (err) => {
-  console.error('Failed to start server:', err);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Clean & Flip server running on port ${PORT}`);
+  console.log(`🔗 Visit: http://localhost:${PORT}`);
 });

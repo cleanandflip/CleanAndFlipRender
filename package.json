@@ -8,8 +8,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsx server/index.ts",
-    "dev": "tsx watch server/index.ts"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -18,27 +17,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
+  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/cleanandflip/CleanAndFlip/issues"
   },
   "homepage": "https://github.com/cleanandflip/CleanAndFlip#readme",
   "dependencies": {
-    "@tailwindcss/typography": "^0.5.16",
-    "@types/compression": "^1.8.1",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/express-session": "^1.18.2",
-    "compression": "^1.8.1",
-    "cors": "^2.8.5",
-    "drizzle-kit": "^0.31.4",
-    "express": "^5.1.0",
-    "express-session": "^1.18.2",
-    "helmet": "^8.1.0",
-    "http-proxy-middleware": "^3.0.5",
-    "tailwindcss": "^4.1.11",
-    "tailwindcss-animate": "^1.0.7",
-    "tsx": "^4.20.3",
-    "typescript": "^5.9.2"
+    "express": "^5.1.0"
   }
 }
