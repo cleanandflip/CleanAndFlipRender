@@ -10,7 +10,7 @@ packages = ["psmisc", "lsof"]
 language = "nodejs"
 
 [deployment]
-run = ["sh", "-c", "npm run dev"]
+run = ["sh", "-c", "npm start"]
 deploymentTarget = "cloudrun"
 ignorePorts = false
 
@@ -21,7 +21,3 @@ NODE_ENV = "development"
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 5173
-externalPort = 5173
