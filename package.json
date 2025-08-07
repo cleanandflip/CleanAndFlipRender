@@ -1,0 +1,40 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsx server/index.ts",
+    "dev": "tsx watch server/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cleanandflip/CleanAndFlip.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/cleanandflip/CleanAndFlip/issues"
+  },
+  "homepage": "https://github.com/cleanandflip/CleanAndFlip#readme",
+  "dependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/express-session": "^1.18.2",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
+    "http-proxy-middleware": "^3.0.5",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
+  }
+}
