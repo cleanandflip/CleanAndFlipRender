@@ -235,30 +235,67 @@ export function CategoryManager() {
             </Button>
           </Card>
         ) : (
-          categories?.map((category: Category) => (
-            <Card key={category.id} className="glass themed-card p-4">
-              <div className="flex items-center gap-4">
-                {/* Drag Handle */}
-                <GripVertical className="w-4 h-4 text-text-muted cursor-grab hover:text-text-primary" />
-                
-                {/* Category Info */}
-                <div className="flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-8">
+            {categories?.map((category: Category) => (
+              <div key={category.id} className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 rounded-xl p-6 shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 group hover:scale-105">
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-text-primary">{category.name}</h3>
-                    <Badge variant={category.isActive ? 'default' : 'secondary'}>
-                      {category.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                    <Badge variant="outline">
-                      {category.productCount} products
-                    </Badge>
+                    <div className={`w-4 h-4 rounded-full animate-pulse ${category.isActive ? 'bg-green-400 shadow-green-400/50' : 'bg-red-400 shadow-red-400/50'} shadow-lg`} />
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${category.isActive ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'} border ${category.isActive ? 'border-green-500/30' : 'border-red-500/30'}`}>
+                      {category.isActive ? 'ACTIVE' : 'INACTIVE'}
+                    </div>
                   </div>
-                  {category.description && (
-                    <p className="text-sm text-text-muted mt-1">{category.description}</p>
-                  )}
-                  <p className="text-xs text-text-muted mt-1">
-                    Slug: /{category.slug} • Order: {category.order}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700/50">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-gray-900 border-gray-700">
+                      <DropdownMenuItem onClick={() => handleViewCategory(category)} className="text-gray-300 hover:text-white hover:bg-gray-800">
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditCategory(category)} className="text-gray-300 hover:text-white hover:bg-gray-800">
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Category
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleToggleActive(category)} className="text-gray-300 hover:text-white hover:bg-gray-800">
+                        {category.isActive ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                        {category.isActive ? 'Deactivate' : 'Activate'}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-gray-700" />
+                      <DropdownMenuItem 
+                        onClick={() => handleDeleteCategory(category)}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors line-clamp-1">{category.name}</h3>
+                  <p className="text-sm text-gray-400 leading-relaxed line-clamp-2">{category.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    /{category.slug} • Position: {category.order}
                   </p>
                 </div>
+                
+                <div className="flex items-center justify-between pt-4 border-t border-gray-700/50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-gray-400 font-medium">Products</span>
+                  </div>
+                  <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 px-3 py-1 rounded-lg border border-blue-500/30">
+                    <span className="text-lg font-bold text-white">{category.productCount}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
                 
                 {/* Actions */}
                 <div className="flex items-center gap-1">
