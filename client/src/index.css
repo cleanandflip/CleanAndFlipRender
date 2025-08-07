@@ -85,15 +85,22 @@ body {
   --glass-bg: rgba(35, 41, 55, 0.4);       /* Glass morphism */
   --glass-border: rgba(255, 255, 255, 0.08); /* Glass borders */
   --text-primary: #FFFFFF;                 /* Primary text */
-  --text-secondary: #FFFFFF;               /* Secondary text - now white for visibility */
-  --text-muted: #FFFFFF;                   /* Muted text - now white for better visibility */
-  --placeholder-color: #FFFFFF;            /* Placeholder text - white for visibility */
-  --label-color: #FFFFFF;                  /* Form label text - white for visibility */
-  --muted-foreground: #FFFFFF;             /* Muted foreground - white for visibility */
-  --input-placeholder: #FFFFFF;            /* Input placeholder override */
-  --form-placeholder: #FFFFFF;             /* Form placeholder override */
+  --text-secondary: #E2E8F0;               /* Secondary text */
+  --text-muted: #94A3B8;                   /* Muted text */
+  --placeholder-color: #64748B;            /* Placeholder text */
+  --label-color: #E2E8F0;                  /* Form label text */
+  --muted-foreground: #94A3B8;             /* Muted foreground */
+  --input-placeholder: #64748B;            /* Input placeholder */
+  --form-placeholder: #64748B;             /* Form placeholder */
   --accent-steel: #64748B;                 /* Athletic steel */
   --accent-blue: #3B82F6;                  /* Vibrant blue */
+  
+  /* ADMIN DASHBOARD OVERRIDE VARIABLES - FORCE NEW UI */
+  --admin-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 75%, #475569 100%);
+  --admin-card-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%);
+  --admin-card-border: rgba(71, 85, 105, 0.3);
+  --admin-text-primary: #FFFFFF;
+  --admin-text-secondary: #E2E8F0;
   
   /* Additional theme variables for consistency */
   --bg-primary: hsl(222, 47%, 11%);        /* #1e293b */
