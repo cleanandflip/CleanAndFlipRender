@@ -1,6 +1,5 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
+// Use minimal server to avoid Express dependency conflicts
+module.exports = require('./minimal-server.js');
 
 // Prevent multiple server instances
 if (global.serverInstance) {
