@@ -1,0 +1,4 @@
+name: "Clean & Flip Development Server"
+run: "npm run dev"
+language: "nodejs"
+onBoot: "npm run dev"
