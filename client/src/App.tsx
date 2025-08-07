@@ -26,7 +26,7 @@ const Checkout = lazy(() => import("@/pages/checkout"));
 const SellToUs = lazy(() => import("@/pages/sell-to-us"));
 const TrackSubmission = lazy(() => import("@/pages/track-submission"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
-const AdminDashboard = lazy(() => import("@/pages/admin-fresh"));
+const AdminDashboard = lazy(() => import("@/pages/admin"));
 const ProductForm = lazy(() => import("@/pages/admin/ProductForm").then(module => ({ default: module.ProductForm })));
 const Orders = lazy(() => import("@/pages/orders"));
 const Wishlist = lazy(() => import("@/pages/wishlist"));
