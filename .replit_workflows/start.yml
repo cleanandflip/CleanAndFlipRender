@@ -1,0 +1,9 @@
+name: "Start application"
+on:
+  - run
+
+tasks:
+  - name: "Start Clean & Flip Server"
+    command: "node index.js"
+    ports:
+      - 3000
