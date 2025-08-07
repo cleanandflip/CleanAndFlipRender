@@ -1,9 +1,4 @@
 const express = require('express');
-const session = require('express-session');
-const helmet = require('helmet');
-const cors = require('cors');
-const compression = require('compression');
-const { createServer } = require('http');
 const path = require('path');
 const fs = require('fs');
 
@@ -17,36 +12,42 @@ global.serverInstance = true;
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Simple in-memory session store
+const sessions = new Map();
+
 // Basic middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
-}));
-
-// CORS
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? false : ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true
-}));
-
-// Compression
-app.use(compression());
-
-// Session middleware
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'clean-and-flip-dev-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
+// Simple CORS middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
   }
-}));
+});
+
+// Simple session middleware
+app.use((req, res, next) => {
+  const sessionId = req.headers['x-session-id'] || 'default-session';
+  req.session = sessions.get(sessionId) || {};
+  
+  res.setSession = (data) => {
+    sessions.set(sessionId, { ...req.session, ...data });
+  };
+  
+  res.destroySession = () => {
+    sessions.delete(sessionId);
+  };
+  
+  next();
+});
 
 // Request logging
 app.use((req, res, next) => {
@@ -73,7 +74,9 @@ app.get('/health', (req, res) => {
 app.get('/api/test', (req, res) => {
   res.json({ 
     message: 'Clean & Flip API is working!',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    server: 'Express.js',
+    version: '1.0.0'
   });
 });
 
@@ -112,6 +115,28 @@ app.get('/api/products', (req, res) => {
       stock: 12,
       rating: 4.9,
       reviews: 35
+    },
+    {
+      id: 4,
+      name: 'Power Rack',
+      price: 899.99,
+      category: 'Racks',
+      description: 'Heavy-duty power rack for home gym setup',
+      image: '/images/rack.jpg',
+      stock: 5,
+      rating: 4.7,
+      reviews: 12
+    },
+    {
+      id: 5,
+      name: 'Adjustable Bench',
+      price: 249.99,
+      category: 'Benches',
+      description: 'Multi-position adjustable weight bench',
+      image: '/images/bench.jpg',
+      stock: 10,
+      rating: 4.5,
+      reviews: 20
     }
   ];
 
@@ -140,7 +165,7 @@ app.get('/api/categories', (req, res) => {
 
 // User authentication
 app.get('/api/user', (req, res) => {
-  if (!req.session || !req.session.userId) {
+  if (!req.session.userId) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
@@ -164,11 +189,13 @@ app.post('/api/login', (req, res) => {
 
   // Mock authentication
   if (email === 'admin@cleanandflip.com' && password === 'admin123') {
-    req.session.userId = 1;
-    req.session.userRole = 'admin';
-    req.session.userEmail = email;
-    req.session.firstName = 'Admin';
-    req.session.lastName = 'User';
+    res.setSession({
+      userId: 1,
+      userRole: 'admin',
+      userEmail: email,
+      firstName: 'Admin',
+      lastName: 'User'
+    });
     
     res.json({
       id: 1,
@@ -178,11 +205,13 @@ app.post('/api/login', (req, res) => {
       role: 'admin'
     });
   } else if (email === 'user@example.com' && password === 'user123') {
-    req.session.userId = 2;
-    req.session.userRole = 'user';
-    req.session.userEmail = email;
-    req.session.firstName = 'John';
-    req.session.lastName = 'Doe';
+    res.setSession({
+      userId: 2,
+      userRole: 'user',
+      userEmail: email,
+      firstName: 'John',
+      lastName: 'Doe'
+    });
     
     res.json({
       id: 2,
@@ -197,13 +226,8 @@ app.post('/api/login', (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error('Logout error:', err);
-      return res.status(500).json({ error: 'Logout failed' });
-    }
-    res.json({ success: true, message: 'Logged out successfully' });
-  });
+  res.destroySession();
+  res.json({ success: true, message: 'Logged out successfully' });
 });
 
 // Frontend serving
@@ -235,8 +259,9 @@ if (fs.existsSync(publicPath)) {
       res.json({
         message: 'Clean & Flip API Server',
         status: 'development',
-        note: 'Run npm run build to build the frontend',
-        api: 'operational'
+        note: 'Frontend will be served when built',
+        api: 'operational',
+        endpoints: ['/api/test', '/api/products', '/api/categories', '/api/login']
       });
     }
   });
@@ -252,28 +277,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Create HTTP server
-const httpServer = createServer(app);
-
 // Graceful shutdown
 const gracefulShutdown = (signal) => {
   console.log(`[SHUTDOWN] ${signal} received, shutting down gracefully...`);
   global.serverInstance = false;
-  
-  httpServer.close((err) => {
-    if (err) {
-      console.error('[SHUTDOWN] Error closing server:', err);
-      process.exit(1);
-    } else {
-      console.log('[SHUTDOWN] Server closed successfully');
-      process.exit(0);
-    }
-  });
-
-  setTimeout(() => {
-    console.error('[SHUTDOWN] Forced shutdown after timeout');
-    process.exit(1);
-  }, 10000);
+  process.exit(0);
 };
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
@@ -284,11 +292,12 @@ process.on('uncaughtException', (err) => {
 });
 
 // Start server
-httpServer.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Clean & Flip server running on port ${PORT}`);
   console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://0.0.0.0:${PORT}/health`);
   console.log(`🔗 API test: http://0.0.0.0:${PORT}/api/test`);
+  console.log(`🔗 Products: http://0.0.0.0:${PORT}/api/products`);
 });
 
 module.exports = app;
