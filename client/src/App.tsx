@@ -3,6 +3,7 @@ import { ROUTES } from "@/config/routes";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, lazy, Suspense } from "react";
+import "@/styles/force-dark-theme.css";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/use-cart";
@@ -134,6 +135,19 @@ function Router() {
 }
 
 function App() {
+  // FORCE dark mode on mount
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+    document.documentElement.style.colorScheme = 'dark';
+    
+    // Remove any light mode classes
+    document.documentElement.classList.remove('light');
+    
+    // Override any inline styles
+    document.querySelectorAll('[style*="background-color: white"]').forEach(el => {
+      (el as HTMLElement).style.backgroundColor = '#1A1F2B';
+    });
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

@@ -208,7 +208,7 @@ export function ShippingCalculator({
 
           {/* Shipping Summary */}
           {selectedOption && (
-            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg">
+            <div className="bg-gray-900 dark:bg-gray-800/50 p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="font-medium">Selected Shipping:</span>
                 <div className="text-right">

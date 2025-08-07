@@ -207,7 +207,7 @@ export const UsersTabComplete: React.FC<UsersTabCompleteProps> = ({ className })
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Users className="w-6 h-6 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-white dark:text-white">
             Users Management
           </h2>
           <Badge variant="secondary" className="ml-2">
@@ -314,7 +314,7 @@ export const UsersTabComplete: React.FC<UsersTabCompleteProps> = ({ className })
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">
+                        <p className="font-medium text-white dark:text-white">
                           {user.firstName} {user.lastName}
                         </p>
                         <p className="text-sm text-gray-500">{user.email}</p>
@@ -471,7 +471,7 @@ export const UsersTabComplete: React.FC<UsersTabCompleteProps> = ({ className })
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white">Contact Information</h4>
+                  <h4 className="font-semibold text-white dark:text-white">Contact Information</h4>
                   <div className="mt-2 space-y-2 text-sm">
                     <p>Email: {selectedUser.email}</p>
                     <p>Location: {selectedUser.city}, {selectedUser.state} {selectedUser.zipCode}</p>
@@ -480,7 +480,7 @@ export const UsersTabComplete: React.FC<UsersTabCompleteProps> = ({ className })
                 </div>
                 
                 <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white">Account Details</h4>
+                  <h4 className="font-semibold text-white dark:text-white">Account Details</h4>
                   <div className="mt-2 space-y-2 text-sm">
                     <p>Role: {selectedUser.isAdmin ? 'Administrator' : 'Customer'}</p>
                     <p>Member since: {format(new Date(selectedUser.createdAt), 'MMMM d, yyyy')}</p>
@@ -493,7 +493,7 @@ export const UsersTabComplete: React.FC<UsersTabCompleteProps> = ({ className })
               
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white">Activity Summary</h4>
+                  <h4 className="font-semibold text-white dark:text-white">Activity Summary</h4>
                   <div className="mt-2 space-y-2 text-sm">
                     <p>Total Orders: {selectedUser.totalOrders}</p>
                     <p>Total Spent: ${selectedUser.totalSpent}</p>
@@ -504,7 +504,7 @@ export const UsersTabComplete: React.FC<UsersTabCompleteProps> = ({ className })
                 
                 {selectedUser.stripeCustomerId && (
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">Payment Information</h4>
+                    <h4 className="font-semibold text-white dark:text-white">Payment Information</h4>
                     <div className="mt-2 space-y-2 text-sm">
                       <p>Stripe Customer: {selectedUser.stripeCustomerId}</p>
                     </div>

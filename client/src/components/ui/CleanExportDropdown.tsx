@@ -80,7 +80,7 @@ export function CleanExportDropdown({ onExport, disabled = false }: CleanExportD
             <div className="p-2 space-y-1">
               <button
                 onClick={() => handleExport('csv')}
-                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
               >
                 <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
                   <FileSpreadsheet className="w-4 h-4 text-gray-400" />
@@ -90,7 +90,7 @@ export function CleanExportDropdown({ onExport, disabled = false }: CleanExportD
               
               <button
                 onClick={() => handleExport('pdf')}
-                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
               >
                 <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
                   <FileText className="w-4 h-4 text-gray-400" />

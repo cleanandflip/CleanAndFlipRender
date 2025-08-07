@@ -150,7 +150,7 @@ export default function Navigation() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden bg-secondary p-2 w-10 h-10 flex-shrink-0 text-text-secondary border border-primary border-transparent hover:text-primary hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20 transition-all duration-200"
+              className="lg:hidden bg-secondary p-2 w-10 h-10 flex-shrink-0 text-text-secondary border border-primary border-transparent hover:text-primary hover:bg-gray-900/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20 transition-all duration-200"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
               <Search size={18} />

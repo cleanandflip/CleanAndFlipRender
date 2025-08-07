@@ -189,9 +189,9 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="!bg-gray-900 !border-gray-700 !text-white max-w-4xl max-h-[90vh] overflow-hidden">
+        <DialogHeader className="!border-gray-700">
+          <DialogTitle className="!text-white flex items-center gap-2">
             <Package className="w-5 h-5" />
             {product ? 'Edit Product' : 'Create New Product'}
           </DialogTitle>
@@ -453,7 +453,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                 {/* Images Tab */}
                 <TabsContent value="images" className="space-y-4">
                   <div className="space-y-4">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8">
+                    <div className="border-2 border-dashed border-gray-700 rounded-lg p-8">
                       <input
                         type="file"
                         id="image-upload"

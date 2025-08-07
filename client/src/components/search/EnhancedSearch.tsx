@@ -166,7 +166,7 @@ export function EnhancedSearch({
                   <button
                     key={suggestion.id}
                     onClick={() => handleSearch(suggestion.text)}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                    className="w-full text-left px-3 py-2 hover:bg-gray-800 dark:hover:bg-gray-800 rounded-lg transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -207,7 +207,7 @@ export function EnhancedSearch({
                   <button
                     key={recent.id}
                     onClick={() => handleSearch(recent.query)}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors group"
+                    className="w-full text-left px-3 py-2 hover:bg-gray-800 dark:hover:bg-gray-800 rounded-lg transition-colors group"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -236,7 +236,7 @@ export function EnhancedSearch({
                   <button
                     key={popular.query}
                     onClick={() => handleSearch(popular.query)}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                    className="w-full text-left px-3 py-2 hover:bg-gray-800 dark:hover:bg-gray-800 rounded-lg transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">

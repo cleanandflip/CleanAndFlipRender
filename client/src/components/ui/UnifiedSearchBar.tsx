@@ -261,7 +261,7 @@ export function UnifiedSearchBar({
     return (
       <div
         key={product.id}
-        className={`w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3 cursor-pointer ${isSelected ? 'bg-white/10' : ''}`}
+        className={`w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3 cursor-pointer ${isSelected ? 'bg-gray-900/10' : ''}`}
         onMouseDown={(e) => {
           e.preventDefault();
           handleProductSelect(product);
@@ -282,7 +282,7 @@ export function UnifiedSearchBar({
           )}
           {product.featured && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
-              <Sparkles size={8} className="text-gray-900" />
+              <Sparkles size={8} className="text-white" />
             </div>
           )}
         </div>
@@ -316,10 +316,10 @@ export function UnifiedSearchBar({
             )}
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-6 h-6 rounded bg-gray-600 flex items-center justify-center hover:bg-gray-500 transition-colors">
+            <div className="w-6 h-6 rounded bg-gray-600 flex items-center justify-center hover:bg-gray-9000 transition-colors">
               <Heart size={12} className="text-gray-400" />
             </div>
-            <div className="w-6 h-6 rounded bg-gray-600 flex items-center justify-center hover:bg-gray-500 transition-colors">
+            <div className="w-6 h-6 rounded bg-gray-600 flex items-center justify-center hover:bg-gray-9000 transition-colors">
               <ShoppingCart size={12} className="text-gray-400" />
             </div>
           </div>
@@ -358,7 +358,7 @@ export function UnifiedSearchBar({
                 <button
                   key={idx}
                   onClick={() => handleSearch(search)}
-                  className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+                  className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
                 >
                   <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
                     <Clock size={16} className="text-gray-400" />
@@ -378,7 +378,7 @@ export function UnifiedSearchBar({
             <button
               key={idx}
               onClick={() => handleSearch(term)}
-              className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+              className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
             >
               <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
                 <Sparkles size={16} className="text-gray-400" />
@@ -429,7 +429,7 @@ export function UnifiedSearchBar({
               <div className="border-t border-white/10 pt-2 mt-2" />
               <button
                 onClick={() => handleSearch(query)}
-                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
+                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
               >
                 <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
                   <Search size={16} className="text-white" />

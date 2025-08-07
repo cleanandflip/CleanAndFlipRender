@@ -107,7 +107,7 @@ export function CleanSelectDropdown({
                     "w-full p-3 rounded-lg text-left transition-all duration-200 flex items-center justify-between",
                     value === option.value 
                       ? "bg-blue-500/30 text-white" 
-                      : "hover:bg-white/10 text-white"
+                      : "hover:bg-gray-900/10 text-white"
                   )}
                 >
                   <span className="font-medium">{option.label}</span>

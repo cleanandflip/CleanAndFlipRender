@@ -236,7 +236,7 @@ export function GuestCheckout({ onSubmit, isLoading = false }: GuestCheckoutProp
           </div>
 
           {/* Account Creation Option */}
-          <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+          <div className="space-y-4 p-4 bg-gray-900 dark:bg-gray-800/50 rounded-lg">
             <FormField
               control={form.control}
               name="createAccount"

@@ -1,1074 +1,133 @@
-/* Import new theme files first */
-@import "./styles/dropdown.css";
-@import './styles/button-theme.css';
-@import './styles/outline-theme.css';
-@import './styles/simple-dropdown.css';
-@import './styles/theme-variables.css';
-
-@import './styles/typography.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Global smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  overflow-x: hidden;
-}
-
-/* Custom scrollbar styling for search dropdown */
-.scrollbar-thin {
-  scrollbar-width: thin;
-}
-
-.scrollbar-thumb-white\/20::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scrollbar-thumb-white\/20::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.scrollbar-thumb-white\/20::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-}
-
-.scrollbar-track-transparent::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+/* SINGLE SOURCE OF TRUTH - FORCE DARK THEME EVERYWHERE */
 :root {
-  /* Global Design System Colors - Clean & Flip */
-  --background: #1A1F2E;                   /* Primary background */
-  --foreground: #FFFFFF;                   /* Primary text */
-  --muted: #232937;                        /* Muted backgrounds */
-  --muted-foreground: #FFFFFF;             /* Muted text */
-  --popover: #232937;                      /* Popover backgrounds */
-  --popover-foreground: #E2E8F0;
-  --card: #232937;                         /* Card backgrounds */
-  --card-foreground: #E2E8F0;
+  /* ONLY THESE COLORS - NO OTHERS */
+  --bg-primary: #0F1419;
+  --bg-secondary: #1A1F2B;
+  --bg-tertiary: #242B3A;
+  --border: #374151;
+  --text-primary: #FFFFFF;
+  --text-secondary: #9CA3AF;
+  --accent: #2563EB;
   
-  /* Form inputs and borders */
-  --border: rgba(255, 255, 255, 0.15);     /* More visible borders */
-  --input: #475569;                        /* Lighter input backgrounds for better visibility */
-  --input-foreground: #FFFFFF;             /* Input text color - enforced white for readability */
-  
-  /* Primary colors - Blue theme */
-  --primary: #3B82F6;                      /* Vibrant blue */
+  /* Shadcn/UI overrides */
+  --background: #0F1419;
+  --foreground: #FFFFFF;
+  --card: #1A1F2B;
+  --card-foreground: #FFFFFF;
+  --popover: #1A1F2B;
+  --popover-foreground: #FFFFFF;
+  --primary: #2563EB;
   --primary-foreground: #FFFFFF;
-  
-  /* Secondary colors */
-  --secondary: #232937;                    /* Secondary backgrounds */
-  --secondary-foreground: #E2E8F0;
-  
-  /* Accent colors */
-  --accent: #475569;                       /* Stronger steel-gray */
-  --accent-foreground: #E2E8F0;
-  
-  /* State colors */
-  --destructive: #DC2626;                  /* Deep red */
-  --destructive-foreground: #FFFFFF;
-  --success: #059669;                      /* Forest green */
-  --warning: #D97706;                      /* Amber warning */
-  --info: #0891B2;                         /* Cyan info */
-  
-  /* Ring and radius */
-  --ring: rgba(59, 130, 246, 0.5);         /* Focus rings */
-  --radius: 0.75rem;
-  
-  /* Clean & Flip theme colors */
-  --glass-bg: rgba(35, 41, 55, 0.4);       /* Glass morphism */
-  --glass-border: rgba(255, 255, 255, 0.08); /* Glass borders */
-  --text-primary: #FFFFFF;                 /* Primary text */
-  --text-secondary: #E2E8F0;               /* Secondary text */
-  --text-muted: #94A3B8;                   /* Muted text */
-  --placeholder-color: #64748B;            /* Placeholder text */
-  --label-color: #E2E8F0;                  /* Form label text */
-  --muted-foreground: #94A3B8;             /* Muted foreground */
-  --input-placeholder: #64748B;            /* Input placeholder */
-  --form-placeholder: #64748B;             /* Form placeholder */
-  --accent-steel: #64748B;                 /* Athletic steel */
-  --accent-blue: #3B82F6;                  /* Vibrant blue */
-  
-  /* ADMIN DASHBOARD OVERRIDE VARIABLES - FORCE NEW UI */
-  --admin-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 75%, #475569 100%);
-  --admin-card-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%);
-  --admin-card-border: rgba(71, 85, 105, 0.3);
-  --admin-text-primary: #FFFFFF;
-  --admin-text-secondary: #E2E8F0;
-  
-  /* Additional theme variables for consistency */
-  --bg-primary: hsl(222, 47%, 11%);        /* #1e293b */
-  --bg-secondary: hsl(215, 25%, 20%);      /* #334155 */
-  --bg-tertiary: hsl(215, 25%, 27%);       /* #475569 */
-  --border-color: hsl(215, 20%, 35%);      /* #64748b */
+  --secondary: #242B3A;
+  --secondary-foreground: #FFFFFF;
+  --muted: #374151;
+  --muted-foreground: #9CA3AF;
+  --border: #374151;
+  --input: #374151;
+  --ring: #2563EB;
+  --radius: 0.5rem;
 }
 
-/* ULTIMATE Glass Morphism System - Override EVERYTHING */
-.glass {
-  background: rgba(35, 41, 55, 0.4) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 0.5rem !important;
-  padding: 0.25rem !important;
-  transition: all 300ms ease-in-out !important;
-  z-index: 50 !important;
-}
-
-.glass-hover:hover {
-  background: rgba(35, 41, 55, 0.6) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  transform: translateY(-1px) !important;
-}
-
-/* Force ALL child elements to be transparent */
-.glass button,
-.glass [data-radix-dropdown-menu-trigger],
-.glass .bg-transparent,
-.glass *[class*="bg-"],
-.glass *[class*="backdrop-"] {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* Override ALL Tailwind backdrop utilities */
-.glass .backdrop-blur-sm,
-.glass .backdrop-blur,
-.glass .backdrop-blur-md,
-.glass .backdrop-blur-lg,
-.glass .backdrop-blur-xl,
-.glass .backdrop-blur-2xl,
-.glass .backdrop-blur-3xl,
-.glass *[class*="backdrop-blur"] {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* Force dropdown content to appear above everything */
-[data-radix-dropdown-menu-content] {
-  z-index: 99999 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* Override ALL Tailwind backdrop utilities EVERYWHERE */
-*[class*="backdrop-blur"]:not(.glass) {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+/* FORCE DARK THEME EVERYWHERE */
+* {
+  color-scheme: dark !important;
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-gray-700;
   }
-
-  /* NUCLEAR OPTION - Force ALL placeholders to be white with maximum specificity */
-  input::placeholder,
-  textarea::placeholder,
-  select::placeholder,
-  [type="text"]::placeholder,
-  [type="email"]::placeholder,
-  [type="password"]::placeholder,
-  [type="tel"]::placeholder,
-  [type="number"]::placeholder,
-  [type="search"]::placeholder,
-  *::placeholder {
-    color: #ffffff !important;
-    opacity: 1 !important;
-  }
-
-  /* Absolute override for all browser prefixes */
-  ::-webkit-input-placeholder { 
-    color: white !important; 
-    opacity: 1 !important; 
-  }
-  ::-moz-placeholder { 
-    color: white !important; 
-    opacity: 1 !important; 
-  }
-  :-ms-input-placeholder { 
-    color: white !important; 
-    opacity: 1 !important; 
-  }
-  :-moz-placeholder { 
-    color: white !important; 
-    opacity: 1 !important; 
-  }
-
-  /* Force input text to be white */
-  input, 
-  textarea, 
-  select {
-    color: white !important;
-    caret-color: white !important;
-  }
-
-  /* Enhanced visibility form field styling - lighter backgrounds */
-  input,
-  textarea,
-  select,
-  .form-input,
-  [type="text"],
-  [type="email"],
-  [type="password"],
-  [type="tel"],
-  [type="number"],
-  [type="search"] {
-    border: 1px solid rgba(156, 163, 175, 0.4) !important; /* gray-400 with 40% opacity */
-    background: rgba(75, 85, 99, 0.4) !important; /* gray-600 with 40% opacity - much lighter */
-    border-radius: 0.5rem !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    font-weight: 500 !important; /* Slightly bolder text for better readability */
-    box-shadow: 
-      0 1px 2px 0 rgba(0, 0, 0, 0.05),
-      inset 0 1px 2px rgba(0, 0, 0, 0.1),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
-  }
-
-  /* Hover state - even lighter and more visible */
-  input:hover,
-  textarea:hover,
-  select:hover {
-    border-color: rgba(156, 163, 175, 0.5) !important; /* gray-400 with 50% opacity */
-    background: rgba(75, 85, 99, 0.5) !important; /* gray-600 with 50% opacity */
-  }
-
-  /* Focus state - maximum visibility with blue accent */
-  input:focus,
-  textarea:focus,
-  select:focus {
-    border-color: rgba(148, 163, 184, 0.6) !important; /* gray-300 with 60% opacity */
-    background: rgba(75, 85, 99, 0.6) !important; /* gray-600 with 60% opacity */
-    outline: none !important;
-    box-shadow: 
-      0 0 0 3px rgba(59, 130, 246, 0.15),
-      0 1px 2px 0 rgba(0, 0, 0, 0.05),
-      inset 0 1px 2px rgba(0, 0, 0, 0.1),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
-  }
-
-  /* Override component library styles */
-  .form-input::placeholder,
-  .input::placeholder,
-  [class*="input"]::placeholder,
-  [class*="form"]::placeholder {
-    color: white !important;
-    opacity: 0.8 !important;
-  }
-
-  /* Enhanced label and helper text visibility */
-  label,
-  .form-label {
-    color: rgba(229, 231, 235, 0.9) !important; /* gray-200 with 90% opacity */
-    font-weight: 500 !important;
-  }
-
-  /* Helper text under inputs */
-  .form-text,
-  .helper-text,
-  small {
-    color: rgba(209, 213, 219, 0.8) !important; /* gray-300 with 80% opacity */
-  }
-
-  /* COMPREHENSIVE DROPDOWN STYLING - NO BACKDROP FILTER for regular dropdowns */
-  select:not(.glass):not(.glass *),
-  select.form-select:not(.glass):not(.glass *),
-  select.form-control:not(.glass):not(.glass *),
-  .select:not(.glass):not(.glass *),
-  [role="combobox"]:not(.glass):not(.glass *),
-  [data-radix-collection-item]:not(.glass):not(.glass *),
-  [class*="select"]:not(option):not(.glass):not(.glass *),
-  [class*="dropdown"]:not(.dropdown-menu):not(.glass):not(.glass *),
-  button[class*="select"]:not(.glass):not(.glass *),
-  button[aria-haspopup="listbox"]:not(.glass):not(.glass *),
-  button[aria-haspopup="true"]:not(.glass):not(.glass *),
-  button[aria-expanded]:not(.glass):not(.glass *),
-  div[class*="select"]:not(.glass):not(.glass *),
-  div[class*="dropdown"]:not(.glass):not(.glass *),
-  .select-trigger:not(.glass):not(.glass *),
-  .dropdown-trigger:not(.glass):not(.glass *),
-  [data-radix-select-trigger]:not(.glass):not(.glass *),
-  [data-headlessui-component="Listbox.Button"]:not(.glass):not(.glass *),
-  [data-state="open"]:not(.glass):not(.glass *),
-  [data-state="closed"]:not(.glass):not(.glass *) {
-    background: rgba(75, 85, 99, 0.4) !important; /* Match input background exactly */
-    background-color: rgba(75, 85, 99, 0.4) !important;
-    border: 1px solid rgba(156, 163, 175, 0.4) !important; /* Match input border exactly */
-    border-radius: 0.5rem !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    color: white !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    min-height: 2.75rem !important;
-    padding: 0.75rem 1rem !important;
-    box-shadow: 
-      0 1px 2px 0 rgba(0, 0, 0, 0.05),
-      inset 0 1px 2px rgba(0, 0, 0, 0.1),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
-  }
-
-  /* Remove any conflicting dark styles */
-  .bg-gray-800,
-  .bg-gray-900,
-  .bg-slate-800,
-  .bg-slate-900,
-  [class*="bg-gray-8"],
-  [class*="bg-gray-9"],
-  [class*="bg-slate-8"],
-  [class*="bg-slate-9"] {
-    background: rgba(75, 85, 99, 0.4) !important;
-    background-color: rgba(75, 85, 99, 0.4) !important;
-  }
-
-  /* Native select arrow styling - enhanced */
-  select,
-  select.form-control,
-  select.form-select {
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    appearance: none !important;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.7)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
-    background-repeat: no-repeat !important;
-    background-position: right 0.75rem center !important;
-    background-size: 1.25em !important;
-    padding-right: 2.5rem !important;
-    /* Force the background to stay consistent */
-    background-color: rgba(75, 85, 99, 0.4) !important;
-  }
-
-  /* Nuclear option - force override everything with CSS variables */
-  * {
-    --dropdown-bg: rgba(75, 85, 99, 0.4) !important;
-    --dropdown-border: rgba(156, 163, 175, 0.4) !important;
-    --dropdown-hover-bg: rgba(75, 85, 99, 0.5) !important;
-    --dropdown-focus-bg: rgba(75, 85, 99, 0.6) !important;
-  }
-
-  /* Dropdown hover states - match input hover exactly (EXCEPT glass containers) */
-  select:hover:not(.glass):not(.glass *),
-  [class*="select"]:hover:not(.glass):not(.glass *),
-  [class*="dropdown"]:hover:not(.glass):not(.glass *),
-  button[class*="select"]:hover:not(.glass):not(.glass *),
-  button[aria-haspopup="true"]:hover:not(.glass):not(.glass *),
-  div[class*="select"]:hover:not(.glass):not(.glass *),
-  div[class*="dropdown"]:hover:not(.glass):not(.glass *),
-  [role="combobox"]:hover:not(.glass):not(.glass *),
-  [data-radix-select-trigger]:hover:not(.glass):not(.glass *) {
-    border-color: rgba(156, 163, 175, 0.5) !important;
-    background: rgba(75, 85, 99, 0.5) !important;
-    background-color: rgba(75, 85, 99, 0.5) !important;
-  }
-
-  /* Dropdown focus states - match input focus exactly */
-  select:focus,
-  [class*="select"]:focus,
-  [class*="dropdown"]:focus,
-  button[class*="select"]:focus,
-  button[aria-haspopup="true"]:focus,
-  div[class*="select"]:focus,
-  div[class*="dropdown"]:focus,
-  [role="combobox"]:focus,
-  [data-radix-select-trigger]:focus {
-    border-color: rgba(148, 163, 184, 0.6) !important;
-    background: rgba(75, 85, 99, 0.6) !important;
-    background-color: rgba(75, 85, 99, 0.6) !important;
-    outline: none !important;
-    box-shadow: 
-      0 0 0 3px rgba(59, 130, 246, 0.15),
-      0 1px 2px 0 rgba(0, 0, 0, 0.05),
-      inset 0 1px 2px rgba(0, 0, 0, 0.1),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
-  }
-
-  /* Component library specific overrides */
-  [data-radix-select-trigger],
-  [data-radix-select-viewport],
-  [data-headlessui-state="open"],
-  [data-headlessui-state="closed"],
-  .react-select__control,
-  .react-select__control--is-focused {
-    background: rgba(75, 85, 99, 0.4) !important;
-    background-color: rgba(75, 85, 99, 0.4) !important;
-    border: 1px solid rgba(156, 163, 175, 0.4) !important;
-    box-shadow: 
-      0 1px 2px 0 rgba(0, 0, 0, 0.05),
-      inset 0 1px 2px rgba(0, 0, 0, 0.1),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
-  }
-
-  /* Dropdown menu/content styling */
-  [role="listbox"],
-  [class*="select-content"],
-  [class*="dropdown-content"],
-  [class*="menu-content"] {
-    background: rgba(31, 41, 55, 0.95) !important;
-    border: 1px solid rgba(156, 163, 175, 0.3) !important;
-    border-radius: 0.5rem !important;
-    box-shadow: 
-      0 10px 25px -5px rgba(0, 0, 0, 0.25),
-      0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  }
-
-  /* Dropdown menu items */
-  [role="option"],
-  [class*="select-item"],
-  [class*="dropdown-item"] {
-    color: rgba(229, 231, 235, 0.9) !important;
-    transition: all 0.15s ease !important;
-  }
-
-  [role="option"]:hover,
-  [class*="select-item"]:hover,
-  [class*="dropdown-item"]:hover {
-    background: rgba(75, 85, 99, 0.5) !important;
-    color: white !important;
-  }
-
-  /* Clean up - removed old search dropdown CSS as new SearchBar handles positioning natively */
-
-  /* Remove all possible gray placeholder classes */
-  .placeholder-gray-400::placeholder,
-  .placeholder-gray-500::placeholder,
-  .placeholder-gray-600::placeholder,
-  .placeholder-slate-400::placeholder,
-  .placeholder-muted::placeholder,
-  [class*="placeholder-gray"]::placeholder,
-  [class*="placeholder:text-gray"]::placeholder {
-    color: white !important;
-    opacity: 1 !important;
-  }
-
-  body {
-    @apply font-sans antialiased text-foreground;
-    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%);
-    background-attachment: fixed;
-    min-height: 100vh;
-    position: relative;
-    overflow-x: hidden;
-    transition: all 0.3s ease;
-  }
-
-  /* Prevent flash of unstyled content */
+  
   html {
-    visibility: hidden;
-    opacity: 0;
-  }
-
-  html.loaded {
-    visibility: visible;
-    opacity: 1;
-    transition: opacity 0.3s ease-out;
-  }
-
-  /* Form fade-in animation */
-  @keyframes fadeInForm {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Apply to form containers */
-  form,
-  .form-container {
-    animation: fadeInForm 0.4s ease-out;
-  }
-
-  /* Athletic hexagonal pattern overlay (gym floor style) */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='30,0 52,13 52,39 30,52 8,39 8,13' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1.5'/%3E%3C/svg%3E");
-    background-size: 60px 52px;
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0.7;
-    animation: hexBreathe 8s ease-in-out infinite;
-  }
-
-  /* Subtle accent grid lines */
-  body::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-      linear-gradient(90deg, transparent 49%, rgba(59,130,246,0.02) 50%, transparent 51%),
-      linear-gradient(0deg, transparent 49%, rgba(59,130,246,0.02) 50%, transparent 51%);
-    background-size: 200px 200px;
-    z-index: 1;
-    pointer-events: none;
-    animation: gridPulse 20s ease-in-out infinite;
-  }
-
-  /* Breathing animation for hexagonal pattern */
-  @keyframes hexBreathe {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 0.9; }
-  }
-
-  /* Grid pulse animation */
-  @keyframes gridPulse {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 0.6; }
-  }
-
-  /* Ensure all pages inherit athletic background */
-  html, body, #root {
-    background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%);
-    background-attachment: fixed;
-    min-height: 100vh;
-  }
-
-  /* Remove conflicting backgrounds on page containers */
-  .page-container,
-  .min-h-screen {
-    background: transparent !important;
-  }
-
-  /* Ensure content is above pattern */
-  main, nav, footer, .content, [data-radix-portal] {
-    position: relative;
-    z-index: 2;
-  }
-
-  /* Athletic atmosphere enhancement */
-  .gym-atmosphere {
-    position: fixed;
-    inset: 0;
-    background: 
-      radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.03) 0%, transparent 40%),
-      radial-gradient(circle at 70% 80%, rgba(34, 197, 94, 0.03) 0%, transparent 40%);
-    animation: atmosphereShift 25s ease-in-out infinite;
-    z-index: 1;
-    pointer-events: none;
-  }
-
-  @keyframes atmosphereShift {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 0.8; }
-  }
-}
-
-@layer components {
-
-  /* Logo styling with enhanced glow effects */
-  .logo-glow {
-    filter: invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
-    transition: all 0.3s ease;
+    @apply bg-[#0F1419] text-white;
   }
   
-  .logo-glow:hover {
-    filter: invert(1) drop-shadow(0 0 16px rgba(255, 255, 255, 0.6));
+  body {
+    @apply bg-[#0F1419] text-white;
   }
   
-  .logo-glow-large {
-    filter: invert(1) drop-shadow(0 0 24px rgba(255, 255, 255, 0.5));
+  /* Force all inputs to be dark */
+  input, textarea, select {
+    @apply bg-gray-800 text-white border-gray-700 !important;
   }
   
-  .nav-brand {
-    @apply flex items-center gap-3;
+  /* Force all buttons to be dark */
+  button {
+    @apply bg-gray-800 text-white border-gray-700 hover:bg-gray-700 !important;
   }
   
-  .nav-brand img {
-    display: block;
-  }
-
-  /* Mobile responsive logo sizes */
-  @media (max-width: 768px) {
-    .logo-glow {
-      filter: invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
-    }
-    .logo-glow:hover {
-      filter: invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.5));
-    }
+  /* Override all dialog/modal backgrounds */
+  [role="dialog"] {
+    @apply bg-gray-900 !important;
   }
   
-
-  
-  .trust-indicator {
-    animation: pulse 2s infinite;
+  /* Override all table elements */
+  table {
+    @apply bg-transparent !important;
   }
   
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+  th {
+    @apply bg-gray-800 text-gray-300 !important;
   }
   
-  .cart-drawer {
-    @apply transform translate-x-full transition-transform duration-300 ease-in-out;
-  }
-  
-  .cart-drawer.open {
-    @apply transform translate-x-0;
-  }
-  
-  .search-suggestions {
-    @apply max-h-0 overflow-hidden transition-all duration-300 ease-in-out;
-  }
-  
-  .search-suggestions.open {
-    @apply max-h-80;
-  }
-
-  /* Custom spacing utilities */
-  .spacing-section {
-    @apply mb-24;
-  }
-  
-  .spacing-element {
-    @apply mb-4;
-  }
-  
-  .spacing-text {
-    @apply mb-2;
-  }
-
-  /* Typography improvements */
-  .font-bebas {
-    font-family: 'Bebas Neue', cursive;
-    letter-spacing: 0.05em;
-  }
-
-  /* Button hover effects - using new theme variables */
-  .btn-glass-legacy {
-    @apply glass glass-hover px-6 py-3 font-semibold text-white transition-all duration-300;
-  }
-
-  /* Product card styling */
-  .product-card {
-    @apply glass glass-hover overflow-hidden;
-  }
-  
-  .product-card img {
-    @apply w-full h-48 object-cover transition-transform duration-300;
-  }
-  
-  .product-card:hover img {
-    @apply scale-105;
-  }
-  
-  /* Professional color utilities - Clean & Flip theme */
-  .text-accent-blue {
-    color: var(--accent-blue) !important;
-  }
-  
-  .bg-accent-blue {
-    background-color: var(--accent-blue) !important;
-  }
-  
-  .text-success {
-    color: var(--success) !important;
-  }
-  
-  .bg-success {
-    background-color: var(--success) !important;
-  }
-  
-  .text-text-secondary {
-    color: var(--text-secondary) !important;
-  }
-  
-  .text-text-muted {
-    color: var(--text-muted) !important;
-  }
-  
-  .bg-warning {
-    background-color: hsl(45, 93%, 58%) !important;
-  }
-
-  /* Navigation styling */
-  .nav-floating {
-    @apply fixed top-6 left-6 right-6 z-50 glass px-6 py-4;
-  }
-
-  /* Footer styling */
-  .footer-dark {
-    background: hsla(222, 84%, 5%, 0.8);
-    border-top: 1px solid var(--glass-border);
+  td {
+    @apply border-gray-700 !important;
   }
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-  
-  .animate-blob {
-    animation: blob 7s infinite;
-  }
-
-  .animation-delay-2000 {
-    animation-delay: 2s;
-  }
+/* OVERRIDE ALL SHADCN/UI DEFAULTS */
+.ui-*, [class*="Dialog"], [class*="Modal"], [class*="Popover"], [class*="Sheet"] {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
 }
 
-@keyframes blob {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-  100% { transform: translate(0px, 0px) scale(1); }
+/* Kill any white backgrounds globally */
+.bg-white { @apply bg-gray-900 !important; }
+.bg-gray-50 { @apply bg-gray-900 !important; }
+.bg-gray-100 { @apply bg-gray-800 !important; }
+.text-gray-900 { @apply text-white !important; }
+.text-black { @apply text-white !important; }
+.border-gray-200 { @apply border-gray-700 !important; }
+.border-gray-300 { @apply border-gray-700 !important; }
+
+/* Force specific component overrides */
+[data-radix-dialog-content] {
+  @apply bg-gray-900 border-gray-700 !important;
 }
 
-/* ========================================
-   GLOBAL THEME VISIBILITY FIXES - Clean & Flip
-   Addressing gray text visibility issues
-======================================== */
-
-/* 1. HELPER/INFORMATIONAL TEXT - Make all helper text more visible */
-.text-muted, 
-p.help-text,
-span.help-text,
-.form-help {
-  color: #d1d5db !important; /* gray-300 */
+[data-radix-dialog-overlay] {
+  @apply bg-black/80 !important;
 }
 
-/* Specific helper text patterns */
-p:has(> small),
-div[class*="help"],
-div[class*="info"] {
-  color: #d1d5db !important; /* gray-300 */
+/* Table specific overrides */
+.table-header {
+  @apply bg-gray-800 !important;
 }
 
-/* 2. FILE UPLOAD SECTION TEXT - Improve upload area visibility */
-.upload-text,
-.dropzone-text,
-[class*="upload"] p,
-[class*="drag-drop"],
-.file-upload-hint {
-  color: #e5e7eb !important; /* gray-200 */
+.table-row {
+  @apply border-gray-700 hover:bg-gray-800/50 !important;
 }
 
-/* "Choose Files" button styling */
-input[type="file"]::file-selector-button,
-.file-input-button,
-button[class*="file"],
-.choose-files-btn {
-  @apply bg-gray-700 text-white border border-gray-400 
-         px-4 py-2 rounded cursor-pointer
-         hover:bg-gray-600 hover:border-gray-300 !important;
+/* Card overrides */
+.card {
+  @apply bg-gray-800/50 border-gray-700 !important;
 }
 
-/* 3. BULLET POINTS / LISTS - Fix all instructional lists */
-ul li,
-ol li,
-.form-instructions li,
-[class*="instruction"] li,
-[class*="requirement"] li {
-  color: #e5e7eb !important; /* gray-200 */
+/* Form element overrides */
+.form-control {
+  @apply bg-gray-800 border-gray-700 text-white !important;
 }
 
-/* Bullet points specifically */
-ul li::marker,
-ol li::marker {
-  color: #d1d5db !important; /* gray-300 */
+/* Dropdown overrides */
+.dropdown-menu {
+  @apply bg-gray-900 border-gray-700 !important;
 }
 
-/* 4. GLOBAL CSS OVERRIDES - Force visibility for secondary text */
-.text-secondary,
-.text-muted-foreground {
-  color: #d1d5db !important; /* gray-300 */
-}
-
-/* Target specific gray classes that are too dark */
-.text-gray-500,
-.text-gray-600,
-.text-gray-700 {
-  color: #d1d5db !important; /* gray-300 */
-}
-
-/* Ensure all form-related text is visible */
-form p:not(.error):not(.success),
-form span:not(.required),
-form small,
-form .hint,
-form .help {
-  color: #e5e7eb !important; /* gray-200 */
-}
-
-/* 5. COMPONENT-LEVEL FIXES - Utility classes for quick fixes */
-.readable-text {
-  color: #e5e7eb !important; /* gray-200 */
-}
-
-.readable-helper {
-  color: #d1d5db !important; /* gray-300 */
-}
-
-.readable-placeholder::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
-
-/* 6. SPECIFIC FIXES FOR FORMS */
-.price-helper-text,
-[class*="fair-offer"],
-.form-note {
-  color: #e5e7eb !important; /* gray-200 */
-  font-size: 0.875rem; /* text-sm */
-}
-
-/* Upload instructions */
-.upload-instructions,
-.photo-requirements {
-  color: #e5e7eb !important; /* gray-200 */
-}
-
-/* File drop zone */
-.file-drop-zone {
-  border: 2px dashed #6b7280; /* border-gray-500 */
-}
-
-.file-drop-zone:hover {
-  border-color: #9ca3af; /* border-gray-400 */
-  background-color: rgba(31, 41, 55, 0.3); /* bg-gray-800/30 */
-}
-
-/* 7. FORM INPUT PLACEHOLDERS - Global placeholder visibility */
-input::placeholder,
-textarea::placeholder,
-select::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
-
-/* 8. DESCRIPTIVE TEXT - All descriptive paragraphs */
-.description,
-.note,
-.info-text,
-p.text-sm,
-span.text-sm {
-  color: #e5e7eb !important; /* gray-200 */
-}
-
-/* 9. MODAL AND DIALOG TEXT - Ensure visibility in overlays */
-[role="dialog"] p,
-[role="dialog"] span:not(.required),
-.modal-content p,
-.dialog-content p {
-  color: #e5e7eb !important; /* gray-200 */
-}
-
-/* 10. CARD CONTENT TEXT - Secondary text in cards */
-.card p:not(.error):not(.success),
-.card span:not(.badge):not(.required),
-[class*="card"] p:not(.error):not(.success) {
-  color: #e5e7eb !important; /* gray-200 */
-}
-
-/* PostCSS catch-all for any remaining gray text */
-form [class*="gray-5"],
-form [class*="gray-6"],
-form [class*="gray-7"] {
-  color: #d1d5db !important; /* gray-300 */
-}
-
-/* ==========================================
-   ADVANCED SEARCH SYSTEM Z-INDEX FIXES
-   ========================================== */
-
-/* Advanced SearchBar dropdown positioning - CRITICAL Z-INDEX FIXES */
-.search-container {
-  position: relative;
-  z-index: 50;
-}
-
-/* Blue border effect when dropdown/cart is active */
-.search-container.active {
-  border: 1px solid #3b82f6 !important;
-}
-
-.search-input.active {
-  border: 1px solid #3b82f6 !important;
-}
-
-.search-container .absolute {
-  z-index: 99999 !important;
-  position: absolute !important;
-}
-
-/* Ensure search dropdown appears above ALL content */
-.search-container [data-radix-popper-content-wrapper],
-.search-container [data-radix-portal],
-.search-dropdown-overlay {
-  z-index: 99999 !important;
-}
-
-/* Lower z-index for all other components */
-.card,
-.product-card,
-[class*="card"],
-.no-products-card,
-.filter-sidebar,
-.product-grid {
-  position: relative;
-  z-index: 1 !important;
-}
-
-.search-container:focus-within {
-  z-index: 99999 !important;
-}
-
-/* Search dropdown specific styling */
-.search-dropdown-portal {
-  z-index: 99999 !important;
-  position: fixed !important;
-}
-
-/* Ensure dropdown is always on top */
-.search-container > div:last-child {
-  z-index: 99999 !important;
-  position: absolute !important;
-}
-
-/* ========================================
-   ENHANCED SEARCH BAR ANIMATIONS & STYLES
-   ======================================== */
-
-/* Search glow animation */
-@keyframes search-glow {
-  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-}
-
-/* Custom Scrollbar for Enhanced Search */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.5);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(75, 85, 99, 0.6);
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 0.8);
-}
-
-/* Fix z-index stacking contexts */
-main, section, .card, [class*="card"] {
-  transform: none !important;
-  filter: none !important;
-}
-
-/* Search highlight animation */
-.search-highlight-pulse {
-  animation: search-glow 2s ease-out;
-}
-
-/* Product highlight animation */
-@keyframes product-highlight {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
-.product-highlight {
-  animation: product-highlight 0.5s ease-in-out;
-}
-
-/* Search input focus glow */
-.search-input-glow {
-  box-shadow: 
-    0 0 0 3px rgba(59, 130, 246, 0.1),
-    0 0 20px rgba(59, 130, 246, 0.15),
-    0 0 40px rgba(59, 130, 246, 0.1);
-}
-
-/* Mobile search modal */
-@media (max-width: 768px) {
-  .search-dropdown-mobile {
-    position: fixed !important;
-    top: 72px !important; /* Position below fixed header */
-    left: 16px !important;
-    right: 16px !important;
-    bottom: 20px !important;
-    width: calc(100% - 32px) !important;
-    height: auto !important;
-    max-height: calc(100vh - 100px) !important;
-    border-radius: 16px !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-  }
-}
-
-/* Prevent body scroll when modal is open on mobile */
-body.search-modal-open {
-  overflow: hidden;
-}
-
-/* Enhanced Search Bar Specific Styles */
-.search-icon-container {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px; /* Fixed width for stability */
-  transform-origin: center;
-}
-
-.search-input {
-  height: 48px; /* Fixed height */
-  line-height: 1;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-}
-
-/* Fix autofill styles */
-.search-input:-webkit-autofill,
-.search-input:-webkit-autofill:hover,
-.search-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 30px rgb(31 41 55) inset !important;
-  -webkit-text-fill-color: rgb(243 244 246) !important;
-}
-
-/* Prevent dropdown flicker and improve performance */
-.search-dropdown {
-  backface-visibility: hidden;
-  -webkit-font-smoothing: antialiased;
-  transform: translateZ(0);
-  contain: layout style paint;
-}
-
-/* Mobile specific improvements */
-@media (max-width: 768px) {
-  .search-dropdown-mobile {
-    contain: layout style paint;
-    touch-action: manipulation;
-  }
-}
-
-/* Reduce motion for accessibility */
-@media (prefers-reduced-motion: reduce) {
-  .search-dropdown {
-    animation: none;
-    transition: none;
-  }
+.dropdown-item {
+  @apply text-white hover:bg-gray-800 !important;
 }

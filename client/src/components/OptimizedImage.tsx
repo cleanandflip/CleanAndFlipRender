@@ -73,7 +73,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   return (
     <div className={`relative ${className}`}>
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 dark:bg-gray-800">
           <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
         </div>
       )}
@@ -90,7 +90,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
       />
       
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 dark:bg-gray-800">
           <span className="text-gray-500">Failed to load image</span>
         </div>
       )}

@@ -170,7 +170,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
             variant="ghost"
             size="sm"
             onClick={clearAllFilters}
-            className="text-text-secondary hover:text-primary hover:bg-white/10"
+            className="text-text-secondary hover:text-primary hover:bg-gray-900/10"
           >
             <RotateCcw size={14} className="mr-1" />
             Clear
