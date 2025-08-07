@@ -916,15 +916,17 @@ export class DatabaseStorage implements IStorage {
     return submission;
   }
 
-  async createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
-    const submissionWithReference = {
-      ...submission,
-      referenceNumber: `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
-    };
+  async createEquipmentSubmission(submission: InsertEquipmentSubmission & { referenceNumber?: string }): Promise<EquipmentSubmission> {
+    // Generate reference number if not provided
+    if (!submission.referenceNumber) {
+      const count = await db.select({ count: sql`COUNT(*)` }).from(equipmentSubmissions);
+      const nextNumber = (Number(count[0]?.count) + 1).toString().padStart(8, '0');
+      submission.referenceNumber = `REF-${nextNumber}`;
+    }
     
     const [newSubmission] = await db
       .insert(equipmentSubmissions)
-      .values(submissionWithReference as any)
+      .values(submission as any)
       .returning();
     return newSubmission;
   }

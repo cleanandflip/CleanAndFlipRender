@@ -372,47 +372,83 @@ export const wishlistRelations = relations(wishlist, ({ one }) => ({
 }));
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).omit({
+export const insertUserSchema = createInsertSchema(users, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertCategorySchema = createInsertSchema(categories).omit({
+export const insertCategorySchema = createInsertSchema(categories, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+}).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertProductSchema = createInsertSchema(products).omit({
+export const insertProductSchema = createInsertSchema(products, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+  views: z.number().optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
   views: true,
 });
 
-export const insertOrderSchema = createInsertSchema(orders).omit({
+export const insertOrderSchema = createInsertSchema(orders, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
+export const insertOrderItemSchema = createInsertSchema(orderItems, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+}).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertCartItemSchema = createInsertSchema(cartItems).omit({
+export const insertCartItemSchema = createInsertSchema(cartItems, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertAddressSchema = createInsertSchema(addresses).omit({
+export const insertAddressSchema = createInsertSchema(addresses, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+}).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertEquipmentSubmissionSchema = createInsertSchema(equipmentSubmissions).omit({
+export const insertEquipmentSubmissionSchema = createInsertSchema(equipmentSubmissions, {
+  id: z.string().optional(),
+  referenceNumber: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+  statusHistory: z.array(z.any()).optional(),
+  viewedByAdmin: z.boolean().optional(),
+  lastViewedAt: z.date().optional(),
+  reviewedAt: z.date().optional(),
+  completedAt: z.date().optional(),
+}).omit({
   id: true,
   referenceNumber: true,
   createdAt: true,
@@ -424,12 +460,18 @@ export const insertEquipmentSubmissionSchema = createInsertSchema(equipmentSubmi
   completedAt: true,
 });
 
-export const insertWishlistSchema = createInsertSchema(wishlist).omit({
+export const insertWishlistSchema = createInsertSchema(wishlist, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+}).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
+export const insertActivityLogSchema = createInsertSchema(activityLogs, {
+  id: z.string().optional(),
+  createdAt: z.date().optional(),
+}).omit({
   id: true,
   createdAt: true,
 });

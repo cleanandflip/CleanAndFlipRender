@@ -1,0 +1,417 @@
+4:36:10 PM info: 
+================================================
+4:36:10 PM info:         🏋️  CLEAN & FLIP - SERVER READY 🏋️        
+4:36:10 PM info: ================================================
+
+4:36:10 PM info:   ⚠️  Environment     development
+4:36:10 PM info:   ⚠️  Port            5000
+4:36:10 PM info:   ✅ Database        Connected
+4:36:10 PM info:   ⚠️  Redis Cache     Disabled
+4:36:10 PM info:   ✅ Session Store   PostgreSQL
+4:36:10 PM info:   ✅ File Storage    Cloudinary
+4:36:10 PM info:   ✅ Payment System  Stripe
+4:36:10 PM info:   ✅ WebSocket       Active
+4:36:10 PM info:   ✅ Security        OWASP Compliant
+4:36:10 PM info:   ✅ Performance     Optimized
+4:36:10 PM info: 
+================================================
+4:36:10 PM info:   Startup completed in 2588ms
+4:36:10 PM info: 
+🎯 All systems operational - no warnings
+4:36:10 PM info: ================================================
+
+4:36:10 PM info: 💡 Performance: Enable Redis for better caching
+4:36:10 PM info: 📝 Logs: Optimized logging active - Redis spam eliminated
+
+
+4:36:10 PM info: [STARTUP] Attempting to start server on 0.0.0.0:5000
+4:36:10 PM info: [STARTUP] Environment: development
+4:36:10 PM info: [STARTUP] Node version: v20.19.3
+4:36:10 PM info: [MAIN] Routes registered successfully
+4:36:10 PM info: [MAIN] Development mode: serving built files from /home/runner/workspace/dist/public
+4:36:10 PM info: [MAIN] ✅ Server setup completed successfully
+4:36:10 PM info: [MAIN] 🚀 Server is running on port 5000
+4:36:10 PM info: 🚀 Server successfully started and listening
+4:36:10 PM info: 🚀 Server started on port 5000
+4:36:10 PM info: [STARTUP] Server is now accepting connections on 0.0.0.0:5000
+4:36:10 PM GET     /                                        304 7ms
+4:36:10 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:36:10 PM GET     /api/cart                                401 2ms
+GET /api/user 401 in 1ms :: {"error":"Not authenticated"}
+4:36:10 PM GET     /api/user                                401 1ms
+GET /api/categories 304 in 127ms
+4:36:11 PM GET     /api/categories?active=true              304 127ms
+GET /api/products/featured 200 in 298ms
+4:36:11 PM GET     /api/products/featured                   200 298ms
+4:36:11 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:36:11 PM GET     /api/cart                                401 1ms
+4:36:14 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:36:14 PM GET     /api/cart                                401 2ms
+4:36:18 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:36:18 PM GET     /api/cart                                401 1ms
+GET /api/categories 304 in 3ms
+4:36:41 PM GET     /api/categories?active=true              304 3ms
+GET /api/products/featured 200 in 280ms
+4:36:41 PM GET     /api/products/featured                   200 280ms
+4:36:48 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:36:48 PM GET     /api/cart                                401 2ms
+4:36:49 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:36:49 PM GET     /api/cart                                401 2ms
+4:36:51 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:36:51 PM GET     /api/cart                                401 2ms
+4:36:55 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:36:55 PM GET     /api/cart                                401 1ms
+GET /api/categories 304 in 1ms
+4:37:11 PM GET     /api/categories?active=true              304 2ms
+4:37:13 PM warn: Slow request detected: GET /api/products/featured took 2259ms
+GET /api/products/featured 200 in 2261ms
+4:37:13 PM GET     /api/products/featured                   200 2261ms
+4:37:13 PM warn: Slow request: GET /api/products/featured took 2261ms
+4:37:25 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:37:25 PM GET     /api/cart                                401 1ms
+4:37:26 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:37:26 PM GET     /api/cart                                401 1ms
+4:37:28 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:37:28 PM GET     /api/cart                                401 1ms
+4:37:32 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:37:32 PM GET     /api/cart                                401 2ms
+GET /api/categories 304 in 1ms
+4:37:41 PM GET     /api/categories?active=true              304 2ms
+GET /api/products/featured 200 in 319ms
+4:37:44 PM GET     /api/products/featured                   200 319ms
+4:38:02 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:38:02 PM GET     /api/cart                                401 2ms
+4:38:03 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:38:03 PM GET     /api/cart                                401 2ms
+4:38:05 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:38:05 PM GET     /api/cart                                401 1ms
+4:38:09 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:38:09 PM GET     /api/cart                                401 2ms
+GET /api/categories 304 in 1ms
+4:38:11 PM GET     /api/categories?active=true              304 1ms
+GET /api/products/featured 200 in 288ms
+4:38:14 PM GET     /api/products/featured                   200 288ms
+4:38:39 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:38:39 PM GET     /api/cart                                401 1ms
+4:38:40 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:38:40 PM GET     /api/cart                                401 1ms
+GET /api/categories 304 in 1ms
+4:38:41 PM GET     /api/categories?active=true              304 1ms
+4:38:42 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:38:42 PM GET     /api/cart                                401 1ms
+GET /api/products/featured 200 in 283ms
+4:38:44 PM GET     /api/products/featured                   200 283ms
+4:38:46 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:38:46 PM GET     /api/cart                                401 1ms
+GET /api/categories 304 in 1ms
+4:39:11 PM GET     /api/categories?active=true              304 1ms
+GET /api/products/featured 200 in 287ms
+4:39:15 PM GET     /api/products/featured                   200 287ms
+4:39:16 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:39:16 PM GET     /api/cart                                401 2ms
+4:39:17 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:39:17 PM GET     /api/cart                                401 1ms
+4:39:20 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:39:20 PM GET     /api/cart                                401 2ms
+4:39:24 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:39:24 PM GET     /api/cart                                401 1ms
+GET /api/categories 304 in 1ms
+4:39:41 PM GET     /api/categories?active=true              304 1ms
+GET /api/products/featured 200 in 314ms
+4:39:45 PM GET     /api/products/featured                   200 314ms
+4:39:54 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:39:54 PM GET     /api/cart                                401 1ms
+4:39:55 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:39:55 PM GET     /api/cart                                401 2ms
+4:39:57 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:39:57 PM GET     /api/cart                                401 2ms
+4:40:01 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:40:01 PM GET     /api/cart                                401 2ms
+GET /api/categories 304 in 1ms
+4:40:11 PM GET     /api/categories?active=true              304 1ms
+GET /api/products/featured 200 in 289ms
+4:40:15 PM GET     /api/products/featured                   200 289ms
+4:40:31 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:40:31 PM GET     /api/cart                                401 1ms
+4:40:32 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:40:32 PM GET     /api/cart                                401 1ms
+4:40:34 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:40:34 PM GET     /api/cart                                401 1ms
+4:40:38 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:40:38 PM GET     /api/cart                                401 1ms
+GET /api/categories 304 in 1ms
+4:40:41 PM GET     /api/categories?active=true              304 1ms
+GET /api/products/featured 200 in 315ms
+4:40:46 PM GET     /api/products/featured                   200 315ms
+4:41:08 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:41:08 PM GET     /api/cart                                401 1ms
+4:41:09 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:41:09 PM GET     /api/cart                                401 1ms
+GET /api/categories 304 in 51ms
+4:41:11 PM GET     /api/categories?active=true              304 51ms
+4:41:11 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:41:11 PM GET     /api/cart                                401 1ms
+4:41:15 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:41:15 PM GET     /api/cart                                401 1ms
+GET /api/products/featured 200 in 49ms
+4:41:16 PM GET     /api/products/featured                   200 49ms
+GET /api/categories 304 in 2ms
+4:41:41 PM GET     /api/categories?active=true              304 2ms
+4:41:45 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:41:45 PM GET     /api/cart                                401 1ms
+GET /api/products/featured 200 in 288ms
+4:41:46 PM GET     /api/products/featured                   200 288ms
+4:41:46 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:41:46 PM GET     /api/cart                                401 1ms
+4:41:48 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:41:48 PM GET     /api/cart                                401 1ms
+4:41:53 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:41:53 PM GET     /api/cart                                401 2ms
+GET /api/categories 304 in 1ms
+4:42:11 PM GET     /api/categories?active=true              304 1ms
+GET /api/products/featured 200 in 260ms
+4:42:17 PM GET     /api/products/featured                   200 260ms
+4:42:23 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:42:23 PM GET     /api/cart                                401 1ms
+4:42:24 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:42:24 PM GET     /api/cart                                401 2ms
+4:42:26 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:42:26 PM GET     /api/cart                                401 1ms
+4:42:30 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:42:30 PM GET     /api/cart                                401 2ms
+GET /api/categories 304 in 1ms
+4:42:41 PM GET     /api/categories?active=true              304 1ms
+GET /api/products/featured 200 in 280ms
+4:42:47 PM GET     /api/products/featured                   200 280ms
+4:43:00 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:43:00 PM GET     /api/cart                                401 1ms
+4:43:01 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 2ms
+4:43:01 PM GET     /api/cart                                401 2ms
+4:43:03 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:43:03 PM GET     /api/cart                                401 1ms
+4:43:07 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:43:07 PM GET     /api/cart                                401 1ms
+GET /api/categories 304 in 1ms
+4:43:11 PM GET     /api/categories?active=true              304 1ms
+GET /api/products/featured 200 in 279ms
+4:43:17 PM GET     /api/products/featured                   200 279ms
+4:43:37 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:43:37 PM GET     /api/cart                                401 1ms
+4:43:38 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:43:38 PM GET     /api/cart                                401 1ms
+4:43:40 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:43:40 PM GET     /api/cart                                401 1ms
+GET /api/categories 304 in 1ms
+4:43:41 PM GET     /api/categories?active=true              304 1ms
+4:43:44 PM debug: Authentication failed for GET /api/cart
+GET /api/cart 401 in 1ms
+4:43:44 PM GET     /api/cart                                401 1ms
+GET /api/products/featured 200 in 282ms
+4:43:47 PM GET     /api/products/featured                   200 282ms
+4:44:01 PM debug: Login attempt for email: cleanandflipyt@gmail.com
+4:44:01 PM debug: User found, checking password for: cleanandflipyt@gmail.com
+4:44:01 PM debug: User password hash exists: true
+4:44:01 PM debug: Successful login for email: cleanandflipyt@gmail.com
+4:44:02 PM debug: [PASSPORT] Serializing user ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:02 PM debug: Login successful and session saved for: cleanandflipyt@gmail.com
+4:44:02 PM debug: Session ID: eseNa7_vxe4L4nGhJmYAkOGD4PNZPp1s
+4:44:02 PM debug: Session passport user: {"user":"0f6081ab-47ae-43a8-bb80-12af3d06c923"}
+4:44:02 PM debug: Is authenticated: true
+POST /api/login 200 in 943ms
+4:44:02 PM POST    /api/login                               200 943ms
+4:44:02 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:02 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+GET /api/user 200 in 141ms
+4:44:02 PM GET     /api/user                                200 141ms
+4:44:02 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:02 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+GET /api/products/featured 200 in 191ms
+4:44:02 PM GET     /api/products/featured                   200 191ms
+4:44:02 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:02 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:02 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on GET /api/wishlist
+4:44:02 PM debug: Get wishlist - userId: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:02 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:02 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+GET /api/wishlist 200 in 494ms :: []
+4:44:02 PM GET     /api/wishlist                            200 494ms
+GET /api/categories 304 in 401ms
+4:44:02 PM GET     /api/categories?active=true              304 402ms
+4:44:03 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:03 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:04 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:04 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:04 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on GET /api/wishlist
+4:44:04 PM debug: Get wishlist - userId: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+GET /api/wishlist 304 in 176ms :: []
+4:44:04 PM GET     /api/wishlist                            304 176ms
+4:44:05 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:05 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:05 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on POST /api/cart/validate
+POST /api/cart/validate 200 in 184ms :: {"updates":[]}
+4:44:05 PM POST    /api/cart/validate                       200 184ms
+4:44:06 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:06 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:06 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on GET /api/wishlist
+4:44:06 PM debug: Get wishlist - userId: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+GET /api/wishlist 304 in 176ms :: []
+4:44:06 PM GET     /api/wishlist                            304 176ms
+4:44:07 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:07 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:07 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:07 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+GET /api/categories 304 in 135ms
+4:44:07 PM GET     /api/categories?active=true              304 136ms
+4:44:08 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:08 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:08 PM debug: Products API - Received filters: {"limit":20,"offset":0}
+GET /api/brands 304 in 399ms
+4:44:08 PM GET     /api/brands                              304 400ms
+GET /api/products 200 in 416ms
+4:44:08 PM GET     /api/products?limit=20&offset=0          200 416ms
+4:44:08 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:08 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:08 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on GET /api/wishlist
+4:44:08 PM debug: Get wishlist - userId: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+GET /api/wishlist 304 in 180ms :: []
+4:44:08 PM GET     /api/wishlist                            304 180ms
+4:44:08 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:08 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+GET /api/products/614a3d12-6419-42be-ad5e-a9ab9af4d85f 200 in 252ms
+4:44:09 PM GET     /api/products/614a3d12-6419-42be-ad5e-a9ab9af4d85f 200 252ms
+4:44:09 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:09 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:09 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on GET /api/wishlist
+4:44:09 PM debug: Get wishlist - userId: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+GET /api/wishlist 304 in 181ms :: []
+4:44:09 PM GET     /api/wishlist                            304 181ms
+4:44:10 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:10 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:10 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on GET /api/wishlist
+4:44:10 PM debug: Get wishlist - userId: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+GET /api/wishlist 304 in 179ms :: []
+4:44:10 PM GET     /api/wishlist                            304 180ms
+4:44:14 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:14 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:14 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on GET /api/cart
+4:44:14 PM debug: Get cart - userId: 0f6081ab-47ae-43a8-bb80-12af3d06c923, sessionId: eseNa7_vxe4L4nGhJmYAkOGD4PNZPp1s
+GET /api/cart 200 in 178ms :: []
+4:44:14 PM GET     /api/cart                                200 178ms
+4:44:26 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:26 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:26 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on GET /api/wishlist
+4:44:26 PM debug: Get wishlist - userId: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+GET /api/wishlist 304 in 502ms :: []
+4:44:26 PM GET     /api/wishlist                            304 502ms
+4:44:27 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:27 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:27 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:27 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+GET /api/admin/products 200 in 233ms
+4:44:28 PM GET     /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&priceMin=0&priceMax=10000&page=1&limit=20 200 233ms
+4:44:28 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:28 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:28 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:28 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+GET /api/admin/categories 200 in 485ms
+4:44:28 PM GET     /api/admin/categories                    200 485ms
+4:44:28 PM debug: Admin stats result: {"totalProducts":10,"totalUsers":3,"totalOrders":0,"totalRevenue":0}
+GET /api/admin/stats 200 in 538ms
+4:44:28 PM GET     /api/admin/stats                         200 538ms
+4:44:29 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:29 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+GET /api/admin/categories 200 in 221ms
+4:44:29 PM GET     /api/admin/categories?search=&sortBy=order&sortOrder=asc 200 221ms
+4:44:30 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:30 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:30 PM error: Error in admin submissions endpoint column equipment_submissions.reference_number does not exist
+GET /api/admin/submissions 500 in 246ms
+4:44:31 PM GET     /api/admin/submissions?status=all&search=&sortBy=date&sortOrder=desc&page=1&limit=20 500 245ms
+4:44:45 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:45 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:45 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on GET /api/cart
+4:44:45 PM debug: Get cart - userId: 0f6081ab-47ae-43a8-bb80-12af3d06c923, sessionId: eseNa7_vxe4L4nGhJmYAkOGD4PNZPp1s
+GET /api/cart 200 in 449ms :: []
+4:44:45 PM GET     /api/cart                                200 449ms
+4:44:58 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:44:58 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:44:58 PM debug: Admin stats result: {"totalProducts":10,"totalUsers":3,"totalOrders":0,"totalRevenue":0}
+GET /api/admin/stats 200 in 529ms
+4:44:58 PM GET     /api/admin/stats                         200 529ms
+4:45:01 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:45:01 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:45:01 PM error: Error in admin submissions endpoint column equipment_submissions.reference_number does not exist
+GET /api/admin/submissions 500 in 221ms
+4:45:02 PM GET     /api/admin/submissions?status=all&search=&sortBy=date&sortOrder=desc&page=1&limit=20 500 221ms
+4:45:07 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:45:07 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:45:07 PM error: Error in admin submissions endpoint column equipment_submissions.reference_number does not exist
+GET /api/admin/submissions 500 in 453ms
+4:45:07 PM GET     /api/admin/submissions?status=all&search=&sortBy=date&sortOrder=desc&page=1&limit=20 500 453ms
+4:45:08 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:45:09 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:45:09 PM error: Error in admin submissions endpoint column equipment_submissions.reference_number does not exist
+GET /api/admin/submissions 500 in 452ms
+4:45:09 PM GET     /api/admin/submissions?status=all&search=&sortBy=date&sortOrder=desc&page=1&limit=20 500 453ms
+4:45:11 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:45:11 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:45:11 PM error: Error in admin submissions endpoint column equipment_submissions.reference_number does not exist
+GET /api/admin/submissions 500 in 502ms
+4:45:11 PM GET     /api/admin/submissions?status=all&search=&sortBy=date&sortOrder=desc&page=1&limit=20 500 502ms
+4:45:15 PM debug: [PASSPORT] Deserializing user with ID: 0f6081ab-47ae-43a8-bb80-12af3d06c923
+4:45:15 PM debug: [PASSPORT] Successfully deserialized user: cleanandflipyt@gmail.com
+4:45:15 PM debug: Auth successful for user 0f6081ab-47ae-43a8-bb80-12af3d06c923 on GET /api/cart
+4:45:15 PM debug: Get cart - userId: 0f6081ab-47ae-43a8-bb80-12af3d06c923, sessionId: eseNa7_vxe4L4nGhJmYAkOGD4PNZPp1s
+GET /api/cart 200 in 429ms :: []
+4:45:15 PM GET     /api/cart                                200 429ms

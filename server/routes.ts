@@ -2246,8 +2246,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (search) {
         conditions.push(
           or(
-            ilike(equipmentSubmissions.referenceNumber, `%${search}%`),
-            ilike(equipmentSubmissions.name, `%${search}%`)
+            sql`COALESCE(${equipmentSubmissions.referenceNumber}, CONCAT('REF-', ${equipmentSubmissions.id})) ILIKE ${`%${search}%`}`,
+            ilike(equipmentSubmissions.name, `%${search}%`),
+            ilike(equipmentSubmissions.email, `%${search}%`),
+            ilike(equipmentSubmissions.brand, `%${search}%`)
           )
         );
       }
@@ -2507,8 +2509,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (search) {
         conditions.push(
           or(
-            ilike(equipmentSubmissions.referenceNumber, `%${search}%`),
-            ilike(equipmentSubmissions.name, `%${search}%`)
+            sql`COALESCE(${equipmentSubmissions.referenceNumber}, CONCAT('REF-', ${equipmentSubmissions.id})) ILIKE ${`%${search}%`}`,
+            ilike(equipmentSubmissions.name, `%${search}%`),
+            ilike(equipmentSubmissions.email, `%${search}%`),
+            ilike(equipmentSubmissions.brand, `%${search}%`)
           )
         );
       }
