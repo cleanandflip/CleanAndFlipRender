@@ -21,3 +21,14 @@ NODE_ENV = "development"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[workflows]
+
+[[workflows.workflow]]
+name = "Clean & Flip Development"
+mode = "sequential"
+author = 45296535
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
