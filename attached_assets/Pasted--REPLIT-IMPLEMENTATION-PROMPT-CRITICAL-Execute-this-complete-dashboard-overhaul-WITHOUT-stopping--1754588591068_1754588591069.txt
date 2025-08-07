@@ -1,0 +1,63 @@
+🚀 REPLIT IMPLEMENTATION PROMPT
+CRITICAL: Execute this complete dashboard overhaul WITHOUT stopping until 100% functional:
+YOUR MISSION:
+Transform the Clean & Flip Developer Dashboard from broken prototype to professional e-commerce admin panel. Every tab is currently broken - fix ALL issues systematically.
+EXECUTE IN ORDER:
+1. DATABASE FIXES (PRIORITY 1)
+
+Fix equipment_submissions table - add missing reference_number column
+Fix analytics tracking - ensure activity_logs captures all events
+Fix category product counts - they all show 0
+Add proper indexes for performance
+
+2. BACKEND REPAIRS
+
+Fix ALL /api/admin/* endpoints returning empty/zero data
+Implement real analytics data collection
+Fix Stripe integration to actually sync products
+Add request caching/deduplication to stop API spam
+Enable Redis caching (currently showing disabled)
+
+3. COMPLETE UI OVERHAUL
+
+REMOVE ALL WHITE BACKGROUNDS - enforce dark theme everywhere
+Make ALL tabs consistent: bg-gray-800/50, border-gray-700, proper spacing
+Fix Product Edit Modal - currently white, should be dark themed
+Rebuild Users tab - currently basic and broken
+Fix Submissions tab - infinite loading error
+Fix Analytics tab - shows $0 for everything
+Fix Wishlist Analytics - completely empty
+
+4. IMPLEMENT PROFESSIONAL FEATURES
+
+Real-time WebSocket updates
+Working charts with actual data (use Recharts)
+Bulk operations on all tables
+Advanced filtering/search on every tab
+Export functionality (CSV/PDF)
+Proper loading states and error handling
+Mobile responsive design
+
+5. CRITICAL FUNCTIONALITY
+Every button must work. Every stat must show real data. Every chart must display actual metrics. No placeholders. No "coming soon". No broken modals.
+ACCEPTANCE CRITERIA:
+✅ Zero console errors
+✅ All metrics show real data
+✅ Consistent dark theme (no white elements)
+✅ All CRUD operations functional
+✅ <500ms load time per tab
+✅ Mobile responsive
+✅ Professional UI matching Shopify/WooCommerce standards
+DO NOT STOP UNTIL:
+
+Equipment Submissions loads properly
+Analytics shows actual revenue/orders/conversion data
+Product Edit Modal is dark themed and saves correctly
+Users tab shows real spending data and has filters
+Categories show correct product counts
+Wishlist Analytics displays real metrics
+System tab shows accurate performance data
+Stripe integration actually works
+
+Start with database fixes, then backend, then frontend. Test everything. Make it production-ready. This is a professional e-commerce platform, not a demo.
+BEGIN NOW. Complete systematically. Do not skip any issue.

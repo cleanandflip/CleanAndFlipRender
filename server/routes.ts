@@ -1126,6 +1126,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+
   // Analytics endpoint - Fixed SQL syntax
   app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
     try {
@@ -1152,65 +1154,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           startDate.setFullYear(2020); // All time
       }
       
-      // Simplified approach - fetch data and process in JavaScript
-      const allOrders = await db.select().from(orders);
-      const allUsers = await db.select().from(users);
-      const allProducts = await db.select().from(products);
-      
-      // Filter and calculate in JavaScript
-      const filteredOrders = allOrders.filter(order => 
-        new Date(order.createdAt!) >= startDate
-      );
-      
-      const completedOrders = filteredOrders.filter(order => 
-        order.status === 'delivered'
-      );
-      
-      const totalRevenue = completedOrders.reduce((sum, order) => 
-        sum + Number(order.total || 0), 0
-      );
-      
-      // Simplified chart data
-      const chartData = [];
-      
-      res.json({
-        revenue: {
-          total: totalRevenue,
-          change: 0
-        },
-        orders: {
-          total: filteredOrders.length,
-          avgValue: filteredOrders.length > 0 ? totalRevenue / completedOrders.length : 0,
-          change: 0
-        },
-        users: {
-          total: allUsers.length,
-          change: 0
-        },
-        products: {
-          total: allProducts.length,
-          change: 0
-        },
-        conversion: {
-          rate: 0,
-          change: 0
-        },
-        charts: {
-          revenue: []
-        },
-        topProducts: [],
-        traffic: {
-          sources: []
-        },
-        recentActivity: []
+      // Use our improved analytics method with real database queries
+      Logger.info('Fetching real analytics data from database');
+      const analytics = await storage.getAnalytics();
+      Logger.info('Analytics data retrieved:', { 
+        totalRevenue: analytics.totalRevenue,
+        totalOrders: analytics.totalOrders,
+        totalUsers: analytics.totalUsers,
+        totalProducts: analytics.totalProducts
       });
-      
-    } catch (error) {
-      Logger.error("Error fetching analytics", error);
-      res.status(500).json({ error: 'Failed to fetch analytics' });
+      res.json(analytics);
+    } catch (error: any) {
+      Logger.error('Error fetching analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics', details: error.message });
     }
   });
-
 
 
   // Admin wishlist analytics - Basic
