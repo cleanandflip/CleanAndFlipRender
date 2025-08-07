@@ -5,13 +5,19 @@ interface UnifiedDashboardCardProps {
   className?: string;
   gradient?: 'blue' | 'green' | 'purple' | 'orange' | 'cyan' | 'pink';
   onClick?: () => void;
+  title?: string;
+  icon?: React.ReactNode;
+  actions?: React.ReactNode;
 }
 
 export function UnifiedDashboardCard({ 
   children, 
   className = '', 
   gradient = 'blue',
-  onClick 
+  onClick,
+  title,
+  icon,
+  actions
 }: UnifiedDashboardCardProps) {
   
   const gradientStyles = {

@@ -32,7 +32,6 @@ interface WishlistAnalytics {
 }
 
 export function WishlistManager() {
-  console.log('🔴 WishlistManager RENDERED at', new Date().toISOString());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const { toast } = useToast();

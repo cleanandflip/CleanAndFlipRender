@@ -10,6 +10,7 @@ interface UnifiedStatCardProps {
     value: number;
     isPositive: boolean;
   };
+  change?: number;
 }
 
 export function UnifiedStatCard({ 
@@ -18,7 +19,8 @@ export function UnifiedStatCard({
   subtitle, 
   icon, 
   gradient = 'blue',
-  trend 
+  trend,
+  change
 }: UnifiedStatCardProps) {
   
   const gradientStyles = {

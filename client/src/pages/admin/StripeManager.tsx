@@ -35,7 +35,6 @@ interface StripeData {
 }
 
 export function StripeManager() {
-  console.log('🔴 StripeManager RENDERED at', new Date().toISOString());
   const queryClient = useQueryClient();
   const { toast } = useToast();
 

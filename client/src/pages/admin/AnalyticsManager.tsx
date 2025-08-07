@@ -34,7 +34,6 @@ interface AnalyticsData {
 }
 
 export function AnalyticsManager() {
-  console.log('🔴 AnalyticsManager RENDERED at', new Date().toISOString());
   const [dateRange, setDateRange] = useState('last30days');
 
   const { data: analytics, isLoading, refetch } = useQuery({
@@ -141,29 +140,29 @@ export function AnalyticsManager() {
           title="Total Revenue"
           value={formatCurrency(analytics?.totalRevenue || 0)}
           change={analytics?.revenueChange}
-          icon={DollarSign}
-          gradient="from-green-500 to-emerald-500"
+          icon={<DollarSign className="w-6 h-6 text-white" />}
+          gradient="green"
         />
         <UnifiedStatCard
           title="Total Orders"
           value={(analytics?.totalOrders || 0).toLocaleString()}
           change={analytics?.ordersChange}
-          icon={ShoppingCart}
-          gradient="from-blue-500 to-cyan-500"
+          icon={<ShoppingCart className="w-6 h-6 text-white" />}
+          gradient="cyan"
         />
         <UnifiedStatCard
           title="Conversion Rate"
           value={`${(analytics?.conversionRate || 0).toFixed(1)}%`}
           change={analytics?.conversionChange}
-          icon={TrendingUp}
-          gradient="from-purple-500 to-pink-500"
+          icon={<TrendingUp className="w-6 h-6 text-white" />}
+          gradient="purple"
         />
         <UnifiedStatCard
           title="Avg Order Value"
           value={formatCurrency(analytics?.avgOrderValue || 0)}
           change={analytics?.aovChange}
-          icon={DollarSign}
-          gradient="from-orange-500 to-red-500"
+          icon={<DollarSign className="w-6 h-6 text-white" />}
+          gradient="orange"
         />
       </div>
 
@@ -173,21 +172,21 @@ export function AnalyticsManager() {
           title="Total Users"
           value={(analytics?.totalUsers || 0).toLocaleString()}
           change={analytics?.usersChange}
-          icon={Users}
-          gradient="from-indigo-500 to-blue-500"
+          icon={<Users className="w-6 h-6 text-white" />}
+          gradient="blue"
         />
         <UnifiedStatCard
           title="Total Products"
           value={(analytics?.totalProducts || 0).toLocaleString()}
           change={analytics?.productsChange}
-          icon={Package}
-          gradient="from-pink-500 to-purple-500"
+          icon={<Package className="w-6 h-6 text-white" />}
+          gradient="pink"
         />
         <UnifiedStatCard
           title="Activity Score"
           value="98.5%"
-          icon={Activity}
-          gradient="from-teal-500 to-green-500"
+          icon={<Activity className="w-6 h-6 text-white" />}
+          gradient="green"
         />
       </div>
 

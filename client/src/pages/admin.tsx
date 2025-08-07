@@ -69,7 +69,6 @@ function TabNavigation({ activeTab, setActiveTab }: { activeTab: string; setActi
 }
 
 function AdminDashboard() {
-  console.log('🔴 AdminDashboard RENDERED at', new Date().toISOString());
   const [activeTab, setActiveTab] = useState('products');
 
   return (
@@ -131,23 +130,7 @@ function AdminDashboard() {
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
             }}
           >
-            {/* MASSIVE VISIBLE UPDATE BANNER */}
-            <div 
-              style={{
-                backgroundColor: '#FF0000',
-                color: '#FFFFFF',
-                padding: '30px',
-                margin: '20px 0',
-                fontSize: '28px',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                border: '5px solid #FFFF00',
-                borderRadius: '10px',
-                boxShadow: '0 0 20px rgba(255, 0, 0, 0.5)'
-              }}
-            >
-              🔥 ADMIN UI UPDATED: {Date.now()} - TAB: {activeTab.toUpperCase()} 🔥
-            </div>
+
             {activeTab === 'products' && <ProductsManager />}
             {activeTab === 'categories' && <CategoryManager />}
             {activeTab === 'submissions' && <SubmissionsManager />}

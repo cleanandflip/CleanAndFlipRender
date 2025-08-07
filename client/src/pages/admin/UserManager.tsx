@@ -25,7 +25,6 @@ interface User {
 }
 
 export function UserManager() {
-  console.log('🔴 UserManager RENDERED at', new Date().toISOString());
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

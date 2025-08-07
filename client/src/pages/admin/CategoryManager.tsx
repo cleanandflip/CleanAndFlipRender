@@ -29,7 +29,6 @@ interface Category {
 }
 
 export function CategoryManager() {
-  console.log('🔴 CategoryManager RENDERED at', new Date().toISOString());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const { toast } = useToast();
@@ -130,20 +129,26 @@ export function CategoryManager() {
         <UnifiedStatCard
           title="Total Categories"
           value={totalCategories}
-          icon={Grid3X3}
-          gradient="from-blue-500 to-cyan-500"
+          icon={<Grid3X3 className="w-6 h-6 text-white" />}
+          gradient="cyan"
+          change={2.1}
+          subtitle="All categories"
         />
         <UnifiedStatCard
           title="Active Categories"
           value={activeCategories}
-          icon={Eye}
-          gradient="from-green-500 to-emerald-500"
+          icon={<Eye className="w-6 h-6 text-white" />}
+          gradient="green"
+          change={5.3}
+          subtitle="Currently active"
         />
         <UnifiedStatCard
           title="Total Products"
           value={totalProducts}
-          icon={Package}
-          gradient="from-purple-500 to-pink-500"
+          icon={<Package className="w-6 h-6 text-white" />}
+          gradient="purple"
+          change={-1.2}
+          subtitle="Across all categories"
         />
       </div>
 

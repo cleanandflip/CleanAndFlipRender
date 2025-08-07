@@ -19,7 +19,6 @@ interface SystemHealth {
 }
 
 export function SystemManager() {
-  console.log('🔴 SystemManager RENDERED at', new Date().toISOString());
   const { toast } = useToast();
 
   const { data: systemHealth, isLoading, refetch } = useQuery({
