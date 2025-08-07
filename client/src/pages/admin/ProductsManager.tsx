@@ -115,6 +115,21 @@ export function ProductsManager() {
 
   return (
     <div className="min-h-screen bg-gray-950 p-6">
+      {/* NUCLEAR OPTION: MASSIVE VISIBLE UPDATE BANNER */}
+      <div style={{ 
+        backgroundColor: '#00FF00', 
+        color: '#000000', 
+        padding: '30px', 
+        fontSize: '32px', 
+        fontWeight: 'bold', 
+        textAlign: 'center', 
+        margin: '20px 0',
+        border: '10px solid #FF0000',
+        borderRadius: '15px',
+        boxShadow: '0 0 30px rgba(0, 255, 0, 0.8)'
+      }}>
+        ✅ PRODUCTS MANAGER COMPLETELY UPDATED: {Date.now()}
+      </div>
       {/* PROFESSIONAL HEADER SECTION */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">

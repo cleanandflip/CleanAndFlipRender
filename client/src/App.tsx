@@ -20,13 +20,14 @@ import Products from "@/pages/products";
 import ProductDetail from "@/pages/product-detail";
 import Cart from "@/pages/cart";
 import NotFound from "@/pages/not-found";
+import AdminDashboardDirect from "@/pages/admin";
 
 // Lazy load less critical pages for better code splitting
 const Checkout = lazy(() => import("@/pages/checkout"));
 const SellToUs = lazy(() => import("@/pages/sell-to-us"));
 const TrackSubmission = lazy(() => import("@/pages/track-submission"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
-const AdminDashboard = lazy(() => import("@/pages/admin"));
+// const AdminDashboard = lazy(() => import("@/pages/admin")); // TEMPORARILY DISABLED FOR TESTING
 const ProductForm = lazy(() => import("@/pages/admin/ProductForm").then(module => ({ default: module.ProductForm })));
 const Orders = lazy(() => import("@/pages/orders"));
 const Wishlist = lazy(() => import("@/pages/wishlist"));
@@ -119,7 +120,7 @@ function Router() {
               <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
               
               {/* Admin Routes */}
-              <Route path={ROUTES.ADMIN} component={AdminDashboard} />
+              <Route path={ROUTES.ADMIN} component={AdminDashboardDirect} />
               <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
               <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
               
