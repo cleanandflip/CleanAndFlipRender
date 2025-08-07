@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { Card } from '@/components/ui/card';
+import { UnifiedDashboardCard } from '@/components/admin/UnifiedDashboardCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

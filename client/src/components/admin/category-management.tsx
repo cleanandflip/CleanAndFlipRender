@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card } from "@/components/ui/card";
+import { UnifiedDashboardCard } from "@/components/admin/UnifiedDashboardCard";
 import CategoryFilterConfig from "@/components/admin/category-filter-config";
 import { apiRequest, broadcastProductUpdate } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -367,12 +367,12 @@ export default function CategoryManagement() {
         <div className="flex justify-between items-center">
           <h2 className="font-bebas text-2xl">CATEGORY MANAGEMENT</h2>
         </div>
-        <Card className="p-6">
+        <UnifiedDashboardCard className="p-6" gradient="blue">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue mx-auto"></div>
             <p className="text-text-secondary mt-4">Loading categories...</p>
           </div>
-        </Card>
+        </UnifiedDashboardCard>
       </div>
     );
   }
@@ -393,7 +393,7 @@ export default function CategoryManagement() {
         </Button>
       </div>
 
-      <Card className="overflow-hidden">
+      <UnifiedDashboardCard className="overflow-hidden" gradient="purple">
         <Table>
           <TableHeader>
             <TableRow>
@@ -473,7 +473,7 @@ export default function CategoryManagement() {
             ))}
           </TableBody>
         </Table>
-      </Card>
+      </UnifiedDashboardCard>
 
       <CategoryEditModal
         category={editingCategory}

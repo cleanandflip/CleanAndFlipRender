@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { UnifiedDashboardCard } from '@/components/admin/UnifiedDashboardCard';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -77,11 +77,12 @@ export function SubmissionsList({
       
       {/* Rows */}
       {submissions.map((submission) => (
-        <Card 
+        <UnifiedDashboardCard 
           key={submission.id}
-          className={`glass themed-card p-4 hover:glass-hover transition-all ${
-            selectedSubmissions.has(submission.id) ? 'ring-2 ring-primary' : ''
+          className={`p-4 hover:shadow-lg transition-all ${
+            selectedSubmissions.has(submission.id) ? 'ring-2 ring-blue-500' : ''
           }`}
+          gradient="green"
         >
           <div className="grid grid-cols-12 gap-4 items-center">
             <div className="col-span-1">
@@ -172,7 +173,7 @@ export function SubmissionsList({
               </DropdownMenu>
             </div>
           </div>
-        </Card>
+        </UnifiedDashboardCard>
       ))}
     </div>
   );

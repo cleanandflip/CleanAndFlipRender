@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { UnifiedDashboardCard } from '@/components/admin/UnifiedDashboardCard';
 import { Package } from 'lucide-react';
 import { formatStatus, getStatusVariant, formatCurrency } from '@/utils/submissionHelpers';
 
@@ -33,13 +33,14 @@ export function SubmissionsGrid({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {submissions.map((submission) => (
-        <Card 
+        <div 
           key={submission.id}
-          className={`glass themed-card p-4 hover:glass-hover transition-all cursor-pointer ${
-            selectedSubmissions.has(submission.id) ? 'ring-2 ring-primary' : ''
+          className={`p-4 hover:shadow-lg transition-all cursor-pointer ${
+            selectedSubmissions.has(submission.id) ? 'ring-2 ring-blue-500' : ''
           }`}
           onClick={() => onViewDetails(submission)}
         >
+        <UnifiedDashboardCard gradient="blue">
           <div className="flex justify-between items-start mb-3">
             <input
               type="checkbox"
@@ -82,7 +83,8 @@ export function SubmissionsGrid({
           <div className="mt-3 pt-3 border-t border-gray-700">
             <p className="text-xs text-gray-400 font-mono">{submission.referenceNumber}</p>
           </div>
-        </Card>
+        </UnifiedDashboardCard>
+        </div>
       ))}
     </div>
   );

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { UnifiedDashboardCard } from "@/components/admin/UnifiedDashboardCard";
 
 interface FilterConfig {
   brand?: string[];
@@ -90,7 +90,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
   );
 
   return (
-    <Card className="p-6 mt-6">
+    <UnifiedDashboardCard className="p-6 mt-6" gradient="green">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-white">Category Filter Configuration</h3>
         {hasActiveFilters && (
@@ -266,6 +266,6 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
           Save Filter Configuration
         </Button>
       </div>
-    </Card>
+    </UnifiedDashboardCard>
   );
 }

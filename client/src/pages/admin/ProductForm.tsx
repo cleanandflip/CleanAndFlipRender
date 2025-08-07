@@ -8,7 +8,7 @@ import { PriceInput } from '@/components/ui/price-input';
 import { UnifiedDropdown } from '@/components/ui/unified-dropdown';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { UnifiedDashboardCard } from '@/components/admin/UnifiedDashboardCard';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Upload, X } from 'lucide-react';
 import { broadcastProductUpdate } from '@/lib/queryClient';
@@ -311,11 +311,11 @@ export function ProductForm() {
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <UnifiedDashboardCard 
+          title="Basic Information"
+          gradient="blue"
+          className="space-y-4"
+        >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">Product Name *</Label>
@@ -352,15 +352,13 @@ export function ProductForm() {
                 rows={4}
               />
             </div>
-          </CardContent>
-        </Card>
+        </UnifiedDashboardCard>
         
         {/* Pricing & Inventory */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Pricing & Inventory</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <UnifiedDashboardCard 
+          title="Pricing & Inventory"
+          gradient="green"
+        >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="price">Price *</Label>
@@ -396,15 +394,13 @@ export function ProductForm() {
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </UnifiedDashboardCard>
         
         {/* Category & Condition */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Category & Condition</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <UnifiedDashboardCard 
+          title="Category & Condition"
+          gradient="purple"
+        >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="category">Category *</Label>
@@ -439,15 +435,14 @@ export function ProductForm() {
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </UnifiedDashboardCard>
         
         {/* Images */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Product Images</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <UnifiedDashboardCard 
+          title="Product Images"
+          gradient="orange"
+          className="space-y-4"
+        >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {imagePreview.map((imageUrl, index) => (
                 <div key={index} className="relative group">
@@ -543,8 +538,7 @@ export function ProductForm() {
               <p>• Recommended: Square images (1500x1500px) for best quality</p>
               <p>• First image will be the main product photo</p>
             </div>
-          </CardContent>
-        </Card>
+        </UnifiedDashboardCard>
         
         {/* Submit Buttons */}
         <div className="flex gap-4">
