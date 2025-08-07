@@ -140,7 +140,7 @@ export function AnalyticsManager() {
                 </Button>
               </div>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 glass border-border">
+            <PopoverContent className="w-auto p-0 themed-modal">
               <div className="p-3 space-y-2 border-b border-border">
                 {quickDateRanges.map((range) => (
                   <Button

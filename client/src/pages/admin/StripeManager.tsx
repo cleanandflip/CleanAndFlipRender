@@ -123,24 +123,24 @@ export default function StripeManager() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Stripe Integration</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-3xl font-bold tracking-tight text-text-primary">Stripe Integration</h1>
+        <p className="text-text-muted">
           Manage product synchronization with Stripe for payment processing
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Sync All Products */}
-        <Card>
+        <Card className="glass themed-card">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-text-primary">
               <RefreshCw className="h-5 w-5" />
               Sync All Products
               {getStatusIcon(syncStatus.all)}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-text-muted">
               Synchronize all existing products in your database with Stripe. This will create
               or update product listings and pricing information. Also automatically archives
               any orphaned products in Stripe that no longer exist in your database.
@@ -151,7 +151,7 @@ export default function StripeManager() {
               <Button
                 onClick={() => syncAllMutation.mutate()}
                 disabled={syncAllMutation.isPending}
-                className="glass glass-hover"
+                className="btn-primary"
               >
                 {syncAllMutation.isPending ? (
                   <>

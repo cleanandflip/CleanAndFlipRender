@@ -224,10 +224,10 @@ export function CategoryManager() {
     >
       <div className="space-y-2">
         {categories?.length === 0 ? (
-          <Card className="glass p-8 text-center">
+          <Card className="glass themed-card p-8 text-center">
             <p className="text-text-muted">No categories found</p>
             <Button 
-              className="mt-4 gap-2"
+              className="btn-primary mt-4 gap-2"
               onClick={() => setIsCreateModalOpen(true)}
             >
               <Plus className="w-4 h-4" />
@@ -236,15 +236,15 @@ export function CategoryManager() {
           </Card>
         ) : (
           categories?.map((category: Category) => (
-            <Card key={category.id} className="glass p-4">
+            <Card key={category.id} className="glass themed-card p-4">
               <div className="flex items-center gap-4">
                 {/* Drag Handle */}
-                <GripVertical className="w-4 h-4 text-text-muted cursor-grab hover:text-white" />
+                <GripVertical className="w-4 h-4 text-text-muted cursor-grab hover:text-text-primary" />
                 
                 {/* Category Info */}
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-white">{category.name}</h3>
+                    <h3 className="font-semibold text-text-primary">{category.name}</h3>
                     <Badge variant={category.isActive ? 'default' : 'secondary'}>
                       {category.isActive ? 'Active' : 'Inactive'}
                     </Badge>

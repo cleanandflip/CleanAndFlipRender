@@ -17,43 +17,43 @@ export function SubmissionAnalytics() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <Card className="p-6">
+      <Card className="glass themed-card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-400">Total Value</p>
-            <p className="text-2xl font-bold">${analytics?.totalValue?.toLocaleString() || 0}</p>
+            <p className="text-sm text-text-muted">Total Value</p>
+            <p className="text-2xl font-bold text-text-primary">${analytics?.totalValue?.toLocaleString() || 0}</p>
           </div>
-          <DollarSign className="w-8 h-8 text-green-500" />
+          <DollarSign className="w-8 h-8 text-primary" />
         </div>
       </Card>
       
-      <Card className="p-6">
+      <Card className="glass themed-card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-400">Avg Response Time</p>
-            <p className="text-2xl font-bold">{analytics?.avgResponseTime || 0}h</p>
+            <p className="text-sm text-text-muted">Avg Response Time</p>
+            <p className="text-2xl font-bold text-text-primary">{analytics?.avgResponseTime || 0}h</p>
           </div>
-          <Clock className="w-8 h-8 text-blue-500" />
+          <Clock className="w-8 h-8 text-accent" />
         </div>
       </Card>
       
-      <Card className="p-6">
+      <Card className="glass themed-card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-400">Acceptance Rate</p>
-            <p className="text-2xl font-bold">{analytics?.acceptanceRate || 0}%</p>
+            <p className="text-sm text-text-muted">Acceptance Rate</p>
+            <p className="text-2xl font-bold text-text-primary">{analytics?.acceptanceRate || 0}%</p>
           </div>
-          <CheckCircle className="w-8 h-8 text-green-500" />
+          <CheckCircle className="w-8 h-8 text-primary" />
         </div>
       </Card>
       
-      <Card className="p-6">
+      <Card className="glass themed-card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-400">Local Submissions</p>
-            <p className="text-2xl font-bold">{analytics?.localPercentage || 0}%</p>
+            <p className="text-sm text-text-muted">Local Submissions</p>
+            <p className="text-2xl font-bold text-text-primary">{analytics?.localPercentage || 0}%</p>
           </div>
-          <MapPin className="w-8 h-8 text-purple-500" />
+          <MapPin className="w-8 h-8 text-accent" />
         </div>
       </Card>
     </div>

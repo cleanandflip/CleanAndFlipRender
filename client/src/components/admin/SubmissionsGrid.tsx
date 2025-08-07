@@ -35,8 +35,8 @@ export function SubmissionsGrid({
       {submissions.map((submission) => (
         <Card 
           key={submission.id}
-          className={`p-4 hover:bg-gray-800/50 transition-all cursor-pointer ${
-            selectedSubmissions.has(submission.id) ? 'ring-2 ring-blue-500' : ''
+          className={`glass themed-card p-4 hover:glass-hover transition-all cursor-pointer ${
+            selectedSubmissions.has(submission.id) ? 'ring-2 ring-primary' : ''
           }`}
           onClick={() => onViewDetails(submission)}
         >
@@ -57,7 +57,7 @@ export function SubmissionsGrid({
           </div>
           
           {/* Image placeholder or actual image */}
-          <div className="aspect-square bg-gray-800 rounded-lg mb-3 flex items-center justify-center">
+          <div className="aspect-square bg-surface-elevated rounded-lg mb-3 flex items-center justify-center">
             {submission.images?.[0] ? (
               <img 
                 src={submission.images[0]} 
@@ -65,12 +65,12 @@ export function SubmissionsGrid({
                 className="w-full h-full object-cover rounded-lg"
               />
             ) : (
-              <Package className="w-12 h-12 text-gray-600" />
+              <Package className="w-12 h-12 text-text-muted" />
             )}
           </div>
           
-          <h3 className="font-semibold mb-1">{submission.name}</h3>
-          <p className="text-sm text-gray-400 mb-2">{submission.brand}</p>
+          <h3 className="font-semibold mb-1 text-text-primary">{submission.name}</h3>
+          <p className="text-sm text-text-muted mb-2">{submission.brand}</p>
           
           <div className="flex justify-between items-center text-sm">
             <span className="font-medium">${submission.askingPrice || 'Open'}</span>

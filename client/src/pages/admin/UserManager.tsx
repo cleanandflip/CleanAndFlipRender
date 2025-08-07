@@ -309,10 +309,10 @@ export function UserManager() {
             value={filters.role}
             onValueChange={(v) => setFilters({ ...filters, role: v, page: 1 })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="themed-input">
               <SelectValue placeholder="All Roles" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="themed-modal">
               <SelectItem value="all">All Roles</SelectItem>
               <SelectItem value="user">Customers</SelectItem>
               <SelectItem value="developer">Developers</SelectItem>
@@ -324,10 +324,10 @@ export function UserManager() {
             value={filters.status}
             onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="themed-input">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="themed-modal">
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
@@ -344,7 +344,7 @@ export function UserManager() {
                 </Button>
               </div>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 glass border-border">
+            <PopoverContent className="w-auto p-0 themed-modal">
               <Calendar
                 mode="range"
                 selected={filters.dateRange as any}
@@ -365,15 +365,7 @@ export function UserManager() {
         </div>
       }
       actions={
-        <button
-          className="px-4 py-2 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2"
-          style={{
-            background: 'rgba(75, 85, 99, 0.4)',
-            border: '1px solid rgba(156, 163, 175, 0.4)',
-            color: 'white',
-            fontWeight: '500'
-          }}
-        >
+        <button className="btn-primary flex items-center gap-2">
           <UserPlus className="w-4 h-4" />
           Invite User
         </button>

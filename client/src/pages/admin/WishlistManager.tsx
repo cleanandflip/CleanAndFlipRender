@@ -173,7 +173,7 @@ export function WishlistManager() {
   const renderProductRow = (product: any, index: number) => (
     <>
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-gray-700 rounded flex-shrink-0">
+        <div className="w-10 h-10 bg-surface-elevated rounded flex-shrink-0">
           {product.productImage && (
             <img 
               src={product.productImage} 
@@ -183,7 +183,7 @@ export function WishlistManager() {
           )}
         </div>
         <div>
-          <p className="font-medium text-white">{product.productName}</p>
+          <p className="font-medium text-text-primary">{product.productName}</p>
           <p className="text-sm text-text-muted">ID: {product.productId.slice(0, 8)}...</p>
         </div>
       </div>
@@ -192,7 +192,7 @@ export function WishlistManager() {
           {product.wishlistCount}
         </Badge>
       </div>
-      <div className="text-white font-semibold">
+      <div className="text-text-primary font-semibold">
         {formatCurrency(product.productPrice)}
       </div>
       <div className="text-center">
@@ -204,7 +204,7 @@ export function WishlistManager() {
         <Button 
           size="sm" 
           variant="outline" 
-          className="glass border-border"
+          className="themed-input"
           onClick={() => handleViewProduct(product.productId)}
           title="View Product"
         >
@@ -213,7 +213,7 @@ export function WishlistManager() {
         <Button 
           size="sm" 
           variant="outline" 
-          className="glass border-border"
+          className="themed-input"
           onClick={() => handleAddToCart(product.productId)}
           title="Add to Cart"
         >
@@ -226,7 +226,7 @@ export function WishlistManager() {
   const renderUserRow = (user: any, index: number) => (
     <>
       <div>
-        <p className="font-medium text-white">{user.userName}</p>
+        <p className="font-medium text-text-primary">{user.userName}</p>
         <p className="text-sm text-text-muted">ID: {user.userId.slice(0, 8)}...</p>
       </div>
       <div className="text-text-muted">{user.email}</div>
@@ -244,7 +244,7 @@ export function WishlistManager() {
         <Button 
           size="sm" 
           variant="outline" 
-          className="glass border-border"
+          className="themed-input"
           onClick={() => handleViewUserWishlist(user.userId)}
           title="View User Wishlist"
         >
@@ -253,7 +253,7 @@ export function WishlistManager() {
         <Button 
           size="sm" 
           variant="outline" 
-          className="glass border-border"
+          className="themed-input"
           onClick={() => handleEmailUser(user)}
           title="Email User"
         >
