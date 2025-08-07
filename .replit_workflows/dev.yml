@@ -1,4 +1,0 @@
-name: Start application
-command: npm run dev
-description: Start the Clean & Flip development server
-category: development
