@@ -1,133 +1,70 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
-/* SINGLE SOURCE OF TRUTH - FORCE DARK THEME EVERYWHERE */
 :root {
-  /* ONLY THESE COLORS - NO OTHERS */
-  --bg-primary: #0F1419;
-  --bg-secondary: #1A1F2B;
-  --bg-tertiary: #242B3A;
-  --border: #374151;
-  --text-primary: #FFFFFF;
-  --text-secondary: #9CA3AF;
-  --accent: #2563EB;
-  
-  /* Shadcn/UI overrides */
-  --background: #0F1419;
-  --foreground: #FFFFFF;
-  --card: #1A1F2B;
-  --card-foreground: #FFFFFF;
-  --popover: #1A1F2B;
-  --popover-foreground: #FFFFFF;
-  --primary: #2563EB;
-  --primary-foreground: #FFFFFF;
-  --secondary: #242B3A;
-  --secondary-foreground: #FFFFFF;
-  --muted: #374151;
-  --muted-foreground: #9CA3AF;
-  --border: #374151;
-  --input: #374151;
-  --ring: #2563EB;
-  --radius: 0.5rem;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark light;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
 }
 
-/* FORCE DARK THEME EVERYWHERE */
-* {
-  color-scheme: dark !important;
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
 }
 
-@layer base {
-  * {
-    @apply border-gray-700;
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
   }
-  
-  html {
-    @apply bg-[#0F1419] text-white;
-  }
-  
-  body {
-    @apply bg-[#0F1419] text-white;
-  }
-  
-  /* Force all inputs to be dark */
-  input, textarea, select {
-    @apply bg-gray-800 text-white border-gray-700 !important;
-  }
-  
-  /* Force all buttons to be dark */
-  button {
-    @apply bg-gray-800 text-white border-gray-700 hover:bg-gray-700 !important;
-  }
-  
-  /* Override all dialog/modal backgrounds */
-  [role="dialog"] {
-    @apply bg-gray-900 !important;
-  }
-  
-  /* Override all table elements */
-  table {
-    @apply bg-transparent !important;
-  }
-  
-  th {
-    @apply bg-gray-800 text-gray-300 !important;
-  }
-  
-  td {
-    @apply border-gray-700 !important;
+  to {
+    transform: rotate(360deg);
   }
 }
 
-/* OVERRIDE ALL SHADCN/UI DEFAULTS */
-.ui-*, [class*="Dialog"], [class*="Modal"], [class*="Popover"], [class*="Sheet"] {
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border) !important;
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
 }
 
-/* Kill any white backgrounds globally */
-.bg-white { @apply bg-gray-900 !important; }
-.bg-gray-50 { @apply bg-gray-900 !important; }
-.bg-gray-100 { @apply bg-gray-800 !important; }
-.text-gray-900 { @apply text-white !important; }
-.text-black { @apply text-white !important; }
-.border-gray-200 { @apply border-gray-700 !important; }
-.border-gray-300 { @apply border-gray-700 !important; }
-
-/* Force specific component overrides */
-[data-radix-dialog-content] {
-  @apply bg-gray-900 border-gray-700 !important;
-}
-
-[data-radix-dialog-overlay] {
-  @apply bg-black/80 !important;
-}
-
-/* Table specific overrides */
-.table-header {
-  @apply bg-gray-800 !important;
-}
-
-.table-row {
-  @apply border-gray-700 hover:bg-gray-800/50 !important;
-}
-
-/* Card overrides */
 .card {
-  @apply bg-gray-800/50 border-gray-700 !important;
+  padding: 2em;
 }
 
-/* Form element overrides */
-.form-control {
-  @apply bg-gray-800 border-gray-700 text-white !important;
-}
-
-/* Dropdown overrides */
-.dropdown-menu {
-  @apply bg-gray-900 border-gray-700 !important;
-}
-
-.dropdown-item {
-  @apply text-white hover:bg-gray-800 !important;
+.read-the-docs {
+  color: #888;
 }

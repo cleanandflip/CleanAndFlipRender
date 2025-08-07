@@ -1,11 +1,25 @@
 const express = require('express');
 const session = require('express-session');
 const helmet = require('helmet');
-const path = require('path');
 const cors = require('cors');
+const compression = require('compression');
+const { createServer } = require('http');
+const path = require('path');
+const fs = require('fs');
+
+// Prevent multiple server instances
+if (global.serverInstance) {
+  console.log("[MAIN] Server already running, exiting...");
+  process.exit(0);
+}
+global.serverInstance = true;
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
+
+// Basic middleware
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Security middleware
 app.use(helmet({
@@ -13,44 +27,53 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-// CORS configuration
+// CORS
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' ? false : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true
 }));
 
-// Body parsing
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Compression
+app.use(compression());
 
-// Session configuration
+// Session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || 'clean-and-flip-dev-secret',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
   }
 }));
 
-// Health check endpoints
+// Request logging
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (req.path.startsWith('/api')) {
+      console.log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
+    }
+  });
+  next();
+});
+
+// Health check
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy', 
-    message: 'Clean & Flip API is running',
+  res.json({ 
+    status: 'healthy',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    uptime: process.uptime()
   });
 });
 
 // API Routes
 app.get('/api/test', (req, res) => {
   res.json({ 
-    message: 'Clean & Flip API endpoint working!',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    message: 'Clean & Flip API is working!',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -183,21 +206,44 @@ app.post('/api/logout', (req, res) => {
   });
 });
 
-// Serve static files in development
-if (process.env.NODE_ENV !== 'production') {
-  // Serve client build files
-  app.use(express.static(path.join(__dirname, '../client/dist')));
-  
-  // SPA fallback for client-side routing
+// Frontend serving
+const publicPath = path.resolve(process.cwd(), 'dist/public');
+const clientPath = path.resolve(process.cwd(), 'client');
+
+if (fs.existsSync(publicPath)) {
+  app.use(express.static(publicPath));
   app.get('*', (req, res) => {
-    if (req.path.startsWith('/api/')) {
-      return res.status(404).json({ error: 'API endpoint not found' });
+    if (!req.path.startsWith('/api/')) {
+      res.sendFile(path.join(publicPath, 'index.html'));
     }
-    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   });
+  console.log(`[MAIN] Serving files from ${publicPath}`);
+} else if (fs.existsSync(clientPath)) {
+  app.use(express.static(clientPath));
+  const indexPath = path.join(clientPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    app.get('*', (req, res) => {
+      if (!req.path.startsWith('/api/')) {
+        res.sendFile(indexPath);
+      }
+    });
+  }
+  console.log(`[MAIN] Serving files from ${clientPath}`);
+} else {
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api/')) {
+      res.json({
+        message: 'Clean & Flip API Server',
+        status: 'development',
+        note: 'Run npm run build to build the frontend',
+        api: 'operational'
+      });
+    }
+  });
+  console.log('[MAIN] No frontend files found - API only mode');
 }
 
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({ 
@@ -206,9 +252,40 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Create HTTP server
+const httpServer = createServer(app);
+
+// Graceful shutdown
+const gracefulShutdown = (signal) => {
+  console.log(`[SHUTDOWN] ${signal} received, shutting down gracefully...`);
+  global.serverInstance = false;
+  
+  httpServer.close((err) => {
+    if (err) {
+      console.error('[SHUTDOWN] Error closing server:', err);
+      process.exit(1);
+    } else {
+      console.log('[SHUTDOWN] Server closed successfully');
+      process.exit(0);
+    }
+  });
+
+  setTimeout(() => {
+    console.error('[SHUTDOWN] Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
+});
+
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Clean & Flip server running on http://0.0.0.0:${PORT}`);
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Clean & Flip server running on port ${PORT}`);
   console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://0.0.0.0:${PORT}/health`);
   console.log(`🔗 API test: http://0.0.0.0:${PORT}/api/test`);

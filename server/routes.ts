@@ -1,29 +1,57 @@
-import express from 'express';
-import { z } from 'zod';
+const express = require('express');
+const { createServer } = require('http');
+const session = require('express-session');
+const helmet = require('helmet');
+const cors = require('cors');
+const compression = require('compression');
 
-const router = express.Router();
+async function registerRoutes(app) {
+  // Security middleware
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false
+  }));
 
-// Health check
-router.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+  // CORS
+  app.use(cors({
+    origin: process.env.NODE_ENV === 'production' ? false : ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true
+  }));
+
+  // Compression
+  app.use(compression());
+
+  // Session middleware
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'clean-and-flip-dev-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
+    }
+  }));
+
+  // Health check
+  app.get('/health', (req, res) => {
+    res.json({ 
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
   });
-});
 
-// Test endpoint
-router.get('/test', (req, res) => {
-  res.json({ 
-    message: 'Clean & Flip API is working!',
-    timestamp: new Date().toISOString()
+  // API Routes
+  app.get('/api/test', (req, res) => {
+    res.json({ 
+      message: 'Clean & Flip API is working!',
+      timestamp: new Date().toISOString()
+    });
   });
-});
 
-// Products endpoints
-router.get('/products', async (req, res) => {
-  try {
-    // Mock data for now - will be replaced with database
+  // Products API
+  app.get('/api/products', (req, res) => {
     const products = [
       {
         id: 1,
@@ -65,15 +93,10 @@ router.get('/products', async (req, res) => {
       total: products.length,
       success: true
     });
-  } catch (error) {
-    console.error('Products API error:', error);
-    res.status(500).json({ error: 'Failed to fetch products' });
-  }
-});
+  });
 
-// Categories endpoint
-router.get('/categories', async (req, res) => {
-  try {
+  // Categories API
+  app.get('/api/categories', (req, res) => {
     const categories = [
       { id: 1, name: 'Barbells', count: 12, slug: 'barbells' },
       { id: 2, name: 'Dumbbells', count: 18, slug: 'dumbbells' },
@@ -86,49 +109,42 @@ router.get('/categories', async (req, res) => {
       categories,
       success: true
     });
-  } catch (error) {
-    console.error('Categories API error:', error);
-    res.status(500).json({ error: 'Failed to fetch categories' });
-  }
-});
+  });
 
-// User authentication endpoints
-router.get('/user', async (req, res) => {
-  try {
-    // Check if user is authenticated
-    if (!req.session?.userId) {
+  // User authentication
+  app.get('/api/user', (req, res) => {
+    if (!req.session || !(req.session as any).userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    // Mock user data - will be replaced with database lookup
+    const session = req.session as any;
     const user = {
-      id: req.session.userId,
-      email: 'user@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      role: 'user'
+      id: session.userId,
+      email: session.userEmail || 'user@example.com',
+      firstName: session.firstName || 'John',
+      lastName: session.lastName || 'Doe',
+      role: session.userRole || 'user'
     };
 
     res.json(user);
-  } catch (error) {
-    console.error('User API error:', error);
-    res.status(500).json({ error: 'Failed to fetch user' });
-  }
-});
+  });
 
-router.post('/login', async (req, res) => {
-  try {
+  app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
 
-    // Basic validation
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
     }
 
-    // Mock authentication - will be replaced with real auth
+    const session = req.session as any;
+
+    // Mock authentication
     if (email === 'admin@cleanandflip.com' && password === 'admin123') {
-      req.session.userId = 1;
-      req.session.userRole = 'admin';
+      session.userId = 1;
+      session.userRole = 'admin';
+      session.userEmail = email;
+      session.firstName = 'Admin';
+      session.lastName = 'User';
       
       res.json({
         id: 1,
@@ -138,8 +154,11 @@ router.post('/login', async (req, res) => {
         role: 'admin'
       });
     } else if (email === 'user@example.com' && password === 'user123') {
-      req.session.userId = 2;
-      req.session.userRole = 'user';
+      session.userId = 2;
+      session.userRole = 'user';
+      session.userEmail = email;
+      session.firstName = 'John';
+      session.lastName = 'Doe';
       
       res.json({
         id: 2,
@@ -151,14 +170,9 @@ router.post('/login', async (req, res) => {
     } else {
       res.status(401).json({ error: 'Invalid credentials' });
     }
-  } catch (error) {
-    console.error('Login API error:', error);
-    res.status(500).json({ error: 'Login failed' });
-  }
-});
+  });
 
-router.post('/logout', async (req, res) => {
-  try {
+  app.post('/api/logout', (req, res) => {
     req.session.destroy((err) => {
       if (err) {
         console.error('Logout error:', err);
@@ -166,10 +180,17 @@ router.post('/logout', async (req, res) => {
       }
       res.json({ success: true, message: 'Logged out successfully' });
     });
-  } catch (error) {
-    console.error('Logout API error:', error);
-    res.status(500).json({ error: 'Logout failed' });
-  }
-});
+  });
 
-export default router;
+  // Create HTTP server
+  const httpServer = createServer(app);
+  const port = process.env.PORT || 5000;
+
+  httpServer.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 Clean & Flip server running on port ${port}`);
+  });
+
+  return httpServer;
+}
+
+module.exports = { registerRoutes };
