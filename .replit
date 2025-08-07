@@ -6,3 +6,15 @@ channel = "stable-25_05"
 [[ports]]
 localPort = 3000
 externalPort = 80
+
+[workflows]
+runButton = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+mode = "parallel"
+author = 45296535
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node index.js"
