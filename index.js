@@ -1,2 +1,2 @@
-// Import the main server application
-require('./server/index.js');
+// Clean & Flip Entry Point - Use minimal server to avoid Express conflicts
+require('./server/minimal-server.js');
