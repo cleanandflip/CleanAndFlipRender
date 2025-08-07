@@ -29,6 +29,7 @@ interface Category {
 }
 
 export function CategoryManager() {
+  console.log('🔴 CategoryManager RENDERED at', new Date().toISOString());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const { toast } = useToast();

@@ -69,6 +69,7 @@ function TabNavigation({ activeTab, setActiveTab }: { activeTab: string; setActi
 }
 
 function AdminDashboard() {
+  console.log('🔴 AdminDashboard RENDERED at', new Date().toISOString());
   const [activeTab, setActiveTab] = useState('products');
 
   return (
@@ -130,6 +131,18 @@ function AdminDashboard() {
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
             }}
           >
+            {/* DEBUG BANNER - REMOVE WHEN CONFIRMED WORKING */}
+            <div 
+              className="mb-6 p-4 rounded-lg border"
+              style={{
+                background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+                borderColor: '#dc2626',
+                color: '#ffffff'
+              }}
+            >
+              <div className="text-lg font-bold">🚨 ADMIN UI TEST - {new Date().toLocaleTimeString()}</div>
+              <div className="text-sm">Active Tab: {activeTab} | Console logs should show manager rendering</div>
+            </div>
             {activeTab === 'products' && <ProductsManager />}
             {activeTab === 'categories' && <CategoryManager />}
             {activeTab === 'submissions' && <SubmissionsManager />}

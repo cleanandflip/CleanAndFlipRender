@@ -34,6 +34,7 @@ interface AnalyticsData {
 }
 
 export function AnalyticsManager() {
+  console.log('🔴 AnalyticsManager RENDERED at', new Date().toISOString());
   const [dateRange, setDateRange] = useState('last30days');
 
   const { data: analytics, isLoading, refetch } = useQuery({

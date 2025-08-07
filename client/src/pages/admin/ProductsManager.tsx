@@ -36,6 +36,7 @@ const defaultFilters = {
 };
 
 export function ProductsManager() {
+  console.log('🔴 ProductsManager RENDERED at', new Date().toISOString());
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState(defaultFilters);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
