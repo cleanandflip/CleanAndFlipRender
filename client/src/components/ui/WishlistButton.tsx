@@ -36,8 +36,7 @@ export function WishlistButton({
   const isInWishlist = isWishlisted(productId);
   const loading = toggleWishlist.isPending;
   
-  // Remove debug logging after fix
-  // console.log(`WishlistButton render - Product: ${productId}, isInWishlist: ${isInWishlist}, loading: ${loading}`);
+
   
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault();
