@@ -82,8 +82,8 @@ export function SystemManager() {
     <div className="min-h-screen bg-background">
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 border-r border-border glass p-6">
-          <h2 className="text-lg font-semibold mb-4 text-white bebas-neue">System Settings</h2>
+        <div className="w-64 border-r border-border bg-card p-6">
+          <h2 className="text-lg font-semibold mb-4 text-foreground bebas-neue">System Settings</h2>
           <nav className="space-y-1">
             {sections.map((section) => {
               const Icon = section.icon;
@@ -107,17 +107,17 @@ export function SystemManager() {
           {activeSection === 'general' && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-2xl font-bold text-white bebas-neue mb-2">System Overview</h1>
-                <p className="text-white">Monitor your Clean & Flip system health and performance</p>
+                <h1 className="text-2xl font-bold text-foreground bebas-neue mb-2">System Overview</h1>
+                <p className="text-foreground">Monitor your Clean & Flip system health and performance</p>
               </div>
 
               {/* System Health Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="glass p-4">
+                <Card className="bg-card border border-border p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-white">Database</p>
-                      <p className="text-lg font-bold text-white">{systemHealth?.database?.status || 'Unknown'}</p>
+                      <p className="text-sm font-medium text-foreground">Database</p>
+                      <p className="text-lg font-bold text-foreground">{systemHealth?.database?.status || 'Unknown'}</p>
                     </div>
                     <Database className={`w-6 h-6 ${getStatusColor(systemHealth?.database?.status || 'unknown')}`} />
                   </div>
@@ -126,11 +126,11 @@ export function SystemManager() {
                   </div>
                 </Card>
 
-                <Card className="glass p-4">
+                <Card className="bg-card border border-border p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-white">Cache</p>
-                      <p className="text-lg font-bold text-white">{systemHealth?.redis?.status || 'Disabled'}</p>
+                      <p className="text-sm font-medium text-foreground">Cache</p>
+                      <p className="text-lg font-bold text-foreground">{systemHealth?.redis?.status || 'Disabled'}</p>
                     </div>
                     <Zap className={`w-6 h-6 ${getStatusColor(systemHealth?.redis?.status || 'warning')}`} />
                   </div>
@@ -139,11 +139,11 @@ export function SystemManager() {
                   </div>
                 </Card>
 
-                <Card className="glass p-4">
+                <Card className="bg-card border border-border p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-white">Storage</p>
-                      <p className="text-lg font-bold text-white">{systemHealth?.storage?.status || 'Unknown'}</p>
+                      <p className="text-sm font-medium text-foreground">Storage</p>
+                      <p className="text-lg font-bold text-foreground">{systemHealth?.storage?.status || 'Unknown'}</p>
                     </div>
                     <HardDrive className={`w-6 h-6 ${getStatusColor(systemHealth?.storage?.status || 'unknown')}`} />
                   </div>
@@ -152,11 +152,11 @@ export function SystemManager() {
                   </div>
                 </Card>
 
-                <Card className="glass p-4">
+                <Card className="bg-card border border-border p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-white">Uptime</p>
-                      <p className="text-lg font-bold text-white">{systemHealth?.uptime ? formatUptime(systemHealth.uptime) : 'Unknown'}</p>
+                      <p className="text-sm font-medium text-foreground">Uptime</p>
+                      <p className="text-lg font-bold text-foreground">{systemHealth?.uptime ? formatUptime(systemHealth.uptime) : 'Unknown'}</p>
                     </div>
                     <Activity className="w-6 h-6 text-green-400" />
                   </div>
@@ -168,12 +168,12 @@ export function SystemManager() {
 
               {/* Performance Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="glass p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-white">Memory Usage</h3>
+                <Card className="bg-card border border-border p-6">
+                  <h3 className="text-lg font-semibold mb-4 text-foreground">Memory Usage</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-white">Used</span>
-                      <span className="text-white">{systemHealth?.memory?.used || 0} MB</span>
+                      <span className="text-foreground">Used</span>
+                      <span className="text-foreground">{systemHealth?.memory?.used || 0} MB</span>
                     </div>
                     <div className="w-full bg-gray-700 h-2 rounded-full">
                       <div 

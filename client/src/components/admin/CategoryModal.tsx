@@ -15,7 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { Category } from '@shared/schema';
-import { globalDesignSystem as theme } from '@/styles/design-system/theme';
+
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -125,21 +125,13 @@ export function CategoryModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-2xl max-h-[90vh] overflow-y-auto"
-        style={{
-          backgroundColor: theme.colors.bg.secondary,
-          border: `1px solid ${theme.colors.border.default}`,
-          color: theme.colors.text.primary
-        }}
+        className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border border-border text-card-foreground"
       >
-        <DialogHeader 
-          className="border-b pb-4"
-          style={{ borderColor: theme.colors.border.default }}
-        >
-          <DialogTitle style={{ color: theme.colors.text.primary }}>
-            {category ? 'Edit Category' : 'Add New Category'}
+        <DialogHeader className="border-b border-border pb-4">
+          <DialogTitle className="text-foreground font-bebas text-xl tracking-wider">
+            {category ? 'EDIT CATEGORY' : 'ADD NEW CATEGORY'}
           </DialogTitle>
-          <DialogDescription style={{ color: theme.colors.text.secondary }}>
+          <DialogDescription className="text-muted-foreground">
             {category ? 'Update category information and settings' : 'Create a new category for your products'}
           </DialogDescription>
         </DialogHeader>
@@ -147,51 +139,39 @@ export function CategoryModal({
         <form onSubmit={handleSubmit} className="space-y-6 pt-6">
           {/* Basic Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold" style={{ color: theme.colors.text.primary }}>Basic Information</h3>
+            <h3 className="text-lg font-semibold text-foreground">Basic Information</h3>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="name" style={{ color: theme.colors.text.secondary }}>Category Name *</Label>
+                <Label htmlFor="name" className="text-muted-foreground">Category Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={handleNameChange}
-                  style={{ 
-                    backgroundColor: theme.colors.bg.primary, 
-                    borderColor: theme.colors.border.default, 
-                    color: theme.colors.text.primary 
-                  }}
+                  className="bg-input border-border text-input-foreground"
                   required
                 />
               </div>
               
               <div>
-                <Label htmlFor="slug" style={{ color: theme.colors.text.secondary }}>Slug</Label>
+                <Label htmlFor="slug" className="text-muted-foreground">Slug</Label>
                 <Input
                   id="slug"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  style={{ 
-                    backgroundColor: theme.colors.bg.primary, 
-                    borderColor: theme.colors.border.default, 
-                    color: theme.colors.text.primary 
-                  }}
+                  className="bg-input border-border text-input-foreground"
                   placeholder="Auto-generated from name"
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="description" style={{ color: theme.colors.text.secondary }}>Description</Label>
+              <Label htmlFor="description" className="text-muted-foreground">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                style={{ 
-                  backgroundColor: theme.colors.bg.primary, 
-                  borderColor: theme.colors.border.default, 
-                  color: theme.colors.text.primary 
-                }}
+                className="bg-input border-border text-input-foreground"
                 rows={3}
                 placeholder="Brief description of this category"
               />

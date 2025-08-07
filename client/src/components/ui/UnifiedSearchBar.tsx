@@ -459,13 +459,7 @@ export function UnifiedSearchBar({
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Search Input */}
-      <div className={`relative group ${isOpen ? 'active' : ''}`} 
-           style={{
-             background: 'rgba(75, 85, 99, 0.4)',
-             border: isOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
-             borderRadius: '0.5rem',
-             transition: 'all 0.2s ease'
-           }}>
+      <div className={`relative group glass rounded-lg transition-all duration-200 ${isOpen ? 'active border-primary' : 'border-border'}`}>
         {/* Search Icon */}
         <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
           <Search 

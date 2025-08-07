@@ -167,14 +167,14 @@ export default function AuthPage() {
             <TabsContent value="login" className="transition-all duration-300 ease-in-out">
               <Card className="p-8">
                 <div className="mb-8">
-                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">WELCOME BACK</h2>
-                  <p className="text-white">
+                  <h2 className="font-bebas text-3xl text-foreground tracking-wider mb-3">WELCOME BACK</h2>
+                  <p className="text-foreground">
                     Sign in to your account to continue
                   </p>
                 </div>
                 <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-4">
-                    <Label htmlFor="email" className="text-white font-medium text-xl">Email</Label>
+                    <Label htmlFor="email" className="text-foreground font-medium text-xl">Email</Label>
                     <Input
                       id="email"
                       name="email"
@@ -186,7 +186,7 @@ export default function AuthPage() {
                     />
                   </div>
                   <div className="space-y-4">
-                    <Label htmlFor="password" className="text-white font-medium text-xl">Password</Label>
+                    <Label htmlFor="password" className="text-foreground font-medium text-xl">Password</Label>
                     <Input
                       id="password"
                       name="password"
@@ -221,8 +221,8 @@ export default function AuthPage() {
             <TabsContent value="register" className="transition-all duration-300 ease-in-out">
               <Card className="p-8">
                 <div className="mb-6">
-                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-2">CREATE ACCOUNT</h2>
-                  <p className="text-white">
+                  <h2 className="font-bebas text-3xl text-foreground tracking-wider mb-2">CREATE ACCOUNT</h2>
+                  <p className="text-foreground">
                     Join Clean & Flip to buy and sell equipment
                   </p>
                 </div>
@@ -272,7 +272,7 @@ export default function AuthPage() {
                   
                   {/* Address Autocomplete */}
                   <div className="space-y-2">
-                    <Label htmlFor="address" className="text-text-secondary text-sm">Address</Label>
+                    <Label htmlFor="address" className="text-foreground text-sm">Address</Label>
                     <AddressAutocomplete
                       id="address"
                       name="address"

@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/shared/AnimatedComponents";
-import { globalDesignSystem as theme } from "@/styles/design-system/theme";
+
 import { useToast } from "@/hooks/use-toast";
 import AddressAutocomplete from "@/components/ui/address-autocomplete";
 import { SmartLink } from "@/components/ui/smart-link";
@@ -96,7 +96,7 @@ function AddressesSection() {
       <Card className="p-6">
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue mx-auto"></div>
-          <p className="text-text-secondary mt-4">Loading addresses...</p>
+          <p className="text-muted-foreground mt-4">Loading addresses...</p>
         </div>
       </Card>
     );
@@ -105,7 +105,7 @@ function AddressesSection() {
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-bebas text-2xl">SAVED ADDRESSES</h2>
+        <h2 className="font-bebas text-2xl text-foreground">SAVED ADDRESSES</h2>
         <Button>
           Add New Address
         </Button>
@@ -114,8 +114,8 @@ function AddressesSection() {
       {addresses.length === 0 ? (
         <div className="text-center py-12">
           <MapPin className="mx-auto mb-4 text-gray-400" size={48} />
-          <h3 className="text-xl font-semibold mb-2">No saved addresses</h3>
-          <p className="text-text-secondary mb-6">
+          <h3 className="text-xl font-semibold mb-2 text-foreground">No saved addresses</h3>
+          <p className="text-muted-foreground mb-6">
             Add addresses to make checkout faster.
           </p>
           <Button>
@@ -129,7 +129,7 @@ function AddressesSection() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-white">
+                    <h3 className="font-semibold text-foreground">
                       Primary Address
                     </h3>
                     {address.isDefault && (

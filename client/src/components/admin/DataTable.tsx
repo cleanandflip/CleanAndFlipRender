@@ -57,10 +57,10 @@ export function DataTable<T extends { id: string }>({
 
   if (isLoading) {
     return (
-      <div className="bg-secondary rounded-lg p-6">
+      <div className="bg-card border border-border rounded-lg p-6">
         <div className="animate-pulse space-y-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-4 bg-gray-700 rounded w-full"></div>
+            <div key={i} className="h-4 bg-muted rounded w-full"></div>
           ))}
         </div>
       </div>
@@ -68,18 +68,17 @@ export function DataTable<T extends { id: string }>({
   }
 
   return (
-    <div className="bg-secondary rounded-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-800/50 border-b border-bg-secondary-border">
+          <thead className="bg-muted/50 border-b border-border">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-4 py-3 text-left text-sm font-medium text-text-muted ${
+                  className={`px-4 py-3 text-left text-sm font-medium text-muted-foreground ${
                     column.sortable ? 'cursor-pointer hover:text-primary' : ''
-                  }`}
-                  style={{ width: column.width }}
+                  } ${column.width ? `w-[${column.width}]` : ''}`}
                   onClick={() => column.sortable && handleSort(column.key)}
                 >
                   <div className="flex items-center gap-2">
@@ -108,7 +107,7 @@ export function DataTable<T extends { id: string }>({
           <tbody>
             {data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-8 text-center text-text-muted">
+                <td colSpan={columns.length} className="px-4 py-8 text-center text-muted-foreground">
                   No data available
                 </td>
               </tr>
