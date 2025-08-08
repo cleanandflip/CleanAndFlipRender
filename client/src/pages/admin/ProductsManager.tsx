@@ -4,13 +4,7 @@ import { DashboardLayout } from '@/components/admin/DashboardLayout';
 import { Pagination } from '@/components/admin/Pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  
-  div,
-  div,
-  StandardDropdown,
-  div
-} from '@/components/ui/select';
+import { UnifiedDropdown } from '@/components/ui';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProductModal } from '@/components/admin/ProductModal';

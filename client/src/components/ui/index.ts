@@ -24,8 +24,8 @@ export { UnifiedDropdown } from './UnifiedDropdown';
 export { UnifiedSearch } from './UnifiedSearch';
 export type { DropdownOption } from './UnifiedDropdown';
 
-// Backward compatibility exports
-export { UnifiedDropdown as StandardDropdown } from './UnifiedDropdown';
+// Backward compatibility exports  
 export { UnifiedDropdown as Dropdown } from './UnifiedDropdown';
+export { UnifiedSearch as SearchNavDropdown } from './UnifiedSearch';
 export { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './select';
 export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './dropdown-menu';

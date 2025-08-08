@@ -4,13 +4,7 @@ import { DashboardLayout } from '@/components/admin/DashboardLayout';
 import { MetricCard } from '@/components/admin/MetricCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  
-  div,
-  div,
-  StandardDropdown,
-  div
-} from '@/components/ui/select';
+import { UnifiedDropdown } from '@/components/ui';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
