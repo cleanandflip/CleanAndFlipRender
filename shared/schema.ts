@@ -35,11 +35,10 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)]
 );
 
-// User roles enum
+// User roles enum - Simplified system (user/developer only)
 export const userRoleEnum = pgEnum("user_role", [
   "user",
-  "developer", 
-  "admin"
+  "developer"
 ]);
 
 // Users table
