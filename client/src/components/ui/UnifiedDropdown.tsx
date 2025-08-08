@@ -87,13 +87,13 @@ export function UnifiedDropdown({
     }
   };
 
-  // Style variants matching your theme
+  // Style variants matching your theme - UNIFIED with Input/Textarea styling
   const buttonStyles = {
     default: cn(
-      "w-full px-4 py-2.5 rounded-lg",
+      "w-full px-3 py-2 rounded-md", // UNIFIED: Match Input/Textarea padding and border radius
       "text-left flex items-center justify-between",
       "transition-all duration-200",
-      "border",
+      "border h-10", // UNIFIED: Match Input height
       !disabled && "hover:border-opacity-60",
       disabled && "opacity-50 cursor-not-allowed",
       isOpen && "ring-2 ring-opacity-40",
@@ -124,9 +124,9 @@ export function UnifiedDropdown({
   const buttonStyle = {
     backgroundColor: variant === 'ghost' || variant === 'nav' 
       ? 'transparent' 
-      : theme.colors.inputBg,
-    borderColor: theme.colors.border,
-    color: theme.colors.textPrimary,
+      : 'var(--input)', // UNIFIED: Use same background as Input and Textarea components
+    borderColor: 'var(--border)', // UNIFIED: Use same border as other form fields
+    color: 'var(--input-foreground)', // UNIFIED: Use same text color as other form fields
     ...(isOpen && { 
       borderColor: theme.colors.accent,
       boxShadow: `0 0 0 3px ${theme.colors.accentFocus}`
@@ -152,11 +152,11 @@ export function UnifiedDropdown({
         style={buttonStyle}
       >
         <span 
-          className={cn("truncate", !selectedOptions.length && "opacity-60")}
+          className={cn("truncate", !selectedOptions.length && "text-white")}
           style={{ 
             color: selectedOptions.length 
-              ? theme.colors.textPrimary 
-              : theme.colors.textPlaceholder 
+              ? 'var(--input-foreground)' // UNIFIED: Same text color as other inputs
+              : 'white' // UNIFIED: Same placeholder color as other inputs
           }}
         >
           {multiple

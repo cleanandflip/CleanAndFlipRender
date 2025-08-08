@@ -89,10 +89,10 @@ body {
   --card: #232937;                         /* Card backgrounds */
   --card-foreground: #E2E8F0;
   
-  /* Form inputs and borders */
-  --border: rgba(255, 255, 255, 0.15);     /* More visible borders */
-  --input: #475569;                        /* Lighter input backgrounds for better visibility */
-  --input-foreground: #FFFFFF;             /* Input text color - enforced white for readability */
+  /* Form inputs and borders - UNIFIED STYLING */
+  --border: rgba(255, 255, 255, 0.15);     /* Consistent borders for all fields */
+  --input: #475569;                        /* UNIFIED input background for all form elements */
+  --input-foreground: #FFFFFF;             /* UNIFIED text color - white for all fields */
   
   /* Primary colors - Blue theme */
   --primary: #3B82F6;                      /* Vibrant blue */
