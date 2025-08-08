@@ -137,7 +137,7 @@ export function GlobalDropdown({
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.15 }}
                 ref={dropdownRef}
-                className="rounded-lg overflow-hidden max-h-96 overflow-y-auto shadow-2xl border"
+                className="rounded-lg overflow-hidden max-h-96 overflow-y-auto shadow-2xl border scrollbar-hide"
                 style={{
                   position: 'fixed',
                   top: dropdownPosition.top,

@@ -41,6 +41,16 @@ body {
   background: transparent;
 }
 
+/* Hide scrollbar but maintain scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
 :root {
   /* Global Design System Colors - Clean & Flip */
   --background: #1A1F2E;                   /* Primary background */
