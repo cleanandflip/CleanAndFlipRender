@@ -118,6 +118,7 @@ function Router() {
 
               
               {/* Admin Routes */}
+              <Route path="/admin/:tab?" component={AdminDashboard} />
               <Route path={ROUTES.ADMIN} component={AdminDashboard} />
               <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
               <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
