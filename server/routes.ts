@@ -53,6 +53,7 @@ import {
   activityLogs,
   reviews,
   coupons,
+  emailQueue,
   orderTracking,
   returnRequests,
   passwordResetTokens,
@@ -2935,7 +2936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const review = await db.insert(reviews).values({
-        productId: Number(productId),
+        productId: String(productId),
         userId,
         rating,
         comment: comment || '',
@@ -2954,7 +2955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/reviews/:productId", async (req, res) => {
     try {
       const productReviews = await db.select().from(reviews)
-        .where(eq(reviews.productId, Number(req.params.productId)))
+        .where(eq(reviews.productId, req.params.productId))
         .orderBy(desc(reviews.createdAt));
       
       res.json(productReviews);
@@ -2976,7 +2977,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const coupon = await db.select().from(coupons)
         .where(and(
           eq(coupons.code, code.toUpperCase()),
-          eq(coupons.active, true)
+          eq(coupons.isActive, true)
         ))
         .limit(1);
       
@@ -2991,31 +2992,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Coupon has expired" });
       }
       
-      // Check usage limit
-      if (couponData.usedCount >= couponData.maxUses) {
+      // Check usage limit  
+      if (couponData.usageCount >= (couponData.usageLimit || 999999)) {
         return res.status(400).json({ error: "Coupon usage limit reached" });
       }
       
       // Check minimum purchase
-      if (couponData.minPurchase && cartTotal < couponData.minPurchase) {
+      if (couponData.minOrderAmount && cartTotal < Number(couponData.minOrderAmount)) {
         return res.status(400).json({ 
-          error: `Minimum purchase of $${couponData.minPurchase} required` 
+          error: `Minimum purchase of $${couponData.minOrderAmount} required` 
         });
       }
       
       // Calculate discount
       let discount = 0;
-      if (couponData.discountPercent) {
-        discount = (cartTotal * couponData.discountPercent) / 100;
-      } else if (couponData.discountAmount) {
-        discount = Number(couponData.discountAmount);
+      if (couponData.discountType === 'percentage') {
+        discount = (cartTotal * Number(couponData.discountValue)) / 100;
+      } else if (couponData.discountType === 'fixed') {
+        discount = Number(couponData.discountValue);
       }
       
       res.json({
         valid: true,
         discount,
         code: couponData.code,
-        type: couponData.discountPercent ? 'percentage' : 'fixed'
+        type: couponData.discountType
       });
     } catch (error) {
       Logger.error("Error validating coupon", error);

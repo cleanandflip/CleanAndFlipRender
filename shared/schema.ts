@@ -284,6 +284,20 @@ export const activityLogs = pgTable("activity_logs", {
   index("idx_activity_logs_type").on(table.eventType),
 ]);
 
+// Email Queue table for notifications and marketing
+export const emailQueue = pgTable("email_queue", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  toEmail: varchar("to_email").notNull(),
+  template: varchar("template").notNull(),
+  data: jsonb("data"),
+  status: varchar("status").default("pending"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_email_queue_status").on(table.status),
+  index("idx_email_queue_created_at").on(table.createdAt),
+]);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
