@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {  div, div, StandardDropdown, div } from '@/components/ui/select';
+import { UnifiedDropdown } from '@/components/ui';
 import { Switch } from '@/components/ui/switch';
 import { Upload, X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -275,21 +275,12 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
 
             <div>
               <Label htmlFor="category" style={{ color: theme.colors.text.secondary }}>Category *</Label>
-              <Select
+              <UnifiedDropdown
+                options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
                 value={formData.categoryId}
-                onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
-              >
-                <StandardDropdown style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}>
-                  <div placeholder="Select category" />
-                </StandardDropdown>
-                <div>
-                  {categories.map(cat => (
-                    <div key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </div>
-                  ))}
-                </div>
-              </Select>
+                onChange={(value: string | string[]) => setFormData({ ...formData, categoryId: Array.isArray(value) ? value[0] : value })}
+                placeholder="Select category"
+              />
             </div>
 
             <div>

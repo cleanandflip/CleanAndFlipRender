@@ -170,9 +170,9 @@ export function AnalyticsManager() {
           </Popover>
           
           <Select value={metric} onValueChange={setMetric}>
-            <StandardDropdown>
+            <UnifiedDropdown>
               <div />
-            </StandardDropdown>
+            </UnifiedDropdown>
             <div>
               <div value="revenue">Revenue</div>
               <div value="orders">Orders</div>
@@ -183,9 +183,9 @@ export function AnalyticsManager() {
           </Select>
           
           <Select value={groupBy} onValueChange={setGroupBy}>
-            <StandardDropdown>
+            <UnifiedDropdown>
               <div />
-            </StandardDropdown>
+            </UnifiedDropdown>
             <div>
               <div value="hour">Hourly</div>
               <div value="day">Daily</div>

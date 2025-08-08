@@ -276,9 +276,9 @@ export function ProductsManager() {
             value={filters.category}
             onValueChange={(v) => setFilters({ ...filters, category: v, page: 1 })}
           >
-            <StandardDropdown className="glass border-border">
+            <UnifiedDropdown className="glass border-border">
               <div placeholder="All Categories" />
-            </StandardDropdown>
+            </UnifiedDropdown>
             <div className="glass border-border">
               <div value="all">All Categories</div>
               <div value="barbells">Barbells</div>
@@ -293,9 +293,9 @@ export function ProductsManager() {
             value={filters.status}
             onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
           >
-            <StandardDropdown className="glass border-border">
+            <UnifiedDropdown className="glass border-border">
               <div placeholder="All Statuses" />
-            </StandardDropdown>
+            </UnifiedDropdown>
             <div className="glass border-border">
               <div value="all">All Statuses</div>
               <div value="active">Active</div>

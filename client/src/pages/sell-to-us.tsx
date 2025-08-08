@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceInput } from "@/components/ui/price-input";
-import { StandardDropdown } from "@/components/ui";
+import { UnifiedDropdown } from "@/components/ui";
 import { Textarea } from "@/components/ui/textarea";
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -339,7 +339,7 @@ export default function SellToUs() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <StandardDropdown
+                            <UnifiedDropdown
                               label="Brand"
                               options={EQUIPMENT_BRANDS}
                               value={field.value || ""}
@@ -362,7 +362,7 @@ export default function SellToUs() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <StandardDropdown
+                            <UnifiedDropdown
                               label="Condition"
                               options={[
                                 { value: "new", label: "New" },

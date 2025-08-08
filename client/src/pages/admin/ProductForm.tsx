@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceInput } from '@/components/ui/price-input';
-import { StandardDropdown } from '@/components/ui';
+import { UnifiedDropdown } from '@/components/ui';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -328,7 +328,7 @@ export function ProductForm() {
               </div>
               
               <div>
-                <StandardDropdown
+                <UnifiedDropdown
                   label="Brand"
                   options={EQUIPMENT_BRANDS}
                   value={formData.brand}
@@ -406,7 +406,7 @@ export function ProductForm() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <StandardDropdown
+                <UnifiedDropdown
                   label="Category *"
                   options={(categories as any[]).map((category: any) => ({
                     value: category.id,
@@ -420,7 +420,7 @@ export function ProductForm() {
               </div>
               
               <div>
-                <StandardDropdown
+                <UnifiedDropdown
                   label="Condition"
                   options={[
                     { value: "new", label: "New" },
