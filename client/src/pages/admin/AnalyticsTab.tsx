@@ -17,30 +17,17 @@ export function AnalyticsTab() {
   });
 
   const metrics = {
-    revenue: { value: analyticsData?.totalRevenue || 0, change: 15 },
-    orders: { value: analyticsData?.totalOrders || 0, change: 8 },
-    conversion: { value: analyticsData?.conversionRate || 2.4, change: -2 },
-    avgOrder: { value: analyticsData?.avgOrderValue || 0, change: 12 },
-    users: { value: analyticsData?.totalUsers || 0, change: 5 },
-    products: { value: analyticsData?.totalProducts || 0, change: 3 }
+    revenue: { value: analyticsData?.totalRevenue || 0, change: 0 },
+    orders: { value: analyticsData?.totalOrders || 0, change: 0 },
+    conversion: { value: analyticsData?.conversionRate || 0, change: 0 },
+    avgOrder: { value: analyticsData?.avgOrderValue || 0, change: 0 },
+    users: { value: analyticsData?.totalUsers || 0, change: 0 },
+    products: { value: analyticsData?.totalProducts || 0, change: 0 }
   };
 
-  // Mock chart data - replace with real data from API
-  const revenueData = [
-    { name: 'Jan', revenue: 4000 },
-    { name: 'Feb', revenue: 3000 },
-    { name: 'Mar', revenue: 5000 },
-    { name: 'Apr', revenue: 4500 },
-    { name: 'May', revenue: 6000 },
-    { name: 'Jun', revenue: 5500 },
-  ];
-
-  const topProducts = [
-    { name: 'Olympic Barbell', sales: 45 },
-    { name: 'Adjustable Dumbbells', sales: 32 },
-    { name: 'Power Rack', sales: 28 },
-    { name: 'Weight Plates Set', sales: 24 },
-  ];
+  // Use real data from API
+  const revenueData = analyticsData?.charts?.revenue || [];
+  const topProducts = analyticsData?.topProducts || [];
 
   if (isLoading) {
     return (
@@ -151,29 +138,31 @@ export function AnalyticsTab() {
       <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
         <div className="space-y-4">
-          {[
-            { type: 'order', message: 'New order placed', id: 'CF-2024-1001', time: '2 minutes ago' },
-            { type: 'user', message: 'New user registered', id: 'john.doe@email.com', time: '5 minutes ago' },
-            { type: 'product', message: 'Product updated', id: 'Olympic Barbell', time: '10 minutes ago' },
-            { type: 'order', message: 'Order completed', id: 'CF-2024-1000', time: '15 minutes ago' },
-            { type: 'review', message: 'New review posted', id: '5 stars on Power Rack', time: '20 minutes ago' },
-          ].map((activity, i) => (
-            <div key={i} className="flex items-center justify-between py-3 border-b border-gray-800/50 last:border-0">
-              <div className="flex items-center gap-4">
-                <div className={`w-2 h-2 rounded-full ${
-                  activity.type === 'order' ? 'bg-green-400' :
-                  activity.type === 'user' ? 'bg-blue-400' :
-                  activity.type === 'product' ? 'bg-yellow-400' :
-                  'bg-purple-400'
-                }`}></div>
-                <div>
-                  <p className="text-white">{activity.message}</p>
-                  <p className="text-sm text-gray-400">{activity.id}</p>
+          {(analyticsData?.recentActivity || []).length > 0 ? (
+            analyticsData.recentActivity.map((activity: any, i: number) => (
+              <div key={i} className="flex items-center justify-between py-3 border-b border-gray-800/50 last:border-0">
+                <div className="flex items-center gap-4">
+                  <div className={`w-2 h-2 rounded-full ${
+                    activity.type === 'order' ? 'bg-green-400' :
+                    activity.type === 'user' ? 'bg-blue-400' :
+                    activity.type === 'product' ? 'bg-yellow-400' :
+                    'bg-purple-400'
+                  }`}></div>
+                  <div>
+                    <p className="text-white">{activity.description}</p>
+                    <p className="text-sm text-gray-400">{activity.type}</p>
+                  </div>
                 </div>
+                <p className="text-sm text-gray-400">
+                  {activity.timestamp ? new Date(activity.timestamp).toLocaleString() : 'Unknown'}
+                </p>
               </div>
-              <p className="text-sm text-gray-400">{activity.time}</p>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-400">No recent activity</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
