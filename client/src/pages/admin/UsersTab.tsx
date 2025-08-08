@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
+import { useToast } from '@/hooks/use-toast';
 
 interface User {
   id: string;
@@ -20,6 +21,7 @@ interface User {
 
 export function UsersTab() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
 
   const { data: usersData, isLoading, refetch } = useQuery({
     queryKey: ['admin-users', searchQuery],

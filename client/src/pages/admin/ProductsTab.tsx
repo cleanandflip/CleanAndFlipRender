@@ -197,35 +197,6 @@ export function ProductsTab() {
           {product.status}
         </span>
       )
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (product: Product) => (
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => handleView(product)}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-            title="View Product"
-          >
-            <Eye className="w-4 h-4 text-gray-400" />
-          </button>
-          <button
-            onClick={() => handleEdit(product)}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-            title="Edit Product"
-          >
-            <Edit2 className="w-4 h-4 text-gray-400" />
-          </button>
-          <button
-            onClick={() => handleDelete(product)}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-            title="Delete Product"
-          >
-            <Trash2 className="w-4 h-4 text-red-400" />
-          </button>
-        </div>
-      )
     }
   ];
 

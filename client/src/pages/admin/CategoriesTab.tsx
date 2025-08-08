@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
+import { useToast } from '@/hooks/use-toast';
 
 interface Category {
   id: string;
@@ -19,6 +20,7 @@ interface Category {
 export function CategoriesTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: categoriesData, isLoading, refetch } = useQuery({
     queryKey: ['admin-categories', searchQuery],

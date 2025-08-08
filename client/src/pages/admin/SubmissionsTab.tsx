@@ -5,6 +5,7 @@ import { FolderOpen, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
+import { useToast } from '@/hooks/use-toast';
 
 interface Submission {
   id: string;
@@ -19,6 +20,7 @@ interface Submission {
 
 export function SubmissionsTab() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
 
   const { data: submissionsData, isLoading, refetch } = useQuery({
     queryKey: ['admin-submissions', searchQuery],

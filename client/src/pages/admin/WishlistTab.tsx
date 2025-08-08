@@ -5,6 +5,7 @@ import { Heart, TrendingUp, Users, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
+import { useToast } from '@/hooks/use-toast';
 
 interface WishlistItem {
   id: string;
@@ -19,6 +20,7 @@ interface WishlistItem {
 
 export function WishlistTab() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
 
   const { data: wishlistData, isLoading, refetch } = useQuery({
     queryKey: ['admin-wishlist', searchQuery],
