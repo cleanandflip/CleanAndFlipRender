@@ -190,6 +190,7 @@ export default function Navigation() {
                     handleNavigation(ROUTES.DASHBOARD);
                     setIsUserDropdownOpen(false);
                   }}
+                  showSeparator={true}
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Dashboard
@@ -199,6 +200,7 @@ export default function Navigation() {
                     handleNavigation(ROUTES.ORDERS);
                     setIsUserDropdownOpen(false);
                   }}
+                  showSeparator={user.isAdmin}
                 >
                   <History className="mr-2 h-4 w-4" />
                   Order History
@@ -209,12 +211,12 @@ export default function Navigation() {
                       handleNavigation(ROUTES.ADMIN);
                       setIsUserDropdownOpen(false);
                     }}
+                    showSeparator={true}
                   >
                     <Package className="mr-2 h-4 w-4" />
                     Admin Dashboard
                   </NavigationDropdownItem>
                 )}
-                <NavigationDropdownSeparator />
                 <NavigationDropdownItem 
                   onClick={() => {
                     logoutMutation.mutate();

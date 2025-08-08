@@ -265,27 +265,31 @@ export function UnifiedDropdown({
                 
                 {filteredOptions.length > 0 ? (
                   filteredOptions.map((option, index) => (
-                    <div
-                      key={option.value}
-                      onClick={() => {
-                        if (!option.disabled) {
-                          onChange(option.value);
-                          setIsOpen(false);
-                          if (searchable) {
-                            setSearch(option.label);
+                    <div key={option.value}>
+                      <div
+                        onClick={() => {
+                          if (!option.disabled) {
+                            onChange(option.value);
+                            setIsOpen(false);
+                            if (searchable) {
+                              setSearch(option.label);
+                            }
+                            setSelectedIndex(-1);
                           }
-                          setSelectedIndex(-1);
-                        }
-                      }}
-                      className={cn(
-                        "px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center justify-between",
-                        option.disabled && 'opacity-50 cursor-not-allowed',
-                        option.value === value && 'bg-white/10'
-                      )}
-                    >
-                      <span className="font-medium truncate flex-1 pr-2">{option.label}</span>
-                      {option.value === value && (
-                        <Check className="w-4 h-4 text-blue-400" />
+                        }}
+                        className={cn(
+                          "px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center justify-between",
+                          option.disabled && 'opacity-50 cursor-not-allowed',
+                          option.value === value && 'bg-white/10'
+                        )}
+                      >
+                        <span className="font-medium truncate flex-1 pr-2">{option.label}</span>
+                        {option.value === value && (
+                          <Check className="w-4 h-4 text-blue-400" />
+                        )}
+                      </div>
+                      {index < filteredOptions.length - 1 && (
+                        <div className="border-t border-gray-600/30 mx-4" />
                       )}
                     </div>
                   ))

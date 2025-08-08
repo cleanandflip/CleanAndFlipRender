@@ -162,19 +162,25 @@ interface NavigationDropdownItemProps {
   children: React.ReactNode;
   className?: string;
   disabled?: boolean;
+  showSeparator?: boolean;
 }
 
-export function NavigationDropdownItem({ onClick, children, className = '', disabled = false }: NavigationDropdownItemProps) {
+export function NavigationDropdownItem({ onClick, children, className = '', disabled = false, showSeparator = false }: NavigationDropdownItemProps) {
   return (
-    <div
-      onClick={disabled ? undefined : onClick}
-      className={cn(
-        "px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center",
-        disabled && 'opacity-50 cursor-not-allowed',
-        className
+    <div>
+      <div
+        onClick={disabled ? undefined : onClick}
+        className={cn(
+          "px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center",
+          disabled && 'opacity-50 cursor-not-allowed',
+          className
+        )}
+      >
+        {children}
+      </div>
+      {showSeparator && (
+        <div className="border-t border-gray-600/30 mx-4" />
       )}
-    >
-      {children}
     </div>
   );
 }
