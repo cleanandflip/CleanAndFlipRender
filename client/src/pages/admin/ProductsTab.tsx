@@ -7,7 +7,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
-import { ProductModal } from '@/components/admin/modals/ProductModal';
+import { EnhancedProductModal } from '@/components/admin/modals/EnhancedProductModal';
 
 interface Product {
   id: string;
@@ -267,7 +267,7 @@ export function ProductsTab() {
 
       {/* Modal */}
       {showProductModal && (
-        <ProductModal 
+        <EnhancedProductModal 
           product={selectedProduct}
           onClose={() => {
             setShowProductModal(false);

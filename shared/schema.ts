@@ -92,9 +92,11 @@ export const productConditionEnum = pgEnum("product_condition", [
 // Product status enum
 export const productStatusEnum = pgEnum("product_status", [
   "active",
+  "inactive",
   "sold",
-  "pending",
+  "pending", 
   "draft",
+  "archived",
 ]);
 
 // Products

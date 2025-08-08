@@ -1186,7 +1186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedAt: product.updatedAt,
           category: product.category?.name || 'Uncategorized',
           categoryId: product.categoryId,
-          status: (product.stockQuantity || 0) > 0 ? 'active' : 'out-of-stock'
+          status: (product.stockQuantity || 0) > 0 ? 'active' : 'inactive'
         })),
         pagination: {
           page: parseInt(page as string),
