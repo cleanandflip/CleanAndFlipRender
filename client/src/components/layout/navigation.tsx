@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { NavigationDropdown, NavigationDropdownItem, NavigationDropdownSeparator, NavigationDropdownLabel } from "@/components/ui/NavigationDropdown";
+import { GlobalDropdown } from "@/components/ui/GlobalDropdown";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
@@ -159,7 +159,7 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <NavigationDropdown
+              <GlobalDropdown
                 isOpen={isUserDropdownOpen}
                 onOpenChange={setIsUserDropdownOpen}
                 align="end"
@@ -181,52 +181,52 @@ export default function Navigation() {
                   </Button>
                 }
               >
-                <NavigationDropdownLabel>
+                <div className="px-4 py-2 text-white font-medium text-sm border-b border-gray-600/50">
                   {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
-                </NavigationDropdownLabel>
-                <NavigationDropdownSeparator />
-                <NavigationDropdownItem 
+                </div>
+                <div 
                   onClick={() => {
                     handleNavigation(ROUTES.DASHBOARD);
                     setIsUserDropdownOpen(false);
                   }}
-                  showSeparator={true}
+                  className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center"
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Dashboard
-                </NavigationDropdownItem>
-                <NavigationDropdownItem 
+                </div>
+                <div 
                   onClick={() => {
                     handleNavigation(ROUTES.ORDERS);
                     setIsUserDropdownOpen(false);
                   }}
-                  showSeparator={user.isAdmin}
+                  className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center"
                 >
                   <History className="mr-2 h-4 w-4" />
                   Order History
-                </NavigationDropdownItem>
+                </div>
                 {user.isAdmin && (
-                  <NavigationDropdownItem 
+                  <div 
                     onClick={() => {
                       handleNavigation(ROUTES.ADMIN);
                       setIsUserDropdownOpen(false);
                     }}
-                    showSeparator={true}
+                    className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center border-t border-gray-600/50"
                   >
                     <Package className="mr-2 h-4 w-4" />
                     Admin Dashboard
-                  </NavigationDropdownItem>
+                  </div>
                 )}
-                <NavigationDropdownItem 
+                <div 
                   onClick={() => {
                     logoutMutation.mutate();
                     setIsUserDropdownOpen(false);
                   }}
+                  className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center border-t border-gray-600/50"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
-                </NavigationDropdownItem>
-              </NavigationDropdown>
+                </div>
+              </GlobalDropdown>
             ) : (
               <Button
                 variant="primary"
