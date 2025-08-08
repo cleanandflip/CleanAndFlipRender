@@ -449,6 +449,17 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Session test endpoint (for debugging)
+  app.get("/api/session-test", (req, res) => {
+    res.json({
+      sessionExists: !!req.session,
+      sessionID: req.sessionID,
+      userId: req.session?.passport?.user,
+      isAuthenticated: req.isAuthenticated?.() || false,
+      sessionData: req.session,
+    });
+  });
+
   // Note: /api/user endpoint is defined in routes.ts to avoid conflicts
 }
 

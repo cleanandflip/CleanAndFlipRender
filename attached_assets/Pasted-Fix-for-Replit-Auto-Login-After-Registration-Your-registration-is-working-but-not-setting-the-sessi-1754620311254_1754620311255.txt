@@ -1,0 +1,184 @@
+Fix for Replit: Auto-Login After Registration
+Your registration is working but not setting the session. Here's how to fix the authentication flow:
+
+IMMEDIATE FIX: Update Registration Endpoint
+File: /server/auth.ts or /server/routes.ts - Find the registration endpoint and fix:
+typescript// FIND your registration endpoint (around line 220-250)
+app.post('/api/register', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // ... existing user creation code ...
+    
+    // PROBLEM: You're creating user but not setting session
+    // ADD THIS after successful user creation:
+    
+    // Set session immediately after registration
+    req.session.userId = newUser.id;
+    req.session.email = newUser.email;
+    req.session.role = newUser.role || 'user';
+    
+    // Force session save before sending response
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Session creation failed' });
+      }
+      
+      // Send success with user data
+      res.status(201).json({
+        message: 'Registration successful',
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          role: newUser.role
+        }
+      });
+    });
+    
+  } catch (error) {
+    // ... error handling ...
+  }
+});
+
+CHECK SESSION CONFIGURATION
+File: /server/index.ts - Verify session middleware settings:
+typescript// FIND your session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false, // CHANGE THIS TO true for registration
+  store: new PostgreSQLStore({
+    conString: process.env.DATABASE_URL,
+    tableName: 'sessions',
+    createTableIfMissing: true // ADD THIS
+  }),
+  cookie: {
+    secure: false, // MUST be false for development (HTTP)
+    httpOnly: true,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    sameSite: 'lax' // Important for same-site requests
+  },
+  name: 'cleanflip.sid'
+}));
+
+FIX FRONTEND REGISTRATION FLOW
+File: /client/src/pages/Auth.tsx or similar - Update registration handler:
+typescript// FIND your registration form handler
+const handleRegister = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  try {
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // CRITICAL: Include cookies
+      body: JSON.stringify({ email, password })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      // After successful registration, fetch user data
+      const userResponse = await fetch('/api/user', {
+        credentials: 'include' // Include session cookie
+      });
+      
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        // Update your user context/state
+        setUser(userData);
+        // Redirect to home or dashboard
+        navigate('/');
+      }
+    }
+  } catch (error) {
+    console.error('Registration error:', error);
+  }
+};
+
+DEBUG SESSION ISSUES
+Create /server/debug-session.ts - Add session debugging:
+typescript// Add this middleware temporarily to debug sessions
+app.use((req, res, next) => {
+  console.log('Session Debug:', {
+    sessionID: req.sessionID,
+    session: req.session,
+    cookies: req.headers.cookie,
+    hasUserId: !!req.session?.userId
+  });
+  next();
+});
+
+// Add test endpoint
+app.get('/api/session-test', (req, res) => {
+  res.json({
+    sessionExists: !!req.session,
+    sessionID: req.sessionID,
+    userId: req.session?.userId,
+    isAuthenticated: !!req.session?.userId
+  });
+});
+
+VERIFY CORS CONFIGURATION
+File: /server/index.ts - Ensure CORS allows credentials:
+typescriptapp.use(cors({
+  origin: 'http://localhost:3000', // Your frontend URL
+  credentials: true, // MUST be true for cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+CHECK DATABASE SESSION TABLE
+Run this SQL to verify sessions are being created:
+sql-- Check if sessions table exists and has data
+SELECT * FROM sessions ORDER BY expire DESC LIMIT 5;
+
+-- If table doesn't exist, create it
+CREATE TABLE IF NOT EXISTS sessions (
+  sid VARCHAR NOT NULL COLLATE "default",
+  sess JSON NOT NULL,
+  expire TIMESTAMP(6) NOT NULL,
+  PRIMARY KEY (sid)
+);
+
+CREATE INDEX IF NOT EXISTS IDX_session_expire ON sessions(expire);
+
+COMMON ISSUES & FIXES
+
+Cookie not being set:
+
+Check browser DevTools → Application → Cookies
+Ensure secure: false for development
+Verify sameSite: 'lax'
+
+
+Session not persisting:
+
+Check PostgreSQL connection
+Verify SESSION_SECRET is set
+Ensure req.session.save() is called
+
+
+Frontend not receiving cookie:
+
+Add credentials: 'include' to ALL fetch requests
+Check CORS configuration
+Verify same origin/port
+
+
+
+
+TEST THE FIX
+bash# Test registration with auto-login
+curl -X POST http://localhost:5000/api/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password123"}' \
+  -c cookies.txt -v
+
+# Check if session was created
+curl http://localhost:5000/api/user -b cookies.txt
+
+# Check session test endpoint
+curl http://localhost:5000/api/session-test -b cookies.txt
+Expected Result: After registration, user should be automatically logged in with active session, and /api/user should return user data immediately.

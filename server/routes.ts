@@ -48,7 +48,9 @@ import {
   categories, 
   orders,
   orderItems,
-  // equipmentSubmissions, wishlist - removed for single-seller model
+  cartItems,
+  addresses,
+  equipmentSubmissions,
   activityLogs,
   reviews,
   coupons,
@@ -62,7 +64,11 @@ import {
   type Review,
   type Coupon,
   type OrderTracking,
-  type ReturnRequest
+  type ReturnRequest,
+  type CartItem,
+  type Address,
+  type EquipmentSubmission,
+  insertEquipmentSubmissionSchema
 } from "@shared/schema";
 import { convertSubmissionsToCSV } from './utils/exportHelpers';
 import { eq, desc, ilike, sql, and, or, gt, lt, gte, lte, ne, asc, inArray, not, count, sum } from "drizzle-orm";
@@ -1767,16 +1773,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User endpoint (protected) - Using proper Passport authentication
-  app.get("/api/user", authMiddleware.requireAuth, (req, res) => {
+  app.get("/api/user", (req, res) => {
+    Logger.debug(`[USER API] Authentication check - isAuthenticated: ${req.isAuthenticated?.()}, user: ${!!req.user}, sessionID: ${req.sessionID}`);
+    Logger.debug(`[USER API] Session passport: ${JSON.stringify((req.session as any)?.passport)}`);
+    
     // Use Passport's built-in authentication check
-    if (!req.isAuthenticated()) {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      Logger.debug('[USER API] Not authenticated - no isAuthenticated function or returns false');
       return res.status(401).json({ error: "Not authenticated" });
     }
     
     // req.user is automatically populated by Passport deserializeUser
     if (!req.user) {
+      Logger.debug('[USER API] Not authenticated - no user object');
       return res.status(401).json({ error: "Not authenticated" });
     }
+    
+    Logger.debug(`[USER API] User found: ${JSON.stringify(req.user)}`);
     
     // Remove sensitive data before sending user info
     const { password, ...userWithoutPassword } = req.user as any;
