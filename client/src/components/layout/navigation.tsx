@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GlobalDropdown } from "@/components/ui/GlobalDropdown";
+import { GlobalDropdown, DropdownItem, DropdownLabel, DropdownSeparator } from "@/components/ui/GlobalDropdown";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
@@ -181,51 +181,52 @@ export default function Navigation() {
                   </Button>
                 }
               >
-                <div className="px-4 py-2 text-white font-medium text-sm border-b border-gray-600/50">
+                <DropdownLabel>
                   {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
-                </div>
-                <div 
+                </DropdownLabel>
+                <DropdownSeparator />
+                <DropdownItem 
                   onClick={() => {
                     handleNavigation(ROUTES.DASHBOARD);
                     setIsUserDropdownOpen(false);
                   }}
-                  className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center"
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Dashboard
-                </div>
-                <div 
+                </DropdownItem>
+                <DropdownItem 
                   onClick={() => {
                     handleNavigation(ROUTES.ORDERS);
                     setIsUserDropdownOpen(false);
                   }}
-                  className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center"
                 >
                   <History className="mr-2 h-4 w-4" />
                   Order History
-                </div>
+                </DropdownItem>
                 {user.isAdmin && (
-                  <div 
-                    onClick={() => {
-                      handleNavigation(ROUTES.ADMIN);
-                      setIsUserDropdownOpen(false);
-                    }}
-                    className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center border-t border-gray-600/50"
-                  >
-                    <Package className="mr-2 h-4 w-4" />
-                    Admin Dashboard
-                  </div>
+                  <>
+                    <DropdownSeparator />
+                    <DropdownItem 
+                      onClick={() => {
+                        handleNavigation(ROUTES.ADMIN);
+                        setIsUserDropdownOpen(false);
+                      }}
+                    >
+                      <Package className="mr-2 h-4 w-4" />
+                      Admin Dashboard
+                    </DropdownItem>
+                  </>
                 )}
-                <div 
+                <DropdownSeparator />
+                <DropdownItem 
                   onClick={() => {
                     logoutMutation.mutate();
                     setIsUserDropdownOpen(false);
                   }}
-                  className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center border-t border-gray-600/50"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
-                </div>
+                </DropdownItem>
               </GlobalDropdown>
             ) : (
               <Button
