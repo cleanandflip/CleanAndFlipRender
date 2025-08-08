@@ -133,7 +133,7 @@ export function Dropdown({
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.15, ease: 'easeOut' }}
-          className={`fixed z-[999999] glass ${className || ''}`}
+          className={`fixed z-[999999] ${className}`}
           style={{
             top: `${position.top}px`,
             left: `${position.left}px`,

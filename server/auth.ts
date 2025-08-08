@@ -8,7 +8,7 @@ import { User } from "@shared/schema";
 import connectPg from "connect-pg-simple";
 import { normalizeEmail, parseCityStateZip, isLocalZip, validateCityStateZip, normalizePhone } from "@shared/utils";
 import { authLimiter } from "./middleware/security";
-import { Logger } from "./config/logger";
+import { Logger, LogLevel } from "./utils/logger";
 
 declare global {
   namespace Express {
@@ -458,7 +458,11 @@ export function requireAuth(req: any, res: any, next: any) {
   
   // Check if user is authenticated via passport
   if (!req.isAuthenticated || !req.isAuthenticated()) {
-    Logger.debug(`Authentication failed for ${endpoint}`);
+    Logger.consolidate(
+      `auth-fail-${endpoint}`,
+      `Authentication failed for ${endpoint}`,
+      LogLevel.DEBUG
+    );
     return res.status(401).json({ 
       error: 'Authentication required',
       message: 'Please log in to continue'
@@ -467,7 +471,11 @@ export function requireAuth(req: any, res: any, next: any) {
   
   const user = req.user;
   if (!user) {
-    Logger.debug(`No user object for ${endpoint}`);
+    Logger.consolidate(
+      `auth-fail-nouser-${endpoint}`,
+      `No user object for ${endpoint}`,
+      LogLevel.DEBUG
+    );
     return res.status(401).json({ 
       error: 'Authentication required',
       message: 'Please log in to continue'
@@ -476,7 +484,11 @@ export function requireAuth(req: any, res: any, next: any) {
   
   // Set userId for consistent access in route handlers
   req.userId = user.id;
-  Logger.debug(`Auth successful for user ${user.id} on ${endpoint}`);
+  Logger.consolidate(
+    `auth-success-${user.id}-${endpoint}`,
+    `Auth successful for user ${user.id} on ${endpoint}`,
+    LogLevel.DEBUG
+  );
   next();
 }
 

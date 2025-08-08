@@ -51,7 +51,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => handleOpenChange(false)}
-                className="hover:bg-gray-900/10"
+                className="hover:bg-white/10"
               >
                 <X size={20} />
               </Button>
@@ -144,7 +144,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                               <div className="flex items-center bg-card rounded">
                                 <button
                                   onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                                  className="p-1 hover:bg-gray-900/10 transition-colors"
+                                  className="p-1 hover:bg-white/10 transition-colors"
                                   disabled={item.quantity <= 1}
                                 >
                                   <Minus size={12} />
@@ -154,7 +154,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                 </span>
                                 <button
                                   onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                  className="p-1 hover:bg-gray-900/10 transition-colors"
+                                  className="p-1 hover:bg-white/10 transition-colors"
                                   disabled={!item.product.stockQuantity || item.quantity >= item.product.stockQuantity}
                                 >
                                   <Plus size={12} />

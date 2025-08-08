@@ -350,7 +350,7 @@ export function EnhancedSearchBar({
           )}
           {product.featured && (
             <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-              <Sparkles size={12} className="text-white" />
+              <Sparkles size={12} className="text-gray-900" />
             </div>
           )}
         </div>

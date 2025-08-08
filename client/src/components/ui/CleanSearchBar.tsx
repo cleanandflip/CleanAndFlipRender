@@ -172,7 +172,7 @@ export function CleanSearchBar({
             <button
               key={product.id}
               onClick={() => handleProductSelect(product)}
-              className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
+              className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
             >
               <div className="w-10 h-10 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0">
                 {product.imageUrl ? (
@@ -222,7 +222,7 @@ export function CleanSearchBar({
                 <button
                   key={index}
                   onClick={() => handleSearch(search)}
-                  className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
+                  className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
                 >
                   <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0">
                     <Clock size={16} className="text-gray-400" />
@@ -243,7 +243,7 @@ export function CleanSearchBar({
               <button
                 key={index}
                 onClick={() => handleSearch(search)}
-                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
+                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
               >
                 <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0">
                   <TrendingUp size={16} className="text-gray-400" />

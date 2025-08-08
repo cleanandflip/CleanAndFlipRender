@@ -31,7 +31,7 @@ export default function CategoryGrid() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {Array.from({ length: 6 }).map((_, index) => (
           <div key={index} className="aspect-square glass rounded-lg animate-pulse">
-            <div className="w-full h-full bg-gray-900/10 rounded-lg"></div>
+            <div className="w-full h-full bg-white/10 rounded-lg"></div>
           </div>
         ))}
       </div>

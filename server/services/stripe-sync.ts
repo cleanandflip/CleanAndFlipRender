@@ -2,10 +2,10 @@ import Stripe from 'stripe';
 import { db } from '../db.js';
 import { products, categories } from '../../shared/schema.js';
 import { eq, isNull, or } from 'drizzle-orm';
-import { Logger } from '../config/logger';
+import { Logger } from '../utils/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil',
+  apiVersion: '2025-06-30.basil',
 });
 
 interface ProductSyncData {

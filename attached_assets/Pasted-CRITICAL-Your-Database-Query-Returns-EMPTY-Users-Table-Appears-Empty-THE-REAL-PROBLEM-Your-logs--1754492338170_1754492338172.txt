@@ -1,0 +1,296 @@
+CRITICAL: Your Database Query Returns EMPTY - Users Table Appears Empty!
+THE REAL PROBLEM
+Your logs show "WARNING: Users table appears to be empty!" - This means your SQL queries are returning ZERO rows even though you KNOW the users exist.
+THIS IS A DATABASE CONNECTION/QUERY ISSUE
+IMMEDIATE DIAGNOSTIC - RUN THESE NOW
+STEP 1: VERIFY DATABASE CONNECTION
+bash# Check what database URL you're using
+echo $DATABASE_URL
+
+# Connect DIRECTLY to database and check
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM users;"
+
+# If that fails, try with quotes
+psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM users;"
+
+# List ALL users
+psql $DATABASE_URL -c "SELECT id, email FROM users;"
+STEP 2: THE PROBLEM - Your Raw SQL is WRONG
+Your code is using sql.raw() incorrectly. The Drizzle sql.raw() doesn't work like that!
+REPLACE YOUR UserService with THIS WORKING VERSION:
+typescript// server/services/user.service.ts - COMPLETE REPLACEMENT
+import { db } from '../db';
+import { users } from '../db/schema';
+import { sql, eq } from 'drizzle-orm';
+import { randomBytes } from 'crypto';
+import bcrypt from 'bcrypt';
+
+export class UserService {
+  async findUserByEmail(email: string): Promise<any> {
+    if (!email) {
+      console.log('[UserService] No email provided');
+      return null;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log(`[UserService] Looking for email: "${normalizedEmail}"`);
+
+    try {
+      // METHOD 1: Use Drizzle's sql template literal (CORRECT WAY)
+      console.log('[UserService] Executing database query...');
+      
+      const result = await db.execute(
+        sql`SELECT * FROM users WHERE LOWER(TRIM(email)) = ${normalizedEmail} LIMIT 1`
+      );
+      
+      console.log(`[UserService] Query executed. Rows found: ${result.rows?.length || 0}`);
+      
+      if (result.rows && result.rows.length > 0) {
+        console.log(`[UserService] ✅ FOUND USER: ${result.rows[0].email} (ID: ${result.rows[0].id})`);
+        return result.rows[0];
+      }
+      
+      // DEBUG: Check if table has ANY users
+      console.log('[UserService] Primary lookup failed. Checking if table has data...');
+      const countResult = await db.execute(sql`SELECT COUNT(*) as count FROM users`);
+      const userCount = countResult.rows?.[0]?.count || 0;
+      console.log(`[UserService] Total users in database: ${userCount}`);
+      
+      if (userCount === '0' || userCount === 0) {
+        console.log('[UserService] ⚠️ CRITICAL: Users table is EMPTY!');
+        
+        // Try direct connection test
+        console.log('[UserService] Testing direct database connection...');
+        const testResult = await db.execute(sql`SELECT current_database() as dbname, current_user as dbuser`);
+        console.log(`[UserService] Connected to database: ${testResult.rows?.[0]?.dbname} as ${testResult.rows?.[0]?.dbuser}`);
+      } else {
+        // Show sample users
+        const sampleResult = await db.execute(
+          sql`SELECT id, email, created_at FROM users ORDER BY created_at DESC LIMIT 5`
+        );
+        
+        console.log('[UserService] Sample users in database:');
+        sampleResult.rows?.forEach((row, idx) => {
+          console.log(`  ${idx + 1}. ${row.email} (ID: ${row.id})`);
+        });
+        
+        // Try ILIKE search
+        console.log('[UserService] Trying case-insensitive search...');
+        const ilikeResult = await db.execute(
+          sql`SELECT * FROM users WHERE email ILIKE ${`%${email}%`} LIMIT 5`
+        );
+        
+        if (ilikeResult.rows?.length > 0) {
+          console.log(`[UserService] Found ${ilikeResult.rows.length} partial matches:`);
+          ilikeResult.rows.forEach(row => {
+            console.log(`  - "${row.email}"`);
+          });
+        }
+      }
+      
+      console.log(`[UserService] ❌ No user found for: "${normalizedEmail}"`);
+      return null;
+      
+    } catch (error) {
+      console.error('[UserService] 🔥 DATABASE ERROR:', error);
+      console.error('[UserService] Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      
+      // Try fallback with Drizzle ORM
+      console.log('[UserService] Attempting fallback with Drizzle ORM...');
+      try {
+        const fallbackResult = await db
+          .select()
+          .from(users)
+          .where(sql`LOWER(TRIM(${users.email})) = ${normalizedEmail}`)
+          .limit(1);
+          
+        if (fallbackResult.length > 0) {
+          console.log(`[UserService] ✅ Found via fallback: ${fallbackResult[0].email}`);
+          return fallbackResult[0];
+        }
+      } catch (fallbackError) {
+        console.error('[UserService] Fallback also failed:', fallbackError.message);
+      }
+      
+      throw error;
+    }
+  }
+
+  async createPasswordResetToken(userId: string): Promise<string> {
+    const token = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 3600000);
+    
+    console.log(`[UserService] Creating token for user: ${userId}`);
+    
+    try {
+      // Clear old tokens using sql template literal
+      await db.execute(
+        sql`UPDATE password_reset_tokens 
+            SET used = true 
+            WHERE user_id = ${userId}::uuid AND used = false`
+      );
+      
+      // Insert new token
+      await db.execute(
+        sql`INSERT INTO password_reset_tokens (user_id, token, expires_at, used)
+            VALUES (${userId}::uuid, ${token}, ${expiresAt}, false)`
+      );
+      
+      console.log(`[UserService] ✅ Token created`);
+      return token;
+      
+    } catch (error) {
+      console.error('[UserService] Token creation failed:', error);
+      throw error;
+    }
+  }
+
+  async validateResetToken(token: string): Promise<any> {
+    const result = await db.execute(
+      sql`SELECT * FROM password_reset_tokens 
+          WHERE token = ${token} AND used = false AND expires_at > NOW() 
+          LIMIT 1`
+    );
+    return result.rows?.[0] || null;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    const tokenData = await this.validateResetToken(token);
+    if (!tokenData) throw new Error('Invalid token');
+    
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    
+    await db.execute(
+      sql`UPDATE users SET password = ${hashedPassword}, updated_at = NOW() 
+          WHERE id = ${tokenData.user_id}::uuid`
+    );
+    
+    await db.execute(
+      sql`UPDATE password_reset_tokens SET used = true WHERE id = ${tokenData.id}`
+    );
+    
+    return true;
+  }
+}
+STEP 3: CHECK FOR SCHEMA ISSUES
+Your users might be in a different schema:
+sql-- Check if users are in public schema
+SELECT schemaname, tablename 
+FROM pg_tables 
+WHERE tablename = 'users';
+
+-- If not in public, check all schemas
+SELECT * FROM information_schema.tables 
+WHERE table_name = 'users';
+
+-- Try querying with explicit schema
+SELECT * FROM public.users LIMIT 5;
+STEP 4: CREATE TEST SCRIPT
+Create scripts/debug-database.ts:
+typescriptimport { db } from '../server/db';
+import { sql } from 'drizzle-orm';
+
+async function debug() {
+  console.log('='.repeat(60));
+  console.log('DATABASE DEBUG');
+  console.log('='.repeat(60));
+  
+  try {
+    // Test 1: Basic connection
+    console.log('\n1. Testing connection...');
+    const dbInfo = await db.execute(sql`SELECT current_database() as db, version() as ver`);
+    console.log('Database:', dbInfo.rows[0].db);
+    console.log('Version:', dbInfo.rows[0].ver);
+    
+    // Test 2: Count users
+    console.log('\n2. Counting users...');
+    const count = await db.execute(sql`SELECT COUNT(*) as total FROM users`);
+    console.log('Total users:', count.rows[0].total);
+    
+    // Test 3: List users
+    console.log('\n3. Listing users...');
+    const userList = await db.execute(sql`SELECT id, email FROM users LIMIT 10`);
+    if (userList.rows.length === 0) {
+      console.log('❌ NO USERS FOUND!');
+    } else {
+      userList.rows.forEach(u => console.log(`  - ${u.email}`));
+    }
+    
+    // Test 4: Check specific emails
+    console.log('\n4. Checking specific emails...');
+    const emails = ['cleanandflipyt@gmail.com', 'test3@gmail.com'];
+    for (const email of emails) {
+      const result = await db.execute(
+        sql`SELECT id FROM users WHERE LOWER(email) = ${email.toLowerCase()}`
+      );
+      console.log(`  ${email}: ${result.rows.length > 0 ? '✅ EXISTS' : '❌ NOT FOUND'}`);
+    }
+    
+    // Test 5: Raw query
+    console.log('\n5. Testing raw query...');
+    const raw = await db.execute(sql`SELECT * FROM users WHERE email = 'cleanandflipyt@gmail.com'`);
+    console.log('Raw query result:', raw.rows.length, 'rows');
+    
+  } catch (error) {
+    console.error('ERROR:', error);
+  }
+  
+  console.log('\n' + '='.repeat(60));
+  process.exit(0);
+}
+
+debug();
+Run it:
+bashnpm run tsx scripts/debug-database.ts
+# or
+npx tsx scripts/debug-database.ts
+STEP 5: NUCLEAR OPTION - Direct PostgreSQL Function
+If NOTHING works, create a PostgreSQL function:
+sql-- Create a function to find users
+CREATE OR REPLACE FUNCTION find_user_by_email(input_email TEXT)
+RETURNS TABLE(id UUID, email TEXT, first_name TEXT, last_name TEXT)
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT u.id, u.email, u.first_name, u.last_name
+  FROM users u
+  WHERE LOWER(TRIM(u.email)) = LOWER(TRIM(input_email))
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Test it
+SELECT * FROM find_user_by_email('cleanandflipyt@gmail.com');
+Then call it from your code:
+typescriptconst result = await db.execute(
+  sql`SELECT * FROM find_user_by_email(${email})`
+);
+STEP 6: VERIFY ENVIRONMENT VARIABLES
+bash# Make sure you're using the RIGHT database
+env | grep DATABASE
+env | grep POSTGRES
+env | grep NEON
+
+# The DATABASE_URL should be your PRODUCTION database
+# NOT a local database!
+🔴 MOST LIKELY CAUSES
+
+Wrong sql.raw() syntax - You're using it incorrectly
+Wrong database - Connected to empty dev database
+Schema issue - Users table in different schema
+Permission issue - Can't read from users table
+
+IMMEDIATE ACTION
+Run this RIGHT NOW:
+bashpsql $DATABASE_URL << EOF
+SELECT 'Database:' as info, current_database() as value
+UNION ALL
+SELECT 'User count:', COUNT(*)::text FROM users
+UNION ALL
+SELECT 'Sample email:', email FROM users LIMIT 1;
+EOF
+If this shows users exist, then your Node.js code is the problem. Use the fixed UserService above!

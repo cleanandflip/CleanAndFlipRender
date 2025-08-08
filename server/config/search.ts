@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { db } from './database';
-import { Logger } from './logger';
+import { Logger } from '../utils/logger';
 
 // Initialize full-text search
 export async function initializeSearchIndexes() {

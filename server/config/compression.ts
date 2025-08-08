@@ -1,6 +1,6 @@
 import compression from 'compression';
 import { Express } from 'express';
-import { Logger } from './logger';
+import { Logger } from '../utils/logger';
 
 export function setupCompression(app: Express) {
   app.use(compression({

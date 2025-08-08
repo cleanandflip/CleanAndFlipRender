@@ -1,57 +1,74 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { UnifiedDashboardCard } from '@/components/admin/UnifiedDashboardCard';
-import { UnifiedStatCard } from '@/components/admin/UnifiedStatCard';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Cpu, HardDrive, Database, Activity, Server, Shield, AlertTriangle, CheckCircle, RefreshCw, Settings, Zap, Monitor } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { 
+  Settings, 
+  Database, 
+  Mail, 
+  CreditCard, 
+  Shield, 
+  Download, 
+  FileText, 
+  Zap,
+  Server,
+  Activity,
+  HardDrive,
+  Wifi
+} from 'lucide-react';
 
 interface SystemHealth {
-  cpu: { usage: number; cores: number };
+  database: { status: 'healthy' | 'warning' | 'error'; message: string };
+  redis: { status: 'healthy' | 'warning' | 'error'; message: string };
+  storage: { status: 'healthy' | 'warning' | 'error'; message: string };
   memory: { used: number; total: number; percentage: number };
-  disk: { used: number; total: number; percentage: number };
-  database: { status: string; connections: number; responseTime: number };
+  cpu: { usage: number };
   uptime: number;
-  errors: number;
-  warnings: number;
 }
 
 export function SystemManager() {
-  const { toast } = useToast();
+  const [activeSection, setActiveSection] = useState('general');
 
-  const { data: systemHealth, isLoading, refetch } = useQuery({
-    queryKey: ['system-health'],
+  const sections = [
+    { id: 'general', label: 'General Settings', icon: Settings },
+    { id: 'database', label: 'Database', icon: Database },
+    { id: 'email', label: 'Email Configuration', icon: Mail },
+    { id: 'payment', label: 'Payment Settings', icon: CreditCard },
+    { id: 'security', label: 'Security', icon: Shield },
+    { id: 'backup', label: 'Backup & Export', icon: Download },
+    { id: 'logs', label: 'System Logs', icon: FileText },
+    { id: 'cache', label: 'Cache Management', icon: Zap }
+  ];
+
+  const { data: systemHealth, isLoading } = useQuery({
+    queryKey: ['admin-system-health'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/system/health');
+      const res = await fetch('/api/admin/system/health', {
+        credentials: 'include'
+      });
       if (!res.ok) throw new Error('Failed to fetch system health');
       return res.json();
     },
-    refetchInterval: 30000 // Auto-refresh every 30 seconds
+    refetchInterval: 30000 // Refresh every 30 seconds
   });
 
-  const { data: systemLogs } = useQuery({
-    queryKey: ['system-logs'],
-    queryFn: async () => {
-      const res = await fetch('/api/admin/system/logs?limit=10');
-      if (!res.ok) throw new Error('Failed to fetch system logs');
-      return res.json();
-    }
-  });
-
-  const handleClearCache = async () => {
-    try {
-      await fetch('/api/admin/system/cache/clear', { method: 'POST' });
-      toast({ title: 'Cache cleared successfully' });
-      refetch();
-    } catch (error) {
-      toast({ title: 'Error clearing cache', variant: 'destructive' });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'healthy': return 'text-green-400';
+      case 'warning': return 'text-yellow-400';
+      case 'error': return 'text-red-400';
+      default: return 'text-gray-400';
     }
   };
 
-  const handleRestartService = (service: string) => {
-    toast({ title: `Restart ${service} functionality coming soon` });
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'healthy': return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Healthy</Badge>;
+      case 'warning': return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Warning</Badge>;
+      case 'error': return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Error</Badge>;
+      default: return <Badge variant="secondary">Unknown</Badge>;
+    }
   };
 
   const formatUptime = (seconds: number) => {
@@ -61,230 +78,232 @@ export function SystemManager() {
     return `${days}d ${hours}h ${minutes}m`;
   };
 
-  const getHealthStatus = (percentage: number) => {
-    if (percentage < 60) return { color: 'text-green-400', status: 'Healthy' };
-    if (percentage < 80) return { color: 'text-yellow-400', status: 'Warning' };
-    return { color: 'text-red-400', status: 'Critical' };
-  };
-
   return (
-    <div className="min-h-screen bg-gray-950 p-6">
-      {/* PROFESSIONAL HEADER */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2">System Manager</h1>
-            <p className="text-gray-400">Monitor system health and performance</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => refetch()}
-              className="border-gray-700 text-gray-300 hover:bg-gray-700"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button 
-              onClick={() => toast({ title: 'System settings coming soon' })}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
-          </div>
-        </div>
-
-        {/* SYSTEM HEALTH CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <UnifiedStatCard
-            title="CPU Usage"
-            value={`${systemHealth?.cpu?.usage || 0}%`}
-            icon={<Cpu className="w-6 h-6 text-white" />}
-            gradient="blue"
-            subtitle={`${systemHealth?.cpu?.cores || 4} cores`}
-          />
-          <UnifiedStatCard
-            title="Memory Usage"
-            value={`${systemHealth?.memory?.percentage || 0}%`}
-            icon={<HardDrive className="w-6 h-6 text-white" />}
-            gradient="green"
-            subtitle={`${systemHealth?.memory?.used || 0}MB / ${systemHealth?.memory?.total || 1024}MB`}
-          />
-          <UnifiedStatCard
-            title="Database"
-            value={systemHealth?.database?.status || 'Unknown'}
-            icon={<Database className="w-6 h-6 text-white" />}
-            gradient="purple"
-            subtitle={`${systemHealth?.database?.connections || 0} connections`}
-          />
-          <UnifiedStatCard
-            title="Uptime"
-            value={formatUptime(systemHealth?.uptime || 0)}
-            icon={<Activity className="w-6 h-6 text-white" />}
-            gradient="orange"
-            subtitle="System uptime"
-          />
-        </div>
-      </div>
-
-      {/* SYSTEM STATUS OVERVIEW */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <UnifiedDashboardCard 
-          title="Resource Usage" 
-          icon={<Monitor className="w-5 h-5 text-white" />}
-          gradient="blue"
-        >
-          <div className="space-y-6">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-white">CPU Usage</span>
-                <span className={`font-bold ${getHealthStatus(systemHealth?.cpu?.usage || 0).color}`}>
-                  {systemHealth?.cpu?.usage || 0}%
-                </span>
-              </div>
-              <Progress value={systemHealth?.cpu?.usage || 0} className="h-2" />
-            </div>
-            
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-white">Memory Usage</span>
-                <span className={`font-bold ${getHealthStatus(systemHealth?.memory?.percentage || 0).color}`}>
-                  {systemHealth?.memory?.percentage || 0}%
-                </span>
-              </div>
-              <Progress value={systemHealth?.memory?.percentage || 0} className="h-2" />
-            </div>
-            
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-white">Disk Usage</span>
-                <span className={`font-bold ${getHealthStatus(systemHealth?.disk?.percentage || 0).color}`}>
-                  {systemHealth?.disk?.percentage || 0}%
-                </span>
-              </div>
-              <Progress value={systemHealth?.disk?.percentage || 0} className="h-2" />
-            </div>
-          </div>
-        </UnifiedDashboardCard>
-
-        <UnifiedDashboardCard 
-          title="Services Status" 
-          icon={<Server className="w-5 h-5 text-white" />}
-          gradient="green"
-        >
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400" />
-                <span className="text-white">Web Server</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-green-600/20 text-green-300 border-green-500/30">Online</Badge>
-                <Button size="sm" variant="outline" onClick={() => handleRestartService('web')}>
-                  Restart
+    <div className="min-h-screen bg-background">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 border-r border-border glass p-6">
+          <h2 className="text-lg font-semibold mb-4 text-white bebas-neue">System Settings</h2>
+          <nav className="space-y-1">
+            {sections.map((section) => {
+              const Icon = section.icon;
+              return (
+                <Button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  variant={activeSection === section.id ? 'primary' : 'ghost'}
+                  className="w-full justify-start gap-3"
+                >
+                  <Icon className="w-4 h-4" />
+                  {section.label}
                 </Button>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400" />
-                <span className="text-white">Database</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-green-600/20 text-green-300 border-green-500/30">Connected</Badge>
-                <Button size="sm" variant="outline" onClick={() => handleRestartService('database')}>
-                  Restart
-                </Button>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-5 h-5 text-yellow-400" />
-                <span className="text-white">Cache</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-yellow-600/20 text-yellow-300 border-yellow-500/30">Warning</Badge>
-                <Button size="sm" variant="outline" onClick={handleClearCache}>
-                  Clear
-                </Button>
-              </div>
-            </div>
-          </div>
-        </UnifiedDashboardCard>
-      </div>
-
-      {/* QUICK ACTIONS */}
-      <UnifiedDashboardCard 
-        title="Quick Actions" 
-        icon={<Zap className="w-5 h-5 text-white" />}
-        gradient="purple"
-        className="mb-8"
-      >
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Button 
-            onClick={handleClearCache}
-            className="h-20 flex-col gap-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700"
-          >
-            <RefreshCw className="w-6 h-6" />
-            Clear Cache
-          </Button>
-          
-          <Button 
-            onClick={() => toast({ title: 'Backup functionality coming soon' })}
-            className="h-20 flex-col gap-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700"
-          >
-            <Shield className="w-6 h-6" />
-            Backup System
-          </Button>
-          
-          <Button 
-            onClick={() => toast({ title: 'Update functionality coming soon' })}
-            className="h-20 flex-col gap-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700"
-          >
-            <Activity className="w-6 h-6" />
-            Check Updates
-          </Button>
-          
-          <Button 
-            onClick={() => toast({ title: 'Maintenance mode coming soon' })}
-            className="h-20 flex-col gap-2 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700"
-          >
-            <Settings className="w-6 h-6" />
-            Maintenance
-          </Button>
+              );
+            })}
+          </nav>
         </div>
-      </UnifiedDashboardCard>
-
-      {/* RECENT LOGS */}
-      <UnifiedDashboardCard 
-        title="Recent System Logs" 
-        icon={<Activity className="w-5 h-5 text-white" />}
-        gradient="orange"
-      >
-        <div className="space-y-3">
-          {systemLogs?.logs?.slice(0, 5).map((log: any, index: number) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                {log.level === 'error' && <AlertTriangle className="w-4 h-4 text-red-400" />}
-                {log.level === 'warning' && <AlertTriangle className="w-4 h-4 text-yellow-400" />}
-                {log.level === 'info' && <CheckCircle className="w-4 h-4 text-blue-400" />}
-                <span className="text-white text-sm">{log.message}</span>
+        
+        {/* Main Content */}
+        <div className="flex-1 p-6">
+          {activeSection === 'general' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-bold text-white bebas-neue mb-2">System Overview</h1>
+                <p className="text-white">Monitor your Clean & Flip system health and performance</p>
               </div>
-              <span className="text-gray-400 text-xs">
-                {new Date(log.timestamp).toLocaleTimeString()}
-              </span>
+
+              {/* System Health Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="glass p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-white">Database</p>
+                      <p className="text-lg font-bold text-white">{systemHealth?.database?.status || 'Unknown'}</p>
+                    </div>
+                    <Database className={`w-6 h-6 ${getStatusColor(systemHealth?.database?.status || 'unknown')}`} />
+                  </div>
+                  <div className="mt-2">
+                    {getStatusBadge(systemHealth?.database?.status || 'unknown')}
+                  </div>
+                </Card>
+
+                <Card className="glass p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-white">Cache</p>
+                      <p className="text-lg font-bold text-white">{systemHealth?.redis?.status || 'Disabled'}</p>
+                    </div>
+                    <Zap className={`w-6 h-6 ${getStatusColor(systemHealth?.redis?.status || 'warning')}`} />
+                  </div>
+                  <div className="mt-2">
+                    {getStatusBadge(systemHealth?.redis?.status || 'warning')}
+                  </div>
+                </Card>
+
+                <Card className="glass p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-white">Storage</p>
+                      <p className="text-lg font-bold text-white">{systemHealth?.storage?.status || 'Unknown'}</p>
+                    </div>
+                    <HardDrive className={`w-6 h-6 ${getStatusColor(systemHealth?.storage?.status || 'unknown')}`} />
+                  </div>
+                  <div className="mt-2">
+                    {getStatusBadge(systemHealth?.storage?.status || 'unknown')}
+                  </div>
+                </Card>
+
+                <Card className="glass p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-white">Uptime</p>
+                      <p className="text-lg font-bold text-white">{systemHealth?.uptime ? formatUptime(systemHealth.uptime) : 'Unknown'}</p>
+                    </div>
+                    <Activity className="w-6 h-6 text-green-400" />
+                  </div>
+                  <div className="mt-2">
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Online</Badge>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="glass p-6">
+                  <h3 className="text-lg font-semibold mb-4 text-white">Memory Usage</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white">Used</span>
+                      <span className="text-white">{systemHealth?.memory?.used || 0} MB</span>
+                    </div>
+                    <div className="w-full bg-gray-700 h-2 rounded-full">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all" 
+                        style={{ width: `${systemHealth?.memory?.percentage || 0}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-white">
+                      <span>0 MB</span>
+                      <span>{systemHealth?.memory?.total || 0} MB</span>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="glass p-6">
+                  <h3 className="text-lg font-semibold mb-4 text-white">CPU Usage</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white">Current</span>
+                      <span className="text-white">{systemHealth?.cpu?.usage || 0}%</span>
+                    </div>
+                    <div className="w-full bg-gray-700 h-2 rounded-full">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all" 
+                        style={{ width: `${systemHealth?.cpu?.usage || 0}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-white">
+                      <span>0%</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Quick Actions */}
+              <Card className="glass p-6">
+                <h3 className="text-lg font-semibold mb-4 text-white">Quick Actions</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button variant="outline" className="gap-2">
+                    <Database className="w-4 h-4" />
+                    Database Backup
+                  </Button>
+                  <Button variant="outline" className="gap-2">
+                    <Zap className="w-4 h-4" />
+                    Clear Cache
+                  </Button>
+                  <Button variant="outline" className="gap-2">
+                    <Download className="w-4 h-4" />
+                    Export Logs
+                  </Button>
+                </div>
+              </Card>
             </div>
-          )) || (
-            <div className="text-center text-gray-400 py-8">
-              <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No recent logs available</p>
+          )}
+
+          {activeSection === 'database' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-bold text-white bebas-neue mb-2">Database Management</h1>
+                <p className="text-white">Monitor and manage your PostgreSQL database</p>
+              </div>
+
+              <Card className="glass p-6">
+                <h3 className="text-lg font-semibold mb-4 text-white">Database Status</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white">Connection Status</span>
+                    {getStatusBadge(systemHealth?.database?.status || 'unknown')}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white">Provider</span>
+                    <span className="text-white">Neon PostgreSQL</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white">Environment</span>
+                    <Badge variant="outline">Development</Badge>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="glass p-6">
+                <h3 className="text-lg font-semibold mb-4 text-white">Database Actions</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button variant="outline" className="gap-2">
+                    <Database className="w-4 h-4" />
+                    Run Migrations
+                  </Button>
+                  <Button variant="outline" className="gap-2">
+                    <Download className="w-4 h-4" />
+                    Backup Database
+                  </Button>
+                  <Button variant="outline" className="gap-2">
+                    <Activity className="w-4 h-4" />
+                    Check Integrity
+                  </Button>
+                  <Button variant="outline" className="gap-2">
+                    <Zap className="w-4 h-4" />
+                    Optimize Tables
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {activeSection === 'logs' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-bold text-white bebas-neue mb-2">System Logs</h1>
+                <p className="text-white">View and analyze system activity logs</p>
+              </div>
+
+              <Card className="glass p-6">
+                <h3 className="text-lg font-semibold mb-4 text-white">Recent Log Entries</h3>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  <div className="text-sm font-mono bg-gray-800/50 p-2 rounded">
+                    <span className="text-green-400">[INFO]</span> <span className="text-gray-400">2025-01-01 17:41:32</span> Database connected successfully
+                  </div>
+                  <div className="text-sm font-mono bg-gray-800/50 p-2 rounded">
+                    <span className="text-blue-400">[DEBUG]</span> <span className="text-gray-400">2025-01-01 17:41:30</span> Performance: Enable Redis for better caching
+                  </div>
+                  <div className="text-sm font-mono bg-gray-800/50 p-2 rounded">
+                    <span className="text-green-400">[INFO]</span> <span className="text-gray-400">2025-01-01 17:41:28</span> Server started on port 5000
+                  </div>
+                </div>
+              </Card>
             </div>
           )}
         </div>
-      </UnifiedDashboardCard>
+      </div>
     </div>
   );
 }

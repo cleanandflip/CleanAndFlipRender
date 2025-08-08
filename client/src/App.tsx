@@ -1,120 +1,149 @@
-import React, { useState, useEffect } from 'react';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { Switch, Route, useLocation } from "wouter";
+import { ROUTES } from "@/config/routes";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { useEffect, lazy, Suspense } from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { CartProvider } from "@/hooks/use-cart";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ErrorBoundary } from "@/components/error-boundary";
+import Navigation from "@/components/layout/navigation";
+import Footer from "@/components/layout/footer";
+import CartDrawer from "@/components/cart/cart-drawer";
+import { PageLoader } from "@/components/ui/page-loader";
 
-const queryClient = new QueryClient();
+// Import critical pages directly to avoid lazy loading issues with routing
+import Home from "@/pages/home";
+import Products from "@/pages/products";
+import ProductDetail from "@/pages/product-detail";
+import Cart from "@/pages/cart";
+import NotFound from "@/pages/not-found";
 
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  description: string;
-  image: string;
-  stock: number;
-  rating: number;
-  reviews: number;
-};
+// Lazy load less critical pages for better code splitting
+const Checkout = lazy(() => import("@/pages/checkout"));
+const SellToUs = lazy(() => import("@/pages/sell-to-us"));
+const TrackSubmission = lazy(() => import("@/pages/track-submission"));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const AdminDashboard = lazy(() => import("@/pages/admin"));
+const ProductForm = lazy(() => import("@/pages/admin/ProductForm").then(module => ({ default: module.ProductForm })));
+const Orders = lazy(() => import("@/pages/orders"));
+const Wishlist = lazy(() => import("@/pages/wishlist"));
+const About = lazy(() => import("@/pages/about"));
+const Contact = lazy(() => import("@/pages/contact"));
+const AuthPage = lazy(() => import("@/pages/auth"));
+const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
+const ResetPassword = lazy(() => import("@/pages/reset-password"));
 
-function ProductList() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['products'],
-    queryFn: async () => {
-      const response = await fetch('/api/products');
-      if (!response.ok) {
-        throw new Error('Failed to fetch products');
+function ScrollRestoration() {
+  const [location] = useLocation();
+  
+  useEffect(() => {
+    // Prevent flash of unstyled content
+    if (typeof document !== 'undefined') {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          document.documentElement.classList.add('loaded');
+        });
+      } else {
+        document.documentElement.classList.add('loaded');
       }
-      return response.json();
     }
-  });
+    
+    // Don't restore scroll for hash links
+    if (location.includes('#')) {
+      const hash = location.split('#')[1];
+      const element = document.querySelector(`#${hash}`);
+      element?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    
+    // Check if we have a saved position
+    const savedPosition = sessionStorage.getItem(`scroll-${location}`);
+    if (savedPosition) {
+      setTimeout(() => {
+        window.scrollTo(0, parseInt(savedPosition));
+      }, 100);
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [location]);
+  
+  // Save scroll position before navigation
+  useEffect(() => {
+    const handleScroll = () => {
+      sessionStorage.setItem(`scroll-${location}`, window.scrollY.toString());
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [location]);
+  
+  return null;
+}
 
-  if (isLoading) return <div className="text-center py-8">Loading products...</div>;
-  if (error) return <div className="text-center py-8 text-red-500">Error loading products</div>;
-
+function Router() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-      {data?.products?.map((product: Product) => (
-        <div key={product.id} className="bg-gray-800 rounded-lg p-6 shadow-lg">
-          <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
-          <p className="text-gray-300 mb-4">{product.description}</p>
-          <div className="flex justify-between items-center">
-            <span className="text-2xl font-bold text-green-400">${product.price}</span>
-            <span className="text-sm text-gray-400">{product.stock} in stock</span>
-          </div>
-          <div className="flex items-center mt-2">
-            <span className="text-yellow-400">★</span>
-            <span className="text-gray-300 ml-1">{product.rating} ({product.reviews} reviews)</span>
-          </div>
-        </div>
-      ))}
-    </div>
+    <ErrorBoundary>
+      <div className="min-h-screen flex flex-col">
+        {/* Athletic atmosphere overlay */}
+        <div className="gym-atmosphere" />
+        <Navigation />
+        <CartDrawer />
+        <ScrollRestoration />
+        <main className="flex-1">
+          <Suspense fallback={<PageLoader />}>
+            <Switch>
+              {/* Public Routes */}
+              <Route path={ROUTES.HOME} component={Home} />
+              <Route path={ROUTES.PRODUCTS} component={Products} />
+              <Route path={ROUTES.PRODUCT_DETAIL} component={ProductDetail} />
+              <Route path={ROUTES.ABOUT} component={About} />
+              <Route path={ROUTES.CONTACT} component={Contact} />
+              
+              {/* Shopping Routes */}
+              <Route path={ROUTES.CART} component={Cart} />
+              <Route path={ROUTES.CHECKOUT} component={Checkout} />
+              
+              {/* Auth Routes */}
+              <Route path={ROUTES.LOGIN} component={AuthPage} />
+              <Route path="/forgot-password" component={ForgotPassword} />
+              <Route path="/reset-password" component={ResetPassword} />
+              
+              {/* User Routes - No longer wrapped in ProtectedRoute, pages handle auth internally */}
+              <Route path={ROUTES.DASHBOARD} component={Dashboard} />
+              <Route path={ROUTES.ORDERS} component={Orders} />
+              <Route path={ROUTES.WISHLIST} component={Wishlist} />
+              <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />
+              <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
+              
+              {/* Admin Routes */}
+              <Route path={ROUTES.ADMIN} component={AdminDashboard} />
+              <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
+              <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
+              
+              {/* 404 */}
+              <Route component={NotFound} />
+            </Switch>
+          </Suspense>
+        </main>
+        <Footer />
+      </div>
+    </ErrorBoundary>
   );
 }
 
 function App() {
-  const [apiStatus, setApiStatus] = useState<string>('checking...');
-
-  useEffect(() => {
-    fetch('/api/test')
-      .then(res => res.json())
-      .then(data => setApiStatus('connected'))
-      .catch(() => setApiStatus('disconnected'));
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gray-900 text-white">
-        <header className="bg-gray-800 shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-6">
-            <h1 className="text-4xl font-bold text-center">
-              Clean & Flip
-            </h1>
-            <p className="text-center text-gray-300 mt-2">
-              Premium Weightlifting Equipment Marketplace
-            </p>
-            <div className="text-center mt-2">
-              <span className={`inline-block px-3 py-1 rounded-full text-xs ${
-                apiStatus === 'connected' ? 'bg-green-600' : 'bg-red-600'
-              }`}>
-                API: {apiStatus}
-              </span>
-            </div>
-          </div>
-        </header>
-
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold mb-4">Featured Products</h2>
-            <p className="text-gray-400">
-              Discover our selection of premium weightlifting equipment
-            </p>
-          </div>
-
-          <ProductList />
-
-          <div className="mt-12 text-center">
-            <h3 className="text-2xl font-bold mb-4">Ready to Get Started?</h3>
-            <p className="text-gray-400 mb-6">
-              Join thousands of fitness enthusiasts who trust Clean & Flip for their equipment needs
-            </p>
-            <div className="space-x-4">
-              <button className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition-colors">
-                Browse All Products
-              </button>
-              <button className="border border-gray-600 hover:border-gray-500 px-6 py-3 rounded-lg font-semibold transition-colors">
-                Sell Your Equipment
-              </button>
-            </div>
-          </div>
-        </main>
-
-        <footer className="bg-gray-800 mt-16">
-          <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-            <p className="text-gray-400">
-              © 2025 Clean & Flip. Professional weightlifting equipment marketplace.
-            </p>
-          </div>
-        </footer>
-      </div>
+      <TooltipProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Toaster />
+            <Router />
+          </CartProvider>
+        </AuthProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

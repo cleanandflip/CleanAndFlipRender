@@ -1,7 +1,7 @@
 # Clean & Flip - E-Commerce Marketplace
 
 ## Overview
-Clean & Flip is a comprehensive weightlifting equipment marketplace facilitating the buying and selling of premium fitness equipment. It operates as a two-sided marketplace where users can sell used equipment or purchase verified gear. The business vision is to provide a trusted platform for fitness enthusiasts, leveraging a local business presence in Asheville, NC, to ensure quality and trust. The platform aims to be a professional, production-ready e-commerce marketplace comparable to Amazon/Shopify.
+Clean & Flip is a comprehensive weightlifting equipment marketplace facilitating the buying and selling of premium fitness equipment. It operates as a two-sided marketplace where users can sell used equipment or purchase verified gear. The business vision is to provide a trusted platform for fitness enthusiasts, leveraging a local business presence in Asheville, NC, to ensure quality and trust. The platform has recently undergone significant enhancements to become a professional, production-ready e-commerce marketplace comparable to Amazon/Shopify.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -56,34 +56,90 @@ Preferred communication style: Simple, everyday language.
 - **File Storage**: Cloudinary (for image handling and transformations, uploads up to 12MB and 12 images per product).
 - **Caching**: Redis.
 - **Address Autocomplete**: Geoapify.
-- **Email Service**: Resend (for transactional emails like order confirmations, password resets, etc.).
+- **Email Service**: Resend (for transactional emails like order confirmations, password resets, etc.). Production-ready with cleanandflip.com domain verification and case-insensitive email handling.
 
-## Recent System Overhaul (August 2025)
-### Critical Issues Fixed:
-1. **Equipment Submissions Database** - Added missing reference_number column with proper indexing and automatic generation
-2. **Image Optimization** - Implemented OptimizedImage component with Cloudinary versioning and cache control
-3. **Product Management** - Created comprehensive ProductEditModal with tabbed interface and image handling
-4. **Analytics System** - Built real-time AnalyticsService with activity tracking and performance monitoring
-5. **API Optimization** - Added request batching, rate limiting, compression, and circuit breaker patterns
-6. **Users Management** - Complete rebuild of admin users interface with advanced filtering and bulk operations
+## Deployment Configuration
 
-### COMPREHENSIVE DEVELOPER DASHBOARD OVERHAUL (August 7, 2025)
-**FINAL COMPLETE VISUAL TRANSFORMATION ACHIEVED:**
-1. **Complete UI System Replacement** - Completely deleted and rebuilt admin.tsx with inline styles to bypass conflicting CSS
-2. **UnifiedDashboardCard & UnifiedStatCard Rebuilt** - Created new components with proper gradient backgrounds, glass morphism effects, and professional animations
-3. **ALL Manager Components Verified** - CategoryManager, AnalyticsManager, ProductsManager, UserManager, SystemManager, WishlistManager, StripeManager, SubmissionsManager all using unified design
-4. **Style Conflict Resolution** - Updated global CSS variables in index.css to prevent old styles from overriding new unified design
-5. **Cache Clearing & Server Restart** - Removed all cached files and restarted server to ensure new UI displays properly
-6. **Professional Design System Achieved** - Gradient backgrounds (blue-purple), glass morphism cards, modern animations, unified color scheme across all 8+ admin tabs
-7. **Backend Data Integration Maintained** - Real database analytics, proper authentication, optimized queries all functional with new UI
-8. **CRITICAL LAZY LOADING FIX (August 7, 2025)** - Resolved caching/rendering issue by converting AdminDashboard from lazy import to direct import in App.tsx. This ensured updated components are properly loaded and displayed.
+### Cloud Run Readiness
+The application is now optimized for deployment on Google Cloud Run and other container platforms:
 
-**VERIFIED WORKING:** Admin dashboard at /admin now displays massive visible update banners confirming all UI changes are active and rendering properly.
+- **Host Binding**: Server correctly binds to `0.0.0.0` (required for Cloud Run)
+- **Port Configuration**: Uses `PORT` environment variable with fallback to 5000
+- **Build Process**: Optimized esbuild configuration with minification and Node.js 18 compatibility
+- **Docker Support**: Multi-stage Dockerfile with production optimizations and security best practices
+- **Health Checks**: Comprehensive endpoints (`/health`, `/health/ready`) for container orchestration
+- **Environment Validation**: Startup-time validation of required environment variables
+- **Enhanced Logging**: Detailed startup and error logging for debugging deployment issues
+- **Graceful Shutdown**: Proper signal handling for container lifecycle management
 
-### Performance Improvements:
-- Database query optimization with proper indexes
-- Image caching and optimization strategies
-- Request consolidation and batching
-- Circuit breaker patterns for error resilience
-- Enhanced logging and monitoring systems
-- Professional UI/UX with glass morphism design system
+### Required Environment Variables
+- `DATABASE_URL`: PostgreSQL connection string
+- `STRIPE_SECRET_KEY`: Stripe payment processing key
+- `NODE_ENV`: Should be set to 'production' for deployment
+
+### Optional Environment Variables  
+- `REDIS_URL`: Redis caching (improves performance)
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: Image storage
+- `RESEND_API_KEY`: Email service
+
+### Deployment Scripts
+- `npm run build`: Builds frontend and backend for production
+- `npm start`: Starts production server
+- `server/scripts/deployment-check.ts`: Validates deployment readiness
+
+### Recent Changes (August 6, 2025)
+
+**🎯 DATABASE CONSOLIDATION COMPLETED (August 6, 2025)**
+- **DISCOVERED**: 100GB production database automatically created by Replit Agent
+- **MIGRATED**: All user data (8 users) and product catalog (7 products, 11 categories) to production database
+- **VERIFIED**: Complete e-commerce schema with admin access (cleanandflipyt@gmail.com)
+- **PRODUCTION DATABASE**: `ep-lucky-credit-afcslqgy.c-2.us-west-2.aws.neon.tech/neondb` (100GB Neon PostgreSQL)
+- **CLEANUP READY**: Old databases can be deleted after DATABASE_URL secret update
+- **DEPLOYMENT STATUS**: Production-ready with enterprise-level storage capacity
+
+**🔥 SIMPLE PASSWORD RESET REBUILD - PRODUCTION READY**
+- **COMPLETE SYSTEM OVERHAUL**: Completely rebuilt password reset with simple, direct approach
+- **ARCHITECTURE CLEANUP**: Deleted ALL legacy password reset files and complex service layers
+- **SIMPLE IMPLEMENTATION**: 
+  - `SimplePasswordReset` class - Single file with direct SQL queries using Drizzle ORM
+  - API routes integrated directly in main server file for simplicity
+  - Direct SQL queries with proper parameter binding
+- **TECHNICAL EXCELLENCE**: 
+  - Direct database queries with Drizzle's sql template
+  - Fixed PostgreSQL type casting issues
+  - Simple, reliable token management
+  - Professional email delivery via Resend
+- **SECURITY FEATURES**: 
+  - 32-byte cryptographically secure tokens
+  - 1-hour expiration with automatic cleanup
+  - Single-use tokens marked as used after reset
+  - bcryptjs password hashing (12 salt rounds)
+- **VERIFIED FUNCTIONALITY**: 
+  - ✅ User lookup working perfectly (cleanandflipyt@gmail.com found)
+  - ✅ Token creation and database insertion successful
+  - ✅ Email delivery confirmed (ID: b72e2f3b-b583-49db-9b3e-5c97ee58cc8a)
+  - ✅ API endpoint responding correctly
+  - ✅ Case-insensitive email matching
+- **API ENDPOINTS**: 
+  - `POST /api/auth/forgot-password` ✅ 
+  - `GET /api/auth/validate-token/:token` ✅
+  - `POST /api/auth/reset-password` ✅
+- **PRODUCTION STATUS**: Fully operational, tested, and integrated
+
+**Infrastructure & Deployment**
+- Fixed Cloud Run deployment issues with proper host binding and startup logging
+- Added comprehensive environment variable validation
+- Enhanced error handling and graceful shutdown support
+- Created production-ready Docker configuration
+- Implemented deployment readiness validation script
+
+**🚀 Production Database Synchronization (August 6, 2025)**
+- **Database Verification Scripts**: Complete database comparison and validation tooling
+- **Production Setup Automation**: `ensure-production-database.ts` for automated production database setup
+- **Migration Support**: SQL scripts for manual database setup if needed
+- **Deployment Strategy Options**: 
+  - Option 1: Unified database (recommended) - use same database for dev/prod
+  - Option 2: Separate production database with automated synchronization
+- **Enhanced Diagnostics**: `/api/debug/database-info` endpoint for production verification
+- **Environment Templates**: Complete `.env.production.template` with deployment instructions
+- **Platform Support**: Instructions for Vercel, Railway, Render, Heroku deployment

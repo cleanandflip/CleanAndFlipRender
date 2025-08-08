@@ -33,7 +33,7 @@ import {
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike, isNotNull } from "drizzle-orm";
 import { normalizeEmail, normalizeSearchTerm, normalizeBrand } from "@shared/utils";
-import { Logger } from "./config/logger";
+import { Logger } from "./utils/logger";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -238,28 +238,7 @@ export class DatabaseStorage implements IStorage {
 
   // Category operations
   async getCategories(): Promise<Category[]> {
-    const categoriesWithCounts = await db
-      .select({
-        id: categories.id,
-        name: categories.name,
-        slug: categories.slug,
-        imageUrl: categories.imageUrl,
-        description: categories.description,
-        displayOrder: categories.displayOrder,
-        isActive: categories.isActive,
-        productCount: sql<number>`CAST((
-          SELECT COUNT(*) FROM products 
-          WHERE category_id = ${categories.id} 
-          AND status = 'active'
-        ) AS INTEGER)`,
-        filterConfig: categories.filterConfig,
-        createdAt: categories.createdAt,
-        updatedAt: categories.updatedAt,
-      })
-      .from(categories)
-      .orderBy(asc(categories.name));
-    
-    return categoriesWithCounts as Category[];
+    return await db.select().from(categories).orderBy(asc(categories.name));
   }
 
   // Removed duplicate createCategory function
@@ -554,17 +533,7 @@ export class DatabaseStorage implements IStorage {
   // Removed duplicate getAllUsers function
 
   async getAnalytics(): Promise<any> {
-    // Get REAL stats from database
-    const [statsResult] = await db
-      .select({
-        totalProducts: sql<number>`(SELECT COUNT(*) FROM products WHERE status = 'active')`,
-        totalUsers: sql<number>`(SELECT COUNT(*) FROM users)`,
-        totalOrders: sql<number>`(SELECT COUNT(*) FROM orders)`,
-        totalRevenue: sql<number>`COALESCE((SELECT SUM(total::numeric) FROM orders), 0)`,
-      })
-      .from(sql`(SELECT 1) as dummy`);
-
-    // Get page views from activity logs
+    // Get REAL page views from last 7 days
     const [pageViewsResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(activityLogs)
@@ -575,53 +544,64 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    // Get active users (unique users in last 24 hours)
+    // Get REAL active users (unique users in last hour)
     const [activeUsersResult] = await db
       .select({ count: sql<number>`count(distinct ${activityLogs.userId})` })
       .from(activityLogs)
       .where(
         and(
-          sql`${activityLogs.createdAt} > NOW() - INTERVAL '24 hours'`,
+          sql`${activityLogs.createdAt} > NOW() - INTERVAL '1 hour'`,
           isNotNull(activityLogs.userId)
         )
       );
 
-    // Calculate conversion rate from product views to orders
-    const totalProductViews = await db
-      .select({ views: sql<number>`COALESCE(SUM(views), 0)` })
-      .from(products);
-    
-    const productViewCount = Number(totalProductViews[0]?.views || 0);
-    const orderCount = Number(statsResult.totalOrders || 0);
-    const conversionRate = productViewCount > 0 ? (orderCount / productViewCount * 100) : 0;
+    // Calculate REAL conversion rate based on visits vs orders
+    const [visitsResult] = await db
+      .select({ count: sql<number>`count(distinct ${activityLogs.sessionId})` })
+      .from(activityLogs)
+      .where(
+        and(
+          eq(activityLogs.eventType, 'page_view'),
+          sql`${activityLogs.createdAt} > NOW() - INTERVAL '7 days'`
+        )
+      );
 
-    // Get average order value
+    const [orderCountResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(sql`${orders.createdAt} > NOW() - INTERVAL '7 days'`);
+
+    const visits = Number(visitsResult.count || 1);
+    const orderCount = Number(orderCountResult.count || 0);
+    const conversionRate = visits > 0 ? (orderCount / visits * 100) : 0;
+
+    // Get average order value from delivered orders (fix enum error)
     const [avgOrderResult] = await db
-      .select({ avgValue: sql<number>`COALESCE(AVG(total::numeric), 0)` })
-      .from(orders);
+      .select({ avgValue: sql<number>`coalesce(avg(${orders.total}), 0)` })
+      .from(orders)
+      .where(eq(orders.status, 'delivered'));
 
-    // Get top products by views (since no orders exist yet)
+    // Get top products (if any orders exist)
     const topProducts = await db
       .select({
-        productId: products.id,
+        productId: orderItems.productId,
         name: products.name,
-        views: products.views,
-        price: products.price,
-        image: sql<string>`(${products.images})[1]`
+        totalSold: sql<number>`sum(${orderItems.quantity})`,
+        revenue: sql<number>`sum(${orderItems.quantity} * ${orderItems.price})`
       })
-      .from(products)
-      .where(eq(products.status, 'active'))
-      .orderBy(desc(products.views))
+      .from(orderItems)
+      .leftJoin(products, eq(orderItems.productId, products.id))
+      .groupBy(orderItems.productId, products.name)
+      .orderBy(sql`sum(${orderItems.quantity}) desc`)
       .limit(5);
 
-    // Get recent activity from activity_logs
+    // Get recent activity from activity_logs (last 10 entries)
     const recentActivity = await db
       .select({
         id: activityLogs.id,
         type: activityLogs.eventType,
         details: sql<string>`CASE 
-          WHEN ${activityLogs.eventType} = 'page_view' THEN 'Page viewed: ' || COALESCE(${activityLogs.page}, 'Unknown')
-          WHEN ${activityLogs.eventType} = 'product_view' THEN 'Product viewed'
+          WHEN ${activityLogs.eventType} = 'page_view' THEN 'Page view: ' || COALESCE(${activityLogs.page}, 'Unknown')
           WHEN ${activityLogs.eventType} = 'user_action' THEN 'User action: ' || COALESCE(${activityLogs.action}, 'Unknown')
           ELSE ${activityLogs.eventType}
         END`,
@@ -631,47 +611,25 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(activityLogs.createdAt))
       .limit(10);
 
-    // Generate revenue trend data (mock for now since no historical data)
-    const revenueData = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      revenueData.push({
-        date: date.toISOString().split('T')[0],
-        value: i === 0 ? Number(statsResult.totalRevenue) : 0
-      });
-    }
-
     return {
-      totalRevenue: Number(statsResult.totalRevenue || 0),
-      revenueChange: 0,
-      totalOrders: Number(statsResult.totalOrders || 0),
-      ordersChange: 0,
-      conversionRate: Math.round(conversionRate * 10) / 10,
-      conversionChange: 0,
-      avgOrderValue: Math.round(Number(avgOrderResult.avgValue || 0) * 100) / 100,
-      aovChange: 0,
-      totalUsers: Number(statsResult.totalUsers || 0),
-      usersChange: 0,
-      totalProducts: Number(statsResult.totalProducts || 0),
-      productsChange: 0,
-      revenueData,
-      topProducts: topProducts.map(p => ({
-        name: p.name,
-        sales: p.views || 0,
-        revenue: Number(p.price || 0)
-      })),
-      trafficSources: [
-        { source: 'Direct', users: Math.floor(Number(statsResult.totalUsers) * 0.6), percentage: 60 },
-        { source: 'Search', users: Math.floor(Number(statsResult.totalUsers) * 0.3), percentage: 30 },
-        { source: 'Social', users: Math.floor(Number(statsResult.totalUsers) * 0.1), percentage: 10 }
-      ],
-      recentActivity: recentActivity.map(a => ({
-        id: a.id,
-        type: a.type,
-        description: a.details,
-        timestamp: a.timestamp?.toISOString() || new Date().toISOString()
-      }))
+      pageViews: { 
+        current: Number(pageViewsResult.count || 0),
+        change: 0 // Would need historical tracking for real change calculation
+      },
+      activeUsers: { 
+        current: Number(activeUsersResult.count || 0),
+        change: 0
+      },
+      conversionRate: { 
+        current: Math.round(conversionRate * 10) / 10, 
+        change: 0 
+      },
+      avgOrderValue: { 
+        current: Math.round(Number(avgOrderResult.avgValue) * 100) / 100, 
+        change: 0 
+      },
+      topProducts,
+      recentActivity
     };
   }
 
@@ -958,17 +916,15 @@ export class DatabaseStorage implements IStorage {
     return submission;
   }
 
-  async createEquipmentSubmission(submission: InsertEquipmentSubmission & { referenceNumber?: string }): Promise<EquipmentSubmission> {
-    // Generate reference number if not provided
-    if (!submission.referenceNumber) {
-      const count = await db.select({ count: sql`COUNT(*)` }).from(equipmentSubmissions);
-      const nextNumber = (Number(count[0]?.count) + 1).toString().padStart(8, '0');
-      submission.referenceNumber = `REF-${nextNumber}`;
-    }
+  async createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
+    const submissionWithReference = {
+      ...submission,
+      referenceNumber: `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
+    };
     
     const [newSubmission] = await db
       .insert(equipmentSubmissions)
-      .values(submission as any)
+      .values(submissionWithReference as any)
       .returning();
     return newSubmission;
   }

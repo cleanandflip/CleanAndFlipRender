@@ -135,7 +135,7 @@ export function OrderTracking({ orderId, orderNumber, className = '' }: OrderTra
 
       {/* Tracking Number */}
       {hasTrackingNumber && (
-        <div className="bg-gray-900 dark:bg-gray-800/50 p-4 rounded-lg mb-6">
+        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg mb-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Tracking Number</p>

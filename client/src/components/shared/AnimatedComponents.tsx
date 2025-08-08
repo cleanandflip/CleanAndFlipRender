@@ -153,7 +153,7 @@ export const Toggle: React.FC<ToggleProps> = ({
         disabled={disabled}
       >
         <motion.span
-          className="inline-block h-4 w-4 transform rounded-full bg-gray-900 shadow-lg"
+          className="inline-block h-4 w-4 transform rounded-full bg-white shadow-lg"
           animate={{ x: checked ? 24 : 4 }}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
         />
@@ -231,7 +231,7 @@ export const LoadingSpinner: React.FC<{ size?: 'sm' | 'md' | 'lg' }> = ({
 
   return (
     <motion.div
-      className={cn('animate-spin rounded-full border-2 border-gray-700', sizeClasses[size])}
+      className={cn('animate-spin rounded-full border-2 border-gray-300', sizeClasses[size])}
       style={{ borderTopColor: theme.colors.brand.blue }}
       animate={{ rotate: 360 }}
       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}

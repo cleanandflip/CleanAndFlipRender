@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus } from "lucide-react";
-import { UnifiedDashboardCard } from "@/components/admin/UnifiedDashboardCard";
+import { Card } from "@/components/ui/card";
 
 interface FilterConfig {
   brand?: string[];
@@ -90,7 +90,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
   );
 
   return (
-    <UnifiedDashboardCard className="p-6 mt-6" gradient="green">
+    <Card className="p-6 mt-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-white">Category Filter Configuration</h3>
         {hasActiveFilters && (
@@ -159,7 +159,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
                   priceMin: e.target.value ? Number(e.target.value) : undefined 
                 })}
                 placeholder="0"
-                className="glass bg-gray-900/5 border-white/20 text-white"
+                className="glass bg-white/5 border-white/20 text-white"
               />
             </div>
             <div>
@@ -172,7 +172,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
                   priceMax: e.target.value ? Number(e.target.value) : undefined 
                 })}
                 placeholder="999"
-                className="glass bg-gray-900/5 border-white/20 text-white"
+                className="glass bg-white/5 border-white/20 text-white"
               />
             </div>
           </div>
@@ -206,7 +206,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
               onChange={(e) => setNewTag(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addTag()}
               placeholder="Add custom tag"
-              className="glass bg-gray-900/5 border-white/20 text-white flex-1"
+              className="glass bg-white/5 border-white/20 text-white flex-1"
             />
             <Button 
               onClick={addTag}
@@ -226,7 +226,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
               variant="outline"
               size="sm"
               onClick={() => setFilters({ condition: ['New', 'Like New', 'Excellent'] })}
-              className="glass border-white/20 text-text-secondary hover:bg-gray-900/10"
+              className="glass border-white/20 text-text-secondary hover:bg-white/10"
             >
               High Quality Only
             </Button>
@@ -234,7 +234,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
               variant="outline"
               size="sm"
               onClick={() => setFilters({ priceMax: 100 })}
-              className="glass border-white/20 text-text-secondary hover:bg-gray-900/10"
+              className="glass border-white/20 text-text-secondary hover:bg-white/10"
             >
               Budget Friendly ($100 or less)
             </Button>
@@ -242,7 +242,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
               variant="outline"
               size="sm"
               onClick={() => setFilters({ tags: ['sale', 'clearance'] })}
-              className="glass border-white/20 text-text-secondary hover:bg-gray-900/10"
+              className="glass border-white/20 text-text-secondary hover:bg-white/10"
             >
               Sale Items
             </Button>
@@ -250,7 +250,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
               variant="outline"
               size="sm"
               onClick={() => setFilters({})}
-              className="glass border-white/20 text-text-secondary hover:bg-gray-900/10"
+              className="glass border-white/20 text-text-secondary hover:bg-white/10"
             >
               Clear All
             </Button>
@@ -266,6 +266,6 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
           Save Filter Configuration
         </Button>
       </div>
-    </UnifiedDashboardCard>
+    </Card>
   );
 }

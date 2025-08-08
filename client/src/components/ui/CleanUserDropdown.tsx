@@ -121,7 +121,7 @@ export function CleanUserDropdown({ user, onNavigate, onLogout }: CleanUserDropd
             <div className="p-2 space-y-1">
               <button
                 onClick={() => handleItemClick(() => onNavigate('/dashboard'))}
-                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
+                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
               >
                 <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
                   <LayoutDashboard size={16} className="text-gray-400" />
@@ -131,7 +131,7 @@ export function CleanUserDropdown({ user, onNavigate, onLogout }: CleanUserDropd
               
               <button
                 onClick={() => handleItemClick(() => onNavigate('/orders'))}
-                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
+                className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
               >
                 <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
                   <Package size={16} className="text-gray-400" />
@@ -144,7 +144,7 @@ export function CleanUserDropdown({ user, onNavigate, onLogout }: CleanUserDropd
               {user.isAdmin && (
                 <button
                   onClick={() => handleItemClick(() => onNavigate('/admin'))}
-                  className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-gray-900/10 flex items-center gap-3"
+                  className="w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-white/10 flex items-center gap-3"
                 >
                   <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center">
                     <ShieldCheck size={16} className="text-gray-400" />

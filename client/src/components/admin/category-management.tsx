@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UnifiedDashboardCard } from "@/components/admin/UnifiedDashboardCard";
+import { Card } from "@/components/ui/card";
 import CategoryFilterConfig from "@/components/admin/category-filter-config";
 import { apiRequest, broadcastProductUpdate } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -208,7 +208,7 @@ function CategoryEditModal({
                   id="image-upload"
                 />
                 <Label htmlFor="image-upload" className="cursor-pointer">
-                  <div className="glass border-2 border-dashed border-border border-primary rounded-lg p-4 text-center hover:bg-gray-900/5 transition-colors">
+                  <div className="glass border-2 border-dashed border-border border-primary rounded-lg p-4 text-center hover:bg-white/5 transition-colors">
                     <Upload className="mx-auto mb-2 text-text-muted" size={24} />
                     <p className="text-sm text-text-muted">
                       Click to upload category image
@@ -367,12 +367,12 @@ export default function CategoryManagement() {
         <div className="flex justify-between items-center">
           <h2 className="font-bebas text-2xl">CATEGORY MANAGEMENT</h2>
         </div>
-        <UnifiedDashboardCard className="p-6" gradient="blue">
+        <Card className="p-6">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue mx-auto"></div>
             <p className="text-text-secondary mt-4">Loading categories...</p>
           </div>
-        </UnifiedDashboardCard>
+        </Card>
       </div>
     );
   }
@@ -393,7 +393,7 @@ export default function CategoryManagement() {
         </Button>
       </div>
 
-      <UnifiedDashboardCard className="overflow-hidden" gradient="purple">
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -473,7 +473,7 @@ export default function CategoryManagement() {
             ))}
           </TableBody>
         </Table>
-      </UnifiedDashboardCard>
+      </Card>
 
       <CategoryEditModal
         category={editingCategory}

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Logger } from '../config/logger';
+import { Logger } from '../utils/logger';
 
 // Performance monitoring middleware
 export function performanceMonitoring(req: Request, res: Response, next: NextFunction) {

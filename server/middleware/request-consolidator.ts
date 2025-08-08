@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Logger } from '../config/logger';
+import { Logger, LogLevel } from '../utils/logger';
 
 interface RequestStat {
   count: number;
@@ -76,7 +76,7 @@ class RequestConsolidator {
           Logger.consolidate(
             `frequent-${requestKey}`,
             `${requestKey} ${res.statusCode} ${duration}ms`,
-            'debug'
+            LogLevel.DEBUG
           );
         }
       });

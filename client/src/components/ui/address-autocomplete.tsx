@@ -58,13 +58,14 @@ export default function AddressAutocomplete({
     const searchAddresses = async () => {
       setLoading(true);
       try {
-        const apiKey = (import.meta as any).env?.VITE_GEOAPIFY_API_KEY;
+        const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
         if (!apiKey) {
-          console.warn('VITE_GEOAPIFY_API_KEY not found - address autocomplete disabled');
-          setSuggestions([]);
+          console.error('VITE_GEOAPIFY_API_KEY not found in environment variables');
+          console.log('Available env vars:', Object.keys(import.meta.env));
           return;
         }
 
+        console.log('Making address search request for:', debouncedInput);
         const response = await fetch(
           `https://api.geoapify.com/v1/geocode/autocomplete?` +
           `text=${encodeURIComponent(debouncedInput)}&` +
@@ -74,22 +75,22 @@ export default function AddressAutocomplete({
         );
         
         if (!response.ok) {
-          console.warn(`Address API request failed: ${response.status}`);
-          setSuggestions([]);
-          return;
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
+        console.log('API response:', data);
         
         if (data.results && Array.isArray(data.results)) {
           setSuggestions(data.results);
           setShowDropdown(true);
+          console.log(`Found ${data.results.length} suggestions`);
         } else {
+          console.log('No results in API response');
           setSuggestions([]);
         }
       } catch (error) {
-        // Silently handle address search errors to prevent unhandled promise rejections
-        console.warn('Address search temporarily unavailable');
+        console.error('Address search error:', error);
         setSuggestions([]);
       } finally {
         setLoading(false);

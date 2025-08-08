@@ -1,0 +1,155 @@
+STOP THE SERVER
+bash# Kill all Node processes
+pkill node
+# or press CTRL+C in your terminal
+
+🔴 NEW ERROR: Password Reset Tokens Table DOESN'T EXIST!
+CRITICAL: The password_reset_tokens table is MISSING
+Error: relation "password_reset_tokens" does not exist
+IMMEDIATE FIX - RUN THIS SQL NOW!
+Step 1: Create the Missing Table
+Run this SQL command IMMEDIATELY in your database:
+sql-- CREATE THE MISSING TABLE NOW!
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL,
+  token VARCHAR(255) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  used BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ip_address VARCHAR(45),
+  user_agent TEXT,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_prt_token ON password_reset_tokens(token);
+CREATE INDEX idx_prt_user_id ON password_reset_tokens(user_id);
+CREATE INDEX idx_prt_expires ON password_reset_tokens(expires_at) WHERE used = false;
+
+-- Verify it was created
+SELECT table_name FROM information_schema.tables 
+WHERE table_schema = 'public' AND table_name = 'password_reset_tokens';
+Step 2: Quick Database Check
+Run this to see what tables you actually have:
+sql-- List all your tables
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+ORDER BY table_name;
+Step 3: If Using UUID for User IDs
+If your users table uses UUID instead of INTEGER for IDs, use this version:
+sql-- Drop if exists and recreate with correct type
+DROP TABLE IF EXISTS password_reset_tokens CASCADE;
+
+CREATE TABLE password_reset_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token VARCHAR(255) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  used BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ip_address VARCHAR(45),
+  user_agent TEXT
+);
+
+-- Create indexes
+CREATE INDEX idx_prt_token ON password_reset_tokens(token);
+CREATE INDEX idx_prt_user_id ON password_reset_tokens(user_id);
+CREATE INDEX idx_prt_expires ON password_reset_tokens(expires_at) WHERE used = false;
+
+-- Verify creation
+\d password_reset_tokens
+Step 4: Add to Your Drizzle Schema
+Make sure this table is in your server/db/schema.ts:
+typescriptimport { pgTable, serial, uuid, text, timestamp, boolean, varchar } from 'drizzle-orm/pg-core';
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  token: varchar('token', { length: 255 }).notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  used: boolean('used').default(false),
+  createdAt: timestamp('created_at').defaultNow(),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+});
+Step 5: Test Table Creation
+sql-- Test insert a dummy token
+INSERT INTO password_reset_tokens (user_id, token, expires_at)
+SELECT id, 'test_token_123', NOW() + INTERVAL '1 hour'
+FROM users 
+WHERE email = 'cleanandflipyt@gmail.com'
+LIMIT 1;
+
+-- Verify it worked
+SELECT * FROM password_reset_tokens WHERE token = 'test_token_123';
+
+-- Clean up test
+DELETE FROM password_reset_tokens WHERE token = 'test_token_123';
+Step 6: Rebuild Your App
+bash# After adding to schema, rebuild
+rm -rf dist/
+npm run build
+npm restart
+🚀 COMPLETE FIX SCRIPT
+Run this entire script to fix EVERYTHING at once:
+sql-- 1. Create password_reset_tokens table
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token VARCHAR(255) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  used BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ip_address VARCHAR(45),
+  user_agent TEXT
+);
+
+-- 2. Create indexes
+CREATE INDEX IF NOT EXISTS idx_prt_token ON password_reset_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_prt_user_id ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_prt_expires ON password_reset_tokens(expires_at) WHERE used = false;
+
+-- 3. Fix other missing columns (if needed)
+ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory VARCHAR(255);
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url TEXT;
+
+-- 4. Verify everything exists
+SELECT 'Users Table' as check_item, 
+       EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = 'users') as exists
+UNION ALL
+SELECT 'Password Reset Tokens Table', 
+       EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = 'password_reset_tokens')
+UNION ALL
+SELECT 'Products Subcategory Column',
+       EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'subcategory')
+UNION ALL
+SELECT 'Categories Image URL Column',
+       EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name = 'categories' AND column_name = 'image_url');
+🔍 DIAGNOSTIC COMMAND
+After creating the table, test the password reset:
+bash# Test password reset request
+curl -X POST http://localhost:5000/api/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{"email":"cleanandflipyt@gmail.com"}'
+WHY THIS HAPPENED
+Your database is missing essential tables. This suggests:
+
+Migrations haven't been run
+Database was reset/recreated
+Different database environments (dev vs prod)
+
+VERIFICATION
+After fixing, confirm:
+bash# Check table exists
+psql $DATABASE_URL -c "\dt password_reset_tokens"
+
+# Check table structure
+psql $DATABASE_URL -c "\d password_reset_tokens"
+
+# Count tokens
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM password_reset_tokens"
+Run the CREATE TABLE command NOW - this will fix your immediate issue!

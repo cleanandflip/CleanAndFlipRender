@@ -108,7 +108,7 @@ export function UnifiedDropdown({
         }}
         className={cn(
           "w-full px-4 py-3 rounded-lg text-left transition-all duration-200 flex items-center justify-between group",
-          "hover:bg-gray-900/10",
+          "hover:bg-white/10",
           disabled 
             ? "cursor-not-allowed opacity-50" 
             : searchable ? "cursor-text" : "cursor-pointer"

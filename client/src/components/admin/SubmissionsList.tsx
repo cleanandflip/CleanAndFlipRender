@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { UnifiedDashboardCard } from '@/components/admin/UnifiedDashboardCard';
+import { Card } from '@/components/ui/card';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -57,7 +57,7 @@ export function SubmissionsList({
   return (
     <div className="space-y-2">
       {/* Header */}
-      <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm text-text-muted font-medium">
+      <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm text-gray-400 font-medium">
         <div className="col-span-1">
           <input
             type="checkbox"
@@ -77,12 +77,11 @@ export function SubmissionsList({
       
       {/* Rows */}
       {submissions.map((submission) => (
-        <UnifiedDashboardCard 
+        <Card 
           key={submission.id}
-          className={`p-4 hover:shadow-lg transition-all ${
+          className={`p-4 hover:bg-gray-800/50 transition-colors ${
             selectedSubmissions.has(submission.id) ? 'ring-2 ring-blue-500' : ''
           }`}
-          gradient="green"
         >
           <div className="grid grid-cols-12 gap-4 items-center">
             <div className="col-span-1">
@@ -102,22 +101,22 @@ export function SubmissionsList({
             </div>
             
             <div className="col-span-3">
-              <p className="font-medium text-text-primary">{submission.name}</p>
-              <p className="text-sm text-text-muted">{submission.brand} • {submission.condition}</p>
+              <p className="font-medium">{submission.name}</p>
+              <p className="text-sm text-gray-400">{submission.brand} • {submission.condition}</p>
             </div>
             
             <div className="col-span-2">
-              <p className="text-sm text-text-primary">
+              <p className="text-sm">
                 {submission.user?.firstName && submission.user?.lastName 
                   ? `${submission.user.firstName} ${submission.user.lastName}`
                   : submission.user?.email || 'Unknown User'
                 }
               </p>
-              <p className="text-xs text-text-muted">{submission.phoneNumber}</p>
+              <p className="text-xs text-gray-400">{submission.phoneNumber}</p>
             </div>
             
             <div className="col-span-1">
-              <p className="font-medium text-text-primary">${submission.askingPrice || 'Open'}</p>
+              <p className="font-medium">${submission.askingPrice || 'Open'}</p>
             </div>
             
             <div className="col-span-1">
@@ -127,7 +126,7 @@ export function SubmissionsList({
             </div>
             
             <div className="col-span-1">
-              <p className="text-sm text-text-muted">
+              <p className="text-sm text-gray-400">
                 {new Date(submission.createdAt).toLocaleDateString()}
               </p>
             </div>
@@ -173,7 +172,7 @@ export function SubmissionsList({
               </DropdownMenu>
             </div>
           </div>
-        </UnifiedDashboardCard>
+        </Card>
       ))}
     </div>
   );

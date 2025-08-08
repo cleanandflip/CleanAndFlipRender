@@ -1,0 +1,167 @@
+INSTRUCTIONS FOR REPLIT: UNIFIED DROPDOWN SYSTEM
+OBJECTIVE
+Replace all dropdown components across the site with a unified dropdown that matches the search bar's glass morphism styling and behavior.
+
+STEP 1: CREATE UNIFIED DROPDOWN COMPONENT
+File to create: /client/src/components/ui/unified-dropdown.tsx
+Requirements:
+
+Copy the styling logic from UnifiedSearchBar.tsx (glass morphism effect)
+Use the same portal approach with useSafePortal hook
+Match the exact styling:
+background: 'rgba(75, 85, 99, 0.4)'
+border: '1px solid rgba(156, 163, 175, 0.4)'
+backdropFilter: 'blur(8px)'
+
+Include hover states with hover:bg-white/10
+Support keyboard navigation (Arrow keys, Enter, Escape)
+Use Framer Motion for animations (same as search dropdown)
+
+Props to accept:
+
+value: Current selected value
+onChange: Callback when value changes
+options: Array of {value, label} objects
+placeholder: Placeholder text
+className: Additional classes
+required: Boolean for required fields
+disabled: Boolean for disabled state
+
+
+STEP 2: UPDATE SELL-TO-US PAGE
+File to modify: /client/src/pages/SellToUs.tsx (or EquipmentSubmission component)
+Changes needed:
+
+Import the new UnifiedDropdown:
+tsximport { UnifiedDropdown } from '@/components/ui/unified-dropdown';
+
+Replace Condition dropdown:
+
+Find the existing Select/dropdown for condition
+Replace with UnifiedDropdown
+Pass options: [{value: 'new', label: 'New'}, {value: 'like-new', label: 'Like New'}, {value: 'good', label: 'Good'}, {value: 'fair', label: 'Fair'}]
+
+
+Replace Brand dropdown:
+
+Convert brand input to UnifiedDropdown
+Either provide predefined brand options or make it searchable/filterable
+Consider popular brands: Nike, Adidas, Rogue, etc.
+
+
+
+
+STEP 3: UPDATE CONTACT PAGE
+File to modify: /client/src/pages/Contact.tsx
+Changes needed:
+
+Replace Category dropdown:
+
+Find the existing Select component for category
+Replace with UnifiedDropdown
+Pass options:
+[
+  {value: 'selling', label: 'Selling Equipment'},
+  {value: 'buying', label: 'Buying Equipment'},
+  {value: 'order', label: 'Order Support'},
+  {value: 'shipping', label: 'Shipping & Delivery'},
+  {value: 'returns', label: 'Returns & Refunds'},
+  {value: 'other', label: 'Other'}
+]
+
+
+
+
+
+STEP 4: REMOVE OLD DROPDOWN COMPONENTS
+Files to check and clean up:
+
+Remove old Select imports:
+
+Search for: import.*Select.*from.*@radix-ui/react-select
+Search for: import.*Select.*from.*@/components/ui/select
+Remove these imports
+
+
+Delete old select component file:
+
+Delete: /client/src/components/ui/select.tsx
+
+
+Clean up any inline dropdown implementations:
+
+Search for <select tags and replace with UnifiedDropdown
+Search for custom dropdown implementations
+
+
+
+
+STEP 5: STYLING CONSISTENCY
+Ensure these styles are applied to all dropdowns:
+
+Trigger button styling:
+
+Background: rgba(75, 85, 99, 0.4)
+Border: 1px solid rgba(156, 163, 175, 0.4)
+Focus border: 1px solid #3b82f6
+Text color: white
+Placeholder color: text-gray-400
+
+
+Dropdown content styling:
+
+Same glass morphism effect as trigger
+Fixed positioning to handle scroll
+Z-index: 999999 (same as search)
+Item hover: bg-white/10
+Selected item: Show check icon
+
+
+Animation (using Framer Motion):
+
+Initial: { opacity: 0, y: -8 }
+Animate: { opacity: 1, y: 0 }
+Exit: { opacity: 0, y: -8 }
+Duration: 0.15s
+
+
+
+
+STEP 6: TESTING CHECKLIST
+After implementation, verify:
+
+Visual consistency:
+
+All dropdowns look identical to search bar
+Glass morphism effect works
+Hover states match
+
+
+Functionality:
+
+Keyboard navigation works
+Click outside closes dropdown
+Selected values persist
+Form validation works
+
+
+Responsive behavior:
+
+Dropdowns position correctly on scroll
+Work on mobile devices
+Don't get cut off at viewport edges
+
+
+
+
+IMPLEMENTATION ORDER
+
+First, create the UnifiedDropdown component
+Test it in isolation
+Replace Contact page category dropdown (simplest)
+Replace Sell-to-us condition dropdown
+Replace Sell-to-us brand dropdown
+Remove all old dropdown code
+Run full testing suite
+
+Key point: The UnifiedDropdown should be the ONLY dropdown component in the entire codebase. No exceptions.
