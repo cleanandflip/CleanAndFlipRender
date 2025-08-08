@@ -1,16 +1,12 @@
-/* Import new theme files first */
-
+/* Import all CSS files first, before @tailwind directives */
 @import './styles/button-theme.css';
 @import './styles/outline-theme.css';
-
-
 @import './styles/typography.css';
+@import url("./styles/animations.css");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url("./styles/animations.css");
 
 /* Global smooth scrolling */
 html {
