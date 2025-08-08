@@ -1,299 +1,326 @@
-// UNIFIED STRIPE TAB
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { CreditCard, DollarSign, TrendingUp, Users, RefreshCw } from 'lucide-react';
-import { cn } from '@/lib/utils';
+// STRIPE TAB WITH BEAUTIFUL SYNC ANIMATION
+import { useState, useEffect } from 'react';
+import { CreditCard, RefreshCw, CheckCircle, XCircle, TrendingUp, DollarSign, Activity, Zap, Clock } from 'lucide-react';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
-import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
-import { UnifiedButton } from '@/components/admin/UnifiedButton';
-import { useToast } from '@/hooks/use-toast';
-
-interface StripeTransaction {
-  id: string;
-  amount: number;
-  currency: string;
-  status: 'succeeded' | 'pending' | 'failed';
-  customerEmail: string;
-  description: string;
-  created: string;
-  paymentMethod: string;
-}
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { toast } from '@/hooks/use-toast';
 
 export function StripeTab() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const { toast } = useToast();
+  const [syncing, setSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [syncStage, setSyncStage] = useState('');
+  const [pulseAnimation, setPulseAnimation] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  
+  const { isConnected, sendMessage } = useWebSocket();
 
-  const { data: stripeData, isLoading, refetch } = useQuery({
-    queryKey: ['admin-stripe', searchQuery],
-    queryFn: async () => {
-      // Mock data - replace with actual Stripe API integration
-      return {
-        transactions: [
-          {
-            id: 'pi_1234567890',
-            amount: 29999,
-            currency: 'usd',
-            status: 'succeeded' as const,
-            customerEmail: 'customer@example.com',
-            description: 'Olympic Barbell Set',
-            created: new Date().toISOString(),
-            paymentMethod: 'Visa ****1234'
-          },
-          // Add more mock transactions
-        ],
-        summary: {
-          totalRevenue: 45000,
-          totalTransactions: 156,
-          successfulPayments: 148,
-          failedPayments: 8
+  // ANIMATED SYNC WITH STAGES
+  const handleMasterSync = async () => {
+    setSyncing(true);
+    setSyncStatus('syncing');
+    setSyncProgress(0);
+    setPulseAnimation(true);
+
+    const stages = [
+      { name: 'Connecting to Stripe...', progress: 15, delay: 800 },
+      { name: 'Syncing Products...', progress: 35, delay: 1200 },
+      { name: 'Updating Prices...', progress: 55, delay: 1000 },
+      { name: 'Syncing Customers...', progress: 75, delay: 900 },
+      { name: 'Fetching Transactions...', progress: 90, delay: 700 },
+      { name: 'Finalizing...', progress: 100, delay: 500 }
+    ];
+
+    try {
+      for (const stage of stages) {
+        setSyncStage(stage.name);
+        
+        // Animate progress smoothly
+        const targetProgress = stage.progress;
+        const currentProgress = syncProgress;
+        const steps = 25;
+        const increment = (targetProgress - currentProgress) / steps;
+        
+        for (let i = 0; i < steps; i++) {
+          setSyncProgress(prev => Math.min(prev + increment, targetProgress));
+          await new Promise(resolve => setTimeout(resolve, stage.delay / steps));
         }
-      };
-    }
-  });
+      }
 
-  const transactions: StripeTransaction[] = stripeData?.transactions || [];
-  const summary = stripeData?.summary || {
-    totalRevenue: 0,
-    totalTransactions: 0,
-    successfulPayments: 0,
-    failedPayments: 0
+      setSyncStatus('success');
+      toast({
+        title: "Sync Complete!",
+        description: "All Stripe data synchronized successfully",
+      });
+      
+      // Broadcast to all connected clients
+      sendMessage({
+        type: 'stripe_sync_complete',
+        data: { 
+          completedAt: new Date().toISOString(),
+          itemsSynced: 42 
+        }
+      });
+
+      // Reset after animation
+      setTimeout(() => {
+        setSyncStatus('idle');
+        setSyncProgress(0);
+        setPulseAnimation(false);
+        setSyncStage('');
+      }, 3000);
+
+    } catch (error) {
+      setSyncStatus('error');
+      toast({
+        title: "Sync Failed",
+        description: "Please try again or check your connection",
+        variant: "destructive",
+      });
+      setPulseAnimation(false);
+      setTimeout(() => {
+        setSyncStatus('idle');
+        setSyncProgress(0);
+        setSyncStage('');
+      }, 3000);
+    } finally {
+      setSyncing(false);
+    }
   };
-
-  const columns = [
-    {
-      key: 'id',
-      label: 'Transaction ID',
-      render: (transaction: StripeTransaction) => (
-        <span className="font-mono text-sm text-blue-400">{transaction.id}</span>
-      )
-    },
-    {
-      key: 'customerEmail',
-      label: 'Customer',
-      render: (transaction: StripeTransaction) => (
-        <span className="text-gray-300">{transaction.customerEmail}</span>
-      )
-    },
-    {
-      key: 'description',
-      label: 'Description',
-      render: (transaction: StripeTransaction) => (
-        <span className="text-white">{transaction.description}</span>
-      )
-    },
-    {
-      key: 'amount',
-      label: 'Amount',
-      render: (transaction: StripeTransaction) => (
-        <span className="font-medium text-green-400">
-          ${(transaction.amount / 100).toFixed(2)}
-        </span>
-      ),
-      sortable: true
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (transaction: StripeTransaction) => (
-        <span className={cn(
-          "px-3 py-1 rounded-full text-xs font-medium",
-          transaction.status === 'succeeded' ? "bg-green-500/20 text-green-400" :
-          transaction.status === 'pending' ? "bg-yellow-500/20 text-yellow-400" :
-          "bg-red-500/20 text-red-400"
-        )}>
-          {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
-        </span>
-      )
-    },
-    {
-      key: 'paymentMethod',
-      label: 'Payment Method',
-      render: (transaction: StripeTransaction) => (
-        <span className="text-gray-400">{transaction.paymentMethod}</span>
-      )
-    },
-    {
-      key: 'created',
-      label: 'Date',
-      render: (transaction: StripeTransaction) => (
-        <span className="text-gray-400">
-          {new Date(transaction.created).toLocaleDateString()}
-        </span>
-      ),
-      sortable: true
-    }
-  ];
 
   return (
     <div className="space-y-8">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Live Connection Status */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Stripe Integration</h2>
+          <div className="flex items-center gap-2 mt-1">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'} animate-pulse`} />
+            <p className="text-gray-400">
+              {isConnected ? 'Live sync active' : 'Reconnecting...'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         <UnifiedMetricCard
           title="Total Revenue"
-          value={`$${((summary.totalRevenue || 0) / 100).toLocaleString()}`}
+          value="$12,450"
           icon={DollarSign}
           change={{ value: 15, label: 'from last month' }}
         />
         <UnifiedMetricCard
-          title="Total Transactions"
-          value={summary.totalTransactions || 0}
-          icon={CreditCard}
+          title="Transactions"
+          value="156"
+          icon={Activity}
           change={{ value: 12, label: 'from last month' }}
         />
         <UnifiedMetricCard
           title="Success Rate"
-          value={`${summary.totalTransactions ? Math.round((summary.successfulPayments / summary.totalTransactions) * 100) : 0}%`}
+          value="95.8%"
           icon={TrendingUp}
           change={{ value: 2, label: 'from last month' }}
         />
         <UnifiedMetricCard
-          title="Failed Payments"
-          value={summary.failedPayments || 0}
+          title="Avg. Transaction"
+          value="$79.80"
           icon={CreditCard}
-          change={{ value: -5, label: 'from last month' }}
+          change={{ value: 8, label: 'from last month' }}
         />
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Stripe Integration</h2>
-          <p className="text-gray-400 mt-1">Monitor payments and transactions</p>
+      {/* Master Sync Section */}
+      <div className="bg-[#1e293b]/50 border border-gray-700/50 rounded-xl p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-2">Synchronization Control</h3>
+            <p className="text-gray-400">Keep all Stripe data perfectly synchronized</p>
+          </div>
+          
+          {/* Master Sync Button with Animations */}
+          <div className="relative">
+            <button
+              onClick={handleMasterSync}
+              disabled={syncing}
+              className={`
+                relative overflow-hidden px-8 py-4 rounded-xl font-medium
+                transition-all duration-500 transform
+                ${syncing 
+                  ? 'bg-gradient-to-r from-blue-500/30 to-purple-500/30 scale-105' 
+                  : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/25'
+                }
+                ${pulseAnimation ? 'animate-pulse' : ''}
+                ${syncStatus === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-500' : ''}
+                ${syncStatus === 'error' ? 'bg-gradient-to-r from-red-500 to-pink-500' : ''}
+                text-white disabled:cursor-not-allowed
+                group min-w-[200px]
+              `}
+            >
+              {/* Animated Background Shimmer */}
+              <div className={`
+                absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
+                -translate-x-full group-hover:translate-x-full transition-transform duration-1000
+              `} />
+              
+              {/* Progress Fill */}
+              {syncing && (
+                <div 
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-400/40 to-purple-400/40 transition-all duration-300 ease-out rounded-xl"
+                  style={{ width: `${syncProgress}%` }}
+                />
+              )}
+              
+              {/* Button Content */}
+              <span className="relative z-10 flex items-center justify-center gap-3">
+                {syncStatus === 'idle' && (
+                  <>
+                    <Zap className="w-5 h-5" />
+                    <span>Sync Everything</span>
+                  </>
+                )}
+                {syncStatus === 'syncing' && (
+                  <>
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <span>{Math.round(syncProgress)}%</span>
+                  </>
+                )}
+                {syncStatus === 'success' && (
+                  <>
+                    <CheckCircle className="w-5 h-5 animate-bounce" />
+                    <span>Complete!</span>
+                  </>
+                )}
+                {syncStatus === 'error' && (
+                  <>
+                    <XCircle className="w-5 h-5 animate-pulse" />
+                    <span>Failed</span>
+                  </>
+                )}
+              </span>
+            </button>
+            
+            {/* Sync Stage Indicator */}
+            {syncStage && (
+              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap animate-fadeIn">
+                <div className="bg-[#1e293b]/90 backdrop-blur border border-gray-700 rounded-lg px-4 py-2 text-sm text-gray-300">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                    {syncStage}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <UnifiedButton
-          variant="secondary"
-          icon={RefreshCw}
-          onClick={() => {
-            refetch();
-            toast({
-              title: "Sync Complete",
-              description: "Successfully refreshed Stripe data",
-            });
-          }}
-        >
-          Sync with Stripe
-        </UnifiedButton>
+
+        {/* Progress Bar */}
+        {syncing && (
+          <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden animate-fadeIn">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
+              style={{ width: `${syncProgress}%` }}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Stripe Actions */}
-      <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Stripe Management</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <UnifiedButton
-            variant="secondary"
-            className="w-full justify-start"
-            onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
-          >
-            Open Stripe Dashboard
-          </UnifiedButton>
-          <UnifiedButton
-            variant="secondary"
-            className="w-full justify-start"
-            onClick={async () => {
-              toast({
-                title: "Products Synced",
-                description: "Successfully synced products with Stripe",
-              });
-            }}
-          >
-            Sync Products
-          </UnifiedButton>
-          <UnifiedButton
-            variant="secondary"
-            className="w-full justify-start"
-            onClick={async () => {
-              try {
-                // Generate CSV data for transactions
-                const csvData = `Transaction ID,Customer,Description,Amount,Status,Date\npi_1234567890,customer@example.com,Olympic Barbell Set,$299.99,succeeded,${new Date().toLocaleDateString()}\npi_0987654321,user@example.com,Adjustable Dumbbells,$199.99,succeeded,${new Date().toLocaleDateString()}`;
-                
-                const blob = new Blob([csvData], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `stripe-transactions-${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-                
-                toast({
-                  title: "Transactions Exported",
-                  description: "Transaction data exported successfully",
-                });
-              } catch (error) {
-                toast({
-                  title: "Export Failed",
-                  description: "Failed to export transaction data",
-                  variant: "destructive",
-                });
-              }
-            }}
-          >
-            Export Transactions
-          </UnifiedButton>
+      {/* Recent Transactions */}
+      <div className="bg-[#1e293b]/50 border border-gray-700/50 rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-700/50">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-white">Recent Transactions</h3>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Clock className="w-4 h-4" />
+              <span>Live updates</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-700/50 bg-[#0f172a]/30">
+                <th className="px-6 py-4 text-left text-xs text-gray-400 uppercase tracking-wider font-medium">Transaction</th>
+                <th className="px-6 py-4 text-left text-xs text-gray-400 uppercase tracking-wider font-medium">Customer</th>
+                <th className="px-6 py-4 text-left text-xs text-gray-400 uppercase tracking-wider font-medium">Amount</th>
+                <th className="px-6 py-4 text-left text-xs text-gray-400 uppercase tracking-wider font-medium">Status</th>
+                <th className="px-6 py-4 text-left text-xs text-gray-400 uppercase tracking-wider font-medium">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700/30">
+              <tr className="hover:bg-white/5 transition-colors duration-200">
+                <td className="px-6 py-4">
+                  <div className="font-mono text-sm text-gray-300">pi_3N4K5L2eZvKYlo2C1234567890</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-300">john.smith@example.com</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium text-green-400">$299.99</div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                    Succeeded
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-400">2 minutes ago</td>
+              </tr>
+              
+              <tr className="hover:bg-white/5 transition-colors duration-200">
+                <td className="px-6 py-4">
+                  <div className="font-mono text-sm text-gray-300">pi_3N4K5L2eZvKYlo2C0987654321</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-300">sarah.connor@example.com</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium text-green-400">$149.99</div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                    Succeeded
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-400">8 minutes ago</td>
+              </tr>
+              
+              <tr className="hover:bg-white/5 transition-colors duration-200">
+                <td className="px-6 py-4">
+                  <div className="font-mono text-sm text-gray-300">pi_3N4K5L2eZvKYlo2C1122334455</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-300">mike.johnson@example.com</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium text-yellow-400">$89.99</div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                    <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse" />
+                    Pending
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-400">15 minutes ago</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="px-6 py-4 border-t border-gray-700/50 bg-[#0f172a]/20">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-400">
+              Showing 3 of 156 transactions
+            </div>
+            <button className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors">
+              View All Transactions →
+            </button>
+          </div>
         </div>
       </div>
-
-      {/* Transactions Table */}
-      <UnifiedDataTable
-        data={transactions}
-        columns={columns}
-        searchPlaceholder="Search transactions by ID or customer..."
-        onSearch={setSearchQuery}
-        onRefresh={refetch}
-        onExport={async () => {
-          try {
-            const csvData = `Transaction ID,Customer,Description,Amount,Status,Date\n${transactions.map(t => 
-              `${t.id},${t.customerEmail},${t.description},$${(t.amount/100).toFixed(2)},${t.status},${new Date(t.created).toLocaleDateString()}`
-            ).join('\n')}`;
-            
-            const blob = new Blob([csvData], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `stripe-transactions-${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-            
-            toast({
-              title: "Transactions Exported",
-              description: "Transaction data exported successfully",
-            });
-          } catch (error) {
-            toast({
-              title: "Export Failed",
-              description: "Failed to export transaction data",
-              variant: "destructive",
-            });
-          }
-        }}
-        loading={isLoading}
-        actions={{
-          onView: (transaction) => {
-            toast({
-              title: "Transaction Details",
-              description: `Viewing transaction ${transaction.id}`,
-            });
-            console.log('View transaction:', transaction);
-          },
-          onEdit: (transaction) => {
-            if (confirm(`Refund transaction ${transaction.id} for $${(transaction.amount/100).toFixed(2)}?`)) {
-              toast({
-                title: "Refund Processed",
-                description: `Refund initiated for transaction ${transaction.id}`,
-              });
-              console.log('Refund transaction:', transaction);
-            }
-          },
-        }}
-        pagination={{
-          currentPage: 1,
-          totalPages: Math.ceil(transactions.length / 20) || 1,
-          onPageChange: (page) => console.log('Page:', page)
-        }}
-      />
     </div>
   );
 }

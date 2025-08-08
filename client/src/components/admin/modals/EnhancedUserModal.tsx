@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Loader2, Check, AlertCircle, User, Mail, Lock, MapPin, Shield } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface UserModalProps {
   user?: any;
@@ -13,6 +14,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const { sendMessage } = useWebSocket();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -133,6 +135,17 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
           title: "Success!",
           description: user ? 'User updated successfully' : 'User created successfully',
         });
+        
+        // Broadcast update for live sync
+        sendMessage({
+          type: 'user_update',
+          data: { 
+            userId: user?.id,
+            action: user ? 'update' : 'create',
+            email: formData.email 
+          }
+        });
+        
         onSave();
         onClose();
       } else {
@@ -351,8 +364,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
                     className="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   >
                     <option value="user">User</option>
-                    <option value="developer">Developer</option>
-                    <option value="admin">Admin</option>
+                    <option value="developer">Developer (Full Access)</option>
                   </select>
                 </div>
 

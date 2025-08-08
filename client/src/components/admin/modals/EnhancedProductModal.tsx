@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Upload, Trash2, Loader2, Plus, Check, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface ProductModalProps {
   product?: any;
@@ -14,6 +15,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const { sendMessage } = useWebSocket();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -220,6 +222,18 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
           title: "Success!",
           description: product ? 'Product updated successfully' : 'Product created successfully',
         });
+        
+        // Broadcast update for live sync
+        sendMessage({
+          type: 'product_update',
+          data: { 
+            productId: product?.id,
+            action: product ? 'update' : 'create',
+            name: formData.name,
+            price: formData.price
+          }
+        });
+        
         onSave();
         onClose();
       } else {

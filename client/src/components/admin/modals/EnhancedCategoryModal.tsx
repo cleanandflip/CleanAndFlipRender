@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Upload, Trash2, Loader2, Plus, Check, AlertCircle, Tag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface CategoryModalProps {
   category?: any;
@@ -14,6 +15,7 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const { sendMessage } = useWebSocket();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -164,6 +166,18 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
           title: "Success!",
           description: category ? 'Category updated successfully' : 'Category created successfully',
         });
+        
+        // Broadcast update for live sync
+        sendMessage({
+          type: 'category_update',
+          data: { 
+            categoryId: category?.id,
+            action: category ? 'update' : 'create',
+            name: formData.name,
+            slug: formData.slug
+          }
+        });
+        
         onSave();
         onClose();
       } else {

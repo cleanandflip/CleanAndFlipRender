@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Loader2, Check, AlertCircle, Package, User, Calendar, MapPin, DollarSign, MessageSquare } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface SubmissionModalProps {
   submission?: any;
@@ -13,6 +14,7 @@ export function EnhancedSubmissionModal({ submission, onClose, onSave }: Submiss
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const { sendMessage } = useWebSocket();
   
   const [formData, setFormData] = useState({
     status: 'pending',
@@ -95,6 +97,18 @@ export function EnhancedSubmissionModal({ submission, onClose, onSave }: Submiss
           title: "Success!",
           description: 'Submission updated successfully',
         });
+        
+        // Broadcast update for live sync
+        sendMessage({
+          type: 'submission_update',
+          data: { 
+            submissionId: submission.id,
+            action: 'update',
+            status: formData.status,
+            contactEmail: submission.contactEmail
+          }
+        });
+        
         onSave();
         onClose();
       } else {
