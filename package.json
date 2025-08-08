@@ -103,6 +103,7 @@
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.2",
     "redis": "^5.8.0",
+    "resend": "^6.0.0",
     "socket.io": "^4.8.1",
     "stripe": "^18.4.0",
     "tailwind-merge": "^2.6.0",
