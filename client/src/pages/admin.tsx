@@ -25,7 +25,7 @@ import {
   TrendingUp,
   AlertCircle,
   Heart,
-  Grid3X3,
+  Grid,
   Clipboard
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -500,7 +500,7 @@ function AdminDashboard() {
                 onClick={() => setActiveTab('categories')}
                 className="flex items-center gap-2 h-8 px-3"
               >
-                <Grid3X3 className="w-4 h-4" />
+                <Grid className="w-4 h-4" />
                 Categories
               </Button>
               <Button
