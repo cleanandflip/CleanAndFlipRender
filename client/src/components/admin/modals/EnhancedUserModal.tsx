@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Loader2, Check, AlertCircle, User, Mail, Lock, MapPin, Shield } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface UserModalProps {
   user?: any;
@@ -13,6 +14,7 @@ interface UserModalProps {
 export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const { send } = useWebSocket();
   
@@ -59,6 +61,17 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
     }
   }, [formData, initialData]);
 
+  // Disable Replit's beforeunload when modal is open
+  useEffect(() => {
+    // Override Replit's beforeunload handler
+    const originalBeforeUnload = window.onbeforeunload;
+    window.onbeforeunload = null;
+    
+    return () => {
+      window.onbeforeunload = originalBeforeUnload;
+    };
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
@@ -72,14 +85,25 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
 
   const handleClose = () => {
     if (hasChanges) {
-      if (confirm('You have unsaved changes. Do you want to save them?')) {
-        handleSubmit();
-      } else if (confirm('Are you sure you want to discard your changes?')) {
-        onClose();
-      }
+      setShowConfirm(true);
     } else {
       onClose();
     }
+  };
+
+  const handleSaveAndClose = async () => {
+    setShowConfirm(false);
+    await handleSubmit();
+  };
+
+  const handleDiscardAndClose = () => {
+    setShowConfirm(false);
+    setHasChanges(false);
+    onClose();
+  };
+
+  const handleCancelClose = () => {
+    setShowConfirm(false);
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -437,6 +461,16 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
           </div>
         </form>
       </div>
+
+      {/* Native Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="Unsaved Changes"
+        message="You have unsaved changes. Would you like to save them before closing?"
+        onSave={handleSaveAndClose}
+        onDiscard={handleDiscardAndClose}
+        onCancel={handleCancelClose}
+      />
     </div>
   );
 }

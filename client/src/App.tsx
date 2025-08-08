@@ -12,6 +12,7 @@ import Navigation from "@/components/layout/navigation";
 import Footer from "@/components/layout/footer";
 import CartDrawer from "@/components/cart/cart-drawer";
 import { PageLoader } from "@/components/ui/page-loader";
+import { environment } from "@/lib/environment";
 
 // Import critical pages directly to avoid lazy loading issues with routing
 import Home from "@/pages/home";
@@ -135,6 +136,25 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    // Disable Replit's embed warnings globally
+    environment.disableReplitEmbeds();
+    
+    // Override any Replit beforeunload handlers
+    const originalAddEventListener = window.addEventListener;
+    window.addEventListener = function(type: string, listener: any, options?: any) {
+      if (type === 'beforeunload' && listener?.toString().includes('replit')) {
+        return;
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+
+    // Clean up on unmount
+    return () => {
+      window.onbeforeunload = null;
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
