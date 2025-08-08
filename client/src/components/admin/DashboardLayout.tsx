@@ -3,8 +3,13 @@ import { globalDesignSystem as theme } from '@/styles/design-system/theme';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CleanExportDropdown } from '@/components/ui/CleanExportDropdown';
-import { CleanSelectDropdown } from '@/components/ui/CleanSelectDropdown';
+import { UnifiedDropdown } from '@/components/ui/unified-dropdown';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Search, Filter, RefreshCw, Grid, List, ArrowUpDown } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -81,7 +86,21 @@ export function DashboardLayout({
                 Refresh
               </Button>
               
-              <CleanExportDropdown onExport={onExport} />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 h-8">
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => onExport('csv')}>
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onExport('pdf')}>
+                    Export as PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           
@@ -143,10 +162,11 @@ export function DashboardLayout({
             {sortOptions && onSort && (
               <div className="flex items-center gap-2">
                 <ArrowUpDown className="w-4 h-4 text-text-muted" />
-                <CleanSelectDropdown
-                  options={sortOptions}
+                <UnifiedDropdown
+                  options={sortOptions.map(opt => opt.value)}
+                  value=""
+                  onChange={onSort}
                   placeholder="Sort by..."
-                  onValueChange={onSort}
                   className="w-40"
                 />
               </div>
