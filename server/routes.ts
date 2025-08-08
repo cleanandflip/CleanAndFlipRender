@@ -528,7 +528,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Removed equipment submission routes for single-seller model
+  // Equipment submissions
+  app.get("/api/submissions", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      const submissions = await storage.getSubmissions(userId);
+      res.json(submissions);
+    } catch (error) {
+      Logger.error("Error fetching submissions", error);
+      res.status(500).json({ message: "Failed to fetch submissions" });
+    }
+  });
+
+  app.post("/api/submissions", async (req, res) => {
+    try {
+      const validatedData = insertEquipmentSubmissionSchema.parse(req.body);
+      const submission = await storage.createSubmission(validatedData);
+      res.json(submission);
+    } catch (error) {
+      Logger.error("Error creating submission", error);
+      res.status(500).json({ message: "Failed to create submission" });
+    }
+  });
+
+  app.get("/api/submissions/:id", async (req, res) => {
+    try {
+      const submission = await storage.getSubmission(req.params.id);
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+      res.json(submission);
+    } catch (error) {
+      Logger.error("Error fetching submission", error);
+      res.status(500).json({ message: "Failed to fetch submission" });
+    }
+  });
+
+  app.get("/api/submissions/track/:reference", async (req, res) => {
+    try {
+      const submission = await storage.getSubmissionByReference(req.params.reference);
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+      res.json(submission);
+    } catch (error) {
+      Logger.error("Error tracking submission", error);
+      res.status(500).json({ message: "Failed to track submission" });
+    }
+  });
 
   // Removed all wishlist routes for single-seller model
 

@@ -20,15 +20,18 @@ export const ROUTES = {
   // User routes
   DASHBOARD: '/dashboard',
   ORDERS: '/orders',
-  // Removed WISHLIST, SUBMIT_EQUIPMENT, TRACK_SUBMISSION for single-seller model
+  SUBMIT_EQUIPMENT: '/sell-to-us',
+  TRACK_SUBMISSION: '/track-submission',
+  // Removed WISHLIST for single-seller model
   
   // Admin routes
   ADMIN: '/admin',
   ADMIN_PRODUCTS: '/admin/products',
   ADMIN_CATEGORIES: '/admin/categories',
   ADMIN_USERS: '/admin/users',
+  ADMIN_SUBMISSIONS: '/admin/submissions',
   ADMIN_ANALYTICS: '/admin/analytics',
-  // Removed ADMIN_SUBMISSIONS and ADMIN_WISHLIST for single-seller model
+  // Removed ADMIN_WISHLIST for single-seller model
   ADMIN_SYSTEM: '/admin/system',
   ADMIN_PRODUCT_NEW: '/admin/products/new',
   ADMIN_PRODUCT_EDIT: '/admin/products/edit/:id',
@@ -42,7 +45,7 @@ export const ROUTES = {
 export const routes = {
   productDetail: (id: string) => `/products/${id}`,
   orderDetail: (id: string) => `/orders/${id}`,
-  // Removed submissionDetail helper for single-seller model
+  submissionDetail: (ref: string) => `/track-submission?ref=${ref}`,
   adminProduct: (id: string) => `/admin/products/edit/${id}`,
   adminTab: (tab: string) => `/admin?tab=${tab}`,
 } as const;
@@ -62,6 +65,8 @@ export const routeGroups = {
   authenticated: [
     ROUTES.DASHBOARD, 
     ROUTES.ORDERS, 
+    ROUTES.SUBMIT_EQUIPMENT,
+    ROUTES.TRACK_SUBMISSION,
     ROUTES.CART,
     ROUTES.CHECKOUT
   ],
@@ -70,6 +75,7 @@ export const routeGroups = {
     ROUTES.ADMIN_PRODUCTS,
     ROUTES.ADMIN_CATEGORIES,
     ROUTES.ADMIN_USERS,
+    ROUTES.ADMIN_SUBMISSIONS,
     ROUTES.ADMIN_ANALYTICS,
     ROUTES.ADMIN_SYSTEM,
     ROUTES.ADMIN_PRODUCT_NEW,
