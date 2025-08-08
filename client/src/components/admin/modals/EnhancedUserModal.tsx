@@ -26,9 +26,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
     city: '',
     state: '',
     zipCode: '',
-    role: 'user',
-    isAdmin: false,
-    isLocalCustomer: false
+    role: 'user'
   });
 
   const [initialData, setInitialData] = useState<typeof formData | null>(null);
@@ -45,9 +43,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
         city: user.city || '',
         state: user.state || '',
         zipCode: user.zipCode || '',
-        role: user.role || 'user',
-        isAdmin: user.isAdmin || false,
-        isLocalCustomer: user.isLocalCustomer || false
+        role: user.role || 'user'
       };
       setFormData(data);
       setInitialData(data);
@@ -197,7 +193,6 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto bg-[#0f172a]/50">
           <div className="p-6 space-y-8">
-            
             {/* Account Information */}
             <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -346,53 +341,31 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
               </div>
             </div>
 
-            {/* Permissions */}
+            {/* User Role */}
             <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <Shield className="w-5 h-5 text-blue-400" />
-                Permissions & Role
+                User Role
               </h3>
               
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    User Role
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  >
-                    <option value="user">User</option>
-                    <option value="developer">Developer (Full Access)</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={formData.isAdmin}
-                      onChange={(e) => setFormData({ ...formData, isAdmin: e.target.checked })}
-                      className="w-4 h-4 rounded border-gray-700 bg-transparent text-blue-500 focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-400 group-hover:text-white transition-colors">
-                      Admin Access
-                    </span>
-                  </label>
-                  
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={formData.isLocalCustomer}
-                      onChange={(e) => setFormData({ ...formData, isLocalCustomer: e.target.checked })}
-                      className="w-4 h-4 rounded border-gray-700 bg-transparent text-blue-500 focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-400 group-hover:text-white transition-colors">
-                      Local Customer
-                    </span>
-                  </label>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Role Level
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                >
+                  <option value="user">User</option>
+                  <option value="developer">Developer</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-2">
+                  {formData.role === 'developer' 
+                    ? 'Full access to admin dashboard and system management' 
+                    : 'Standard user access for shopping and account management'
+                  }
+                </p>
               </div>
             </div>
           </div>
