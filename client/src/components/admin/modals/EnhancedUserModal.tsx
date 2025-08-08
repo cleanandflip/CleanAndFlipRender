@@ -352,20 +352,46 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
                 <label className="block text-sm font-medium text-gray-400 mb-2">
                   Role Level
                 </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                >
-                  <option value="user">User</option>
-                  <option value="developer">Developer</option>
-                </select>
-                <p className="text-xs text-gray-500 mt-2">
-                  {formData.role === 'developer' 
-                    ? 'Full access to admin dashboard and system management' 
-                    : 'Standard user access for shopping and account management'
-                  }
-                </p>
+                <div className="relative">
+                  <select
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#0f172a] border border-gray-700/50 rounded-lg text-white 
+                             focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 
+                             hover:border-gray-600/70 hover:bg-[#1e293b]/30
+                             transition-all duration-300 ease-out
+                             appearance-none cursor-pointer
+                             shadow-sm hover:shadow-md"
+                  >
+                    <option value="user" className="bg-[#0f172a] text-white py-2 hover:bg-blue-500/20">
+                      User
+                    </option>
+                    <option value="developer" className="bg-[#0f172a] text-white py-2 hover:bg-blue-500/20">
+                      Developer
+                    </option>
+                  </select>
+                  
+                  {/* Enhanced Dropdown Arrow */}
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="mt-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-2 h-2 rounded-full ${formData.role === 'developer' ? 'bg-blue-400' : 'bg-green-400'} animate-pulse`}></div>
+                    <span className="text-xs font-medium text-gray-300">
+                      {formData.role === 'developer' ? 'Developer Access' : 'Standard User'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    {formData.role === 'developer' 
+                      ? 'Full access to admin dashboard, system management, user controls, and all platform features' 
+                      : 'Standard user access for shopping, account management, and basic platform features'
+                    }
+                  </p>
+                </div>
               </div>
             </div>
           </div>
