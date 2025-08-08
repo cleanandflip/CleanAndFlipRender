@@ -2977,7 +2977,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const coupon = await db.select().from(coupons)
         .where(and(
           eq(coupons.code, code.toUpperCase()),
-          eq(coupons.isActive, true)
+          eq(coupons.active, true)
         ))
         .limit(1);
       
@@ -2993,30 +2993,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check usage limit  
-      if (couponData.usageCount >= (couponData.usageLimit || 999999)) {
+      if (couponData.used_count >= (couponData.max_uses || 999999)) {
         return res.status(400).json({ error: "Coupon usage limit reached" });
       }
       
       // Check minimum purchase
-      if (couponData.minOrderAmount && cartTotal < Number(couponData.minOrderAmount)) {
+      if (couponData.min_purchase && cartTotal < Number(couponData.min_purchase)) {
         return res.status(400).json({ 
-          error: `Minimum purchase of $${couponData.minOrderAmount} required` 
+          error: `Minimum purchase of $${couponData.min_purchase} required` 
         });
       }
       
       // Calculate discount
       let discount = 0;
-      if (couponData.discountType === 'percentage') {
-        discount = (cartTotal * Number(couponData.discountValue)) / 100;
-      } else if (couponData.discountType === 'fixed') {
-        discount = Number(couponData.discountValue);
+      if (couponData.discount_percent) {
+        discount = (cartTotal * Number(couponData.discount_percent)) / 100;
+      } else if (couponData.discount_amount) {
+        discount = Number(couponData.discount_amount);
       }
       
       res.json({
         valid: true,
         discount,
         code: couponData.code,
-        type: couponData.discountType
+        type: couponData.discount_percent ? 'percentage' : 'fixed'
       });
     } catch (error) {
       Logger.error("Error validating coupon", error);
