@@ -42,6 +42,27 @@ import { healthLive, healthReady } from "./config/health";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
 import { db } from "./db";
+
+// WebSocket Manager for broadcasting updates
+let wsManager: any = null;
+
+export function setWebSocketManager(manager: any) {
+  wsManager = manager;
+}
+
+// Helper function to broadcast cart updates
+function broadcastCartUpdate(userId: string, action: string = 'update', data?: any) {
+  if (wsManager && wsManager.broadcast) {
+    wsManager.broadcast({
+      type: 'cart_update',
+      userId,
+      action,
+      data,
+      timestamp: new Date().toISOString()
+    });
+    Logger.debug(`[WS] Cart update broadcasted: ${action} for user ${userId}`);
+  }
+}
 import { 
   users, 
   products, 
@@ -2875,9 +2896,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Initialize enhanced WebSocket support for live sync
-  const { setupWebSocket } = await import('./websocket');
+  const { setupWebSocket, wsManager } = await import('./websocket');
   setupWebSocket(httpServer);
-  Logger.info('[WS] Enhanced WebSocket server initialized for live sync');
+  setWebSocketManager(wsManager); // Connect WebSocket manager to routes
+  Logger.info('[WS] Enhanced WebSocket server initialized for live sync and connected to routes');
   
   // Register graceful shutdown handlers
   registerGracefulShutdown(httpServer);
