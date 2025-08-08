@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { 
   Package, Grid, FolderOpen, BarChart3, Heart, 
-  Users, Settings, CreditCard, ChevronRight 
+  Users, Settings, CreditCard, ChevronRight, Wifi, WifiOff 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -26,14 +27,34 @@ const ADMIN_TABS = [
 export function AdminLayout({ children, currentTab }: AdminLayoutProps) {
   const [location, navigate] = useLocation();
   const activeTab = currentTab || location.split('/').pop() || 'products';
+  const { isConnected, status } = useWebSocket();
 
   return (
     <div className="min-h-screen bg-[#0f172a]">
       {/* Header */}
       <div className="border-b border-gray-800 bg-[#1e293b]/50 backdrop-blur">
         <div className="container mx-auto px-6 py-8">
-          <h1 className="text-3xl font-bold text-white mb-2">DEVELOPER DASHBOARD</h1>
-          <p className="text-gray-400">Manage your Clean & Flip marketplace</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">DEVELOPER DASHBOARD</h1>
+              <p className="text-gray-400">Manage your Clean & Flip marketplace</p>
+            </div>
+            
+            {/* Live Sync Status */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/50">
+              {isConnected ? (
+                <Wifi className="w-4 h-4 text-green-500" />
+              ) : (
+                <WifiOff className="w-4 h-4 text-red-500" />
+              )}
+              <span className={cn(
+                "text-xs font-medium",
+                isConnected ? "text-green-400" : "text-red-400"
+              )}>
+                {isConnected ? "Live Sync Active" : "Offline"}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

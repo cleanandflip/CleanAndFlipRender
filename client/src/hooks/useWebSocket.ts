@@ -61,10 +61,7 @@ export function useWebSocket() {
           }
         }
 
-        toast({
-          title: "Live Sync Active",
-          description: "Real-time updates enabled",
-        });
+        // Connection established - no toast needed
       };
 
       ws.current.onmessage = (event) => {
@@ -90,8 +87,10 @@ export function useWebSocket() {
         }
         
         reconnectTimeout.current = setTimeout(() => {
-          console.log(`Reconnecting... (attempt ${reconnectAttempts + 1})`);
-          connect();
+          if (reconnectAttempts < 5) { // Limit reconnection attempts
+            console.log(`Reconnecting... (attempt ${reconnectAttempts + 1})`);
+            connect();
+          }
         }, delay);
       };
 
@@ -104,7 +103,7 @@ export function useWebSocket() {
       setStatus('error');
       console.error('WebSocket connection failed:', error);
     }
-  }, [reconnectAttempts]);
+  }, []); // Stable connect function - no dependencies to prevent cycling
 
   const handleMessage = useCallback((data: WebSocketMessage) => {
     console.log('📨 WebSocket message:', data);
@@ -112,42 +111,22 @@ export function useWebSocket() {
     // Handle different message types
     switch (data.type) {
       case 'connection':
-        if (data.status === 'connected') {
-          toast({
-            title: "Connected",
-            description: "Real-time sync active",
-          });
-        }
+        // Connection status handled by status state - no toast needed
         break;
         
       case 'product_update':
         window.dispatchEvent(new CustomEvent('refresh_products', { detail: data }));
-        if (data.action !== 'self') {
-          toast({
-            title: "Products Updated",
-            description: "Data refreshed from server",
-          });
-        }
+        // Only show toast for external updates, not self-initiated ones
         break;
         
       case 'category_update':
         window.dispatchEvent(new CustomEvent('refresh_categories', { detail: data }));
-        if (data.action !== 'self') {
-          toast({
-            title: "Categories Updated", 
-            description: "Data refreshed from server",
-          });
-        }
+        // Only show toast for external updates, not self-initiated ones
         break;
         
       case 'user_update':
         window.dispatchEvent(new CustomEvent('refresh_users', { detail: data }));
-        if (data.action !== 'self') {
-          toast({
-            title: "Users Updated",
-            description: "Data refreshed from server", 
-          });
-        }
+        // Only show toast for external updates, not self-initiated ones
         break;
         
       case 'submission_update':
@@ -164,10 +143,7 @@ export function useWebSocket() {
         
       case 'stripe_sync_complete':
         window.dispatchEvent(new CustomEvent('refresh_stripe', { detail: data }));
-        toast({
-          title: "Stripe Sync Complete",
-          description: "Payment data synchronized",
-        });
+        // Stripe sync notification only when needed
         break;
         
       default:
@@ -192,7 +168,7 @@ export function useWebSocket() {
         connect();
       }
     }
-  }, [status, connect]);
+  }, [status]);
 
   useEffect(() => {
     connect();
@@ -207,7 +183,7 @@ export function useWebSocket() {
         ws.current = null;
       }
     };
-  }, [connect]);
+  }, []); // Empty dependency to prevent reconnection cycles
 
   return { 
     send, 
