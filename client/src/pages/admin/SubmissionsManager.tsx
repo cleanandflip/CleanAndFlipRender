@@ -7,9 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import {  div, div, StandardDropdown, div } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { StandardDropdown } from '@/components/ui';
+// Removed legacy popover imports - using unified dropdown system
+// Removed legacy calendar import - using unified system
 import { 
   Search, Filter, Download, Archive, CheckCircle, XCircle, Clock, 
   Eye, Calendar as CalendarIcon, DollarSign, MapPin, Phone, Mail,
@@ -406,48 +406,42 @@ export function SubmissionsManager() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Select
+            <StandardDropdown
+              options={[
+                { value: 'all', label: 'All Statuses' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'under_review', label: 'Under Review' },
+                { value: 'accepted', label: 'Accepted' },
+                { value: 'rejected', label: 'Rejected' },
+                { value: 'cancelled', label: 'Cancelled' },
+                { value: 'completed', label: 'Completed' }
+              ]}
               value={filters.status}
-              onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
-            >
-              <StandardDropdown className="glass border-border">
-                <div placeholder="All Statuses" />
-              </StandardDropdown>
-              <div className="glass border-border">
-                <div value="all">All Statuses</div>
-                <div value="pending">Pending</div>
-                <div value="under_review">Under Review</div>
-                <div value="accepted">Accepted</div>
-                <div value="rejected">Rejected</div>
-                <div value="cancelled">Cancelled</div>
-                <div value="completed">Completed</div>
-              </div>
-            </Select>
+              onChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
+              placeholder="All Statuses"
+              className="glass border-border"
+            />
             
-            <Select
+            <StandardDropdown
+              options={[
+                { value: 'all', label: 'All Locations' },
+                { value: 'true', label: 'Local (Asheville)' },
+                { value: 'false', label: 'Remote' }
+              ]}
               value={filters.isLocal === null ? 'all' : filters.isLocal.toString()}
-              onValueChange={(v) => setFilters({ 
+              onChange={(v) => setFilters({ 
                 ...filters, 
                 isLocal: v === 'all' ? null : v === 'true',
                 page: 1 
               })}
-            >
-              <StandardDropdown className="glass border-border">
-                <div placeholder="All Locations" />
-              </StandardDropdown>
-              <div className="glass border-border">
-                <div value="all">All Locations</div>
-                <div value="true">Local (Asheville)</div>
-                <div value="false">Remote</div>
-              </div>
-            </Select>
+              placeholder="All Locations"
+              className="glass border-border"
+            />
             
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="glass border-border justify-start">
-                  <CalendarIcon className="w-4 h-4 mr-2" />
-                  {filters.dateRange.from ? (
-                    filters.dateRange.to ? (
+            <Button variant="outline" className="glass border-border justify-start">
+              <CalendarIcon className="w-4 h-4 mr-2" />
+              {filters.dateRange.from ? (
+                filters.dateRange.to ? (
                       `${filters.dateRange.from.toLocaleDateString()} - ${filters.dateRange.to.toLocaleDateString()}`
                     ) : (
                       filters.dateRange.from.toLocaleDateString()
@@ -455,16 +449,7 @@ export function SubmissionsManager() {
                   ) : (
                     'Date Range'
                   )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 glass border-border">
-                <Calendar
-                  mode="range"
-                  selected={filters.dateRange as any}
-                  onSelect={(range) => setFilters({ ...filters, dateRange: (range as any) || { from: null, to: null } })}
-                />
-              </PopoverContent>
-            </Popover>
+            </Button>
             
             <Button 
               variant="outline" 

@@ -4,15 +4,9 @@ import { DashboardLayout } from '@/components/admin/DashboardLayout';
 import { MetricCard } from '@/components/admin/MetricCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  
-  div,
-  div,
-  StandardDropdown,
-  div
-} from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { StandardDropdown } from '@/components/ui';
+// Removed legacy calendar import - using unified system
+// Removed legacy popover imports - using unified dropdown system
 import { 
   DollarSign, 
   ShoppingCart, 
@@ -128,7 +122,7 @@ export function AnalyticsManager() {
       isLoading={isLoading}
       filters={
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Popover>
+          <div>
             <PopoverTrigger asChild>
               <div className="glass glass-hover rounded-lg p-1">
                 <Button variant="ghost" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
@@ -165,34 +159,32 @@ export function AnalyticsManager() {
                     setDateRange(range as any);
                   }
                 }}
-              />
-            </PopoverContent>
-          </Popover>
-          
-          <Select value={metric} onValueChange={setMetric}>
-            <StandardDropdown>
-              <div />
-            </StandardDropdown>
-            <div>
-              <div value="revenue">Revenue</div>
-              <div value="orders">Orders</div>
-              <div value="users">New Users</div>
-              <div value="conversion">Conversion Rate</div>
-              <div value="submissions">Submissions</div>
             </div>
-          </Select>
           
-          <Select value={groupBy} onValueChange={setGroupBy}>
-            <StandardDropdown>
-              <div />
-            </StandardDropdown>
-            <div>
-              <div value="hour">Hourly</div>
-              <div value="day">Daily</div>
-              <div value="week">Weekly</div>
-              <div value="month">Monthly</div>
-            </div>
-          </Select>
+          <StandardDropdown
+            options={[
+              { value: 'revenue', label: 'Revenue' },
+              { value: 'orders', label: 'Orders' },
+              { value: 'users', label: 'New Users' },
+              { value: 'conversion', label: 'Conversion Rate' },
+              { value: 'submissions', label: 'Submissions' }
+            ]}
+            value={metric}
+            onChange={setMetric}
+            className="glass border-border"
+          />
+          
+          <StandardDropdown
+            options={[
+              { value: 'hour', label: 'Hourly' },
+              { value: 'day', label: 'Daily' },
+              { value: 'week', label: 'Weekly' },
+              { value: 'month', label: 'Monthly' }
+            ]}
+            value={groupBy}
+            onChange={setGroupBy}
+            className="glass border-border"
+          />
           
           <div className="glass glass-hover rounded-lg p-1">
             <Button variant="ghost" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">

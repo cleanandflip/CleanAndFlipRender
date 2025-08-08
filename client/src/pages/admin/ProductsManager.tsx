@@ -5,12 +5,8 @@ import { Pagination } from '@/components/admin/Pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  
-  div,
-  div,
-  StandardDropdown,
-  div
-} from '@/components/ui/select';
+  StandardDropdown
+} from '@/components/ui';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProductModal } from '@/components/admin/ProductModal';
@@ -272,37 +268,33 @@ export function ProductsManager() {
       }}
       filters={
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Select
+          <StandardDropdown
+            options={[
+              { value: 'all', label: 'All Categories' },
+              { value: 'barbells', label: 'Barbells' },
+              { value: 'plates', label: 'Plates' },
+              { value: 'dumbbells', label: 'Dumbbells' },
+              { value: 'racks', label: 'Racks & Storage' },
+              { value: 'cardio', label: 'Cardio Equipment' }
+            ]}
             value={filters.category}
-            onValueChange={(v) => setFilters({ ...filters, category: v, page: 1 })}
-          >
-            <StandardDropdown className="glass border-border">
-              <div placeholder="All Categories" />
-            </StandardDropdown>
-            <div className="glass border-border">
-              <div value="all">All Categories</div>
-              <div value="barbells">Barbells</div>
-              <div value="plates">Plates</div>
-              <div value="dumbbells">Dumbbells</div>
-              <div value="racks">Racks & Storage</div>
-              <div value="cardio">Cardio Equipment</div>
-            </div>
-          </Select>
+            onChange={(v) => setFilters({ ...filters, category: Array.isArray(v) ? v[0] : v, page: 1 })}
+            placeholder="All Categories"
+            className="glass border-border"
+          />
           
-          <Select
+          <StandardDropdown
+            options={[
+              { value: 'all', label: 'All Statuses' },
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+              { value: 'out-of-stock', label: 'Out of Stock' }
+            ]}
             value={filters.status}
-            onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
-          >
-            <StandardDropdown className="glass border-border">
-              <div placeholder="All Statuses" />
-            </StandardDropdown>
-            <div className="glass border-border">
-              <div value="all">All Statuses</div>
-              <div value="active">Active</div>
-              <div value="inactive">Inactive</div>
-              <div value="out-of-stock">Out of Stock</div>
-            </div>
-          </Select>
+            onChange={(v) => setFilters({ ...filters, status: Array.isArray(v) ? v[0] : v, page: 1 })}
+            placeholder="All Statuses"
+            className="glass border-border"
+          />
           
           <div className="flex gap-2">
             <Input
