@@ -14,7 +14,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { sendMessage } = useWebSocket();
+  const { send } = useWebSocket();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -133,7 +133,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
         });
         
         // Broadcast update for live sync
-        sendMessage({
+        send({
           type: 'user_update',
           data: { 
             userId: user?.id,
