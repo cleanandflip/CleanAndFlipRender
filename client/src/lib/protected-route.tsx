@@ -5,10 +5,10 @@ import { useEffect } from "react";
 
 export function ProtectedRoute({
   children,
-  requireAdmin = false,
+  requireDeveloper = false,
 }: {
   children: React.ReactNode;
-  requireAdmin?: boolean;
+  requireDeveloper?: boolean;
 }) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
@@ -31,7 +31,7 @@ export function ProtectedRoute({
     return null; // Will redirect to auth
   }
 
-  if (requireAdmin && user.role !== 'developer') {
+  if (requireDeveloper && user.role !== 'developer') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

@@ -1,4 +1,4 @@
-// COMPLETE WEBSOCKET HOOK WITH CONNECTION STATUS AND LIVE SYNC
+// COMPLETE FIXED WEBSOCKET HOOK - NO SYNTAX ERRORS
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 
@@ -6,9 +6,9 @@ type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
 interface WebSocketMessage {
   type: string;
-  data?: any;
-  timestamp: string;
-  sourceClient?: string;
+  action?: string;
+  timestamp?: string;
+  [key: string]: any;
 }
 
 export function useWebSocket() {
@@ -16,7 +16,7 @@ export function useWebSocket() {
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const reconnectTimeout = useRef<NodeJS.Timeout>();
-  const messageQueue = useRef<any[]>([]);
+  const messageQueue = useRef<WebSocketMessage[]>([]);
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
 
   const connect = useCallback(() => {
@@ -34,31 +34,33 @@ export function useWebSocket() {
       ws.current.onopen = () => {
         setStatus('connected');
         setReconnectAttempts(0);
-        console.log('✅ WebSocket connected successfully');
+        console.log('✅ WebSocket connected');
         
-        // Send authentication if user is logged in
+        // Send authentication
         const userStr = localStorage.getItem('user');
         if (userStr) {
           try {
             const user = JSON.parse(userStr);
-            if (user.id) {
+            if (user?.id) {
               ws.current?.send(JSON.stringify({
                 type: 'auth',
                 userId: user.id,
-                role: user.role || 'user'
+                role: user.role
               }));
             }
           } catch (e) {
-            console.log('No valid user data for auth');
+            console.error('Failed to parse user data:', e);
           }
         }
         
         // Send queued messages
         while (messageQueue.current.length > 0) {
           const msg = messageQueue.current.shift();
-          ws.current?.send(JSON.stringify(msg));
+          if (msg) {
+            ws.current?.send(JSON.stringify(msg));
+          }
         }
-        
+
         toast({
           title: "Live Sync Active",
           description: "Real-time updates enabled",
@@ -67,7 +69,7 @@ export function useWebSocket() {
 
       ws.current.onmessage = (event) => {
         try {
-          const data: WebSocketMessage = JSON.parse(event.data);
+          const data = JSON.parse(event.data);
           setLastMessage(data);
           handleMessage(data);
         } catch (error) {
@@ -77,78 +79,79 @@ export function useWebSocket() {
 
       ws.current.onclose = (event) => {
         setStatus('disconnected');
-        console.log(`❌ WebSocket disconnected: ${event.code} - ${event.reason}`);
+        console.log('❌ WebSocket disconnected:', event.code, event.reason);
         
-        // Auto-reconnect with exponential backoff (max 30 seconds)
+        // Auto-reconnect with exponential backoff
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
         setReconnectAttempts(prev => prev + 1);
         
+        if (reconnectTimeout.current) {
+          clearTimeout(reconnectTimeout.current);
+        }
+        
         reconnectTimeout.current = setTimeout(() => {
-          console.log(`🔄 Reconnecting... (attempt ${reconnectAttempts + 1})`);
+          console.log(`Reconnecting... (attempt ${reconnectAttempts + 1})`);
           connect();
         }, delay);
       };
 
       ws.current.onerror = (error) => {
         setStatus('error');
-        console.error('❌ WebSocket error:', error);
+        console.error('WebSocket error:', error);
       };
       
     } catch (error) {
       setStatus('error');
-      console.error('❌ WebSocket connection failed:', error);
+      console.error('WebSocket connection failed:', error);
     }
   }, [reconnectAttempts]);
 
-  const handleMessage = (data: WebSocketMessage) => {
-    console.log('📨 WebSocket message:', data.type, data);
+  const handleMessage = useCallback((data: WebSocketMessage) => {
+    console.log('📨 WebSocket message:', data);
     
-    // Dispatch custom events for different update types
+    // Handle different message types
     switch (data.type) {
       case 'connection':
         if (data.status === 'connected') {
-          console.log('🔗 Connection confirmed');
+          toast({
+            title: "Connected",
+            description: "Real-time sync active",
+          });
         }
         break;
         
       case 'product_update':
         window.dispatchEvent(new CustomEvent('refresh_products', { detail: data }));
-        if (data.sourceClient) {
+        if (data.action !== 'self') {
           toast({
             title: "Products Updated",
-            description: "Product data synchronized",
+            description: "Data refreshed from server",
           });
         }
         break;
         
       case 'category_update':
         window.dispatchEvent(new CustomEvent('refresh_categories', { detail: data }));
-        if (data.sourceClient) {
+        if (data.action !== 'self') {
           toast({
             title: "Categories Updated", 
-            description: "Category data synchronized",
+            description: "Data refreshed from server",
           });
         }
         break;
         
       case 'user_update':
         window.dispatchEvent(new CustomEvent('refresh_users', { detail: data }));
-        if (data.sourceClient) {
+        if (data.action !== 'self') {
           toast({
             title: "Users Updated",
-            description: "User data synchronized",
+            description: "Data refreshed from server", 
           });
         }
         break;
         
       case 'submission_update':
         window.dispatchEvent(new CustomEvent('refresh_submissions', { detail: data }));
-        if (data.sourceClient) {
-          toast({
-            title: "Submissions Updated",
-            description: "Submission data synchronized",
-          });
-        }
         break;
         
       case 'wishlist_update':
@@ -170,18 +173,19 @@ export function useWebSocket() {
       default:
         console.log('Unknown message type:', data.type);
     }
-  };
+  }, []);
 
-  const send = useCallback((data: any) => {
-    const message = typeof data === 'string' ? data : JSON.stringify(data);
+  const send = useCallback((data: WebSocketMessage) => {
+    const message = {
+      ...data,
+      timestamp: new Date().toISOString()
+    };
     
     if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(message);
-      console.log('📤 Sent message:', data.type || 'unknown');
+      ws.current.send(JSON.stringify(message));
     } else {
       // Queue message if not connected
-      console.log('📋 Queuing message (not connected):', data.type);
-      messageQueue.current.push(data);
+      messageQueue.current.push(message);
       
       // Try to reconnect if disconnected
       if (status === 'disconnected') {
@@ -200,6 +204,7 @@ export function useWebSocket() {
       }
       if (ws.current) {
         ws.current.close();
+        ws.current = null;
       }
     };
   }, [connect]);
@@ -210,26 +215,5 @@ export function useWebSocket() {
     isConnected: status === 'connected',
     reconnectAttempts,
     lastMessage
-  };
-}
-      }
-    };
-  }, []);
-
-  const sendMessage = (message: Omit<WebSocketMessage, 'timestamp'>) => {
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      const fullMessage: WebSocketMessage = {
-        ...message,
-        timestamp: new Date().toISOString()
-      };
-      ws.current.send(JSON.stringify(fullMessage));
-    }
-  };
-
-  return {
-    isConnected,
-    lastMessage,
-    sendMessage,
-    ws: ws.current
   };
 }
