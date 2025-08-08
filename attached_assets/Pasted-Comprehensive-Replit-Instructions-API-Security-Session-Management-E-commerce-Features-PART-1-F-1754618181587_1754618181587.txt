@@ -1,0 +1,281 @@
+Comprehensive Replit Instructions: API Security, Session Management & E-commerce Features
+
+PART 1: FIX SESSION & AUTHENTICATION FLOW
+File: /server/middleware/auth.ts - Create centralized auth middleware:
+typescriptimport { Request, Response, NextFunction } from 'express';
+
+export const authMiddleware = {
+  // Check if user is logged in
+  requireAuth: (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    next();
+  },
+  
+  // Check if user is admin
+  requireAdmin: (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session?.userId || req.session?.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+  },
+  
+  // Optional auth (guest checkout)
+  optionalAuth: (req: Request, res: Response, next: NextFunction) => {
+    // Attach user if exists, continue regardless
+    req.userId = req.session?.userId || `guest-${req.sessionID}`;
+    next();
+  }
+};
+File: /server/routes.ts - Apply middleware properly:
+typescript// Import middleware
+import { authMiddleware } from './middleware/auth';
+
+// Public routes (no auth needed)
+app.get('/api/products', ...);
+app.get('/api/categories', ...);
+
+// Protected routes (auth required)
+app.get('/api/user', authMiddleware.requireAuth, ...);
+app.get('/api/cart', authMiddleware.optionalAuth, ...); // Allow guest cart
+app.get('/api/orders', authMiddleware.requireAuth, ...);
+app.get('/api/wishlist', authMiddleware.requireAuth, ...);
+
+// Admin routes
+app.use('/api/admin/*', authMiddleware.requireAdmin);
+
+PART 2: OPTIMIZE DATABASE QUERIES
+File: /server/storage.ts - Add query optimization:
+typescript// Add caching layer for frequent queries
+class StorageWithCache extends DatabaseStorage {
+  private cache = new Map<string, { data: any, expires: number }>();
+  
+  async getCachedQuery(key: string, query: () => Promise<any>, ttl = 60000) {
+    const cached = this.cache.get(key);
+    if (cached && cached.expires > Date.now()) {
+      return cached.data;
+    }
+    
+    const data = await query();
+    this.cache.set(key, { data, expires: Date.now() + ttl });
+    return data;
+  }
+  
+  // Optimize product queries with single join
+  async getProductsOptimized(filters?: any) {
+    return this.getCachedQuery(`products:${JSON.stringify(filters)}`, async () => {
+      return db.select({
+        product: products,
+        category: categories,
+        wishlistCount: sql<number>`COUNT(DISTINCT w.user_id)`.as('wishlist_count')
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .leftJoin(wishlist, eq(products.id, wishlist.productId))
+      .where(filters ? buildWhereClause(filters) : undefined)
+      .groupBy(products.id, categories.id);
+    });
+  }
+}
+
+PART 3: PREVENT DUPLICATES
+File: /db/schema.ts - Add unique constraints:
+sql-- Add to your schema
+CREATE UNIQUE INDEX idx_cart_user_product ON cart_items(user_id, product_id);
+CREATE UNIQUE INDEX idx_wishlist_user_product ON wishlist(user_id, product_id);
+CREATE UNIQUE INDEX idx_user_email ON users(LOWER(email));
+CREATE UNIQUE INDEX idx_product_slug ON products(slug);
+File: /server/routes.ts - Add duplicate prevention:
+typescript// Prevent duplicate cart items
+app.post('/api/cart', async (req, res) => {
+  const { productId, quantity } = req.body;
+  const userId = req.userId;
+  
+  // Upsert instead of insert
+  await db.insert(cartItems)
+    .values({ userId, productId, quantity })
+    .onConflictDoUpdate({
+      target: [cartItems.userId, cartItems.productId],
+      set: { 
+        quantity: sql`${cartItems.quantity} + ${quantity}`,
+        updatedAt: new Date()
+      }
+    });
+});
+
+PART 4: ESSENTIAL E-COMMERCE FEATURES TO ADD
+typescript// 1. PRODUCT REVIEWS & RATINGS
+CREATE TABLE reviews (
+  id SERIAL PRIMARY KEY,
+  product_id INT REFERENCES products(id),
+  user_id TEXT,
+  rating INT CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  verified_purchase BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+// 2. DISCOUNT CODES & COUPONS
+CREATE TABLE coupons (
+  id SERIAL PRIMARY KEY,
+  code TEXT UNIQUE NOT NULL,
+  discount_percent INT,
+  discount_amount DECIMAL(10,2),
+  min_purchase DECIMAL(10,2),
+  max_uses INT DEFAULT 1,
+  used_count INT DEFAULT 0,
+  expires_at TIMESTAMP,
+  active BOOLEAN DEFAULT true
+);
+
+// 3. INVENTORY TRACKING
+ALTER TABLE products ADD COLUMN stock_quantity INT DEFAULT 0;
+ALTER TABLE products ADD COLUMN low_stock_threshold INT DEFAULT 5;
+ALTER TABLE products ADD COLUMN track_inventory BOOLEAN DEFAULT true;
+
+// 4. ABANDONED CART RECOVERY
+CREATE TABLE abandoned_carts (
+  id SERIAL PRIMARY KEY,
+  session_id TEXT,
+  email TEXT,
+  cart_data JSONB,
+  recovery_sent BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+// 5. PRODUCT VARIANTS (Size, Color)
+CREATE TABLE product_variants (
+  id SERIAL PRIMARY KEY,
+  product_id INT REFERENCES products(id),
+  sku TEXT UNIQUE,
+  size TEXT,
+  color TEXT,
+  price DECIMAL(10,2),
+  stock INT DEFAULT 0,
+  image_url TEXT
+);
+
+// 6. SHIPPING ZONES & RATES
+CREATE TABLE shipping_zones (
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  zip_codes TEXT[],
+  flat_rate DECIMAL(10,2),
+  free_threshold DECIMAL(10,2)
+);
+
+// 7. EMAIL NOTIFICATIONS
+CREATE TABLE email_queue (
+  id SERIAL PRIMARY KEY,
+  to_email TEXT,
+  template TEXT,
+  data JSONB,
+  status TEXT DEFAULT 'pending',
+  sent_at TIMESTAMP
+);
+
+// 8. SAVED SEARCH ALERTS
+CREATE TABLE search_alerts (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT,
+  query TEXT,
+  filters JSONB,
+  frequency TEXT DEFAULT 'daily',
+  last_sent TIMESTAMP
+);
+
+// 9. PRODUCT QUESTIONS & ANSWERS
+CREATE TABLE product_qa (
+  id SERIAL PRIMARY KEY,
+  product_id INT,
+  user_id TEXT,
+  question TEXT,
+  answer TEXT,
+  answered_by TEXT,
+  helpful_count INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+// 10. REFERRAL SYSTEM
+CREATE TABLE referrals (
+  id SERIAL PRIMARY KEY,
+  referrer_id TEXT,
+  referred_email TEXT,
+  referral_code TEXT UNIQUE,
+  status TEXT DEFAULT 'pending',
+  reward_amount DECIMAL(10,2),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+PART 5: API ENDPOINT CHECKLIST
+typescript// Core E-commerce APIs to implement:
+POST   /api/reviews                     // Add product review
+GET    /api/reviews/:productId          // Get product reviews
+POST   /api/coupons/validate            // Validate discount code
+POST   /api/inventory/check             // Check stock availability
+POST   /api/cart/save                   // Save cart for later
+GET    /api/shipping/calculate          // Calculate shipping cost
+POST   /api/email/subscribe             // Newsletter signup
+GET    /api/recommendations             // Product recommendations
+POST   /api/qa/ask                      // Ask product question
+GET    /api/referral/:code               // Track referral
+POST   /api/waitlist                    // Join product waitlist
+GET    /api/recently-viewed             // Recently viewed products
+POST   /api/compare                     // Compare products
+GET    /api/deals                       // Daily/weekly deals
+POST   /api/gift-cards                  // Purchase gift card
+
+PART 6: SESSION COOKIE FIX
+File: /server/index.ts - Fix session configuration:
+typescriptapp.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  store: new PostgreSQLStore({
+    conString: process.env.DATABASE_URL,
+    tableName: 'sessions'
+  }),
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    sameSite: 'lax'
+  },
+  name: 'cleanflip.sid' // Custom session name
+}));
+
+// Add session debugging
+app.use((req, res, next) => {
+  console.log('Session:', req.session?.userId ? 'Authenticated' : 'Guest');
+  next();
+});
+
+IMMEDIATE ACTIONS FOR REPLIT:
+
+Run these SQL commands first to add missing features:
+
+sql-- Fix current issues
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
+UPDATE users SET role = 'admin' WHERE email = 'admin@cleanflip.com';
+
+-- Add essential indexes
+CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured);
+CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
+
+Test authentication flow:
+
+bash# Test login
+curl -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@cleanflip.com","password":"admin123"}' \
+  -c cookies.txt
+
+# Test authenticated request
+curl http://localhost:5000/api/user -b cookies.txt
+
+Restart server with verbose logging:
+
+bashDEBUG=express-session npm run dev
+Expected Result: Full authentication working, optimized queries, no duplicates, and foundation for complete e-commerce platform.

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
+import { authMiddleware } from "./middleware/auth";
 // import { upload, cloudinary } from "./config/cloudinary"; // Temporarily disabled for clean slate setup
 import multer from 'multer';
 import cors from "cors";
@@ -311,8 +312,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cart operations - Always fetch fresh product data
-  app.get("/api/cart", requireAuth, async (req, res) => {
+  // Cart operations - Allow guest cart with optional auth
+  app.get("/api/cart", authMiddleware.optionalAuth, async (req, res) => {
     try {
       // SECURITY FIX: Only use authenticated userId from middleware
       const userId = req.userId; // Set by requireAuth middleware
@@ -340,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/cart", requireAuth, async (req, res) => {
+  app.post("/api/cart", authMiddleware.optionalAuth, async (req, res) => {
     try {
       const { productId, quantity = 1 } = req.body;
       // SECURITY FIX: Only use authenticated userId from middleware
@@ -1021,7 +1022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced admin users endpoint with filtering and stats
-  app.get("/api/admin/users", adminLimiter, requireAdmin, async (req, res) => {
+  app.get("/api/admin/users", adminLimiter, authMiddleware.requireAdmin, async (req, res) => {
     try {
       const { 
         search = '', 
@@ -1946,7 +1947,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User endpoint (protected) - Using proper Passport authentication
-  app.get("/api/user", (req, res) => {
+  app.get("/api/user", authMiddleware.requireAuth, (req, res) => {
     // Use Passport's built-in authentication check
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -2921,6 +2922,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     process.exit(1);
   });
   
+  // ===== NEW E-COMMERCE API ENDPOINTS =====
+  
+  // Product Reviews & Ratings
+  app.post("/api/reviews", authMiddleware.requireAuth, async (req, res) => {
+    try {
+      const { productId, rating, comment } = req.body;
+      const userId = (req as any).userId;
+      
+      if (!productId || !rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Valid product ID and rating (1-5) required" });
+      }
+      
+      const review = await db.insert(reviews).values({
+        productId: Number(productId),
+        userId,
+        rating,
+        comment: comment || '',
+        verifiedPurchase: false, // TODO: Check if user actually purchased this product
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      
+      res.json(review[0]);
+    } catch (error) {
+      Logger.error("Error creating review", error);
+      res.status(500).json({ error: "Failed to create review" });
+    }
+  });
+  
+  app.get("/api/reviews/:productId", async (req, res) => {
+    try {
+      const productReviews = await db.select().from(reviews)
+        .where(eq(reviews.productId, Number(req.params.productId)))
+        .orderBy(desc(reviews.createdAt));
+      
+      res.json(productReviews);
+    } catch (error) {
+      Logger.error("Error fetching reviews", error);
+      res.status(500).json({ error: "Failed to fetch reviews" });
+    }
+  });
+  
+  // Coupon Validation
+  app.post("/api/coupons/validate", authMiddleware.optionalAuth, async (req, res) => {
+    try {
+      const { code, cartTotal } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ error: "Coupon code required" });
+      }
+      
+      const coupon = await db.select().from(coupons)
+        .where(and(
+          eq(coupons.code, code.toUpperCase()),
+          eq(coupons.active, true)
+        ))
+        .limit(1);
+      
+      if (!coupon.length) {
+        return res.status(404).json({ error: "Invalid coupon code" });
+      }
+      
+      const couponData = coupon[0];
+      
+      // Check expiration
+      if (couponData.expiresAt && new Date() > couponData.expiresAt) {
+        return res.status(400).json({ error: "Coupon has expired" });
+      }
+      
+      // Check usage limit
+      if (couponData.usedCount >= couponData.maxUses) {
+        return res.status(400).json({ error: "Coupon usage limit reached" });
+      }
+      
+      // Check minimum purchase
+      if (couponData.minPurchase && cartTotal < couponData.minPurchase) {
+        return res.status(400).json({ 
+          error: `Minimum purchase of $${couponData.minPurchase} required` 
+        });
+      }
+      
+      // Calculate discount
+      let discount = 0;
+      if (couponData.discountPercent) {
+        discount = (cartTotal * couponData.discountPercent) / 100;
+      } else if (couponData.discountAmount) {
+        discount = Number(couponData.discountAmount);
+      }
+      
+      res.json({
+        valid: true,
+        discount,
+        code: couponData.code,
+        type: couponData.discountPercent ? 'percentage' : 'fixed'
+      });
+    } catch (error) {
+      Logger.error("Error validating coupon", error);
+      res.status(500).json({ error: "Failed to validate coupon" });
+    }
+  });
+  
+  // Inventory Check
+  app.post("/api/inventory/check", async (req, res) => {
+    try {
+      const { productId, quantity = 1 } = req.body;
+      
+      const product = await db.select().from(products)
+        .where(eq(products.id, productId))
+        .limit(1);
+      
+      if (!product.length) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      
+      const available = product[0].stockQuantity >= quantity;
+      
+      res.json({
+        available,
+        stockQuantity: product[0].stockQuantity,
+        requested: quantity
+      });
+    } catch (error) {
+      Logger.error("Error checking inventory", error);
+      res.status(500).json({ error: "Failed to check inventory" });
+    }
+  });
+  
+  // Newsletter Subscription
+  app.post("/api/email/subscribe", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email || !email.includes('@')) {
+        return res.status(400).json({ error: "Valid email address required" });
+      }
+      
+      // Add to email queue for processing
+      await db.insert(emailQueue).values({
+        toEmail: email,
+        template: 'newsletter_welcome',
+        data: { email },
+        status: 'pending',
+        createdAt: new Date()
+      });
+      
+      res.json({ success: true, message: "Successfully subscribed to newsletter" });
+    } catch (error) {
+      Logger.error("Error subscribing to newsletter", error);
+      res.status(500).json({ error: "Failed to subscribe" });
+    }
+  });
+
   server.on('listening', () => {
     Logger.info(`[STARTUP] Server is now accepting connections on ${host}:${port}`);
   });
