@@ -7,7 +7,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
-import { CategoryModal } from '@/components/admin/modals/CategoryModal';
+import { EnhancedCategoryModal } from '@/components/admin/modals/EnhancedCategoryModal';
 
 interface Category {
   id: string;
@@ -216,7 +216,7 @@ export function CategoriesTab() {
 
       {/* Modal */}
       {showCategoryModal && (
-        <CategoryModal 
+        <EnhancedCategoryModal 
           category={selectedCategory}
           onClose={() => {
             setShowCategoryModal(false);

@@ -7,6 +7,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
+import { EnhancedSubmissionModal } from '@/components/admin/modals/EnhancedSubmissionModal';
 
 interface Submission {
   id: string;
@@ -22,6 +23,8 @@ interface Submission {
 
 export function SubmissionsTab() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const { toast } = useToast();
 
   const { data: submissionsData, isLoading, refetch } = useQuery({
@@ -45,14 +48,16 @@ export function SubmissionsTab() {
 
   // Action handlers
   const handleView = (submission: Submission) => {
-    console.log('View:', submission);
-    toast({
-      title: "Submission Details",
-      description: `Viewing submission "${submission.title}"`,
-    });
+    setSelectedSubmission(submission);
+    setShowSubmissionModal(true);
   };
 
   const handleEdit = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setShowSubmissionModal(true);
+  };
+
+  const handleEditOriginal = (submission: Submission) => {
     console.log('Review:', submission);
     toast({
       title: "Review Submission",
@@ -281,6 +286,18 @@ export function SubmissionsTab() {
           onPageChange: (page) => console.log('Page:', page)
         }}
       />
+
+      {/* Modal */}
+      {showSubmissionModal && (
+        <EnhancedSubmissionModal 
+          submission={selectedSubmission}
+          onClose={() => {
+            setShowSubmissionModal(false);
+            setSelectedSubmission(null);
+          }} 
+          onSave={refetch}
+        />
+      )}
     </div>
   );
 }

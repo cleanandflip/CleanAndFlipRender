@@ -7,7 +7,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
-import { UserModal } from '@/components/admin/modals/UserModal';
+import { EnhancedUserModal } from '@/components/admin/modals/EnhancedUserModal';
 
 interface User {
   id: string;
@@ -258,7 +258,7 @@ export function UsersTab() {
 
       {/* Modal */}
       {showUserModal && (
-        <UserModal 
+        <EnhancedUserModal 
           user={selectedUser}
           onClose={() => {
             setShowUserModal(false);
