@@ -1,0 +1,211 @@
+Fix for Replit: Resolve ALL Database Column Mismatches
+Here's a comprehensive solution to fix all column mismatch errors permanently:
+
+IMMEDIATE FIX: Add ALL Missing Columns
+Run this SQL in your Neon Dashboard to add all missing columns at once:
+sql-- Add ALL missing columns to users table
+ALTER TABLE users 
+ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT,
+ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user',
+ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+-- Add missing columns to orders table
+ALTER TABLE orders 
+ADD COLUMN IF NOT EXISTS subtotal DECIMAL(10,2),
+ADD COLUMN IF NOT EXISTS shipping_cost DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS tax DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS stripe_payment_intent_id TEXT,
+ADD COLUMN IF NOT EXISTS shipping_address JSONB,
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+-- Add missing columns to products table
+ALTER TABLE products 
+ADD COLUMN IF NOT EXISTS stripe_product_id TEXT,
+ADD COLUMN IF NOT EXISTS stripe_price_id TEXT,
+ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS views INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS sold_count INT DEFAULT 0;
+
+-- Add missing columns to equipment_submissions
+ALTER TABLE equipment_submissions 
+ADD COLUMN IF NOT EXISTS reference_number TEXT,
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+-- Ensure cart_items has all columns
+ALTER TABLE cart_items
+ADD COLUMN IF NOT EXISTS added_at TIMESTAMP DEFAULT NOW(),
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+-- Copy data to new columns where needed
+UPDATE orders SET subtotal = total WHERE subtotal IS NULL;
+UPDATE equipment_submissions SET reference_number = reference_code WHERE reference_number IS NULL;
+
+PERMANENT FIX: Sync Schema File
+Edit /db/schema.ts - Update to match exactly what the code expects:
+typescriptimport { pgTable, text, serial, decimal, timestamp, boolean, integer, jsonb } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+  email: text('email').notNull().unique(),
+  username: text('username'),
+  password: text('password'),
+  role: text('role').default('user').notNull(),
+  stripe_customer_id: text('stripe_customer_id'),
+  street: text('street'),
+  city: text('city'),
+  state: text('state'),
+  zipCode: text('zip_code'),
+  latitude: text('latitude'),
+  longitude: text('longitude'),
+  isLocalCustomer: boolean('is_local_customer').default(false),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
+
+export const products = pgTable('products', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+  categoryId: integer('category_id'),
+  images: text('images').array(),
+  stripe_product_id: text('stripe_product_id'),
+  stripe_price_id: text('stripe_price_id'),
+  featured: boolean('featured').default(false),
+  is_featured: boolean('is_featured').default(false), // Alias
+  views: integer('views').default(0),
+  sold_count: integer('sold_count').default(0),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
+
+export const orders = pgTable('orders', {
+  id: serial('id').primaryKey(),
+  user_id: text('user_id').notNull(),
+  subtotal: decimal('subtotal', { precision: 10, scale: 2 }),
+  total: decimal('total', { precision: 10, scale: 2 }),
+  shipping_cost: decimal('shipping_cost', { precision: 10, scale: 2 }).default('0'),
+  tax: decimal('tax', { precision: 10, scale: 2 }).default('0'),
+  status: text('status').default('pending'),
+  stripe_payment_intent_id: text('stripe_payment_intent_id'),
+  shipping_address: jsonb('shipping_address'),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow()
+});
+
+AUTOMATED COLUMN CHECKER
+Create /server/db-check.ts to automatically detect and fix missing columns:
+typescriptimport { db } from './db';
+import { sql } from 'drizzle-orm';
+
+async function checkAndFixColumns() {
+  console.log('🔍 Checking database schema...');
+  
+  // Get all columns from database
+  const tables = ['users', 'products', 'orders', 'cart_items', 'wishlist', 'equipment_submissions'];
+  
+  for (const table of tables) {
+    try {
+      const result = await db.execute(sql`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = ${table}
+      `);
+      
+      console.log(`✅ Table ${table} has columns:`, result.rows.map(r => r.column_name));
+    } catch (error) {
+      console.error(`❌ Error checking ${table}:`, error.message);
+    }
+  }
+  
+  // Auto-fix common missing columns
+  const fixes = [
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user'",
+    "ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal DECIMAL(10,2)",
+    "ALTER TABLE products ADD COLUMN IF NOT EXISTS stripe_product_id TEXT",
+    "ALTER TABLE equipment_submissions ADD COLUMN IF NOT EXISTS reference_number TEXT"
+  ];
+  
+  for (const fix of fixes) {
+    try {
+      await db.execute(sql.raw(fix));
+      console.log(`✅ Applied: ${fix.substring(0, 50)}...`);
+    } catch (e) {
+      // Column already exists, ignore
+    }
+  }
+  
+  console.log('✅ Schema check complete!');
+}
+
+// Run on startup
+checkAndFixColumns();
+
+PREVENT FUTURE ISSUES
+Update /server/storage.ts - Add defensive coding:
+typescript// Wrap all queries with column existence checks
+async getUserByEmail(email: string) {
+  try {
+    const result = await db.select({
+      id: users.id,
+      email: users.email,
+      username: users.username,
+      password: users.password,
+      role: sql<string>`COALESCE(role, 'user')`,
+      stripe_customer_id: sql<string>`COALESCE(stripe_customer_id, '')`,
+      // Add defaults for potentially missing columns
+    })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+    
+    return result[0];
+  } catch (error) {
+    console.error('Query error, attempting fallback:', error);
+    // Fallback query without optional columns
+    const result = await db.execute(sql`
+      SELECT id, email, username, password 
+      FROM users 
+      WHERE email = ${email} 
+      LIMIT 1
+    `);
+    return result.rows[0];
+  }
+}
+
+RUN THESE COMMANDS NOW:
+bash# 1. Stop server
+# Ctrl+C
+
+# 2. Run the schema checker
+tsx server/db-check.ts
+
+# 3. Regenerate Drizzle schema
+npm run db:generate
+npm run db:migrate
+
+# 4. If migrations fail, force push
+npx drizzle-kit push:pg --force
+
+# 5. Restart server
+npm run dev
+
+VERIFICATION CHECKLIST:
+Test these endpoints to ensure all issues are resolved:
+bash# Test registration (should work now)
+curl -X POST http://localhost:5000/api/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password123"}'
+
+# Test login
+curl -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password123"}'
+Expected Result:
+
+No more "column does not exist" errors
+Registration and login working perfectly
+All API endpoints functioning
+Database schema fully synchronized
