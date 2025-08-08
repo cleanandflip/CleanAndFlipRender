@@ -31,7 +31,7 @@ export function ProtectedRoute({
     return null; // Will redirect to auth
   }
 
-  if (requireAdmin && !user.isAdmin) {
+  if (requireAdmin && user.role !== 'developer') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

@@ -57,7 +57,7 @@ export const useNavigation = () => {
     refresh: () => window.location.reload(),
     
     // Helper for checking admin routes
-    isAdminRoute: () => location.startsWith('/admin'),
+    isDeveloperRoute: () => location.startsWith('/admin'),
     isUserRoute: () => ['/dashboard', '/orders'].some(route => location.startsWith(route)),
     
     // External links and utilities
