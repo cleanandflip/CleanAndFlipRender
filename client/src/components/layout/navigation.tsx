@@ -2,14 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
+import { GlobalDropdown, DropdownItem, DropdownSeparator, DropdownLabel } from "@/components/ui/GlobalDropdown";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
@@ -25,6 +18,7 @@ export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [previousPath, setPreviousPath] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const { cartCount } = useCart();
   const { user, logoutMutation } = useAuth();
 
@@ -158,8 +152,11 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              <GlobalDropdown
+                isOpen={isUserDropdownOpen}
+                onOpenChange={setIsUserDropdownOpen}
+                align="end"
+                trigger={
                   <Button
                     variant="ghost"
                     className="bg-secondary border border-primary/30 h-10 px-3 flex-shrink-0 hover:bg-white/10 hover:border-white/20 transition-all duration-200 flex items-center gap-2"
@@ -168,48 +165,52 @@ export default function Navigation() {
                     <span className="hidden sm:inline text-sm font-medium">{user.firstName || 'User'}</span>
                     <ChevronDown size={14} />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-56 bg-gray-900/98 border border-gray-600/50 backdrop-blur-sm"
+                }
+              >
+                <DropdownLabel>
+                  {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
+                </DropdownLabel>
+                <DropdownSeparator />
+                <DropdownItem 
+                  onClick={() => {
+                    handleNavigation(ROUTES.DASHBOARD);
+                    setIsUserDropdownOpen(false);
+                  }}
                 >
-                  <DropdownMenuLabel className="text-white font-medium">
-                    {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-gray-600/50" />
-                  <DropdownMenuItem 
-                    onClick={() => handleNavigation(ROUTES.DASHBOARD)}
-                    className="text-white hover:bg-white/10 cursor-pointer"
+                  <Settings className="mr-2 h-4 w-4" />
+                  Dashboard
+                </DropdownItem>
+                <DropdownItem 
+                  onClick={() => {
+                    handleNavigation(ROUTES.ORDERS);
+                    setIsUserDropdownOpen(false);
+                  }}
+                >
+                  <History className="mr-2 h-4 w-4" />
+                  Order History
+                </DropdownItem>
+                {user.isAdmin && (
+                  <DropdownItem 
+                    onClick={() => {
+                      handleNavigation(ROUTES.ADMIN);
+                      setIsUserDropdownOpen(false);
+                    }}
                   >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => handleNavigation(ROUTES.ORDERS)}
-                    className="text-white hover:bg-white/10 cursor-pointer"
-                  >
-                    <History className="mr-2 h-4 w-4" />
-                    Order History
-                  </DropdownMenuItem>
-                  {user.isAdmin && (
-                    <DropdownMenuItem 
-                      onClick={() => handleNavigation(ROUTES.ADMIN)}
-                      className="text-white hover:bg-white/10 cursor-pointer"
-                    >
-                      <Package className="mr-2 h-4 w-4" />
-                      Admin Dashboard
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator className="bg-gray-600/50" />
-                  <DropdownMenuItem 
-                    onClick={() => logoutMutation.mutate()}
-                    className="text-white hover:bg-white/10 cursor-pointer"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <Package className="mr-2 h-4 w-4" />
+                    Admin Dashboard
+                  </DropdownItem>
+                )}
+                <DropdownSeparator />
+                <DropdownItem 
+                  onClick={() => {
+                    logoutMutation.mutate();
+                    setIsUserDropdownOpen(false);
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownItem>
+              </GlobalDropdown>
             ) : (
               <Button
                 variant="primary"
