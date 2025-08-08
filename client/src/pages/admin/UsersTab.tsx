@@ -30,7 +30,7 @@ export function UsersTab() {
     }
   });
 
-  const users: User[] = usersData || [];
+  const users: User[] = Array.isArray(usersData) ? usersData : [];
 
   const columns = [
     {

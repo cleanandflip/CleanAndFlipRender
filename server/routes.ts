@@ -1721,6 +1721,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple users endpoint for admin
+  app.get("/api/users", requireAdmin, async (req, res) => {
+    try {
+      const usersList = await db.select().from(users).limit(100);
+      
+      // Transform to match frontend interface
+      const transformedUsers = usersList.map(user => ({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        isActive: !user.isAdmin, // Transform field name
+        lastLogin: user.updatedAt?.toISOString() || null,
+        createdAt: user.createdAt?.toISOString() || null
+      }));
+      
+      res.json(transformedUsers);
+    } catch (error) {
+      Logger.error("Error fetching users", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
   // User endpoint (protected) - Using proper Passport authentication
   app.get("/api/user", (req, res) => {
     Logger.debug(`[USER API] Authentication check - isAuthenticated: ${req.isAuthenticated?.()}, user: ${!!req.user}, sessionID: ${req.sessionID}`);

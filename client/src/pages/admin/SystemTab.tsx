@@ -146,11 +146,11 @@ export function SystemTab() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Node Version:</span>
-              <span className="text-white">{process?.version || 'Unknown'}</span>
+              <span className="text-white">{systemHealth?.nodeVersion || 'Unknown'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Platform:</span>
-              <span className="text-white">{process?.platform || 'Unknown'}</span>
+              <span className="text-white">{systemHealth?.platform || 'Unknown'}</span>
             </div>
           </div>
           <div className="space-y-2">
@@ -160,7 +160,7 @@ export function SystemTab() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Process ID:</span>
-              <span className="text-white">{process?.pid || 'Unknown'}</span>
+              <span className="text-white">{systemHealth?.processId || 'Unknown'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Timezone:</span>
