@@ -20,9 +20,8 @@ export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from './drawer';
 
 // Central export for all dropdown components
-export { StandardDropdown } from './UnifiedDropdown';
-export { SearchNavDropdown } from './SearchNavDropdown';
-export { GlobalDropdown, DropdownItem, DropdownLabel, DropdownSeparator } from './GlobalDropdown';
+export { UnifiedDropdown, StandardDropdown, NavDropdown, GhostDropdown } from './UnifiedDropdown';
+export { UnifiedSearch } from './UnifiedSearch';
 export type { DropdownOption } from './UnifiedDropdown';
 
 // Backward compatibility exports

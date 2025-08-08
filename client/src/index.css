@@ -10,6 +10,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dropdown animations - preserving theme */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Preserve scrollbar styling for dropdowns */
+.overflow-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-auto::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 3px;
+}
+
 /* Global smooth scrolling */
 html {
   scroll-behavior: smooth;

@@ -2,7 +2,7 @@
 // This file is maintained for backward compatibility
 // New search functionality is in @/components/ui/UnifiedSearchBar
 
-import { SearchNavDropdown } from '@/components/ui';
+import { UnifiedSearch } from '@/components/ui';
 
 // Backward compatibility wrapper - forwards to new Enhanced SearchBar
 interface LegacySearchBarProps {
@@ -17,10 +17,11 @@ export function SearchBar({
   className 
 }: LegacySearchBarProps) {
   return (
-    <SearchNavDropdown
+    <UnifiedSearch
       placeholder={placeholder}
       onSearch={onSearch}
       className={className}
+      variant="page"
     />
   );
 }

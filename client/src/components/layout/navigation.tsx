@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GlobalDropdown, DropdownItem, DropdownLabel, DropdownSeparator } from "@/components/ui";
+import { UnifiedDropdown, UnifiedSearch } from "@/components/ui";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
-import { SearchNavDropdown } from "@/components/ui";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown } from "lucide-react";
@@ -125,7 +124,7 @@ export default function Navigation() {
           <div className="flex items-center space-x-3 flex-shrink-0 min-w-0 overflow-visible p-1">
             {/* Desktop Search */}
             <div className="hidden lg:block">
-              <SearchNavDropdown
+              <UnifiedSearch
                 placeholder="Search equipment..."
                 onSearch={(query) => {
                   const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
@@ -135,6 +134,7 @@ export default function Navigation() {
                   handleNavigation(result.url);
                 }}
                 className="w-72"
+                variant="navbar"
               />
             </div>
 
@@ -157,75 +157,26 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <GlobalDropdown
-                isOpen={isUserDropdownOpen}
-                onOpenChange={setIsUserDropdownOpen}
-                align="end"
-                trigger={
-                  <Button
-                    variant="ghost"
-                    className="h-10 px-3 flex-shrink-0 transition-all duration-200 flex items-center gap-2 hover:bg-white/10"
-                    style={{
-                      background: 'rgba(75, 85, 99, 0.4)',
-                      border: '1px solid rgba(156, 163, 175, 0.4)',
-                      backdropFilter: 'blur(8px)',
-                      color: 'white',
-                      fontWeight: '500'
-                    }}
-                  >
-                    <User size={16} />
-                    <span className="hidden sm:inline text-sm font-medium">{user.firstName || 'User'}</span>
-                    <ChevronDown size={14} />
-                  </Button>
-                }
-              >
-                <DropdownLabel>
-                  {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
-                </DropdownLabel>
-                <DropdownSeparator />
-                <DropdownItem 
-                  onClick={() => {
-                    handleNavigation(ROUTES.DASHBOARD);
-                    setIsUserDropdownOpen(false);
-                  }}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Dashboard
-                </DropdownItem>
-                <DropdownItem 
-                  onClick={() => {
-                    handleNavigation(ROUTES.ORDERS);
-                    setIsUserDropdownOpen(false);
-                  }}
-                >
-                  <History className="mr-2 h-4 w-4" />
-                  Order History
-                </DropdownItem>
-                {user.isAdmin && (
-                  <>
-                    <DropdownSeparator />
-                    <DropdownItem 
-                      onClick={() => {
-                        handleNavigation(ROUTES.ADMIN);
-                        setIsUserDropdownOpen(false);
-                      }}
-                    >
-                      <Package className="mr-2 h-4 w-4" />
-                      Admin Dashboard
-                    </DropdownItem>
-                  </>
-                )}
-                <DropdownSeparator />
-                <DropdownItem 
-                  onClick={() => {
-                    logoutMutation.mutate();
-                    setIsUserDropdownOpen(false);
-                  }}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownItem>
-              </GlobalDropdown>
+              <UnifiedDropdown
+                variant="nav"
+                options={[
+                  { value: 'dashboard', label: 'Dashboard', icon: <Settings className="w-4 h-4" /> },
+                  { value: 'orders', label: 'Order History', icon: <History className="w-4 h-4" /> },
+                  ...(user.isAdmin ? [{ value: 'admin', label: 'Admin Dashboard', icon: <Package className="w-4 h-4" /> }] : []),
+                  { value: 'logout', label: 'Sign Out', icon: <LogOut className="w-4 h-4" /> }
+                ]}
+                value=""
+                onChange={(value) => {
+                  switch(value) {
+                    case 'dashboard': handleNavigation(ROUTES.DASHBOARD); break;
+                    case 'orders': handleNavigation(ROUTES.ORDERS); break;
+                    case 'admin': handleNavigation(ROUTES.ADMIN); break;
+                    case 'logout': logoutMutation.mutate(); break;
+                  }
+                }}
+                placeholder={user.firstName || 'User'}
+                className="h-10 px-3"
+              />
             ) : (
               <Button
                 variant="primary"
@@ -326,7 +277,7 @@ export default function Navigation() {
         {/* Mobile Search Bar */}
         {isSearchOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-bg-secondary-border">
-            <SearchNavDropdown
+            <UnifiedSearch
               placeholder="Search equipment..."
               onSearch={(query: string) => {
                 const searchUrl = `/products?search=${encodeURIComponent(query)}`;
@@ -338,6 +289,7 @@ export default function Navigation() {
                 setIsSearchOpen(false);
               }}
               className="w-full"
+              variant="page"
             />
           </div>
         )}
