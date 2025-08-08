@@ -13,7 +13,6 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { productEvents } from "@/lib/queryClient";
 import { AddToCartButton } from "@/components/AddToCartButton";
-import { WishlistButton } from "@/components/ui";
 import { 
   ShoppingCart, 
   Heart, 
@@ -387,20 +386,15 @@ export default function ProductDetail() {
                 />
               </div>
               
-              {/* Wishlist and Share buttons below */}
+              {/* Share button */}
               <div className="flex gap-3 mt-4">
-                <WishlistButton
-                  productId={product.id}
-                  size="lg"
-                  showTooltip={true}
-                />
-                
                 <Button
                   variant="outline"
                   onClick={handleShare}
-                  className="glass border-border"
+                  className="glass border-border flex-1"
                 >
-                  <Share2 size={20} />
+                  <Share2 size={20} className="mr-2" />
+                  Share Product
                 </Button>
               </div>
             </div>

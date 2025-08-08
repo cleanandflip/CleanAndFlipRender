@@ -115,7 +115,7 @@ function Router() {
               <Route path={ROUTES.ORDERS} component={Orders} />
               <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />
               <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
-              {/* Removed WISHLIST routes for single-seller model */}
+
               
               {/* Admin Routes */}
               <Route path={ROUTES.ADMIN} component={AdminDashboard} />

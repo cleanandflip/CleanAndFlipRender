@@ -1,5 +1,5 @@
 // Unified UI Components - Single source of truth
-export { WishlistButton } from './WishlistButton';
+
 export { AddToCartButton } from '../AddToCartButton';
 export { ProductPrice } from './ProductPrice';
 export { StockIndicator } from './StockIndicator';

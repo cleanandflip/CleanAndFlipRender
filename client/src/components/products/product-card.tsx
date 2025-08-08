@@ -3,7 +3,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { SmartLink } from "@/components/ui/smart-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { WishlistButton, ProductPrice, StockIndicator, AddToCartButton } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
@@ -124,12 +123,6 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 />
                 
                 <div className="flex items-center gap-2">
-                  <WishlistButton 
-                    productId={product.id}
-                    size="sm"
-                    showTooltip={true}
-                  />
-                  
                   <AddToCartButton
                     productId={product.id}
                     stock={product.stockQuantity}
@@ -174,14 +167,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
         </div>
       )}
       
-      {/* Wishlist Button - Always Visible */}
-      <div className="absolute top-3 right-3 z-20" onClick={(e) => e.stopPropagation()}>
-        <WishlistButton 
-          productId={product.id}
-          size="md"
-          showTooltip={true}
-        />
-      </div>
+
       
       {/* Clickable area for product details */}
       <SmartLink href={routes.productDetail(product.id)} preserveState={true}>

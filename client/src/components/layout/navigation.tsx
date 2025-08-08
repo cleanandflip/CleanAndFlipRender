@@ -12,11 +12,11 @@ import {
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
-
+import { CleanDropdown } from "@/components/ui/CleanDropdown";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
-import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, Heart } from "lucide-react";
-import { useWishlist } from "@/hooks/useWishlist";
+import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package } from "lucide-react";
+
 import { ROUTES } from "@/config/routes";
 
 export default function Navigation() {
@@ -27,7 +27,7 @@ export default function Navigation() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cartCount } = useCart();
   const { user, logoutMutation } = useAuth();
-  const { wishlistCount } = useWishlist();
+
 
   // Track cart open state based on current location
   useEffect(() => {
@@ -158,30 +158,11 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="bg-secondary border border-primary/30 w-10 h-10 flex-shrink-0">
-                    <User size={18} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => handleNavigation(ROUTES.DASHBOARD)}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </DropdownMenuItem>
-                  {user.isAdmin && (
-                    <DropdownMenuItem onClick={() => handleNavigation(ROUTES.ADMIN)}>
-                      <Package className="mr-2 h-4 w-4" />
-                      Admin
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <CleanDropdown 
+                user={user}
+                onNavigate={handleNavigation}
+                onLogout={() => logoutMutation.mutate()}
+              />
             ) : (
               <Button
                 variant="primary"
@@ -194,29 +175,7 @@ export default function Navigation() {
               </Button>
             )}
 
-            {/* Wishlist */}
-            {user && (
-              <div className="relative">
-                <button
-                  onClick={() => handleNavigation(ROUTES.WISHLIST)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 focus:outline-none relative"
-                  style={{
-                    background: 'rgba(75, 85, 99, 0.4)',
-                    border: location === ROUTES.WISHLIST ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
-                    color: 'white',
-                    fontWeight: '500'
-                  }}
-                >
-                  <Heart size={20} className="text-white" />
-                  
-                  {wishlistCount > 0 && (
-                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
-                      {wishlistCount}
-                    </div>
-                  )}
-                </button>
-              </div>
-            )}
+
 
             {/* Cart */}
             <div className="relative">

@@ -45,7 +45,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { apiRequest } from "@/lib/queryClient";
-import { WishlistButton } from "@/components/ui/WishlistButton";
+
 import type { Order, EquipmentSubmission } from "@shared/schema";
 
 function AddressesSection() {
@@ -227,10 +227,7 @@ function DashboardContent() {
     refetchOnMount: true, // Always refetch when component mounts
   });
 
-  const { data: wishlistItems = [] } = useQuery<any[]>({
-    queryKey: ["/api/wishlist"],
-    enabled: !!user?.id,
-  });
+
 
   const cancelSubmissionMutation = useMutation({
     mutationFn: async (submissionId: string) => {
@@ -379,7 +376,9 @@ function DashboardContent() {
           </Card>
           
           <Card className="p-6 text-center">
-            <Heart className="mx-auto mb-3 text-red-400" size={32} />
+            <Settings className="mx-auto mb-3 text-purple-400" size={32} />
+            <div className="text-2xl font-bold">Active</div>
+            <div className="text-sm text-text-muted">Account Status</div>
           </Card>
         </div>
 
@@ -661,13 +660,13 @@ function DashboardContent() {
                         </div>
                         
                         {/* Status-specific information */}
-                        {submission.status === 'accepted' && submission.offerAmount && (
+                        {submission.status === 'accepted' && submission.offeredPrice && (
                           <div className="mt-4 p-4 bg-green-900/20 border border-green-700 rounded-lg">
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="text-sm text-green-400">Offer Made</p>
                                 <p className="text-2xl font-bold text-green-500">
-                                  ${submission.offerAmount}
+                                  ${submission.offeredPrice}
                                 </p>
                               </div>
                               <AlertCircle className="w-5 h-5 text-green-400" />
@@ -678,10 +677,10 @@ function DashboardContent() {
                           </div>
                         )}
                         
-                        {submission.status === 'declined' && submission.declineReason && (
+                        {submission.status === 'declined' && submission.adminNotes && (
                           <div className="mt-4 p-4 bg-red-900/20 border border-red-700 rounded-lg">
                             <p className="text-sm text-red-400">Reason for decline:</p>
-                            <p className="text-sm mt-1">{submission.declineReason}</p>
+                            <p className="text-sm mt-1">{submission.adminNotes}</p>
                           </div>
                         )}
                       </div>
@@ -692,94 +691,7 @@ function DashboardContent() {
             </Card>
           )}
 
-          {/* Wishlist Tab */}
-          {activeTab === 'wishlist' && (
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-bebas text-2xl">WISHLIST</h2>
-                <SmartLink href="/products">
-                  <div className="glass glass-hover rounded-lg p-1">
-                    <Button 
-                      variant="primary"
-                      size="sm"
-                      className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      Browse Products
-                    </Button>
-                  </div>
-                </SmartLink>
-              </div>
 
-              {wishlistItems.length === 0 ? (
-                <div className="text-center py-12">
-                  <Heart className="mx-auto mb-4 text-gray-400" size={48} />
-                  <p className="text-text-secondary mb-6">
-                    Save items you're interested in to easily find them later.
-                  </p>
-                  <SmartLink href="/products">
-                    <div className="glass glass-hover rounded-lg p-1">
-                      <Button 
-                        variant="primary"
-                        size="sm"
-                        className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        Start Shopping
-                      </Button>
-                    </div>
-                  </SmartLink>
-                </div>
-              ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {wishlistItems.map((item) => (
-                    <div key={item.id} className="relative glass rounded-lg overflow-hidden">
-                      <SmartLink href={`/products/${item.product.id}`}>
-                        <div className="w-full h-48 relative bg-gray-900/30 hover:bg-gray-900/40 transition-colors overflow-hidden">
-                          {item.product.images?.[0] ? (
-                            <img
-                              src={item.product.images[0]}
-                              alt={item.product.name}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <div className="text-center text-text-muted">
-                                <div className="text-4xl mb-2">📦</div>
-                                <div className="text-sm">No Image Available</div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </SmartLink>
-                      <div className="absolute top-2 right-2">
-                        <WishlistButton
-                          productId={item.product.id}
-                          size="sm"
-                          showTooltip={false}
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold mb-2 text-white">{item.product.name}</h3>
-                        <p className="text-accent-blue font-bold mb-3">${item.product.price}</p>
-                        <div className="flex gap-2">
-                          <SmartLink href={`/products/${item.product.id}`} className="flex-1">
-                            <div className="glass glass-hover rounded-lg p-1">
-                              <Button 
-                                variant="primary"
-                                size="sm"
-                                className="w-full h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                              >
-                                View Product
-                              </Button>
-                            </div>
-                          </SmartLink>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          )}
 
           {/* Profile Tab */}
           {activeTab === 'profile' && (
