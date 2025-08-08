@@ -143,9 +143,14 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
         delete submitData.password;
       }
       
+      console.log('Submitting user data:', { ...submitData, password: submitData.password ? '[HIDDEN]' : undefined });
+      
       const res = await fetch(endpoint, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json' 
+        },
         body: JSON.stringify(submitData),
         credentials: 'include'
       });

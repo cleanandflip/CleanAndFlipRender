@@ -1975,7 +1975,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User role management
+  // Full user update endpoint
+  app.put("/api/admin/users/:id", requireRole('developer'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = { ...req.body };
+      
+      // Remove password if empty, otherwise hash it
+      if (!updateData.password || updateData.password === '') {
+        delete updateData.password;
+      } else {
+        const bcrypt = await import('bcryptjs');
+        updateData.password = await bcrypt.hash(updateData.password, 12);
+      }
+      
+      // Validate role
+      if (updateData.role && !['user', 'developer'].includes(updateData.role)) {
+        return res.status(400).json({ error: 'Invalid role. Must be "user" or "developer"' });
+      }
+      
+      // Clean the update data
+      const cleanData = {
+        email: updateData.email,
+        firstName: updateData.firstName || null,
+        lastName: updateData.lastName || null, 
+        phone: updateData.phone || null,
+        role: updateData.role, // Include role in the update
+        updatedAt: new Date()
+      };
+      
+      // Add password if provided
+      if (updateData.password) {
+        cleanData.password = updateData.password;
+      }
+      
+      Logger.info(`Updating user ${id} with data:`, { ...cleanData, password: cleanData.password ? '[HIDDEN]' : undefined });
+      
+      // Update user in database
+      const [updatedUser] = await db
+        .update(users)
+        .set(cleanData)
+        .where(eq(users.id, id))
+        .returning();
+      
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Broadcast update via WebSocket
+      if (wsManager) {
+        wsManager.broadcast({
+          type: 'user_update',
+          action: 'update',
+          userId: id,
+          data: updatedUser,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json({ 
+        success: true, 
+        user: userWithoutPassword 
+      });
+      
+    } catch (error) {
+      Logger.error("Error updating user", error);
+      res.status(500).json({ 
+        error: "Failed to update user",
+        details: error.message 
+      });
+    }
+  });
+
+  // User role management (legacy endpoint - kept for compatibility)
   app.put("/api/admin/users/:id/role", requireRole('developer'), async (req, res) => {
     try {
       const { role } = req.body;
