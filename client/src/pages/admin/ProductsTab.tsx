@@ -11,8 +11,11 @@ interface Product {
   id: string;
   name: string;
   category: string;
+  categoryId?: string;
   price: number;
   stock: number;
+  brand?: string;
+  condition?: string;
   status: 'active' | 'inactive';
   images?: string[];
 }
@@ -20,7 +23,7 @@ interface Product {
 export function ProductsTab() {
   const [searchQuery, setSearchQuery] = useState('');
   
-  const { data: productsData, isLoading, refetch } = useQuery({
+  const { data: productsData, isLoading, refetch, error } = useQuery({
     queryKey: ['admin-products', searchQuery],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -33,8 +36,13 @@ export function ProductsTab() {
         limit: '20'
       });
       const res = await fetch(`/api/admin/products?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch products');
-      return res.json();
+      if (!res.ok) {
+        console.error('Products API failed:', res.status, res.statusText);
+        throw new Error(`Failed to fetch products: ${res.status}`);
+      }
+      const data = await res.json();
+      console.log('Products API response:', data);
+      return data;
     }
   });
 
@@ -47,7 +55,9 @@ export function ProductsTab() {
     }
   });
 
-  const products = productsData?.products || [];
+  const products = Array.isArray(productsData?.data) ? productsData.data : 
+                   Array.isArray(productsData?.products) ? productsData.products : 
+                   Array.isArray(productsData) ? productsData : [];
 
   const columns = [
     {
