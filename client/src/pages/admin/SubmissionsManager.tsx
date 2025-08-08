@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { UnifiedDropdown } from '@/components/ui';
+import {  div, div, StandardDropdown, div } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { 
@@ -406,37 +406,41 @@ export function SubmissionsManager() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <UnifiedDropdown
-              options={[
-                { value: 'all', label: 'All Statuses' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'under_review', label: 'Under Review' },
-                { value: 'accepted', label: 'Accepted' },
-                { value: 'rejected', label: 'Rejected' },
-                { value: 'cancelled', label: 'Cancelled' },
-                { value: 'completed', label: 'Completed' }
-              ]}
+            <Select
               value={filters.status}
-              onChange={(v) => setFilters({ ...filters, status: Array.isArray(v) ? v[0] : v, page: 1 })}
-              placeholder="All Statuses"
-              className="glass border-border"
-            />
+              onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
+            >
+              <StandardDropdown className="glass border-border">
+                <div placeholder="All Statuses" />
+              </StandardDropdown>
+              <div className="glass border-border">
+                <div value="all">All Statuses</div>
+                <div value="pending">Pending</div>
+                <div value="under_review">Under Review</div>
+                <div value="accepted">Accepted</div>
+                <div value="rejected">Rejected</div>
+                <div value="cancelled">Cancelled</div>
+                <div value="completed">Completed</div>
+              </div>
+            </Select>
             
-            <UnifiedDropdown
-              options={[
-                { value: 'all', label: 'All Locations' },
-                { value: 'true', label: 'Local (Asheville)' },
-                { value: 'false', label: 'Remote' }
-              ]}
+            <Select
               value={filters.isLocal === null ? 'all' : filters.isLocal.toString()}
-              onChange={(v) => setFilters({ 
+              onValueChange={(v) => setFilters({ 
                 ...filters, 
                 isLocal: v === 'all' ? null : v === 'true',
                 page: 1 
               })}
-              placeholder="All Locations"
-              className="glass border-border"
-            />
+            >
+              <StandardDropdown className="glass border-border">
+                <div placeholder="All Locations" />
+              </StandardDropdown>
+              <div className="glass border-border">
+                <div value="all">All Locations</div>
+                <div value="true">Local (Asheville)</div>
+                <div value="false">Remote</div>
+              </div>
+            </Select>
             
             <Popover>
               <PopoverTrigger asChild>

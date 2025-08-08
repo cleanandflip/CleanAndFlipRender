@@ -4,7 +4,13 @@ import { DashboardLayout } from '@/components/admin/DashboardLayout';
 import { MetricCard } from '@/components/admin/MetricCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UnifiedDropdown } from '@/components/ui';
+import { 
+  
+  div,
+  div,
+  StandardDropdown,
+  div
+} from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
@@ -164,9 +170,9 @@ export function AnalyticsManager() {
           </Popover>
           
           <Select value={metric} onValueChange={setMetric}>
-            <UnifiedDropdown>
+            <StandardDropdown>
               <div />
-            </UnifiedDropdown>
+            </StandardDropdown>
             <div>
               <div value="revenue">Revenue</div>
               <div value="orders">Orders</div>
@@ -177,9 +183,9 @@ export function AnalyticsManager() {
           </Select>
           
           <Select value={groupBy} onValueChange={setGroupBy}>
-            <UnifiedDropdown>
+            <StandardDropdown>
               <div />
-            </UnifiedDropdown>
+            </StandardDropdown>
             <div>
               <div value="hour">Hourly</div>
               <div value="day">Daily</div>

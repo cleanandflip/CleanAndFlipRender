@@ -20,12 +20,12 @@ export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from './drawer';
 
 // Central export for all dropdown components
-export { UnifiedDropdown } from './UnifiedDropdown';
-export { UnifiedSearch } from './UnifiedSearch';
+export { StandardDropdown } from './UnifiedDropdown';
+export { SearchNavDropdown } from './SearchNavDropdown';
+export { GlobalDropdown, DropdownItem, DropdownLabel, DropdownSeparator } from './GlobalDropdown';
 export type { DropdownOption } from './UnifiedDropdown';
 
-// Backward compatibility exports  
-export { UnifiedDropdown as Dropdown } from './UnifiedDropdown';
-export { UnifiedSearch as SearchNavDropdown } from './UnifiedSearch';
+// Backward compatibility exports
+export { StandardDropdown as Dropdown } from './UnifiedDropdown';
 export { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './select';
 export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './dropdown-menu';

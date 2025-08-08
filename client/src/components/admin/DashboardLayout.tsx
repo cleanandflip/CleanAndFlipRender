@@ -3,7 +3,7 @@ import { globalDesignSystem as theme } from '@/styles/design-system/theme';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UnifiedDropdown } from "@/components/ui";
+import { StandardDropdown } from "@/components/ui";
 import { Search, Filter, RefreshCw, Grid, List, ArrowUpDown } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -80,7 +80,7 @@ export function DashboardLayout({
                 Refresh
               </Button>
               
-              <UnifiedDropdown
+              <StandardDropdown
                 options={[
                   { value: 'csv', label: 'Export as CSV' },
                   { value: 'pdf', label: 'Export as PDF' }
@@ -88,6 +88,7 @@ export function DashboardLayout({
                 value=""
                 placeholder="Export"
                 onChange={(format) => onExport((Array.isArray(format) ? format[0] : format) as 'csv' | 'pdf')}
+                size="sm"
               />
             </div>
           </div>
@@ -150,7 +151,7 @@ export function DashboardLayout({
             {sortOptions && onSort && (
               <div className="flex items-center gap-2">
                 <ArrowUpDown className="w-4 h-4 text-text-muted" />
-                <UnifiedDropdown
+                <StandardDropdown
                   options={sortOptions.map(opt => ({ value: opt.value, label: opt.label }))}
                   value=""
                   onChange={(value) => onSort(Array.isArray(value) ? value[0] : value)}

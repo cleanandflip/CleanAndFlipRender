@@ -4,7 +4,13 @@ import { DashboardLayout } from '@/components/admin/DashboardLayout';
 import { Pagination } from '@/components/admin/Pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UnifiedDropdown } from '@/components/ui';
+import { 
+  
+  div,
+  div,
+  StandardDropdown,
+  div
+} from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProductModal } from '@/components/admin/ProductModal';
@@ -270,9 +276,9 @@ export function ProductsManager() {
             value={filters.category}
             onValueChange={(v) => setFilters({ ...filters, category: v, page: 1 })}
           >
-            <UnifiedDropdown className="glass border-border">
+            <StandardDropdown className="glass border-border">
               <div placeholder="All Categories" />
-            </UnifiedDropdown>
+            </StandardDropdown>
             <div className="glass border-border">
               <div value="all">All Categories</div>
               <div value="barbells">Barbells</div>
@@ -287,9 +293,9 @@ export function ProductsManager() {
             value={filters.status}
             onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
           >
-            <UnifiedDropdown className="glass border-border">
+            <StandardDropdown className="glass border-border">
               <div placeholder="All Statuses" />
-            </UnifiedDropdown>
+            </StandardDropdown>
             <div className="glass border-border">
               <div value="all">All Statuses</div>
               <div value="active">Active</div>

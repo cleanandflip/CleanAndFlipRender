@@ -2,7 +2,7 @@
 // This file is maintained for backward compatibility
 // New search functionality is in @/components/ui/UnifiedSearchBar
 
-import { UnifiedSearch } from '@/components/ui';
+import { SearchNavDropdown } from '@/components/ui';
 
 interface SearchBarProps {
   className?: string;
@@ -24,11 +24,10 @@ export default function SearchBar({
   autoFocus = false
 }: SearchBarProps) {
   return (
-    <UnifiedSearch
+    <SearchNavDropdown
       placeholder={placeholder}
       onSearch={onSearch}
       className={className}
-      variant={variant as 'page' | 'navbar'}
     />
   );
 }

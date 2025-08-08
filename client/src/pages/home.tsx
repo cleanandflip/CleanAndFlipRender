@@ -43,9 +43,6 @@ export default function Home() {
   return (
     <motion.div 
       className="min-h-screen"
-      style={{
-        background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%)'
-      }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
