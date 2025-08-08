@@ -64,7 +64,7 @@ The system implements proper security headers, input sanitization, and SQL injec
 - **Google Cloud Storage**: Alternative file storage option with proper service account authentication
 
 ### Database and Infrastructure
-- **Neon Database**: Serverless PostgreSQL hosting with connection pooling and automatic scaling
+- **Replit Database**: Managed PostgreSQL database with automatic provisioning and secure environment variable integration
 - **Redis** (Optional): Caching layer for improved performance with graceful degradation when unavailable
 
 ### Email Services
