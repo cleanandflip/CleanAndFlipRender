@@ -45,10 +45,7 @@ export function CategoryManager() {
   });
 
   const createCategoryMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/categories', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => apiRequest('/api/categories', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       toast({ title: "Category created successfully" });
@@ -62,10 +59,7 @@ export function CategoryManager() {
 
   const updateCategoryMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => 
-      apiRequest('/api/categories/' + id, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-      }),
+      apiRequest(`/api/categories/${id}`, 'PATCH', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       toast({ title: "Category updated successfully" });
@@ -78,9 +72,7 @@ export function CategoryManager() {
   });
 
   const deleteCategoryMutation = useMutation({
-    mutationFn: (categoryId: number) => apiRequest('/api/categories/' + categoryId, {
-      method: 'DELETE',
-    }),
+    mutationFn: (categoryId: number) => apiRequest(`/api/categories/${categoryId}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
       toast({ title: "Category deleted successfully" });
@@ -90,7 +82,7 @@ export function CategoryManager() {
     },
   });
 
-  const filteredCategories = categories.filter((category: Category) =>
+  const filteredCategories = (categories as Category[]).filter((category: Category) =>
     category.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -120,15 +112,15 @@ export function CategoryManager() {
 
   const handleSubmit = () => {
     if (selectedCategory) {
-      updateCategoryMutation.mutate({ id: selectedCategory.id, data: formData });
+      updateCategoryMutation.mutate({ id: Number(selectedCategory.id), data: formData });
     } else {
       createCategoryMutation.mutate(formData);
     }
   };
 
-  const handleDeleteCategory = (categoryId: number) => {
+  const handleDeleteCategory = (categoryId: string | number) => {
     if (confirm("Are you sure you want to delete this category?")) {
-      deleteCategoryMutation.mutate(categoryId);
+      deleteCategoryMutation.mutate(Number(categoryId));
     }
   };
 

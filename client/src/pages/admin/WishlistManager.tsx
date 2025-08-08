@@ -30,7 +30,7 @@ export function WishlistManager() {
     enabled: false, // Disabled since wishlists are not used in single-seller model
   });
 
-  const filteredData = wishlistData.filter((item: any) =>
+  const filteredData = (wishlistData as any[]).filter((item: any) =>
     item.productName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 

@@ -37,9 +37,7 @@ export function UserManager() {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (userId: number) => apiRequest('/api/users/' + userId, {
-      method: 'DELETE',
-    }),
+    mutationFn: (userId: number) => apiRequest(`/api/users/${userId}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       toast({ title: "User deleted successfully" });
@@ -51,10 +49,7 @@ export function UserManager() {
 
   const updateUserRoleMutation = useMutation({
     mutationFn: ({ userId, role }: { userId: number; role: string }) => 
-      apiRequest('/api/users/' + userId + '/role', {
-        method: 'PATCH',
-        body: JSON.stringify({ role }),
-      }),
+      apiRequest(`/api/users/${userId}/role`, 'PATCH', { role }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       toast({ title: "User role updated successfully" });
@@ -64,7 +59,7 @@ export function UserManager() {
     },
   });
 
-  const filteredUsers = users.filter((user: UserType) =>
+  const filteredUsers = (users as UserType[]).filter((user: UserType) =>
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -159,7 +154,7 @@ export function UserManager() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleRoleChange(
-                          user.id, 
+                          Number(user.id), 
                           user.role === 'admin' ? 'user' : 'admin'
                         )}
                       >
@@ -169,7 +164,7 @@ export function UserManager() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDeleteUser(user.id)}
+                        onClick={() => handleDeleteUser(Number(user.id))}
                         disabled={deleteUserMutation.isPending}
                       >
                         <Trash2 className="w-4 h-4" />

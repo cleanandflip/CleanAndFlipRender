@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GlobalDropdown } from "@/components/ui/GlobalDropdown";
+
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
@@ -159,74 +159,87 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <GlobalDropdown
-                isOpen={isUserDropdownOpen}
-                onOpenChange={setIsUserDropdownOpen}
-                align="end"
-                trigger={
-                  <Button
-                    variant="ghost"
-                    className="h-10 px-3 flex-shrink-0 transition-all duration-200 flex items-center gap-2 hover:bg-white/10"
-                    style={{
-                      background: 'rgba(75, 85, 99, 0.4)',
-                      border: '1px solid rgba(156, 163, 175, 0.4)',
-                      backdropFilter: 'blur(8px)',
-                      color: 'white',
-                      fontWeight: '500'
-                    }}
-                  >
-                    <User size={16} />
-                    <span className="hidden sm:inline text-sm font-medium">{user.firstName || 'User'}</span>
-                    <ChevronDown size={14} />
-                  </Button>
-                }
-              >
-                <div className="px-4 py-2 text-white font-medium text-sm border-b border-gray-600/50">
-                  {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
-                </div>
-                <div 
-                  onClick={() => {
-                    handleNavigation(ROUTES.DASHBOARD);
-                    setIsUserDropdownOpen(false);
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  className="h-10 px-3 flex-shrink-0 transition-all duration-200 flex items-center gap-2 hover:bg-white/10"
+                  style={{
+                    background: 'rgba(75, 85, 99, 0.4)',
+                    border: '1px solid rgba(156, 163, 175, 0.4)',
+                    backdropFilter: 'blur(8px)',
+                    color: 'white',
+                    fontWeight: '500'
                   }}
-                  className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center"
+                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                 >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Dashboard
-                </div>
-                <div 
-                  onClick={() => {
-                    handleNavigation(ROUTES.ORDERS);
-                    setIsUserDropdownOpen(false);
-                  }}
-                  className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center"
-                >
-                  <History className="mr-2 h-4 w-4" />
-                  Order History
-                </div>
-                {user.isAdmin && (
-                  <div 
-                    onClick={() => {
-                      handleNavigation(ROUTES.ADMIN);
-                      setIsUserDropdownOpen(false);
-                    }}
-                    className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center border-t border-gray-600/50"
-                  >
-                    <Package className="mr-2 h-4 w-4" />
-                    Admin Dashboard
-                  </div>
+                  <User size={16} />
+                  <span className="hidden sm:inline text-sm font-medium">{user.firstName || 'User'}</span>
+                  <ChevronDown size={14} />
+                </Button>
+                
+                {isUserDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsUserDropdownOpen(false)}
+                    />
+                    <div 
+                      className="absolute right-0 top-full mt-2 w-48 rounded-lg shadow-xl z-50"
+                      style={{
+                        background: 'rgba(75, 85, 99, 0.95)',
+                        border: '1px solid rgba(156, 163, 175, 0.4)',
+                        backdropFilter: 'blur(8px)',
+                      }}
+                    >
+                      <div className="px-4 py-2 text-white font-medium text-sm border-b border-gray-600/50">
+                        {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
+                      </div>
+                      <div 
+                        onClick={() => {
+                          handleNavigation(ROUTES.DASHBOARD);
+                          setIsUserDropdownOpen(false);
+                        }}
+                        className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center"
+                      >
+                        <Settings className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </div>
+                      <div 
+                        onClick={() => {
+                          handleNavigation(ROUTES.ORDERS);
+                          setIsUserDropdownOpen(false);
+                        }}
+                        className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center"
+                      >
+                        <History className="mr-2 h-4 w-4" />
+                        Order History
+                      </div>
+                      {user.isAdmin && (
+                        <div 
+                          onClick={() => {
+                            handleNavigation(ROUTES.ADMIN);
+                            setIsUserDropdownOpen(false);
+                          }}
+                          className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center border-t border-gray-600/50"
+                        >
+                          <Package className="mr-2 h-4 w-4" />
+                          Admin Dashboard
+                        </div>
+                      )}
+                      <div 
+                        onClick={() => {
+                          logoutMutation.mutate();
+                          setIsUserDropdownOpen(false);
+                        }}
+                        className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center border-t border-gray-600/50"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign Out
+                      </div>
+                    </div>
+                  </>
                 )}
-                <div 
-                  onClick={() => {
-                    logoutMutation.mutate();
-                    setIsUserDropdownOpen(false);
-                  }}
-                  className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center border-t border-gray-600/50"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </div>
-              </GlobalDropdown>
+              </div>
             ) : (
               <Button
                 variant="primary"
