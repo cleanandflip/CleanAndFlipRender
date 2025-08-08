@@ -830,7 +830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Security test endpoint removed for production
 
-  app.get("/api/admin/stats", adminLimiter, requireAdmin, async (req, res) => {
+  app.get("/api/admin/stats", adminLimiter, requireRole('developer'), async (req, res) => {
     try {
       const stats = await storage.getAdminStats();
       Logger.debug(`Admin stats result: ${JSON.stringify(stats)}`);
@@ -848,7 +848,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced admin users endpoint with filtering and stats
-  app.get("/api/admin/users", adminLimiter, authMiddleware.requireAdmin, async (req, res) => {
+  app.get("/api/admin/users", adminLimiter, requireRole('developer'), async (req, res) => {
     try {
       const { 
         search = '', 
@@ -955,7 +955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics endpoint - Fixed SQL syntax
-  app.get("/api/admin/analytics", requireAdmin, async (req, res) => {
+  app.get("/api/admin/analytics", requireRole('developer'), async (req, res) => {
     try {
       const { range = 'last30days' } = req.query;
       
@@ -1079,7 +1079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Wishlist analytics functionality removed for single-seller model
 
   // Admin Products Management - Main endpoint  
-  app.get("/api/admin/products", requireAdmin, async (req, res) => {
+  app.get("/api/admin/products", requireRole('developer'), async (req, res) => {
     try {
       const {
         search = '',
@@ -1210,7 +1210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Image upload endpoint for products  
-  app.post('/api/admin/products/upload', requireAdmin, async (req, res) => {
+  app.post('/api/admin/products/upload', requireRole('developer'), async (req, res) => {
     try {
       // For now, return a placeholder response
       // The actual upload functionality will be handled by the ProductModal
@@ -1226,7 +1226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product bulk operations
-  app.post("/api/admin/products/bulk", requireAdmin, async (req, res) => {
+  app.post("/api/admin/products/bulk", requireRole('developer'), async (req, res) => {
     try {
       const { action, productIds } = req.body;
       
@@ -1268,7 +1268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product export functionality
-  app.get("/api/admin/products/export", requireAdmin, async (req, res) => {
+  app.get("/api/admin/products/export", requireRole('developer'), async (req, res) => {
     try {
       const { format = 'csv' } = req.query;
       const allProducts = await db
@@ -1321,7 +1321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Individual product operations
-  app.delete("/api/admin/products/:id", requireAdmin, async (req, res) => {
+  app.delete("/api/admin/products/:id", requireRole('developer'), async (req, res) => {
     try {
       const { id } = req.params;
       await storage.deleteProduct(id);
@@ -1333,7 +1333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Filter options for category configuration
-  app.get("/api/admin/products/filter-options", requireAdmin, async (req, res) => {
+  app.get("/api/admin/products/filter-options", requireRole('developer'), async (req, res) => {
     try {
       // Get all products to extract unique values
       const allProducts = await db.select().from(products);
@@ -1352,7 +1352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Category Management APIs - Enhanced with proper product counts
-  app.get("/api/admin/categories", requireAdmin, async (req, res) => {
+  app.get("/api/admin/categories", requireRole('developer'), async (req, res) => {
     try {
       const {
         search = '',
@@ -1435,7 +1435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/categories", requireAdmin, /* upload.single('image'), */ async (req, res) => {
+  app.post("/api/admin/categories", requireRole('developer'), /* upload.single('image'), */ async (req, res) => {
     try {
       const { name, slug, description, is_active, filter_config } = req.body;
       
@@ -1458,7 +1458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/categories/:id", requireAdmin, /* upload.single('image'), */ async (req, res) => {
+  app.put("/api/admin/categories/:id", requireRole('developer'), /* upload.single('image'), */ async (req, res) => {
     try {
       const { name, slug, description, is_active, existing_image_url, filter_config } = req.body;
       
@@ -1481,7 +1481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/categories/:id/toggle", requireAdmin, async (req, res) => {
+  app.put("/api/admin/categories/:id/toggle", requireRole('developer'), async (req, res) => {
     try {
       const { is_active } = req.body;
       await storage.updateCategory(req.params.id, { isActive: is_active });
@@ -1493,7 +1493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Category reorder endpoint
-  app.post("/api/admin/categories/reorder", requireAdmin, async (req, res) => {
+  app.post("/api/admin/categories/reorder", requireRole('developer'), async (req, res) => {
     try {
       const { categories: categoryUpdates } = req.body;
       
@@ -1516,7 +1516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/admin/categories/:id", requireAdmin, async (req, res) => {
+  app.delete("/api/admin/categories/:id", requireRole('developer'), async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -1542,7 +1542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // System health and information endpoints
-  app.get("/api/admin/system/health", requireAdmin, async (req, res) => {
+  app.get("/api/admin/system/health", requireRole('developer'), async (req, res) => {
     try {
       const startTime = process.uptime();
       const memoryUsage = process.memoryUsage();
@@ -1595,7 +1595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }  
   });
 
-  app.get("/api/admin/system/info", requireAdmin, async (req, res) => {
+  app.get("/api/admin/system/info", requireRole('developer'), async (req, res) => {
     try {
       const memoryUsage = process.memoryUsage();
       const uptime = process.uptime();
@@ -1652,7 +1652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/categories/reorder", requireAdmin, async (req, res) => {
+  app.post("/api/admin/categories/reorder", requireRole('developer'), async (req, res) => {
     try {
       const { categoryOrder } = req.body;
       await storage.reorderCategories(categoryOrder);
@@ -1773,7 +1773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Simple users endpoint for admin
-  app.get("/api/users", requireAdmin, async (req, res) => {
+  app.get("/api/users", requireRole('developer'), async (req, res) => {
     try {
       const usersList = await db.select().from(users).limit(100);
       
@@ -1842,7 +1842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // System health endpoint
-  app.get("/api/admin/system/health", requireAdmin, async (req, res) => {
+  app.get("/api/admin/system/health", requireRole('developer'), async (req, res) => {
     try {
       const memUsage = process.memoryUsage();
       const health = {
@@ -1863,7 +1863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Database health check
-  app.get("/api/admin/system/db-check", requireAdmin, async (req, res) => {
+  app.get("/api/admin/system/db-check", requireRole('developer'), async (req, res) => {
     try {
       await storage.healthCheck();
       res.json({ status: 'Connected', pool: 'Active', timestamp: new Date().toISOString() });
@@ -1876,7 +1876,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Product management endpoints
   
   // Create new product with image uploads
-  app.post("/api/admin/products", requireAdmin, /* upload.array('images', 6), */ async (req, res) => {
+  app.post("/api/admin/products", requireRole('developer'), /* upload.array('images', 6), */ async (req, res) => {
     try {
       // Handle images array from form data
       let images = [];
@@ -1918,7 +1918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update product with image uploads
-  app.put("/api/admin/products/:id", requireAdmin, /* upload.array('images', 6), */ async (req, res) => {
+  app.put("/api/admin/products/:id", requireRole('developer'), /* upload.array('images', 6), */ async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -1964,7 +1964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  app.put("/api/admin/products/:id/stock", requireAdmin, async (req, res) => {
+  app.put("/api/admin/products/:id/stock", requireRole('developer'), async (req, res) => {
     try {
       const { status } = req.body;
       await storage.updateProductStock(req.params.id, status);
@@ -1976,7 +1976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User role management
-  app.put("/api/admin/users/:id/role", requireAdmin, async (req, res) => {
+  app.put("/api/admin/users/:id/role", requireRole('developer'), async (req, res) => {
     try {
       const { role } = req.body;
       await storage.updateUserRole(req.params.id, role);
@@ -2054,7 +2054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/submissions", requireAdmin, async (req, res) => {
+  app.get("/api/admin/submissions", requireRole('developer'), async (req, res) => {
     try {
       
       
@@ -2258,7 +2258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/submissions/:id", requireAdmin, async (req, res) => {
+  app.put("/api/admin/submissions/:id", requireRole('developer'), async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -2277,7 +2277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk actions for submissions
-  app.post("/api/admin/submissions/bulk", requireAdmin, async (req, res) => {
+  app.post("/api/admin/submissions/bulk", requireRole('developer'), async (req, res) => {
     try {
       const { action, submissionIds } = req.body;
       
@@ -2322,7 +2322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Export submissions data
-  app.get("/api/admin/submissions/export", requireAdmin, async (req, res) => {
+  app.get("/api/admin/submissions/export", requireRole('developer'), async (req, res) => {
     try {
       const {
         format = 'csv',
@@ -2429,7 +2429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CSV Export endpoints
-  app.get("/api/admin/export/:type", requireAdmin, async (req, res) => {
+  app.get("/api/admin/export/:type", requireRole('developer'), async (req, res) => {
     try {
       const { type } = req.params;
       let data: any[] = [];
@@ -2476,7 +2476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Export endpoints
-  app.get("/api/admin/export/:type", requireAdmin, async (req, res) => {
+  app.get("/api/admin/export/:type", requireRole('developer'), async (req, res) => {
     try {
       const { type } = req.params;
       let csv = '';

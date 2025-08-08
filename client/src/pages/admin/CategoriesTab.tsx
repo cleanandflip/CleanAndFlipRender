@@ -31,7 +31,7 @@ export function CategoriesTab() {
 
   // Fetch categories with React Query
   const {
-    data: categories = [],
+    data: categoriesData,
     isLoading,
     refetch
   } = useQuery({
@@ -41,9 +41,15 @@ export function CategoriesTab() {
         credentials: 'include'
       });
       if (!res.ok) throw new Error('Failed to fetch categories');
-      return res.json();
+      const data = await res.json();
+      console.log('Categories API response:', data);
+      return data;
     }
   });
+
+  // Extract categories array from API response
+  const categories = categoriesData?.categories || [];
+  const stats = categoriesData?.stats || { active: 0, empty: 0, total: 0 };
 
   // Setup live sync
   useEffect(() => {
