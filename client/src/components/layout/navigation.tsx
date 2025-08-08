@@ -15,21 +15,7 @@ import Logo from "@/components/common/logo";
 import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
-import {
-  Menu,
-  Search,
-  ShoppingCart,
-  User,
-  X,
-  LogOut,
-  LogIn,
-  UserPlus,
-  Settings,
-  XCircle,
-  Package,
-  History,
-  ChevronDown,
-} from "lucide-react";
+import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown } from "lucide-react";
 
 import { ROUTES } from "@/config/routes";
 
@@ -41,6 +27,7 @@ export default function Navigation() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { cartCount } = useCart();
   const { user, logoutMutation } = useAuth();
+
 
   // Track cart open state based on current location
   useEffect(() => {
@@ -66,38 +53,37 @@ export default function Navigation() {
     if (e) {
       e.preventDefault();
     }
-
+    
     // Don't navigate if already on this page
     if (location === href) {
       return;
     }
-
+    
     // Clear products state when navigating to non-product pages
-    if (href && href !== ROUTES.PRODUCTS && !href.startsWith("/products/")) {
+    if (href && href !== ROUTES.PRODUCTS && !href.startsWith('/products/')) {
       NavigationStateManager.clearState(ROUTES.PRODUCTS);
     }
-
+    
     setLocation(href);
   };
 
   // Cart button toggle behavior
   const handleCartClick = (e: React.MouseEvent) => {
     e.preventDefault();
-
+    
     if (!isCartOpen) {
       // Save current location before opening cart
       if (location !== ROUTES.CART) {
         setPreviousPath(location);
-        sessionStorage.setItem("cartPreviousPath", location);
+        sessionStorage.setItem('cartPreviousPath', location);
       }
       setLocation(ROUTES.CART);
     } else {
       // Cart is open, go back to previous view
-      const savedPath =
-        sessionStorage.getItem("cartPreviousPath") || previousPath;
+      const savedPath = sessionStorage.getItem('cartPreviousPath') || previousPath;
       if (savedPath && savedPath !== ROUTES.CART) {
         setLocation(savedPath);
-        sessionStorage.removeItem("cartPreviousPath");
+        sessionStorage.removeItem('cartPreviousPath');
       } else {
         setLocation(ROUTES.PRODUCTS); // fallback
       }
@@ -107,14 +93,11 @@ export default function Navigation() {
   return (
     <>
       {/* Main Navigation - Cleaner Layout with Badge Support */}
-      <nav
-        className="fixed top-4 left-4 right-4 z-50 rounded-xl px-6 py-3 max-w-7xl mx-auto overflow-visible"
-        style={{
-          background: "rgba(35, 41, 55, 0.4)",
-
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-        }}
-      >
+      <nav className="fixed top-4 left-4 right-4 z-50 rounded-xl px-6 py-3 max-w-7xl mx-auto overflow-visible" style={{ 
+        background: 'rgba(35, 41, 55, 0.4)', 
+ 
+        border: '1px solid rgba(255, 255, 255, 0.08)' 
+      }}>
         <div className="flex items-center justify-between w-full gap-4">
           {/* Left Side - Logo */}
           <div className="flex items-center flex-shrink-0">
@@ -173,18 +156,82 @@ export default function Navigation() {
               <Search size={18} />
             </Button>
 
+            {/* Account */}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="bg-secondary border border-primary/30 h-10 px-3 flex-shrink-0 hover:bg-white/10 hover:border-white/20 transition-all duration-200 flex items-center gap-2"
+                  >
+                    <User size={16} />
+                    <span className="hidden sm:inline text-sm font-medium">{user.firstName || 'User'}</span>
+                    <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-56 bg-gray-900/98 border border-gray-600/50 backdrop-blur-sm"
+                >
+                  <DropdownMenuLabel className="text-white font-medium">
+                    {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-gray-600/50" />
+                  <DropdownMenuItem 
+                    onClick={() => handleNavigation(ROUTES.DASHBOARD)}
+                    className="text-white hover:bg-white/10 cursor-pointer"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleNavigation(ROUTES.ORDERS)}
+                    className="text-white hover:bg-white/10 cursor-pointer"
+                  >
+                    <History className="mr-2 h-4 w-4" />
+                    Order History
+                  </DropdownMenuItem>
+                  {user.isAdmin && (
+                    <DropdownMenuItem 
+                      onClick={() => handleNavigation(ROUTES.ADMIN)}
+                      className="text-white hover:bg-white/10 cursor-pointer"
+                    >
+                      <Package className="mr-2 h-4 w-4" />
+                      Admin Dashboard
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator className="bg-gray-600/50" />
+                  <DropdownMenuItem 
+                    onClick={() => logoutMutation.mutate()}
+                    className="text-white hover:bg-white/10 cursor-pointer"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={(e) => handleNavigation(ROUTES.LOGIN, e)}
+                className="font-medium px-5 py-2 whitespace-nowrap"
+              >
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In
+              </Button>
+            )}
+
             {/* Cart */}
             <div className="relative">
               <button
                 onClick={handleCartClick}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 focus:outline-none relative"
                 style={{
-                  background: "rgba(75, 85, 99, 0.4)",
-                  border: isCartOpen
-                    ? "1px solid #3b82f6"
-                    : "1px solid rgba(156, 163, 175, 0.4)",
-                  color: "white",
-                  fontWeight: "500",
+                  background: 'rgba(75, 85, 99, 0.4)',
+                  border: isCartOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
+                  color: 'white',
+                  fontWeight: '500'
                 }}
               >
                 {isCartOpen ? (
@@ -194,7 +241,7 @@ export default function Navigation() {
                 ) : (
                   <ShoppingCart size={20} className="text-white" />
                 )}
-
+                
                 {cartCount > 0 && (
                   <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
                     {cartCount}
@@ -214,10 +261,7 @@ export default function Navigation() {
                   <Menu size={18} />
                 </Button>
               </SheetTrigger>
-              <SheetContent
-                side="right"
-                className="bg-secondary border-bg-secondary-border"
-              >
+              <SheetContent side="right" className="bg-secondary border-bg-secondary-border">
                 <div className="flex items-center justify-between mb-8">
                   <Logo />
                   <Button
@@ -228,7 +272,7 @@ export default function Navigation() {
                     <X size={20} />
                   </Button>
                 </div>
-
+                
                 <nav className="space-y-4">
                   {navigation.map((item) => (
                     <Button
@@ -244,7 +288,7 @@ export default function Navigation() {
                       {item.name}
                     </Button>
                   ))}
-
+                  
                   <Button
                     variant={isActive("/dashboard") ? "primary" : "outline"}
                     onClick={() => {
