@@ -15,10 +15,10 @@ The client-side application is built with React 18 using TypeScript and leverage
 - **Framework**: React with TypeScript for type safety
 - **Routing**: Wouter for lightweight client-side routing
 - **State Management**: TanStack Query for server state with custom hooks for cart and authentication
-- **UI Components**: Radix UI primitives with shadcn/ui design system and custom GlobalDropdown component for theme-consistent dropdowns
-- **Styling**: Tailwind CSS with CSS variables for theming
+- **UI Components**: Radix UI primitives with shadcn/ui design system and UnifiedDropdown/NavigationDropdown components for consistent theming across all dropdowns
+- **Styling**: Tailwind CSS with CSS variables for theming and scrollbar-hide utility for clean dropdown appearance
 - **Build System**: Vite for fast development and optimized production builds
-- **Animations**: Framer Motion for enhanced dropdown animations and transitions
+- **Animations**: Framer Motion for enhanced dropdown animations and transitions with portal-based rendering
 
 The frontend implements lazy loading for non-critical pages, error boundaries for graceful error handling, and a responsive design optimized for both desktop and mobile experiences.
 

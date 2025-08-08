@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GlobalDropdown, DropdownItem, DropdownSeparator, DropdownLabel } from "@/components/ui/GlobalDropdown";
+import { NavigationDropdown, NavigationDropdownItem, NavigationDropdownSeparator, NavigationDropdownLabel } from "@/components/ui/NavigationDropdown";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
@@ -159,7 +159,7 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <GlobalDropdown
+              <NavigationDropdown
                 isOpen={isUserDropdownOpen}
                 onOpenChange={setIsUserDropdownOpen}
                 align="end"
@@ -181,11 +181,11 @@ export default function Navigation() {
                   </Button>
                 }
               >
-                <DropdownLabel>
+                <NavigationDropdownLabel>
                   {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
-                </DropdownLabel>
-                <DropdownSeparator />
-                <DropdownItem 
+                </NavigationDropdownLabel>
+                <NavigationDropdownSeparator />
+                <NavigationDropdownItem 
                   onClick={() => {
                     handleNavigation(ROUTES.DASHBOARD);
                     setIsUserDropdownOpen(false);
@@ -193,8 +193,8 @@ export default function Navigation() {
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Dashboard
-                </DropdownItem>
-                <DropdownItem 
+                </NavigationDropdownItem>
+                <NavigationDropdownItem 
                   onClick={() => {
                     handleNavigation(ROUTES.ORDERS);
                     setIsUserDropdownOpen(false);
@@ -202,9 +202,9 @@ export default function Navigation() {
                 >
                   <History className="mr-2 h-4 w-4" />
                   Order History
-                </DropdownItem>
+                </NavigationDropdownItem>
                 {user.isAdmin && (
-                  <DropdownItem 
+                  <NavigationDropdownItem 
                     onClick={() => {
                       handleNavigation(ROUTES.ADMIN);
                       setIsUserDropdownOpen(false);
@@ -212,10 +212,10 @@ export default function Navigation() {
                   >
                     <Package className="mr-2 h-4 w-4" />
                     Admin Dashboard
-                  </DropdownItem>
+                  </NavigationDropdownItem>
                 )}
-                <DropdownSeparator />
-                <DropdownItem 
+                <NavigationDropdownSeparator />
+                <NavigationDropdownItem 
                   onClick={() => {
                     logoutMutation.mutate();
                     setIsUserDropdownOpen(false);
@@ -223,8 +223,8 @@ export default function Navigation() {
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
-                </DropdownItem>
-              </GlobalDropdown>
+                </NavigationDropdownItem>
+              </NavigationDropdown>
             ) : (
               <Button
                 variant="primary"
