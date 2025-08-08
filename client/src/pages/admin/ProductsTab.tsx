@@ -1,11 +1,12 @@
 // UNIFIED PRODUCTS TAB
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Package, Plus, DollarSign } from 'lucide-react';
+import { Package, Plus, DollarSign, Eye, Edit2, Trash2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
+import { useToast } from '@/hooks/use-toast';
 
 interface Product {
   id: string;
@@ -22,6 +23,7 @@ interface Product {
 
 export function ProductsTab() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
   
   const { data: productsData, isLoading, refetch, error } = useQuery({
     queryKey: ['admin-products', searchQuery],
@@ -58,6 +60,83 @@ export function ProductsTab() {
   const products = Array.isArray(productsData?.data) ? productsData.data : 
                    Array.isArray(productsData?.products) ? productsData.products : 
                    Array.isArray(productsData) ? productsData : [];
+
+  // Action handlers
+  const handleView = (product: Product) => {
+    console.log('View:', product);
+    window.open(`/product/${product.id}`, '_blank');
+  };
+
+  const handleEdit = (product: Product) => {
+    console.log('Edit:', product);
+    toast({
+      title: "Edit Product",
+      description: `Editing ${product.name}`,
+    });
+  };
+
+  const handleDelete = async (product: Product) => {
+    console.log('Delete:', product);
+    if (!confirm(`Are you sure you want to delete "${product.name}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (res.ok) {
+        toast({
+          title: "Success",
+          description: "Product deleted successfully",
+        });
+        refetch(); // Refresh the data
+      } else {
+        throw new Error('Failed to delete');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExport = async () => {
+    console.log('Export');
+    try {
+      const res = await fetch('/api/admin/products/export', {
+        credentials: 'include'
+      });
+      
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `products-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        toast({
+          title: "Success",
+          description: "Products exported successfully",
+        });
+      }
+    } catch (error) {
+      console.error('Error exporting products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export products",
+        variant: "destructive",
+      });
+    }
+  };
 
   const columns = [
     {
@@ -118,6 +197,35 @@ export function ProductsTab() {
           {product.status}
         </span>
       )
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (product: Product) => (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => handleView(product)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            title="View Product"
+          >
+            <Eye className="w-4 h-4 text-gray-400" />
+          </button>
+          <button
+            onClick={() => handleEdit(product)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            title="Edit Product"
+          >
+            <Edit2 className="w-4 h-4 text-gray-400" />
+          </button>
+          <button
+            onClick={() => handleDelete(product)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            title="Delete Product"
+          >
+            <Trash2 className="w-4 h-4 text-red-400" />
+          </button>
+        </div>
+      )
     }
   ];
 
@@ -154,7 +262,12 @@ export function ProductsTab() {
         <UnifiedButton
           variant="primary"
           icon={Plus}
-          onClick={() => {/* Add product modal */}}
+          onClick={() => {
+            toast({
+              title: "Add Product",
+              description: "Product creation modal would open here",
+            });
+          }}
         >
           Add Product
         </UnifiedButton>
@@ -167,12 +280,12 @@ export function ProductsTab() {
         searchPlaceholder="Search products by name, SKU, or category..."
         onSearch={setSearchQuery}
         onRefresh={refetch}
-        onExport={() => console.log('Export')}
+        onExport={handleExport}
         loading={isLoading}
         actions={{
-          onView: (product) => console.log('View:', product),
-          onEdit: (product) => console.log('Edit:', product),
-          onDelete: (product) => console.log('Delete:', product)
+          onView: handleView,
+          onEdit: handleEdit,
+          onDelete: handleDelete
         }}
         pagination={{
           currentPage: 1,

@@ -32,7 +32,7 @@ export function AdminDashboard() {
 
   return (
     <ProtectedRoute requireAdmin={true}>
-      <AdminLayout>
+      <AdminLayout currentTab={tab}>
         {renderTab()}
       </AdminLayout>
     </ProtectedRoute>

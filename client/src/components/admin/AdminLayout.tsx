@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
+  currentTab?: string;
 }
 
 const ADMIN_TABS = [
@@ -22,9 +23,9 @@ const ADMIN_TABS = [
   { id: 'stripe', label: 'Stripe', icon: CreditCard },
 ];
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export function AdminLayout({ children, currentTab }: AdminLayoutProps) {
   const [location, navigate] = useLocation();
-  const currentTab = location.split('/').pop() || 'products';
+  const activeTab = currentTab || location.split('/').pop() || 'products';
 
   return (
     <div className="min-h-screen bg-[#0f172a]">
@@ -42,7 +43,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <nav className="flex space-x-1 -mb-px">
             {ADMIN_TABS.map((tab) => {
               const Icon = tab.icon;
-              const isActive = currentTab === tab.id;
+              const isActive = activeTab === tab.id;
               
               return (
                 <button
