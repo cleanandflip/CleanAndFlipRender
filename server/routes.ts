@@ -2023,14 +2023,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Broadcast update via WebSocket
-      if (wsManager) {
-        wsManager.broadcast({
-          type: 'user_update',
-          action: 'update',
-          userId: id,
-          data: updatedUser,
-          timestamp: new Date().toISOString()
-        });
+      try {
+        const { wsManager } = await import('./websocket');
+        if (wsManager) {
+          wsManager.broadcast({
+            type: 'user_update',
+            action: 'update',
+            userId: id,
+            data: updatedUser,
+            timestamp: new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
       }
       
       // Return user without password
@@ -2106,14 +2111,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Broadcast update via WebSocket
-      if (wsManager) {
-        wsManager.broadcast({
-          type: 'user_update',
-          action: 'create',
-          userId: newUser.id,
-          data: newUser,
-          timestamp: new Date().toISOString()
-        });
+      try {
+        const { wsManager } = await import('./websocket');
+        if (wsManager) {
+          wsManager.broadcast({
+            type: 'user_update',
+            action: 'create',
+            userId: newUser.id,
+            data: newUser,
+            timestamp: new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
       }
       
       // Return user without password
