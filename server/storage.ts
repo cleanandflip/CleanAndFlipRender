@@ -6,7 +6,7 @@ import {
   orderItems,
   cartItems,
   addresses,
-  // equipmentSubmissions, wishlist - removed for single-seller model
+  equipmentSubmissions,
   activityLogs,
   type User,
   type InsertUser,
@@ -22,7 +22,8 @@ import {
   type InsertCartItem,
   type Address,
   type InsertAddress,
-  // type EquipmentSubmission, type InsertEquipmentSubmission, type Wishlist, type InsertWishlist - removed for single-seller
+  type EquipmentSubmission,
+  type InsertEquipmentSubmission,
   type ActivityLog,
   type InsertActivityLog,
 } from "@shared/schema";

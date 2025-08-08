@@ -12,7 +12,7 @@ import {
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
-import { CleanUserDropdown } from "@/components/ui/CleanUserDropdown";
+
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, Heart } from "lucide-react";
@@ -158,14 +158,30 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <CleanUserDropdown 
-                user={{
-                  ...user,
-                  isAdmin: user.isAdmin || false
-                }}
-                onNavigate={handleNavigation}
-                onLogout={() => logoutMutation.mutate()}
-              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="bg-secondary border border-primary/30 w-10 h-10 flex-shrink-0">
+                    <User size={18} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => handleNavigation(ROUTES.DASHBOARD)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </DropdownMenuItem>
+                  {user.isAdmin && (
+                    <DropdownMenuItem onClick={() => handleNavigation(ROUTES.ADMIN)}>
+                      <Package className="mr-2 h-4 w-4" />
+                      Admin
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Button
                 variant="primary"

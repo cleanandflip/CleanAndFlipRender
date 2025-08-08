@@ -1041,58 +1041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // Admin wishlist analytics - Basic
-  app.get("/api/admin/wishlist-analytics", requireAdmin, async (req, res) => {
-    try {
-      const analytics = await storage.getWishlistAnalytics();
-      res.json(analytics);
-    } catch (error) {
-      Logger.error("Error fetching wishlist analytics", error);
-      res.status(500).json({ message: "Failed to fetch wishlist analytics" });
-    }
-  });
-
-  // Enhanced wishlist analytics with comprehensive insights
-  app.get("/api/admin/wishlist-analytics/detailed", requireAdmin, async (req, res) => {
-    try {
-      const { timeRange = '30d' } = req.query;
-      const analytics = await storage.getDetailedWishlistAnalytics(timeRange as string);
-      
-      // Generate actionable insights
-      const insights = (analytics as any).insights || [];
-      
-      res.json({
-        stats: analytics.stats,
-        trendData: analytics.trendData,
-        topProducts: analytics.topProducts,
-        topUsers: analytics.topUsers,
-        insights
-      });
-    } catch (error) {
-      Logger.error("Error fetching detailed wishlist analytics", error);
-      res.status(500).json({ message: "Failed to fetch detailed wishlist analytics" });
-    }
-  });
-
-  // Export wishlist analytics data
-  app.get("/api/admin/wishlist-analytics/export", requireAdmin, async (req, res) => {
-    try {
-      const { format = 'csv' } = req.query;
-      const data = await storage.getWishlistExportData();
-      
-      if (format === 'csv') {
-        const csv = JSON.stringify(data); // Simple conversion for now
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=wishlist-analytics.csv');
-        res.send(csv);
-      } else {
-        res.json(data);
-      }
-    } catch (error) {
-      Logger.error("Error exporting wishlist data", error);
-      res.status(500).json({ message: "Failed to export wishlist data" });
-    }
-  });
+  // Wishlist analytics functionality removed for single-seller model
 
   // Admin Products Management - Main endpoint  
   app.get("/api/admin/products", requireAdmin, async (req, res) => {
@@ -1439,7 +1388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { name, slug, description, is_active, filter_config } = req.body;
       
-      let imageUrl = null; // Clean slate: no image uploads initially
+      let imageUrl: string | undefined = undefined; // Clean slate: no image uploads initially
 
       const categoryData = {
         name,
@@ -1980,7 +1929,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { generateUniqueReference } = await import("./utils/referenceGenerator");
       const referenceNumber = await generateUniqueReference();
       
-      const submission = await storage.createEquipmentSubmission({
+      const submission = await storage.createSubmission({
         ...req.body,
         userId,
         referenceNumber,
