@@ -1,13 +1,14 @@
-// UNIFIED USERS TAB
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Users, UserPlus, Crown, Shield } from 'lucide-react';
+// UNIFIED USERS TAB WITH LIVE SYNC
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Users, UserPlus, Crown, Shield, Wifi, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedUserModal } from '@/components/admin/modals/EnhancedUserModal';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface User {
   id: string;
@@ -25,6 +26,8 @@ export function UsersTab() {
   const [showUserModal, setShowUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { isConnected, lastMessage } = useWebSocket();
 
   const { data: usersData, isLoading, refetch } = useQuery({
     queryKey: ['admin-users', searchQuery],
@@ -34,6 +37,23 @@ export function UsersTab() {
       return res.json();
     }
   });
+
+  // Handle live sync updates
+  useEffect(() => {
+    if (lastMessage?.type === 'user_update') {
+      // Invalidate and refetch users data
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      
+      // Show sync animation
+      const tableElement = document.querySelector('[data-table="users"]');
+      if (tableElement) {
+        tableElement.classList.add('animate-liveSync');
+        setTimeout(() => {
+          tableElement.classList.remove('animate-liveSync');
+        }, 800);
+      }
+    }
+  }, [lastMessage, queryClient]);
 
   const users: User[] = Array.isArray(usersData) ? usersData : [];
 
@@ -220,7 +240,22 @@ export function UsersTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">User Management</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-white">User Management</h2>
+            <div className="flex items-center gap-2">
+              {isConnected ? (
+                <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full">
+                  <Wifi className="w-3 h-3 text-green-400 animate-pulse" />
+                  <span className="text-xs text-green-400 font-medium">Live Sync</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 rounded-full">
+                  <WifiOff className="w-3 h-3 text-red-400" />
+                  <span className="text-xs text-red-400 font-medium">Offline</span>
+                </div>
+              )}
+            </div>
+          </div>
           <p className="text-gray-400 mt-1">Manage registered users and permissions</p>
         </div>
         <UnifiedButton
@@ -236,25 +271,27 @@ export function UsersTab() {
       </div>
 
       {/* Table */}
-      <UnifiedDataTable
-        data={users}
-        columns={columns}
-        searchPlaceholder="Search users by name or email..."
-        onSearch={setSearchQuery}
-        onRefresh={refetch}
-        onExport={handleExportUsers}
-        loading={isLoading}
-        actions={{
-          onView: handleView,
-          onEdit: handleEdit,
-          onDelete: handleDelete
-        }}
-        pagination={{
-          currentPage: 1,
-          totalPages: Math.ceil(users.length / 20) || 1,
-          onPageChange: (page) => console.log('Page:', page)
-        }}
-      />
+      <div data-table="users">
+        <UnifiedDataTable
+          data={users}
+          columns={columns}
+          searchPlaceholder="Search users by name or email..."
+          onSearch={setSearchQuery}
+          onRefresh={refetch}
+          onExport={handleExportUsers}
+          loading={isLoading}
+          actions={{
+            onView: handleView,
+            onEdit: handleEdit,
+            onDelete: handleDelete
+          }}
+          pagination={{
+            currentPage: 1,
+            totalPages: Math.ceil(users.length / 20) || 1,
+            onPageChange: (page) => console.log('Page:', page)
+          }}
+        />
+      </div>
 
       {/* Modal */}
       {showUserModal && (

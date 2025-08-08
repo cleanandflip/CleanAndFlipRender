@@ -59,9 +59,60 @@ export function useWebSocket() {
       setIsConnected(false);
       console.log('WebSocket disconnected');
       
-      // Reconnect after 3 seconds
+      // Auto-reconnect after 3 seconds
       setTimeout(() => {
         console.log('Attempting WebSocket reconnection...');
+        if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
+          const newWs = new WebSocket(wsUrl);
+          ws.current = newWs;
+          
+          // Re-bind event handlers
+          newWs.onopen = () => {
+            setIsConnected(true);
+            console.log('WebSocket reconnected successfully');
+          };
+          
+          newWs.onmessage = (event) => {
+            try {
+              const message: WebSocketMessage = JSON.parse(event.data);
+              setLastMessage(message);
+              
+              // Handle different message types
+              switch (message.type) {
+                case 'product_update':
+                  toast({
+                    title: "Live Update",
+                    description: "Product data updated in real-time",
+                  });
+                  break;
+                case 'user_update':
+                  toast({
+                    title: "Live Update", 
+                    description: "User data updated in real-time",
+                  });
+                  break;
+                case 'stripe_sync_complete':
+                  toast({
+                    title: "Sync Complete",
+                    description: "Stripe synchronization finished",
+                  });
+                  break;
+              }
+            } catch (error) {
+              console.error('WebSocket message parse error:', error);
+            }
+          };
+          
+          newWs.onclose = () => {
+            setIsConnected(false);
+            console.log('WebSocket disconnected again');
+          };
+          
+          newWs.onerror = (error) => {
+            console.error('WebSocket reconnection error:', error);
+            setIsConnected(false);
+          };
+        }
       }, 3000);
     };
 
