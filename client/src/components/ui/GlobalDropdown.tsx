@@ -137,17 +137,18 @@ export function GlobalDropdown({
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.15 }}
                 ref={dropdownRef}
-                className="rounded-lg overflow-hidden max-h-96 overflow-y-auto"
+                className="rounded-lg overflow-hidden max-h-96 overflow-y-auto shadow-2xl border"
                 style={{
                   position: 'fixed',
                   top: dropdownPosition.top,
                   left: dropdownPosition.left,
                   width: dropdownPosition.width,
                   zIndex: 999999,
-                  background: 'rgba(75, 85, 99, 0.4)',
-                  border: '1px solid rgba(156, 163, 175, 0.4)',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)'
+                  background: 'rgba(30, 41, 59, 0.95)',
+                  borderColor: 'rgba(71, 85, 105, 0.6)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)'
                 }}
               >
                 {children}
@@ -174,8 +175,8 @@ export function DropdownItem({ onClick, children, className = '', disabled = fal
     <div
       onClick={disabled ? undefined : onClick}
       className={`
-        px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150
-        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+        px-4 py-3 text-white hover:bg-gradient-to-r hover:from-slate-700/50 hover:to-slate-600/30 cursor-pointer transition-all duration-200 flex items-center
+        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}
         ${className}
       `}
     >
@@ -186,7 +187,7 @@ export function DropdownItem({ onClick, children, className = '', disabled = fal
 
 // Separator component for dropdown sections
 export function DropdownSeparator({ className = '' }: { className?: string }) {
-  return <div className={`border-t border-gray-600/50 my-1 ${className}`} />;
+  return <div className={`border-t border-slate-600/40 my-1 ${className}`} />;
 }
 
 // Label component for dropdown sections
@@ -197,7 +198,7 @@ interface DropdownLabelProps {
 
 export function DropdownLabel({ children, className = '' }: DropdownLabelProps) {
   return (
-    <div className={`px-4 py-2 text-white font-medium text-sm ${className}`}>
+    <div className={`px-4 py-3 text-white font-semibold text-sm border-b border-slate-600/40 ${className}`}>
       {children}
     </div>
   );

@@ -144,7 +144,14 @@ export default function Navigation() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden bg-secondary p-2 w-10 h-10 flex-shrink-0 text-text-secondary border border-primary border-transparent hover:text-primary hover:bg-white/10 hover:shadow-lg hover:shadow-white/20 hover:border-white/20 transition-all duration-200"
+              className="lg:hidden w-10 h-10 flex-shrink-0 transition-all duration-200 hover:bg-white/10"
+              style={{
+                background: 'rgba(75, 85, 99, 0.4)',
+                border: '1px solid rgba(156, 163, 175, 0.4)',
+                backdropFilter: 'blur(8px)',
+                color: 'white',
+                fontWeight: '500'
+              }}
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
               <Search size={18} />
@@ -159,7 +166,14 @@ export default function Navigation() {
                 trigger={
                   <Button
                     variant="ghost"
-                    className="bg-secondary border border-primary/30 h-10 px-3 flex-shrink-0 hover:bg-white/10 hover:border-white/20 transition-all duration-200 flex items-center gap-2"
+                    className="h-10 px-3 flex-shrink-0 transition-all duration-200 flex items-center gap-2 hover:bg-white/10"
+                    style={{
+                      background: 'rgba(75, 85, 99, 0.4)',
+                      border: '1px solid rgba(156, 163, 175, 0.4)',
+                      backdropFilter: 'blur(8px)',
+                      color: 'white',
+                      fontWeight: '500'
+                    }}
                   >
                     <User size={16} />
                     <span className="hidden sm:inline text-sm font-medium">{user.firstName || 'User'}</span>
@@ -227,10 +241,11 @@ export default function Navigation() {
             <div className="relative">
               <button
                 onClick={handleCartClick}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 focus:outline-none relative"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 focus:outline-none relative hover:bg-white/10"
                 style={{
                   background: 'rgba(75, 85, 99, 0.4)',
                   border: isCartOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
+                  backdropFilter: 'blur(8px)',
                   color: 'white',
                   fontWeight: '500'
                 }}
