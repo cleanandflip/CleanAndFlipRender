@@ -1,10 +1,11 @@
 // UNIFIED WISHLIST TAB
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Heart, TrendingUp, Users, Package } from 'lucide-react';
+import { Heart, TrendingUp, Users, Package, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
+import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 
 interface WishlistItem {
@@ -210,6 +211,49 @@ export function WishlistTab() {
         <div>
           <h2 className="text-2xl font-bold text-white">Wishlist Analytics</h2>
           <p className="text-gray-400 mt-1">Track what users want most</p>
+        </div>
+        <div className="flex gap-3">
+          <UnifiedButton
+            variant="secondary"
+            icon={RefreshCw}
+            onClick={() => {
+              refetch();
+              toast({
+                title: "Data Refreshed",
+                description: "Wishlist data has been updated",
+              });
+            }}
+          >
+            Refresh
+          </UnifiedButton>
+          <UnifiedButton
+            variant="secondary"
+            onClick={() => {
+              // Export wishlist data
+              const csvHeaders = 'Product,User,Price,Added Date\n';
+              const csvData = wishlistItems.map((item: WishlistItem) => 
+                `"${item.productName}","${item.userEmail}","$${item.price}","${new Date(item.addedAt).toLocaleDateString()}"`
+              ).join('\n');
+              
+              const fullCsv = csvHeaders + csvData;
+              const blob = new Blob([fullCsv], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `wishlist-export-${new Date().toISOString().split('T')[0]}.csv`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+              
+              toast({
+                title: "Export Complete",
+                description: `Exported ${wishlistItems.length} wishlist items to CSV`,
+              });
+            }}
+          >
+            Export Data
+          </UnifiedButton>
         </div>
       </div>
 

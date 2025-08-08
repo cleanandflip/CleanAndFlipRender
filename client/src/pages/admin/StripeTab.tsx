@@ -163,7 +163,13 @@ export function StripeTab() {
         <UnifiedButton
           variant="secondary"
           icon={RefreshCw}
-          onClick={refetch}
+          onClick={() => {
+            refetch();
+            toast({
+              title: "Sync Complete",
+              description: "Successfully refreshed Stripe data",
+            });
+          }}
         >
           Sync with Stripe
         </UnifiedButton>

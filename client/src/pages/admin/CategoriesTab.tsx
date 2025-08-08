@@ -79,7 +79,7 @@ export function CategoriesTab() {
       // Generate CSV data for categories
       const csvHeaders = 'Name,Slug,Product Count,Status,Created Date\n';
       const csvData = categories.map((c: Category) => 
-        `"${c.name}","${c.slug}","${c.productCount}","${c.isActive ? 'Active' : 'Inactive'}","${new Date(c.createdAt).toLocaleDateString()}"`
+        `"${c.name}","${c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}","${c.productCount}","${c.isActive ? 'Active' : 'Inactive'}","${new Date(c.createdAt).toLocaleDateString()}"`
       ).join('\n');
       
       const fullCsv = csvHeaders + csvData;

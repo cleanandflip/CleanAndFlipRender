@@ -5,12 +5,11 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CategoryModalProps {
   category?: any;
-  isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
 }
 
-export function CategoryModal({ category, isOpen, onClose, onSave }: CategoryModalProps) {
+export function CategoryModal({ category, onClose, onSave }: CategoryModalProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const [formData, setFormData] = useState({

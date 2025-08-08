@@ -5,12 +5,11 @@ import { useToast } from '@/hooks/use-toast';
 
 interface UserModalProps {
   user?: any;
-  isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
 }
 
-export function UserModal({ user, isOpen, onClose, onSave }: UserModalProps) {
+export function UserModal({ user, onClose, onSave }: UserModalProps) {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();

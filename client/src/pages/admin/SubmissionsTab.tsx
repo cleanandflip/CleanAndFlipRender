@@ -1,10 +1,11 @@
 // UNIFIED SUBMISSIONS TAB
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FolderOpen, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { FolderOpen, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
+import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 
 interface Submission {
@@ -13,6 +14,7 @@ interface Submission {
   description: string;
   status: 'pending' | 'approved' | 'rejected';
   submittedBy: string;
+  submitterName: string;
   submittedAt: string;
   category: string;
   estimatedValue: number;
@@ -213,6 +215,49 @@ export function SubmissionsTab() {
         <div>
           <h2 className="text-2xl font-bold text-white">Equipment Submissions</h2>
           <p className="text-gray-400 mt-1">Review and manage user equipment submissions</p>
+        </div>
+        <div className="flex gap-3">
+          <UnifiedButton
+            variant="secondary"
+            icon={RefreshCw}
+            onClick={() => {
+              refetch();
+              toast({
+                title: "Data Refreshed",
+                description: "Submissions data has been updated",
+              });
+            }}
+          >
+            Refresh
+          </UnifiedButton>
+          <UnifiedButton
+            variant="secondary"
+            onClick={() => {
+              // Export submissions data
+              const csvHeaders = 'Submitter,Title,Category,Est. Value,Status,Submitted Date\n';
+              const csvData = submissions.map((s: Submission) => 
+                `"${s.submitterName}","${s.title}","${s.category}","$${s.estimatedValue}","${s.status}","${new Date(s.submittedAt).toLocaleDateString()}"`
+              ).join('\n');
+              
+              const fullCsv = csvHeaders + csvData;
+              const blob = new Blob([fullCsv], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `submissions-export-${new Date().toISOString().split('T')[0]}.csv`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+              
+              toast({
+                title: "Export Complete",
+                description: `Exported ${submissions.length} submissions to CSV`,
+              });
+            }}
+          >
+            Export Data
+          </UnifiedButton>
         </div>
       </div>
 
