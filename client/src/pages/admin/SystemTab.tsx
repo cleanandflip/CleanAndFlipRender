@@ -52,7 +52,7 @@ export function SystemTab() {
         />
         <UnifiedMetricCard
           title="Memory Usage"
-          value={`${Math.round((process as any)?.memoryUsage?.()?.heapUsed / 1024 / 1024) || 0}MB`}
+          value={`${Math.round((systemHealth?.memory?.heapUsed || 0) / 1024 / 1024)}MB`}
           icon={Cpu}
         />
       </div>
