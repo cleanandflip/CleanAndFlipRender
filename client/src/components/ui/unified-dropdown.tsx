@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,7 +39,10 @@ export function UnifiedDropdown({
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [isReady, setIsReady] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const portalRoot = typeof document !== 'undefined' ? document.body : null;
 
   // Normalize options to DropdownOption format
   const normalizedOptions: DropdownOption[] = options.map(opt => 
@@ -52,14 +56,34 @@ export function UnifiedDropdown({
       )
     : normalizedOptions;
 
+  // Portal readiness
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
+
   // Calculate dropdown position when opening
   useEffect(() => {
     if (isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
+      const scrollY = window.scrollY;
+      const scrollX = window.scrollX;
+      
+      let left = rect.left + scrollX;
+      const width = Math.max(rect.width, 200);
+      
+      // Ensure dropdown doesn't go off-screen
+      const windowWidth = window.innerWidth;
+      if (left + width > windowWidth) {
+        left = windowWidth - width - 10;
+      }
+      if (left < 10) {
+        left = 10;
+      }
+
       setDropdownPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.left + window.scrollX,
-        width: rect.width
+        top: rect.bottom + scrollY + 8,
+        left,
+        width
       });
     }
   }, [isOpen]);
@@ -88,6 +112,37 @@ export function UnifiedDropdown({
       setSelectedIndex(-1);
     }
   };
+
+  // Click outside and escape handling
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isOpen &&
+        triggerRef.current &&
+        dropdownRef.current &&
+        !triggerRef.current.contains(event.target as Node) &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+        setSelectedIndex(-1);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+        setSelectedIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
 
   // Remove debug logs for production
 
@@ -151,87 +206,99 @@ export function UnifiedDropdown({
         />
       </div>
 
-      {/* Dropdown Menu - Matching UnifiedSearchBar styling exactly */}
-      {isOpen && !disabled && (
-        <div 
-          className="absolute top-full left-0 right-0 mt-2 z-50 rounded-lg shadow-2xl max-h-64 overflow-y-auto overflow-x-hidden"
-          style={{
-            background: 'rgba(30, 41, 59, 0.95)',
-            border: '1px solid rgba(71, 85, 105, 0.6)',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
-          }}
-        >
-          {/* Show custom option first if applicable */}
-          {allowCustom && search.trim() && !normalizedOptions.find(opt => opt.label.toLowerCase() === search.trim().toLowerCase()) && (
-            <button
-              type="button"
-              onClick={() => {
-                onChange(search.trim());
-                setIsOpen(false);
-                setSelectedIndex(-1);
-              }}
-              className="w-full px-4 py-3 text-left flex items-center justify-between transition-all duration-200 hover:scale-[1.02] group border-b border-slate-600/40"
-            >
-              <span className="font-medium text-blue-300 flex items-center gap-2">
-                <span>Create "{search.trim()}"</span>
-                <span className="text-xs bg-blue-500/20 px-2 py-1 rounded">Custom</span>
-              </span>
-            </button>
-          )}
-          
-          {filteredOptions.length > 0 ? (
-            filteredOptions.map((option, index) => (
-              <button
-                key={option.value}
-                type="button"
+      {/* Safe Portal Dropdown with GlobalDropdown Theme */}
+      {isReady && portalRoot && createPortal(
+        <AnimatePresence>
+          {isOpen && !disabled && (
+            <>
+              {/* Backdrop */}
+              <motion.div 
+                key="backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/20" 
+                style={{ zIndex: 999998 }}
                 onClick={() => {
-                  onChange(option.value);
                   setIsOpen(false);
-                  if (searchable) {
-                    setSearch(option.label);
-                  }
                   setSelectedIndex(-1);
                 }}
-                disabled={option.disabled}
-                className={cn(
-                  "w-full px-4 py-3 text-left flex items-center justify-between transition-all duration-200 hover:scale-[1.02] group",
-                  "first:rounded-t-lg last:rounded-b-lg min-w-0", // Added min-w-0 to prevent overflow
-                  option.disabled 
-                    ? 'text-gray-500 cursor-not-allowed opacity-50' 
-                    : 'text-white hover:bg-gradient-to-r hover:from-slate-700/50 hover:to-slate-600/30 cursor-pointer',
-                  option.value === value && 'bg-gradient-to-r from-blue-600/20 to-blue-500/10 text-blue-200',
-                  selectedIndex === index && 'bg-gradient-to-r from-slate-600/40 to-slate-500/20'
-                )}
+              />
+              
+              {/* Dropdown Content */}
+              <motion.div 
+                key="dropdown"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                ref={dropdownRef}
+                className="rounded-lg overflow-hidden max-h-96 overflow-y-auto"
                 style={{
-                  borderBottom: index < filteredOptions.length - 1 ? '1px solid rgba(71, 85, 105, 0.3)' : 'none'
+                  position: 'fixed',
+                  top: dropdownPosition.top,
+                  left: dropdownPosition.left,
+                  width: dropdownPosition.width,
+                  zIndex: 999999,
+                  background: 'rgba(75, 85, 99, 0.4)',
+                  border: '1px solid rgba(156, 163, 175, 0.4)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)'
                 }}
               >
-                <span className="font-medium truncate flex-1 pr-2">{option.label}</span>
-                {option.value === value && (
-                  <Check className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                {/* Show custom option first if applicable */}
+                {allowCustom && search.trim() && !normalizedOptions.find(opt => opt.label.toLowerCase() === search.trim().toLowerCase()) && (
+                  <div
+                    onClick={() => {
+                      onChange(search.trim());
+                      setIsOpen(false);
+                      setSelectedIndex(-1);
+                    }}
+                    className="px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 border-b border-gray-600/50"
+                  >
+                    <span className="font-medium text-blue-300 flex items-center gap-2">
+                      <span>Create "{search.trim()}"</span>
+                      <span className="text-xs bg-blue-500/20 px-2 py-1 rounded">Custom</span>
+                    </span>
+                  </div>
                 )}
-              </button>
-            ))
-          ) : (
-            <div className="px-6 py-4 text-center">
-              <span className="text-slate-400 font-medium">
-                {allowCustom ? 'Type to create custom option' : 'No options found'}
-              </span>
-            </div>
+                
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map((option, index) => (
+                    <div
+                      key={option.value}
+                      onClick={() => {
+                        if (!option.disabled) {
+                          onChange(option.value);
+                          setIsOpen(false);
+                          if (searchable) {
+                            setSearch(option.label);
+                          }
+                          setSelectedIndex(-1);
+                        }
+                      }}
+                      className={cn(
+                        "px-4 py-2 text-white hover:bg-white/10 cursor-pointer transition-colors duration-150 flex items-center justify-between",
+                        option.disabled && 'opacity-50 cursor-not-allowed',
+                        option.value === value && 'bg-white/10'
+                      )}
+                    >
+                      <span className="font-medium truncate flex-1 pr-2">{option.label}</span>
+                      {option.value === value && (
+                        <Check className="w-4 h-4 text-blue-400" />
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-4 py-2 text-white font-medium text-center">
+                    {allowCustom ? 'Type to create custom option' : 'No options found'}
+                  </div>
+                )}
+              </motion.div>
+            </>
           )}
-        </div>
-      )}
-
-      {/* Click outside to close */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 z-10" 
-          onClick={() => {
-            setIsOpen(false);
-            setSelectedIndex(-1);
-          }} 
-        />
+        </AnimatePresence>,
+        portalRoot
       )}
     </div>
   );
