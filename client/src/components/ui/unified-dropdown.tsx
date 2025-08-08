@@ -289,7 +289,7 @@ export function UnifiedDropdown({
                         )}
                       </div>
                       {index < filteredOptions.length - 1 && (
-                        <div className="border-t border-gray-400/70 mx-4" />
+                        <div className="border-t mx-4" style={{ borderColor: '#4B5563' }} />
                       )}
                     </div>
                   ))
