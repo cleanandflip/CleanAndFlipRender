@@ -162,7 +162,7 @@ export function ProductModal({ product, isOpen, onClose, onSave }: ProductModalP
     }
   };
 
-  if (!isOpen) return null;
+  // Modal is always rendered when component is mounted
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
