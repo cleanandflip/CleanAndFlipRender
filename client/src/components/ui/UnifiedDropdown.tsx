@@ -107,7 +107,7 @@ export function UnifiedDropdown({
       disabled && "opacity-50 cursor-not-allowed"
     ),
     nav: cn(
-      "flex items-center gap-3 px-4 py-3 min-w-[140px]",
+      "flex items-center gap-2 px-3 py-2",
       "rounded-lg transition-all duration-200",
       !disabled && "hover:bg-white hover:bg-opacity-10",
       disabled && "opacity-50 cursor-not-allowed"
@@ -213,12 +213,12 @@ export function UnifiedDropdown({
                 onClick={() => handleSelect(option)}
                 disabled={option.disabled}
                 className={cn(
-                  "w-full px-4 py-3 text-left",
+                  "w-full px-4 py-2.5 text-left",
                   "flex items-center justify-between",
                   "transition-colors duration-150",
                   !option.disabled && "hover:bg-white hover:bg-opacity-5",
                   option.disabled && "opacity-50 cursor-not-allowed",
-                  index !== 0 && "border-t border-white/10"
+                  index !== 0 && "border-t"
                 )}
                 style={{
                   color: theme.colors.textPrimary,
@@ -229,8 +229,8 @@ export function UnifiedDropdown({
                 }}
               >
                 <div className="flex items-center gap-3">
-                  {option.icon && <span className="w-5 h-5 flex-shrink-0">{option.icon}</span>}
-                  <span className="font-medium">{option.label}</span>
+                  {option.icon && <span className="w-5 h-5">{option.icon}</span>}
+                  <span>{option.label}</span>
                 </div>
                 {selectedValues.includes(option.value) && (
                   <Check 

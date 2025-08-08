@@ -212,3 +212,24 @@ export function useWebSocket() {
     lastMessage
   };
 }
+      }
+    };
+  }, []);
+
+  const sendMessage = (message: Omit<WebSocketMessage, 'timestamp'>) => {
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      const fullMessage: WebSocketMessage = {
+        ...message,
+        timestamp: new Date().toISOString()
+      };
+      ws.current.send(JSON.stringify(fullMessage));
+    }
+  };
+
+  return {
+    isConnected,
+    lastMessage,
+    sendMessage,
+    ws: ws.current
+  };
+}
