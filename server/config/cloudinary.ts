@@ -1,5 +1,4 @@
 import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
 
 // Configure Cloudinary
@@ -9,18 +8,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Configure multer storage
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'clean-and-flip/products',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [
-      { width: 1200, height: 1200, crop: 'limit' },
-      { quality: 'auto' }
-    ]
-  } as any
-});
+// Use memory storage for now (can be enhanced later)
+const storage = multer.memoryStorage();
 
 export const upload = multer({ 
   storage,

@@ -121,10 +121,10 @@ export const db = drizzle({ client: pool, schema });
 import { sql } from 'drizzle-orm';
 db.execute(sql`SELECT current_database() as db, current_user as user, version() as version`)
   .then((result) => {
-    const info = result.rows[0];
+    const info = result.rows[0] as any;
     console.log('[DB] ✅ Database connected successfully');
     console.log(`[DB] Database: ${info.db}, User: ${info.user}`);
-    console.log(`[DB] PostgreSQL Version: ${info.version.split(',')[0]}`);
+    console.log(`[DB] PostgreSQL Version: ${info.version?.split(',')[0] || 'unknown'}`);
   })
   .catch((err) => {
     console.error('[DB] ❌ Database connection failed:', err.message);
