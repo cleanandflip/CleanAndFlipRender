@@ -26,10 +26,10 @@ interface ProductCardProps {
   product: Product;
   viewMode?: 'grid' | 'list';
   compact?: boolean;
-  isWishlisted?: boolean;
+
 }
 
-export default function ProductCard({ product, viewMode = 'grid', compact = false, isWishlisted = false }: ProductCardProps) {
+export default function ProductCard({ product, viewMode = 'grid', compact = false }: ProductCardProps) {
   // Handle both string URLs and image objects with url property
   const imageData = product.images?.[0];
   const mainImage = typeof imageData === 'string' ? imageData : (imageData as any)?.url;

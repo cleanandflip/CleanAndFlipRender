@@ -9,7 +9,6 @@ import { CategoriesTab } from './admin/CategoriesTab';
 import { UsersTab } from './admin/UsersTab';
 import { SystemTab } from './admin/SystemTab';
 import { StripeTab } from './admin/StripeTab';
-import { WishlistTab } from './admin/WishlistTab';
 import { SubmissionsTab } from './admin/SubmissionsTab';
 
 export function AdminDashboard() {
@@ -24,7 +23,6 @@ export function AdminDashboard() {
       case 'users': return <UsersTab />;
       case 'system': return <SystemTab />;
       case 'stripe': return <StripeTab />;
-      case 'wishlist': return <WishlistTab />;
       case 'submissions': return <SubmissionsTab />;
       default: return <ProductsTab />;
     }

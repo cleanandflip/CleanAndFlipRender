@@ -47,7 +47,7 @@ export const useNavigation = () => {
     goToAdminUsers: () => setLocation(routes.adminTab('users')),
     goToAdminSubmissions: () => setLocation(routes.adminTab('submissions')),
     goToAdminAnalytics: () => setLocation(routes.adminTab('analytics')),
-    goToAdminWishlist: () => setLocation(routes.adminTab('wishlist')),
+
     goToAdminSystem: () => setLocation(routes.adminTab('system')),
     goToNewProduct: () => setLocation(ROUTES.ADMIN_PRODUCT_NEW),
     goToEditProduct: (id: string) => setLocation(routes.adminProduct(id)),

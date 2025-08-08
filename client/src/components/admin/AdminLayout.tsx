@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { 
-  Package, Grid, FolderOpen, BarChart3, Heart, 
+  Package, Grid, FolderOpen, BarChart3, 
   Users, Settings, CreditCard, ChevronRight, Wifi, WifiOff 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,7 +18,6 @@ const ADMIN_TABS = [
   { id: 'categories', label: 'Categories', icon: Grid },
   { id: 'submissions', label: 'Submissions', icon: FolderOpen },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'wishlist', label: 'Wishlist', icon: Heart },
   { id: 'users', label: 'Users', icon: Users },
   { id: 'system', label: 'System', icon: Settings },
   { id: 'stripe', label: 'Stripe', icon: CreditCard },
