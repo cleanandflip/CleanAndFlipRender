@@ -1,14 +1,14 @@
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 
-// Configure Cloudinary
+// Configure Cloudinary (clean slate setup)
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'demo',
+  api_key: process.env.CLOUDINARY_API_KEY || 'demo',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'demo'
 });
 
-// Use memory storage for now (can be enhanced later)
+// Clean slate: Use memory storage
 const storage = multer.memoryStorage();
 
 export const upload = multer({ 

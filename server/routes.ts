@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
-import { upload, cloudinary } from "./config/cloudinary";
+// import { upload, cloudinary } from "./config/cloudinary"; // Temporarily disabled for clean slate setup
 import multer from 'multer';
 import cors from "cors";
 import { 
@@ -1608,18 +1608,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/categories", requireAdmin, upload.single('image'), async (req, res) => {
+  app.post("/api/admin/categories", requireAdmin, /* upload.single('image'), */ async (req, res) => {
     try {
       const { name, slug, description, is_active, filter_config } = req.body;
       
-      let imageUrl;
-      if (req.file) {
-        const result = await (cloudinary as any).v2.uploader.upload(req.file.path, {
-          folder: 'categories',
-          transformation: [{ width: 800, height: 600, crop: 'fill', quality: 'auto' }]
-        });
-        imageUrl = result.secure_url;
-      }
+      let imageUrl = null; // Clean slate: no image uploads initially
 
       const categoryData = {
         name,
@@ -1638,31 +1631,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/categories/:id", requireAdmin, upload.single('image'), async (req, res) => {
+  app.put("/api/admin/categories/:id", requireAdmin, /* upload.single('image'), */ async (req, res) => {
     try {
       const { name, slug, description, is_active, existing_image_url, filter_config } = req.body;
       
-      let imageUrl = existing_image_url;
-      if (req.file) {
-        // Upload new image
-        const result = await (cloudinary as any).v2.uploader.upload(req.file.path, {
-          folder: 'categories',
-          transformation: [{ width: 800, height: 600, crop: 'fill', quality: 'auto' }]
-        });
-        imageUrl = result.secure_url;
-        
-        // Delete old image if it exists
-        if (existing_image_url) {
-          try {
-            const publicId = existing_image_url.split('/').pop()?.split('.')[0];
-            if (publicId) {
-              await (cloudinary as any).v2.uploader.destroy(`categories/${publicId}`);
-            }
-          } catch (deleteError) {
-            Logger.error("Failed to delete old image", deleteError);
-          }
-        }
-      }
+      let imageUrl = existing_image_url || null; // Clean slate: no file uploads initially
 
       const updates = {
         name,
@@ -2045,7 +2018,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Product management endpoints
   
   // Create new product with image uploads
-  app.post("/api/admin/products", requireAdmin, upload.array('images', 6), async (req, res) => {
+  app.post("/api/admin/products", requireAdmin, /* upload.array('images', 6), */ async (req, res) => {
     try {
       // Handle images array from form data
       let images = [];
@@ -2087,7 +2060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update product with image uploads
-  app.put("/api/admin/products/:id", requireAdmin, upload.array('images', 6), async (req, res) => {
+  app.put("/api/admin/products/:id", requireAdmin, /* upload.array('images', 6), */ async (req, res) => {
     try {
       const { id } = req.params;
       

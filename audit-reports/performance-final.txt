@@ -1,3 +1,0 @@
-\n=== PERFORMANCE ANALYSIS ===
-41
-Total useEffect hooks found

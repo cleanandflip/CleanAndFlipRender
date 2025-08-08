@@ -1,2 +1,0 @@
-\n=== MISSING IMPORTS ===
-./client/src/components/admin/CategoryModal.tsx:17:import type { Category } from '@/shared/schema';
