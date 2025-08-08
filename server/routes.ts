@@ -1209,6 +1209,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Image upload endpoint for products  
+  app.post('/api/admin/products/upload', requireAdmin, async (req, res) => {
+    try {
+      // For now, return a placeholder response
+      // The actual upload functionality will be handled by the ProductModal
+      res.json({ 
+        success: true, 
+        url: 'https://via.placeholder.com/300x300?text=Upload+Placeholder',
+        publicId: 'placeholder' 
+      });
+    } catch (error) {
+      Logger.error('Image upload error:', error);
+      res.status(500).json({ error: 'Failed to upload image' });
+    }
+  });
+
   // Product bulk operations
   app.post("/api/admin/products/bulk", requireAdmin, async (req, res) => {
     try {

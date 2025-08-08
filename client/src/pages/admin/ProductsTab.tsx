@@ -7,7 +7,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
-import { AddProductModal } from '@/components/admin/Modals';
+import { ProductModal } from '@/components/admin/modals/ProductModal';
 
 interface Product {
   id: string;
@@ -24,9 +24,8 @@ interface Product {
 
 export function ProductsTab() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { toast } = useToast();
   
   const { data: productsData, isLoading, refetch, error } = useQuery({
@@ -72,13 +71,13 @@ export function ProductsTab() {
   };
 
   const handleEdit = (product: Product) => {
-    console.log('Edit:', product);
-    setEditingProduct(product);
-    setShowEditModal(true);
-    toast({
-      title: "Edit Mode",
-      description: `Opening edit form for ${product.name}`,
-    });
+    setSelectedProduct(product);
+    setShowProductModal(true);
+  };
+
+  const handleAddProduct = () => {
+    setSelectedProduct(null);
+    setShowProductModal(true);
   };
 
   const handleDelete = async (product: Product) => {
@@ -239,7 +238,7 @@ export function ProductsTab() {
         <UnifiedButton
           variant="primary"
           icon={Plus}
-          onClick={() => setShowAddModal(true)}
+          onClick={handleAddProduct}
         >
           Add Product
         </UnifiedButton>
@@ -266,10 +265,14 @@ export function ProductsTab() {
         }}
       />
 
-      {/* Modals */}
-      {showAddModal && (
-        <AddProductModal 
-          onClose={() => setShowAddModal(false)} 
+      {/* Modal */}
+      {showProductModal && (
+        <ProductModal 
+          product={selectedProduct}
+          onClose={() => {
+            setShowProductModal(false);
+            setSelectedProduct(null);
+          }} 
           onSave={refetch}
         />
       )}

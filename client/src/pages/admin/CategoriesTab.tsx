@@ -7,7 +7,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
-import { AddCategoryModal } from '@/components/admin/Modals';
+import { CategoryModal } from '@/components/admin/modals/CategoryModal';
 
 interface Category {
   id: string;
@@ -20,9 +20,8 @@ interface Category {
 
 export function CategoriesTab() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -39,22 +38,13 @@ export function CategoriesTab() {
 
   // Action handlers
   const handleView = (category: Category) => {
-    console.log('View:', category);
-    window.open(`/category/${category.slug}`, '_blank');
-    toast({
-      title: "Opening Category",
-      description: `Opening ${category.name} in new tab`,
-    });
+    setSelectedCategory(category);
+    setShowCategoryModal(true);
   };
 
   const handleEdit = (category: Category) => {
-    console.log('Edit:', category);
-    setEditingCategory(category);
-    setShowEditModal(true);
-    toast({
-      title: "Edit Mode",
-      description: `Opening edit form for ${category.name}`,
-    });
+    setSelectedCategory(category);
+    setShowCategoryModal(true);
   };
 
   const handleDelete = async (category: Category) => {
@@ -194,7 +184,10 @@ export function CategoriesTab() {
         <UnifiedButton
           variant="primary"
           icon={Plus}
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setSelectedCategory(null);
+            setShowCategoryModal(true);
+          }}
         >
           Add Category
         </UnifiedButton>
@@ -221,10 +214,14 @@ export function CategoriesTab() {
         }}
       />
 
-      {/* Modals */}
-      {showAddModal && (
-        <AddCategoryModal 
-          onClose={() => setShowAddModal(false)} 
+      {/* Modal */}
+      {showCategoryModal && (
+        <CategoryModal 
+          category={selectedCategory}
+          onClose={() => {
+            setShowCategoryModal(false);
+            setSelectedCategory(null);
+          }} 
           onSave={refetch}
         />
       )}

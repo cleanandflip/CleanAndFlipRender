@@ -7,7 +7,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
-import { AddUserModal } from '@/components/admin/Modals';
+import { UserModal } from '@/components/admin/modals/UserModal';
 
 interface User {
   id: string;
@@ -22,9 +22,8 @@ interface User {
 
 export function UsersTab() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
 
   const { data: usersData, isLoading, refetch } = useQuery({
@@ -40,21 +39,13 @@ export function UsersTab() {
 
   // Action handlers
   const handleView = (user: User) => {
-    console.log('View:', user);
-    toast({
-      title: "User Details",
-      description: `Viewing profile for ${user.firstName} ${user.lastName}`,
-    });
+    setSelectedUser(user);
+    setShowUserModal(true);
   };
 
   const handleEdit = (user: User) => {
-    console.log('Edit:', user);
-    setEditingUser(user);
-    setShowEditModal(true);
-    toast({
-      title: "Edit Mode",
-      description: `Opening edit form for ${user.firstName} ${user.lastName}`,
-    });
+    setSelectedUser(user);
+    setShowUserModal(true);
   };
 
   const handleDelete = async (user: User) => {
@@ -235,7 +226,10 @@ export function UsersTab() {
         <UnifiedButton
           variant="primary"
           icon={UserPlus}
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setSelectedUser(null);
+            setShowUserModal(true);
+          }}
         >
           Add User
         </UnifiedButton>
@@ -262,10 +256,14 @@ export function UsersTab() {
         }}
       />
 
-      {/* Modals */}
-      {showAddModal && (
-        <AddUserModal 
-          onClose={() => setShowAddModal(false)} 
+      {/* Modal */}
+      {showUserModal && (
+        <UserModal 
+          user={selectedUser}
+          onClose={() => {
+            setShowUserModal(false);
+            setSelectedUser(null);
+          }} 
           onSave={refetch}
         />
       )}
