@@ -88,7 +88,7 @@ export function DashboardLayout({
                 value=""
                 placeholder="Export"
                 onChange={(format) => onExport((Array.isArray(format) ? format[0] : format) as 'csv' | 'pdf')}
-                size="sm"
+                className="h-8"
               />
             </div>
           </div>

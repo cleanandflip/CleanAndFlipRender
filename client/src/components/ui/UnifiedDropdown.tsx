@@ -43,8 +43,8 @@ export function UnifiedDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Normalize options
-  const normalizedOptions: DropdownOption[] = options.map(opt => 
+  // Normalize options with null check
+  const normalizedOptions: DropdownOption[] = (options || []).map(opt => 
     typeof opt === 'string' ? { value: opt, label: opt } : opt
   );
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,15 +34,16 @@ import { apiRequest, broadcastProductUpdate } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLiveData } from "@/hooks/use-live-data";
 
-import CategoryManagement from "@/components/admin/category-management";
-import { SubmissionsManager } from "./admin/SubmissionsManager";
-import { ProductsManager } from './admin/ProductsManager';
-import { UserManager } from './admin/UserManager';
-import { AnalyticsManager } from './admin/AnalyticsManager';
-import { CategoryManager } from './admin/CategoryManager';
-import { SystemManager } from './admin/SystemManager';
-import { WishlistManager } from './admin/WishlistManager';
-import StripeManager from './admin/StripeManager';
+// Lazy load admin components for better performance
+const CategoryManagement = lazy(() => import("@/components/admin/category-management"));
+const SubmissionsManager = lazy(() => import("./admin/SubmissionsManager").then(m => ({ default: m.SubmissionsManager })));
+const ProductsManager = lazy(() => import('./admin/ProductsManager').then(m => ({ default: m.ProductsManager })));
+const UserManager = lazy(() => import('./admin/UserManager').then(m => ({ default: m.UserManager })));
+const AnalyticsManager = lazy(() => import('./admin/AnalyticsManager').then(m => ({ default: m.AnalyticsManager })));
+const CategoryManager = lazy(() => import('./admin/CategoryManager').then(m => ({ default: m.CategoryManager })));
+const SystemManager = lazy(() => import('./admin/SystemManager').then(m => ({ default: m.SystemManager })));
+const WishlistManager = lazy(() => import('./admin/WishlistManager').then(m => ({ default: m.WishlistManager })));
+const StripeManager = lazy(() => import('./admin/StripeManager'));
 import type { Product, User, Order } from "@shared/schema";
 
 interface AdminStats {
@@ -437,17 +438,10 @@ function AdminDashboard() {
       }
       return response.json();
     },
-    refetchInterval: 30000
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    cacheTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    refetchInterval: 60000 // Refresh every minute instead of 30s
   });
-
-  // Auto-refresh stats every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refetchStats();
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, [refetchStats]);
 
   return (
     <ProtectedRoute requireAdmin={true}>
@@ -559,21 +553,20 @@ function AdminDashboard() {
               </Button>
             </div>
 
-            {activeTab === 'products' && <ProductsManager />}
-
-            {activeTab === 'categories' && <CategoryManager />}
-
-            {activeTab === 'submissions' && <SubmissionsManager />}
-
-            {activeTab === 'analytics' && <AnalyticsManager />}
-
-            {activeTab === 'wishlist' && <WishlistManager />}
-
-            {activeTab === 'users' && <UserManager />}
-
-            {activeTab === 'system' && <SystemManager />}
-
-            {activeTab === 'stripe' && <StripeManager />}
+            <Suspense fallback={
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            }>
+              {activeTab === 'products' && <ProductsManager />}
+              {activeTab === 'categories' && <CategoryManager />}
+              {activeTab === 'submissions' && <SubmissionsManager />}
+              {activeTab === 'analytics' && <AnalyticsManager />}
+              {activeTab === 'wishlist' && <WishlistManager />}
+              {activeTab === 'users' && <UserManager />}
+              {activeTab === 'system' && <SystemManager />}
+              {activeTab === 'stripe' && <StripeManager />}
+            </Suspense>
           </div>
         </div>
       </div>
