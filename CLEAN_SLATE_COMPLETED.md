@@ -18,6 +18,8 @@
 7. ✅ Frontend icon issue resolved (Grid3X3 → Grid)
 8. ✅ Admin user set to regular user role as requested
 9. ✅ Fixed column name mismatches (added subtotal to orders, reference_number to equipment_submissions)
+10. ✅ Connected to your specified database (ep-ancient-dawn-ae9a1rdb) with all tables created
+11. ✅ Added missing product columns (subcategory, status) for full functionality
 
 ## What Was Preserved
 1. ✅ Core React application and UI components
