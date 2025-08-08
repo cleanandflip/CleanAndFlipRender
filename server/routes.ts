@@ -2692,7 +2692,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cloudinary upload endpoint - allow admin and developer roles
-  app.post("/api/upload/cloudinary", requireRole(['admin', 'developer']), (req, res, next) => {
+  app.post("/api/upload/cloudinary", requireRole('developer'), (req, res, next) => {
     memoryUpload.single('file')(req, res, (err) => {
       if (err) {
         Logger.error('Multer upload error:', err);
@@ -2791,7 +2791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete Cloudinary image endpoint - allow admin and developer roles
-  app.delete("/api/upload/cloudinary/:publicId", requireRole(['admin', 'developer']), async (req, res) => {
+  app.delete("/api/upload/cloudinary/:publicId", requireRole('developer'), async (req, res) => {
     try {
       const publicId = decodeURIComponent(req.params.publicId);
       await cloudinary.uploader.destroy(publicId);
@@ -2803,7 +2803,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe sync routes (admin only)
-  app.post('/api/stripe/sync-all', requireRole(['admin']), async (req, res) => {
+  app.post('/api/stripe/sync-all', requireRole('developer'), async (req, res) => {
     try {
       const { StripeProductSync } = await import('./services/stripe-sync.js');
       await StripeProductSync.syncAllProducts();
@@ -2814,7 +2814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/stripe/sync/:productId', requireRole(['admin']), async (req, res) => {
+  app.post('/api/stripe/sync/:productId', requireRole('developer'), async (req, res) => {
     try {
       const { StripeProductSync } = await import('./services/stripe-sync.js');
       const { productId } = req.params;
@@ -2826,7 +2826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/stripe/create-test-products', requireRole(['admin']), async (req, res) => {
+  app.post('/api/stripe/create-test-products', requireRole('developer'), async (req, res) => {
     try {
       const { createTestProducts } = await import('./scripts/create-test-products.js');
       await createTestProducts();
