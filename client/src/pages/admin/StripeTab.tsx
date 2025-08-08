@@ -13,7 +13,7 @@ export function StripeTab() {
   const [pulseAnimation, setPulseAnimation] = useState(false);
   const [transactions, setTransactions] = useState([]);
   
-  const { isConnected, sendMessage } = useWebSocket();
+  const { isConnected, send } = useWebSocket();
 
   // REAL STRIPE SYNC WITH API CALL
   const handleMasterSync = async () => {
@@ -64,7 +64,7 @@ export function StripeTab() {
       // Wait for animation to complete
       await animationPromise;
 
-      if (response.ok) {
+      if (response.ok && result.success) {
         setSyncStatus('success');
         toast({
           title: "Sync Complete!",
@@ -72,15 +72,17 @@ export function StripeTab() {
         });
         
         // Broadcast to all connected clients
-        sendMessage({
-          type: 'stripe_sync_complete',
-          data: { 
-            completedAt: new Date().toISOString(),
-            success: true
-          }
-        });
+        if (send) {
+          send({
+            type: 'stripe_sync_complete',
+            data: { 
+              completedAt: new Date().toISOString(),
+              success: true
+            }
+          });
+        }
       } else {
-        throw new Error(result.error || 'Sync failed');
+        throw new Error(result.error || result.message || 'Sync failed');
       }
 
       // Reset after animation
@@ -91,11 +93,12 @@ export function StripeTab() {
         setSyncStage('');
       }, 3000);
 
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Stripe sync error:', error);
       setSyncStatus('error');
       toast({
         title: "Sync Failed",
-        description: error.message || "Please try again or check your connection",
+        description: error?.message || "Please try again or check your connection",
         variant: "destructive",
       });
       setPulseAnimation(false);
