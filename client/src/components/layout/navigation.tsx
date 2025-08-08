@@ -162,7 +162,7 @@ export default function Navigation() {
                 options={[
                   { value: 'dashboard', label: 'Dashboard', icon: <Settings className="w-4 h-4" /> },
                   { value: 'orders', label: 'Order History', icon: <History className="w-4 h-4" /> },
-                  ...(user.isAdmin ? [{ value: 'admin', label: 'Admin Dashboard', icon: <Package className="w-4 h-4" /> }] : []),
+                  ...(user.role === 'developer' ? [{ value: 'admin', label: 'Admin Dashboard', icon: <Package className="w-4 h-4" /> }] : []),
                   { value: 'logout', label: 'Sign Out', icon: <LogOut className="w-4 h-4" /> }
                 ]}
                 value=""
@@ -175,7 +175,7 @@ export default function Navigation() {
                   }
                 }}
                 placeholder={user.firstName || 'User'}
-                className="h-10 px-3"
+                className="h-12 px-4 min-w-[120px]"
               />
             ) : (
               <Button
