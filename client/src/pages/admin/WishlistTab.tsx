@@ -46,6 +46,82 @@ export function WishlistTab() {
 
   const wishlistItems: WishlistItem[] = wishlistData?.items || [];
 
+  // Action handlers
+  const handleView = (item: WishlistItem) => {
+    console.log('View:', item);
+    window.open(`/product/${item.productId}`, '_blank');
+    toast({
+      title: "Opening Product",
+      description: `Opening ${item.productName} in new tab`,
+    });
+  };
+
+  const handleEdit = (item: WishlistItem) => {
+    console.log('Edit:', item);
+    toast({
+      title: "Wishlist Item",
+      description: `Managing wishlist item for ${item.productName}`,
+    });
+  };
+
+  const handleDelete = async (item: WishlistItem) => {
+    if (!confirm(`Remove ${item.productName} from ${item.userEmail}'s wishlist?`)) return;
+    
+    try {
+      const res = await fetch(`/api/admin/wishlist/${item.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (res.ok) {
+        refetch();
+        toast({
+          title: "Removed from Wishlist",
+          description: `${item.productName} has been removed from wishlist`,
+        });
+      } else {
+        throw new Error('Failed to remove item');
+      }
+    } catch (error) {
+      toast({
+        title: "Remove Failed",
+        description: "Failed to remove item from wishlist. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportWishlist = async () => {
+    try {
+      const csvHeaders = 'Product,User Email,Category,Price,Added Date\n';
+      const csvData = wishlistItems.map((w: WishlistItem) => 
+        `"${w.productName}","${w.userEmail}","${w.category}","$${w.price.toFixed(2)}","${new Date(w.addedAt).toLocaleDateString()}"`
+      ).join('\n');
+      
+      const fullCsv = csvHeaders + csvData;
+      const blob = new Blob([fullCsv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `wishlist-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export Complete",
+        description: `Exported ${wishlistItems.length} wishlist items to CSV`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export wishlist data",
+        variant: "destructive",
+      });
+    }
+  };
+
   const columns = [
     {
       key: 'product',
@@ -147,12 +223,12 @@ export function WishlistTab() {
             searchPlaceholder="Search wishlist items..."
             onSearch={setSearchQuery}
             onRefresh={refetch}
-            onExport={() => console.log('Export wishlist')}
+            onExport={handleExportWishlist}
             loading={isLoading}
             actions={{
-              onView: (item) => console.log('View wishlist item:', item),
-              onEdit: (item) => console.log('Edit wishlist item:', item),
-              onDelete: (item) => console.log('Remove from wishlist:', item)
+              onView: handleView,
+              onEdit: handleEdit,
+              onDelete: handleDelete
             }}
             pagination={{
               currentPage: 1,

@@ -7,6 +7,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
+import { AddUserModal } from '@/components/admin/Modals';
 
 interface User {
   id: string;
@@ -21,6 +22,9 @@ interface User {
 
 export function UsersTab() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const { toast } = useToast();
 
   const { data: usersData, isLoading, refetch } = useQuery({
@@ -33,6 +37,84 @@ export function UsersTab() {
   });
 
   const users: User[] = Array.isArray(usersData) ? usersData : [];
+
+  // Action handlers
+  const handleView = (user: User) => {
+    console.log('View:', user);
+    toast({
+      title: "User Details",
+      description: `Viewing profile for ${user.firstName} ${user.lastName}`,
+    });
+  };
+
+  const handleEdit = (user: User) => {
+    console.log('Edit:', user);
+    setEditingUser(user);
+    setShowEditModal(true);
+    toast({
+      title: "Edit Mode",
+      description: `Opening edit form for ${user.firstName} ${user.lastName}`,
+    });
+  };
+
+  const handleDelete = async (user: User) => {
+    if (!confirm(`Are you sure you want to delete "${user.firstName} ${user.lastName}"? This action cannot be undone.`)) return;
+    
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (res.ok) {
+        refetch(); // Refresh the data
+        toast({
+          title: "User Deleted",
+          description: `${user.firstName} ${user.lastName} has been permanently deleted`,
+        });
+      } else {
+        throw new Error('Failed to delete user');
+      }
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportUsers = async () => {
+    try {
+      // Generate CSV data for users
+      const csvHeaders = 'Name,Email,Role,Status,Last Login,Created Date\n';
+      const csvData = users.map((u: User) => 
+        `"${u.firstName} ${u.lastName}","${u.email}","${u.role}","${u.isActive ? 'Active' : 'Inactive'}","${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : 'Never'}","${new Date(u.createdAt).toLocaleDateString()}"`
+      ).join('\n');
+      
+      const fullCsv = csvHeaders + csvData;
+      const blob = new Blob([fullCsv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export Complete",
+        description: `Exported ${users.length} users to CSV`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export users data",
+        variant: "destructive",
+      });
+    }
+  };
 
   const columns = [
     {
@@ -153,7 +235,7 @@ export function UsersTab() {
         <UnifiedButton
           variant="primary"
           icon={UserPlus}
-          onClick={() => {/* Add user modal */}}
+          onClick={() => setShowAddModal(true)}
         >
           Add User
         </UnifiedButton>
@@ -166,12 +248,12 @@ export function UsersTab() {
         searchPlaceholder="Search users by name or email..."
         onSearch={setSearchQuery}
         onRefresh={refetch}
-        onExport={() => console.log('Export users')}
+        onExport={handleExportUsers}
         loading={isLoading}
         actions={{
-          onView: (user) => console.log('View user:', user),
-          onEdit: (user) => console.log('Edit user:', user),
-          onDelete: (user) => console.log('Delete user:', user)
+          onView: handleView,
+          onEdit: handleEdit,
+          onDelete: handleDelete
         }}
         pagination={{
           currentPage: 1,
@@ -179,6 +261,14 @@ export function UsersTab() {
           onPageChange: (page) => console.log('Page:', page)
         }}
       />
+
+      {/* Modals */}
+      {showAddModal && (
+        <AddUserModal 
+          onClose={() => setShowAddModal(false)} 
+          onSave={refetch}
+        />
+      )}
     </div>
   );
 }

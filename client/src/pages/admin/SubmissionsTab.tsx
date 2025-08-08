@@ -41,6 +41,81 @@ export function SubmissionsTab() {
 
   const submissions: Submission[] = submissionsData?.submissions || [];
 
+  // Action handlers
+  const handleView = (submission: Submission) => {
+    console.log('View:', submission);
+    toast({
+      title: "Submission Details",
+      description: `Viewing submission "${submission.title}"`,
+    });
+  };
+
+  const handleEdit = (submission: Submission) => {
+    console.log('Review:', submission);
+    toast({
+      title: "Review Submission",
+      description: `Opening review form for "${submission.title}"`,
+    });
+  };
+
+  const handleDelete = async (submission: Submission) => {
+    if (!confirm(`Are you sure you want to delete submission "${submission.title}"? This action cannot be undone.`)) return;
+    
+    try {
+      const res = await fetch(`/api/admin/submissions/${submission.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (res.ok) {
+        refetch();
+        toast({
+          title: "Submission Deleted",
+          description: `"${submission.title}" submission has been permanently deleted`,
+        });
+      } else {
+        throw new Error('Failed to delete submission');
+      }
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete submission. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportSubmissions = async () => {
+    try {
+      const csvHeaders = 'Title,Submitter,Category,Estimated Value,Status,Submitted Date\n';
+      const csvData = submissions.map((s: Submission) => 
+        `"${s.title}","${s.submittedBy}","${s.category}","$${s.estimatedValue.toFixed(2)}","${s.status}","${new Date(s.submittedAt).toLocaleDateString()}"`
+      ).join('\n');
+      
+      const fullCsv = csvHeaders + csvData;
+      const blob = new Blob([fullCsv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `submissions-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export Complete",
+        description: `Exported ${submissions.length} submissions to CSV`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export submissions data",
+        variant: "destructive",
+      });
+    }
+  };
+
   const columns = [
     {
       key: 'title',
@@ -148,12 +223,12 @@ export function SubmissionsTab() {
         searchPlaceholder="Search submissions by title or submitter..."
         onSearch={setSearchQuery}
         onRefresh={refetch}
-        onExport={() => console.log('Export submissions')}
+        onExport={handleExportSubmissions}
         loading={isLoading}
         actions={{
-          onView: (submission) => console.log('View submission:', submission),
-          onEdit: (submission) => console.log('Review submission:', submission),
-          onDelete: (submission) => console.log('Delete submission:', submission)
+          onView: handleView,
+          onEdit: handleEdit,
+          onDelete: handleDelete
         }}
         pagination={{
           currentPage: 1,

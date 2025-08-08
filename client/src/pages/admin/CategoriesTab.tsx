@@ -7,6 +7,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
+import { AddCategoryModal } from '@/components/admin/Modals';
 
 interface Category {
   id: string;
@@ -19,6 +20,9 @@ interface Category {
 
 export function CategoriesTab() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -32,6 +36,85 @@ export function CategoriesTab() {
   });
 
   const categories: Category[] = categoriesData?.categories || [];
+
+  // Action handlers
+  const handleView = (category: Category) => {
+    console.log('View:', category);
+    window.open(`/category/${category.slug}`, '_blank');
+    toast({
+      title: "Opening Category",
+      description: `Opening ${category.name} in new tab`,
+    });
+  };
+
+  const handleEdit = (category: Category) => {
+    console.log('Edit:', category);
+    setEditingCategory(category);
+    setShowEditModal(true);
+    toast({
+      title: "Edit Mode",
+      description: `Opening edit form for ${category.name}`,
+    });
+  };
+
+  const handleDelete = async (category: Category) => {
+    if (!confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) return;
+    
+    try {
+      const res = await fetch(`/api/admin/categories/${category.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (res.ok) {
+        refetch(); // Refresh the data
+        toast({
+          title: "Category Deleted",
+          description: `${category.name} has been permanently deleted`,
+        });
+      } else {
+        throw new Error('Failed to delete category');
+      }
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete category. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportCategories = async () => {
+    try {
+      // Generate CSV data for categories
+      const csvHeaders = 'Name,Slug,Product Count,Status,Created Date\n';
+      const csvData = categories.map((c: Category) => 
+        `"${c.name}","${c.slug}","${c.productCount}","${c.isActive ? 'Active' : 'Inactive'}","${new Date(c.createdAt).toLocaleDateString()}"`
+      ).join('\n');
+      
+      const fullCsv = csvHeaders + csvData;
+      const blob = new Blob([fullCsv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `categories-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Export Complete",
+        description: `Exported ${categories.length} categories to CSV`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export categories data",
+        variant: "destructive",
+      });
+    }
+  };
 
   const columns = [
     {
@@ -111,7 +194,7 @@ export function CategoriesTab() {
         <UnifiedButton
           variant="primary"
           icon={Plus}
-          onClick={() => {/* Add category modal */}}
+          onClick={() => setShowAddModal(true)}
         >
           Add Category
         </UnifiedButton>
@@ -124,12 +207,12 @@ export function CategoriesTab() {
         searchPlaceholder="Search categories..."
         onSearch={setSearchQuery}
         onRefresh={refetch}
-        onExport={() => console.log('Export categories')}
+        onExport={handleExportCategories}
         loading={isLoading}
         actions={{
-          onView: (category) => console.log('View category:', category),
-          onEdit: (category) => console.log('Edit category:', category),
-          onDelete: (category) => console.log('Delete category:', category)
+          onView: handleView,
+          onEdit: handleEdit,
+          onDelete: handleDelete
         }}
         pagination={{
           currentPage: 1,
@@ -137,6 +220,14 @@ export function CategoriesTab() {
           onPageChange: (page) => console.log('Page:', page)
         }}
       />
+
+      {/* Modals */}
+      {showAddModal && (
+        <AddCategoryModal 
+          onClose={() => setShowAddModal(false)} 
+          onSave={refetch}
+        />
+      )}
     </div>
   );
 }
