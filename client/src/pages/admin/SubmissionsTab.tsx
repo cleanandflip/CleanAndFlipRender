@@ -1,13 +1,14 @@
 // UNIFIED SUBMISSIONS TAB
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FolderOpen, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { FolderOpen, Clock, CheckCircle, XCircle, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedSubmissionModal } from '@/components/admin/modals/EnhancedSubmissionModal';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface Submission {
   id: string;
@@ -26,6 +27,7 @@ export function SubmissionsTab() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const { toast } = useToast();
+  const { send, isConnected } = useWebSocket();
 
   const { data: submissionsData, isLoading, refetch } = useQuery({
     queryKey: ['admin-submissions', searchQuery],
@@ -218,7 +220,22 @@ export function SubmissionsTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Equipment Submissions</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-white">Equipment Submissions</h2>
+            <div className="flex items-center gap-2">
+              {isConnected ? (
+                <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full">
+                  <Wifi className="w-3 h-3 text-green-400 animate-pulse" />
+                  <span className="text-xs text-green-400 font-medium">Live Sync</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 rounded-full">
+                  <WifiOff className="w-3 h-3 text-red-400" />
+                  <span className="text-xs text-red-400 font-medium">Offline</span>
+                </div>
+              )}
+            </div>
+          </div>
           <p className="text-gray-400 mt-1">Review and manage user equipment submissions</p>
         </div>
         <div className="flex gap-3">

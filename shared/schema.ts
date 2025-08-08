@@ -56,8 +56,6 @@ export const users = pgTable("users", {
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
   role: userRoleEnum("role").default("user"),
-  isAdmin: boolean("is_admin").default(false),
-  isLocalCustomer: boolean("is_local_customer").default(false),
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
   createdAt: timestamp("created_at").defaultNow(),

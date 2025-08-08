@@ -38,7 +38,7 @@ import { autoSyncProducts } from "./middleware/product-sync";
 import { runPenetrationTests } from "./security/penetration-tests";
 import { setupCompression } from "./config/compression";
 import { healthLive, healthReady } from "./config/health";
-import { initializeWebSocket, broadcastProductUpdate, broadcastCartUpdate, broadcastStockUpdate } from "./config/websocket";
+// Removed old WebSocket import - using new enhanced WebSocket system
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
 import { db } from "./db";
@@ -2707,8 +2707,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
-  // Initialize WebSocket support
-  const io = initializeWebSocket(httpServer);
+  // Initialize enhanced WebSocket support for live sync
+  const { setupWebSocket } = await import('./websocket');
+  setupWebSocket(httpServer);
+  Logger.info('[WS] Enhanced WebSocket server initialized for live sync');
   
   // Register graceful shutdown handlers
   registerGracefulShutdown(httpServer);

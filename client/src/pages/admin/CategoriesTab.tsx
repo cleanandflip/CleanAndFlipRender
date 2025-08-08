@@ -1,127 +1,144 @@
-// UNIFIED CATEGORIES TAB
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Grid, Plus, Package, Eye, Edit, Trash } from 'lucide-react';
-import { cn } from '@/lib/utils';
+// CATEGORIES TAB WITH COMPLETE LIVE SYNC
+import { useState, useEffect } from 'react';
+import { FolderTree, Plus, Wifi, WifiOff } from 'lucide-react';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
-import { useToast } from '@/hooks/use-toast';
 import { EnhancedCategoryModal } from '@/components/admin/modals/EnhancedCategoryModal';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
 
 interface Category {
   id: string;
   name: string;
-  description: string;
-  productCount: number;
+  slug: string;
+  description?: string;
+  imageUrl?: string;
   isActive: boolean;
+  displayOrder: number;
+  productCount: number;
   createdAt: string;
+  updatedAt: string;
 }
 
 export function CategoriesTab() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { send, isConnected } = useWebSocket();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
-  const { data: categoriesData, isLoading, refetch } = useQuery({
-    queryKey: ['admin-categories', searchQuery],
+  // Fetch categories with React Query
+  const {
+    data: categories = [],
+    isLoading,
+    refetch
+  } = useQuery({
+    queryKey: ['/api/admin/categories'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/categories', { credentials: 'include' });
+      const res = await fetch('/api/admin/categories', {
+        credentials: 'include'
+      });
       if (!res.ok) throw new Error('Failed to fetch categories');
       return res.json();
     }
   });
 
-  const categories: Category[] = categoriesData?.categories || [];
+  // Setup live sync
+  useEffect(() => {
+    const handleRefresh = (event: CustomEvent) => {
+      console.log('🔄 Live sync: Refreshing categories', event.detail);
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/categories'] });
+      
+      // Trigger animation for data table
+      const tableElement = document.querySelector('[data-table="categories"]');
+      if (tableElement) {
+        tableElement.classList.add('animate-slideUp');
+        setTimeout(() => tableElement.classList.remove('animate-slideUp'), 500);
+      }
+    };
 
-  // Action handlers
-  const handleView = (category: Category) => {
+    window.addEventListener('refresh_categories', handleRefresh as any);
+    return () => window.removeEventListener('refresh_categories', handleRefresh as any);
+  }, [queryClient]);
+
+  // Handle category actions
+  const handleAddCategory = () => {
+    setSelectedCategory(null);
+    setShowCategoryModal(true);
+  };
+
+  const handleEditCategory = (category: Category) => {
     setSelectedCategory(category);
     setShowCategoryModal(true);
   };
 
-  const handleEdit = (category: Category) => {
-    setSelectedCategory(category);
-    setShowCategoryModal(true);
-  };
+  const handleDeleteCategory = async (category: Category) => {
+    if (!confirm(`Delete category "${category.name}"?`)) return;
 
-  const handleDelete = async (category: Category) => {
-    if (!confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) return;
-    
     try {
       const res = await fetch(`/api/admin/categories/${category.id}`, {
         method: 'DELETE',
-        credentials: 'include',
+        credentials: 'include'
       });
-      
+
       if (res.ok) {
-        refetch(); // Refresh the data
         toast({
           title: "Category Deleted",
-          description: `${category.name} has been permanently deleted`,
+          description: `${category.name} has been removed`,
         });
-      } else {
-        throw new Error('Failed to delete category');
+
+        // Broadcast live update
+        send({
+          type: 'category_update',
+          action: 'delete',
+          categoryId: category.id
+        });
+
+        refetch();
       }
     } catch (error) {
       toast({
-        title: "Delete Failed",
-        description: "Failed to delete category. Please try again.",
-        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete category",
+        variant: "destructive"
       });
     }
   };
 
-  const handleExportCategories = async () => {
-    try {
-      // Generate CSV data for categories
-      const csvHeaders = 'Name,Slug,Product Count,Status,Created Date\n';
-      const csvData = categories.map((c: Category) => 
-        `"${c.name}","${c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}","${c.productCount}","${c.isActive ? 'Active' : 'Inactive'}","${new Date(c.createdAt).toLocaleDateString()}"`
-      ).join('\n');
-      
-      const fullCsv = csvHeaders + csvData;
-      const blob = new Blob([fullCsv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `categories-export-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Export Complete",
-        description: `Exported ${categories.length} categories to CSV`,
-      });
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: "Failed to export categories data",
-        variant: "destructive",
-      });
-    }
-  };
-
+  // Define table columns
   const columns = [
     {
       key: 'name',
-      label: 'Category',
+      label: 'Category Name',
       render: (category: Category) => (
-        <div>
-          <p className="font-medium text-white">{category.name}</p>
-          <p className="text-sm text-gray-500">{category.description}</p>
-        </div>
+        <div className="font-medium text-white">{category.name}</div>
+      ),
+      sortable: true
+    },
+    {
+      key: 'slug',
+      label: 'Slug',
+      render: (category: Category) => (
+        <code className="text-xs bg-gray-800 px-2 py-1 rounded text-gray-300">
+          {category.slug}
+        </code>
       )
     },
     {
       key: 'productCount',
       label: 'Products',
       render: (category: Category) => (
-        <span className="font-medium text-blue-400">{category.productCount}</span>
+        <span className="font-mono text-blue-400">{category.productCount || 0}</span>
+      ),
+      sortable: true
+    },
+    {
+      key: 'displayOrder',
+      label: 'Order',
+      render: (category: Category) => (
+        <span className="text-gray-400">{category.displayOrder}</span>
       ),
       sortable: true
     },
@@ -129,100 +146,118 @@ export function CategoriesTab() {
       key: 'isActive',
       label: 'Status',
       render: (category: Category) => (
-        <span className={cn(
-          "px-3 py-1 rounded-full text-xs font-medium",
-          category.isActive 
-            ? "bg-green-500/20 text-green-400" 
-            : "bg-gray-500/20 text-gray-400"
-        )}>
+        <span className={`inline-flex px-2 py-1 rounded-full text-xs ${
+          category.isActive
+            ? 'bg-green-500/20 text-green-400'
+            : 'bg-gray-500/20 text-gray-400'
+        }`}>
           {category.isActive ? 'Active' : 'Inactive'}
         </span>
       )
-    },
-    {
-      key: 'createdAt',
-      label: 'Created',
-      render: (category: Category) => (
-        <span className="text-gray-400">
-          {new Date(category.createdAt).toLocaleDateString()}
-        </span>
-      ),
-      sortable: true
     }
   ];
 
+  const activeCategories = categories.filter((c: Category) => c.isActive);
+  const totalProducts = categories.reduce((sum: number, c: Category) => sum + (c.productCount || 0), 0);
+
   return (
     <div className="space-y-8">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <UnifiedMetricCard
           title="Total Categories"
           value={categories.length}
-          icon={Grid}
-          change={{ value: 5, label: 'from last month' }}
+          icon={FolderTree}
+          change={{ value: 2, label: 'from last month' }}
         />
         <UnifiedMetricCard
           title="Active Categories"
-          value={categories.filter(c => c.isActive).length}
-          icon={Grid}
-          change={{ value: 3, label: 'from last month' }}
+          value={activeCategories.length}
+          icon={FolderTree}
+          change={{ value: 1, label: 'from last month' }}
         />
         <UnifiedMetricCard
           title="Total Products"
-          value={categories.reduce((sum, c) => sum + c.productCount, 0)}
-          icon={Package}
-          change={{ value: 15, label: 'from last month' }}
+          value={totalProducts}
+          icon={FolderTree}
+        />
+        <UnifiedMetricCard
+          title="Avg Products/Category"
+          value={Math.round(totalProducts / (categories.length || 1))}
+          icon={FolderTree}
         />
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Category Management</h2>
-          <p className="text-gray-400 mt-1">Organize your product catalog</p>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-white">Category Management</h2>
+            <div className="flex items-center gap-2">
+              {isConnected ? (
+                <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full">
+                  <Wifi className="w-3 h-3 text-green-400 animate-pulse" />
+                  <span className="text-xs text-green-400 font-medium">Live Sync</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 rounded-full">
+                  <WifiOff className="w-3 h-3 text-red-400" />
+                  <span className="text-xs text-red-400 font-medium">Offline</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <p className="text-gray-400 mt-1">Organize your products into categories</p>
         </div>
         <UnifiedButton
           variant="primary"
           icon={Plus}
-          onClick={() => {
-            setSelectedCategory(null);
-            setShowCategoryModal(true);
-          }}
+          onClick={handleAddCategory}
         >
           Add Category
         </UnifiedButton>
       </div>
 
       {/* Table */}
-      <UnifiedDataTable
-        data={categories}
-        columns={columns}
-        searchPlaceholder="Search categories..."
-        onSearch={setSearchQuery}
-        onRefresh={refetch}
-        onExport={handleExportCategories}
-        loading={isLoading}
-        actions={{
-          onView: handleView,
-          onEdit: handleEdit,
-          onDelete: handleDelete
-        }}
-        pagination={{
-          currentPage: 1,
-          totalPages: Math.ceil(categories.length / 20) || 1,
-          onPageChange: (page) => console.log('Page:', page)
-        }}
-      />
+      <div data-table="categories">
+        <UnifiedDataTable
+          data={categories}
+          columns={columns}
+          searchPlaceholder="Search categories..."
+          onSearch={setSearchQuery}
+          onRefresh={refetch}
+          loading={isLoading}
+          actions={{
+            onView: handleEditCategory,
+            onEdit: handleEditCategory,
+            onDelete: handleDeleteCategory
+          }}
+          pagination={{
+            currentPage: 1,
+            totalPages: Math.ceil(categories.length / 20) || 1,
+            onPageChange: (page) => console.log('Page:', page)
+          }}
+        />
+      </div>
 
-      {/* Modal */}
+      {/* Category Modal */}
       {showCategoryModal && (
-        <EnhancedCategoryModal 
+        <EnhancedCategoryModal
           category={selectedCategory}
           onClose={() => {
             setShowCategoryModal(false);
             setSelectedCategory(null);
-          }} 
-          onSave={refetch}
+          }}
+          onSave={() => {
+            refetch();
+            
+            // Broadcast live update
+            send({
+              type: 'category_update',
+              action: selectedCategory ? 'update' : 'create',
+              categoryId: selectedCategory?.id
+            });
+          }}
         />
       )}
     </div>

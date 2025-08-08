@@ -220,8 +220,8 @@ export function UsersTab() {
           change={{ value: 8, label: 'from last month' }}
         />
         <UnifiedMetricCard
-          title="Admins"
-          value={users.filter(u => u.role === 'admin').length}
+          title="Developers"
+          value={users.filter(u => u.role === 'developer').length}
           icon={Shield}
         />
         <UnifiedMetricCard
