@@ -61,6 +61,12 @@ body {
   min-height: 100vh;
 }
 
+/* Ensure all page backgrounds inherit the gradient */
+#root {
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0f1419 100%);
+  min-height: 100vh;
+}
+
 /* Animation classes for dropdowns */
 @keyframes animate-in {
   from {
