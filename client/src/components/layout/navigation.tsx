@@ -2,12 +2,20 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
-import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown } from "lucide-react";
 
 import { ROUTES } from "@/config/routes";
 
@@ -150,14 +158,58 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleNavigation(ROUTES.DASHBOARD)}
-                className="bg-secondary border border-primary/30 w-10 h-10 flex-shrink-0 hover:bg-white/10 hover:border-white/20 transition-all duration-200"
-              >
-                <User size={18} />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="bg-secondary border border-primary/30 h-10 px-3 flex-shrink-0 hover:bg-white/10 hover:border-white/20 transition-all duration-200 flex items-center gap-2"
+                  >
+                    <User size={16} />
+                    <span className="hidden sm:inline text-sm font-medium">{user.firstName || 'User'}</span>
+                    <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-56 bg-gray-900/98 border border-gray-600/50 backdrop-blur-sm"
+                >
+                  <DropdownMenuLabel className="text-white font-medium">
+                    {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-gray-600/50" />
+                  <DropdownMenuItem 
+                    onClick={() => handleNavigation(ROUTES.DASHBOARD)}
+                    className="text-white hover:bg-white/10 cursor-pointer"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleNavigation(ROUTES.ORDERS)}
+                    className="text-white hover:bg-white/10 cursor-pointer"
+                  >
+                    <History className="mr-2 h-4 w-4" />
+                    Order History
+                  </DropdownMenuItem>
+                  {user.isAdmin && (
+                    <DropdownMenuItem 
+                      onClick={() => handleNavigation(ROUTES.ADMIN)}
+                      className="text-white hover:bg-white/10 cursor-pointer"
+                    >
+                      <Package className="mr-2 h-4 w-4" />
+                      Admin Dashboard
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator className="bg-gray-600/50" />
+                  <DropdownMenuItem 
+                    onClick={() => logoutMutation.mutate()}
+                    className="text-white hover:bg-white/10 cursor-pointer"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Button
                 variant="primary"
