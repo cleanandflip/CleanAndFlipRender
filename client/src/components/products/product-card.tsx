@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import type { Product } from "@shared/schema";
 import { routes } from "@/config/routes";
+import { StockIndicator } from "@/components/ui/StockIndicator";
+import { ProductPrice } from "@/components/ui/ProductPrice";
+import { AddToCartButton } from "@/components/AddToCartButton";
 
 interface ProductCardProps {
   product: Product;
