@@ -234,12 +234,59 @@ export const emailQueue = pgTable("email_queue", {
   index("idx_email_queue_created_at").on(table.createdAt),
 ]);
 
+// Equipment submission status enum
+export const equipmentSubmissionStatusEnum = pgEnum("equipment_submission_status", [
+  "pending",
+  "under_review", 
+  "approved",
+  "declined",
+  "scheduled",
+  "completed",
+  "cancelled"
+]);
+
+// Equipment submissions table (for sell-to-us functionality)
+export const equipmentSubmissions = pgTable("equipment_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  referenceNumber: varchar("reference_number").unique().notNull(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  brand: varchar("brand"),
+  condition: productConditionEnum("condition").notNull(),
+  weight: integer("weight"),
+  images: jsonb("images").$type<string[]>().default([]),
+  estimatedValue: decimal("estimated_value", { precision: 10, scale: 2 }),
+  askingPrice: decimal("asking_price", { precision: 10, scale: 2 }),
+  offerAmount: decimal("offer_amount", { precision: 10, scale: 2 }),
+  status: equipmentSubmissionStatusEnum("status").default("pending"),
+  statusHistory: jsonb("status_history").$type<any[]>().default([]),
+  adminNotes: text("admin_notes"),
+  declineReason: text("decline_reason"),
+  isLocal: boolean("is_local").default(false),
+  pickupAddress: text("pickup_address"),
+  contactPhone: varchar("contact_phone"),
+  preferredContactMethod: varchar("preferred_contact_method"),
+  scheduledPickupDate: timestamp("scheduled_pickup_date"),
+  pickupWindowStart: varchar("pickup_window_start"),
+  pickupWindowEnd: varchar("pickup_window_end"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_equipment_submissions_user").on(table.userId),
+  index("idx_equipment_submissions_status").on(table.status),
+  index("idx_equipment_submissions_reference").on(table.referenceNumber),
+  index("idx_equipment_submissions_created").on(table.createdAt),
+]);
+
 // Relations  
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
   cartItems: many(cartItems),
   addresses: many(addresses),
   activities: many(activityLogs),
+  equipmentSubmissions: many(equipmentSubmissions),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -300,7 +347,12 @@ export const addressesRelations = relations(addresses, ({ one }) => ({
   }),
 }));
 
-// Removed wishlist relations for single-seller model
+export const equipmentSubmissionsRelations = relations(equipmentSubmissions, ({ one }) => ({
+  user: one(users, {
+    fields: [equipmentSubmissions.userId],
+    references: [users.id],
+  }),
+}));
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -343,57 +395,19 @@ export const insertAddressSchema = createInsertSchema(addresses).omit({
   createdAt: true,
 });
 
-// Equipment submissions table - users submit equipment for business to purchase
-export const equipmentSubmissions = pgTable("equipment_submissions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }),
-  name: varchar("name").notNull(),
-  brand: varchar("brand"),
-  category: varchar("category").notNull(),
-  condition: varchar("condition").notNull(), // 'new', 'excellent', 'good', 'fair', 'poor'
-  description: text("description").notNull(),
-  images: text("images").array().default([]),
-  askingPrice: decimal("asking_price", { precision: 10, scale: 2 }),
-  weight: integer("weight"), // in pounds
-  dimensions: text("dimensions"), // "L x W x H"
-  yearPurchased: integer("year_purchased"),
-  originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
-  sellerEmail: varchar("seller_email").notNull(),
-  sellerPhone: varchar("seller_phone"),
-  sellerLocation: text("seller_location"), // Free text location
-  isLocalPickup: boolean("is_local_pickup").default(false),
-  notes: text("notes"), // Additional seller notes
-  status: varchar("status").default("pending"), // 'pending', 'reviewing', 'approved', 'rejected', 'purchased'
-  adminNotes: text("admin_notes"), // Internal admin notes
-  offeredPrice: decimal("offered_price", { precision: 10, scale: 2 }), // Price offered by business
-  referenceNumber: varchar("reference_number").unique(), // Tracking reference for users
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  index("idx_submissions_user").on(table.userId),
-  index("idx_submissions_status").on(table.status),
-  index("idx_submissions_reference").on(table.referenceNumber),
-  index("idx_submissions_category").on(table.category),
-]);
-
-// Equipment submission schema
 export const insertEquipmentSubmissionSchema = createInsertSchema(equipmentSubmissions).omit({
   id: true,
   referenceNumber: true,
+  statusHistory: true,
   adminNotes: true,
-  offeredPrice: true,
+  offerAmount: true,
   status: true,
   createdAt: true,
   updatedAt: true,
+  completedAt: true,
 });
 
-// Equipment submissions relations
-export const equipmentSubmissionsRelations = relations(equipmentSubmissions, ({ one }) => ({
-  user: one(users, {
-    fields: [equipmentSubmissions.userId],
-    references: [users.id],
-  }),
-}));
+
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   id: true,
