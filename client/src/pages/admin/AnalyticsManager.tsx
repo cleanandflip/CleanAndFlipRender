@@ -5,8 +5,9 @@ import { MetricCard } from '@/components/admin/MetricCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StandardDropdown } from '@/components/ui';
-// Removed legacy calendar import - using unified system
-// Removed legacy popover imports - using unified dropdown system
+// Using simplified date picker approach instead of complex calendar
+// import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+// import { Calendar } from '@/components/ui/calendar';
 import { 
   DollarSign, 
   ShoppingCart, 
@@ -122,44 +123,22 @@ export function AnalyticsManager() {
       isLoading={isLoading}
       filters={
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div>
-            <PopoverTrigger asChild>
-              <div className="glass glass-hover rounded-lg p-1">
-                <Button variant="ghost" className="gap-2 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                  <CalendarIcon className="w-4 h-4" />
-                  {dateRange.from && dateRange.to 
-                    ? `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}`
-                    : 'Select date range'
-                  }
-                </Button>
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 glass border-border">
-              <div className="p-3 space-y-2 border-b border-border">
-                {quickDateRanges.map((range) => (
-                  <Button
-                    key={range.days}
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={() => setDateRange({
-                      from: subDays(new Date(), range.days),
-                      to: new Date()
-                    })}
-                  >
-                    {range.label}
-                  </Button>
-                ))}
-              </div>
-              <Calendar
-                mode="range"
-                selected={dateRange as any}
-                onSelect={(range) => {
-                  if (range) {
-                    setDateRange(range as any);
-                  }
-                }}
-            </div>
+          <StandardDropdown
+            options={quickDateRanges.map(range => ({
+              value: range.days.toString(),
+              label: range.label
+            }))}
+            value=""
+            onChange={(value: string | string[]) => {
+              const days = parseInt(value as string);
+              setDateRange({
+                from: subDays(new Date(), days),
+                to: new Date()
+              });
+            }}
+            placeholder="Select date range"
+            className="glass border-border"
+          />
           
           <StandardDropdown
             options={[
@@ -170,7 +149,7 @@ export function AnalyticsManager() {
               { value: 'submissions', label: 'Submissions' }
             ]}
             value={metric}
-            onChange={setMetric}
+            onChange={(value: string | string[]) => setMetric(value as string)}
             className="glass border-border"
           />
           
@@ -182,7 +161,7 @@ export function AnalyticsManager() {
               { value: 'month', label: 'Monthly' }
             ]}
             value={groupBy}
-            onChange={setGroupBy}
+            onChange={(value: string | string[]) => setGroupBy(value as string)}
             className="glass border-border"
           />
           
