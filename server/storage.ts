@@ -6,8 +6,7 @@ import {
   orderItems,
   cartItems,
   addresses,
-  equipmentSubmissions,
-  wishlist,
+  // equipmentSubmissions, wishlist - removed for single-seller model
   activityLogs,
   type User,
   type InsertUser,
@@ -23,10 +22,7 @@ import {
   type InsertCartItem,
   type Address,
   type InsertAddress,
-  type EquipmentSubmission,
-  type InsertEquipmentSubmission,
-  type Wishlist,
-  type InsertWishlist,
+  // type EquipmentSubmission, type InsertEquipmentSubmission, type Wishlist, type InsertWishlist - removed for single-seller
   type ActivityLog,
   type InsertActivityLog,
 } from "@shared/schema";
@@ -79,7 +75,7 @@ export interface IStorage {
   deleteProduct(id: string): Promise<void>;
   incrementProductViews(id: string): Promise<void>;
   getFeaturedProducts(limit?: number): Promise<Product[]>;
-  createSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission>;
+  // Removed equipment submission and wishlist methods for single-seller model
   healthCheck(): Promise<{ status: string; timestamp: string }>;
 
   // Cart operations
@@ -103,19 +99,6 @@ export interface IStorage {
   getOrderItems(orderId: string): Promise<(OrderItem & { product: Product })[]>;
   createOrderItems(orderItems: InsertOrderItem[]): Promise<OrderItem[]>;
 
-  // Equipment submission operations
-  getSubmissions(userId?: string): Promise<EquipmentSubmission[]>;
-  getSubmission(id: string): Promise<EquipmentSubmission | undefined>;
-  createSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission>;
-  updateSubmission(id: string, submission: Partial<InsertEquipmentSubmission>): Promise<EquipmentSubmission>;
-
-  // Wishlist operations
-  getWishlistItems(userId: string): Promise<(Wishlist & { product: Product })[]>;
-  addToWishlist(userId: string, productId: string): Promise<Wishlist>;
-  isProductInWishlist(userId: string, productId: string): Promise<boolean>;
-  getWishlistStatusBatch(userId: string, productIds: string[]): Promise<Record<string, boolean>>;
-  removeFromWishlist(userId: string, productId: string): Promise<void>;
-
   // Admin operations
   getAdminStats(): Promise<{
     totalProducts: number;
@@ -132,15 +115,7 @@ export interface IStorage {
   trackActivity(activity: InsertActivityLog): Promise<ActivityLog>;
   getAnalytics(): Promise<any>;
   
-  // Equipment Submission operations
-  createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission>;
-  getEquipmentSubmissions(status?: string): Promise<any[]>;
-  updateEquipmentSubmission(id: string, updates: Partial<EquipmentSubmission>): Promise<void>;
-  
-  // Wishlist analytics
-  getWishlistAnalytics(): Promise<any>;
-  getDetailedWishlistAnalytics(timeRange: string): Promise<any>;
-  getWishlistExportData(): Promise<any>;
+  // Removed equipment submission and wishlist analytics for single-seller model
   
   healthCheck(): Promise<{ status: string; timestamp: string; }>;
 }
@@ -473,18 +448,7 @@ export class DatabaseStorage implements IStorage {
     return existing[0];
   }
 
-  // Batch wishlist check for performance optimization
-  async getWishlistedProducts(userId: string, productIds: string[]): Promise<Array<{ productId: string }>> {
-    const result = await db
-      .select({ productId: wishlist.productId })
-      .from(wishlist)
-      .where(and(
-        eq(wishlist.userId, userId),
-        inArray(wishlist.productId, productIds)
-      ));
-    
-    return result.filter(item => item.productId !== null).map(item => ({ productId: item.productId! }));
-  }
+  // Removed wishlist batch check for single-seller model
 
   async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
     // Create new cart item - ensure we have either userId or sessionId
@@ -660,13 +624,7 @@ export class DatabaseStorage implements IStorage {
       
       Logger.debug(`Removed ${deletedCartItems.length} cart items referencing product`);
       
-      // Remove from wishlist
-      const deletedWishlistItems = await db
-        .delete(wishlist)
-        .where(eq(wishlist.productId, productId))
-        .returning();
-      
-      Logger.debug(`Removed ${deletedWishlistItems.length} wishlist items referencing product`);
+      // Removed wishlist cleanup for single-seller model
       
       // Delete the product itself
       const deletedProducts = await db
@@ -897,41 +855,7 @@ export class DatabaseStorage implements IStorage {
     return await db.insert(orderItems).values(items).returning();
   }
 
-  // Equipment submission operations
-  async getSubmissions(userId?: string): Promise<EquipmentSubmission[]> {
-    let query = db.select().from(equipmentSubmissions);
-    
-    if (userId) {
-      query = query.where(eq(equipmentSubmissions.userId, userId)) as any;
-    }
-    
-    return await query.orderBy(desc(equipmentSubmissions.createdAt));
-  }
-
-  async getSubmission(id: string): Promise<EquipmentSubmission | undefined> {
-    const [submission] = await db
-      .select()
-      .from(equipmentSubmissions)
-      .where(eq(equipmentSubmissions.id, id));
-    return submission;
-  }
-
-  async createEquipmentSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
-    const submissionWithReference = {
-      ...submission,
-      referenceNumber: `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
-    };
-    
-    const [newSubmission] = await db
-      .insert(equipmentSubmissions)
-      .values(submissionWithReference as any)
-      .returning();
-    return newSubmission;
-  }
-
-  async createSubmission(submission: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
-    return this.createEquipmentSubmission(submission);
-  }
+  // Removed all equipment submission operations for single-seller model
 
   async healthCheck(): Promise<{ status: string; timestamp: string; }> {
     try {
@@ -945,123 +869,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getSubmissionByReference(reference: string): Promise<EquipmentSubmission | undefined> {
-    const [submission] = await db
-      .select()
-      .from(equipmentSubmissions)
-      .where(eq(equipmentSubmissions.referenceNumber, reference));
-    return submission;
-  }
+  // Removed submission reference and update methods for single-seller model
 
-  async getUserSubmissions(userId: string): Promise<EquipmentSubmission[]> {
-    const userSubmissions = await db
-      .select()
-      .from(equipmentSubmissions)
-      .where(eq(equipmentSubmissions.userId, userId))
-      .orderBy(desc(equipmentSubmissions.createdAt));
-    return userSubmissions;
-  }
-
-  async updateSubmission(
-    id: string, 
-    submission: Partial<InsertEquipmentSubmission>
-  ): Promise<EquipmentSubmission> {
-    const [updatedSubmission] = await db
-      .update(equipmentSubmissions)
-      .set({
-        ...(submission as any),
-        updatedAt: new Date(),
-      })
-      .where(eq(equipmentSubmissions.id, id))
-      .returning();
-    return updatedSubmission;
-  }
-
-  // Wishlist operations
-  async getWishlistItems(userId: string): Promise<(Wishlist & { product: Product })[]> {
-    return await db
-      .select({
-        id: wishlist.id,
-        userId: wishlist.userId,
-        productId: wishlist.productId,
-        createdAt: wishlist.createdAt,
-        product: products,
-      })
-      .from(wishlist)
-      .innerJoin(products, eq(wishlist.productId, products.id))
-      .where(eq(wishlist.userId, userId)) as any;
-  }
-
-  async addToWishlist(userId: string, productId: string): Promise<Wishlist> {
-    // Check if already exists to prevent duplicates
-    const existing = await db
-      .select()
-      .from(wishlist)
-      .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)))
-      .limit(1);
-      
-    if (existing.length > 0) {
-      return existing[0]; // Return existing item
-    }
-    
-    const wishlistItem: InsertWishlist = {
-      userId,
-      productId
-    };
-    
-    const [newItem] = await db.insert(wishlist).values(wishlistItem).returning();
-    return newItem;
-  }
-
-  async isProductInWishlist(userId: string, productId: string): Promise<boolean> {
-    const result = await db
-      .select({ id: wishlist.id })
-      .from(wishlist)
-      .where(and(eq(wishlist.userId, userId), eq(wishlist.productId, productId)))
-      .limit(1);
-      
-    return result.length > 0;
-  }
-
-  // BATCH wishlist check to reduce API spam
-  async getWishlistStatusBatch(userId: string, productIds: string[]): Promise<Record<string, boolean>> {
-    if (!productIds.length) return {};
-    
-    const results = await db
-      .select({ productId: wishlist.productId })
-      .from(wishlist)
-      .where(and(
-        eq(wishlist.userId, userId),
-        inArray(wishlist.productId, productIds)
-      ));
-    
-    const statusMap: Record<string, boolean> = {};
-    
-    // Initialize all as false
-    for (const productId of productIds) {
-      statusMap[productId] = false;
-    }
-    
-    // Set found items as true
-    for (const result of results) {
-      if (result.productId) {
-        statusMap[result.productId] = true;
-      }
-    }
-    
-    return statusMap;
-  }
-
-  async removeFromWishlist(userId: string, productId: string): Promise<void> {
-    await db
-      .delete(wishlist)
-      .where(
-        and(
-          eq(wishlist.userId, userId),
-          eq(wishlist.productId, productId)
-        )
-      );
-  }
+  // Removed all wishlist operations for single-seller model
 
   // Admin operations
   async getAdminStats(): Promise<{
@@ -1095,59 +905,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 
-  async getWishlistAnalytics(): Promise<{
-    topWishlisted: Array<{ productId: string; productName: string; count: number }>;
-    activeUsers: Array<{ userId: string; userName: string; email: string; itemCount: number }>;
-    totalWishlistItems: number;
-  }> {
-    try {
-      // Most wishlisted products
-      const topWishlisted = await db
-        .select({
-          productId: wishlist.productId,
-          productName: products.name,
-          count: sql<number>`count(*)`.as('count')
-        })
-        .from(wishlist)
-        .leftJoin(products, eq(wishlist.productId, products.id))
-        .groupBy(wishlist.productId, products.name)
-        .orderBy(desc(sql`count(*)`))
-        .limit(10);
-        
-      // Users with most wishlist items
-      const activeUsers = await db
-        .select({
-          userId: wishlist.userId,
-          userName: sql<string>`CONCAT(${users.firstName}, ' ', ${users.lastName})`.as('userName'),
-          email: users.email,
-          itemCount: sql<number>`count(*)`.as('itemCount')
-        })
-        .from(wishlist)
-        .leftJoin(users, eq(wishlist.userId, users.id))
-        .groupBy(wishlist.userId, users.firstName, users.lastName, users.email)
-        .orderBy(desc(sql`count(*)`));
-        
-      // Total wishlist items count
-      const totalResult = await db
-        .select({ count: sql<number>`count(*)`.as('count') })
-        .from(wishlist);
-      
-      const totalWishlistItems = totalResult[0]?.count || 0;
-      
-      return { 
-        topWishlisted: (topWishlisted || []).filter((item): item is { productId: string; productName: string; count: number } => 
-          item.productId !== null && item.productName !== null
-        ), 
-        activeUsers: (activeUsers || []).filter((user): user is { userId: string; userName: string; email: string; itemCount: number } => 
-          user.userId !== null && user.email !== null
-        ), 
-        totalWishlistItems 
-      };
-    } catch (error) {
-      Logger.error('Error getting wishlist analytics:', error);
-      return { topWishlisted: [], activeUsers: [], totalWishlistItems: 0 };
-    }
-  }
+  // Removed wishlist analytics for single-seller model
 
   // Category management methods
   async getAllCategoriesWithProductCount(): Promise<Array<{
@@ -1283,149 +1041,7 @@ export class DatabaseStorage implements IStorage {
 
 
 
-  // Enhanced wishlist analytics with detailed insights
-  async getDetailedWishlistAnalytics(timeRange: string = '30d') {
-    const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365;
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-
-    // Get wishlist statistics
-    const wishlistStats = await db
-      .select({
-        totalItems: sql<number>`count(*)`,
-        activeUsers: sql<number>`count(distinct ${wishlist.userId})`,
-        avgDaysInWishlist: sql<number>`avg(extract(day from now() - ${wishlist.createdAt}))`,
-      })
-      .from(wishlist);
-
-    // Get user segments
-    const userSegments = await db
-      .select({
-        userId: wishlist.userId,
-        itemCount: sql<number>`count(*)`
-      })
-      .from(wishlist)
-      .groupBy(wishlist.userId);
-
-    const powerUsers = userSegments.filter(u => u.itemCount >= 10).length;
-    const activeWishlisters = userSegments.filter(u => u.itemCount >= 5 && u.itemCount < 10).length;
-    const casualUsers = userSegments.filter(u => u.itemCount < 5).length;
-
-    // Get top products with conversion tracking
-    const topProducts = await db
-      .select({
-        productId: wishlist.productId,
-        productName: products.name,
-        productImage: sql<string>`(${products.images})[1]`,
-        productPrice: products.price,
-        wishlistCount: sql<number>`count(*)`,
-        conversionRate: sql<number>`0`
-      })
-      .from(wishlist)
-      .innerJoin(products, eq(wishlist.productId, products.id))
-      .groupBy(wishlist.productId, products.name, products.images, products.price)
-      .orderBy(sql`count(*) desc`)
-      .limit(10);
-
-    // Get top users
-    const topUsers = await db
-      .select({
-        userId: wishlist.userId,
-        userName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
-        email: users.email,
-        itemCount: sql<number>`count(*)`,
-        purchaseCount: sql<number>`0`
-      })
-      .from(wishlist)
-      .innerJoin(users, eq(wishlist.userId, users.id))
-      .groupBy(wishlist.userId, users.firstName, users.lastName, users.email)
-      .orderBy(sql`count(*) desc`)
-      .limit(10);
-
-    // Generate trend data (simplified for now)
-    const trendData = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      trendData.push({
-        date: date.toISOString().split('T')[0],
-        additions: Math.floor(Math.random() * 5),
-        removals: Math.floor(Math.random() * 2),
-        purchases: Math.floor(Math.random() * 1)
-      });
-    }
-
-    return {
-      stats: {
-        totalItems: wishlistStats[0]?.totalItems || 0,
-        itemsChange: 0,
-        activeUsers: wishlistStats[0]?.activeUsers || 0,
-        usersChange: 0,
-        conversionRate: 0,
-        avgDaysInWishlist: Math.round(wishlistStats[0]?.avgDaysInWishlist || 0),
-        powerUsers,
-        activeWishlisters,
-        casualUsers
-      },
-      trendData,
-      topProducts,
-      topUsers
-    };
-  }
-
-  // Export wishlist data for CSV download
-  async getWishlistExportData() {
-    return await db
-      .select({
-        id: wishlist.id,
-        userId: wishlist.userId,
-        userEmail: users.email,
-        userName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
-        productId: wishlist.productId,
-        productName: products.name,
-        productPrice: products.price,
-        createdAt: wishlist.createdAt
-      })
-      .from(wishlist)
-      .innerJoin(users, eq(wishlist.userId, users.id))
-      .innerJoin(products, eq(wishlist.productId, products.id))
-      .orderBy(desc(wishlist.createdAt));
-  }
-
-  // Equipment Submission operations (duplicate removed)
-
-  async getEquipmentSubmissions(status?: string): Promise<any[]> {
-    let query = db
-      .select({
-        submission: equipmentSubmissions,
-        user: {
-          id: users.id,
-          email: users.email,
-          firstName: users.firstName,
-          lastName: users.lastName,
-        },
-      })
-      .from(equipmentSubmissions)
-      .leftJoin(users, eq(equipmentSubmissions.userId, users.id))
-      .orderBy(desc(equipmentSubmissions.createdAt)) as any;
-
-    if (status && status !== 'all') {
-      query = query.where(eq(equipmentSubmissions.status, status)) as any;
-    }
-
-    const results = await query;
-    return results.map((row: any) => ({
-      ...row.submission,
-      user: row.user,
-    }));
-  }
-
-  async updateEquipmentSubmission(id: string, updates: Partial<EquipmentSubmission>): Promise<void> {
-    await db
-      .update(equipmentSubmissions)
-      .set(updates)
-      .where(eq(equipmentSubmissions.id, id));
-  }
+  // Removed all wishlist analytics and equipment submission operations for single-seller model
 }
 
 export const storage = new DatabaseStorage();

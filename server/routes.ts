@@ -48,8 +48,7 @@ import {
   categories, 
   orders,
   orderItems,
-  equipmentSubmissions,
-  wishlist,
+  // equipmentSubmissions, wishlist - removed for single-seller model
   activityLogs,
   reviews,
   coupons,
@@ -79,8 +78,7 @@ import {
   insertCartItemSchema,
   insertAddressSchema,
   insertOrderSchema,
-  insertEquipmentSubmissionSchema,
-  insertWishlistSchema,
+  // insertEquipmentSubmissionSchema, insertWishlistSchema - removed for single-seller model
   insertReviewSchema,
   insertCouponSchema,
   insertOrderTrackingSchema,
@@ -530,235 +528,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Equipment submissions
-  app.get("/api/submissions", async (req, res) => {
-    try {
-      const userId = req.query.userId as string;
-      const submissions = await storage.getSubmissions(userId);
-      res.json(submissions);
-    } catch (error) {
-      Logger.error("Error fetching submissions", error);
-      res.status(500).json({ message: "Failed to fetch submissions" });
-    }
-  });
+  // Removed equipment submission routes for single-seller model
 
-  app.post("/api/submissions", async (req, res) => {
-    try {
-      const validatedData = insertEquipmentSubmissionSchema.parse(req.body);
-      const submission = await storage.createSubmission(validatedData);
-      res.json(submission);
-    } catch (error) {
-      Logger.error("Error creating submission", error);
-      res.status(500).json({ message: "Failed to create submission" });
-    }
-  });
-
-  app.get("/api/submissions/:id", async (req, res) => {
-    try {
-      const submission = await storage.getSubmission(req.params.id);
-      if (!submission) {
-        return res.status(404).json({ message: "Submission not found" });
-      }
-      res.json(submission);
-    } catch (error) {
-      Logger.error("Error fetching submission", error);
-      res.status(500).json({ message: "Failed to fetch submission" });
-    }
-  });
-
-  // Wishlist - require authentication
-  app.get("/api/wishlist", requireAuth, async (req, res) => {
-    try {
-      const userId = req.userId; // Now set by requireAuth middleware
-      
-      Logger.debug(`Get wishlist - userId: ${userId}`);
-      
-      if (!userId) {
-        return res.status(401).json({ 
-          error: 'Authentication required',
-          message: 'Please log in to view your wishlist'
-        });
-      }
-      
-      const wishlistItems = await storage.getWishlistItems(userId);
-      res.json(wishlistItems);
-    } catch (error) {
-      Logger.error("Error fetching wishlist", error);
-      res.status(500).json({ message: "Failed to fetch wishlist" });
-    }
-  });
-
-  // Wishlist cache for preventing spam requests
-  const wishlistCache = new Map<string, { data: any; timestamp: number }>();
-  const WISHLIST_CACHE_DURATION = 10000; // 10 seconds - longer cache
-  
-  // BATCH wishlist check endpoint to reduce API spam
-  app.post("/api/wishlist/check-batch", requireAuth, async (req, res) => {
-    try {
-      const { productIds } = req.body;
-      const userId = req.userId;
-      
-      if (!userId) {
-        return res.status(401).json({ 
-          error: 'Authentication required',
-          message: 'Please log in to check wishlist status'
-        });
-      }
-      
-      if (!productIds || !Array.isArray(productIds)) {
-        return res.status(400).json({ message: "Product IDs array required" });
-      }
-      
-      const results = {};
-      const uncachedIds = [];
-      
-      // Check cache first
-      for (const productId of productIds) {
-        const cacheKey = `${userId}-${productId}`;
-        const cached = wishlistCache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < WISHLIST_CACHE_DURATION) {
-          (results as any)[productId] = cached.data.isWishlisted;
-        } else {
-          uncachedIds.push(productId);
-        }
-      }
-      
-      // Fetch uncached items in batch
-      if (uncachedIds.length > 0) {
-        const wishlistStatuses = await storage.getWishlistStatusBatch(userId, uncachedIds);
-        
-        for (const productId of uncachedIds) {
-          const isWishlisted = (wishlistStatuses as any)[productId] || false;
-          (results as any)[productId] = isWishlisted;
-          
-          // Cache individual results
-          const cacheKey = `${userId}-${productId}`;
-          wishlistCache.set(cacheKey, {
-            data: { isWishlisted },
-            timestamp: Date.now()
-          });
-        }
-      }
-      
-      res.json(results);
-    } catch (error) {
-      Logger.error("Error checking wishlist batch", error);
-      res.status(500).json({ message: "Failed to check wishlist status" });
-    }
-  });
-  
-  // Single wishlist check - HEAVILY CACHED
-  app.post("/api/wishlist/check", requireAuth, async (req, res) => {
-    try {
-      const { productId } = req.body;
-      const userId = req.userId;
-      
-      if (!userId) {
-        return res.status(401).json({ 
-          error: 'Authentication required',
-          message: 'Please log in to check wishlist status'
-        });
-      }
-      
-      if (!productId) {
-        return res.status(400).json({ message: "Product ID required" });
-      }
-      
-      // Check cache first - AGGRESSIVE CACHING
-      const cacheKey = `${userId}-${productId}`;
-      const cached = wishlistCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < WISHLIST_CACHE_DURATION) {
-        return res.json(cached.data);
-      }
-      
-      const isWishlisted = await storage.isProductInWishlist(userId, productId);
-      const result = { isWishlisted };
-      
-      // Cache the result
-      wishlistCache.set(cacheKey, {
-        data: result,
-        timestamp: Date.now()
-      });
-      
-      res.json(result);
-    } catch (error) {
-      Logger.error("Error checking wishlist", error);
-      res.status(500).json({ message: "Failed to check wishlist status" });
-    }
-  });
-
-  // Batch wishlist check for performance optimization - prevents spam individual requests
-  app.post("/api/wishlist/check-batch", requireAuth, async (req, res) => {
-    try {
-      const { productIds } = req.body;
-      const userId = req.userId!;
-      
-      if (!Array.isArray(productIds)) {
-        return res.status(400).json({ error: "productIds must be an array" });
-      }
-      
-      const wishlistedItems = await storage.getWishlistedProducts(userId, productIds);
-      
-      // Return object for O(1) lookup in frontend
-      const wishlistMap: Record<string, boolean> = {};
-      wishlistedItems.forEach(item => {
-        wishlistMap[item.productId] = true;
-      });
-      
-      res.json(wishlistMap);
-    } catch (error) {
-      Logger.error("Error checking batch wishlist", error);
-      res.status(500).json({ error: "Failed to check wishlist" });
-    }
-  });
-
-  app.post("/api/wishlist", requireAuth, async (req, res) => {
-    try {
-      const { productId } = req.body;
-      const userId = req.userId; // Now set by requireAuth middleware
-      
-      Logger.debug(`Add to wishlist - userId: ${userId}, productId: ${productId}`);
-      
-      if (!userId) {
-        return res.status(401).json({ 
-          error: 'Authentication required',
-          message: 'Please log in to add items to your wishlist'
-        });
-      }
-      
-      const wishlistItem = await storage.addToWishlist(userId, productId);
-      res.json({ message: "Added to wishlist" });
-    } catch (error) {
-      Logger.error("Error adding to wishlist", error);
-      res.status(500).json({ message: "Failed to add to wishlist" });
-    }
-  });
-
-  app.delete("/api/wishlist", requireAuth, async (req, res) => {
-    try {
-      const { productId } = req.body; // Read from body instead of query
-      const userId = req.userId; // Now set by requireAuth middleware
-      
-      Logger.debug(`Remove from wishlist - userId: ${userId}, productId: ${productId}`);
-      
-      if (!userId) {
-        return res.status(401).json({ 
-          error: 'Authentication required',
-          message: 'Please log in to manage your wishlist'
-        });
-      }
-      
-      if (!productId) {
-        return res.status(400).json({ message: "Product ID required" });
-      }
-      
-      await storage.removeFromWishlist(userId, productId);
-      res.json({ message: "Item removed from wishlist" });
-    } catch (error) {
-      Logger.error("Error removing from wishlist", error);
-      res.status(500).json({ message: "Failed to remove from wishlist" });
-    }
-  });
+  // Removed all wishlist routes for single-seller model
 
   // Stripe payment intent
   app.post("/api/create-payment-intent", requireAuth, async (req, res) => {

@@ -202,71 +202,7 @@ export const cartItems = pgTable("cart_items", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Equipment submissions
-export const equipmentSubmissions = pgTable("equipment_submissions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  
-  // Reference tracking
-  referenceNumber: varchar("reference_number").notNull().unique(),
-  
-  userId: varchar("user_id").references(() => users.id),
-  name: varchar("name").notNull(),
-  description: text("description"),
-  brand: varchar("brand"),
-  condition: productConditionEnum("condition").notNull(),
-  weight: integer("weight"),
-  askingPrice: decimal("asking_price", { precision: 10, scale: 2 }),
-  images: jsonb("images").$type<string[]>().default([]),
-  
-  // Contact & Location
-  phoneNumber: varchar("phone_number"),
-  email: varchar("email"),
-  userCity: varchar("user_city"),
-  userState: varchar("user_state"),
-  userZipCode: varchar("user_zip_code"),
-  isLocal: boolean("is_local").default(false),
-  distance: decimal("distance", { precision: 5, scale: 2 }),
-  
-  // Status Management (pending, under_review, accepted, declined, scheduled, completed, cancelled)
-  status: varchar("status").default("pending"),
-  statusHistory: jsonb("status_history").default([]),
-  
-  // Admin fields
-  adminNotes: text("admin_notes"),
-  internalNotes: text("internal_notes"), // Not visible to users
-  offerAmount: decimal("offer_amount", { precision: 10, scale: 2 }),
-  declineReason: text("decline_reason"),
-  notes: text("notes"),
-  
-  // Scheduling
-  scheduledPickupDate: timestamp("scheduled_pickup_date"),
-  pickupWindowStart: varchar("pickup_window_start"),
-  pickupWindowEnd: varchar("pickup_window_end"),
-  
-  // Tracking
-  viewedByAdmin: boolean("viewed_by_admin").default(false),
-  lastViewedAt: timestamp("last_viewed_at"),
-  assignedTo: varchar("assigned_to").references(() => users.id),
-  
-  // Timestamps
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  reviewedAt: timestamp("reviewed_at"),
-  completedAt: timestamp("completed_at"),
-}, (table) => [
-  index("idx_reference_number").on(table.referenceNumber),
-  index("idx_status").on(table.status),
-  index("idx_user_id").on(table.userId),
-  index("idx_created_at").on(table.createdAt),
-]);
-
-// Wishlist
-export const wishlist = pgTable("wishlist", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id),
-  productId: varchar("product_id").references(() => products.id),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Removed equipment submissions and wishlist tables for single-seller model
 
 // Activity logs for real analytics tracking
 export const activityLogs = pgTable("activity_logs", {
@@ -303,8 +239,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
   cartItems: many(cartItems),
   addresses: many(addresses),
-  submissions: many(equipmentSubmissions),
-  wishlist: many(wishlist),
   activities: many(activityLogs),
 }));
 
@@ -319,7 +253,6 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   }),
   orderItems: many(orderItems),
   cartItems: many(cartItems),
-  wishlist: many(wishlist),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -367,23 +300,7 @@ export const addressesRelations = relations(addresses, ({ one }) => ({
   }),
 }));
 
-export const equipmentSubmissionsRelations = relations(equipmentSubmissions, ({ one }) => ({
-  user: one(users, {
-    fields: [equipmentSubmissions.userId],
-    references: [users.id],
-  }),
-}));
-
-export const wishlistRelations = relations(wishlist, ({ one }) => ({
-  user: one(users, {
-    fields: [wishlist.userId],
-    references: [users.id],
-  }),
-  product: one(products, {
-    fields: [wishlist.productId],
-    references: [products.id],
-  }),
-}));
+// Removed equipment submissions and wishlist relations for single-seller model
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -426,22 +343,7 @@ export const insertAddressSchema = createInsertSchema(addresses).omit({
   createdAt: true,
 });
 
-export const insertEquipmentSubmissionSchema = createInsertSchema(equipmentSubmissions).omit({
-  id: true,
-  referenceNumber: true,
-  createdAt: true,
-  updatedAt: true,
-  statusHistory: true,
-  viewedByAdmin: true,
-  lastViewedAt: true,
-  reviewedAt: true,
-  completedAt: true,
-});
-
-export const insertWishlistSchema = createInsertSchema(wishlist).omit({
-  id: true,
-  createdAt: true,
-});
+// Removed equipment submission and wishlist schemas for single-seller model
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   id: true,
@@ -483,11 +385,7 @@ export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type Address = typeof addresses.$inferSelect;
 export type InsertAddress = z.infer<typeof insertAddressSchema>;
 
-export type EquipmentSubmission = typeof equipmentSubmissions.$inferSelect;
-export type InsertEquipmentSubmission = z.infer<typeof insertEquipmentSubmissionSchema>;
-
-export type Wishlist = typeof wishlist.$inferSelect;
-export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
+// Removed EquipmentSubmission and Wishlist types for single-seller model
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
