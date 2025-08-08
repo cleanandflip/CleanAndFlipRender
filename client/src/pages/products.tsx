@@ -6,7 +6,7 @@ import { NavigationStateManager } from "@/lib/navigation-state";
 import ProductGrid from "@/components/products/product-grid";
 import ProductList from "@/components/products/ProductList";
 import FilterSidebar from "@/components/products/filter-sidebar";
-import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
+import { SearchNavDropdown } from "@/components/ui";
 import FilterChip from "@/components/products/filter-chip";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/shared/AnimatedComponents";
@@ -380,11 +380,9 @@ export default function Products() {
         <Card className="p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 max-w-md">
-              <UnifiedSearchBar 
-                context="products"
+              <SearchNavDropdown
                 onSearch={(search: string) => handleFilterChange({ search })}
                 placeholder="Search weightlifting equipment..."
-                value={filters.search || ''}
                 className="w-full"
               />
             </div>

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {  div, div, StandardDropdown, div } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Upload, X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -279,16 +279,16 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
                 value={formData.categoryId}
                 onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
               >
-                <SelectTrigger style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
+                <StandardDropdown style={{ backgroundColor: theme.colors.bg.primary, borderColor: theme.colors.border.default, color: theme.colors.text.primary }}>
+                  <div placeholder="Select category" />
+                </StandardDropdown>
+                <div>
                   {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>
+                    <div key={cat.id} value={cat.id}>
                       {cat.name}
-                    </SelectItem>
+                    </div>
                   ))}
-                </SelectContent>
+                </div>
               </Select>
             </div>
 

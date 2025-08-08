@@ -1,4 +1,4 @@
-import { forwardRef, InputHTMLAttributes, SelectHTMLAttributes, ButtonHTMLAttributes } from 'react';
+import { forwardRef, InputHTMLAttributesHTMLAttributes, ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 // Input Component
@@ -22,7 +22,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
 Input.displayName = "Input";
 
 // Select Component
-export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement> & {
+export const Select = forwardRef<HTMLSelectElementHTMLAttributes<HTMLSelectElement> & {
   error?: boolean;
 }>(({ className, error, children, ...props }, ref) => {
   return (

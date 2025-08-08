@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {  div, div, StandardDropdown, div } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { 
@@ -410,18 +410,18 @@ export function SubmissionsManager() {
               value={filters.status}
               onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
             >
-              <SelectTrigger className="glass border-border">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent className="glass border-border">
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="under_review">Under Review</SelectItem>
-                <SelectItem value="accepted">Accepted</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
+              <StandardDropdown className="glass border-border">
+                <div placeholder="All Statuses" />
+              </StandardDropdown>
+              <div className="glass border-border">
+                <div value="all">All Statuses</div>
+                <div value="pending">Pending</div>
+                <div value="under_review">Under Review</div>
+                <div value="accepted">Accepted</div>
+                <div value="rejected">Rejected</div>
+                <div value="cancelled">Cancelled</div>
+                <div value="completed">Completed</div>
+              </div>
             </Select>
             
             <Select
@@ -432,14 +432,14 @@ export function SubmissionsManager() {
                 page: 1 
               })}
             >
-              <SelectTrigger className="glass border-border">
-                <SelectValue placeholder="All Locations" />
-              </SelectTrigger>
-              <SelectContent className="glass border-border">
-                <SelectItem value="all">All Locations</SelectItem>
-                <SelectItem value="true">Local (Asheville)</SelectItem>
-                <SelectItem value="false">Remote</SelectItem>
-              </SelectContent>
+              <StandardDropdown className="glass border-border">
+                <div placeholder="All Locations" />
+              </StandardDropdown>
+              <div className="glass border-border">
+                <div value="all">All Locations</div>
+                <div value="true">Local (Asheville)</div>
+                <div value="false">Remote</div>
+              </div>
             </Select>
             
             <Popover>

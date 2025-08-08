@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, Input } from "@/components/shared/AnimatedComponents";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { UnifiedDropdown } from "@/components/ui/unified-dropdown";
+import { StandardDropdown } from "@/components/ui";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -250,7 +250,7 @@ export default function Contact() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <UnifiedDropdown
+                            <StandardDropdown
                               label="Category"
                               required={true}
                               options={[

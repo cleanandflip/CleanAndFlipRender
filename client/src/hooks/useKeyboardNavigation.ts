@@ -13,7 +13,7 @@ export function useKeyboardNavigation({
   isOpen,
   items,
   selectedIndex,
-  onSelect,
+  on
   onEnter,
   onEscape
 }: UseKeyboardNavigationProps) {
@@ -45,5 +45,5 @@ export function useKeyboardNavigation({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, items, selectedIndex, onSelect, onEnter, onEscape]);
+  }, [isOpen, items, selectedIndex, on onEnter, onEscape]);
 }

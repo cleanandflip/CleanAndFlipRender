@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { GlobalDropdown, DropdownItem, DropdownLabel, DropdownSeparator } from "@/components/ui/GlobalDropdown";
+import { GlobalDropdown, DropdownItem, DropdownLabel, DropdownSeparator } from "@/components/ui";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
-import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
+import { SearchNavDropdown } from "@/components/ui";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown } from "lucide-react";
@@ -125,17 +125,15 @@ export default function Navigation() {
           <div className="flex items-center space-x-3 flex-shrink-0 min-w-0 overflow-visible p-1">
             {/* Desktop Search */}
             <div className="hidden lg:block">
-              <UnifiedSearchBar
+              <SearchNavDropdown
                 placeholder="Search equipment..."
                 onSearch={(query) => {
                   const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
                   handleNavigation(searchUrl);
                 }}
-                onProductSelect={(product) => {
-                  const productUrl = `/products/${product.id}`;
-                  handleNavigation(productUrl);
+                onSelect={(result) => {
+                  handleNavigation(result.url);
                 }}
-                context="header"
                 className="w-72"
               />
             </div>
@@ -328,19 +326,17 @@ export default function Navigation() {
         {/* Mobile Search Bar */}
         {isSearchOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-bg-secondary-border">
-            <UnifiedSearchBar
+            <SearchNavDropdown
               placeholder="Search equipment..."
               onSearch={(query: string) => {
                 const searchUrl = `/products?search=${encodeURIComponent(query)}`;
                 handleNavigation(searchUrl);
                 setIsSearchOpen(false);
               }}
-              onProductSelect={(product) => {
-                const productUrl = `/products/${product.id}`;
-                handleNavigation(productUrl);
+              onSelect={(result) => {
+                handleNavigation(result.url);
                 setIsSearchOpen(false);
               }}
-              context="header"
               className="w-full"
             />
           </div>

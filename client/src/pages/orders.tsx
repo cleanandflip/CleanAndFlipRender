@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { UnifiedDropdown } from "@/components/ui/unified-dropdown";
+import { StandardDropdown } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { Package, Search, Calendar, Truck, ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -130,7 +130,7 @@ export default function Orders() {
             </div>
 
             {/* Status Filter */}
-            <UnifiedDropdown
+            <StandardDropdown
               value={statusFilter}
               onChange={setStatusFilter}
               placeholder="Filter by status"
@@ -146,7 +146,7 @@ export default function Orders() {
             />
 
             {/* Sort */}
-            <UnifiedDropdown
+            <StandardDropdown
               value={sortBy}
               onChange={setSortBy}
               placeholder="Sort by"

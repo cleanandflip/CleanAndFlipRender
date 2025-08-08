@@ -5,11 +5,11 @@ import { Pagination } from '@/components/admin/Pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
+  
+  div,
+  div,
+  StandardDropdown,
+  div
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -276,32 +276,32 @@ export function ProductsManager() {
             value={filters.category}
             onValueChange={(v) => setFilters({ ...filters, category: v, page: 1 })}
           >
-            <SelectTrigger className="glass border-border">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent className="glass border-border">
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="barbells">Barbells</SelectItem>
-              <SelectItem value="plates">Plates</SelectItem>
-              <SelectItem value="dumbbells">Dumbbells</SelectItem>
-              <SelectItem value="racks">Racks & Storage</SelectItem>
-              <SelectItem value="cardio">Cardio Equipment</SelectItem>
-            </SelectContent>
+            <StandardDropdown className="glass border-border">
+              <div placeholder="All Categories" />
+            </StandardDropdown>
+            <div className="glass border-border">
+              <div value="all">All Categories</div>
+              <div value="barbells">Barbells</div>
+              <div value="plates">Plates</div>
+              <div value="dumbbells">Dumbbells</div>
+              <div value="racks">Racks & Storage</div>
+              <div value="cardio">Cardio Equipment</div>
+            </div>
           </Select>
           
           <Select
             value={filters.status}
             onValueChange={(v) => setFilters({ ...filters, status: v, page: 1 })}
           >
-            <SelectTrigger className="glass border-border">
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent className="glass border-border">
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-            </SelectContent>
+            <StandardDropdown className="glass border-border">
+              <div placeholder="All Statuses" />
+            </StandardDropdown>
+            <div className="glass border-border">
+              <div value="all">All Statuses</div>
+              <div value="active">Active</div>
+              <div value="inactive">Inactive</div>
+              <div value="out-of-stock">Out of Stock</div>
+            </div>
           </Select>
           
           <div className="flex gap-2">

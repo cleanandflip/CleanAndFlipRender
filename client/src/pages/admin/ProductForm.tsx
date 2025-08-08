@@ -5,9 +5,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceInput } from '@/components/ui/price-input';
-import { UnifiedDropdown } from '@/components/ui/unified-dropdown';
+import { StandardDropdown } from '@/components/ui';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Upload, X } from 'lucide-react';
@@ -329,12 +328,12 @@ export function ProductForm() {
               </div>
               
               <div>
-                <UnifiedDropdown
+                <StandardDropdown
                   label="Brand"
                   options={EQUIPMENT_BRANDS}
                   value={formData.brand}
                   placeholder="Search or select a brand..."
-                  onChange={(brand) => setFormData({...formData, brand})}
+                  onChange={(brand) => setFormData({...formData, brand: Array.isArray(brand) ? brand[0] : brand})}
                   searchable={true}
                   allowCustom={true}
                   required={true}
@@ -407,23 +406,21 @@ export function ProductForm() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="category">Category *</Label>
-                <Select value={formData.categoryId} onValueChange={(value) => setFormData({...formData, categoryId: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(categories as any[]).map((category: any) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <StandardDropdown
+                  label="Category *"
+                  options={(categories as any[]).map((category: any) => ({
+                    value: category.id,
+                    label: category.name
+                  }))}
+                  value={formData.categoryId}
+                  placeholder="Select category"
+                  onChange={(value) => setFormData({...formData, categoryId: Array.isArray(value) ? value[0] : value})}
+                  required={true}
+                />
               </div>
               
               <div>
-                <UnifiedDropdown
+                <StandardDropdown
                   label="Condition"
                   options={[
                     { value: "new", label: "New" },
@@ -434,7 +431,7 @@ export function ProductForm() {
                   ]}
                   value={formData.condition}
                   placeholder="Select condition"
-                  onChange={(condition) => setFormData({...formData, condition})}
+                  onChange={(condition) => setFormData({...formData, condition: Array.isArray(condition) ? condition[0] : condition})}
                   required={true}
                 />
               </div>

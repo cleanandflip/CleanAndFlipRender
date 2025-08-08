@@ -1,13 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import { StandardDropdown } from '@/components/ui';
 import { Eye, Edit, MessageSquare, Archive, Trash2, MoreVertical } from 'lucide-react';
 import { formatStatus, getStatusVariant, formatCurrency } from '@/utils/submissionHelpers';
 
@@ -142,34 +136,23 @@ export function SubmissionsList({
                   <Eye className="w-4 h-4" />
                 </Button>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <div className="glass glass-hover rounded-lg p-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="glass border-border bg-card">
-                  <DropdownMenuItem>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Add Note
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Archive className="w-4 h-4 mr-2" />
-                    Archive
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-400">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="glass glass-hover rounded-lg">
+                <StandardDropdown
+                  options={[
+                    { value: 'edit', label: 'Edit' },
+                    { value: 'note', label: 'Add Note' },
+                    { value: 'archive', label: 'Archive' },
+                    { value: 'delete', label: 'Delete' }
+                  ]}
+                  value=""
+                  placeholder="•••"
+                  onChange={(action) => {
+                    console.log(`Action selected: ${action}`);
+                  }}
+                  size="sm"
+                  className="border-none bg-transparent"
+                />
+              </div>
             </div>
           </div>
         </Card>

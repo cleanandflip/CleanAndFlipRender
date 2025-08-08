@@ -5,11 +5,11 @@ import { MetricCard } from '@/components/admin/MetricCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
+  
+  div,
+  div,
+  StandardDropdown,
+  div
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -170,28 +170,28 @@ export function AnalyticsManager() {
           </Popover>
           
           <Select value={metric} onValueChange={setMetric}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="revenue">Revenue</SelectItem>
-              <SelectItem value="orders">Orders</SelectItem>
-              <SelectItem value="users">New Users</SelectItem>
-              <SelectItem value="conversion">Conversion Rate</SelectItem>
-              <SelectItem value="submissions">Submissions</SelectItem>
-            </SelectContent>
+            <StandardDropdown>
+              <div />
+            </StandardDropdown>
+            <div>
+              <div value="revenue">Revenue</div>
+              <div value="orders">Orders</div>
+              <div value="users">New Users</div>
+              <div value="conversion">Conversion Rate</div>
+              <div value="submissions">Submissions</div>
+            </div>
           </Select>
           
           <Select value={groupBy} onValueChange={setGroupBy}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hour">Hourly</SelectItem>
-              <SelectItem value="day">Daily</SelectItem>
-              <SelectItem value="week">Weekly</SelectItem>
-              <SelectItem value="month">Monthly</SelectItem>
-            </SelectContent>
+            <StandardDropdown>
+              <div />
+            </StandardDropdown>
+            <div>
+              <div value="hour">Hourly</div>
+              <div value="day">Daily</div>
+              <div value="week">Weekly</div>
+              <div value="month">Monthly</div>
+            </div>
           </Select>
           
           <div className="glass glass-hover rounded-lg p-1">
