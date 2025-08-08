@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceInput } from '@/components/ui/price-input';
-import { UnifiedDropdown } from '@/components/ui/unified-dropdown';
+import { UnifiedSearchDropdown } from '@/components/ui/unified-search-dropdown';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -329,15 +329,13 @@ export function ProductForm() {
               </div>
               
               <div>
-                <UnifiedDropdown
-                  label="Brand"
-                  options={EQUIPMENT_BRANDS}
+                <UnifiedSearchDropdown
+                  options={EQUIPMENT_BRANDS.map(brand => ({ value: brand, label: brand }))}
                   value={formData.brand}
                   placeholder="Search or select a brand..."
-                  onChange={(brand) => setFormData({...formData, brand})}
+                  onValueChange={(brand) => setFormData({...formData, brand})}
                   searchable={true}
                   allowCustom={true}
-                  required={true}
                 />
               </div>
             </div>
@@ -423,8 +421,7 @@ export function ProductForm() {
               </div>
               
               <div>
-                <UnifiedDropdown
-                  label="Condition"
+                <UnifiedSearchDropdown
                   options={[
                     { value: "new", label: "New" },
                     { value: "like_new", label: "Like New" },
@@ -434,8 +431,9 @@ export function ProductForm() {
                   ]}
                   value={formData.condition}
                   placeholder="Select condition"
-                  onChange={(condition) => setFormData({...formData, condition})}
-                  required={true}
+                  onValueChange={(condition) => setFormData({...formData, condition})}
+                  searchable={false}
+                  allowCustom={false}
                 />
               </div>
             </div>

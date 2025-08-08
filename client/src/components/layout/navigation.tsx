@@ -2,17 +2,10 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
-import { UnifiedSearchBar } from "@/components/ui/UnifiedSearchBar";
-import { CleanDropdown } from "@/components/ui/CleanDropdown";
+import { UnifiedSearchDropdown } from "@/components/ui/unified-search-dropdown";
+import { UnifiedActionDropdown } from "@/components/ui/unified-action-dropdown";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package } from "lucide-react";
@@ -131,18 +124,16 @@ export default function Navigation() {
           <div className="flex items-center space-x-3 flex-shrink-0 min-w-0 overflow-visible p-1">
             {/* Desktop Search */}
             <div className="hidden lg:block">
-              <UnifiedSearchBar
+              <UnifiedSearchDropdown
                 placeholder="Search equipment..."
                 onSearch={(query) => {
                   const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
                   handleNavigation(searchUrl);
                 }}
-                onProductSelect={(product) => {
-                  const productUrl = `/products/${product.id}`;
-                  handleNavigation(productUrl);
-                }}
-                context="header"
                 className="w-72"
+                icon={<Search size={16} />}
+                searchable={true}
+                allowCustom={true}
               />
             </div>
 
@@ -158,10 +149,36 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <CleanDropdown 
-                user={user}
-                onNavigate={handleNavigation}
-                onLogout={() => logoutMutation.mutate()}
+              <UnifiedActionDropdown
+                trigger={
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-text-primary hover:text-white transition-all duration-200">
+                    <User size={18} />
+                    <span className="font-medium">{user.displayName || user.email}</span>
+                  </div>
+                }
+                options={[
+                  {
+                    value: "dashboard",
+                    label: "Dashboard",
+                    icon: <Settings size={16} />,
+                    onClick: () => handleNavigation(ROUTES.DASHBOARD)
+                  },
+                  {
+                    value: "orders",
+                    label: "My Orders", 
+                    icon: <Package size={16} />,
+                    onClick: () => handleNavigation(ROUTES.ORDERS)
+                  },
+                  {
+                    value: "logout",
+                    label: "Sign Out",
+                    icon: <LogOut size={16} />,
+                    variant: "destructive",
+                    onClick: () => logoutMutation.mutate()
+                  }
+                ]}
+                align="end"
+                closeOnSelect={true}
               />
             ) : (
               <Button
@@ -264,20 +281,17 @@ export default function Navigation() {
         {/* Mobile Search Bar */}
         {isSearchOpen && (
           <div className="lg:hidden mt-4 pt-4 border-t border-bg-secondary-border">
-            <UnifiedSearchBar
+            <UnifiedSearchDropdown
               placeholder="Search equipment..."
               onSearch={(query: string) => {
                 const searchUrl = `/products?search=${encodeURIComponent(query)}`;
                 handleNavigation(searchUrl);
                 setIsSearchOpen(false);
               }}
-              onProductSelect={(product) => {
-                const productUrl = `/products/${product.id}`;
-                handleNavigation(productUrl);
-                setIsSearchOpen(false);
-              }}
-              context="header"
               className="w-full"
+              icon={<Search size={16} />}
+              searchable={true}
+              allowCustom={true}
             />
           </div>
         )}
