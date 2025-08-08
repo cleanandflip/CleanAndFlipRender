@@ -1995,7 +1995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Clean the update data
-      const cleanData = {
+      const cleanData: any = {
         email: updateData.email,
         firstName: updateData.firstName || null,
         lastName: updateData.lastName || null, 
@@ -2011,7 +2011,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       Logger.info(`Updating user ${id} with data:`, { ...cleanData, password: cleanData.password ? '[HIDDEN]' : undefined });
       
-      // Update user in database
+      // Update user in database using existing imports
       const [updatedUser] = await db
         .update(users)
         .set(cleanData)
@@ -2044,6 +2044,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Logger.error("Error updating user", error);
       res.status(500).json({ 
         error: "Failed to update user",
+        details: error.message 
+      });
+    }
+  });
+
+  // Create new user endpoint
+  app.post("/api/admin/users", requireRole('developer'), async (req, res) => {
+    try {
+      const { email, password, role = 'user', firstName, lastName, phone } = req.body;
+      
+      // Validate required fields
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: email, password, firstName, lastName' 
+        });
+      }
+      
+      // Validate role
+      if (!['user', 'developer'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role. Must be "user" or "developer"' });
+      }
+      
+      // Check if user already exists
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+      
+      if (existingUser) {
+        return res.status(400).json({ error: 'User with this email already exists' });
+      }
+      
+      // Hash password
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.hash(password, 12);
+      
+      // Create user data
+      const userData = {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        phone: phone || null,
+        role,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      Logger.info(`Creating new user with email: ${email}, role: ${role}`);
+      
+      // Insert user
+      const [newUser] = await db
+        .insert(users)
+        .values(userData)
+        .returning();
+      
+      if (!newUser) {
+        return res.status(500).json({ error: 'Failed to create user' });
+      }
+      
+      // Broadcast update via WebSocket
+      if (wsManager) {
+        wsManager.broadcast({
+          type: 'user_update',
+          action: 'create',
+          userId: newUser.id,
+          data: newUser,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = newUser;
+      res.json({ 
+        success: true, 
+        user: userWithoutPassword 
+      });
+      
+    } catch (error) {
+      Logger.error("Error creating user", error);
+      res.status(500).json({ 
+        error: "Failed to create user",
         details: error.message 
       });
     }

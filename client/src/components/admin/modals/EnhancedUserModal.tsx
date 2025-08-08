@@ -156,6 +156,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
       });
 
       if (res.ok) {
+        const result = await res.json();
         toast({
           title: "Success!",
           description: user ? 'User updated successfully' : 'User created successfully',
@@ -165,9 +166,10 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
         send({
           type: 'user_update',
           data: { 
-            userId: user?.id,
+            userId: user?.id || result.user?.id,
             action: user ? 'update' : 'create',
-            email: formData.email 
+            email: formData.email,
+            role: formData.role
           }
         });
         
@@ -175,7 +177,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
         onClose();
       } else {
         const error = await res.json();
-        throw new Error(error.message || 'Failed to save user');
+        throw new Error(error.error || error.message || 'Failed to save user');
       }
     } catch (error: any) {
       toast({
