@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
-import { UnifiedSearchDropdown } from "@/components/ui/unified-search-dropdown";
-import { UnifiedActionDropdown } from "@/components/ui/unified-action-dropdown";
+import { UnifiedSearchDropdown, UnifiedNavDropdown, UnifiedUserDropdown } from "@/components/ui/UnifiedDropdowns";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package } from "lucide-react";
@@ -126,14 +125,7 @@ export default function Navigation() {
             <div className="hidden lg:block">
               <UnifiedSearchDropdown
                 placeholder="Search equipment..."
-                onSearch={(query) => {
-                  const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
-                  handleNavigation(searchUrl);
-                }}
                 className="w-72"
-                icon={<Search size={16} />}
-                searchable={true}
-                allowCustom={true}
               />
             </div>
 
@@ -149,36 +141,17 @@ export default function Navigation() {
 
             {/* Account */}
             {user ? (
-              <UnifiedActionDropdown
-                trigger={
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-text-primary hover:text-white transition-all duration-200">
-                    <User size={18} />
-                    <span className="font-medium">{user.displayName || user.email}</span>
-                  </div>
-                }
-                options={[
-                  {
-                    value: "dashboard",
-                    label: "Dashboard",
-                    icon: <Settings size={16} />,
-                    onClick: () => handleNavigation(ROUTES.DASHBOARD)
-                  },
-                  {
-                    value: "orders",
-                    label: "My Orders", 
-                    icon: <Package size={16} />,
-                    onClick: () => handleNavigation(ROUTES.ORDERS)
-                  },
-                  {
-                    value: "logout",
-                    label: "Sign Out",
-                    icon: <LogOut size={16} />,
-                    variant: "destructive",
-                    onClick: () => logoutMutation.mutate()
-                  }
-                ]}
-                align="end"
-                closeOnSelect={true}
+              <UnifiedUserDropdown
+                user={{
+                  id: user.id?.toString() || '',
+                  email: user.email || '',
+                  displayName: user.email || '',
+                  role: user.role || 'user'
+                }}
+                onLogout={() => {
+                  logoutMutation.mutate();
+                }}
+                className="flex-shrink-0"
               />
             ) : (
               <Button
@@ -283,15 +256,7 @@ export default function Navigation() {
           <div className="lg:hidden mt-4 pt-4 border-t border-bg-secondary-border">
             <UnifiedSearchDropdown
               placeholder="Search equipment..."
-              onSearch={(query: string) => {
-                const searchUrl = `/products?search=${encodeURIComponent(query)}`;
-                handleNavigation(searchUrl);
-                setIsSearchOpen(false);
-              }}
               className="w-full"
-              icon={<Search size={16} />}
-              searchable={true}
-              allowCustom={true}
             />
           </div>
         )}

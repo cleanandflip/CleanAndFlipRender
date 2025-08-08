@@ -1,0 +1,689 @@
+Based on your Clean & Flip website design and requirements, I'll provide you with comprehensive fullstack code for unified search and navigation dropdowns that match your minimalist aesthetic.
+Unified Search Dropdown & Navigation Dropdown Implementation
+1. Backend API Routes (/server/routes/search.ts)
+typescriptimport { Router } from 'express';
+import { db } from '../db';
+import { products, categories } from '@db/schema';
+import { sql, like, or } from 'drizzle-orm';
+
+const router = Router();
+
+// Unified search endpoint
+router.get('/api/search/suggestions', async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || typeof q !== 'string' || q.length < 2) {
+      return res.json({ suggestions: [] });
+    }
+
+    const searchTerm = `%${q.toLowerCase()}%`;
+    
+    // Search products and categories in parallel
+    const [productResults, categoryResults] = await Promise.all([
+      db.select({
+        id: products.id,
+        name: products.name,
+        price: products.price,
+        image: sql<string>`${products.images}[1]`,
+        type: sql<string>`'product'`
+      })
+      .from(products)
+      .where(or(
+        like(sql`LOWER(${products.name})`, searchTerm),
+        like(sql`LOWER(${products.description})`, searchTerm)
+      ))
+      .limit(5),
+      
+      db.select({
+        id: categories.id,
+        name: categories.name,
+        count: sql<number>`(SELECT COUNT(*) FROM products WHERE category_id = ${categories.id})`,
+        type: sql<string>`'category'`
+      })
+      .from(categories)
+      .where(like(sql`LOWER(${categories.name})`, searchTerm))
+      .limit(3)
+    ]);
+
+    const suggestions = [
+      ...categoryResults.map(cat => ({
+        type: 'category',
+        id: cat.id,
+        text: cat.name,
+        meta: `${cat.count} items`,
+        url: `/shop?category=${cat.id}`
+      })),
+      ...productResults.map(prod => ({
+        type: 'product',
+        id: prod.id,
+        text: prod.name,
+        meta: `$${prod.price}`,
+        image: prod.image,
+        url: `/product/${prod.id}`
+      }))
+    ];
+
+    res.json({ suggestions });
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// Quick navigation data
+router.get('/api/navigation/menu', async (req, res) => {
+  try {
+    const [categoriesData, featuredProducts] = await Promise.all([
+      db.select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug
+      })
+      .from(categories)
+      .where(categories.active)
+      .orderBy(categories.displayOrder)
+      .limit(6),
+      
+      db.select({
+        id: products.id,
+        name: products.name,
+        price: products.price
+      })
+      .from(products)
+      .where(products.featured)
+      .limit(3)
+    ]);
+
+    res.json({
+      categories: categoriesData,
+      featured: featuredProducts,
+      quickLinks: [
+        { label: 'New Arrivals', url: '/shop?sort=newest' },
+        { label: 'On Sale', url: '/shop?sale=true' },
+        { label: 'Local Pickup', url: '/shop?local=true' }
+      ]
+    });
+  } catch (error) {
+    console.error('Navigation menu error:', error);
+    res.status(500).json({ error: 'Failed to load menu' });
+  }
+});
+
+export default router;
+2. React Components (/client/src/components/UnifiedDropdowns.tsx)
+tsximport React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Link, useLocation, useRoute } from 'wouter';
+import { Search, ChevronDown, X, ShoppingBag, TrendingUp, MapPin } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { cn } from '@/lib/utils';
+
+interface SearchSuggestion {
+  type: 'product' | 'category';
+  id: string | number;
+  text: string;
+  meta: string;
+  image?: string;
+  url: string;
+}
+
+interface NavigationMenu {
+  categories: Array<{ id: number; name: string; slug: string }>;
+  featured: Array<{ id: number; name: string; price: string }>;
+  quickLinks: Array<{ label: string; url: string }>;
+}
+
+// Unified Search Dropdown Component
+export const UnifiedSearchDropdown: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debouncedQuery = useDebounce(query, 300);
+  const [, navigate] = useLocation();
+
+  // Fetch suggestions
+  useEffect(() => {
+    if (debouncedQuery.length >= 2) {
+      setLoading(true);
+      fetch(`/api/search/suggestions?q=${encodeURIComponent(debouncedQuery)}`)
+        .then(res => res.json())
+        .then(data => {
+          setSuggestions(data.suggestions || []);
+          setLoading(false);
+        })
+        .catch(() => {
+          setLoading(false);
+          setSuggestions([]);
+        });
+    } else {
+      setSuggestions([]);
+    }
+  }, [debouncedQuery]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen || suggestions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev > 0 ? prev - 1 : suggestions.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+          navigate(suggestions[selectedIndex].url);
+          setIsOpen(false);
+          setQuery('');
+        } else if (query) {
+          navigate(`/shop?search=${encodeURIComponent(query)}`);
+          setIsOpen(false);
+        }
+        break;
+      case 'Escape':
+        setIsOpen(false);
+        inputRef.current?.blur();
+        break;
+    }
+  };
+
+  return (
+    <div ref={searchRef} className="relative flex-1 max-w-2xl">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setIsOpen(true);
+            setSelectedIndex(-1);
+          }}
+          onFocus={() => setIsOpen(true)}
+          onKeyDown={handleKeyDown}
+          placeholder="Search equipment..."
+          className={cn(
+            "w-full pl-10 pr-10 py-2.5 bg-white/10 backdrop-blur-sm",
+            "border border-white/20 rounded-lg",
+            "text-white placeholder:text-gray-400",
+            "focus:outline-none focus:ring-2 focus:ring-blue-500/50",
+            "transition-all duration-200"
+          )}
+        />
+        {query && (
+          <button
+            onClick={() => {
+              setQuery('');
+              setSuggestions([]);
+              inputRef.current?.focus();
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Dropdown */}
+      {isOpen && (query.length >= 2 || suggestions.length > 0) && (
+        <div className={cn(
+          "absolute top-full left-0 right-0 mt-2",
+          "bg-white rounded-lg shadow-2xl border border-gray-100",
+          "overflow-hidden z-50 animate-in fade-in slide-in-from-top-2"
+        )}>
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">
+              <div className="animate-pulse">Searching...</div>
+            </div>
+          ) : suggestions.length > 0 ? (
+            <div className="max-h-96 overflow-y-auto">
+              {/* Category Results */}
+              {suggestions.filter(s => s.type === 'category').length > 0 && (
+                <div className="p-2 border-b border-gray-100">
+                  <div className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Categories
+                  </div>
+                  {suggestions.filter(s => s.type === 'category').map((item, idx) => (
+                    <Link key={item.id} href={item.url}>
+                      
+                        className={cn(
+                          "flex items-center justify-between px-3 py-2 rounded-md",
+                          "hover:bg-gray-50 transition-colors",
+                          selectedIndex === suggestions.indexOf(item) && "bg-gray-50"
+                        )}
+                        onMouseEnter={() => setSelectedIndex(suggestions.indexOf(item))}
+                      >
+                        <span className="font-medium text-gray-900">{item.text}</span>
+                        <span className="text-sm text-gray-500">{item.meta}</span>
+                      </a>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* Product Results */}
+              {suggestions.filter(s => s.type === 'product').length > 0 && (
+                <div className="p-2">
+                  <div className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Products
+                  </div>
+                  {suggestions.filter(s => s.type === 'product').map((item) => (
+                    <Link key={item.id} href={item.url}>
+                      
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2 rounded-md",
+                          "hover:bg-gray-50 transition-colors",
+                          selectedIndex === suggestions.indexOf(item) && "bg-gray-50"
+                        )}
+                        onMouseEnter={() => setSelectedIndex(suggestions.indexOf(item))}
+                      >
+                        {item.image && (
+                          <img
+                            src={item.image}
+                            alt={item.text}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{item.text}</div>
+                        </div>
+                        <div className="text-sm font-semibold text-blue-600">{item.meta}</div>
+                      </a>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : query.length >= 2 ? (
+            <div className="p-8 text-center">
+              <p className="text-gray-500">No results found for "{query}"</p>
+              <button
+                onClick={() => {
+                  navigate(`/shop?search=${encodeURIComponent(query)}`);
+                  setIsOpen(false);
+                }}
+                className="mt-2 text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View all results →
+              </button>
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Unified Navigation Dropdown Component
+export const UnifiedNavDropdown: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [menu, setMenu] = useState<NavigationMenu | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [, navigate] = useLocation();
+
+  // Fetch menu data
+  useEffect(() => {
+    if (isOpen && !menu) {
+      fetch('/api/navigation/menu')
+        .then(res => res.json())
+        .then(data => setMenu(data))
+        .catch(console.error);
+    }
+  }, [isOpen, menu]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "flex items-center gap-2 px-4 py-2",
+          "text-white hover:text-gray-200 transition-colors",
+          "font-medium"
+        )}
+      >
+        Shop
+        <ChevronDown className={cn(
+          "w-4 h-4 transition-transform duration-200",
+          isOpen && "rotate-180"
+        )} />
+      </button>
+
+      {isOpen && menu && (
+        <div className={cn(
+          "absolute top-full left-0 mt-2 w-[600px]",
+          "bg-white rounded-lg shadow-2xl border border-gray-100",
+          "z-50 animate-in fade-in slide-in-from-top-2"
+        )}>
+          <div className="grid grid-cols-3 gap-6 p-6">
+            {/* Categories Column */}
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-3 text-sm uppercase tracking-wider">
+                Categories
+              </h3>
+              <ul className="space-y-2">
+                {menu.categories.map(cat => (
+                  <li key={cat.id}>
+                    <Link href={`/shop?category=${cat.slug}`}>
+                      
+                        onClick={() => setIsOpen(false)}
+                        className="text-gray-600 hover:text-blue-600 hover:translate-x-1 transform transition-all duration-200 inline-block"
+                      >
+                        {cat.name}
+                      </a>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Quick Links Column */}
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-3 text-sm uppercase tracking-wider">
+                Quick Links
+              </h3>
+              <ul className="space-y-2">
+                {menu.quickLinks.map((link, idx) => (
+                  <li key={idx}>
+                    <Link href={link.url}>
+                      
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
+                      >
+                        {link.label === 'New Arrivals' && <TrendingUp className="w-4 h-4" />}
+                        {link.label === 'On Sale' && <ShoppingBag className="w-4 h-4" />}
+                        {link.label === 'Local Pickup' && <MapPin className="w-4 h-4" />}
+                        {link.label}
+                      </a>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Featured Products Column */}
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-3 text-sm uppercase tracking-wider">
+                Featured
+              </h3>
+              <ul className="space-y-3">
+                {menu.featured.map(product => (
+                  <li key={product.id}>
+                    <Link href={`/product/${product.id}`}>
+                      
+                        onClick={() => setIsOpen(false)}
+                        className="block hover:bg-gray-50 p-2 -m-2 rounded transition-colors"
+                      >
+                        <div className="font-medium text-gray-900">{product.name}</div>
+                        <div className="text-sm text-blue-600">${product.price}</div>
+                      </a>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="border-t border-gray-100 px-6 py-4 bg-gray-50">
+            <Link href="/shop">
+              
+                onClick={() => setIsOpen(false)}
+                className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-2"
+              >
+                View All Products
+                <span>→</span>
+              </a>
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Custom hook for debouncing
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+3. Updated Navigation Component (/client/src/components/Navigation.tsx)
+tsximport React from 'react';
+import { Link } from 'wouter';
+import { ShoppingCart, User } from 'lucide-react';
+import { UnifiedSearchDropdown, UnifiedNavDropdown } from './UnifiedDropdowns';
+import { useAuth } from '@/hooks/useAuth';
+import { useCart } from '@/hooks/useCart';
+
+export const Navigation: React.FC = () => {
+  const { user } = useAuth();
+  const { itemCount } = useCart();
+
+  return (
+    <nav className="bg-gradient-to-b from-gray-900 to-gray-800 sticky top-0 z-40">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link href="/">
+            <a className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-white rounded flex items-center justify-center">
+                <span className="font-bold text-gray-900">C&F</span>
+              </div>
+              <span className="text-white font-semibold text-lg">CLEAN & FLIP</span>
+            </a>
+          </Link>
+
+          {/* Navigation Items */}
+          <div className="flex items-center gap-6">
+            <UnifiedNavDropdown />
+            <Link href="/sell">
+              <a className="text-white hover:text-gray-200 transition-colors font-medium">
+                Sell
+              </a>
+            </Link>
+            <Link href="/about">
+              <a className="text-white hover:text-gray-200 transition-colors font-medium">
+                About
+              </a>
+            </Link>
+            <Link href="/contact">
+              <a className="text-white hover:text-gray-200 transition-colors font-medium">
+                Contact
+              </a>
+            </Link>
+          </div>
+
+          {/* Search */}
+          <UnifiedSearchDropdown />
+
+          {/* User Actions */}
+          <div className="flex items-center gap-4">
+            {user ? (
+              <>
+                <span className="text-white text-sm">{user.email}</span>
+                {user.role === 'admin' && (
+                  <Link href="/admin">
+                    <a className="text-white hover:text-gray-200 transition-colors">
+                      <User className="w-5 h-5" />
+                    </a>
+                  </Link>
+                )}
+              </>
+            ) : (
+              <Link href="/login">
+                <a className="text-white hover:text-gray-200 transition-colors">
+                  <User className="w-5 h-5" />
+                </a>
+              </Link>
+            )}
+            
+            <Link href="/cart">
+              <a className="relative text-white hover:text-gray-200 transition-colors">
+                <ShoppingCart className="w-5 h-5" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
+              </a>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+};
+4. CSS Animations (/client/src/styles/animations.css)
+css@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-in {
+  animation-duration: 200ms;
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.slide-in-from-top-2 {
+  animation-name: slideInFromTop;
+}
+
+/* Smooth transitions for dropdown items */
+.dropdown-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dropdown-item:hover {
+  transform: translateX(4px);
+}
+
+/* Glass morphism effect for search */
+.search-glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+5. Integration Instructions
+bash# 1. Install required dependencies
+npm install lucide-react wouter clsx tailwind-merge
+
+# 2. Update your server index.ts to include the search routes
+import searchRoutes from './routes/search';
+app.use(searchRoutes);
+
+# 3. Replace your existing navigation component with the new one
+
+# 4. Add the animations CSS to your global styles
+
+# 5. Ensure your database has proper indexes for search performance:
+CREATE INDEX idx_products_name_search ON products USING gin(to_tsvector('english', name));
+CREATE INDEX idx_products_description_search ON products USING gin(to_tsvector('english', description));
+CREATE INDEX idx_categories_name ON categories(LOWER(name));
+This implementation provides:
+
+Unified Search Dropdown with:
+
+Real-time search suggestions
+Category and product results
+Keyboard navigation
+Debounced API calls
+Image previews
+Direct navigation to results
+
+
+Unified Navigation Dropdown with:
+
+Dynamic category menu
+Featured products
+Quick links
+Smooth animations
+Responsive grid layout
+
+
+Performance optimizations:
+
+Debounced search
+Lazy loading of menu data
+Optimized database queries
+Proper indexing
+
+
+Accessibility features:
+
+Keyboard navigation
+ARIA labels
+Focus management
+Escape key handling
+
+
+
+The design matches your Clean & Flip aesthetic with a dark navigation bar, clean white dropdowns, and smooth animations.

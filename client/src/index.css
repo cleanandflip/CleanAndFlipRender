@@ -10,6 +10,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url("./styles/animations.css");
+
 /* Global smooth scrolling */
 html {
   scroll-behavior: smooth;
