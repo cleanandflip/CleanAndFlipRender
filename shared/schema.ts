@@ -169,8 +169,8 @@ export const orders = pgTable("orders", {
   userId: varchar("user_id").references(() => users.id),
   status: orderStatusEnum("status").default("pending"),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
-  tax: decimal("tax", { precision: 10, scale: 2 }).default("0"),
-  shipping: decimal("shipping", { precision: 10, scale: 2 }).default("0"),
+  tax: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),
+  shipping: decimal("shipping_cost", { precision: 10, scale: 2 }).default("0"),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   stripePaymentIntentId: varchar("stripe_payment_intent_id"),
   shippingAddressId: varchar("shipping_address_id").references(() => addresses.id),
@@ -234,13 +234,12 @@ export const emailQueue = pgTable("email_queue", {
   index("idx_email_queue_created_at").on(table.createdAt),
 ]);
 
-// Relations
+// Relations  
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
   cartItems: many(cartItems),
   addresses: many(addresses),
   activities: many(activityLogs),
-  equipmentSubmissions: many(equipmentSubmissions),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
