@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Card, Input } from "@/components/shared/AnimatedComponents";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { UnifiedSearchDropdown } from "@/components/ui/unified-search-dropdown";
+import { UnifiedDropdown } from "@/components/ui/unified-dropdown";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -250,7 +250,9 @@ export default function Contact() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <UnifiedSearchDropdown
+                            <UnifiedDropdown
+                              label="Category"
+                              required={true}
                               options={[
                                 { value: "selling", label: "Selling Equipment" },
                                 { value: "buying", label: "Buying Equipment" },
@@ -262,9 +264,7 @@ export default function Contact() {
                               ]}
                               value={field.value || ""}
                               placeholder="What can we help with?"
-                              onValueChange={field.onChange}
-                              searchable={false}
-                              allowCustom={false}
+                              onChange={field.onChange}
                             />
                           </FormControl>
                           <FormMessage />

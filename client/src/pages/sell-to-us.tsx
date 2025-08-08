@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceInput } from "@/components/ui/price-input";
-import { UnifiedSearchDropdown } from "@/components/ui/unified-search-dropdown";
+import { UnifiedDropdown } from "@/components/ui/unified-dropdown";
 import { Textarea } from "@/components/ui/textarea";
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -339,11 +339,12 @@ export default function SellToUs() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <UnifiedSearchDropdown
-                              options={EQUIPMENT_BRANDS.map(brand => ({ value: brand, label: brand }))}
+                            <UnifiedDropdown
+                              label="Brand"
+                              options={EQUIPMENT_BRANDS}
                               value={field.value || ""}
                               placeholder="Search or select a brand..."
-                              onValueChange={field.onChange}
+                              onChange={field.onChange}
                               searchable={true}
                               allowCustom={true}
                             />
@@ -361,7 +362,8 @@ export default function SellToUs() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <UnifiedSearchDropdown
+                            <UnifiedDropdown
+                              label="Condition"
                               options={[
                                 { value: "new", label: "New" },
                                 { value: "like_new", label: "Like New" },
@@ -371,9 +373,8 @@ export default function SellToUs() {
                               ]}
                               value={field.value || ""}
                               placeholder="Select condition"
-                              onValueChange={field.onChange}
-                              searchable={false}
-                              allowCustom={false}
+                              onChange={field.onChange}
+                              required={true}
                             />
                           </FormControl>
                           <FormMessage />
