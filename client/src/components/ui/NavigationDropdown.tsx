@@ -179,7 +179,7 @@ export function NavigationDropdownItem({ onClick, children, className = '', disa
         {children}
       </div>
       {showSeparator && (
-        <div className="border-t border-gray-600/30 mx-4" />
+        <div className="border-t border-gray-500/50 mx-4" />
       )}
     </div>
   );
@@ -187,7 +187,7 @@ export function NavigationDropdownItem({ onClick, children, className = '', disa
 
 // Separator component for navigation dropdown sections
 export function NavigationDropdownSeparator({ className = '' }: { className?: string }) {
-  return <div className={`border-t border-gray-600/50 my-1 ${className}`} />;
+  return <div className={`border-t border-gray-500/60 my-1 ${className}`} />;
 }
 
 // Label component for navigation dropdown sections

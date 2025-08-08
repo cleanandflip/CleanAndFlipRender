@@ -289,7 +289,7 @@ export function UnifiedDropdown({
                         )}
                       </div>
                       {index < filteredOptions.length - 1 && (
-                        <div className="border-t border-gray-600/30 mx-4" />
+                        <div className="border-t border-gray-500/50 mx-4" />
                       )}
                     </div>
                   ))
