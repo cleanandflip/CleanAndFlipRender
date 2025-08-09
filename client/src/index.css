@@ -1425,7 +1425,7 @@ body.search-modal-open {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Prevent body scroll when dropdown is open */
+/* Allow body scroll - removed overflow hidden */
 body.search-open {
-  overflow: hidden;
+  /* overflow: hidden; - Removed to allow page scrolling */
 }

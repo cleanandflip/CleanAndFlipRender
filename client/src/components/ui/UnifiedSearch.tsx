@@ -186,18 +186,7 @@ export function UnifiedSearch({
     };
   }, []);
 
-  // Prevent body scroll when dropdown is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add('search-open');
-    } else {
-      document.body.classList.remove('search-open');
-    }
-    
-    return () => {
-      document.body.classList.remove('search-open');
-    };
-  }, [isOpen]);
+  // Remove body scroll prevention - allow page scroll while dropdown is open
 
   const handleSearch = useCallback((searchQuery: string) => {
     console.log('handleSearch:', searchQuery, 'variant:', variant);
@@ -390,8 +379,21 @@ export function UnifiedSearch({
             scrollbarColor: `${theme.colors.textSecondary} ${theme.colors.cardBg}`
           }}
           onWheel={(e) => {
-            // Prevent page scroll when scrolling dropdown
-            e.stopPropagation();
+            // Allow page scroll when not scrolling inside dropdown
+            const target = e.currentTarget;
+            const { scrollTop, scrollHeight, clientHeight } = target;
+            const isScrollingUp = e.deltaY < 0;
+            const isScrollingDown = e.deltaY > 0;
+            
+            // Prevent page scroll only when dropdown scroll is at boundaries
+            if ((isScrollingUp && scrollTop === 0) || 
+                (isScrollingDown && scrollTop + clientHeight >= scrollHeight)) {
+              // Allow page scroll to continue
+              return;
+            } else {
+              // Prevent page scroll when scrolling within dropdown
+              e.stopPropagation();
+            }
           }}
         >
           {loading ? (
