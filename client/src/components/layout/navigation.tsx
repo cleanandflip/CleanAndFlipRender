@@ -159,48 +159,48 @@ export default function Navigation() {
               />
             </div>
 
-            {/* Mobile Search Toggle with Enhanced Touch Target */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden w-11 h-11 flex-shrink-0 transition-all duration-200 hover:bg-white/10"
-              style={{
-                background: 'rgba(75, 85, 99, 0.4)',
-                border: '1px solid rgba(156, 163, 175, 0.4)',
-                backdropFilter: 'blur(8px)',
-                color: 'white',
-                fontWeight: '500'
-              }}
+            {/* Mobile Search Toggle with Unified Styling */}
+            <button
               onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className="lg:hidden px-3 py-2 
+                        bg-[#1e293b]/30 border border-gray-700/30 
+                        rounded-lg hover:bg-[#1e293b]/50 hover:border-gray-600/30 
+                        transition-all nav-button"
             >
-              <Search size={20} />
-            </Button>
+              <Search className="w-5 h-5 text-gray-400" />
+            </button>
 
             {/* Account - Professional Dropdown */}
             {user ? (
               <div className="relative user-dropdown-container" ref={dropdownRef}>
                 <button 
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-white/5 transition-all"
+                  className="flex items-center gap-2 px-3 py-2 
+                             bg-[#1e293b]/30 border border-gray-700/30 
+                             rounded-lg hover:bg-[#1e293b]/50 hover:border-gray-600/30 
+                             transition-all nav-button"
                 >
-                  <User className="w-5 h-5 text-gray-300" />
+                  <User className="w-5 h-5 text-gray-400" />
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
                     isUserDropdownOpen ? 'rotate-180' : ''
                   }`} />
                 </button>
 
                 {isUserDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 
-                                  bg-[#1e293b] 
-                                  border border-gray-700/50 
-                                  rounded-xl shadow-2xl 
-                                  overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-64 
+                                  bg-[#1e293b] border border-gray-700/30 
+                                  rounded-xl shadow-2xl shadow-black/50 
+                                  overflow-hidden dropdown-shadow">
                     
-                    {/* User Info Section - Subtle gray matching header theme */}
-                    <div className="p-4 bg-[#0f172a]/50 border-b border-gray-700/50">
+                    {/* User Info with Subtle Gradient Touch */}
+                    <div className="p-4 bg-gradient-to-br from-[#1e293b] to-[#252d3d] 
+                                    border-b border-gray-700/30">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                          <span className="text-gray-300 font-bold">
+                        {/* Subtle gradient avatar - not too colorful */}
+                        <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-700 
+                                        rounded-lg flex items-center justify-center 
+                                        border border-gray-600/30">
+                          <span className="text-white font-bold">
                             {user?.firstName?.[0]?.toUpperCase() || 
                              user?.email?.[0]?.toUpperCase() || 
                              'A'}
@@ -210,25 +210,28 @@ export default function Navigation() {
                           <div className="text-white font-medium">
                             {user?.firstName || 'Admin'}
                           </div>
-                          <div className="text-gray-400 text-xs capitalize">
-                            {user?.role || 'user'}
+                          <div className="text-gray-400 text-xs">
+                            {user?.role === 'developer' ? 'Developer' : 'User'}
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Developer badge with subtle accent */}
                       {user?.role === 'developer' && (
                         <div className="mt-3">
-                          <span className="inline-block px-2 py-1 
-                                         bg-gray-700/50 text-gray-400 
-                                         text-xs font-medium rounded
-                                         border border-gray-600/50">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 
+                                         bg-blue-500/10 text-blue-400 
+                                         text-xs font-medium rounded 
+                                         border border-blue-500/20">
+                            <Code className="w-3 h-3" />
                             Developer Access
                           </span>
                         </div>
                       )}
                     </div>
 
-                    {/* Menu Items Container - Better spacing */}
-                    <div className="py-2">
+                    {/* Menu Items with Better Hover States */}
+                    <div className="py-2 bg-[#181f2a]">
                       {/* Dashboard */}
                       <button
                         onClick={() => {
@@ -236,10 +239,10 @@ export default function Navigation() {
                           setIsUserDropdownOpen(false);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 
-                                  text-gray-300 hover:bg-white/5 
-                                  transition-colors text-left"
+                                  text-gray-300 hover:bg-white/5 hover:text-white 
+                                  transition-all group text-left"
                       >
-                        <LayoutGrid className="w-4 h-4 text-gray-500" />
+                        <LayoutGrid className="w-4 h-4 text-gray-500 group-hover:text-gray-400" />
                         <span className="text-sm">Dashboard</span>
                       </button>
 
@@ -250,35 +253,34 @@ export default function Navigation() {
                           setIsUserDropdownOpen(false);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 
-                                  text-gray-300 hover:bg-white/5 
-                                  transition-colors text-left"
+                                  text-gray-300 hover:bg-white/5 hover:text-white 
+                                  transition-all group text-left"
                       >
-                        <History className="w-4 h-4 text-gray-500" />
+                        <History className="w-4 h-4 text-gray-500 group-hover:text-gray-400" />
                         <span className="text-sm">Order History</span>
                       </button>
 
-                      {/* Developer Dashboard - Subtle styling */}
+                      {/* Developer Dashboard with Accent */}
                       {user?.role === 'developer' && (
                         <>
-                          <div className="my-1 mx-4 border-t border-gray-700/30" />
+                          <div className="my-2 mx-4 border-t border-gray-700/30" />
                           <button
                             onClick={() => {
                               handleNavigation(ROUTES.ADMIN);
                               setIsUserDropdownOpen(false);
                             }}
                             className="w-full flex items-center gap-3 px-4 py-3 
-                                      text-gray-300 hover:bg-white/5 
-                                      transition-colors text-left"
+                                      text-blue-400 hover:bg-blue-500/10 
+                                      transition-all group text-left"
                           >
-                            <Code2 className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm">Developer Dashboard</span>
-                            <span className="ml-auto text-xs text-gray-500">→</span>
+                            <Code className="w-4 h-4 text-blue-500" />
+                            <span className="text-sm font-medium">Developer Dashboard</span>
+                            <span className="ml-auto text-xs">→</span>
                           </button>
                         </>
                       )}
 
-                      {/* Divider before Sign Out */}
-                      <div className="my-1 mx-4 border-t border-gray-700/30" />
+                      <div className="my-2 mx-4 border-t border-gray-700/30" />
 
                       {/* Sign Out */}
                       <button
@@ -288,7 +290,7 @@ export default function Navigation() {
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 
                                   text-red-400 hover:bg-red-500/10 
-                                  transition-colors text-left"
+                                  transition-all group text-left"
                       >
                         <LogOut className="w-4 h-4 text-red-500" />
                         <span className="text-sm">Sign Out</span>
@@ -309,31 +311,27 @@ export default function Navigation() {
               </Button>
             )}
 
-            {/* Cart with Enhanced Touch Target */}
+            {/* Cart with Unified Styling */}
             <div className="relative">
               <button
                 onClick={handleCartClick}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none relative hover:bg-white/10 h-11 min-w-[44px]"
-                style={{
-                  background: 'rgba(75, 85, 99, 0.4)',
-                  border: isCartOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
-                  backdropFilter: 'blur(8px)',
-                  color: 'white',
-                  fontWeight: '500'
-                }}
+                className="relative flex items-center px-3 py-2 
+                          bg-[#1e293b]/30 border border-gray-700/30 
+                          rounded-lg hover:bg-[#1e293b]/50 hover:border-gray-600/30 
+                          transition-all nav-button"
               >
                 {isCartOpen ? (
-                  <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                    <X size={14} className="text-white" />
-                  </div>
+                  <X className="w-5 h-5 text-red-400" />
                 ) : (
-                  <ShoppingCart size={22} className="text-white" />
+                  <ShoppingCart className="w-5 h-5 text-gray-400" />
                 )}
                 
                 {cartCount > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full min-w-[22px] h-[22px] flex items-center justify-center font-semibold px-1">
+                  <span className="absolute -top-2 -right-2 min-w-[20px] h-5 
+                                 bg-blue-500 text-white text-xs font-bold 
+                                 rounded-full flex items-center justify-center px-1">
                     {cartCount}
-                  </div>
+                  </span>
                 )}
               </button>
             </div>
