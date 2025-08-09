@@ -196,12 +196,15 @@ export function UnifiedSearch({
   };
 
   const handleTrendingClick = (item: string) => {
-    console.log('Trending clicked:', item);
+    console.log('🔥 TRENDING CLICK TRIGGERED:', item);
+    console.log('Current variant:', variant);
+    console.log('Current query state:', query);
+    
     setQuery(item);
     setTimeout(() => {
-      console.log('Executing search for:', item);
+      console.log('🚀 EXECUTING SEARCH FOR:', item);
       handleSearch(item);
-    }, 0);
+    }, 50); // Increased timeout for better state sync
   };
 
   const searchStyles = {
@@ -246,7 +249,10 @@ export function UnifiedSearch({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            console.log('🎯 SEARCH INPUT FOCUSED - Opening dropdown');
+            setIsOpen(true);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
@@ -384,6 +390,7 @@ export function UnifiedSearch({
                     <button
                       key={idx}
                       onClick={(e) => {
+                        console.log('🔍 RECENT SEARCH BUTTON CLICKED:', search);
                         e.preventDefault();
                         e.stopPropagation();
                         handleTrendingClick(search);
@@ -413,6 +420,7 @@ export function UnifiedSearch({
                     <button
                       key={idx}
                       onClick={(e) => {
+                        console.log('⭐ TRENDING BUTTON CLICKED:', item);
                         e.preventDefault();
                         e.stopPropagation();
                         handleTrendingClick(item);
