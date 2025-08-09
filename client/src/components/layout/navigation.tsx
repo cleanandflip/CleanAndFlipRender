@@ -184,7 +184,7 @@ export default function Navigation() {
                   className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-all"
                 >
                   <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold">CF</span>
+                    <span className="text-white font-bold text-sm">CF</span>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
                     isUserDropdownOpen ? 'rotate-180' : ''
@@ -192,26 +192,25 @@ export default function Navigation() {
                 </button>
 
                 {isUserDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 
+                  <div className="absolute right-0 mt-2 w-56 
                                   bg-[#1e293b] 
                                   border border-gray-700/50 
                                   rounded-xl shadow-2xl 
                                   overflow-hidden">
                     
-                    {/* User Info Section - Same style as admin user cards */}
+                    {/* User Info Section - Consistent with trigger button */}
                     <div className="p-4 bg-[#0f172a]/50 border-b border-gray-700/50">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 
-                                        rounded-lg flex items-center justify-center">
-                          <span className="text-white font-bold">
-                            {user?.email?.[0]?.toUpperCase() || 'CF'}
-                          </span>
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold">CF</span>
                         </div>
                         <div>
                           <div className="text-white font-medium text-sm">
-                            {user?.firstName || user?.email?.split('@')[0] || 'User'}
+                            {user?.firstName || 'Admin'}
                           </div>
-                          <div className="text-gray-400 text-xs">{user?.email}</div>
+                          <div className="text-gray-400 text-xs">
+                            {user?.email?.split('@')[0]}
+                          </div>
                         </div>
                       </div>
                       {user?.role === 'developer' && (
