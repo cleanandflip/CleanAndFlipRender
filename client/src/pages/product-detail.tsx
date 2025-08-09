@@ -557,7 +557,10 @@ export default function ProductDetail() {
                   {images.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentImageIndex(index)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(index);
+                      }}
                       className={`w-3 h-3 rounded-full transition-all hover:scale-125 ${
                         index === currentImageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70'
                       }`}
@@ -572,13 +575,19 @@ export default function ProductDetail() {
           {images.length > 1 && (
             <>
               <button 
-                onClick={() => setCurrentImageIndex(currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex(currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1);
+                }}
                 className="fixed left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
               <button 
-                onClick={() => setCurrentImageIndex(currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex(currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0);
+                }}
                 className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
               >
                 <ChevronRight className="w-6 h-6" />
@@ -588,7 +597,10 @@ export default function ProductDetail() {
           
           {/* Close Button */}
           <button 
-            onClick={() => setShowLightbox(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowLightbox(false);
+            }}
             className="fixed top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
           >
             ✕
