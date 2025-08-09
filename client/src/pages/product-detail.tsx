@@ -538,6 +538,7 @@ export default function ProductDetail() {
           {/* Image Container - Prevents overflow */}
           <div 
             className="absolute inset-0 flex items-center justify-center p-4 md:p-8"
+            onClick={() => setShowLightbox(false)}
           >
             <div 
               className="relative cursor-default"
