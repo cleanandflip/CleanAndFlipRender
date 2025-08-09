@@ -186,7 +186,7 @@ export default function Navigation() {
                     e.stopPropagation();
                     setIsUserDropdownOpen(!isUserDropdownOpen);
                   }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none hover:bg-white/10 h-11 min-w-[44px] cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none hover:bg-white/20 h-11 min-w-[44px] cursor-pointer"
                   style={{
                     background: 'rgba(75, 85, 99, 0.4)',
                     border: '1px solid rgba(156, 163, 175, 0.4)',
@@ -254,10 +254,10 @@ export default function Navigation() {
                           setIsUserDropdownOpen(false);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 
-                                  text-gray-300 hover:bg-white/5 
-                                  transition-colors group text-left"
+                                  text-gray-300 hover:bg-white/15 hover:text-white
+                                  transition-all duration-200 group text-left"
                       >
-                        <LayoutGrid className="w-4 h-4 text-gray-500" />
+                        <LayoutGrid className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
                         <span className="text-sm">Dashboard</span>
                       </button>
 
@@ -268,10 +268,10 @@ export default function Navigation() {
                           setIsUserDropdownOpen(false);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 
-                                  text-gray-300 hover:bg-white/5 
-                                  transition-colors group text-left"
+                                  text-gray-300 hover:bg-white/15 hover:text-white
+                                  transition-all duration-200 group text-left"
                       >
-                        <History className="w-4 h-4 text-gray-500" />
+                        <History className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
                         <span className="text-sm">Order History</span>
                       </button>
 
@@ -284,10 +284,10 @@ export default function Navigation() {
                               setIsUserDropdownOpen(false);
                             }}
                             className="w-full flex items-center gap-3 px-4 py-2.5 
-                                      text-purple-400 hover:bg-purple-500/10 
-                                      transition-colors group text-left"
+                                      text-purple-400 hover:bg-purple-500/20 hover:text-purple-300
+                                      transition-all duration-200 group text-left"
                           >
-                            <Code2 className="w-4 h-4 text-purple-500" />
+                            <Code2 className="w-4 h-4 text-purple-500 group-hover:text-purple-400" />
                             <span className="text-sm font-medium">Developer Dashboard</span>
                           </button>
                         </>
@@ -300,10 +300,10 @@ export default function Navigation() {
                           setIsUserDropdownOpen(false);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 
-                                  text-red-400 hover:bg-red-500/10 
-                                  transition-colors group text-left"
+                                  text-red-400 hover:bg-red-500/20 hover:text-red-300
+                                  transition-all duration-200 group text-left"
                       >
-                        <LogOut className="w-4 h-4 text-red-500" />
+                        <LogOut className="w-4 h-4 text-red-500 group-hover:text-red-400" />
                         <span className="text-sm">Sign Out</span>
                       </button>
                     </div>
