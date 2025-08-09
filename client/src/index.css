@@ -74,18 +74,6 @@ body {
   scrollbar-width: none;  /* Firefox */
 }
 
-/* Dropdown shadow enhancement */
-.dropdown-shadow {
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.3),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-/* Subtle glow on hover for nav buttons */
-.nav-button:hover {
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
-}
-
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
 }

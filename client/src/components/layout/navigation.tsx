@@ -159,90 +159,87 @@ export default function Navigation() {
               />
             </div>
 
-            {/* Mobile Search Toggle with Unified Styling */}
-            <button
+            {/* Mobile Search Toggle with Enhanced Touch Target */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden w-11 h-11 flex-shrink-0 transition-all duration-200 hover:bg-white/10"
+              style={{
+                background: 'rgba(75, 85, 99, 0.4)',
+                border: '1px solid rgba(156, 163, 175, 0.4)',
+                backdropFilter: 'blur(8px)',
+                color: 'white',
+                fontWeight: '500'
+              }}
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="lg:hidden px-3 py-2 
-                        bg-[#1e293b]/30 border border-gray-700/30 
-                        rounded-lg hover:bg-[#1e293b]/50 hover:border-gray-600/30 
-                        transition-all nav-button"
             >
-              <Search className="w-5 h-5 text-gray-400" />
-            </button>
+              <Search size={20} />
+            </Button>
 
             {/* Account - Professional Dropdown */}
             {user ? (
               <div className="relative user-dropdown-container" ref={dropdownRef}>
                 <button 
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-2 
-                             bg-[#1e293b]/30 border border-gray-700/30 
-                             rounded-lg hover:bg-[#1e293b]/50 hover:border-gray-600/30 
-                             transition-all nav-button"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-white/5 transition-all"
                 >
-                  <User className="w-5 h-5 text-gray-400" />
+                  <User className="w-5 h-5 text-gray-300" />
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
                     isUserDropdownOpen ? 'rotate-180' : ''
                   }`} />
                 </button>
 
                 {isUserDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 
-                                  bg-[#1e293b] border border-gray-700/30 
-                                  rounded-xl shadow-2xl shadow-black/50 
-                                  overflow-hidden dropdown-shadow">
+                  <div className="absolute right-0 mt-2 w-56 
+                                  bg-[#1e293b] 
+                                  border border-gray-700/50 
+                                  rounded-xl shadow-2xl 
+                                  overflow-hidden">
                     
-                    {/* User Info with Subtle Gradient Touch */}
-                    <div className="p-4 bg-gradient-to-br from-[#1e293b] to-[#252d3d] 
-                                    border-b border-gray-700/30">
+                    {/* User Info Section - Display first name initial and role */}
+                    <div className="p-4 bg-[#0f172a]/50 border-b border-gray-700/50">
                       <div className="flex items-center gap-3">
-                        {/* Subtle gradient avatar - not too colorful */}
-                        <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-700 
-                                        rounded-lg flex items-center justify-center 
-                                        border border-gray-600/30">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 
+                                        rounded-lg flex items-center justify-center">
                           <span className="text-white font-bold">
                             {user?.firstName?.[0]?.toUpperCase() || 
                              user?.email?.[0]?.toUpperCase() || 
-                             'A'}
+                             'U'}
                           </span>
                         </div>
                         <div>
                           <div className="text-white font-medium">
-                            {user?.firstName || user?.username || 'Admin'}
+                            {user?.firstName || 'User'}
                           </div>
                           <div className="text-gray-400 text-xs capitalize">
                             {user?.role || 'user'}
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Developer badge with subtle accent */}
                       {user?.role === 'developer' && (
                         <div className="mt-3">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 
-                                         bg-blue-500/10 text-blue-400 
-                                         text-xs font-medium rounded 
-                                         border border-blue-500/20">
-                            <Code className="w-3 h-3" />
+                          <span className="inline-block px-2 py-1 
+                                         bg-purple-500/20 text-purple-400 
+                                         text-xs font-medium rounded">
                             Developer Access
                           </span>
                         </div>
                       )}
                     </div>
 
-                    {/* Menu Items with Better Hover States */}
-                    <div className="py-2 bg-[#181f2a]">
+                    {/* Menu Items Container */}
+                    <div className="py-1">
                       {/* Dashboard */}
                       <button
                         onClick={() => {
                           handleNavigation(ROUTES.DASHBOARD);
                           setIsUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 
-                                  text-gray-300 hover:bg-white/5 hover:text-white 
-                                  transition-all group text-left"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 
+                                  text-gray-300 hover:bg-white/5 
+                                  transition-colors group text-left"
                       >
-                        <LayoutGrid className="w-4 h-4 text-gray-500 group-hover:text-gray-400" />
+                        <LayoutGrid className="w-4 h-4 text-gray-500" />
                         <span className="text-sm">Dashboard</span>
                       </button>
 
@@ -252,35 +249,35 @@ export default function Navigation() {
                           handleNavigation(ROUTES.ORDERS);
                           setIsUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 
-                                  text-gray-300 hover:bg-white/5 hover:text-white 
-                                  transition-all group text-left"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 
+                                  text-gray-300 hover:bg-white/5 
+                                  transition-colors group text-left"
                       >
-                        <History className="w-4 h-4 text-gray-500 group-hover:text-gray-400" />
+                        <History className="w-4 h-4 text-gray-500" />
                         <span className="text-sm">Order History</span>
                       </button>
 
-                      {/* Developer Dashboard with Accent */}
+                      {/* Developer Dashboard - Conditional */}
                       {user?.role === 'developer' && (
                         <>
-                          <div className="my-2 mx-4 border-t border-gray-700/30" />
+                          <div className="my-1 mx-4 border-t border-gray-700/30" />
                           <button
                             onClick={() => {
                               handleNavigation(ROUTES.ADMIN);
                               setIsUserDropdownOpen(false);
                             }}
-                            className="w-full flex items-center gap-3 px-4 py-3.5 
-                                      text-blue-400 hover:bg-blue-500/10 
-                                      transition-all group text-left"
+                            className="w-full flex items-center gap-3 px-4 py-2.5 
+                                      text-purple-400 hover:bg-purple-500/10 
+                                      transition-colors group text-left"
                           >
-                            <Code className="w-4 h-4 text-blue-500" />
+                            <Code2 className="w-4 h-4 text-purple-500" />
                             <span className="text-sm font-medium">Developer Dashboard</span>
-                            <span className="ml-auto text-xs">→</span>
                           </button>
                         </>
                       )}
 
-                      <div className="my-2 mx-4 border-t border-gray-700/30" />
+                      {/* Divider before Sign Out */}
+                      <div className="my-1 mx-4 border-t border-gray-700/30" />
 
                       {/* Sign Out */}
                       <button
@@ -288,9 +285,9 @@ export default function Navigation() {
                           logoutMutation.mutate();
                           setIsUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 
+                        className="w-full flex items-center gap-3 px-4 py-2.5 
                                   text-red-400 hover:bg-red-500/10 
-                                  transition-all group text-left"
+                                  transition-colors group text-left"
                       >
                         <LogOut className="w-4 h-4 text-red-500" />
                         <span className="text-sm">Sign Out</span>
@@ -311,27 +308,31 @@ export default function Navigation() {
               </Button>
             )}
 
-            {/* Cart with Unified Styling */}
+            {/* Cart with Enhanced Touch Target */}
             <div className="relative">
               <button
                 onClick={handleCartClick}
-                className="relative flex items-center px-3 py-2 
-                          bg-[#1e293b]/30 border border-gray-700/30 
-                          rounded-lg hover:bg-[#1e293b]/50 hover:border-gray-600/30 
-                          transition-all nav-button"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none relative hover:bg-white/10 h-11 min-w-[44px]"
+                style={{
+                  background: 'rgba(75, 85, 99, 0.4)',
+                  border: isCartOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
+                  backdropFilter: 'blur(8px)',
+                  color: 'white',
+                  fontWeight: '500'
+                }}
               >
                 {isCartOpen ? (
-                  <X className="w-5 h-5 text-red-400" />
+                  <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <X size={14} className="text-white" />
+                  </div>
                 ) : (
-                  <ShoppingCart className="w-5 h-5 text-gray-400" />
+                  <ShoppingCart size={22} className="text-white" />
                 )}
                 
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-[20px] h-5 
-                                 bg-blue-500 text-white text-xs font-bold 
-                                 rounded-full flex items-center justify-center px-1">
+                  <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full min-w-[22px] h-[22px] flex items-center justify-center font-semibold px-1">
                     {cartCount}
-                  </span>
+                  </div>
                 )}
               </button>
             </div>
