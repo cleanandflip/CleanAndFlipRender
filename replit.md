@@ -81,6 +81,16 @@ The application is designed to be deployed on cloud platforms like Google Cloud 
 
 ## Recent Changes (August 9, 2025)
 
+### Image Modal UI Fixes & Positioning Improvements
+- **Fixed Modal Overflow**: Resolved modal cut-off issues by constraining images to 85vh max height
+- **Consistent Modal Centering**: Modal position now stable regardless of image dimensions using proper flex layout
+- **Navigation Arrow Alignment**: Fixed arrow positioning using fixed positioning instead of absolute for consistent placement
+- **Prevented Text Cut-Off**: Help text now always visible at bottom with proper fixed positioning and z-index
+- **Added Max Height Constraints**: Images properly contained within viewport with overflow-hidden on modal container
+- **Enhanced Mobile Support**: Responsive padding (p-4 md:p-8) for better experience across screen sizes
+- **Improved Click-Outside**: Restructured modal DOM to ensure click-outside detection works in all areas
+- **Better Control Positioning**: Close button, arrows, and dots now use fixed positioning for consistent placement
+
 ### Navigation Dropdown Complete Implementation & Fixes
 - **Fixed Double Border Issue**: Resolved persistent double border problem by matching user button styling exactly to cart button
 - **Working Dropdown Functionality**: Fixed broken click handler by correcting click-outside detection to use dropdownRef instead of class selector

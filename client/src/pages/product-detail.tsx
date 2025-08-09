@@ -532,62 +532,66 @@ export default function ProductDetail() {
       {/* Enhanced Lightbox Modal with Fixed Positioning */}
       {showLightbox && hasImages && (
         <div 
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center cursor-pointer overflow-hidden p-4 md:p-8"
+          className="fixed inset-0 z-50 bg-black/90 cursor-pointer overflow-hidden"
           onClick={() => setShowLightbox(false)}
         >
           {/* Image Container - Prevents overflow */}
           <div 
-            className="relative flex items-center justify-center w-full h-full cursor-default"
-            onClick={(e) => e.stopPropagation()}
+            className="absolute inset-0 flex items-center justify-center p-4 md:p-8"
           >
-            {/* Main Image */}
-            <img 
-              src={currentImage} 
-              alt={product.name}
-              className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-lg"
-            />
-            
-            {/* Navigation Arrows - Fixed position */}
-            {images.length > 1 && (
-              <>
-                <button 
-                  onClick={() => setCurrentImageIndex(currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1)}
-                  className="fixed left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                <button 
-                  onClick={() => setCurrentImageIndex(currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0)}
-                  className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </>
-            )}
-            
-            {/* Close Button */}
-            <button 
-              onClick={() => setShowLightbox(false)}
-              className="fixed top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
+            <div 
+              className="relative cursor-default"
+              onClick={(e) => e.stopPropagation()}
             >
-              ✕
-            </button>
-            
-            {/* Image dots indicator */}
-            {images.length > 1 && (
-              <div className="fixed bottom-16 left-1/2 -translate-x-1/2 flex gap-2 z-50">
-                {images.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`w-3 h-3 rounded-full transition-all hover:scale-125 ${
-                      index === currentImageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
+              {/* Main Image */}
+              <img 
+                src={currentImage} 
+                alt={product.name}
+                className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-lg"
+              />
+              
+              {/* Image dots indicator */}
+              {images.length > 1 && (
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+                  {images.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`w-3 h-3 rounded-full transition-all hover:scale-125 ${
+                        index === currentImageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+          
+          {/* Navigation Arrows - Fixed position */}
+          {images.length > 1 && (
+            <>
+              <button 
+                onClick={() => setCurrentImageIndex(currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1)}
+                className="fixed left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button 
+                onClick={() => setCurrentImageIndex(currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0)}
+                className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
+          
+          {/* Close Button */}
+          <button 
+            onClick={() => setShowLightbox(false)}
+            className="fixed top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
+          >
+            ✕
+          </button>
           
           {/* Help Text - Always visible at bottom */}
           <div className="fixed bottom-8 left-1/2 -translate-x-1/2 text-white/60 text-sm pointer-events-none z-50">
