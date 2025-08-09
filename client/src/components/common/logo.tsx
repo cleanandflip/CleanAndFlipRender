@@ -41,34 +41,18 @@ export default function Logo({ className = "", size = 'md', clickable = true, te
       );
     }
 
-    // For navigation and other locations - enhanced gradient logo with glow
+    // For navigation and other locations - show logo + text
     return (
-      <div className={`flex items-center gap-3 group cursor-pointer ${className}`}>
-        <div className="relative">
-          {/* Gradient glow effect background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg blur opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
-          
-          {/* Logo container with gradient background */}
-          <div className="relative bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-lg hover-lift">
-            <img 
-              src="/clean-flip-logo-final.png" 
-              alt="Clean & Flip Logo" 
-              className={`brightness-0 invert ${size === 'lg' ? 'h-24 w-24' : size === 'md' ? 'h-10 w-10' : 'h-8 w-8'}`}
-              style={{ minHeight: size === 'lg' ? '96px' : size === 'md' ? '40px' : '32px', minWidth: size === 'lg' ? '96px' : size === 'md' ? '40px' : '32px' }}
-            />
-          </div>
-        </div>
-        
-        <div className="hidden sm:block">
-          <div className={`font-bebas ${currentSize?.container || sizes.md.container} text-white tracking-wider group-hover:text-blue-300 transition-colors`}>
-            CLEAN & FLIP
-          </div>
-          {size === 'md' && (
-            <div className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors">
-              Premium Sports Gear
-            </div>
-          )}
-        </div>
+      <div className={`flex items-center gap-3 hover:opacity-80 transition-opacity ${className}`}>
+        <img 
+          src="/clean-flip-logo-final.png" 
+          alt="Clean & Flip Logo" 
+          className={`${currentSize?.logo || sizes.md.logo} brightness-0 invert`}
+          style={{ minHeight: size === 'lg' ? '128px' : size === 'md' ? '64px' : '48px', minWidth: size === 'lg' ? '128px' : size === 'md' ? '64px' : '48px' }}
+        />
+        <span className={`font-bebas ${currentSize?.container || sizes.md.container} text-white tracking-wider`}>
+          CLEAN & FLIP
+        </span>
       </div>
     );
   };

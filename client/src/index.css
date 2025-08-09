@@ -5,20 +5,6 @@
 @import './styles/simple-dropdown.css';
 @import './styles/animations.css';
 
-/* NAVIGATION THEME VARIABLES - COMPREHENSIVE UI REDESIGN */
-:root {
-  /* Navigation specific variables */
-  --nav-height: 64px;
-  --nav-bg: linear-gradient(135deg, #1a1f2e 0%, #151922 100%);
-  --dropdown-bg: #1a1f2e;
-  --hover-bg: rgba(255, 255, 255, 0.05);
-  --border-color: rgba(255, 255, 255, 0.1);
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --accent-blue: #3b82f6;
-  --accent-purple: #8b5cf6;
-}
-
 @import './styles/typography.css';
 
 @tailwind base;
@@ -86,60 +72,6 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */
   scrollbar-width: none;  /* Firefox */
-}
-
-/* NAVIGATION UI ENHANCEMENT CLASSES */
-.glass-effect {
-  backdrop-filter: blur(20px);
-  background: rgba(26, 31, 46, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.gradient-text {
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.hover-lift {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.hover-lift:hover {
-  transform: scale(1.05);
-}
-
-.badge-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes glow {
-  0%, 100% { 
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); 
-  }
-  50% { 
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.8); 
-  }
-}
-
-.animate-glow {
-  animation: glow 2s ease-in-out infinite;
-}
-
-.nav-gradient {
-  background: var(--nav-bg);
-}
-
-.dropdown-enhanced {
-  background: var(--dropdown-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.nav-item-hover:hover {
-  background: var(--hover-bg);
-  color: var(--text-primary);
 }
 
 .scrollbar-hide::-webkit-scrollbar {
