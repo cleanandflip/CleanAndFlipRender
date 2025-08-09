@@ -30,19 +30,21 @@ export default function Navigation() {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.user-dropdown-container')) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsUserDropdownOpen(false);
       }
     };
 
     if (isUserDropdownOpen) {
-      document.addEventListener('click', handleClickOutside);
+      // Add small delay to prevent immediate close
+      setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 0);
     }
 
     return () => {
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isUserDropdownOpen]);
 
@@ -180,9 +182,14 @@ export default function Navigation() {
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button 
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     console.log('User button clicked!');
-                    setIsUserDropdownOpen(!isUserDropdownOpen);
+                    console.log('Current dropdown state:', isUserDropdownOpen);
+                    setIsUserDropdownOpen(prev => {
+                      console.log('Setting dropdown state from', prev, 'to', !prev);
+                      return !prev;
+                    });
                   }}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none hover:bg-white/10 h-11 min-w-[44px] cursor-pointer"
                   style={{
@@ -203,11 +210,12 @@ export default function Navigation() {
                 {isUserDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 
                                   rounded-xl shadow-2xl 
-                                  overflow-hidden"
+                                  overflow-hidden z-50"
                        style={{ 
                          background: 'rgba(35, 41, 55, 0.4)', 
                          backdropFilter: 'blur(12px)',
-                         border: '1px solid rgba(255, 255, 255, 0.08)' 
+                         border: '1px solid rgba(255, 255, 255, 0.08)',
+                         zIndex: 9999
                        }}>
                     
                     {/* User Info Section - Display first name initial and role */}
