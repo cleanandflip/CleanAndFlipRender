@@ -208,10 +208,10 @@ export default function Navigation() {
                         </div>
                         <div>
                           <div className="text-white font-medium">
-                            {user?.firstName || 'Admin'}
+                            {user?.firstName || user?.username || 'Admin'}
                           </div>
-                          <div className="text-gray-400 text-xs">
-                            {user?.role === 'developer' ? 'Developer' : 'User'}
+                          <div className="text-gray-400 text-xs capitalize">
+                            {user?.role || 'user'}
                           </div>
                         </div>
                       </div>
@@ -238,7 +238,7 @@ export default function Navigation() {
                           handleNavigation(ROUTES.DASHBOARD);
                           setIsUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 
+                        className="w-full flex items-center gap-3 px-4 py-3.5 
                                   text-gray-300 hover:bg-white/5 hover:text-white 
                                   transition-all group text-left"
                       >
@@ -252,7 +252,7 @@ export default function Navigation() {
                           handleNavigation(ROUTES.ORDERS);
                           setIsUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 
+                        className="w-full flex items-center gap-3 px-4 py-3.5 
                                   text-gray-300 hover:bg-white/5 hover:text-white 
                                   transition-all group text-left"
                       >
@@ -269,7 +269,7 @@ export default function Navigation() {
                               handleNavigation(ROUTES.ADMIN);
                               setIsUserDropdownOpen(false);
                             }}
-                            className="w-full flex items-center gap-3 px-4 py-3 
+                            className="w-full flex items-center gap-3 px-4 py-3.5 
                                       text-blue-400 hover:bg-blue-500/10 
                                       transition-all group text-left"
                           >
@@ -288,7 +288,7 @@ export default function Navigation() {
                           logoutMutation.mutate();
                           setIsUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 
+                        className="w-full flex items-center gap-3 px-4 py-3.5 
                                   text-red-400 hover:bg-red-500/10 
                                   transition-all group text-left"
                       >
