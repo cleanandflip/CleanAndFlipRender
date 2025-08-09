@@ -15,7 +15,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { sendMessage } = useWebSocket();
+  const { send } = useWebSocket();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -224,7 +224,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         });
         
         // Broadcast update for live sync
-        sendMessage({
+        send({
           type: 'product_update',
           data: { 
             productId: product?.id,
