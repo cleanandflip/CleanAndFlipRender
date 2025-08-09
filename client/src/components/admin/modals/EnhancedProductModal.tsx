@@ -131,22 +131,21 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
     setUploading(true);
     const uploadPromises = [];
 
-    for (const file of Array.from(files)) {
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-      
-      uploadPromises.push(
-        fetch('/api/upload/cloudinary', {
-          method: 'POST',
-          body: formDataUpload,
-          credentials: 'include'
-        }).then(res => res.json())
-      );
-    }
+    const formDataUpload = new FormData();
+    Array.from(files).forEach(file => {
+      formDataUpload.append('images', file); // Use 'images' to match new endpoint
+    });
+    formDataUpload.append('folder', 'products');
 
     try {
-      const results = await Promise.all(uploadPromises);
-      const urls = results.map(r => r.url).filter(Boolean);
+      const res = await fetch('/api/upload/images', {
+        method: 'POST',
+        body: formDataUpload,
+        credentials: 'include'
+      });
+      
+      const result = await res.json();
+      const urls = result.success ? result.urls : [];
       
       setFormData(prev => ({
         ...prev,

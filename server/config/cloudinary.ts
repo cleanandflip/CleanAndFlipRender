@@ -11,14 +11,15 @@ cloudinary.config({
 // Clean slate: Use memory storage
 const storage = multer.memoryStorage();
 
+// Legacy upload configuration - use imageUpload from routes.ts instead
 export const upload = multer({ 
   storage,
   limits: { 
-    fileSize: 12 * 1024 * 1024, // 12MB max (industry standard)
-    files: 12 // Maximum 12 images per product
+    fileSize: 5 * 1024 * 1024, // 5MB max (unified with new system)
+    files: 8 // Maximum 8 images per upload
   },
   fileFilter: (req, file, cb) => {
-    // Industry standard image types
+    // Strict file validation matching unified system
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     
     if (allowedTypes.includes(file.mimetype)) {

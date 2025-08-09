@@ -102,22 +102,25 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
 
     setUploading(true);
     const formDataUpload = new FormData();
-    formDataUpload.append('file', file);
+    formDataUpload.append('images', file); // Use 'images' to match new endpoint
+    formDataUpload.append('folder', 'categories');
 
     try {
-      const res = await fetch('/api/admin/upload', {
+      const res = await fetch('/api/upload/images', {
         method: 'POST',
         body: formDataUpload,
         credentials: 'include'
       });
       
       const result = await res.json();
-      if (result.url) {
-        setFormData(prev => ({ ...prev, imageUrl: result.url }));
+      if (result.success && result.urls && result.urls[0]) {
+        setFormData(prev => ({ ...prev, imageUrl: result.urls[0] }));
         toast({
           title: "Image Uploaded",
           description: "Category image uploaded successfully",
         });
+      } else {
+        throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
       toast({
