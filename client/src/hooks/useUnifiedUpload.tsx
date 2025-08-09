@@ -35,30 +35,40 @@ export function useUnifiedUpload() {
     setUploadProgress({});
 
     try {
-      // Client-side validation
+      // Enhanced client-side validation
+      const invalidFiles: string[] = [];
       const validFiles = files.slice(0, maxFiles).filter(file => {
-        // Check size
+        // Check size first (more important)
         if (file.size > maxFileSize * 1024 * 1024) {
-          toast({
-            title: "File too large",
-            description: `${file.name} exceeds ${maxFileSize}MB limit`,
-            variant: "destructive"
-          });
+          const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);
+          invalidFiles.push(`${file.name} (${sizeInMB}MB) exceeds ${maxFileSize}MB limit`);
           return false;
         }
         
         // Check type
         if (!file.type.startsWith('image/')) {
-          toast({
-            title: "Invalid file",
-            description: `${file.name} is not an image`,
-            variant: "destructive"
-          });
+          invalidFiles.push(`${file.name} is not a valid image file`);
+          return false;
+        }
+        
+        // Check specific image formats
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type.toLowerCase())) {
+          invalidFiles.push(`${file.name} must be JPEG, PNG, or WebP format`);
           return false;
         }
         
         return true;
       });
+
+      // Show validation errors
+      if (invalidFiles.length > 0) {
+        toast({
+          title: "Invalid files detected",
+          description: invalidFiles.slice(0, 3).join('. ') + (invalidFiles.length > 3 ? `... and ${invalidFiles.length - 3} more` : ''),
+          variant: "destructive"
+        });
+      }
 
       if (validFiles.length === 0) {
         throw new Error('No valid files to upload');
@@ -89,7 +99,12 @@ export function useUnifiedUpload() {
             const result = JSON.parse(xhr.responseText);
             resolve(result);
           } else {
-            reject(new Error(`Upload failed: ${xhr.statusText}`));
+            try {
+              const errorResult = JSON.parse(xhr.responseText);
+              reject(new Error(errorResult.message || `Upload failed: ${xhr.statusText}`));
+            } catch {
+              reject(new Error(`Upload failed: ${xhr.statusText}`));
+            }
           }
         });
         

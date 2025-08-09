@@ -100,9 +100,30 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Pre-upload validation
+    const maxSize = 5; // MB
+    if (file.size > maxSize * 1024 * 1024) {
+      const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);
+      toast({
+        title: "File too large",
+        description: `${file.name} (${sizeInMB}MB) exceeds ${maxSize}MB limit. Please compress the image.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file",
+        description: "Please select a valid image file (JPEG, PNG, or WebP).",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setUploading(true);
     const formDataUpload = new FormData();
-    formDataUpload.append('images', file); // Use 'images' to match new endpoint
+    formDataUpload.append('images', file);
     formDataUpload.append('folder', 'categories');
 
     try {
@@ -111,6 +132,11 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
         body: formDataUpload,
         credentials: 'include'
       });
+      
+      if (!res.ok) {
+        const errorResult = await res.json();
+        throw new Error(errorResult.message || 'Upload failed');
+      }
       
       const result = await res.json();
       if (result.success && result.urls && result.urls[0]) {

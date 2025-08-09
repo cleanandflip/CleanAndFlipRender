@@ -285,7 +285,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
-  app.post("/api/upload/images", requireAuth, imageUpload.array('images', 8), async (req, res) => {
+  app.post("/api/upload/images", requireAuth, (req, res, next) => {
+    imageUpload.array('images', 8)(req, res, (err) => {
+      if (err) {
+        Logger.error('Upload middleware error:', err);
+        
+        // Handle specific multer errors with user-friendly messages
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ 
+            error: 'File too large',
+            message: 'Images must be smaller than 5MB. Please compress your images or choose smaller files.',
+            maxSize: '5MB'
+          });
+        }
+        
+        if (err.code === 'LIMIT_FILE_COUNT') {
+          return res.status(400).json({ 
+            error: 'Too many files',
+            message: 'You can upload a maximum of 8 images at once.',
+            maxFiles: 8
+          });
+        }
+        
+        if (err.message.includes('Invalid file type')) {
+          return res.status(400).json({ 
+            error: 'Invalid file type',
+            message: 'Only JPEG, PNG, and WebP images are allowed.',
+            allowedTypes: ['JPEG', 'PNG', 'WebP']
+          });
+        }
+        
+        return res.status(400).json({ 
+          error: 'Upload error',
+          message: err.message || 'An error occurred during upload'
+        });
+      }
+      next();
+    });
+  }, async (req, res) => {
     const startTime = Date.now();
     
     try {

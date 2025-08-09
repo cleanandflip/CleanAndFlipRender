@@ -1,0 +1,45 @@
+[WS] Client connected: 8rd6mv3shtqme4iepb0 (Total: 3)
+[ERROR] Application error: {
+  timestamp: '2025-08-09T17:09:09.626Z',
+  method: 'POST',
+  url: '/api/upload/images',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  error: {
+    name: 'MulterError',
+    message: 'File too large',
+    stack: 'MulterError: File too large\n' +
+      '    at abortWithCode (/home/runner/workspace/node_modules/multer/lib/make-middleware.js:85:22)\n' +
+      '    at FileStream.<anonymous> (/home/runner/workspace/node_modules/multer/lib/make-middleware.js:155:11)\n' +
+      '    at FileStream.emit (node:events:524:28)\n' +
+      '    at SBMH.ssCb [as _cb] (/home/runner/workspace/node_modules/busboy/lib/types/multipart.js:479:32)\n' +
+      '    at feed (/home/runner/workspace/node_modules/streamsearch/lib/sbmh.js:248:10)\n' +
+      '    at SBMH.push (/home/runner/workspace/node_modules/streamsearch/lib/sbmh.js:104:16)\n' +
+      '    at Multipart._write (/home/runner/workspace/node_modules/busboy/lib/types/multipart.js:567:19)\n' +
+      '    at writeOrBuffer (node:internal/streams/writable:572:12)\n' +
+      '    at _write (node:internal/streams/writable:501:10)\n' +
+      '    at Writable.write (node:internal/streams/writable:510:10)\n' +
+      '    at IncomingMessage.ondata (node:internal/streams/readable:1009:22)\n' +
+      '    at IncomingMessage.emit (node:events:524:28)\n' +
+      '    at addChunk (node:internal/streams/readable:561:12)\n' +
+      '    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n' +
+      '    at Readable.push (node:internal/streams/readable:392:5)\n' +
+      '    at HTTPParser.parserOnBody (node:_http_common:130:24)'
+  }
+}
+MulterError: File too large
+    at abortWithCode (/home/runner/workspace/node_modules/multer/lib/make-middleware.js:85:22)
+    at FileStream.<anonymous> (/home/runner/workspace/node_modules/multer/lib/make-middleware.js:155:11)
+    at FileStream.emit (node:events:524:28)
+    at SBMH.ssCb [as _cb] (/home/runner/workspace/node_modules/busboy/lib/types/multipart.js:479:32)
+    at feed (/home/runner/workspace/node_modules/streamsearch/lib/sbmh.js:248:10)
+    at SBMH.push (/home/runner/workspace/node_modules/streamsearch/lib/sbmh.js:104:16)
+    at Multipart._write (/home/runner/workspace/node_modules/busboy/lib/types/multipart.js:567:19)
+    at writeOrBuffer (node:internal/streams/writable:572:12)
+    at _write (node:internal/streams/writable:501:10)
+    at Writable.write (node:internal/streams/writable:510:10)
+    at IncomingMessage.ondata (node:internal/streams/readable:1009:22)
+    at IncomingMessage.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at HTTPParser.parserOnBody (node:_http_common:130:24)

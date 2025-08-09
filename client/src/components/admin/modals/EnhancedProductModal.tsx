@@ -123,17 +123,30 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
     }
   };
 
-  // IMAGE UPLOAD WITH PROGRESS
+  // IMAGE UPLOAD WITH PROGRESS AND VALIDATION
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setUploading(true);
-    const uploadPromises = [];
+    // Pre-upload validation
+    const fileArray = Array.from(files);
+    const maxSize = 5; // MB
+    const oversizedFiles = fileArray.filter(file => file.size > maxSize * 1024 * 1024);
+    
+    if (oversizedFiles.length > 0) {
+      const sizeInfo = oversizedFiles.map(f => `${f.name} (${(f.size / (1024 * 1024)).toFixed(1)}MB)`);
+      toast({
+        title: "Files too large",
+        description: `These files exceed ${maxSize}MB limit: ${sizeInfo.slice(0, 2).join(', ')}${sizeInfo.length > 2 ? '...' : ''}`,
+        variant: "destructive"
+      });
+      return;
+    }
 
+    setUploading(true);
     const formDataUpload = new FormData();
-    Array.from(files).forEach(file => {
-      formDataUpload.append('images', file); // Use 'images' to match new endpoint
+    fileArray.forEach(file => {
+      formDataUpload.append('images', file);
     });
     formDataUpload.append('folder', 'products');
 
@@ -144,8 +157,17 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         credentials: 'include'
       });
       
+      if (!res.ok) {
+        const errorResult = await res.json();
+        throw new Error(errorResult.message || 'Upload failed');
+      }
+      
       const result = await res.json();
       const urls = result.success ? result.urls : [];
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
       
       setFormData(prev => ({
         ...prev,
