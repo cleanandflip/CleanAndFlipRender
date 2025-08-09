@@ -1070,17 +1070,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .slice(0, 5)
         .map(([name, sales]) => ({ name, sales }));
 
-      // Get real top products from database
-      const realTopProducts = await db
-        .select({
-          id: products.id,
-          name: products.name,
-          views: products.views,
-          price: products.price
-        })
-        .from(products)
-        .orderBy(desc(products.views))
-        .limit(5);
+      // Get real top products from database - only if we have real order data
+      let topProductsList = [];
+      
+      if (Object.keys(productSales).length > 0) {
+        // Use real order-based sales data
+        topProductsList = Object.entries(productSales)
+          .sort(([,a], [,b]) => (b as number) - (a as number))
+          .slice(0, 5)
+          .map(([name, sales]) => {
+            // Get the product price
+            const product = allProducts.find(p => p.name === name);
+            return {
+              name,
+              sales: sales as number,
+              price: product?.price || '0'
+            };
+          });
+      } else {
+        // If no orders exist, use product view data but with correct labeling
+        const realTopProducts = await db
+          .select({
+            id: products.id,
+            name: products.name,
+            views: products.views,
+            price: products.price
+          })
+          .from(products)
+          .orderBy(desc(products.views))
+          .limit(5);
+          
+        topProductsList = realTopProducts.map(p => ({
+          name: p.name,
+          sales: p.views || 0, // This represents views, not sales
+          price: p.price
+        }));
+      }
 
       // Calculate conversion rate (orders / total users)
       const conversionRate = allUsers.length > 0 ? (filteredOrders.length / allUsers.length) * 100 : 0;
@@ -1095,11 +1120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         charts: {
           revenue: chartData
         },
-        topProducts: realTopProducts.map(p => ({
-          name: p.name,
-          sales: p.views || 0,
-          price: p.price
-        })),
+        topProducts: topProductsList,
         recentActivity: filteredOrders.slice(-10).map(order => ({
           type: 'order',
           description: `Order ${order.id} - $${order.total}`,

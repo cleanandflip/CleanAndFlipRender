@@ -13,6 +13,12 @@ export function StripeTab() {
   const [syncStage, setSyncStage] = useState('');
   const [pulseAnimation, setPulseAnimation] = useState(false);
   const [transactions, setTransactions] = useState([]);
+  const [stripeMetrics, setStripeMetrics] = useState({
+    totalRevenue: 0,
+    transactionCount: 0,
+    successRate: 0,
+    avgTransaction: 0
+  });
   
   const { isConnected, send } = useWebSocket();
   
@@ -27,10 +33,24 @@ export function StripeTab() {
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
-  // Update transactions state when data changes
+  // Update transactions and metrics when data changes
   useEffect(() => {
     if (transactionData?.transactions) {
       setTransactions(transactionData.transactions);
+      
+      // Calculate real metrics from actual Stripe data
+      const txs = transactionData.transactions;
+      const totalRevenue = txs.reduce((sum: number, tx: any) => sum + (tx.amount / 100), 0);
+      const successfulTxs = txs.filter((tx: any) => tx.status === 'succeeded');
+      const successRate = txs.length > 0 ? (successfulTxs.length / txs.length) * 100 : 0;
+      const avgTransaction = successfulTxs.length > 0 ? totalRevenue / successfulTxs.length : 0;
+      
+      setStripeMetrics({
+        totalRevenue,
+        transactionCount: txs.length,
+        successRate,
+        avgTransaction
+      });
     }
   }, [transactionData]);
 
@@ -146,31 +166,31 @@ export function StripeTab() {
         </div>
       </div>
 
-      {/* Metrics Cards */}
+      {/* Real Stripe Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         <UnifiedMetricCard
           title="Total Revenue"
-          value="$12,450"
+          value={stripeMetrics.totalRevenue > 0 ? `$${stripeMetrics.totalRevenue.toFixed(2)}` : '$0.00'}
           icon={DollarSign}
-          change={{ value: 15, label: 'from last month' }}
+          change={{ value: 0, label: 'from Stripe API' }}
         />
         <UnifiedMetricCard
           title="Transactions"
-          value="156"
+          value={stripeMetrics.transactionCount.toString()}
           icon={Activity}
-          change={{ value: 12, label: 'from last month' }}
+          change={{ value: 0, label: 'from Stripe API' }}
         />
         <UnifiedMetricCard
           title="Success Rate"
-          value="95.8%"
+          value={`${stripeMetrics.successRate.toFixed(1)}%`}
           icon={TrendingUp}
-          change={{ value: 2, label: 'from last month' }}
+          change={{ value: 0, label: 'from Stripe API' }}
         />
         <UnifiedMetricCard
           title="Avg. Transaction"
-          value="$79.80"
+          value={stripeMetrics.avgTransaction > 0 ? `$${stripeMetrics.avgTransaction.toFixed(2)}` : '$0.00'}
           icon={CreditCard}
-          change={{ value: 8, label: 'from last month' }}
+          change={{ value: 0, label: 'from Stripe API' }}
         />
       </div>
 
