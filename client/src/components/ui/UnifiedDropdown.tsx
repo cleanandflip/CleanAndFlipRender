@@ -191,14 +191,12 @@ export function UnifiedDropdown({
       {/* Dropdown Menu */}
       {isOpen && !disabled && (
         <div 
-          className="absolute z-50 w-full mt-2 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent"
+          className="absolute z-50 w-full mt-2 rounded-lg shadow-xl dropdown-scrollable overflow-hidden"
           style={{
             ...dropdownStyles,
             boxShadow: theme.effects.shadow,
             animation: 'slideDown 0.2s ease-out'
           }}
-          onWheel={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
         >
           {normalizedOptions.length === 0 ? (
             <div 
