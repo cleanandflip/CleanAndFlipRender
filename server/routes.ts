@@ -1103,9 +1103,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
         topProductsList = realTopProducts.map(p => ({
           name: p.name,
-          sales: p.views || 0, // Views since no actual sales yet
+          sales: 0, // No sales yet - showing as zero
+          views: p.views || 0, // Actual view count
           price: p.price,
-          isViewData: true // Flag to indicate this is view data, not sales data
+          isViewData: true, // Flag to indicate this is view data, not sales data
+          displayMetric: 'views' // What we're actually displaying
         }));
       }
 

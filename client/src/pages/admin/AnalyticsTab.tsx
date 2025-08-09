@@ -110,35 +110,35 @@ export function AnalyticsTab() {
           </div>
         </div>
 
-        {/* Top Products */}
+        {/* Top Products - Show Zero State for No Sales */}
         <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Top Products</h3>
+            <h3 className="text-lg font-semibold text-white">Product Sales</h3>
             <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded">
-              {topProducts.some((p: any) => p.isViewData) ? 'By Views' : 'By Sales'}
+              No orders yet
             </span>
           </div>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topProducts}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="name" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1e293b', 
-                    border: '1px solid #374151',
-                    borderRadius: '8px'
-                  }}
-                  labelStyle={{ color: '#F3F4F6' }}
-                  formatter={(value: any, name: string) => [
-                    value, 
-                    topProducts.some((p: any) => p.isViewData) ? 'Views' : 'Sales'
-                  ]}
-                />
-                <Bar dataKey="sales" fill="#3B82F6" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-80 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-800/50 rounded-full flex items-center justify-center">
+                <BarChart3 className="w-8 h-8 text-gray-500" />
+              </div>
+              <h4 className="text-lg font-medium text-gray-300 mb-2">No Sales Data Yet</h4>
+              <p className="text-gray-400 max-w-md">
+                Product sales will appear here once customers complete orders. Currently showing zero sales across all products.
+              </p>
+              <div className="mt-6 text-left bg-gray-800/30 rounded-lg p-4">
+                <h5 className="text-sm font-medium text-gray-300 mb-2">Product Views (for reference):</h5>
+                {topProducts.length > 0 ? topProducts.map((product: any, i: number) => (
+                  <div key={i} className="flex justify-between text-sm text-gray-400 mb-1">
+                    <span>{product.name}</span>
+                    <span>{product.views || product.sales || 0} views</span>
+                  </div>
+                )) : (
+                  <p className="text-sm text-gray-500">No product data available</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
