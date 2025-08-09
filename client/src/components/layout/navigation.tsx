@@ -205,7 +205,7 @@ export default function Navigation() {
                        }}>
                     
                     {/* User Info Section - Display first name initial and role */}
-                    <div className="p-4 border-b border-white/10" 
+                    <div className="p-4" 
                          style={{ background: 'rgba(15, 23, 42, 0.3)' }}>
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 
