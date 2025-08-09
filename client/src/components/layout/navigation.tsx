@@ -181,11 +181,9 @@ export default function Navigation() {
               <div className="relative user-dropdown-container" ref={dropdownRef}>
                 <button 
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-white/5 transition-all"
                 >
-                  <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">CF</span>
-                  </div>
+                  <User className="w-5 h-5 text-gray-300" />
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
                     isUserDropdownOpen ? 'rotate-180' : ''
                   }`} />
@@ -198,18 +196,23 @@ export default function Navigation() {
                                   rounded-xl shadow-2xl 
                                   overflow-hidden">
                     
-                    {/* User Info Section - Consistent with trigger button */}
+                    {/* User Info Section - Display first name initial and role */}
                     <div className="p-4 bg-[#0f172a]/50 border-b border-gray-700/50">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                          <span className="text-white font-bold">CF</span>
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 
+                                        rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold">
+                            {user?.firstName?.[0]?.toUpperCase() || 
+                             user?.email?.[0]?.toUpperCase() || 
+                             'U'}
+                          </span>
                         </div>
                         <div>
-                          <div className="text-white font-medium text-sm">
-                            {user?.firstName || 'Admin'}
+                          <div className="text-white font-medium">
+                            {user?.firstName || 'User'}
                           </div>
-                          <div className="text-gray-400 text-xs">
-                            {user?.email?.split('@')[0]}
+                          <div className="text-gray-400 text-xs capitalize">
+                            {user?.role || 'user'}
                           </div>
                         </div>
                       </div>
