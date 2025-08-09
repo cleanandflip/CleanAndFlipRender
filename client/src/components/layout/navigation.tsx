@@ -181,7 +181,12 @@ export default function Navigation() {
               <div className="relative user-dropdown-container" ref={dropdownRef}>
                 <button 
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-white/5 transition-all"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-white/10 transition-all duration-200 h-11"
+                  style={{
+                    background: 'rgba(75, 85, 99, 0.4)',
+                    border: '1px solid rgba(156, 163, 175, 0.4)',
+                    backdropFilter: 'blur(8px)'
+                  }}
                 >
                   <User className="w-5 h-5 text-gray-300" />
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
