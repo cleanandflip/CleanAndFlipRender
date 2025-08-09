@@ -502,21 +502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Search endpoint with full-text search
-  app.get("/api/search", apiLimiter, async (req, res) => {
-    try {
-      const { q: query, limit = 20, offset = 0 } = req.query;
-      
-      if (!query || typeof query !== 'string') {
-        return res.status(400).json({ message: "Search query is required" });
-      }
-      
-      const results = await searchProducts(query, Number(limit), Number(offset));
-      res.json({ results, total: results.length });
-    } catch (error) {
-      Logger.error("Search error", error);
-      res.status(500).json({ message: "Search failed" });
-    }
-  });
+  // Remove duplicate search route - using the more complete one later
   
   // Categories (public endpoint with rate limiting and caching)
   app.get("/api/categories", apiLimiter, async (req, res) => {

@@ -311,9 +311,10 @@ export function UnifiedSearch({
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
             width: `${dropdownPosition.width}px`,
-            zIndex: 99999,
+            zIndex: 999999, // Increased z-index for better layering
             transition: 'opacity 0.2s ease-in-out',
             opacity: dropdownPosition ? 1 : 0,
+            pointerEvents: 'auto', // Ensure clicks work
             ...dropdownStyle
           }}
         >
@@ -389,14 +390,24 @@ export function UnifiedSearch({
                   {recentSearches.map((search, idx) => (
                     <button
                       key={idx}
-                      onClick={(e) => {
-                        console.log('🔍 RECENT SEARCH BUTTON CLICKED:', search);
+                      type="button"
+                      onMouseDown={(e) => {
+                        console.log('🔍 RECENT SEARCH BUTTON MOUSEDOWN:', search);
                         e.preventDefault();
                         e.stopPropagation();
                         handleTrendingClick(search);
                       }}
-                      className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors"
-                      style={{ color: theme.colors.textPrimary }}
+                      onClick={(e) => {
+                        console.log('🔍 RECENT SEARCH BUTTON CLICKED:', search);
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors cursor-pointer"
+                      style={{ 
+                        color: theme.colors.textPrimary,
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none'
+                      }}
                     >
                       {search}
                     </button>
@@ -419,14 +430,24 @@ export function UnifiedSearch({
                   {trendingItems.map((item, idx) => (
                     <button
                       key={idx}
-                      onClick={(e) => {
-                        console.log('⭐ TRENDING BUTTON CLICKED:', item);
+                      type="button"
+                      onMouseDown={(e) => {
+                        console.log('⭐ TRENDING BUTTON MOUSEDOWN:', item);
                         e.preventDefault();
                         e.stopPropagation();
                         handleTrendingClick(item);
                       }}
-                      className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors"
-                      style={{ color: theme.colors.textPrimary }}
+                      onClick={(e) => {
+                        console.log('⭐ TRENDING BUTTON CLICKED:', item);
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors cursor-pointer"
+                      style={{ 
+                        color: theme.colors.textPrimary,
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none'
+                      }}
                     >
                       {item}
                     </button>
