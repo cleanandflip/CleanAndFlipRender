@@ -150,31 +150,38 @@ export function UnifiedSearch({
   }, []);
 
   const handleSearch = useCallback((searchQuery: string) => {
-    // Early return for empty queries
+    // Skip empty queries
     if (!searchQuery?.trim()) {
-      // Clear everything efficiently
-      setQuery('');
-      setResults([]);
-      setIsOpen(false);
-      
-      if (variant === 'navbar' && window.location.pathname !== '/') {
-        navigate('/');
-      }
       return;
     }
     
-    // Save to recent searches (deduplicated)
+    console.log('handleSearch called:', searchQuery, 'variant:', variant);
+    
+    // Save to recent searches
     const recent = [searchQuery, ...recentSearches.filter(s => s !== searchQuery)].slice(0, 5);
     setRecentSearches(recent);
     localStorage.setItem('recentSearches', JSON.stringify(recent));
     
-    // Execute search
-    if (onSearch) {
-      onSearch(searchQuery);
-    } else {
+    // Set the query in input
+    setQuery(searchQuery);
+    
+    // Navigate based on variant
+    if (variant === 'navbar') {
+      // From navbar: always go to products page with search
       navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+    } else if (variant === 'page') {
+      // From products page: trigger search callback
+      if (onSearch) {
+        onSearch(searchQuery);
+      } else {
+        // Update URL params without navigation
+        const url = new URL(window.location.href);
+        url.searchParams.set('search', searchQuery);
+        window.history.pushState(null, '', url.toString());
+      }
     }
     
+    // Close dropdown and remove focus
     setIsOpen(false);
     inputRef.current?.blur();
   }, [recentSearches, onSearch, navigate, variant]);
@@ -189,8 +196,12 @@ export function UnifiedSearch({
   };
 
   const handleTrendingClick = (item: string) => {
+    console.log('Trending clicked:', item);
     setQuery(item);
-    handleSearch(item);
+    setTimeout(() => {
+      console.log('Executing search for:', item);
+      handleSearch(item);
+    }, 0);
   };
 
   const searchStyles = {
@@ -237,20 +248,17 @@ export function UnifiedSearch({
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsOpen(true)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && query.trim()) {
+            if (e.key === 'Enter') {
               e.preventDefault();
-              handleSearch(query);
+              if (query.trim()) {
+                handleSearch(query);
+              }
             } else if (e.key === 'Escape') {
               e.preventDefault();
               setQuery('');
               setResults([]);
               setIsOpen(false);
               inputRef.current?.blur();
-              
-              // Navigate home if in navbar
-              if (variant === 'navbar' && query) {
-                navigate('/');
-              }
             }
           }}
           placeholder={placeholder}
@@ -260,27 +268,26 @@ export function UnifiedSearch({
         {query && (
           <button
             onClick={() => {
+              // Clear query
               setQuery('');
               setResults([]);
               setIsOpen(false);
               
-              // If in navbar variant, navigate to home
               if (variant === 'navbar') {
+                // Navbar: go to home
                 navigate('/');
-              } else {
-                // If on search page, clear search params
-                const currentUrl = window.location.pathname;
-                if (currentUrl.includes('/products')) {
-                  navigate('/products'); // Remove search params
+              } else if (variant === 'page') {
+                // Products page: clear search, show all products
+                if (onSearch) {
+                  onSearch(''); // Trigger search with empty string
                 }
+                // Clear URL params
+                const url = new URL(window.location.href);
+                url.searchParams.delete('search');
+                window.history.pushState(null, '', url.pathname);
               }
               
-              // Clear any search callbacks
-              if (onSearch) {
-                onSearch('');
-              }
-              
-              inputRef.current?.blur(); // Remove focus to close dropdown
+              inputRef.current?.blur();
             }}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:opacity-80"
             style={{ color: theme.colors.textSecondary }}
@@ -376,7 +383,11 @@ export function UnifiedSearch({
                   {recentSearches.map((search, idx) => (
                     <button
                       key={idx}
-                      onClick={() => handleTrendingClick(search)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleTrendingClick(search);
+                      }}
                       className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors"
                       style={{ color: theme.colors.textPrimary }}
                     >
@@ -401,7 +412,11 @@ export function UnifiedSearch({
                   {trendingItems.map((item, idx) => (
                     <button
                       key={idx}
-                      onClick={() => handleTrendingClick(item)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleTrendingClick(item);
+                      }}
                       className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors"
                       style={{ color: theme.colors.textPrimary }}
                     >
