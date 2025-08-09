@@ -148,7 +148,7 @@ export function UnifiedDropdown({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={buttonStyles[variant]}
+        className={cn(buttonStyles[variant], "bg-[#333b49]")}
         style={buttonStyle}
       >
         <span 
