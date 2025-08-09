@@ -191,13 +191,17 @@ export default function Navigation() {
 
                 {isUserDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 
-                                  bg-[#1e293b] 
-                                  border border-gray-700/50 
                                   rounded-xl shadow-2xl 
-                                  overflow-hidden">
+                                  overflow-hidden"
+                       style={{ 
+                         background: 'rgba(35, 41, 55, 0.4)', 
+                         backdropFilter: 'blur(12px)',
+                         border: '1px solid rgba(255, 255, 255, 0.08)' 
+                       }}>
                     
                     {/* User Info Section - Display first name initial and role */}
-                    <div className="p-4 bg-[#0f172a]/50 border-b border-gray-700/50">
+                    <div className="p-4 border-b border-white/10" 
+                         style={{ background: 'rgba(15, 23, 42, 0.3)' }}>
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 
                                         rounded-lg flex items-center justify-center">
