@@ -85,11 +85,10 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Main Navigation - Cleaner Layout with Badge Support */}
-      <nav className="fixed top-4 left-4 right-4 z-50 rounded-xl px-6 py-3 max-w-7xl mx-auto overflow-visible" style={{ 
-        background: 'rgba(35, 41, 55, 0.4)', 
- 
-        border: '1px solid rgba(255, 255, 255, 0.08)' 
+      {/* Main Navigation - Premium Design with Glass Effect */}
+      <nav className="fixed top-4 left-4 right-4 z-50 rounded-xl px-6 py-4 max-w-7xl mx-auto overflow-visible nav-gradient glass-effect" style={{ 
+        height: 'var(--nav-height)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
       }}>
         <div className="flex items-center justify-between w-full gap-4">
           {/* Left Side - Logo */}
@@ -108,10 +107,10 @@ export default function Navigation() {
                   e.stopPropagation();
                   handleNavigation(item.href, e);
                 }}
-                className={`transition-all duration-300 font-medium cursor-pointer px-3 py-2 rounded-lg text-base whitespace-nowrap ${
+                className={`transition-all duration-300 font-medium cursor-pointer px-4 py-2.5 rounded-lg text-base whitespace-nowrap nav-item-hover ${
                   isActive(item.href)
-                    ? "text-white bg-blue-500/30 border border-blue-400/50 shadow-md cursor-default"
-                    : "text-text-secondary hover:text-blue-300 hover:bg-blue-500/10"
+                    ? "text-white bg-gradient-to-r from-blue-500/30 to-purple-500/30 border border-blue-400/50 shadow-lg cursor-default"
+                    : "text-text-secondary hover:text-white hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-purple-500/10"
                 }`}
                 disabled={isActive(item.href)}
               >
@@ -122,8 +121,8 @@ export default function Navigation() {
 
           {/* Right Side - Actions */}
           <div className="flex items-center space-x-3 flex-shrink-0 min-w-0 overflow-visible p-1">
-            {/* Desktop Search */}
-            <div className="hidden lg:block">
+            {/* Desktop Search - Enhanced with Focus Expansion */}
+            <div className="hidden lg:block relative">
               <UnifiedSearch
                 placeholder="Search equipment..."
                 onSearch={(query) => {
@@ -133,50 +132,69 @@ export default function Navigation() {
                 onSelect={(result) => {
                   handleNavigation(result.url);
                 }}
-                className="w-72"
+                className="w-72 focus-within:w-80 transition-all duration-300"
                 variant="navbar"
               />
             </div>
 
-            {/* Mobile Search Toggle */}
+            {/* Mobile Search Toggle - Enhanced */}
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden w-10 h-10 flex-shrink-0 transition-all duration-200 hover:bg-white/10"
+              className="lg:hidden w-12 h-12 flex-shrink-0 transition-all duration-200 hover:scale-105 group"
               style={{
-                background: 'rgba(75, 85, 99, 0.4)',
-                border: '1px solid rgba(156, 163, 175, 0.4)',
-                backdropFilter: 'blur(8px)',
+                background: isSearchOpen ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' : 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(12px)',
                 color: 'white',
                 fontWeight: '500'
               }}
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
-              <Search size={18} />
+              <Search size={18} className="group-hover:scale-110 transition-transform" />
             </Button>
 
-            {/* Account */}
+            {/* Account - Enhanced Dropdown */}
             {user ? (
-              <UnifiedDropdown
-                variant="nav"
-                options={[
-                  { value: 'dashboard', label: 'Dashboard', icon: <Settings className="w-4 h-4" /> },
-                  { value: 'orders', label: 'Order History', icon: <History className="w-4 h-4" /> },
-                  ...(user.role === 'developer' ? [{ value: 'admin', label: 'Developer Dashboard', icon: <Package className="w-4 h-4" /> }] : []),
-                  { value: 'logout', label: 'Sign Out', icon: <LogOut className="w-4 h-4" /> }
-                ]}
-                value=""
-                onChange={(value) => {
-                  switch(value) {
-                    case 'dashboard': handleNavigation(ROUTES.DASHBOARD); break;
-                    case 'orders': handleNavigation(ROUTES.ORDERS); break;
-                    case 'admin': handleNavigation(ROUTES.ADMIN); break;
-                    case 'logout': logoutMutation.mutate(); break;
+              <div className="relative">
+                <UnifiedDropdown
+                  variant="nav"
+                  options={[
+                    { value: 'dashboard', label: 'Dashboard', icon: <Settings className="w-4 h-4" /> },
+                    { value: 'orders', label: 'Order History', icon: <History className="w-4 h-4" /> },
+                    ...(user.role === 'developer' ? [{ value: 'admin', label: 'Developer Dashboard', icon: <Package className="w-4 h-4" /> }] : []),
+                    { value: 'logout', label: 'Sign Out', icon: <LogOut className="w-4 h-4" /> }
+                  ]}
+                  value=""
+                  onChange={(value) => {
+                    switch(value) {
+                      case 'dashboard': handleNavigation(ROUTES.DASHBOARD); break;
+                      case 'orders': handleNavigation(ROUTES.ORDERS); break;
+                      case 'admin': handleNavigation(ROUTES.ADMIN); break;
+                      case 'logout': logoutMutation.mutate(); break;
+                    }
+                  }}
+                  placeholder={
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
+                        {(user.firstName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                      </div>
+                      <div className="hidden sm:block text-left">
+                        <div className="text-sm text-white font-medium">
+                          {user.firstName || 'User'}
+                        </div>
+                        {user.role === 'developer' && (
+                          <div className="text-xs text-blue-400">
+                            Developer
+                          </div>
+                        )}
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-gray-400 hidden sm:block" />
+                    </div>
                   }
-                }}
-                placeholder={user.firstName || 'User'}
-                className="h-10 px-3"
-              />
+                  className="h-12 px-3 bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                />
+              </div>
             ) : (
               <Button
                 variant="primary"
@@ -189,15 +207,15 @@ export default function Navigation() {
               </Button>
             )}
 
-            {/* Cart */}
+            {/* Cart - Enhanced with Better Badge */}
             <div className="relative">
               <button
                 onClick={handleCartClick}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 focus:outline-none relative hover:bg-white/10"
+                className="flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 focus:outline-none relative hover:scale-105 group"
                 style={{
-                  background: 'rgba(75, 85, 99, 0.4)',
-                  border: isCartOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
-                  backdropFilter: 'blur(8px)',
+                  background: isCartOpen ? 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' : 'rgba(255, 255, 255, 0.1)',
+                  border: isCartOpen ? '1px solid #60a5fa' : '1px solid rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(12px)',
                   color: 'white',
                   fontWeight: '500'
                 }}
@@ -207,14 +225,18 @@ export default function Navigation() {
                     <X size={12} className="text-white" />
                   </div>
                 ) : (
-                  <ShoppingCart size={20} className="text-white" />
+                  <ShoppingCart size={20} className="text-white group-hover:scale-110 transition-transform" />
                 )}
                 
-                {cartCount > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
-                    {cartCount}
+                {cartCount > 0 && !isCartOpen && (
+                  <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg badge-pulse">
+                    {cartCount > 99 ? '99+' : cartCount}
                   </div>
                 )}
+                
+                <span className="hidden sm:block text-sm">
+                  {isCartOpen ? 'Close' : 'Cart'}
+                </span>
               </button>
             </div>
 
