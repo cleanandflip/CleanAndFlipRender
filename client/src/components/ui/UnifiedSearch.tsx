@@ -1,6 +1,5 @@
 // UNIFIED SEARCH MATCHING YOUR THEME
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useRef, useEffect } from 'react';
 import { Search, X, TrendingUp, Clock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -43,7 +42,6 @@ export function UnifiedSearch({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -79,41 +77,6 @@ export function UnifiedSearch({
     }
   }, [debouncedQuery, apiEndpoint]);
 
-  // Update position when dropdown opens
-  useEffect(() => {
-    if (isOpen && inputRef.current) {
-      const rect = inputRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width
-      });
-    }
-  }, [isOpen]);
-
-  // Update position on scroll/resize
-  useEffect(() => {
-    const updatePosition = () => {
-      if (isOpen && inputRef.current) {
-        const rect = inputRef.current.getBoundingClientRect();
-        setDropdownPosition({
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX,
-          width: rect.width
-        });
-      }
-    };
-
-    if (isOpen) {
-      window.addEventListener('scroll', updatePosition, { passive: true });
-      window.addEventListener('resize', updatePosition, { passive: true });
-      return () => {
-        window.removeEventListener('scroll', updatePosition);
-        window.removeEventListener('resize', updatePosition);
-      };
-    }
-  }, [isOpen]);
-
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -129,36 +92,14 @@ export function UnifiedSearch({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // Cleanup on unmount
-      setQuery('');
-      setResults([]);
-      setIsOpen(false);
-    };
-  }, []);
-
-  const handleSearch = useCallback((searchQuery: string) => {
-    // Early return for empty queries
-    if (!searchQuery?.trim()) {
-      // Clear everything efficiently
-      setQuery('');
-      setResults([]);
-      setIsOpen(false);
-      
-      if (variant === 'navbar' && window.location.pathname !== '/') {
-        navigate('/');
-      }
-      return;
-    }
+  const handleSearch = (searchQuery: string) => {
+    if (!searchQuery.trim()) return;
     
-    // Save to recent searches (deduplicated)
+    // Save to recent searches
     const recent = [searchQuery, ...recentSearches.filter(s => s !== searchQuery)].slice(0, 5);
     setRecentSearches(recent);
     localStorage.setItem('recentSearches', JSON.stringify(recent));
     
-    // Execute search
     if (onSearch) {
       onSearch(searchQuery);
     } else {
@@ -166,8 +107,7 @@ export function UnifiedSearch({
     }
     
     setIsOpen(false);
-    inputRef.current?.blur();
-  }, [recentSearches, onSearch, navigate, variant]);
+  };
 
   const handleResultClick = (result: SearchResult) => {
     if (onSelect) {
@@ -228,19 +168,9 @@ export function UnifiedSearch({
           onFocus={() => setIsOpen(true)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && query.trim()) {
-              e.preventDefault();
               handleSearch(query);
             } else if (e.key === 'Escape') {
-              e.preventDefault();
-              setQuery('');
-              setResults([]);
               setIsOpen(false);
-              inputRef.current?.blur();
-              
-              // Navigate home if in navbar
-              if (variant === 'navbar' && query) {
-                navigate('/');
-              }
             }
           }}
           placeholder={placeholder}
@@ -252,25 +182,7 @@ export function UnifiedSearch({
             onClick={() => {
               setQuery('');
               setResults([]);
-              setIsOpen(false);
-              
-              // If in navbar variant, navigate to home
-              if (variant === 'navbar') {
-                navigate('/');
-              } else {
-                // If on search page, clear search params
-                const currentUrl = window.location.pathname;
-                if (currentUrl.includes('/products')) {
-                  navigate('/products'); // Remove search params
-                }
-              }
-              
-              // Clear any search callbacks
-              if (onSearch) {
-                onSearch('');
-              }
-              
-              inputRef.current?.blur(); // Remove focus to close dropdown
+              inputRef.current?.focus();
             }}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:opacity-80"
             style={{ color: theme.colors.textSecondary }}
@@ -280,17 +192,10 @@ export function UnifiedSearch({
         )}
       </div>
 
-      {isOpen && createPortal(
+      {isOpen && (
         <div 
-          className="rounded-lg overflow-hidden shadow-xl max-h-96 overflow-auto search-dropdown-portal"
-          style={{
-            position: 'fixed',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            width: `${dropdownPosition.width}px`,
-            zIndex: 99999,
-            ...dropdownStyle
-          }}
+          className={searchStyles.dropdown}
+          style={dropdownStyle}
         >
           {loading ? (
             <div className="flex items-center justify-center p-6">
@@ -418,8 +323,7 @@ export function UnifiedSearch({
               )}
             </div>
           )}
-        </div>,
-        document.body
+        </div>
       )}
     </div>
   );

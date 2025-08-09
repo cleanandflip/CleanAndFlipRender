@@ -11,20 +11,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Z-INDEX HIERARCHY */
-:root {
-  --z-dropdown: 50;
-  --z-modal-backdrop: 100;
-  --z-modal: 110;
-  --z-search-dropdown: 9999; /* Highest */
-  --z-notification: 10000;
-}
-
-/* Ensure search dropdown is always on top */
-.search-dropdown-portal {
-  z-index: var(--z-search-dropdown) !important;
-}
-
 /* Dropdown animations - preserving theme */
 @keyframes slideDown {
   from {
