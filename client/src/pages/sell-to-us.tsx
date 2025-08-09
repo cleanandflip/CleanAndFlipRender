@@ -88,6 +88,7 @@ export default function SellToUs() {
   const [isDragging, setIsDragging] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
 
   const form = useForm<SubmissionForm>({
     resolver: zodResolver(submissionSchema),
@@ -146,28 +147,38 @@ export default function SellToUs() {
     },
   });
 
-  // Drag and drop handlers
+  // Drag and drop handlers with counter fix
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
+    dragCounter.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true); // Keep it active
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+    dragCounter.current = 0; // Reset counter
     
     const files = Array.from(e.dataTransfer.files);
     handleFiles(files);
@@ -540,40 +551,69 @@ export default function SellToUs() {
                     className="hidden"
                   />
                   
-                  {/* Drop zone */}
+                  {/* Drag wrapper - handles all drag events */}
                   <div
-                    onDragEnter={handleDragEnter}
-                    onDragLeave={handleDragLeave}
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`
-                      border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
-                      transition-all duration-200
-                      ${isDragging 
-                        ? 'border-blue-500 bg-blue-500/10' 
-                        : 'border-gray-600 hover:border-gray-500 hover:bg-white/5'
-                      }
-                    `}
+                    className="relative"
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDragging(true);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDragging(false);
+                      const files = Array.from(e.dataTransfer.files);
+                      handleFiles(files);
+                    }}
                   >
-                    <Upload className="mx-auto mb-4 text-gray-400" size={48} />
-                    <h4 className="font-semibold mb-2 text-white">
-                      {isDragging ? 'Drop photos here' : 'Upload Photos'}
-                    </h4>
-                    <p className="text-gray-400 mb-4">
-                      Drag and drop photos here, or click to select
-                    </p>
-                    <Button 
-                      type="button"
-                      variant="outline" 
-                      className="border-gray-600 hover:border-gray-500"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileInputRef.current?.click();
-                      }}
+                    {/* Invisible overlay when dragging */}
+                    {isDragging && (
+                      <div 
+                        className="absolute inset-0 z-10"
+                        onDragLeave={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsDragging(false);
+                        }}
+                      />
+                    )}
+                    
+                    {/* Drop zone content */}
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`
+                        border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
+                        transition-all duration-200
+                        ${isDragging 
+                          ? 'border-blue-500 bg-blue-500/10' 
+                          : 'border-gray-600 hover:border-gray-500 hover:bg-white/5'
+                        }
+                      `}
                     >
-                      Choose Files
-                    </Button>
+                      <Upload className="mx-auto mb-4 text-gray-400" size={48} />
+                      <h4 className="font-semibold mb-2 text-white">
+                        {isDragging ? 'Drop photos here' : 'Upload Photos'}
+                      </h4>
+                      <p className="text-gray-400 mb-4">
+                        Drag and drop photos here, or click to select
+                      </p>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        className="border-gray-600 hover:border-gray-500"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                      >
+                        Choose Files
+                      </Button>
+                    </div>
                   </div>
                   
                   {/* Image Preview Grid */}
