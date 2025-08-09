@@ -180,14 +180,18 @@ export default function Navigation() {
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button 
-                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none relative hover:bg-white/10 h-11 min-w-[44px]"
+                  onClick={() => {
+                    console.log('User button clicked!');
+                    setIsUserDropdownOpen(!isUserDropdownOpen);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none hover:bg-white/10 h-11 min-w-[44px] cursor-pointer"
                   style={{
                     background: 'rgba(75, 85, 99, 0.4)',
                     border: '1px solid rgba(156, 163, 175, 0.4)',
                     backdropFilter: 'blur(8px)',
                     color: 'white',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    zIndex: 10
                   }}
                 >
                   <User className="w-5 h-5 text-gray-300" />
