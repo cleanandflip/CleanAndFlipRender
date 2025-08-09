@@ -11,30 +11,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Professional Navigation Animations */
+/* Dropdown animations - preserving theme */
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.animate-slideDown {
-  animation: slideDown 0.2s ease-out;
-}
-
-/* Glass effect for navigation */
-.backdrop-blur-md {
-  backdrop-filter: blur(12px);
-}
-
-/* Focus rings */
-.focus\:ring-2:focus {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 /* Preserve scrollbar styling for dropdowns */
