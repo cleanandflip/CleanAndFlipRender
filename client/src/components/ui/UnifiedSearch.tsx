@@ -43,7 +43,11 @@ export function UnifiedSearch({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
   
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -84,10 +88,12 @@ export function UnifiedSearch({
     if (isOpen && inputRef.current) {
       const rect = inputRef.current.getBoundingClientRect();
       setDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
+        top: rect.bottom,  // Remove window.scrollY for fixed positioning
+        left: rect.left,   // Remove window.scrollX for fixed positioning
         width: rect.width
       });
+    } else {
+      setDropdownPosition(null); // Reset when closed to prevent animation from 0,0
     }
   }, [isOpen]);
 
@@ -97,14 +103,18 @@ export function UnifiedSearch({
       if (isOpen && inputRef.current) {
         const rect = inputRef.current.getBoundingClientRect();
         setDropdownPosition({
-          top: rect.bottom + window.scrollY,
-          left: rect.left + window.scrollX,
+          top: rect.bottom,  // Fixed positioning - no scroll offset needed
+          left: rect.left,
           width: rect.width
         });
       }
     };
 
     if (isOpen) {
+      // Update immediately
+      updatePosition();
+      
+      // Then listen for changes
       window.addEventListener('scroll', updatePosition, { passive: true });
       window.addEventListener('resize', updatePosition, { passive: true });
       return () => {
@@ -280,7 +290,7 @@ export function UnifiedSearch({
         )}
       </div>
 
-      {isOpen && createPortal(
+      {isOpen && dropdownPosition && createPortal(
         <div 
           className="rounded-lg overflow-hidden shadow-xl max-h-96 overflow-auto search-dropdown-portal"
           style={{
@@ -289,6 +299,8 @@ export function UnifiedSearch({
             left: `${dropdownPosition.left}px`,
             width: `${dropdownPosition.width}px`,
             zIndex: 99999,
+            transition: 'opacity 0.2s ease-in-out',
+            opacity: dropdownPosition ? 1 : 0,
             ...dropdownStyle
           }}
         >
