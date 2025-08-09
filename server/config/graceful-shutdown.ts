@@ -1,5 +1,5 @@
 import { Server } from 'http';
-import { closeDatabasePool } from './database';
+// Database pool is handled by server/db.ts
 import { closeRedisConnection } from './cache';
 import { logger } from './logger';
 
@@ -33,13 +33,8 @@ async function handleShutdown() {
     });
   }
   
-  // Close database connections
-  try {
-    await closeDatabasePool();
-    logger.info('Database connections closed');
-  } catch (error) {
-    logger.error('Error closing database:', error);
-  }
+  // Database connections are handled by server/db.ts
+  logger.info('Database connections will be closed by shutdown handlers');
   
   // Close Redis connection
   try {

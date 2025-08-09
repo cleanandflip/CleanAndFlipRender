@@ -856,7 +856,6 @@ var init_storage = __esm({
           zipCode: addressData.zipCode,
           latitude: addressData.latitude ? String(addressData.latitude) : void 0,
           longitude: addressData.longitude ? String(addressData.longitude) : void 0,
-          isLocalCustomer: addressData.isLocalCustomer,
           updatedAt: /* @__PURE__ */ new Date()
         }).where(eq(users.id, id)).returning();
         return user;
@@ -1127,8 +1126,7 @@ var init_storage = __esm({
         await db.update(products).set({ stockQuantity }).where(eq(products.id, productId));
       }
       async updateUserRole(userId, role) {
-        const isAdmin = role === "admin" || role === "developer";
-        await db.update(users).set({ role, isAdmin }).where(eq(users.id, userId));
+        await db.update(users).set({ role }).where(eq(users.id, userId));
       }
       async exportProductsToCSV() {
         const productResults = await this.getProducts();
@@ -1148,14 +1146,13 @@ var init_storage = __esm({
       }
       async exportUsersToCSV() {
         const users2 = await this.getAllUsers();
-        const headers = ["ID", "Email", "First Name", "Last Name", "Role", "Admin", "Created"];
+        const headers = ["ID", "Email", "First Name", "Last Name", "Role", "Created"];
         const rows = users2.map((u) => [
           u.id,
           u.email,
           u.firstName || "",
           u.lastName || "",
           u.role || "user",
-          u.isAdmin ? "Yes" : "No",
           u.createdAt?.toISOString() || ""
         ]);
         return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
@@ -1861,7 +1858,7 @@ var simple_password_reset_exports = {};
 __export(simple_password_reset_exports, {
   SimplePasswordReset: () => SimplePasswordReset
 });
-import { sql as sql8 } from "drizzle-orm";
+import { sql as sql7 } from "drizzle-orm";
 import { Resend } from "resend";
 import crypto2 from "crypto";
 import bcryptjs from "bcryptjs";
@@ -1876,7 +1873,7 @@ var init_simple_password_reset = __esm({
       async findUser(email) {
         console.log(`[PasswordReset] Looking for: ${email}`);
         try {
-          const result = await db.execute(sql8`
+          const result = await db.execute(sql7`
         SELECT id, email, first_name, last_name 
         FROM users 
         WHERE LOWER(email) = LOWER(${email.trim()})
@@ -1886,9 +1883,9 @@ var init_simple_password_reset = __esm({
             console.log(`[PasswordReset] \u2705 Found user: ${result.rows[0].email}`);
             return result.rows[0];
           }
-          const countResult = await db.execute(sql8`SELECT COUNT(*) as total FROM users`);
+          const countResult = await db.execute(sql7`SELECT COUNT(*) as total FROM users`);
           console.log(`[PasswordReset] Total users in DB: ${countResult.rows[0]?.total || 0}`);
-          const debugResult = await db.execute(sql8`SELECT email FROM users LIMIT 3`);
+          const debugResult = await db.execute(sql7`SELECT email FROM users LIMIT 3`);
           console.log("[PasswordReset] Sample emails in DB:");
           debugResult.rows.forEach((r) => console.log(`  - ${r.email}`));
           console.log(`[PasswordReset] \u274C User not found: ${email}`);
@@ -1903,7 +1900,7 @@ var init_simple_password_reset = __esm({
         const token = crypto2.randomBytes(32).toString("hex");
         const expires = new Date(Date.now() + 36e5);
         try {
-          await db.execute(sql8`
+          await db.execute(sql7`
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,
           user_id UUID NOT NULL,
@@ -1913,10 +1910,10 @@ var init_simple_password_reset = __esm({
           created_at TIMESTAMP DEFAULT NOW()
         )
       `);
-          await db.execute(sql8`
+          await db.execute(sql7`
         DELETE FROM password_reset_tokens WHERE user_id = ${userId}
       `);
-          await db.execute(sql8`
+          await db.execute(sql7`
         INSERT INTO password_reset_tokens (user_id, token, expires_at) 
         VALUES (${userId}, ${token}, ${expires})
       `);
@@ -1984,7 +1981,7 @@ var init_simple_password_reset = __esm({
       // VALIDATE TOKEN
       async validateToken(token) {
         try {
-          const result = await db.execute(sql8`
+          const result = await db.execute(sql7`
         SELECT * FROM password_reset_tokens 
         WHERE token = ${token} AND used = FALSE AND expires_at > NOW()
       `);
@@ -2003,10 +2000,10 @@ var init_simple_password_reset = __esm({
         }
         try {
           const hashedPassword = await bcryptjs.hash(newPassword, 12);
-          await db.execute(sql8`
+          await db.execute(sql7`
         UPDATE users SET password = ${hashedPassword} WHERE id = ${tokenData.user_id}
       `);
-          await db.execute(sql8`
+          await db.execute(sql7`
         UPDATE password_reset_tokens SET used = TRUE WHERE id = ${tokenData.id}
       `);
           console.log("[PasswordReset] Password updated successfully");
@@ -2985,32 +2982,8 @@ function setupCompression(app2) {
   Logger.info("\u2705 Response compression configured");
 }
 
-// server/config/database.ts
-init_schema();
-init_logger();
-import { drizzle as drizzle2 } from "drizzle-orm/neon-serverless";
-import { Pool as Pool2 } from "@neondatabase/serverless";
-import { sql as sql4 } from "drizzle-orm";
-var pool2 = new Pool2({
-  connectionString: process.env.DATABASE_URL,
-  max: 20,
-  // Maximum connections
-  idleTimeoutMillis: 3e4,
-  // 30 seconds idle timeout
-  connectionTimeoutMillis: 1e4
-  // 10 seconds connection timeout
-});
-var db2 = drizzle2(pool2, { schema: schema_exports });
-pool2.on("connect", () => {
-  Logger.info("Database connection established");
-});
-pool2.on("error", (err) => {
-  Logger.error("Database pool error:", err);
-});
-async function closeDatabasePool() {
-  Logger.info("Closing database connection pool...");
-  await pool2.end();
-}
+// server/config/health.ts
+init_db();
 
 // server/lib/cache.ts
 var MemoryCache = class {
@@ -3102,7 +3075,7 @@ async function closeRedisConnection() {
 var redis = null;
 
 // server/config/health.ts
-import { sql as sql5 } from "drizzle-orm";
+import { sql as sql4 } from "drizzle-orm";
 async function healthLive(req, res) {
   res.json({
     status: "ok",
@@ -3118,7 +3091,7 @@ async function healthReady(req, res) {
   };
   let overallStatus = "ready";
   try {
-    await db2.execute(sql5`SELECT 1`);
+    await db.execute(sql4`SELECT 1`);
     checks.database = "connected";
   } catch (error) {
     checks.database = "disconnected";
@@ -3328,7 +3301,7 @@ function convertSubmissionsToCSV(submissions) {
 }
 
 // server/routes.ts
-import { eq as eq5, desc as desc2, ilike as ilike2, sql as sql7, and as and3, or as or3, gte as gte2, lte as lte2, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
+import { eq as eq5, desc as desc2, ilike as ilike2, sql as sql6, and as and3, or as or3, gte as gte2, lte as lte2, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
 
 // server/utils/startup-banner.ts
 init_logger();
@@ -3424,26 +3397,27 @@ var initRedis = async () => {
 };
 
 // server/config/search.ts
-import { sql as sql6 } from "drizzle-orm";
+init_db();
 init_logger();
+import { sql as sql5 } from "drizzle-orm";
 async function initializeSearchIndexes() {
   try {
-    await db2.execute(sql6`
+    await db.execute(sql5`
       ALTER TABLE products 
       ADD COLUMN IF NOT EXISTS search_vector tsvector
     `);
-    await db2.execute(sql6`
+    await db.execute(sql5`
       CREATE INDEX IF NOT EXISTS idx_products_search 
       ON products USING GIN(search_vector)
     `);
-    await db2.execute(sql6`
+    await db.execute(sql5`
       UPDATE products SET search_vector = 
         setweight(to_tsvector('english', coalesce(name,'')), 'A') ||
         setweight(to_tsvector('english', coalesce(description,'')), 'B') ||
         setweight(to_tsvector('english', coalesce(brand,'')), 'C')
       WHERE search_vector IS NULL
     `);
-    await db2.execute(sql6`
+    await db.execute(sql5`
       CREATE OR REPLACE FUNCTION update_product_search_vector()
       RETURNS TRIGGER AS $$
       BEGIN
@@ -3455,7 +3429,7 @@ async function initializeSearchIndexes() {
       END;
       $$ LANGUAGE plpgsql;
     `);
-    await db2.execute(sql6`
+    await db.execute(sql5`
       DROP TRIGGER IF EXISTS trigger_update_product_search_vector ON products;
       CREATE TRIGGER trigger_update_product_search_vector
         BEFORE INSERT OR UPDATE ON products
@@ -3491,12 +3465,7 @@ async function handleShutdown() {
       logger.info("HTTP server closed");
     });
   }
-  try {
-    await closeDatabasePool();
-    logger.info("Database connections closed");
-  } catch (error) {
-    logger.error("Error closing database:", error);
-  }
+  logger.info("Database connections will be closed by shutdown handlers");
   try {
     await closeRedisConnection();
     logger.info("Redis connection closed");
@@ -4185,20 +4154,20 @@ async function registerRoutes(app2) {
     };
     try {
       try {
-        await db.execute(sql7`SELECT subcategory FROM products LIMIT 1`);
+        await db.execute(sql6`SELECT subcategory FROM products LIMIT 1`);
         results.tables["products.subcategory"] = "exists";
       } catch (e) {
         results.tables["products.subcategory"] = "missing";
         results.issues.push("products.subcategory column missing");
       }
       try {
-        await db.execute(sql7`SELECT street FROM users LIMIT 1`);
+        await db.execute(sql6`SELECT street FROM users LIMIT 1`);
         results.tables["users.street"] = "exists";
       } catch (e) {
         results.tables["users.street"] = "missing";
         results.issues.push("users.street column missing");
       }
-      const addressCheck = await db.execute(sql7`
+      const addressCheck = await db.execute(sql6`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_name = 'addresses'
@@ -4234,8 +4203,8 @@ async function registerRoutes(app2) {
           title: products.name,
           subtitle: products.brand,
           price: products.price,
-          image: sql7`${products.images}->0`,
-          type: sql7`'product'`
+          image: sql6`${products.images}->0`,
+          type: sql6`'product'`
         }).from(products).where(
           and3(
             eq5(products.status, "active"),
@@ -4256,7 +4225,7 @@ async function registerRoutes(app2) {
         const categoryResults = await db.select({
           id: categories.id,
           title: categories.name,
-          type: sql7`'category'`
+          type: sql6`'category'`
         }).from(categories).where(
           and3(
             eq5(categories.isActive, true),
@@ -4592,17 +4561,17 @@ async function registerRoutes(app2) {
       const minPrice = parseFloat(priceMin);
       const maxPrice = parseFloat(priceMax);
       if (minPrice > 0) {
-        conditions.push(gte2(sql7`CAST(${products.price} AS NUMERIC)`, minPrice));
+        conditions.push(gte2(sql6`CAST(${products.price} AS NUMERIC)`, minPrice));
       }
       if (maxPrice < 1e4) {
-        conditions.push(lte2(sql7`CAST(${products.price} AS NUMERIC)`, maxPrice));
+        conditions.push(lte2(sql6`CAST(${products.price} AS NUMERIC)`, maxPrice));
       }
       if (conditions.length > 0) {
         query = query.where(and3(...conditions));
       }
-      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql7`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
+      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql6`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
       query = query.orderBy(sortOrder === "desc" ? desc2(sortColumn) : asc2(sortColumn));
-      let countQuery = db.select({ count: sql7`count(*)` }).from(products);
+      let countQuery = db.select({ count: sql6`count(*)` }).from(products);
       if (conditions.length > 0) {
         countQuery = countQuery.where(and3(...conditions));
       }
@@ -4781,7 +4750,7 @@ async function registerRoutes(app2) {
         displayOrder: categories.displayOrder,
         createdAt: categories.createdAt,
         updatedAt: categories.updatedAt,
-        productCount: sql7`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
+        productCount: sql6`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
       }).from(categories);
       const conditions = [];
       if (search) {
@@ -4795,10 +4764,10 @@ async function registerRoutes(app2) {
       if (conditions.length > 0) {
         query = query.where(and3(...conditions));
       }
-      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql7`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
+      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql6`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
       query = query.orderBy(sortOrder === "desc" ? desc2(sortColumn) : asc2(sortColumn));
       const result = await query;
-      const totalProducts = await db.select({ count: sql7`COUNT(*)` }).from(products);
+      const totalProducts = await db.select({ count: sql6`COUNT(*)` }).from(products);
       const activeCategories = result.filter((cat) => cat.isActive).length;
       const emptyCategories = result.filter((cat) => Number(cat.productCount) === 0).length;
       res.json({
@@ -4901,7 +4870,7 @@ async function registerRoutes(app2) {
   app2.delete("/api/admin/categories/:id", requireRole("developer"), async (req, res) => {
     try {
       const { id } = req.params;
-      const productCount = await db.select({ count: sql7`COUNT(*)` }).from(products).where(eq5(products.categoryId, id));
+      const productCount = await db.select({ count: sql6`COUNT(*)` }).from(products).where(eq5(products.categoryId, id));
       if (productCount[0]?.count > 0) {
         return res.status(400).json({
           error: "Cannot delete category with products",
@@ -4923,7 +4892,7 @@ async function registerRoutes(app2) {
       let dbLatency = 0;
       try {
         const start = Date.now();
-        await db.select({ test: sql7`1` });
+        await db.select({ test: sql6`1` });
         dbLatency = Date.now() - start;
       } catch (error) {
         dbStatus = "Disconnected";
@@ -4967,9 +4936,9 @@ async function registerRoutes(app2) {
     try {
       const memoryUsage = process.memoryUsage();
       const uptime = process.uptime();
-      const [userCount] = await db.select({ count: sql7`COUNT(*)` }).from(users);
-      const [productCount] = await db.select({ count: sql7`COUNT(*)` }).from(products);
-      const [orderCount] = await db.select({ count: sql7`COUNT(*)` }).from(orders);
+      const [userCount] = await db.select({ count: sql6`COUNT(*)` }).from(users);
+      const [productCount] = await db.select({ count: sql6`COUNT(*)` }).from(products);
+      const [orderCount] = await db.select({ count: sql6`COUNT(*)` }).from(orders);
       const systemInfo = {
         application: {
           name: "Clean & Flip Admin",
@@ -5485,7 +5454,7 @@ async function registerRoutes(app2) {
       const query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql7`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql6`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
       }).from(equipmentSubmissions).leftJoin(users, eq5(equipmentSubmissions.userId, users.id)).orderBy(desc2(equipmentSubmissions.createdAt)).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
@@ -5668,7 +5637,7 @@ async function registerRoutes(app2) {
       let query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql7`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql6`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
       }).from(equipmentSubmissions).leftJoin(users, eq5(equipmentSubmissions.userId, users.id)).orderBy(desc2(equipmentSubmissions.createdAt));
@@ -6291,7 +6260,7 @@ function getEnvironmentInfo() {
 
 // server/index.ts
 init_db();
-import { sql as sql9 } from "drizzle-orm";
+import { sql as sql8 } from "drizzle-orm";
 import fs2 from "fs";
 import path3 from "path";
 var app = express2();
@@ -6366,7 +6335,7 @@ app.use((req, res, next) => {
   setInterval(async () => {
     try {
       const deleted = await db.execute(
-        sql9`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
+        sql8`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
       );
       if (deleted.rowCount && deleted.rowCount > 0) {
         Logger.info(`[CLEANUP] Removed ${deleted.rowCount} expired password reset tokens`);

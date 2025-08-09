@@ -193,7 +193,6 @@ export class DatabaseStorage implements IStorage {
     zipCode?: string;
     latitude?: number;
     longitude?: number;
-    isLocalCustomer?: boolean;
   }): Promise<User> {
     const [user] = await db
       .update(users)
@@ -204,7 +203,6 @@ export class DatabaseStorage implements IStorage {
         zipCode: addressData.zipCode,
         latitude: addressData.latitude ? String(addressData.latitude) : undefined,
         longitude: addressData.longitude ? String(addressData.longitude) : undefined,
-        isLocalCustomer: addressData.isLocalCustomer,
         updatedAt: new Date(),
       })
       .where(eq(users.id, id))
@@ -668,10 +666,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserRole(userId: string, role: string): Promise<void> {
-    const isAdmin = role === 'admin' || role === 'developer';
     await db
       .update(users)
-      .set({ role: role as any, isAdmin })
+      .set({ role: role as any })
       .where(eq(users.id, userId));
   }
 
@@ -695,14 +692,13 @@ export class DatabaseStorage implements IStorage {
 
   async exportUsersToCSV(): Promise<string> {
     const users = await this.getAllUsers();
-    const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Admin', 'Created'];
+    const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Created'];
     const rows = users.map(u => [
       u.id,
       u.email,
       u.firstName || '',
       u.lastName || '',
       u.role || 'user',
-      u.isAdmin ? 'Yes' : 'No',
       u.createdAt?.toISOString() || ''
     ]);
     

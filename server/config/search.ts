@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { db } from './database';
+import { db } from '../db';
 import { Logger } from '../utils/logger';
 
 // Initialize full-text search

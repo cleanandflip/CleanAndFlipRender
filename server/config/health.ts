@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from './database';
+import { db } from '../db';
 import { redis } from './cache';
 import { sql } from 'drizzle-orm';
 
