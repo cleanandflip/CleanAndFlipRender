@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import Logo from "@/components/common/logo";
@@ -8,10 +8,14 @@ import ProductCard from "@/components/products/product-card";
 import { DollarSign, Dumbbell, TrendingUp, Users, Clock, CheckCircle } from "lucide-react";
 import CategoryGrid from "@/components/categories/category-grid";
 import { productEvents } from "@/lib/queryClient";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import type { Product } from "@shared/schema";
 
 export default function Home() {
+  const queryClient = useQueryClient();
+  const { lastMessage, isConnected } = useWebSocket();
+  
   const { data: featuredProducts, refetch } = useQuery<Product[]>({
     queryKey: ["/api/products/featured"],
     refetchOnWindowFocus: true, // Refetch when user returns to tab
@@ -21,24 +25,41 @@ export default function Home() {
     refetchInterval: 30000, // Auto-refetch every 30 seconds for live updates
   });
 
-  // Real-time event listeners for admin updates
+  // Real-time WebSocket event listeners for live sync
+  useEffect(() => {
+    if (lastMessage?.type === 'product_update') {
+      console.log('🔄 Product update received, refreshing featured products...');
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+    }
+  }, [lastMessage, refetch, queryClient]);
+
+  // Legacy event listeners for admin updates
   useEffect(() => {
     const handleProductUpdate = () => {
-      // Force refresh on product updates
+      console.log('🔄 Legacy product update event, refreshing...');
       refetch();
+    };
+
+    const handleRefreshProducts = () => {
+      console.log('🔄 Refresh products event, invalidating cache...');
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     };
 
     // Listen to both global productEvents and window events
     productEvents.addEventListener('productUpdated', handleProductUpdate);
     window.addEventListener('productUpdated', handleProductUpdate);
+    window.addEventListener('refresh_products', handleRefreshProducts);
     window.addEventListener('storageChanged', handleProductUpdate);
     
     return () => {
       productEvents.removeEventListener('productUpdated', handleProductUpdate);
       window.removeEventListener('productUpdated', handleProductUpdate);
+      window.removeEventListener('refresh_products', handleRefreshProducts);
       window.removeEventListener('storageChanged', handleProductUpdate);
     };
-  }, [refetch]);
+  }, [refetch, queryClient]);
 
   return (
     <motion.div 
@@ -437,13 +458,35 @@ export default function Home() {
                 </div>
               </Card>
 
+              {/* Live Sync Status */}
+              <div className="flex items-center gap-2 mb-4">
+                <div 
+                  className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                ></div>
+                <span 
+                  className="text-xs"
+                  style={{ color: theme.colors.text.muted }}
+                >
+                  {isConnected ? 'Live Updates Active' : 'Connecting...'}
+                </span>
+              </div>
+
               {/* Featured Items */}
-              {featuredProducts && featuredProducts.length > 0 && (
+              {featuredProducts && featuredProducts.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
                   {featuredProducts.slice(0, 4).map((product) => (
                     <ProductCard key={product.id} product={product} compact />
                   ))}
                 </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <span 
+                    className="text-lg"
+                    style={{ color: theme.colors.text.secondary }}
+                  >
+                    {featuredProducts === undefined ? 'Loading latest items...' : 'No items available yet'}
+                  </span>
+                </Card>
               )}
             </motion.div>
           </div>
