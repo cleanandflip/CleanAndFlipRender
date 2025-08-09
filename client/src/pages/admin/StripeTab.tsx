@@ -4,6 +4,7 @@ import { CreditCard, RefreshCw, CheckCircle, XCircle, TrendingUp, DollarSign, Ac
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 export function StripeTab() {
   const [syncing, setSyncing] = useState(false);
@@ -14,6 +15,24 @@ export function StripeTab() {
   const [transactions, setTransactions] = useState([]);
   
   const { isConnected, send } = useWebSocket();
+  
+  // Fetch real Stripe transactions
+  const { data: transactionData, refetch: refetchTransactions } = useQuery({
+    queryKey: ['stripe-transactions'],
+    queryFn: async () => {
+      const res = await fetch('/api/stripe/transactions', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch transactions');
+      return res.json();
+    },
+    refetchInterval: 30000 // Refresh every 30 seconds
+  });
+
+  // Update transactions state when data changes
+  useEffect(() => {
+    if (transactionData?.transactions) {
+      setTransactions(transactionData.transactions);
+    }
+  }, [transactionData]);
 
   // REAL STRIPE SYNC WITH API CALL
   const handleMasterSync = async () => {
@@ -274,62 +293,47 @@ export function StripeTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700/30">
-              <tr className="hover:bg-white/5 transition-colors duration-200">
-                <td className="px-6 py-4">
-                  <div className="font-mono text-sm text-gray-300">pi_3N4K5L2eZvKYlo2C1234567890</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-300">john.smith@example.com</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-green-400">$299.99</div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
-                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                    Succeeded
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-400">2 minutes ago</td>
-              </tr>
-              
-              <tr className="hover:bg-white/5 transition-colors duration-200">
-                <td className="px-6 py-4">
-                  <div className="font-mono text-sm text-gray-300">pi_3N4K5L2eZvKYlo2C0987654321</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-300">sarah.connor@example.com</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-green-400">$149.99</div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
-                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                    Succeeded
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-400">8 minutes ago</td>
-              </tr>
-              
-              <tr className="hover:bg-white/5 transition-colors duration-200">
-                <td className="px-6 py-4">
-                  <div className="font-mono text-sm text-gray-300">pi_3N4K5L2eZvKYlo2C1122334455</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-300">mike.johnson@example.com</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-yellow-400">$89.99</div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
-                    <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse" />
-                    Pending
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-400">15 minutes ago</td>
-              </tr>
+              {transactions.length > 0 ? transactions.map((transaction: any, index: number) => (
+                <tr key={index} className="hover:bg-white/5 transition-colors duration-200">
+                  <td className="px-6 py-4">
+                    <div className="font-mono text-sm text-gray-300">{transaction.id}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-300">{transaction.customer_email || transaction.customer || 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className={`text-sm font-medium ${
+                      transaction.status === 'succeeded' ? 'text-green-400' : 
+                      transaction.status === 'pending' ? 'text-yellow-400' : 'text-red-400'
+                    }`}>
+                      ${(transaction.amount / 100).toFixed(2)}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${
+                      transaction.status === 'succeeded' ? 'bg-green-500/20 text-green-400' :
+                      transaction.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-red-500/20 text-red-400'
+                    }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                        transaction.status === 'succeeded' ? 'bg-green-400' :
+                        transaction.status === 'pending' ? 'bg-yellow-400' :
+                        'bg-red-400'
+                      }`} />
+                      {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-400">
+                    {transaction.created ? new Date(transaction.created * 1000).toLocaleString() : 'Unknown'}
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                    No recent transactions found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
