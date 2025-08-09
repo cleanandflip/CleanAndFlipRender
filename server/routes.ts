@@ -2588,6 +2588,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Get user details to populate seller_email (required field)
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ 
+          error: "User not found", 
+          message: "Please log in again" 
+        });
+      }
+      
       // Import reference generator
       const { generateUniqueReference } = await import("./utils/referenceGenerator");
       const referenceNumber = await generateUniqueReference();
@@ -2595,6 +2604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const submission = await storage.createSubmission({
         ...req.body,
         userId,
+        sellerEmail: user.email, // Required field from authenticated user
         referenceNumber,
       });
       

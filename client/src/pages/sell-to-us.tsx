@@ -32,6 +32,7 @@ import { ImageUploadZone } from '@/components/shared/ImageUploadZone';
 const submissionSchema = z.object({
   name: z.string().min(1, "Equipment name is required"),
   brand: z.string().optional(),
+  category: z.string().min(1, "Category is required"),
   condition: z.enum(["new", "like_new", "good", "fair", "needs_repair"]),
   weight: z.string().optional(),
   askingPrice: z.string().optional(),
@@ -90,6 +91,7 @@ export default function SellToUs() {
     defaultValues: {
       name: "",
       brand: "",
+      category: "",
       condition: "good",
       weight: "",
       askingPrice: "",
@@ -357,6 +359,39 @@ export default function SellToUs() {
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <StandardDropdown
+                              label="Category *"
+                              options={[
+                                { value: "barbells", label: "Barbells" },
+                                { value: "dumbbells", label: "Dumbbells" },
+                                { value: "plates", label: "Weight Plates" },
+                                { value: "racks", label: "Racks & Stands" },
+                                { value: "benches", label: "Benches" },
+                                { value: "cardio", label: "Cardio Equipment" },
+                                { value: "machines", label: "Weight Machines" },
+                                { value: "accessories", label: "Accessories" },
+                                { value: "other", label: "Other" }
+                              ]}
+                              value={field.value || ""}
+                              placeholder="Select category"
+                              onChange={field.onChange}
+                              required={true}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div></div> {/* Empty div for grid spacing */}
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4 mt-4">
