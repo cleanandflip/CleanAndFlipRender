@@ -1,0 +1,265 @@
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+internalQuery: undefined,
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+where: undefined,
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+schema: undefined,
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+table: undefined,
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+column: undefined,
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+dataType: undefined,
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+constraint: undefined,
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+file: undefined,
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+line: undefined,
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+routine: undefined
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+}
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] Clean & Flip Security Hardening Complete
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] Production-grade security measures now active
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] [WS] Enhanced WebSocket server initialized for live sync and connected to routes
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO]
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+================================================
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] 🏋️ CLEAN & FLIP - SERVER READY 🏋️
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ================================================
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ⚠️ Environment production
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ⚠️ Port 5000
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ✅ Database Connected
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ⚠️ Redis Cache Disabled
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ✅ Session Store PostgreSQL
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ✅ File Storage Cloudinary
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ✅ Payment System Stripe
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ✅ WebSocket Active
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ✅ Security OWASP Compliant
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ✅ Performance Optimized
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO]
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+================================================
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] Startup completed in 654ms
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO]
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+🎯 All systems operational - no warnings
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] ================================================
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] 💡 Performance: Enable Redis for better caching
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] 📝 Logs: Optimized logging active - Redis spam eliminated
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] Database connected successfully
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] [STARTUP] Attempting to start server on 0.0.0.0:5000
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] [STARTUP] Environment: production
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] [STARTUP] Node version: v20.19.3
+2025-08-09 19:40:47.92
+cb0f3bd8
+User
+[INFO] [MAIN] Server initialization completed successfully
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+[INFO] 🚀 Server successfully started and listening {
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+timestamp: '2025-08-09T23:40:47.932Z',
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+environment: 'production',
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+host: '0.0.0.0',
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+port: 5000,
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+actualAddress: { address: '0.0.0.0', family: 'IPv4', port: 5000 },
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+redis: 'Disabled',
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+websocket: 'Enabled',
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+process: {
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+pid: 38,
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+memory: {
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+rss: 136249344,
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+heapTotal: 68870144,
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+heapUsed: 30028736,
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+external: 3736079,
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+arrayBuffers: 85388
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+}
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+}
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+}
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+11:40:47 PM info: 🚀 Server started on port 5000
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+[INFO] [STARTUP] Server is now accepting connections on 0.0.0.0:5000
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+[DB] ❌ Database connection failed: password authentication failed for user 'neondb_owner'
+2025-08-09 19:40:47.93
+cb0f3bd8
+User
+[DB] This will cause authentication and other database features to fail

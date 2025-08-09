@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { Logger } from './utils/logger';
 import { validateEnvironmentVariables, getEnvironmentInfo } from './config/env-validation';
 import { db } from './db';
+import { createDatabaseConnection, testDatabaseHealth } from './db/connection-fix';
 import { sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
@@ -87,6 +88,41 @@ app.use((req, res, next) => {
   process.on('SIGINT', () => {
     Logger.info('[MAIN] Received SIGINT signal - initiating graceful shutdown');
   });
+
+  // Test database connection before starting server
+  Logger.info('[MAIN] Testing database connection...');
+  try {
+    // Run comprehensive database diagnostics
+    const { runDatabaseDiagnostics } = await import('./utils/database-health');
+    await runDatabaseDiagnostics();
+    
+    // Test connection with enhanced retry logic
+    const connectionResult = await createDatabaseConnection();
+    Logger.info('[MAIN] ✅ Database connection established successfully');
+    
+    // Test basic database functionality
+    const isHealthy = await testDatabaseHealth(connectionResult.db);
+    if (isHealthy) {
+      Logger.info('[MAIN] ✅ Database health check passed');
+    } else {
+      Logger.warn('[MAIN] ⚠️ Database health check failed but connection exists');
+    }
+    
+  } catch (error: any) {
+    Logger.error('[MAIN] ❌ Database connection failed during startup:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail
+    });
+    
+    // In production, continue with limited functionality
+    if (process.env.NODE_ENV === 'production') {
+      Logger.warn('[MAIN] Continuing server startup without database - some features will be unavailable');
+    } else {
+      Logger.error('[MAIN] Exiting due to database connection failure in development mode');
+      process.exit(1);
+    }
+  }
 
   let server;
   try {
