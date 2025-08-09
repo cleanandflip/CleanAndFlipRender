@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertEquipmentSubmissionSchema } from "@shared/schema";
 import { z } from "zod";
 import { 
-  Upload, 
   DollarSign, 
   Camera, 
   CheckCircle, 
@@ -26,9 +25,9 @@ import {
   Star,
   MessageSquare,
   Copy,
-  Eye,
-  X
+  Eye
 } from "lucide-react";
+import { ImageUploadZone } from '@/components/shared/ImageUploadZone';
 
 const submissionSchema = z.object({
   name: z.string().min(1, "Equipment name is required"),
@@ -85,10 +84,6 @@ export default function SellToUs() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [referenceNumber, setReferenceNumber] = useState<string>("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragCounter = useRef(0);
 
   const form = useForm<SubmissionForm>({
     resolver: zodResolver(submissionSchema),
@@ -147,89 +142,13 @@ export default function SellToUs() {
     },
   });
 
-  // Drag and drop handlers with counter fix
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounter.current++;
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-      setIsDragging(true);
-    }
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounter.current--;
-    if (dragCounter.current === 0) {
-      setIsDragging(false);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-      setIsDragging(true); // Keep it active
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    dragCounter.current = 0; // Reset counter
-    
-    const files = Array.from(e.dataTransfer.files);
-    handleFiles(files);
-  };
-
-  const handleFiles = (files: File[]) => {
-    const imageFiles = files.filter(file => file.type.startsWith('image/'));
-    
-    if (imageFiles.length === 0) {
-      toast({
-        title: "Invalid files",
-        description: "Please upload image files only",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Convert to base64 for preview
-    imageFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        setUploadedImages(prev => [...prev, base64]);
-      };
-      reader.readAsDataURL(file);
-    });
-    
-    setImageFiles(prev => [...prev, ...imageFiles]);
-    
-    toast({
-      title: "Photos uploaded",
-      description: `${imageFiles.length} photo(s) added successfully`
-    });
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    handleFiles(files);
-  };
-
-  const removeImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
-    setImageFiles(prev => prev.filter((_, i) => i !== index));
+  // Handle image upload completion from ImageUploadZone
+  const handleImageUploadComplete = (urls: string[]) => {
+    setUploadedImages(urls);
   };
 
   const onSubmit = (data: SubmissionForm) => {
-    const submissionData = {
-      ...data,
-      images: uploadedImages // Include uploaded images
-    };
-    submitMutation.mutate(submissionData);
+    submitMutation.mutate(data);
   };
 
   // Effect to scroll to top when submission state changes
@@ -431,7 +350,6 @@ export default function SellToUs() {
                               value={field.value || ""}
                               placeholder="Search or select a brand..."
                               onChange={field.onChange}
-                              searchable={true}
                               allowCustom={true}
                             />
                           </FormControl>
@@ -541,113 +459,12 @@ export default function SellToUs() {
                     Include any wear, damage, or unique features.
                   </p>
                   
-                  {/* Hidden file input */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    className="hidden"
+                  <ImageUploadZone
+                    maxImages={8}
+                    folder="equipment-submissions"
+                    onUploadComplete={handleImageUploadComplete}
+                    existingImages={uploadedImages}
                   />
-                  
-                  {/* Drag wrapper - handles all drag events */}
-                  <div
-                    className="relative"
-                    onDragEnter={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsDragging(true);
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsDragging(false);
-                      const files = Array.from(e.dataTransfer.files);
-                      handleFiles(files);
-                    }}
-                  >
-                    {/* Invisible overlay when dragging */}
-                    {isDragging && (
-                      <div 
-                        className="absolute inset-0 z-10"
-                        onDragLeave={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setIsDragging(false);
-                        }}
-                      />
-                    )}
-                    
-                    {/* Drop zone content */}
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`
-                        border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
-                        transition-all duration-200
-                        ${isDragging 
-                          ? 'border-blue-500 bg-blue-500/10' 
-                          : 'border-gray-600 hover:border-gray-500 hover:bg-white/5'
-                        }
-                      `}
-                    >
-                      <Upload className="mx-auto mb-4 text-gray-400" size={48} />
-                      <h4 className="font-semibold mb-2 text-white">
-                        {isDragging ? 'Drop photos here' : 'Upload Photos'}
-                      </h4>
-                      <p className="text-gray-400 mb-4">
-                        Drag and drop photos here, or click to select
-                      </p>
-                      <Button 
-                        type="button"
-                        variant="outline" 
-                        className="border-gray-600 hover:border-gray-500"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fileInputRef.current?.click();
-                        }}
-                      >
-                        Choose Files
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Image Preview Grid */}
-                  {uploadedImages.length > 0 && (
-                    <div className="mt-6 grid grid-cols-3 gap-4">
-                      {uploadedImages.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img 
-                            src={image} 
-                            alt={`Upload ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-2 right-2 p-1 bg-red-500 rounded-full 
-                                       opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-4 h-4 text-white" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {/* Upload hints */}
-                  <div className="mt-4 text-sm text-gray-400">
-                    <p>• Upload 3-8 photos for best results</p>
-                    <p>• Show front, back, and detail views</p>
-                    <p>• Highlight any wear or damage</p>
-                    <p className="text-xs mt-2">
-                      {uploadedImages.length} of 8 photos uploaded
-                    </p>
-                  </div>
                 </Card>
 
                 <Button 

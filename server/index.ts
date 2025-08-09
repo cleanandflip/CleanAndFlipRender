@@ -9,8 +9,9 @@ import fs from 'fs';
 import path from 'path';
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Reduced limits since images now go directly to Cloudinary
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ limit: '1mb', extended: false }));
 
 app.use((req, res, next) => {
   const start = Date.now();

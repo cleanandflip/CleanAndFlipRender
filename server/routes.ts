@@ -63,6 +63,7 @@ function broadcastCartUpdate(userId: string, action: string = 'update', data?: a
     Logger.debug(`[WS] Cart update broadcasted: ${action} for user ${userId}`);
   }
 }
+import crypto from 'crypto';
 import { 
   users, 
   products, 
@@ -185,6 +186,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Performance testing endpoint (development only)
   // Performance monitoring endpoint removed for production
   
+  // Cloudinary signature endpoint
+  app.get("/api/cloudinary/signature", requireAuth, async (req, res) => {
+    try {
+      const { folder = 'uploads' } = req.query;
+      
+      if (!process.env.CLOUDINARY_API_SECRET || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_CLOUD_NAME) {
+        return res.status(500).json({ message: "Cloudinary configuration missing" });
+      }
+
+      const timestamp = Math.round(new Date().getTime() / 1000);
+      const params = {
+        timestamp: timestamp.toString(),
+        folder: folder as string
+      };
+
+      // Create signature
+      const signature = crypto
+        .createHash('sha256')
+        .update(
+          Object.keys(params)
+            .sort()
+            .map(key => `${key}=${params[key as keyof typeof params]}`)
+            .join('&') + process.env.CLOUDINARY_API_SECRET
+        )
+        .digest('hex');
+
+      res.json({
+        signature,
+        timestamp: timestamp.toString(),
+        apiKey: process.env.CLOUDINARY_API_KEY,
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME
+      });
+
+    } catch (error) {
+      Logger.error("Error generating Cloudinary signature", error);
+      res.status(500).json({ message: "Failed to generate signature" });
+    }
+  });
+
   // Search endpoint with full-text search
   app.get("/api/search", apiLimiter, async (req, res) => {
     try {
