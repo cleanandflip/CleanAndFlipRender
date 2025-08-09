@@ -1,6 +1,7 @@
 // NATIVE CONFIRMATION DIALOG
 import { createPortal } from 'react-dom';
 import { AlertTriangle, Save, X } from 'lucide-react';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -21,6 +22,9 @@ export function ConfirmDialog({
   onCancel,
   showSave = true
 }: ConfirmDialogProps) {
+  // Lock body scroll while dialog is open
+  useScrollLock(isOpen);
+  
   if (!isOpen) return null;
 
   return createPortal(

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Upload, Trash2, Loader2, Plus, Check, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface ProductModalProps {
   product?: any;
@@ -16,6 +17,9 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const { send } = useWebSocket();
+  
+  // Lock body scroll while modal is open
+  useScrollLock(true);
   
   const [formData, setFormData] = useState({
     name: '',

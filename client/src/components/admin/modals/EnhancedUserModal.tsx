@@ -4,6 +4,7 @@ import { X, Loader2, Check, AlertCircle, User, Mail, Lock, MapPin, Shield } from
 import { toast } from '@/hooks/use-toast';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface UserModalProps {
   user?: any;
@@ -17,6 +18,9 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
   const [showConfirm, setShowConfirm] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const { send } = useWebSocket();
+  
+  // Lock body scroll while modal is open
+  useScrollLock(true);
   
   const [formData, setFormData] = useState({
     email: '',

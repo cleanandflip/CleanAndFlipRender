@@ -1,0 +1,278 @@
+PREVENT BODY SCROLL ON ALL MODALS
+
+REPLIT INSTRUCTIONS:
+markdown## FIX BODY SCROLL FOR ALL MODALS
+
+### ISSUE:
+When modals are open, the background page still scrolls, which is poor UX.
+
+### SOLUTION:
+Add scroll lock to ALL modals in the developer dashboard and product pages.
+
+---
+
+### OPTION 1: CREATE A REUSABLE HOOK (BEST APPROACH)
+
+#### CREATE NEW FILE: `/client/src/hooks/useScrollLock.tsx`
+```jsx
+import { useEffect } from 'react';
+
+export function useScrollLock(isLocked: boolean) {
+  useEffect(() => {
+    if (isLocked) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      
+      // Lock scroll
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      
+      return () => {
+        // Restore scroll
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isLocked]);
+}
+USE IN ALL MODAL COMPONENTS:
+FILE: /client/src/components/admin/modals/UserModal.tsx
+jsximport { useScrollLock } from '@/hooks/useScrollLock';
+
+export function UserModal({ isOpen, onClose, user, onSave }: UserModalProps) {
+  // Add this line
+  useScrollLock(isOpen);
+  
+  // Rest of component...
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-50 ...">
+      {/* Modal content */}
+    </div>
+  );
+}
+FILE: /client/src/components/admin/modals/ProductModal.tsx
+jsximport { useScrollLock } from '@/hooks/useScrollLock';
+
+export function ProductModal({ isOpen, onClose, product, onSave }: ProductModalProps) {
+  // Add this line
+  useScrollLock(isOpen);
+  
+  // Rest of component...
+}
+FILE: /client/src/components/admin/modals/CategoryModal.tsx
+jsximport { useScrollLock } from '@/hooks/useScrollLock';
+
+export function CategoryModal({ isOpen, onClose, category, onSave }: CategoryModalProps) {
+  // Add this line
+  useScrollLock(isOpen);
+  
+  // Rest of component...
+}
+
+OPTION 2: DIRECT IMPLEMENTATION IN EACH MODAL
+If you prefer not to create a hook, add this to EACH modal component:
+TEMPLATE FOR ALL MODALS:
+jsxexport function AnyModal({ isOpen, onClose, ...props }) {
+  // Add scroll lock effect
+  useEffect(() => {
+    if (isOpen) {
+      // Lock scroll
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+      
+      // Cleanup function
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-50 ...">
+      {/* Modal content */}
+    </div>
+  );
+}
+
+FILES TO UPDATE:
+1. USER MODAL
+FILE: /client/src/components/admin/modals/UserModal.tsx
+jsxuseEffect(() => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }
+}, [isOpen]);
+2. PRODUCT MODAL
+FILE: /client/src/components/admin/modals/ProductModal.tsx
+jsxuseEffect(() => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }
+}, [isOpen]);
+3. CATEGORY MODAL
+FILE: /client/src/components/admin/modals/CategoryModal.tsx
+jsxuseEffect(() => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }
+}, [isOpen]);
+4. SUBMISSION MODAL (if exists)
+FILE: /client/src/components/admin/modals/SubmissionModal.tsx
+jsxuseEffect(() => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }
+}, [isOpen]);
+5. ORDER MODAL (if exists)
+FILE: /client/src/components/admin/modals/OrderModal.tsx
+jsxuseEffect(() => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }
+}, [isOpen]);
+6. IMAGE VIEWER MODAL
+FILE: /client/src/pages/ProductDetail.tsx or wherever image modal is
+jsxuseEffect(() => {
+  if (selectedImage) {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }
+}, [selectedImage]);
+7. CONFIRMATION DIALOGS
+FILE: /client/src/components/ConfirmDialog.tsx
+jsxuseEffect(() => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }
+}, [isOpen]);
+
+OPTION 3: GLOBAL MODAL WRAPPER (MOST ELEGANT)
+CREATE FILE: /client/src/components/Modal.tsx
+jsximport { useEffect, ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  className?: string;
+}
+
+export function Modal({ isOpen, onClose, children, className = '' }: ModalProps) {
+  // Handle scroll lock
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Modal Content */}
+      <div className={`relative ${className}`}>
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+}
+USE IN ALL MODALS:
+jsximport { Modal } from '@/components/Modal';
+
+export function UserModal({ isOpen, onClose, ...props }) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <div className="bg-[#1e293b] rounded-xl p-6 w-full max-w-2xl">
+        {/* Your modal content */}
+      </div>
+    </Modal>
+  );
+}
+
+TESTING CHECKLIST:
+After implementing:
+
+✅ Open UserModal - body shouldn't scroll
+✅ Open ProductModal - body shouldn't scroll
+✅ Open CategoryModal - body shouldn't scroll
+✅ Open Image viewer - body shouldn't scroll
+✅ Close any modal - scroll should restore to original position
+✅ Press ESC - modal should close and scroll should restore
+
+ADDITIONAL CSS (optional):
+Add to /client/src/styles/globals.css:
+css/* Smooth transition when locking scroll */
+body {
+  transition: none;
+}
+
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+}
+SEARCH AND REPLACE:
+Find all files with "isOpen" and "fixed inset-0" to locate all modals:
+bashgrep -r "isOpen.*fixed inset-0" client/src
+Then add scroll lock to each one found.
+
+This will prevent body scrolling for ALL modals in the developer dashboard and throughout the application!
