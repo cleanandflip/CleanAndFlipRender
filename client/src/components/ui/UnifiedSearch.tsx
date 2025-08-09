@@ -1,5 +1,5 @@
 // UNIFIED SEARCH MATCHING YOUR THEME
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, X, TrendingUp, Clock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -123,6 +123,29 @@ export function UnifiedSearch({
     handleSearch(item);
   };
 
+  // Memoized clear handler for efficiency
+  const handleClear = useCallback(() => {
+    // Batch all state updates
+    setQuery('');
+    setResults([]);
+    setIsOpen(false);
+    
+    // Handle navigation efficiently
+    if (variant === 'navbar' && window.location.pathname !== '/') {
+      navigate('/');
+    } else if (variant === 'page') {
+      // Remove search param from URL without navigation
+      const url = new URL(window.location.href);
+      url.searchParams.delete('search');
+      window.history.replaceState(null, '', url.pathname);
+    }
+    
+    // Callback
+    onSearch?.('');
+    
+    inputRef.current?.blur();
+  }, [variant, navigate, onSearch]);
+
   const searchStyles = {
     container: variant === 'navbar' 
       ? "relative max-w-md" 
@@ -133,7 +156,7 @@ export function UnifiedSearch({
       "border focus:outline-none focus:ring-2",
       variant === 'navbar' ? "text-sm" : "text-base"
     ),
-    dropdown: "absolute z-50 w-full mt-2 rounded-lg overflow-hidden shadow-xl max-h-96 overflow-auto"
+    dropdown: "absolute z-[99999] w-full mt-2 rounded-lg overflow-hidden shadow-xl max-h-96 overflow-auto"
   };
 
   const inputStyle = {
@@ -170,7 +193,16 @@ export function UnifiedSearch({
             if (e.key === 'Enter' && query.trim()) {
               handleSearch(query);
             } else if (e.key === 'Escape') {
-              setIsOpen(false);
+              e.preventDefault();
+              
+              if (query) {
+                // If there's text, clear it
+                handleClear();
+              } else {
+                // If no text, just close dropdown
+                setIsOpen(false);
+                inputRef.current?.blur();
+              }
             }
           }}
           placeholder={placeholder}
@@ -179,11 +211,7 @@ export function UnifiedSearch({
         />
         {query && (
           <button
-            onClick={() => {
-              setQuery('');
-              setResults([]);
-              inputRef.current?.focus();
-            }}
+            onClick={handleClear}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:opacity-80"
             style={{ color: theme.colors.textSecondary }}
           >
@@ -195,7 +223,10 @@ export function UnifiedSearch({
       {isOpen && (
         <div 
           className={searchStyles.dropdown}
-          style={dropdownStyle}
+          style={{
+            ...dropdownStyle,
+            zIndex: 99999  // Ensure it's always on top
+          }}
         >
           {loading ? (
             <div className="flex items-center justify-center p-6">

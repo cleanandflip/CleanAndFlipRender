@@ -1,0 +1,145 @@
+FIX SEARCH DROPDOWN Z-INDEX & CLEAR LOGIC ONLY
+
+REPLIT INSTRUCTIONS (LOGIC ONLY - NO THEME CHANGES):
+markdown## FIX SEARCH FUNCTIONALITY - LOGIC ONLY
+
+### FILE: `/client/src/components/UnifiedSearch.tsx`
+
+### ISSUE 1: DROPDOWN Z-INDEX
+The dropdown needs to appear above everything else.
+
+#### FIX: Change z-index in dropdown class
+FIND:
+```jsx
+dropdown: "absolute z-50 w-full mt-2 rounded-lg overflow-hidden shadow-xl max-h-96 overflow-auto"
+REPLACE WITH:
+jsxdropdown: "absolute z-[99999] w-full mt-2 rounded-lg overflow-hidden shadow-xl max-h-96 overflow-auto"
+
+ISSUE 2: CLEAR BUTTON (X) FUNCTIONALITY
+FIX: Update the X button onClick handler
+FIND:
+jsxonClick={() => {
+  setQuery('');
+  setResults([]);
+  inputRef.current?.focus();
+}}
+REPLACE WITH:
+jsxonClick={() => {
+  // Clear search state
+  setQuery('');
+  setResults([]);
+  setIsOpen(false);
+  
+  // Navigation logic based on variant
+  if (variant === 'navbar') {
+    // In navbar: go to home page
+    navigate('/');
+  } else if (variant === 'page') {
+    // On search page: just clear the URL params
+    const currentPath = window.location.pathname;
+    navigate(currentPath); // Removes query params
+  }
+  
+  // Trigger callback if provided
+  if (onSearch) {
+    onSearch('');
+  }
+  
+  // Remove focus to close dropdown
+  inputRef.current?.blur();
+}}
+
+ISSUE 3: OPTIMIZE SEARCH CLEARING
+ADD: Memoized clear handler for efficiency
+Add this function after the other handlers:
+jsxconst handleClear = useCallback(() => {
+  // Batch all state updates
+  setQuery('');
+  setResults([]);
+  setIsOpen(false);
+  
+  // Handle navigation efficiently
+  if (variant === 'navbar' && window.location.pathname !== '/') {
+    navigate('/');
+  } else if (variant === 'page') {
+    // Remove search param from URL without navigation
+    const url = new URL(window.location.href);
+    url.searchParams.delete('search');
+    window.history.replaceState(null, '', url.pathname);
+  }
+  
+  // Callback
+  onSearch?.('');
+  
+  inputRef.current?.blur();
+}, [variant, navigate, onSearch]);
+Then use it in the X button:
+jsx<button onClick={handleClear} ...>
+  <X className="w-4 h-4" />
+</button>
+
+ISSUE 4: ESC KEY BEHAVIOR
+UPDATE: The Escape key handler in onKeyDown
+FIND:
+jsx} else if (e.key === 'Escape') {
+  setIsOpen(false);
+}
+REPLACE WITH:
+jsx} else if (e.key === 'Escape') {
+  e.preventDefault();
+  
+  if (query) {
+    // If there's text, clear it
+    handleClear();
+  } else {
+    // If no text, just close dropdown
+    setIsOpen(false);
+    inputRef.current?.blur();
+  }
+}
+
+ISSUE 5: PREVENT DROPDOWN FROM BEING HIDDEN
+ADD: Higher z-index to the dropdown container
+In the dropdown div that renders when isOpen is true, update the style:
+jsx{isOpen && (
+  <div 
+    className={searchStyles.dropdown}
+    style={{
+      ...dropdownStyle,
+      zIndex: 99999  // Add this to ensure it's always on top
+    }}
+  >
+
+NAVIGATION COMPONENT UPDATE (if needed)
+FILE: /client/src/components/Navigation.tsx
+If Navigation uses UnifiedSearch, ensure it passes the right variant:
+jsx<UnifiedSearch
+  variant="navbar"  // Important for clear behavior
+  placeholder="Search equipment..."
+  onSearch={(query) => {
+    if (!query) {
+      // Already handled in UnifiedSearch clear
+      return;
+    }
+    navigate(`/products?search=${encodeURIComponent(query)}`);
+  }}
+/>
+
+SUMMARY OF LOGIC CHANGES:
+
+✅ Z-index set to 99999 for dropdown (highest priority)
+✅ Clear button navigates home in navbar, clears params on page
+✅ Efficient batched state updates in handleClear
+✅ ESC key properly clears or closes
+✅ No theme/style changes - only logic
+
+TEST THESE SCENARIOS:
+
+In navbar: Click X → goes to home page
+On /products?search=test: Click X → stays on /products (no params)
+Press ESC with text → clears everything
+Press ESC without text → just closes dropdown
+Dropdown appears above all modals and other elements
+
+
+All changes are logic-only, no theme modifications!
