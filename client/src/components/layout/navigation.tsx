@@ -204,37 +204,7 @@ export default function Navigation() {
                          border: '1px solid rgba(255, 255, 255, 0.08)' 
                        }}>
                     
-                    {/* User Info Section - Display first name initial and role */}
-                    <div className="p-4" 
-                         style={{ background: 'rgba(15, 23, 42, 0.3)' }}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 
-                                        rounded-lg flex items-center justify-center">
-                          <span className="text-white font-bold">
-                            {user?.firstName?.[0]?.toUpperCase() || 
-                             user?.email?.[0]?.toUpperCase() || 
-                             'U'}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-white font-medium">
-                            {user?.firstName || 'User'}
-                          </div>
-                          <div className="text-gray-400 text-xs capitalize">
-                            {user?.role || 'user'}
-                          </div>
-                        </div>
-                      </div>
-                      {user?.role === 'developer' && (
-                        <div className="mt-3">
-                          <span className="inline-block px-2 py-1 
-                                         bg-purple-500/20 text-purple-400 
-                                         text-xs font-medium rounded">
-                            Developer Access
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    
 
                     {/* Menu Items Container */}
                     <div className="py-1">
