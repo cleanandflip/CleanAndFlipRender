@@ -1084,7 +1084,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return {
               name,
               sales: sales as number,
-              price: product?.price || '0'
+              price: product?.price || '0',
+              isViewData: false // This is actual sales data
             };
           });
       } else {
@@ -1102,8 +1103,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
         topProductsList = realTopProducts.map(p => ({
           name: p.name,
-          sales: p.views || 0, // This represents views, not sales
-          price: p.price
+          sales: p.views || 0, // Views since no actual sales yet
+          price: p.price,
+          isViewData: true // Flag to indicate this is view data, not sales data
         }));
       }
 

@@ -112,7 +112,12 @@ export function AnalyticsTab() {
 
         {/* Top Products */}
         <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Top Products</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Top Products</h3>
+            <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded">
+              {topProducts.some((p: any) => p.isViewData) ? 'By Views' : 'By Sales'}
+            </span>
+          </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topProducts}>
@@ -126,6 +131,10 @@ export function AnalyticsTab() {
                     borderRadius: '8px'
                   }}
                   labelStyle={{ color: '#F3F4F6' }}
+                  formatter={(value: any, name: string) => [
+                    value, 
+                    topProducts.some((p: any) => p.isViewData) ? 'Views' : 'Sales'
+                  ]}
                 />
                 <Bar dataKey="sales" fill="#3B82F6" radius={[8, 8, 0, 0]} />
               </BarChart>
