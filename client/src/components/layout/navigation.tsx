@@ -184,12 +184,7 @@ export default function Navigation() {
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    console.log('User button clicked!');
-                    console.log('Current dropdown state:', isUserDropdownOpen);
-                    setIsUserDropdownOpen(prev => {
-                      console.log('Setting dropdown state from', prev, 'to', !prev);
-                      return !prev;
-                    });
+                    setIsUserDropdownOpen(!isUserDropdownOpen);
                   }}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none hover:bg-white/10 h-11 min-w-[44px] cursor-pointer"
                   style={{
@@ -222,7 +217,7 @@ export default function Navigation() {
                     <div className="p-4" 
                          style={{ background: 'rgba(15, 23, 42, 0.3)' }}>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 
+                        <div className="w-10 h-10 bg-gray-600 
                                         rounded-lg flex items-center justify-center">
                           <span className="text-white font-bold">
                             {user?.firstName?.[0]?.toUpperCase() || 
