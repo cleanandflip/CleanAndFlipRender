@@ -7,7 +7,7 @@ import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
-import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code, LayoutGrid, Code2 } from "lucide-react";
 
 import { ROUTES } from "@/config/routes";
 
@@ -31,16 +31,19 @@ export default function Navigation() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.user-dropdown-container')) {
         setIsUserDropdownOpen(false);
       }
     };
-    
+
     if (isUserDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
     }
-    
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
   }, [isUserDropdownOpen]);
 
   const navigation = [
@@ -175,13 +178,13 @@ export default function Navigation() {
 
             {/* Account - Professional Dropdown */}
             {user ? (
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative user-dropdown-container" ref={dropdownRef}>
                 <button 
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors h-11"
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-all"
                 >
-                  <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center border border-blue-500/30">
-                    <span className="text-white font-bold text-sm">CF</span>
+                  <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold">CF</span>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
                     isUserDropdownOpen ? 'rotate-180' : ''
@@ -190,30 +193,39 @@ export default function Navigation() {
 
                 {isUserDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-64 
-                                  bg-[#2a2f3e] border border-gray-700/50 
-                                  rounded-xl shadow-2xl overflow-hidden py-1">
+                                  bg-[#1e293b] 
+                                  border border-gray-700/50 
+                                  rounded-xl shadow-2xl 
+                                  overflow-hidden">
                     
-                    {/* User Info Header */}
-                    <div className="px-4 py-3 border-b border-gray-700/50 bg-[#1e2129]">
+                    {/* User Info Section - Same style as admin user cards */}
+                    <div className="p-4 bg-[#0f172a]/50 border-b border-gray-700/50">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                          <span className="text-white font-bold">CF</span>
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 
+                                        rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold">
+                            {user?.email?.[0]?.toUpperCase() || 'CF'}
+                          </span>
                         </div>
                         <div>
-                          <div className="text-white font-medium text-sm">{user.firstName || user.email?.split('@')[0] || 'User'}</div>
-                          <div className="text-gray-400 text-xs">{user.email}</div>
+                          <div className="text-white font-medium text-sm">
+                            {user?.firstName || user?.email?.split('@')[0] || 'User'}
+                          </div>
+                          <div className="text-gray-400 text-xs">{user?.email}</div>
                         </div>
                       </div>
-                      {user.role === 'developer' && (
-                        <div className="mt-2">
-                          <span className="inline-block px-2 py-0.5 bg-purple-600/20 text-purple-400 text-xs rounded">
-                            Developer
+                      {user?.role === 'developer' && (
+                        <div className="mt-3">
+                          <span className="inline-block px-2 py-1 
+                                         bg-purple-500/20 text-purple-400 
+                                         text-xs font-medium rounded">
+                            Developer Access
                           </span>
                         </div>
                       )}
                     </div>
 
-                    {/* Menu Items */}
+                    {/* Menu Items Container */}
                     <div className="py-1">
                       {/* Dashboard */}
                       <button
@@ -222,10 +234,10 @@ export default function Navigation() {
                           setIsUserDropdownOpen(false);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 
-                                  text-gray-300 hover:bg-white/5 hover:text-white 
+                                  text-gray-300 hover:bg-white/5 
                                   transition-colors group text-left"
                       >
-                        <LayoutDashboard className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
+                        <LayoutGrid className="w-4 h-4 text-gray-500" />
                         <span className="text-sm">Dashboard</span>
                       </button>
 
@@ -236,34 +248,34 @@ export default function Navigation() {
                           setIsUserDropdownOpen(false);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 
-                                  text-gray-300 hover:bg-white/5 hover:text-white 
+                                  text-gray-300 hover:bg-white/5 
                                   transition-colors group text-left"
                       >
-                        <History className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
+                        <History className="w-4 h-4 text-gray-500" />
                         <span className="text-sm">Order History</span>
                       </button>
 
-                      {/* Divider */}
-                      <div className="my-1 mx-3 border-t border-gray-700/50" />
-
-                      {/* Developer Dashboard */}
-                      {user.role === 'developer' && (
+                      {/* Developer Dashboard - Conditional */}
+                      {user?.role === 'developer' && (
                         <>
+                          <div className="my-1 mx-4 border-t border-gray-700/30" />
                           <button
                             onClick={() => {
                               handleNavigation(ROUTES.ADMIN);
                               setIsUserDropdownOpen(false);
                             }}
                             className="w-full flex items-center gap-3 px-4 py-2.5 
-                                      text-purple-400 hover:bg-purple-600/10 
+                                      text-purple-400 hover:bg-purple-500/10 
                                       transition-colors group text-left"
                           >
-                            <Code className="w-4 h-4 text-purple-500" />
-                            <span className="text-sm">Developer Dashboard</span>
+                            <Code2 className="w-4 h-4 text-purple-500" />
+                            <span className="text-sm font-medium">Developer Dashboard</span>
                           </button>
-                          <div className="my-1 mx-3 border-t border-gray-700/50" />
                         </>
                       )}
+
+                      {/* Divider before Sign Out */}
+                      <div className="my-1 mx-4 border-t border-gray-700/30" />
 
                       {/* Sign Out */}
                       <button
@@ -272,7 +284,7 @@ export default function Navigation() {
                           setIsUserDropdownOpen(false);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 
-                                  text-red-400 hover:bg-red-600/10 
+                                  text-red-400 hover:bg-red-500/10 
                                   transition-colors group text-left"
                       >
                         <LogOut className="w-4 h-4 text-red-500" />
