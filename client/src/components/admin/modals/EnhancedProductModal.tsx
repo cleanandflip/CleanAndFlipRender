@@ -132,7 +132,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
       formDataUpload.append('file', file);
       
       uploadPromises.push(
-        fetch('/api/admin/upload', {
+        fetch('/api/upload/cloudinary', {
           method: 'POST',
           body: formDataUpload,
           credentials: 'include'

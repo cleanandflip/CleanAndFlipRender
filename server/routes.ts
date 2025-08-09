@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
 import { authMiddleware } from "./middleware/auth";
-// import { upload, cloudinary } from "./config/cloudinary"; // Temporarily disabled for clean slate setup
+import { upload, cloudinary } from "./config/cloudinary";
 import multer from 'multer';
 import cors from "cors";
 import { 
