@@ -64,6 +64,43 @@ export function UnifiedSearch({
     }
   }, []);
 
+  // Sync with URL params on mount (for products page)
+  useEffect(() => {
+    if (variant === 'page') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchParam = urlParams.get('search');
+      if (searchParam) {
+        setQuery(searchParam);
+        // Trigger search if callback provided
+        if (onSearch) {
+          onSearch(searchParam);
+        }
+      }
+    }
+  }, [variant, onSearch]);
+
+  // Listen for URL changes (when navigating from navbar)
+  useEffect(() => {
+    const handleUrlChange = () => {
+      if (variant === 'page') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchParam = urlParams.get('search');
+        setQuery(searchParam || '');
+        if (onSearch) {
+          onSearch(searchParam || '');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('pushstate', handleUrlChange);
+    
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('pushstate', handleUrlChange);
+    };
+  }, [variant, onSearch]);
+
   // Fetch results
   useEffect(() => {
     if (debouncedQuery.length >= 2) {
@@ -149,39 +186,62 @@ export function UnifiedSearch({
     };
   }, []);
 
+  // Prevent body scroll when dropdown is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('search-open');
+    } else {
+      document.body.classList.remove('search-open');
+    }
+    
+    return () => {
+      document.body.classList.remove('search-open');
+    };
+  }, [isOpen]);
+
   const handleSearch = useCallback((searchQuery: string) => {
-    // Skip empty queries
+    console.log('handleSearch:', searchQuery, 'variant:', variant);
+    
+    // Handle empty/clear case
     if (!searchQuery?.trim()) {
+      setQuery('');
+      setResults([]);
+      
+      if (variant === 'navbar') {
+        // Clear products page search via URL
+        const currentPath = window.location.pathname;
+        if (currentPath === '/products') {
+          navigate('/products'); // Remove search param
+        }
+      } else if (variant === 'page' && onSearch) {
+        onSearch(''); // Clear products
+      }
       return;
     }
     
-    console.log('handleSearch called:', searchQuery, 'variant:', variant);
-    
-    // Save to recent searches
+    // Save to recent
     const recent = [searchQuery, ...recentSearches.filter(s => s !== searchQuery)].slice(0, 5);
     setRecentSearches(recent);
     localStorage.setItem('recentSearches', JSON.stringify(recent));
     
-    // Set the query in input
+    // Set query
     setQuery(searchQuery);
     
-    // Navigate based on variant
+    // Navigate/search based on variant
     if (variant === 'navbar') {
-      // From navbar: always go to products page with search
+      // Navigate to products with search param
       navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
     } else if (variant === 'page') {
-      // From products page: trigger search callback
+      // Update URL and trigger search
+      const url = new URL(window.location.href);
+      url.searchParams.set('search', searchQuery);
+      window.history.pushState(null, '', url.toString());
+      
       if (onSearch) {
         onSearch(searchQuery);
-      } else {
-        // Update URL params without navigation
-        const url = new URL(window.location.href);
-        url.searchParams.set('search', searchQuery);
-        window.history.pushState(null, '', url.toString());
       }
     }
     
-    // Close dropdown and remove focus
     setIsOpen(false);
     inputRef.current?.blur();
   }, [recentSearches, onSearch, navigate, variant]);
@@ -274,23 +334,29 @@ export function UnifiedSearch({
         {query && (
           <button
             onClick={() => {
-              // Clear query
+              console.log('Clear button clicked, variant:', variant);
+              
+              // Clear local state
               setQuery('');
               setResults([]);
               setIsOpen(false);
               
               if (variant === 'navbar') {
-                // Navbar: go to home
-                navigate('/');
-              } else if (variant === 'page') {
-                // Products page: clear search, show all products
-                if (onSearch) {
-                  onSearch(''); // Trigger search with empty string
+                // Navigate home and clear products search
+                if (window.location.pathname === '/products') {
+                  navigate('/'); // Go home
+                } else {
+                  navigate('/'); // Already home or elsewhere
                 }
-                // Clear URL params
+              } else if (variant === 'page') {
+                // Clear search on products page
                 const url = new URL(window.location.href);
                 url.searchParams.delete('search');
                 window.history.pushState(null, '', url.pathname);
+                
+                if (onSearch) {
+                  onSearch(''); // Show all products
+                }
               }
               
               inputRef.current?.blur();
@@ -305,17 +371,27 @@ export function UnifiedSearch({
 
       {isOpen && dropdownPosition && createPortal(
         <div 
-          className="rounded-lg overflow-hidden shadow-xl max-h-96 overflow-auto search-dropdown-portal"
+          className="rounded-lg shadow-xl search-dropdown-portal"
           style={{
             position: 'fixed',
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
             width: `${dropdownPosition.width}px`,
-            zIndex: 999999, // Increased z-index for better layering
+            maxHeight: '384px', // max-h-96 = 24rem = 384px
+            overflowY: 'auto',  // Enable vertical scrolling
+            overflowX: 'hidden',
+            zIndex: 999999,
             transition: 'opacity 0.2s ease-in-out',
-            opacity: dropdownPosition ? 1 : 0,
-            pointerEvents: 'auto', // Ensure clicks work
-            ...dropdownStyle
+            opacity: 1,
+            pointerEvents: 'auto',
+            ...dropdownStyle,
+            // Add custom scrollbar styling
+            scrollbarWidth: 'thin',
+            scrollbarColor: `${theme.colors.textSecondary} ${theme.colors.cardBg}`
+          }}
+          onWheel={(e) => {
+            // Prevent page scroll when scrolling dropdown
+            e.stopPropagation();
           }}
         >
           {loading ? (

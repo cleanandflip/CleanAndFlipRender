@@ -1406,3 +1406,26 @@ body.search-modal-open {
 .notification-fade {
   animation: fadeIn 0.2s ease-out;
 }
+
+/* Custom scrollbar for search dropdown */
+.search-dropdown-portal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.search-dropdown-portal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.search-dropdown-portal::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.search-dropdown-portal::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Prevent body scroll when dropdown is open */
+body.search-open {
+  overflow: hidden;
+}
