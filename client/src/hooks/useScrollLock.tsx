@@ -6,27 +6,15 @@ export function useScrollLock(isLocked: boolean) {
       // Save current scroll position
       const scrollY = window.scrollY;
       
-      // More specific approach: only lock if not interacting with dropdowns
-      const activeElement = document.activeElement;
-      const isDropdownOpen = document.querySelector('[role="listbox"], [role="menu"], [data-state="open"]');
-      
-      // Don't lock if dropdown or menu is open
-      if (isDropdownOpen) {
-        return;
-      }
-      
-      // Lock scroll with position fixed to prevent scroll jump
-      document.body.style.position = 'fixed';
+      // Only apply scroll lock to the main body, but preserve scrolling in modals and dropdowns
+      // We use a CSS class approach instead of direct style manipulation
+      document.body.classList.add('modal-scroll-lock');
       document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
       
       return () => {
         // Restore scroll position and styles
-        document.body.style.position = '';
+        document.body.classList.remove('modal-scroll-lock');
         document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.style.overflow = '';
         window.scrollTo(0, scrollY);
       };
     }

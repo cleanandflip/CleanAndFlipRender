@@ -191,7 +191,7 @@ export function UnifiedDropdown({
       {/* Dropdown Menu */}
       {isOpen && !disabled && (
         <div 
-          className="absolute z-50 w-full mt-2 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-auto"
+          className="absolute z-50 w-full mt-2 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent"
           style={{
             ...dropdownStyles,
             boxShadow: theme.effects.shadow,

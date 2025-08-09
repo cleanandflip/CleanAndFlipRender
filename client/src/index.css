@@ -92,6 +92,21 @@ body {
   display: none;  /* Safari and Chrome */
 }
 
+/* Prevent body scroll when modal is open but allow dropdown scrolling */
+.modal-scroll-lock {
+  position: fixed;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Ensure dropdowns and other scrollable elements work properly within locked body */
+.modal-scroll-lock .overflow-auto,
+.modal-scroll-lock [class*="overflow-auto"],
+.modal-scroll-lock .max-h-64 {
+  overflow: auto !important;
+  position: relative !important;
+}
+
 :root {
   /* Global Design System Colors - Clean & Flip */
   --background: #1A1F2E;                   /* Primary background */

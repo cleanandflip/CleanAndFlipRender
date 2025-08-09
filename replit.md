@@ -81,6 +81,21 @@ The application is designed to be deployed on cloud platforms like Google Cloud 
 
 ## Recent Changes (August 9, 2025)
 
+### Complete Dropdown Scrolling Fix & Equipment Submission Resolution ✅
+- **Fixed Dropdown Scrolling Issues**: Resolved scroll lock interference with dropdown interactions by implementing CSS-class based modal scroll lock instead of direct style manipulation
+- **Enhanced Equipment Submission System**: Added missing category field to submission form schema with proper validation and UI dropdown options
+- **Fixed Seller Email Requirement**: Resolved database constraint error by automatically using authenticated user's email from `getUser` method instead of missing `getUserById`
+- **Improved Scroll Lock Strategy**: Modified `useScrollLock` hook to use `modal-scroll-lock` CSS class that preserves scrolling for dropdown elements while preventing body scroll
+- **Enhanced Dropdown UX**: Added professional scrollbar styling with thin scrollbars and improved visual feedback for better user experience
+- **Form Validation Complete**: All equipment submission fields now properly validated with helpful error messages and category selection dropdown
+
+Key technical improvements:
+- CSS-based scroll lock prevents modal background scrolling while allowing dropdown interactions
+- Equipment category dropdown with predefined options (barbells, dumbbells, plates, etc.)
+- Automatic seller email population from authenticated user data
+- Enhanced dropdown scrollbar styling with custom thin scrollbars
+- Bulletproof form validation with real-time feedback
+
 ### Unified Image Upload System Implementation ✅
 - **Complete System Overhaul**: Removed all duplicate upload endpoints and unified entire application to use single `/api/upload/images` endpoint
 - **Server-Side Optimization**: Implemented Sharp library for professional image compression (1200px limit, 85% quality, progressive JPEG)
