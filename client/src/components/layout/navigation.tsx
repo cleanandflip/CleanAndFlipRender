@@ -269,7 +269,6 @@ export default function Navigation() {
                       {/* Developer Dashboard - Conditional */}
                       {user?.role === 'developer' && (
                         <>
-                          <div className="my-1 mx-4 border-t border-gray-700/30" />
                           <button
                             onClick={() => {
                               handleNavigation(ROUTES.ADMIN);
@@ -284,9 +283,6 @@ export default function Navigation() {
                           </button>
                         </>
                       )}
-
-                      {/* Divider before Sign Out */}
-                      <div className="my-1 mx-4 border-t border-gray-700/30" />
 
                       {/* Sign Out */}
                       <button
