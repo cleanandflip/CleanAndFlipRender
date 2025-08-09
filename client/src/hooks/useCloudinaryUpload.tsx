@@ -60,41 +60,72 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
   };
 
   const uploadToCloudinary = async (file: File, signature: any): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('api_key', signature.apiKey);
-    formData.append('timestamp', signature.timestamp);
-    formData.append('signature', signature.signature);
-    formData.append('folder', signature.folder);
-
-    console.log('Uploading to Cloudinary:', {
-      fileName: file.name,
-      fileSize: file.size,
-      cloudName: signature.cloudName,
-      folder: signature.folder,
-      timestamp: signature.timestamp
-    });
-
+    // Try signed upload first
     try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', signature.apiKey);
+      formData.append('timestamp', signature.timestamp);
+      formData.append('signature', signature.signature);
+      formData.append('folder', signature.folder);
+
+      console.log('Trying signed upload to Cloudinary:', {
+        fileName: file.name,
+        fileSize: file.size,
+        cloudName: signature.cloudName,
+        folder: signature.folder
+      });
+
       const response = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloudName}/image/upload`, {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Cloudinary error response:', errorText);
-        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Signed upload successful:', result.secure_url);
+        return result.secure_url;
       }
 
-      const result = await response.json();
-      console.log('Upload successful:', result.secure_url);
-      return result.secure_url;
+      const errorText = await response.text();
+      console.log('Signed upload failed, trying unsigned upload:', errorText);
+      
+      // Fall back to unsigned upload if signed fails
+      return await uploadUnsigned(file, signature.cloudName, signature.folder);
       
     } catch (error) {
-      console.error('Cloudinary upload error:', error);
-      throw error;
+      console.log('Signed upload error, trying unsigned upload:', error);
+      return await uploadUnsigned(file, signature.cloudName, signature.folder);
     }
+  };
+
+  const uploadUnsigned = async (file: File, cloudName: string, folder: string): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'ml_default'); // Default unsigned preset
+    formData.append('folder', folder);
+
+    console.log('Trying unsigned upload:', {
+      fileName: file.name,
+      fileSize: file.size,
+      cloudName,
+      folder
+    });
+
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Unsigned upload failed:', errorText);
+      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('Unsigned upload successful:', result.secure_url);
+    return result.secure_url;
   };
 
   const uploadImages = async (files: File[]): Promise<string[]> => {
