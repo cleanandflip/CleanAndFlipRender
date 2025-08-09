@@ -36,6 +36,26 @@ export default function ProductDetail() {
   const [showLightbox, setShowLightbox] = useState(false);
   const [quantity, setQuantity] = useState(1);
   
+  // Handle escape key for lightbox
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showLightbox) {
+        setShowLightbox(false);
+      }
+    };
+    
+    if (showLightbox) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showLightbox]);
+  
   // Initialize navigation state management
   const { restoreState } = useNavigationState('product-detail');
   useBackButton();
@@ -509,34 +529,68 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Lightbox Modal */}
+      {/* Enhanced Lightbox Modal with Click Outside to Close */}
       {showLightbox && hasImages && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-          <div className="relative max-w-4xl max-h-full">
+        <div 
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-pointer animate-fadeIn"
+          onClick={() => setShowLightbox(false)} // Click backdrop to close
+        >
+          <div 
+            className="relative max-w-4xl max-h-full cursor-default"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking image/content
+          >
+            {/* Close Button */}
             <button
               onClick={() => setShowLightbox(false)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 text-xl"
+              className="absolute top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-10"
             >
               ✕
             </button>
+            
+            {/* Main Image */}
             <img
               src={currentImage}
               alt={product.name}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
             />
+            
+            {/* Navigation arrows for multiple images */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={() => setCurrentImageIndex(currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={() => setCurrentImageIndex(currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+            
+            {/* Image dots indicator */}
             {images.length > 1 && (
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                 {images.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                    className={`w-3 h-3 rounded-full transition-all hover:scale-125 ${
+                      index === currentImageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70'
                     }`}
                   />
                 ))}
               </div>
             )}
+            
+            {/* Help text */}
+            <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-white/60 text-sm text-center">
+              Click outside or press ESC to close
+            </div>
           </div>
         </div>
       )}
