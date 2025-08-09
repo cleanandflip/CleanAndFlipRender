@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -7,7 +7,7 @@ import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
-import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code } from "lucide-react";
 
 import { ROUTES } from "@/config/routes";
 
@@ -20,12 +20,28 @@ export default function Navigation() {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const { cartCount } = useCart();
   const { user, logoutMutation } = useAuth();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
 
   // Track cart open state based on current location
   useEffect(() => {
     setIsCartOpen(location === ROUTES.CART);
   }, [location]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+    
+    if (isUserDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isUserDropdownOpen]);
 
   const navigation = [
     { name: "Shop", href: ROUTES.PRODUCTS },
@@ -157,28 +173,115 @@ export default function Navigation() {
               <Search size={20} />
             </Button>
 
-            {/* Account */}
+            {/* Account - Professional Dropdown */}
             {user ? (
-              <UnifiedDropdown
-                variant="nav"
-                options={[
-                  { value: 'dashboard', label: 'Dashboard', icon: <Settings className="w-4 h-4" /> },
-                  { value: 'orders', label: 'Order History', icon: <History className="w-4 h-4" /> },
-                  ...(user.role === 'developer' ? [{ value: 'admin', label: 'Developer Dashboard', icon: <Package className="w-4 h-4" /> }] : []),
-                  { value: 'logout', label: 'Sign Out', icon: <LogOut className="w-4 h-4" /> }
-                ]}
-                value=""
-                onChange={(value) => {
-                  switch(value) {
-                    case 'dashboard': handleNavigation(ROUTES.DASHBOARD); break;
-                    case 'orders': handleNavigation(ROUTES.ORDERS); break;
-                    case 'admin': handleNavigation(ROUTES.ADMIN); break;
-                    case 'logout': logoutMutation.mutate(); break;
-                  }
-                }}
-                placeholder={user.firstName || 'User'}
-                className="h-11 px-4"
-              />
+              <div className="relative" ref={dropdownRef}>
+                <button 
+                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors h-11"
+                >
+                  <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center border border-blue-500/30">
+                    <span className="text-white font-bold text-sm">CF</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
+                    isUserDropdownOpen ? 'rotate-180' : ''
+                  }`} />
+                </button>
+
+                {isUserDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-64 
+                                  bg-[#2a2f3e] border border-gray-700/50 
+                                  rounded-xl shadow-2xl overflow-hidden py-1">
+                    
+                    {/* User Info Header */}
+                    <div className="px-4 py-3 border-b border-gray-700/50 bg-[#1e2129]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold">CF</span>
+                        </div>
+                        <div>
+                          <div className="text-white font-medium text-sm">{user.firstName || user.email?.split('@')[0] || 'User'}</div>
+                          <div className="text-gray-400 text-xs">{user.email}</div>
+                        </div>
+                      </div>
+                      {user.role === 'developer' && (
+                        <div className="mt-2">
+                          <span className="inline-block px-2 py-0.5 bg-purple-600/20 text-purple-400 text-xs rounded">
+                            Developer
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="py-1">
+                      {/* Dashboard */}
+                      <button
+                        onClick={() => {
+                          handleNavigation(ROUTES.DASHBOARD);
+                          setIsUserDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 
+                                  text-gray-300 hover:bg-white/5 hover:text-white 
+                                  transition-colors group text-left"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
+                        <span className="text-sm">Dashboard</span>
+                      </button>
+
+                      {/* Order History */}
+                      <button
+                        onClick={() => {
+                          handleNavigation(ROUTES.ORDERS);
+                          setIsUserDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 
+                                  text-gray-300 hover:bg-white/5 hover:text-white 
+                                  transition-colors group text-left"
+                      >
+                        <History className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
+                        <span className="text-sm">Order History</span>
+                      </button>
+
+                      {/* Divider */}
+                      <div className="my-1 mx-3 border-t border-gray-700/50" />
+
+                      {/* Developer Dashboard */}
+                      {user.role === 'developer' && (
+                        <>
+                          <button
+                            onClick={() => {
+                              handleNavigation(ROUTES.ADMIN);
+                              setIsUserDropdownOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 
+                                      text-purple-400 hover:bg-purple-600/10 
+                                      transition-colors group text-left"
+                          >
+                            <Code className="w-4 h-4 text-purple-500" />
+                            <span className="text-sm">Developer Dashboard</span>
+                          </button>
+                          <div className="my-1 mx-3 border-t border-gray-700/50" />
+                        </>
+                      )}
+
+                      {/* Sign Out */}
+                      <button
+                        onClick={() => {
+                          logoutMutation.mutate();
+                          setIsUserDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 
+                                  text-red-400 hover:bg-red-600/10 
+                                  transition-colors group text-left"
+                      >
+                        <LogOut className="w-4 h-4 text-red-500" />
+                        <span className="text-sm">Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <Button
                 variant="primary"
