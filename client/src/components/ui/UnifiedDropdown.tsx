@@ -197,6 +197,8 @@ export function UnifiedDropdown({
             boxShadow: theme.effects.shadow,
             animation: 'slideDown 0.2s ease-out'
           }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
         >
           {normalizedOptions.length === 0 ? (
             <div 
