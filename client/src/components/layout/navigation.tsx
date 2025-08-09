@@ -194,6 +194,112 @@ export default function Navigation() {
                   }`} />
                 </button>
 
+                {isUserDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 
+                                  rounded-xl shadow-2xl 
+                                  overflow-hidden"
+                       style={{ 
+                         background: 'rgba(35, 41, 55, 0.4)', 
+                         backdropFilter: 'blur(12px)',
+                         border: '1px solid rgba(255, 255, 255, 0.08)' 
+                       }}>
+                    
+                    {/* User Info Section - Display first name initial and role */}
+                    <div className="p-4" 
+                         style={{ background: 'rgba(15, 23, 42, 0.3)' }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 
+                                        rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold">
+                            {user?.firstName?.[0]?.toUpperCase() || 
+                             user?.email?.[0]?.toUpperCase() || 
+                             'U'}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-white font-medium">
+                            {user?.firstName || 'User'}
+                          </div>
+                          <div className="text-gray-400 text-xs capitalize">
+                            {user?.role || 'user'}
+                          </div>
+                        </div>
+                      </div>
+                      {user?.role === 'developer' && (
+                        <div className="mt-3">
+                          <span className="inline-block px-2 py-1 
+                                         bg-purple-500/20 text-purple-400 
+                                         text-xs font-medium rounded">
+                            Developer Access
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Menu Items Container */}
+                    <div className="py-1">
+                      {/* Dashboard */}
+                      <button
+                        onClick={() => {
+                          handleNavigation(ROUTES.DASHBOARD);
+                          setIsUserDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 
+                                  text-gray-300 hover:bg-white/5 
+                                  transition-colors group text-left"
+                      >
+                        <LayoutGrid className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm">Dashboard</span>
+                      </button>
+
+                      {/* Order History */}
+                      <button
+                        onClick={() => {
+                          handleNavigation(ROUTES.ORDERS);
+                          setIsUserDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 
+                                  text-gray-300 hover:bg-white/5 
+                                  transition-colors group text-left"
+                      >
+                        <History className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm">Order History</span>
+                      </button>
+
+                      {/* Developer Dashboard - Conditional */}
+                      {user?.role === 'developer' && (
+                        <>
+                          <button
+                            onClick={() => {
+                              handleNavigation(ROUTES.ADMIN);
+                              setIsUserDropdownOpen(false);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 
+                                      text-purple-400 hover:bg-purple-500/10 
+                                      transition-colors group text-left"
+                          >
+                            <Code2 className="w-4 h-4 text-purple-500" />
+                            <span className="text-sm font-medium">Developer Dashboard</span>
+                          </button>
+                        </>
+                      )}
+
+                      {/* Sign Out */}
+                      <button
+                        onClick={() => {
+                          logoutMutation.mutate();
+                          setIsUserDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 
+                                  text-red-400 hover:bg-red-500/10 
+                                  transition-colors group text-left"
+                      >
+                        <LogOut className="w-4 h-4 text-red-500" />
+                        <span className="text-sm">Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
                 
               </div>
             ) : (
