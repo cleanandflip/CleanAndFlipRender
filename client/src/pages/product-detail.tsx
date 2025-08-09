@@ -529,52 +529,53 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Enhanced Lightbox Modal with Click Outside to Close */}
+      {/* Enhanced Lightbox Modal with Fixed Positioning */}
       {showLightbox && hasImages && (
         <div 
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-pointer animate-fadeIn"
-          onClick={() => setShowLightbox(false)} // Click backdrop to close
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center cursor-pointer overflow-hidden p-4 md:p-8"
+          onClick={() => setShowLightbox(false)}
         >
+          {/* Image Container - Prevents overflow */}
           <div 
-            className="relative max-w-4xl max-h-full cursor-default"
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking image/content
+            className="relative flex items-center justify-center w-full h-full cursor-default"
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setShowLightbox(false)}
-              className="absolute top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-10"
-            >
-              ✕
-            </button>
-            
             {/* Main Image */}
-            <img
-              src={currentImage}
+            <img 
+              src={currentImage} 
               alt={product.name}
-              className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+              className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-lg"
             />
             
-            {/* Navigation arrows for multiple images */}
+            {/* Navigation Arrows - Fixed position */}
             {images.length > 1 && (
               <>
-                <button
+                <button 
                   onClick={() => setCurrentImageIndex(currentImageIndex > 0 ? currentImageIndex - 1 : images.length - 1)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110"
+                  className="fixed left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </button>
-                <button
+                <button 
                   onClick={() => setCurrentImageIndex(currentImageIndex < images.length - 1 ? currentImageIndex + 1 : 0)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110"
+                  className="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
                 >
                   <ChevronRight className="w-6 h-6" />
                 </button>
               </>
             )}
             
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowLightbox(false)}
+              className="fixed top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 z-50"
+            >
+              ✕
+            </button>
+            
             {/* Image dots indicator */}
             {images.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+              <div className="fixed bottom-16 left-1/2 -translate-x-1/2 flex gap-2 z-50">
                 {images.map((_, index) => (
                   <button
                     key={index}
@@ -586,11 +587,11 @@ export default function ProductDetail() {
                 ))}
               </div>
             )}
-            
-            {/* Help text */}
-            <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-white/60 text-sm text-center">
-              Click outside or press ESC to close
-            </div>
+          </div>
+          
+          {/* Help Text - Always visible at bottom */}
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 text-white/60 text-sm pointer-events-none z-50">
+            Click outside or press ESC to close
           </div>
         </div>
       )}
