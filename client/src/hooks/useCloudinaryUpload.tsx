@@ -65,19 +65,36 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
     formData.append('api_key', signature.apiKey);
     formData.append('timestamp', signature.timestamp);
     formData.append('signature', signature.signature);
-    formData.append('folder', folder);
+    formData.append('folder', signature.folder);
 
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloudName}/image/upload`, {
-      method: 'POST',
-      body: formData,
+    console.log('Uploading to Cloudinary:', {
+      fileName: file.name,
+      fileSize: file.size,
+      cloudName: signature.cloudName,
+      folder: signature.folder,
+      timestamp: signature.timestamp
     });
 
-    if (!response.ok) {
-      throw new Error('Upload failed');
-    }
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
 
-    const result = await response.json();
-    return result.secure_url;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Cloudinary error response:', errorText);
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Upload successful:', result.secure_url);
+      return result.secure_url;
+      
+    } catch (error) {
+      console.error('Cloudinary upload error:', error);
+      throw error;
+    }
   };
 
   const uploadImages = async (files: File[]): Promise<string[]> => {

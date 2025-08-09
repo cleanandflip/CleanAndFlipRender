@@ -189,34 +189,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cloudinary signature endpoint
   app.get("/api/cloudinary/signature", requireAuth, async (req, res) => {
     try {
-      const { folder = 'uploads' } = req.query;
+      const { folder = 'equipment-submissions' } = req.query;
       
       if (!process.env.CLOUDINARY_API_SECRET || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_CLOUD_NAME) {
         return res.status(500).json({ message: "Cloudinary configuration missing" });
       }
 
       const timestamp = Math.round(new Date().getTime() / 1000);
+      
+      // Create parameters for signature (alphabetically sorted)
       const params = {
-        timestamp: timestamp.toString(),
-        folder: folder as string
+        folder: folder as string,
+        timestamp: timestamp.toString()
       };
 
-      // Create signature
+      // Create signature string - must be in alphabetical order
+      const signatureString = Object.keys(params)
+        .sort()
+        .map(key => `${key}=${params[key as keyof typeof params]}`)
+        .join('&') + process.env.CLOUDINARY_API_SECRET;
+
+      // Create signature using SHA-1 (Cloudinary requirement)
       const signature = crypto
-        .createHash('sha256')
-        .update(
-          Object.keys(params)
-            .sort()
-            .map(key => `${key}=${params[key as keyof typeof params]}`)
-            .join('&') + process.env.CLOUDINARY_API_SECRET
-        )
+        .createHash('sha1')
+        .update(signatureString)
         .digest('hex');
+
+      Logger.debug(`[CLOUDINARY] Generated signature for folder: ${folder}`, {
+        timestamp,
+        signatureString: signatureString.replace(process.env.CLOUDINARY_API_SECRET!, '[REDACTED]')
+      });
 
       res.json({
         signature,
         timestamp: timestamp.toString(),
         apiKey: process.env.CLOUDINARY_API_KEY,
-        cloudName: process.env.CLOUDINARY_CLOUD_NAME
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+        folder: folder as string
       });
 
     } catch (error) {
