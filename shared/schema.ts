@@ -419,7 +419,6 @@ export const registerDataSchema = insertUserSchema.extend({
   fullAddress: z.string().optional(),
 }).omit({
   role: true,
-  isAdmin: true,
   stripeCustomerId: true,
   stripeSubscriptionId: true,
 });
