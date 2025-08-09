@@ -186,7 +186,8 @@ export function useWebSocket() {
   }, []); // Empty dependency to prevent reconnection cycles
 
   return { 
-    send, 
+    send,
+    sendMessage: send,  // Add alias for compatibility
     status,
     isConnected: status === 'connected',
     reconnectAttempts,

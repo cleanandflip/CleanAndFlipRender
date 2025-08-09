@@ -13,7 +13,7 @@ interface WSClient {
 class WebSocketManager {
   private wss: WebSocketServer;
   private clients: Map<string, WSClient> = new Map();
-  private heartbeatInterval: NodeJS.Timeout;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
 
   constructor(server: Server) {
     this.wss = new WebSocketServer({ 
@@ -182,6 +182,7 @@ class WebSocketManager {
   public cleanup() {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
     
     this.clients.forEach(client => {

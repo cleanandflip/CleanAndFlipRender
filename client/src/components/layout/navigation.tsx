@@ -31,21 +31,24 @@ export default function Navigation() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as HTMLElement;
+      // Don't close if clicking the button itself
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setIsUserDropdownOpen(false);
       }
     };
 
     if (isUserDropdownOpen) {
-      // Add small delay to prevent immediate close
-      setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-      }, 0);
+      // Delay to prevent immediate close
+      const timer = setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 10);
+      
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('click', handleClickOutside);
+      };
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
   }, [isUserDropdownOpen]);
 
   const navigation = [
