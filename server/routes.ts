@@ -186,8 +186,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Performance testing endpoint (development only)
   // Performance monitoring endpoint removed for production
   
-  // Server-side image upload endpoint (fallback for Cloudinary issues)
-  app.post("/api/upload/images", requireAuth, upload.array('images', 8), async (req, res) => {
+  // Server-side image upload endpoint using memory storage
+  const imageUpload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image files allowed'));
+      }
+    }
+  });
+
+  app.post("/api/upload/images", requireAuth, imageUpload.array('images', 8), async (req, res) => {
     try {
       const files = req.files as Express.Multer.File[];
       
@@ -195,16 +207,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No files uploaded" });
       }
 
+      Logger.debug(`[UPLOAD] Processing ${files.length} files`);
+
       const uploadPromises = files.map(async (file) => {
         try {
-          // Upload to Cloudinary using server-side SDK
-          const result = await cloudinary.uploader.upload(file.path, {
-            folder: 'equipment-submissions',
-            resource_type: 'auto'
+          // Create promise to handle stream upload
+          return new Promise<string | null>((resolve) => {
+            const stream = cloudinary.uploader.upload_stream(
+              {
+                folder: 'equipment-submissions',
+                resource_type: 'auto',
+                transformation: [
+                  { width: 1200, height: 1200, crop: 'limit', quality: 'auto' }
+                ]
+              }, 
+              (error, result) => {
+                if (error) {
+                  Logger.error(`[UPLOAD] Failed to upload ${file.originalname}:`, error);
+                  resolve(null);
+                } else if (result) {
+                  Logger.debug(`[UPLOAD] Successfully uploaded ${file.originalname} to Cloudinary`);
+                  resolve(result.secure_url);
+                } else {
+                  resolve(null);
+                }
+              }
+            );
+            
+            stream.end(file.buffer);
           });
-          
-          Logger.debug(`[UPLOAD] Successfully uploaded ${file.originalname} to Cloudinary`);
-          return result.secure_url;
         } catch (uploadError) {
           Logger.error(`[UPLOAD] Failed to upload ${file.originalname}:`, uploadError);
           return null;
@@ -2869,25 +2900,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Memory storage for single file uploads with industry-standard limits
-  const memoryStorage = multer.memoryStorage();
-  const memoryUpload = multer({ 
-    storage: memoryStorage,
-    limits: { 
-      fileSize: 12 * 1024 * 1024, // 12MB limit (industry standard)
-      files: 12 // Maximum 12 images per product
-    },
-    fileFilter: (req, file, cb) => {
-      // Industry standard image types
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      
-      if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new Error('Only JPEG, PNG, and WebP images are allowed.'));
-      }
-    }
-  });
+  // Using existing memoryUpload from earlier in file
 
   // Cloudinary upload endpoint - allow admin and developer roles
   app.post("/api/upload/cloudinary", requireRole('developer'), (req, res, next) => {
