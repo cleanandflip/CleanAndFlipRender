@@ -173,7 +173,31 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
         })
       );
 
-      // Get signature from backend
+      // Try server-side upload first (more reliable)
+      try {
+        const formData = new FormData();
+        processedFiles.forEach(file => {
+          formData.append('images', file);
+        });
+
+        const response = await fetch('/api/upload/images', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Server-side upload successful:', result);
+          return result.urls;
+        } else {
+          console.log('Server-side upload failed, trying direct upload...');
+        }
+      } catch (error) {
+        console.log('Server-side upload error, trying direct upload:', error);
+      }
+
+      // Fallback to direct Cloudinary upload
       const signature = await apiRequest('GET', `/api/cloudinary/signature?folder=${folder}`);
 
       // Upload all files

@@ -186,7 +186,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Performance testing endpoint (development only)
   // Performance monitoring endpoint removed for production
   
-  // Cloudinary signature endpoint
+  // Server-side image upload endpoint (fallback for Cloudinary issues)
+  app.post("/api/upload/images", requireAuth, upload.array('images', 8), async (req, res) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+
+      const uploadPromises = files.map(async (file) => {
+        try {
+          // Upload to Cloudinary using server-side SDK
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: 'equipment-submissions',
+            resource_type: 'auto'
+          });
+          
+          Logger.debug(`[UPLOAD] Successfully uploaded ${file.originalname} to Cloudinary`);
+          return result.secure_url;
+        } catch (uploadError) {
+          Logger.error(`[UPLOAD] Failed to upload ${file.originalname}:`, uploadError);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const successfulUploads = results.filter((url): url is string => url !== null);
+      
+      if (successfulUploads.length === 0) {
+        return res.status(500).json({ message: "All uploads failed" });
+      }
+
+      res.json({ 
+        urls: successfulUploads,
+        total: files.length,
+        successful: successfulUploads.length
+      });
+
+    } catch (error) {
+      Logger.error("Image upload error:", error);
+      res.status(500).json({ message: "Upload failed" });
+    }
+  });
+
+  // Cloudinary signature endpoint (kept as backup)
   app.get("/api/cloudinary/signature", requireAuth, async (req, res) => {
     try {
       const { folder = 'equipment-submissions' } = req.query;
