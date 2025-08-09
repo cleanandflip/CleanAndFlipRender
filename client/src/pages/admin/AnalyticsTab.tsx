@@ -22,12 +22,15 @@ export function AnalyticsTab() {
     conversion: { value: analyticsData?.conversionRate || 0, change: 0 },
     avgOrder: { value: analyticsData?.avgOrderValue || 0, change: 0 },
     users: { value: analyticsData?.totalUsers || 0, change: 0 },
-    products: { value: analyticsData?.totalProducts || 0, change: 0 }
+    products: { value: analyticsData?.totalProducts || 0, change: 0 },
+    inventoryValue: { value: analyticsData?.totalInventoryValue || 0, change: 0 }
   };
 
   // Use real data from API
   const revenueData = analyticsData?.charts?.revenue || [];
+  const productViewsData = analyticsData?.charts?.productViews || [];
   const topProducts = analyticsData?.topProducts || [];
+  const productPerformance = analyticsData?.productPerformance || [];
 
   if (isLoading) {
     return (
@@ -40,7 +43,7 @@ export function AnalyticsTab() {
   return (
     <div className="space-y-8">
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         <UnifiedMetricCard
           title="Total Revenue"
           value={`$${metrics.revenue.value.toLocaleString()}`}
@@ -78,6 +81,29 @@ export function AnalyticsTab() {
           change={{ value: metrics.products.change, label: 'from last period' }}
         />
       </div>
+      
+      {/* Additional Business Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-white mb-2">Inventory Value</h3>
+          <p className="text-3xl font-bold text-blue-400">${metrics.inventoryValue.value.toLocaleString()}</p>
+          <p className="text-sm text-gray-400 mt-1">Total stock value</p>
+        </div>
+        <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-white mb-2">Product Views</h3>
+          <p className="text-3xl font-bold text-green-400">
+            {productPerformance.reduce((sum, p) => sum + (p.views || 0), 0)}
+          </p>
+          <p className="text-sm text-gray-400 mt-1">Total product views</p>
+        </div>
+        <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-white mb-2">Stock Items</h3>
+          <p className="text-3xl font-bold text-purple-400">
+            {productPerformance.reduce((sum, p) => sum + (p.stockQuantity || 0), 0)}
+          </p>
+          <p className="text-sm text-gray-400 mt-1">Items in inventory</p>
+        </div>
+      </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -110,37 +136,92 @@ export function AnalyticsTab() {
           </div>
         </div>
 
-        {/* Top Products - Show Zero State for No Sales */}
+        {/* Product Views Performance */}
         <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Product Sales</h3>
-            <span className="text-sm text-gray-400 bg-gray-800/50 px-2 py-1 rounded">
-              No orders yet
-            </span>
+          <h3 className="text-lg font-semibold text-white mb-4">Product Performance</h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={productViewsData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="name" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#1e293b', 
+                    border: '1px solid #374151',
+                    borderRadius: '8px'
+                  }}
+                  labelStyle={{ color: '#F3F4F6' }}
+                />
+                <Bar dataKey="views" fill="#10B981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-          <div className="h-80 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-800/50 rounded-full flex items-center justify-center">
-                <BarChart3 className="w-8 h-8 text-gray-500" />
-              </div>
-              <h4 className="text-lg font-medium text-gray-300 mb-2">No Sales Data Yet</h4>
-              <p className="text-gray-400 max-w-md">
-                Product sales will appear here once customers complete orders. Currently showing zero sales across all products.
-              </p>
-              <div className="mt-6 text-left bg-gray-800/30 rounded-lg p-4">
-                <h5 className="text-sm font-medium text-gray-300 mb-2">Product Views (for reference):</h5>
-                {topProducts.length > 0 ? topProducts.map((product: any, i: number) => (
-                  <div key={i} className="flex justify-between text-sm text-gray-400 mb-1">
-                    <span>{product.name}</span>
-                    <span>{product.views || product.sales || 0} views</span>
+        </div>
+      </div>
+
+      {/* Product Sales Status */}
+      <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-white">Product Sales Status</h3>
+          <span className="text-sm text-gray-400 bg-gray-800/50 px-3 py-1 rounded">
+            {metrics.orders.value === 0 ? 'No orders yet' : `${metrics.orders.value} orders`}
+          </span>
+        </div>
+        
+        {metrics.orders.value === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gray-800/50 rounded-full flex items-center justify-center">
+              <ShoppingCart className="w-8 h-8 text-gray-500" />
+            </div>
+            <h4 className="text-lg font-medium text-gray-300 mb-2">No Sales Data Yet</h4>
+            <p className="text-gray-400 max-w-md mx-auto mb-6">
+              Sales analytics will appear here once customers complete orders. Currently tracking product views and inventory.
+            </p>
+            
+            {/* Product Performance Table */}
+            <div className="bg-gray-800/30 rounded-lg p-6">
+              <h5 className="text-sm font-medium text-gray-300 mb-4">Current Product Performance:</h5>
+              <div className="space-y-3">
+                {productPerformance.slice(0, 5).map((product: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      <span className="text-gray-300">{product.name}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-gray-400">
+                      <span>{product.views || 0} views</span>
+                      <span>{product.stockQuantity || 0} in stock</span>
+                      <span>${parseFloat(product.price || '0').toFixed(2)}</span>
+                    </div>
                   </div>
-                )) : (
-                  <p className="text-sm text-gray-500">No product data available</p>
-                )}
+                ))}
               </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {topProducts.map((product: any, i: number) => (
+              <div key={i} className="bg-gray-800/30 rounded-lg p-4">
+                <h4 className="font-medium text-white mb-2">{product.name}</h4>
+                <div className="space-y-1 text-sm text-gray-400">
+                  <div className="flex justify-between">
+                    <span>Sales:</span>
+                    <span>{product.sales || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Revenue:</span>
+                    <span>${(product.revenue || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Views:</span>
+                    <span>{product.views || 0}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Recent Activity */}

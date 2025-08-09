@@ -1101,35 +1101,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .orderBy(desc(products.views))
           .limit(5);
           
+        // Since no orders exist, create meaningful analytics based on product data
         topProductsList = realTopProducts.map(p => ({
           name: p.name,
-          sales: 0, // No sales yet - showing as zero
-          views: p.views || 0, // Actual view count
-          price: p.price,
-          isViewData: true, // Flag to indicate this is view data, not sales data
-          displayMetric: 'views' // What we're actually displaying
+          sales: 0, // No actual sales yet
+          views: p.views || 0,
+          revenue: 0,
+          price: parseFloat(p.price) || 0,
+          stockQuantity: p.stockQuantity || 0,
+          isViewData: true,
+          displayMetric: 'views'
         }));
       }
 
       // Calculate conversion rate (orders / total users)
       const conversionRate = allUsers.length > 0 ? (filteredOrders.length / allUsers.length) * 100 : 0;
 
+      // Get product performance data
+      const productPerformance = await db
+        .select({
+          name: products.name,
+          views: products.views,
+          stockQuantity: products.stockQuantity,
+          price: products.price,
+          featured: products.featured
+        })
+        .from(products)
+        .orderBy(desc(products.views))
+        .limit(10);
+
+      // Calculate total inventory value
+      const totalInventoryValue = allProducts.reduce((sum, product) => {
+        return sum + (parseFloat(product.price) || 0) * (product.stockQuantity || 0);
+      }, 0);
+
+      // Recent product activities
+      const recentProductActivity = allProducts
+        .slice(-5)
+        .map(product => ({
+          type: 'product',
+          description: `Product "${product.name}" added to inventory`,
+          timestamp: product.createdAt,
+          data: { price: product.price, stock: product.stockQuantity }
+        }));
+
       res.json({
         totalRevenue: totalRevenue,
         totalOrders: filteredOrders.length,
         totalUsers: allUsers.length,
         totalProducts: allProducts.length,
+        totalInventoryValue: Math.round(totalInventoryValue * 100) / 100,
         conversionRate: Math.round(conversionRate * 100) / 100,
         avgOrderValue: completedOrders.length > 0 ? Math.round((totalRevenue / completedOrders.length) * 100) / 100 : 0,
         charts: {
-          revenue: chartData
+          revenue: chartData,
+          productViews: productPerformance.map(p => ({
+            name: p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name,
+            views: p.views || 0,
+            value: (parseFloat(p.price) || 0) * (p.stockQuantity || 0)
+          }))
         },
         topProducts: topProductsList,
-        recentActivity: filteredOrders.slice(-10).map(order => ({
-          type: 'order',
-          description: `Order ${order.id} - $${order.total}`,
-          timestamp: order.createdAt
-        }))
+        productPerformance: productPerformance,
+        recentActivity: [
+          ...filteredOrders.slice(-5).map(order => ({
+            type: 'order',
+            description: `Order ${order.id} - $${order.total}`,
+            timestamp: order.createdAt
+          })),
+          ...recentProductActivity
+        ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10)
       });
       
     } catch (error) {
