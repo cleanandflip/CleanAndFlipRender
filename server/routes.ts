@@ -186,78 +186,233 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Performance testing endpoint (development only)
   // Performance monitoring endpoint removed for production
   
-  // Server-side image upload endpoint using memory storage
+  // Professional server-side image upload with optimization
   const imageUpload = multer({ 
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    limits: { 
+      fileSize: 5 * 1024 * 1024, // 5MB max per file
+      files: 8, // Max 8 files per request
+      fields: 10, // Max 10 fields
+      parts: 20 // Max 20 parts total
+    },
     fileFilter: (req, file, cb) => {
-      if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-      } else {
-        cb(new Error('Only image files allowed'));
+      // Strict file validation
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+      
+      if (!allowedMimes.includes(file.mimetype)) {
+        return cb(new Error(`Invalid file type. Only JPEG, PNG, and WebP allowed`));
       }
+      
+      // Check file extension too
+      const ext = file.originalname.split('.').pop()?.toLowerCase();
+      if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext || '')) {
+        return cb(new Error('Invalid file extension'));
+      }
+      
+      cb(null, true);
     }
   });
 
+  // Helper: Optimize image before upload
+  async function optimizeImage(buffer: Buffer): Promise<Buffer> {
+    try {
+      const sharp = require('sharp');
+      return await sharp(buffer)
+        .resize(1200, 1200, { 
+          fit: 'inside',
+          withoutEnlargement: true 
+        })
+        .jpeg({ 
+          quality: 85,
+          progressive: true 
+        })
+        .toBuffer();
+    } catch (error) {
+      Logger.debug('Sharp optimization failed, using original:', error);
+      return buffer; // Return original if optimization fails
+    }
+  }
+
+  // Helper: Upload single image to Cloudinary
+  async function uploadToCloudinary(
+    buffer: Buffer, 
+    filename: string,
+    folder: string
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: folder,
+          public_id: `${Date.now()}-${filename.replace(/\.[^/.]+$/, '')}`,
+          resource_type: 'image',
+          type: 'upload',
+          overwrite: false,
+          unique_filename: true,
+          
+          // Cloudinary optimizations
+          transformation: [
+            { 
+              width: 1200, 
+              height: 1200, 
+              crop: 'limit',
+              quality: 'auto:good',
+              fetch_format: 'auto'
+            }
+          ],
+          
+          // Additional settings
+          invalidate: true,
+          use_filename: true,
+          tags: [folder],
+          context: {
+            upload_source: 'clean_flip_app',
+            upload_date: new Date().toISOString()
+          }
+        },
+        (error, result) => {
+          if (error) {
+            Logger.error('Cloudinary upload error:', error);
+            reject(error);
+          } else if (result) {
+            resolve(result.secure_url);
+          } else {
+            reject(new Error('No result from Cloudinary'));
+          }
+        }
+      );
+      
+      uploadStream.end(buffer);
+    });
+  }
+
   app.post("/api/upload/images", requireAuth, imageUpload.array('images', 8), async (req, res) => {
+    const startTime = Date.now();
+    
     try {
       const files = req.files as Express.Multer.File[];
       
       if (!files || files.length === 0) {
-        return res.status(400).json({ message: "No files uploaded" });
+        return res.status(400).json({ 
+          error: 'No files provided' 
+        });
       }
-
-      Logger.debug(`[UPLOAD] Processing ${files.length} files`);
-
-      const uploadPromises = files.map(async (file) => {
-        try {
-          // Create promise to handle stream upload
-          return new Promise<string | null>((resolve) => {
-            const stream = cloudinary.uploader.upload_stream(
-              {
-                folder: 'equipment-submissions',
-                resource_type: 'auto',
-                transformation: [
-                  { width: 1200, height: 1200, crop: 'limit', quality: 'auto' }
-                ]
-              }, 
-              (error, result) => {
-                if (error) {
-                  Logger.error(`[UPLOAD] Failed to upload ${file.originalname}:`, error);
-                  resolve(null);
-                } else if (result) {
-                  Logger.debug(`[UPLOAD] Successfully uploaded ${file.originalname} to Cloudinary`);
-                  resolve(result.secure_url);
-                } else {
-                  resolve(null);
-                }
-              }
+      
+      // Get folder from request
+      const folder = req.body.folder || 'equipment-submissions';
+      
+      // Validate folder name (security)
+      const validFolders = ['equipment-submissions', 'products', 'avatars'];
+      if (!validFolders.includes(folder)) {
+        return res.status(400).json({ 
+          error: 'Invalid folder' 
+        });
+      }
+      
+      Logger.debug(`[UPLOAD] Processing ${files.length} files for folder: ${folder}`);
+      
+      // Process uploads with concurrency limit
+      const uploadResults = [];
+      const errors = [];
+      
+      // Process in batches of 3 to avoid overwhelming server
+      for (let i = 0; i < files.length; i += 3) {
+        const batch = files.slice(i, i + 3);
+        
+        const batchPromises = batch.map(async (file) => {
+          try {
+            Logger.debug(`Processing ${file.originalname} (${file.size} bytes)`);
+            
+            // Optimize image with sharp if available
+            const optimizedBuffer = await optimizeImage(file.buffer);
+            
+            // Upload to Cloudinary
+            const url = await uploadToCloudinary(
+              optimizedBuffer,
+              file.originalname,
+              folder
             );
             
-            stream.end(file.buffer);
-          });
-        } catch (uploadError) {
-          Logger.error(`[UPLOAD] Failed to upload ${file.originalname}:`, uploadError);
-          return null;
-        }
-      });
-
-      const results = await Promise.all(uploadPromises);
-      const successfulUploads = results.filter((url): url is string => url !== null);
-      
-      if (successfulUploads.length === 0) {
-        return res.status(500).json({ message: "All uploads failed" });
+            return { success: true, url, filename: file.originalname };
+            
+          } catch (error) {
+            Logger.error(`Failed to upload ${file.originalname}:`, error);
+            errors.push({
+              filename: file.originalname,
+              error: error.message
+            });
+            return null;
+          }
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        uploadResults.push(...batchResults.filter(Boolean));
       }
-
-      res.json({ 
-        urls: successfulUploads,
-        total: files.length,
-        successful: successfulUploads.length
+      
+      // Free memory immediately
+      files.forEach(file => {
+        file.buffer = null as any;
+      });
+      
+      const processingTime = Date.now() - startTime;
+      Logger.debug(`Upload completed in ${processingTime}ms`);
+      
+      // Return results
+      if (uploadResults.length === 0) {
+        return res.status(500).json({
+          error: 'All uploads failed',
+          details: errors
+        });
+      }
+      
+      res.json({
+        success: true,
+        urls: uploadResults.map(r => r.url),
+        uploaded: uploadResults.length,
+        failed: errors.length,
+        errors: errors.length > 0 ? errors : undefined,
+        processingTime
       });
 
+      
     } catch (error) {
-      Logger.error("Image upload error:", error);
-      res.status(500).json({ message: "Upload failed" });
+      Logger.error('Upload endpoint error:', error);
+      
+      // Clean up memory on error
+      if (req.files) {
+        (req.files as any[]).forEach(file => {
+          if (file.buffer) file.buffer = null;
+        });
+      }
+      
+      res.status(500).json({
+        error: 'Upload failed',
+        message: error.message
+      });
+    }
+  });
+
+  // Cleanup endpoint - delete from Cloudinary
+  app.delete("/api/upload/cleanup", requireAuth, async (req, res) => {
+    const { urls } = req.body;
+    
+    if (!urls || !Array.isArray(urls)) {
+      return res.status(400).json({ error: 'Invalid URLs' });
+    }
+    
+    // Extract public IDs from URLs
+    const publicIds = urls.map(url => {
+      const parts = url.split('/');
+      const filename = parts[parts.length - 1];
+      const folder = parts[parts.length - 2];
+      return `${folder}/${filename.split('.')[0]}`;
+    });
+    
+    try {
+      await cloudinary.api.delete_resources(publicIds);
+      res.json({ success: true });
+    } catch (error) {
+      Logger.error('Cleanup error:', error);
+      res.status(500).json({ error: 'Cleanup failed' });
     }
   });
 

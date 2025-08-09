@@ -173,26 +173,89 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
         })
       );
 
-      // Try server-side upload first (more reliable)
+      // Enhanced server-side upload with progress tracking
       try {
         const formData = new FormData();
         processedFiles.forEach(file => {
           formData.append('images', file);
         });
+        formData.append('folder', folder);
 
-        const response = await fetch('/api/upload/images', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include'
+        // Client-side validation first
+        const invalidFiles = processedFiles.filter(file => {
+          if (file.size > 5 * 1024 * 1024) {
+            toast({
+              title: "File too large",
+              description: `${file.name} exceeds 5MB limit`,
+              variant: "destructive"
+            });
+            return true;
+          }
+          if (!file.type.startsWith('image/')) {
+            toast({
+              title: "Invalid file",
+              description: `${file.name} is not an image`,
+              variant: "destructive"
+            });
+            return true;
+          }
+          return false;
         });
 
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Server-side upload successful:', result);
-          return result.urls;
-        } else {
-          console.log('Server-side upload failed, trying direct upload...');
+        if (invalidFiles.length > 0) {
+          throw new Error('Some files are invalid');
         }
+
+        // Upload with XMLHttpRequest for progress tracking
+        const response = await new Promise<any>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = Math.round((e.loaded / e.total) * 100);
+              processedFiles.forEach(file => {
+                setUploadProgress(prev => ({ ...prev, [file.name]: percentComplete }));
+              });
+            }
+          });
+          
+          xhr.addEventListener('load', () => {
+            if (xhr.status === 200) {
+              const result = JSON.parse(xhr.responseText);
+              resolve(result);
+            } else {
+              reject(new Error(`Upload failed: ${xhr.statusText}`));
+            }
+          });
+          
+          xhr.addEventListener('error', () => {
+            reject(new Error('Network error during upload'));
+          });
+          
+          xhr.open('POST', '/api/upload/images');
+          xhr.withCredentials = true;
+          xhr.send(formData);
+        });
+
+        console.log('Server-side upload successful:', response);
+        
+        // Show success/warning messages
+        if (response.errors?.length > 0) {
+          toast({
+            title: "Some uploads failed",
+            description: `${response.errors.length} files failed to upload`,
+            variant: "destructive"
+          });
+        } else if (response.success) {
+          toast({
+            title: "Upload successful",
+            description: `${response.uploaded} images uploaded successfully`,
+            variant: "default"
+          });
+        }
+        
+        return response.urls || [];
+        
       } catch (error) {
         console.log('Server-side upload error, trying direct upload:', error);
       }

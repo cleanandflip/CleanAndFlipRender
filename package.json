@@ -103,6 +103,7 @@
     "recharts": "^2.15.4",
     "redis": "^5.8.0",
     "resend": "^6.0.0",
+    "sharp": "^0.34.3",
     "socket.io": "^4.8.1",
     "stripe": "^18.4.0",
     "tailwind-merge": "^2.6.0",
