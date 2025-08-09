@@ -124,7 +124,7 @@ export function UnifiedDropdown({
   const buttonStyle = {
     backgroundColor: variant === 'ghost' || variant === 'nav' 
       ? 'transparent' 
-      : '#333b49', // UNIFIED: Use custom background color
+      : 'var(--input)', // UNIFIED: Use same background as Input and Textarea components
     borderColor: 'var(--border)', // UNIFIED: Use same border as other form fields
     color: 'var(--input-foreground)', // UNIFIED: Use same text color as other form fields
     ...(isOpen && { 
@@ -148,7 +148,7 @@ export function UnifiedDropdown({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={cn(buttonStyles[variant], "bg-[#333b49]")}
+        className={buttonStyles[variant]}
         style={buttonStyle}
       >
         <span 
