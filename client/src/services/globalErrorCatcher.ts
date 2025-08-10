@@ -138,16 +138,18 @@ export class FrontendErrorCatcher {
       errorData.browser = navigator.userAgent;
       errorData.timestamp = new Date();
       
-      // Send to backend
-      await fetch('/api/errors/client', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(errorData),
-        credentials: 'include'
-      }).catch(err => {
-        // Fallback - don't let error logging cause more errors
-        console.warn('Failed to log error to backend:', err);
-      });
+      // DISABLED - was causing crash loop due to 400 errors
+      // await fetch('/api/errors/client', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(errorData),
+      //   credentials: 'include'
+      // }).catch(err => {
+      //   // Fallback - don't let error logging cause more errors
+      //   console.warn('Failed to log error to backend:', err);
+      // });
+      
+      console.warn('Error captured (logging disabled to prevent loop):', errorData.message);
       
     } catch (err) {
       console.warn('Error in error logging:', err);
