@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { UnifiedCard } from '@/components/ui/UnifiedCard';
 import { Package } from 'lucide-react';
 import { formatStatus, getStatusVariant, formatCurrency } from '@/utils/submissionHelpers';
 
@@ -33,9 +33,11 @@ export function SubmissionsGrid({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {submissions.map((submission) => (
-        <Card 
+        <UnifiedCard 
           key={submission.id}
-          className={`p-4 hover:bg-gray-800/50 transition-all cursor-pointer ${
+          variant="interactive"
+          padding="lg"
+          className={`transition-all cursor-pointer ${
             selectedSubmissions.has(submission.id) ? 'ring-2 ring-blue-500' : ''
           }`}
           onClick={() => onViewDetails(submission)}
@@ -82,7 +84,7 @@ export function SubmissionsGrid({
           <div className="mt-3 pt-3 border-t border-gray-700">
             <p className="text-xs text-gray-400 font-mono">{submission.referenceNumber}</p>
           </div>
-        </Card>
+        </UnifiedCard>
       ))}
     </div>
   );

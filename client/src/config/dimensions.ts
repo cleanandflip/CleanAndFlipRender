@@ -1,405 +1,258 @@
 /**
- * UNIFIED DESIGN SYSTEM - PHASE 2: MEASUREMENT STANDARDIZATION
- * Single source of truth for ALL measurements across the application
- * August 10, 2025 - Professional UI Unification Implementation
+ * Unified Spacing & Sizing System
+ * Single source of truth for ALL measurements
+ * Base unit: 4px (0.25rem)
  */
 
-// CORE SPACING SCALE - Base unit: 4px (0.25rem)
-export const SPACING = {
-  // Micro spacing
-  xs: '0.25rem',    // 4px  - space-1 - Tiny gaps
-  sm: '0.5rem',     // 8px  - space-2 - Icon gaps, small margins
-  md: '0.75rem',    // 12px - space-3 - Form field gaps
-  lg: '1rem',       // 16px - space-4 - Standard gap, card padding mobile
-  xl: '1.25rem',    // 20px - space-5 - Section gaps mobile
-  '2xl': '1.5rem',  // 24px - space-6 - Card padding desktop
-  '3xl': '2rem',    // 32px - space-8 - Large gaps
-  '4xl': '2.5rem',  // 40px - space-10 - Section spacing mobile
-  '5xl': '3rem',    // 48px - space-12 - Major section gaps
-  '6xl': '4rem',    // 64px - space-16 - Section spacing desktop
-  '7xl': '5rem',    // 80px - space-20 - Page sections
+// Core spacing scale - use these everywhere
+export const spacing = {
+  xs: '4px',   // space-1 - Tiny gaps
+  sm: '8px',   // space-2 - Icon gaps, small margins
+  md: '12px',  // space-3 - Form field gaps
+  lg: '16px',  // space-4 - Standard gap, card padding mobile
+  xl: '20px',  // space-5 - Section gaps mobile
+  '2xl': '24px', // space-6 - Card padding desktop
+  '3xl': '32px', // space-8 - Large gaps
+  '4xl': '40px', // space-10 - Section spacing mobile
+  '5xl': '48px', // space-12 - Major section gaps
+  '6xl': '64px', // space-16 - Section spacing desktop
+  '7xl': '80px', // space-20 - Page sections
 } as const;
 
-// INTERACTIVE ELEMENT HEIGHTS - Exact specifications
-export const HEIGHTS = {
-  // Interactive Elements
-  xs: '1.75rem',   // 28px - h-7 - Tags, chips only
-  sm: '2rem',      // 32px - h-8 - Secondary actions
-  md: '2.5rem',    // 40px - h-10 - DEFAULT for all inputs/buttons
-  lg: '3rem',      // 48px - h-12 - Primary CTAs
-  xl: '3.5rem',    // 56px - h-14 - Hero buttons only
-
-  // Text Input Specific
-  input: '2.5rem',     // 40px - h-10 - ALL text inputs
-  textarea: '5rem',    // 80px - min-h-[80px] - ALL textareas
-  select: '2.5rem',    // 40px - h-10 - ALL selects
-
-  // Fixed Layout Heights
-  nav: '4rem',         // 64px - h-16 - Navigation bar
-  navMobile: '3.5rem', // 56px - h-14 - Mobile nav
-  tabs: '3rem',        // 48px - h-12 - Tab bars
-  tableRow: '3.25rem', // 52px - h-13 - Table rows
-  sidebar: '2.75rem',  // 44px - h-11 - Sidebar items
+// Interactive element heights - standardized across all components
+export const heights = {
+  // Interactive heights
+  xs: '28px', // h-7 - Tags, chips only
+  sm: '32px', // h-8 - Secondary actions
+  md: '40px', // h-10 - DEFAULT for all inputs/buttons
+  lg: '48px', // h-12 - Primary CTAs
+  xl: '56px', // h-14 - Hero buttons only
+  
+  // Fixed component heights
+  nav: '64px',      // h-16 - Navigation bar
+  navMobile: '56px', // h-14 - Mobile nav
+  tabs: '48px',     // h-12 - Tab bars
+  tableRow: '52px', // h-13 - Table rows
+  sidebarItem: '44px', // h-11 - Sidebar items
 } as const;
 
-// BUTTON SPECIFICATIONS
-export const BUTTONS = {
-  primary: {
-    desktop: {
-      height: HEIGHTS.md,      // h-10 (40px)
-      padding: '0 1rem',       // px-4
-      fontSize: '1rem',        // text-base (16px)
-      borderRadius: '0.5rem',  // rounded-lg (8px)
-      minWidth: '7.5rem',      // min-w-[120px]
-    },
-    mobile: {
-      height: HEIGHTS.lg,      // h-12 (48px)
-      padding: '0 1.5rem',     // px-6
-      fontSize: '1rem',        // text-base (16px)
-      borderRadius: '0.5rem',  // rounded-lg (8px)
-      minWidth: '7.5rem',      // min-w-[120px]
-    }
-  },
-  secondary: {
-    height: HEIGHTS.md,        // h-10 (40px) always
-    padding: '0 0.75rem',      // px-3
-    fontSize: '0.875rem',      // text-sm (14px)
-    borderRadius: '0.5rem',    // rounded-lg (8px)
-  },
-  icon: {
-    size: HEIGHTS.md,          // w-10 h-10 (40px square)
-    iconSize: '1.25rem',       // w-5 h-5 (20px)
-    borderRadius: '0.5rem',    // rounded-lg (8px)
-  },
-  text: {
-    height: HEIGHTS.md,        // h-10
-    padding: '0 0.5rem',       // px-2
-  }
-} as const;
-
-// INPUT FIELD SPECIFICATIONS
-export const INPUTS = {
-  text: {
-    height: HEIGHTS.input,     // h-10 (40px) EXACTLY
-    padding: '0 0.75rem',      // px-3 (12px horizontal)
-    fontSize: '1rem',          // text-base (16px) - prevents zoom
-    borderWidth: '1px',        // border (1px)
-    borderRadius: '0.5rem',    // rounded-lg (8px)
-  },
-  textarea: {
-    minHeight: HEIGHTS.textarea, // min-h-[80px]
-    padding: '0.75rem',          // p-3
-    fontSize: '1rem',            // text-base (16px)
-    borderWidth: '1px',          // border (1px)
-    borderRadius: '0.5rem',      // rounded-lg (8px)
-  },
-  label: {
-    fontSize: '0.875rem',       // text-sm (14px)
-    marginBottom: SPACING.sm,   // mb-2 (8px)
-    fontWeight: '500',          // font-medium
-  },
-  error: {
-    fontSize: '0.875rem',       // text-sm (14px)
-    marginTop: SPACING.xs,      // mt-1 (4px)
-  }
-} as const;
-
-// CARD SPECIFICATIONS
-export const CARDS = {
-  container: {
-    desktop: {
-      padding: SPACING['2xl'],    // p-6 (24px)
-      borderRadius: '0.75rem',    // rounded-xl (12px)
-    },
-    mobile: {
-      padding: SPACING.lg,        // p-4 (16px)
-      borderRadius: '0.75rem',    // rounded-xl (12px)
-    }
-  },
-  image: {
-    borderRadius: '0.5rem',       // rounded-lg (8px)
-  },
-  content: {
-    titleMargin: SPACING.lg,      // mt-4 (16px)
-    paragraphMargin: SPACING.sm,  // mt-2 (8px)
-    buttonMargin: SPACING.lg,     // mt-4 (16px)
-  },
-  grid: {
-    desktop: SPACING['2xl'],      // gap-6 (24px)
-    mobile: SPACING.lg,           // gap-4 (16px)
-  }
-} as const;
-
-// NAVIGATION SPECIFICATIONS
-export const NAVIGATION = {
-  main: {
-    desktop: {
-      height: HEIGHTS.nav,        // h-16 (64px)
-      padding: '0 1.5rem',        // px-6
-    },
-    mobile: {
-      height: HEIGHTS.navMobile,  // h-14 (56px)
-      padding: '0 1rem',          // px-4
-    }
-  },
-  logo: {
-    height: '2rem',               // h-8 (32px)
-  },
-  links: {
-    padding: '0 1rem',            // px-4
-    fontSize: '1rem',             // text-base (16px)
-    activeIndicator: '2px',       // border-b-2
-  },
-  sidebar: {
-    width: '16rem',               // w-64 (256px)
-    padding: SPACING.lg,          // p-4
-    itemHeight: HEIGHTS.sidebar,  // h-11 (44px)
-    itemPadding: '0 0.75rem',     // px-3
-    iconSize: '1.25rem',          // w-5 h-5 (20px)
-    iconGap: SPACING.md,          // gap-3 (12px)
-  }
-} as const;
-
-// TYPOGRAPHY HIERARCHY
-export const TYPOGRAPHY = {
+// Typography scale - consistent across all components
+export const typography = {
+  // Headings
   h1: {
-    desktop: {
-      fontSize: '2.25rem',        // text-4xl (36px)
-      fontWeight: '700',          // font-bold
-      marginBottom: SPACING['2xl'], // mb-6 (24px)
-    },
-    mobile: {
-      fontSize: '1.875rem',       // text-3xl (30px)
-      fontWeight: '700',          // font-bold
-      marginBottom: SPACING['2xl'], // mb-6 (24px)
-    }
+    desktop: 'text-4xl', // 36px
+    mobile: 'text-3xl',  // 30px
+    weight: 'font-bold',
+    spacing: 'mb-6'
   },
   h2: {
-    desktop: {
-      fontSize: '1.875rem',       // text-3xl (30px)
-      fontWeight: '600',          // font-semibold
-      marginBottom: SPACING.lg,   // mb-4 (16px)
-    },
-    mobile: {
-      fontSize: '1.5rem',         // text-2xl (24px)
-      fontWeight: '600',          // font-semibold
-      marginBottom: SPACING.lg,   // mb-4 (16px)
-    }
+    desktop: 'text-3xl', // 30px
+    mobile: 'text-2xl',  // 24px
+    weight: 'font-semibold',
+    spacing: 'mb-4'
   },
   h3: {
-    desktop: {
-      fontSize: '1.25rem',        // text-xl (20px)
-      fontWeight: '600',          // font-semibold
-      marginBottom: SPACING.md,   // mb-3 (12px)
-    },
-    mobile: {
-      fontSize: '1.125rem',       // text-lg (18px)
-      fontWeight: '600',          // font-semibold
-      marginBottom: SPACING.md,   // mb-3 (12px)
-    }
+    desktop: 'text-xl',  // 20px
+    mobile: 'text-lg',   // 18px
+    weight: 'font-semibold',
+    spacing: 'mb-3'
   },
   h4: {
-    desktop: {
-      fontSize: '1.125rem',       // text-lg (18px)
-      fontWeight: '500',          // font-medium
-      marginBottom: SPACING.sm,   // mb-2 (8px)
-    },
-    mobile: {
-      fontSize: '1rem',           // text-base (16px)
-      fontWeight: '500',          // font-medium
-      marginBottom: SPACING.sm,   // mb-2 (8px)
-    }
+    desktop: 'text-lg',   // 18px
+    mobile: 'text-base',  // 16px
+    weight: 'font-medium',
+    spacing: 'mb-2'
   },
+  
+  // Body text
   body: {
-    default: {
-      fontSize: '1rem',           // text-base (16px)
-      lineHeight: '1.625',        // leading-relaxed
-      marginBottom: SPACING.lg,   // mb-4 (16px)
+    size: 'text-base',        // 16px
+    lineHeight: 'leading-relaxed', // 1.625
+    spacing: 'mb-4'
+  },
+  small: 'text-sm',  // 14px - labels, captions, metadata
+  tiny: 'text-xs',   // 12px - timestamps only
+} as const;
+
+// Icon sizing system - consistent across all uses
+export const iconSizes = {
+  // Context-based sizing
+  buttonSm: 'w-4 h-4',    // 16px - in h-8 buttons
+  buttonMd: 'w-5 h-5',    // 20px - in h-10 buttons (default)
+  buttonLg: 'w-6 h-6',    // 24px - in h-12 buttons
+  nav: 'w-6 h-6',         // 24px - navigation icons
+  standalone: 'w-6 h-6',  // 24px - default standalone
+  inline: 'w-4 h-4',      // 16px - tiny icons in text
+} as const;
+
+// Layout dimensions
+export const layout = {
+  // Containers
+  maxWidth: 'max-w-7xl',  // 1280px
+  containerPadding: {
+    desktop: 'px-6',
+    mobile: 'px-4'
+  },
+  
+  // Section spacing
+  sectionSpacing: {
+    desktop: 'py-16',
+    mobile: 'py-12'
+  },
+  
+  // Grid gaps
+  gridGap: {
+    desktop: 'gap-6',  // 24px
+    mobile: 'gap-4'    // 16px
+  },
+  
+  // Card dimensions
+  card: {
+    padding: {
+      desktop: 'p-6',  // 24px
+      mobile: 'p-4'    // 16px
     },
-    small: {
-      fontSize: '0.875rem',       // text-sm (14px)
-    },
-    tiny: {
-      fontSize: '0.75rem',        // text-xs (12px)
-    }
+    borderRadius: 'rounded-xl', // 12px
+    imageBorderRadius: 'rounded-lg' // 8px
   }
 } as const;
 
-// TABLE SPECIFICATIONS
-export const TABLES = {
-  container: {
-    borderRadius: '0.5rem',       // rounded-lg
+// Form specifications
+export const forms = {
+  fieldSpacing: 'space-y-4',    // 16px between fields
+  sectionSpacing: 'space-y-6',  // 24px between sections
+  labelSpacing: 'mb-2',         // 8px label to input
+  errorSpacing: 'mt-1',         // 4px error to field
+  
+  input: {
+    height: 'h-10',             // 40px - ALL text inputs
+    padding: 'px-3',            // 12px horizontal
+    fontSize: 'text-base',      // 16px - prevents zoom
+    borderRadius: 'rounded-lg', // 8px
   },
-  header: {
-    height: HEIGHTS.lg,           // h-12 (48px)
-    fontSize: '0.875rem',         // text-sm
-    fontWeight: '600',            // font-semibold
-    padding: '0 1rem',            // px-4
+  
+  textarea: {
+    minHeight: 'min-h-[80px]',
+    padding: 'p-3',
+    borderRadius: 'rounded-lg',
   },
-  row: {
-    height: HEIGHTS.tableRow,     // h-13 (52px)
-    padding: '0.75rem 1rem',      // py-3 px-4
-  },
-  cell: {
-    fontSize: '0.875rem',         // text-sm
-    padding: '0.75rem 1rem',      // py-3 px-4
-  },
-  actionButton: {
-    size: HEIGHTS.sm,             // h-8 w-8 (32px)
-    iconSize: '1rem',             // w-4 h-4 (16px)
+  
+  label: {
+    fontSize: 'text-sm',       // 14px
+    fontWeight: 'font-medium',
+    spacing: 'mb-2'            // 8px
   }
 } as const;
 
-// MODAL SPECIFICATIONS
-export const MODALS = {
-  container: {
-    maxWidth: '32rem',            // max-w-lg (512px)
-    padding: SPACING['2xl'],      // p-6 (24px)
-    borderRadius: '1rem',         // rounded-2xl (16px)
-    margin: SPACING.lg,           // m-4 (mobile safety)
-  },
-  header: {
-    height: HEIGHTS.xl,           // h-14 (56px)
-    titleSize: '1.25rem',         // text-xl
-    titleWeight: '600',           // font-semibold
-    closeButton: {
-      size: HEIGHTS.sm,           // w-8 h-8
-      iconSize: '1rem',           // w-4 h-4
-    }
-  },
-  content: {
-    paddingTop: SPACING.lg,       // pt-4 (16px)
-    paddingBottom: SPACING['2xl'], // pb-6 (24px)
-    spacing: SPACING.lg,          // space-y-4
-  },
-  footer: {
-    paddingTop: SPACING.lg,       // pt-4 (16px)
-    buttonGap: SPACING.md,        // gap-3 (12px)
-    buttonHeight: HEIGHTS.md,     // minimum h-10
-  }
-} as const;
-
-// ICON SPECIFICATIONS
-export const ICONS = {
-  button: {
-    h8: '1rem',                   // w-4 h-4 (16px)
-    h10: '1.25rem',               // w-5 h-5 (20px)
-    h12: '1.5rem',                // w-6 h-6 (24px)
-  },
-  navigation: '1.5rem',           // w-6 h-6 (24px)
-  standalone: '1.5rem',           // w-6 h-6 default
-  inline: '1rem',                 // w-4 h-4 (16px) - in text
-  spacing: {
-    toText: SPACING.sm,           // gap-2 (8px) - icon to text in buttons
-    inList: SPACING.md,           // gap-3 (12px) - icon to text in lists
-  }
-} as const;
-
-// FORM SPECIFICATIONS
-export const FORMS = {
-  structure: {
-    fieldSpacing: SPACING.lg,     // space-y-4 (16px)
-    sectionSpacing: SPACING['2xl'], // space-y-6 (24px)
-    labelToInput: SPACING.sm,     // mb-2 (8px)
-    errorToField: SPACING.xs,     // mt-1 (4px)
-  },
-  grid: {
-    twoColumn: SPACING.lg,        // gap-4
-  },
-  submit: {
-    marginTop: SPACING['2xl'],    // mt-6 (24px)
-    buttonGap: SPACING.md,        // gap-3
-    primaryHeight: {
-      mobile: HEIGHTS.lg,         // h-12
-      desktop: HEIGHTS.md,        // h-10
-    }
-  }
-} as const;
-
-// LAYOUT GRID SYSTEM
-export const LAYOUT = {
-  container: {
-    maxWidth: '80rem',            // max-w-7xl (1280px)
-    paddingDesktop: '0 1.5rem',   // px-6
-    paddingMobile: '0 1rem',      // px-4
-  },
-  sections: {
-    desktop: '4rem 0',            // py-16
-    mobile: '3rem 0',             // py-12
-  },
-  grids: {
-    products: {
-      gap: {
-        desktop: SPACING['2xl'],  // gap-6
-        mobile: SPACING.lg,       // gap-4
-      }
-    },
-    cards: {
-      gap: {
-        desktop: SPACING['2xl'],  // gap-6
-        mobile: SPACING.lg,       // gap-4
-      }
-    }
-  },
-  flex: {
-    defaultGap: SPACING.lg,       // gap-4 (16px)
-  }
-} as const;
-
-// INTERACTION STATES
-export const INTERACTIONS = {
-  transitions: {
-    default: 'all 200ms ease-in-out',
-    slow: 'all 300ms ease-in-out',
-  },
+// Interaction states
+export const interactions = {
   hover: {
-    cardTransform: 'translateY(-2px)',
-    buttonBrightness: '110%',
+    transition: 'transition-all duration-200',
+    buttonBrightness: 'hover:brightness-110',
+    cardShadow: 'hover:shadow-lg',
+    cardTransform: 'hover:-translate-y-0.5'
   },
+  
   focus: {
-    ring: '2px',
-    ringOffset: '2px',
+    ring: 'ring-2 ring-offset-2',
+    // No outline-none without alternative
   },
+  
   active: {
-    scale: '0.95',
+    buttonScale: 'active:scale-95',
+    cardShadow: 'active:shadow-sm'
   },
+  
   disabled: {
-    opacity: '0.5',
-  },
-  loading: {
-    minimumDisplay: '200ms',
+    opacity: 'opacity-50',
+    cursor: 'cursor-not-allowed'
   }
 } as const;
 
-// BREAKPOINTS (for reference)
-export const BREAKPOINTS = {
-  sm: '640px',
-  md: '768px',
-  lg: '1024px',
-  xl: '1280px',
-  '2xl': '1536px',
+// Table specifications
+export const tables = {
+  container: {
+    overflow: 'overflow-x-auto',
+    borderRadius: layout.card.borderRadius,
+  },
+  
+  header: {
+    height: 'h-12',           // 48px
+    fontSize: 'text-sm',      // 14px
+    fontWeight: 'font-semibold',
+    textAlign: 'text-left',
+    padding: 'px-4'
+  },
+  
+  row: {
+    height: 'h-13',           // 52px
+    border: 'border-b',
+    hover: 'hover:bg-gray-50',
+    padding: 'px-4'
+  },
+  
+  cell: {
+    padding: 'py-3 px-4',
+    fontSize: 'text-sm',
+    verticalAlign: 'align-middle'
+  },
+  
+  actionButton: {
+    size: 'h-8 w-8',          // 32px
+    iconSize: iconSizes.inline // w-4 h-4 (16px)
+  }
 } as const;
 
-// TOUCH TARGETS
-export const TOUCH = {
-  minimum: '2.75rem',             // 44px - minimum touch target
-  recommended: '3rem',            // 48px - recommended touch target
+// Modal/Dialog specifications  
+export const modals = {
+  container: {
+    maxWidth: 'max-w-lg',     // 512px default
+    padding: layout.card.padding.desktop, // p-6 (24px)
+    borderRadius: 'rounded-2xl', // 16px
+    margin: 'm-4'             // for mobile safety
+  },
+  
+  header: {
+    height: 'h-14',           // 56px
+    titleSize: 'text-xl',     // 20px
+    titleWeight: 'font-semibold',
+    closeButton: {
+      size: 'w-8 h-8',        // 32px
+      iconSize: iconSizes.inline // w-4 h-4 (16px)
+    }
+  },
+  
+  content: {
+    paddingTop: 'pt-4',       // 16px
+    paddingBottom: 'pb-6',    // 24px
+    spacing: 'space-y-4'      // 16px between elements
+  },
+  
+  footer: {
+    paddingTop: 'pt-4',       // 16px
+    borderTop: 'border-t',
+    buttonGap: 'gap-3',       // 12px
+    buttonHeight: heights.md  // h-10 minimum
+  }
 } as const;
 
-export default {
-  SPACING,
-  HEIGHTS,
-  BUTTONS,
-  INPUTS,
-  CARDS,
-  NAVIGATION,
-  TYPOGRAPHY,
-  TABLES,
-  MODALS,
-  ICONS,
-  FORMS,
-  LAYOUT,
-  INTERACTIONS,
-  BREAKPOINTS,
-  TOUCH,
+// Grid system specifications
+export const grids = {
+  products: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+  cards: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  
+  flex: {
+    defaultGap: 'gap-4',      // 16px
+    itemAlignment: 'items-center',
+    mobileStack: 'flex-col sm:flex-row'
+  }
+} as const;
+
+// Responsive breakpoints helper
+export const responsive = {
+  // Mobile-first approach
+  mobile: '', // No prefix - default
+  tablet: 'sm:', // 640px+
+  desktop: 'lg:', // 1024px+
+  wide: 'xl:' // 1280px+
 } as const;
