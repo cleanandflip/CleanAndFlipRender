@@ -5,10 +5,18 @@ import FilterSidebar from '@/components/products/filter-sidebar';
 import { WelcomeBanner } from '@/components/ui/welcome-banner';
 import type { Product } from '@shared/schema';
 
+interface ProductsResponse {
+  products: Product[];
+  total: number;
+}
+
 export default function ProductsPage() {
-  const { data: products = [], isLoading } = useQuery<Product[]>({
+  const { data: productsResponse, isLoading } = useQuery<ProductsResponse>({
     queryKey: ['/api/products'],
   });
+  
+  // Extract products array from response - API returns { products: Product[], total: number }
+  const products = Array.isArray(productsResponse?.products) ? productsResponse.products : [];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
