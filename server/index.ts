@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { Logger } from './utils/logger';
 import { validateEnvironmentVariables, getEnvironmentInfo } from './config/env-validation';
+import { productionSecurityHeaders } from "./middleware/security-enhancements";
+import { sanitizeRequest } from "./utils/input-sanitization";
 import { db } from './db';
 import { sql } from 'drizzle-orm';
 import fs from 'fs';
@@ -12,6 +14,12 @@ const app = express();
 
 // CRITICAL: Trust proxy headers for correct redirects
 app.set('trust proxy', true);
+
+// Apply production-ready security headers first
+app.use(productionSecurityHeaders);
+
+// Input sanitization middleware for security
+app.use(sanitizeRequest);
 
 // Reduced limits since images now go directly to Cloudinary
 app.use(express.json({ limit: '1mb' }));

@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/hooks/use-cart";
 import { AuthProvider } from "@/hooks/use-auth";
-import { ErrorBoundary } from "@/components/error-boundary";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Navigation from "@/components/layout/navigation";
 import Footer from "@/components/layout/footer";
 import CartDrawer from "@/components/cart/cart-drawer";
@@ -34,6 +34,8 @@ const ProductForm = lazy(() => import("@/pages/admin/ProductForm").then(module =
 const Orders = lazy(() => import("@/pages/orders"));
 const About = lazy(() => import("@/pages/about"));
 const Contact = lazy(() => import("@/pages/contact"));
+const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
+const TermsOfService = lazy(() => import("@/pages/terms-of-service"));
 const AuthPage = lazy(() => import("@/pages/auth"));
 const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
@@ -103,6 +105,8 @@ function Router() {
               <Route path={ROUTES.PRODUCT_DETAIL} component={ProductDetail} />
               <Route path={ROUTES.ABOUT} component={About} />
               <Route path={ROUTES.CONTACT} component={Contact} />
+              <Route path="/privacy-policy" component={PrivacyPolicy} />
+              <Route path="/terms-of-service" component={TermsOfService} />
               
               {/* Shopping Routes - Profile completion required */}
               <Route path={ROUTES.CART} component={() => (

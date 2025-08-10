@@ -1,0 +1,41 @@
+{
+  "name": "Clean & Flip - Weightlifting Equipment Exchange",
+  "short_name": "Clean & Flip",
+  "description": "Buy and sell premium weightlifting equipment. Professional-grade barbells, dumbbells, plates, and gym accessories.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1f2937",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-US",
+  "categories": ["fitness", "shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "/clean-flip-logo-final.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/clean-flip-logo-final.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/clean-flip-logo-final.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/clean-flip-logo-final.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}

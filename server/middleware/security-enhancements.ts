@@ -24,22 +24,58 @@ export const createEnhancedRateLimit = (maxRequests: number, windowMs: number = 
   });
 };
 
-// Production-ready security headers
+// Production-ready security headers with strict CSP
 export const productionSecurityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      scriptSrc: ["'self'", "'unsafe-eval'", "https://js.stripe.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://api.geoapify.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      styleSrc: [
+        "'self'", 
+        "'unsafe-inline'", // Required for Tailwind CSS
+        "https://fonts.googleapis.com"
+      ],
+      scriptSrc: [
+        "'self'", 
+        "'unsafe-eval'", // Required for Vite in development
+        "https://js.stripe.com",
+        "https://accounts.google.com",
+        "https://apis.google.com"
+      ],
+      imgSrc: [
+        "'self'", 
+        "data:", 
+        "https:", 
+        "blob:",
+        "https://res.cloudinary.com", // Cloudinary images
+        "https://lh3.googleusercontent.com" // Google profile images
+      ],
+      connectSrc: [
+        "'self'", 
+        "https://api.stripe.com",
+        "https://api.geoapify.com",
+        "https://accounts.google.com",
+        "https://oauth2.googleapis.com",
+        "wss:", // WebSocket connections
+        "ws:" // Development WebSocket
+      ],
+      fontSrc: [
+        "'self'", 
+        "https://fonts.gstatic.com"
+      ],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["https://js.stripe.com", "https://hooks.stripe.com"],
+      frameSrc: [
+        "https://js.stripe.com", 
+        "https://hooks.stripe.com",
+        "https://accounts.google.com"
+      ],
+      frameAncestors: ["'none'"], // Prevent clickjacking
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: [], // Force HTTPS in production
     },
   },
-  crossOriginEmbedderPolicy: false, // Allow Stripe integration
+  crossOriginEmbedderPolicy: false, // Allow Stripe and Google integration
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
@@ -47,7 +83,13 @@ export const productionSecurityHeaders = helmet({
   },
   noSniff: true,
   xssFilter: true,
-  referrerPolicy: { policy: 'same-origin' }
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permissionsPolicy: {
+    camera: ['none'],
+    microphone: ['none'],
+    geolocation: ['self'],
+    payment: ['self', 'https://js.stripe.com']
+  }
 });
 
 // Input sanitization middleware
