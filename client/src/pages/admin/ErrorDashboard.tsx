@@ -7,8 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, CheckCircle, Info, AlertTriangle, Bug } from 'lucide-react';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-
 interface ErrorLog {
   id: string;
   error_type: string;
@@ -159,14 +157,13 @@ export default function ErrorDashboard() {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Error Dashboard</h1>
-          <p className="text-muted-foreground">
-            Monitor and resolve application errors in real-time
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Error Dashboard</h1>
+        <p className="text-muted-foreground">
+          Monitor and resolve application errors in real-time
+        </p>
+      </div>
 
         {/* Error Stats */}
         {stats && (
@@ -297,6 +294,5 @@ export default function ErrorDashboard() {
           )}
         </div>
       </div>
-    </AdminLayout>
   );
 }
