@@ -289,9 +289,15 @@ async function migrateEverythingToProduction() {
         images: submission.images,
         status: submission.status,
         notes: submission.notes,
-        contactPreference: submission.contactPreference,
+        contactPreference: submission.contactPreference || 'email',
         phoneNumber: submission.phoneNumber,
-        preferredContactTime: submission.preferredContactTime
+        preferredContactTime: submission.preferredContactTime,
+        sellerEmail: submission.sellerEmail || 'legacy@cleanandflip.com',
+        locationStreet: submission.locationStreet,
+        locationCity: submission.locationCity,
+        locationState: submission.locationState,
+        locationZipCode: submission.locationZipCode,
+        isLocalPickup: submission.isLocalPickup || false
       });
       
       submissionsMigrated++;

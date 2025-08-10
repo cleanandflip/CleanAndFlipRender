@@ -42,19 +42,12 @@ async function initializeProduction() {
     await sql`SELECT 1 as test`;
     console.log('✅ Connected to production database');
     
-    // Check if already initialized
-    const existingDeveloper = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.email, developerEmail)
-    });
+    // Check if already initialized by checking for any users
+    const userCount = await sql`SELECT COUNT(*) as count FROM users`.catch(() => [{ count: 0 }]);
+    const categoryCount = await sql`SELECT COUNT(*) as count FROM categories`.catch(() => [{ count: 0 }]);
     
-    if (existingDeveloper) {
+    if (Number(userCount[0].count) > 0) {
       console.log('⚠️  Production database already initialized');
-      console.log(`   Developer user exists: ${existingDeveloper.email}`);
-      
-      // Update verification
-      const userCount = await sql`SELECT COUNT(*) as count FROM users`;
-      const categoryCount = await sql`SELECT COUNT(*) as count FROM categories`;
-      
       console.log(`   Users: ${userCount[0].count}`);
       console.log(`   Categories: ${categoryCount[0].count}`);
       console.log('✅ Production database verified');
@@ -117,7 +110,7 @@ async function initializeProduction() {
     // Create essential database indexes for performance
     await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_search_vector ON products USING gin(search_vector)`;
     await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_category_price ON products(category_id, price)`;
-    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_status_featured ON products(status, is_featured)`;
+    await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_status_featured ON products(status, featured)`;
     await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_role ON users(role)`;
     await sql`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_user_status ON orders(user_id, status)`;
     
