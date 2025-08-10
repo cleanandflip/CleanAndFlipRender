@@ -1,0 +1,168 @@
+2025-08-09 21:17:20.59
+25f70737
+System
+starting up user application
+2025-08-09 21:17:20.78
+25f70737
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-08-09 21:17:22.32
+25f70737
+User
+> rest-express@1.0.0 start
+2025-08-09 21:17:22.32
+25f70737
+User
+> NODE_ENV=production node dist/index.js
+2025-08-09 21:17:25.79
+25f70737
+User
+[WARN] [ENV] Optional configuration warnings:
+2025-08-09 21:17:25.79
+25f70737
+User
+[WARN] [ENV] - REDIS_URL not set - related features may be disabled
+2025-08-09 21:17:25.79
+25f70737
+User
+[WARN] [ENV] - ENABLE_REDIS not set - related features may be disabled
+2025-08-09 21:17:25.79
+25f70737
+User
+[INFO] [ENV] ✓ RESEND_API_KEY is configured
+2025-08-09 21:17:25.79
+25f70737
+User
+[INFO] [ENV] Production mode - performing additional validation...
+2025-08-09 21:17:25.79
+25f70737
+User
+[INFO] [ENV] Environment validation completed successfully
+2025-08-09 21:17:25.79
+25f70737
+User
+[INFO] [ENV] Running in production mode on port 5000
+2025-08-09 21:17:25.79
+25f70737
+User
+[INFO] [MAIN] Environment validation passed
+2025-08-09 21:17:25.79
+25f70737
+User
+[INFO] [MAIN] System Info: {
+2025-08-09 21:17:25.79
+25f70737
+User
+nodeVersion: 'v20.19.3',
+2025-08-09 21:17:25.79
+25f70737
+User
+platform: 'linux',
+2025-08-09 21:17:25.79
+25f70737
+User
+architecture: 'x64',
+2025-08-09 21:17:25.79
+25f70737
+User
+memory: { total: 122, heap: 34, external: 5 },
+2025-08-09 21:17:25.79
+25f70737
+User
+uptime: 3,
+2025-08-09 21:17:25.79
+25f70737
+User
+environment: 'production',
+2025-08-09 21:17:25.79
+25f70737
+User
+port: '5000'
+2025-08-09 21:17:25.79
+25f70737
+User
+}
+2025-08-09 21:17:25.80
+25f70737
+User
+[INFO] [MAIN] Initializing server...
+2025-08-09 21:17:25.87
+25f70737
+User
+1:17:25 AM ✅ 🔸 Redis caching disabled by environment variable
+2025-08-09 21:17:25.87
+25f70737
+User
+[INFO] ✅ Response compression configured
+2025-08-09 21:17:26.21
+25f70737
+User
+[ERROR] Failed to initialize search indexes: error: password authentication failed for user 'neondb_owner'
+2025-08-09 21:17:26.21
+25f70737
+User
+at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+2025-08-09 21:17:26.21
+25f70737
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-08-09 21:17:26.21
+25f70737
+User
+at async initializeSearchIndexes (file:///home/runner/workspace/dist/index.js:3392:5)
+2025-08-09 21:17:26.21
+25f70737
+User
+at async registerRoutes (file:///home/runner/workspace/dist/index.js:3512:3)
+2025-08-09 21:17:26.21
+25f70737
+User
+at async file:///home/runner/workspace/dist/index.js:6316:15 {
+2025-08-09 21:17:26.21
+25f70737
+User
+length: 75,
+2025-08-09 21:17:26.21
+25f70737
+User
+severity: 'ERROR',
+2025-08-09 21:17:26.21
+25f70737
+User
+code: 'XX000',
+2025-08-09 21:17:26.21
+25f70737
+User
+detail: undefined,
+2025-08-09 21:17:26.21
+25f70737
+User
+hint: undefined,
+2025-08-09 21:17:26.21
+25f70737
+User
+position: undefined,
+2025-08-09 21:17:26.21
+25f70737
+User
+internalPosition: undefined,
+2025-08-09 21:17:26.21
+25f70737
+User
+internalQuery: undefined,
+2025-08-09 21:17:26.21
+25f70737
+User
+where: undefined,
+2025-08-09 21:17:26.21
+25f70737
+User
+schema: undefined,
+2025-08-09 21:17:26.21
+25f70737
+User
+table: undefined,
+2025-08-09 21:17:26.21
+25f70737
+User
+column: undefined,

@@ -14,17 +14,20 @@ export interface DatabaseConfig {
  * Detect current environment
  */
 export function getCurrentEnvironment(): 'development' | 'production' {
-  // Check for Replit deployment flag first
+  // Check for Replit deployment flag first (most reliable for Replit deployments)
   if (process.env.REPLIT_DEPLOYMENT === 'true') {
+    console.log('[DB] Environment detected via REPLIT_DEPLOYMENT=true');
     return 'production';
   }
   
   // Check NODE_ENV
   if (process.env.NODE_ENV === 'production') {
+    console.log('[DB] Environment detected via NODE_ENV=production');
     return 'production';
   }
   
   // Default to development
+  console.log('[DB] Environment defaulting to development');
   return 'development';
 }
 
@@ -35,16 +38,23 @@ export function getDatabaseConfig(): DatabaseConfig {
   const environment = getCurrentEnvironment();
   
   if (environment === 'production') {
-    const prodUrl = process.env.DATABASE_URL_PROD || process.env.DATABASE_URL;
+    // Prioritize DATABASE_URL_PROD for production
+    const prodUrl = process.env.DATABASE_URL_PROD;
     
     if (!prodUrl) {
-      throw new Error('DATABASE_URL_PROD must be set for production environment');
+      console.error('[DB] ❌ CRITICAL: DATABASE_URL_PROD is required for production!');
+      console.error('[DB] Available database URLs:');
+      console.error(`[DB]   DATABASE_URL: ${process.env.DATABASE_URL ? 'Set' : 'Missing'}`);
+      console.error(`[DB]   DATABASE_URL_PROD: ${process.env.DATABASE_URL_PROD ? 'Set' : 'Missing'}`);
+      throw new Error('DATABASE_URL_PROD must be set for production environment. Add it to Replit Secrets.');
     }
     
     // Safety check: ensure we're not using dev database in production
     if (prodUrl.includes('lingering-flower')) {
-      throw new Error('CRITICAL: Cannot use development database in production!');
+      throw new Error('CRITICAL: Cannot use development database (lingering-flower) in production!');
     }
+    
+    console.log('[DB] ✅ Using DATABASE_URL_PROD for production environment');
     
     return {
       url: prodUrl,
@@ -79,7 +89,9 @@ export async function createDatabaseConnection() {
   console.log(`[DB] Initializing ${config.environment} database connection...`);
   console.log(`[DB] NODE_ENV: ${process.env.NODE_ENV}`);
   console.log(`[DB] REPLIT_DEPLOYMENT: ${process.env.REPLIT_DEPLOYMENT}`);
+  console.log(`[DB] Environment detected: ${config.environment}`);
   console.log(`[DB] Has DATABASE_URL: ${!!process.env.DATABASE_URL}`);
+  console.log(`[DB] Has DATABASE_URL_PROD: ${!!process.env.DATABASE_URL_PROD}`);
   
   // Extract host info for logging (without credentials)
   const url = new URL(config.url);

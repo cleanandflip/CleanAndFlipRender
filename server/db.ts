@@ -3,42 +3,35 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import { WebSocket } from "ws";
 import * as schema from "../shared/schema";
 import { Logger } from './utils/logger';
+import { getDatabaseConfig, getCurrentEnvironment } from './config/database';
 
 // Configure Neon with better connection handling
 neonConfig.webSocketConstructor = WebSocket;
 neonConfig.pipelineConnect = false;
 neonConfig.useSecureWebSocket = true;
 
-// Enhanced database connection logging for production deployment
-console.log('[DB] Initializing database connection...');
-console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
-console.log('[DB] Has DATABASE_URL:', !!process.env.DATABASE_URL);
+// Use the unified database configuration system
+const dbConfig = getDatabaseConfig();
+const databaseUrl = dbConfig.url;
 
-if (!process.env.DATABASE_URL) {
-  console.error('[DB] ❌ CRITICAL: DATABASE_URL is not set!');
-  console.error('[DB] Available env vars (non-sensitive):', 
-    Object.keys(process.env).filter(k => 
-      !k.includes('SECRET') && 
-      !k.includes('KEY') && 
-      !k.includes('TOKEN') && 
-      !k.includes('PASSWORD')
-    ).join(', ')
-  );
-  throw new Error('DATABASE_URL environment variable is not set');
-}
+// Enhanced database connection logging for production deployment
+console.log('[DB] Using unified database configuration...');
+console.log('[DB] Environment:', dbConfig.environment);
+console.log('[DB] Database name:', dbConfig.name);
 
 // Log database host (safe to log)
 try {
-  const dbUrl = new URL(process.env.DATABASE_URL);
+  const dbUrl = new URL(databaseUrl);
   console.log('[DB] Connecting to host:', dbUrl.hostname);
   console.log('[DB] Database name:', dbUrl.pathname.substring(1));
 } catch (e) {
-  console.error('[DB] Invalid DATABASE_URL format');
+  console.error('[DB] Invalid database URL format');
+  throw new Error('Invalid database URL configuration');
 }
 
 // Enhanced pool configuration with error handling
 const poolConfig = {
-  connectionString: process.env.DATABASE_URL,
+  connectionString: databaseUrl,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,

@@ -674,42 +674,94 @@ var init_logger = __esm({
   }
 });
 
+// server/config/database.ts
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+function getCurrentEnvironment() {
+  if (process.env.REPLIT_DEPLOYMENT === "true") {
+    console.log("[DB] Environment detected via REPLIT_DEPLOYMENT=true");
+    return "production";
+  }
+  if (process.env.NODE_ENV === "production") {
+    console.log("[DB] Environment detected via NODE_ENV=production");
+    return "production";
+  }
+  console.log("[DB] Environment defaulting to development");
+  return "development";
+}
+function getDatabaseConfig() {
+  const environment = getCurrentEnvironment();
+  if (environment === "production") {
+    const prodUrl = process.env.DATABASE_URL_PROD;
+    if (!prodUrl) {
+      console.error("[DB] \u274C CRITICAL: DATABASE_URL_PROD is required for production!");
+      console.error("[DB] Available database URLs:");
+      console.error(`[DB]   DATABASE_URL: ${process.env.DATABASE_URL ? "Set" : "Missing"}`);
+      console.error(`[DB]   DATABASE_URL_PROD: ${process.env.DATABASE_URL_PROD ? "Set" : "Missing"}`);
+      throw new Error("DATABASE_URL_PROD must be set for production environment. Add it to Replit Secrets.");
+    }
+    if (prodUrl.includes("lingering-flower")) {
+      throw new Error("CRITICAL: Cannot use development database (lingering-flower) in production!");
+    }
+    console.log("[DB] \u2705 Using DATABASE_URL_PROD for production environment");
+    return {
+      url: prodUrl,
+      name: "production",
+      environment: "production",
+      maxRetries: 5,
+      retryDelay: 2e3
+    };
+  } else {
+    const devUrl = process.env.DATABASE_URL_DEV || process.env.DATABASE_URL;
+    if (!devUrl) {
+      throw new Error("DATABASE_URL_DEV must be set for development environment");
+    }
+    return {
+      url: devUrl,
+      name: "development",
+      environment: "development",
+      maxRetries: 3,
+      retryDelay: 1e3
+    };
+  }
+}
+var init_database = __esm({
+  "server/config/database.ts"() {
+    "use strict";
+    init_schema();
+  }
+});
+
 // server/db.ts
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-serverless";
+import { drizzle as drizzle2 } from "drizzle-orm/neon-serverless";
 import { WebSocket } from "ws";
 import { sql as sql2 } from "drizzle-orm";
-var poolConfig, pool, keepAlive, keepAliveInterval, db;
+var dbConfig, databaseUrl, poolConfig, pool, keepAlive, keepAliveInterval, db;
 var init_db = __esm({
   "server/db.ts"() {
     "use strict";
     init_schema();
     init_logger();
+    init_database();
     neonConfig.webSocketConstructor = WebSocket;
     neonConfig.pipelineConnect = false;
     neonConfig.useSecureWebSocket = true;
-    console.log("[DB] Initializing database connection...");
-    console.log("[DB] NODE_ENV:", process.env.NODE_ENV);
-    console.log("[DB] Has DATABASE_URL:", !!process.env.DATABASE_URL);
-    if (!process.env.DATABASE_URL) {
-      console.error("[DB] \u274C CRITICAL: DATABASE_URL is not set!");
-      console.error(
-        "[DB] Available env vars (non-sensitive):",
-        Object.keys(process.env).filter(
-          (k) => !k.includes("SECRET") && !k.includes("KEY") && !k.includes("TOKEN") && !k.includes("PASSWORD")
-        ).join(", ")
-      );
-      throw new Error("DATABASE_URL environment variable is not set");
-    }
+    dbConfig = getDatabaseConfig();
+    databaseUrl = dbConfig.url;
+    console.log("[DB] Using unified database configuration...");
+    console.log("[DB] Environment:", dbConfig.environment);
+    console.log("[DB] Database name:", dbConfig.name);
     try {
-      const dbUrl = new URL(process.env.DATABASE_URL);
+      const dbUrl = new URL(databaseUrl);
       console.log("[DB] Connecting to host:", dbUrl.hostname);
       console.log("[DB] Database name:", dbUrl.pathname.substring(1));
     } catch (e) {
-      console.error("[DB] Invalid DATABASE_URL format");
+      console.error("[DB] Invalid database URL format");
+      throw new Error("Invalid database URL configuration");
     }
     poolConfig = {
-      connectionString: process.env.DATABASE_URL,
+      connectionString: databaseUrl,
       max: 20,
       idleTimeoutMillis: 3e4,
       connectionTimeoutMillis: 1e4,
@@ -745,7 +797,7 @@ var init_db = __esm({
     };
     keepAliveInterval = process.env.NODE_ENV === "production" ? 10 * 60 * 1e3 : 5 * 60 * 1e3;
     setInterval(keepAlive, keepAliveInterval);
-    db = drizzle({ client: pool, schema: schema_exports });
+    db = drizzle2({ client: pool, schema: schema_exports });
     db.execute(sql2`SELECT current_database() as db, current_user as user, version() as version`).then((result) => {
       const info = result.rows[0];
       console.log("[DB] \u2705 Database connected successfully");
