@@ -208,7 +208,7 @@ export default function ErrorDashboard() {
                                            errorGroup.level === 'warning' ? 'medium' : 'low'];
 
     return (
-      <div className="bg-slate-900/50 rounded-lg border border-slate-800/50 hover:border-slate-700 transition-all duration-200 backdrop-blur-sm">
+      <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl backdrop-blur hover:border-gray-700/50 transition-all duration-200">
         {/* Header Row */}
         <div className="p-4 flex items-center justify-between">
           {/* Left Side */}
@@ -220,10 +220,10 @@ export default function ErrorDashboard() {
             
             {/* Error Title */}
             <div className="flex-1">
-              <h3 className="text-slate-200 font-medium text-sm">
+              <h3 className="text-gray-200 font-medium text-sm">
                 {errorGroup.title}
               </h3>
-              <p className="text-slate-400 text-xs mt-1">
+              <p className="text-gray-400 text-xs mt-1">
                 {errorGroup.title.substring(0, 100)}...
               </p>
             </div>
@@ -233,14 +233,14 @@ export default function ErrorDashboard() {
           <div className="flex items-center space-x-6 px-4">
             {/* Occurrence Count */}
             <div className="text-center">
-              <div className="text-slate-200 font-semibold">{errorGroup.occurrenceCount}</div>
-              <div className="text-slate-500 text-xs">EVENTS</div>
+              <div className="text-gray-200 font-semibold">{errorGroup.occurrenceCount}</div>
+              <div className="text-gray-500 text-xs">EVENTS</div>
             </div>
             
             {/* Users Affected */}
             <div className="text-center">
-              <div className="text-slate-200 font-semibold">{errorGroup.usersAffected}</div>
-              <div className="text-slate-500 text-xs">USERS</div>
+              <div className="text-gray-200 font-semibold">{errorGroup.usersAffected}</div>
+              <div className="text-gray-500 text-xs">USERS</div>
             </div>
             
             {/* Trend Sparkline */}
@@ -252,12 +252,12 @@ export default function ErrorDashboard() {
           {/* Right Side - Time & Actions */}
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <div className="text-slate-400 text-xs">
+              <div className="text-gray-400 text-xs">
                 First: {new Date(errorGroup.firstSeen).toLocaleDateString('en-US', {
                   month: 'short', day: 'numeric'
                 })}
               </div>
-              <div className="text-slate-400 text-xs">
+              <div className="text-gray-400 text-xs">
                 Last: {new Date(errorGroup.lastSeen).toLocaleDateString('en-US', {
                   month: 'short', day: 'numeric'
                 })}
@@ -267,10 +267,10 @@ export default function ErrorDashboard() {
             {/* Expand Toggle */}
             <button
               onClick={() => setExpandedError(isExpanded ? null : errorGroup.fingerprint)}
-              className="p-2 hover:bg-slate-700 rounded transition-colors"
+              className="p-2 hover:bg-gray-800/50 rounded transition-colors"
             >
               <ChevronDown 
-                className={`w-4 h-4 text-slate-400 transition-transform ${
+                className={`w-4 h-4 text-gray-400 transition-transform ${
                   isExpanded ? 'rotate-180' : ''
                 }`} 
               />
@@ -292,12 +292,12 @@ export default function ErrorDashboard() {
         
         {/* Expandable Details */}
         {isExpanded && (
-          <div className="border-t border-slate-700 p-4 bg-slate-950/50">
+          <div className="border-t border-gray-800 p-4 bg-[#1e293b]/70">
             {/* Stack Trace */}
             {errorGroup.lastErrorInstance.stack_trace && (
               <div className="mb-4">
-                <h4 className="text-slate-400 text-xs uppercase mb-2">Stack Trace</h4>
-                <pre className="bg-black/50 rounded p-3 text-xs text-slate-300 overflow-x-auto max-h-48 overflow-y-auto font-mono border border-slate-800/30">
+                <h4 className="text-gray-400 text-xs uppercase mb-2">Stack Trace</h4>
+                <pre className="bg-black/80 rounded p-3 text-xs text-gray-300 overflow-x-auto max-h-48 overflow-y-auto font-mono border border-gray-800">
                   {errorGroup.lastErrorInstance.stack_trace}
                 </pre>
               </div>
@@ -306,20 +306,20 @@ export default function ErrorDashboard() {
             {/* Context Tags */}
             <div className="grid grid-cols-4 gap-4 mb-4">
               <div>
-                <span className="text-slate-500 text-xs">Browser</span>
-                <p className="text-slate-200 text-sm">{errorGroup.lastErrorInstance.browser || 'Unknown'}</p>
+                <span className="text-gray-500 text-xs">Browser</span>
+                <p className="text-gray-200 text-sm">{errorGroup.lastErrorInstance.browser || 'Unknown'}</p>
               </div>
               <div>
-                <span className="text-slate-500 text-xs">OS</span>
-                <p className="text-slate-200 text-sm">{errorGroup.lastErrorInstance.os || 'Unknown'}</p>
+                <span className="text-gray-500 text-xs">OS</span>
+                <p className="text-gray-200 text-sm">{errorGroup.lastErrorInstance.os || 'Unknown'}</p>
               </div>
               <div>
-                <span className="text-slate-500 text-xs">User</span>
-                <p className="text-slate-200 text-sm">{errorGroup.lastErrorInstance.user?.email || 'Anonymous'}</p>
+                <span className="text-gray-500 text-xs">User</span>
+                <p className="text-gray-200 text-sm">{errorGroup.lastErrorInstance.user?.email || 'Anonymous'}</p>
               </div>
               <div>
-                <span className="text-slate-500 text-xs">URL</span>
-                <p className="text-slate-200 text-sm truncate">{errorGroup.lastErrorInstance.url || 'N/A'}</p>
+                <span className="text-gray-500 text-xs">URL</span>
+                <p className="text-gray-200 text-sm truncate">{errorGroup.lastErrorInstance.url || 'N/A'}</p>
               </div>
             </div>
           </div>
