@@ -96,17 +96,23 @@ export default function ErrorDashboard() {
     const SeverityIcon = severityInfo.icon;
 
     return (
-      <Card className="mb-4">
-        <CardHeader className="pb-2">
+      <Card className="mb-4 bg-gray-900 border-gray-800">
+        <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <Badge className={`${severityInfo.color} text-white`}>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge className={`${severityInfo.color} text-white font-medium`}>
                 <SeverityIcon className="w-3 h-3 mr-1" />
                 {severityInfo.label}
               </Badge>
-              <Badge variant="outline">{error.error_type}</Badge>
-              {error.resolved && <Badge variant="secondary">Resolved</Badge>}
-              <span className="text-sm text-muted-foreground">
+              <Badge variant="outline" className="border-gray-600 text-gray-300">
+                {error.error_type}
+              </Badge>
+              {error.resolved && (
+                <Badge variant="secondary" className="bg-green-800 text-green-100">
+                  ✓ Resolved
+                </Badge>
+              )}
+              <span className="text-sm text-gray-400 font-medium">
                 {error.occurrence_count}x occurrences
               </span>
             </div>
@@ -115,38 +121,75 @@ export default function ErrorDashboard() {
                 size="sm"
                 variant="outline"
                 onClick={() => handleResolveError(error.id)}
-                className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                className="bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700 hover:border-gray-500"
               >
                 <CheckCircle className="w-4 h-4 mr-1" />
                 Resolve
               </Button>
             )}
           </div>
+          <div className="mt-3">
+            <h3 className="font-semibold text-gray-200 text-base leading-relaxed">
+              {error.message}
+            </h3>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <p className="font-medium text-sm">{error.message}</p>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-muted-foreground">
-              {error.file_path && (
-                <div>
-                  <strong>File:</strong> {error.file_path.split('/').pop()}
-                  {error.line_number && `:${error.line_number}`}
+        <CardContent className="pt-0">
+          <div className="space-y-4">
+            {/* Primary Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              {error.url && (
+                <div className="bg-gray-800 rounded px-3 py-2">
+                  <span className="text-gray-400 font-medium">URL:</span>
+                  <br />
+                  <span className="text-gray-200 break-all">{error.url}</span>
                 </div>
               )}
-              {error.url && <div><strong>URL:</strong> {error.url}</div>}
-              {error.method && <div><strong>Method:</strong> {error.method}</div>}
-              {error.user_email && <div><strong>User:</strong> {error.user_email}</div>}
-              {error.browser && <div><strong>Browser:</strong> {error.browser}</div>}
-              {error.os && <div><strong>OS:</strong> {error.os}</div>}
-              <div><strong>First:</strong> {new Date(error.created_at).toLocaleString()}</div>
-              <div><strong>Last:</strong> {new Date(error.last_seen).toLocaleString()}</div>
+              {error.browser && error.browser !== 'Unknown' && (
+                <div className="bg-gray-800 rounded px-3 py-2">
+                  <span className="text-gray-400 font-medium">Browser:</span>
+                  <br />
+                  <span className="text-gray-200">{error.browser}</span>
+                </div>
+              )}
             </div>
 
+            {/* Secondary Info */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-400">
+              {error.file_path && (
+                <div>
+                  <span className="font-medium text-gray-300">File:</span>
+                  <br />
+                  <span>{error.file_path.split('/').pop()}</span>
+                  {error.line_number && <span>:{error.line_number}</span>}
+                </div>
+              )}
+              {error.method && (
+                <div>
+                  <span className="font-medium text-gray-300">Method:</span>
+                  <br />
+                  <span>{error.method}</span>
+                </div>
+              )}
+              <div>
+                <span className="font-medium text-gray-300">First Seen:</span>
+                <br />
+                <span>{new Date(error.created_at).toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="font-medium text-gray-300">Last Seen:</span>
+                <br />
+                <span>{new Date(error.last_seen).toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Stack Trace */}
             {error.stack_trace && (
-              <details className="mt-2">
-                <summary className="cursor-pointer text-sm font-medium">Stack Trace</summary>
-                <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto whitespace-pre-wrap">
+              <details className="mt-4">
+                <summary className="cursor-pointer text-sm font-medium text-gray-300 hover:text-gray-200 p-2 bg-gray-800 rounded">
+                  View Stack Trace
+                </summary>
+                <pre className="mt-2 p-3 bg-black rounded text-xs overflow-x-auto whitespace-pre-wrap text-gray-300 border border-gray-700">
                   {error.stack_trace}
                 </pre>
               </details>
@@ -217,7 +260,7 @@ export default function ErrorDashboard() {
         )}
 
         {/* Filters */}
-        <Card>
+        <Card className="bg-gray-900 border-gray-800">
           <CardContent className="pt-6">
             <div className="flex flex-wrap gap-4">
               <div className="flex-1 min-w-[200px]">
@@ -225,78 +268,35 @@ export default function ErrorDashboard() {
                   placeholder="Search errors..."
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  className="bg-gray-800 border-gray-700 text-gray-200 placeholder:text-gray-400"
                 />
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700">
-                    {filters.severity === 'all' ? 'All Severities' : 
-                     filters.severity === 'critical' ? 'Critical' :
-                     filters.severity === 'high' ? 'High' :
-                     filters.severity === 'medium' ? 'Medium' : 'Low'}
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'all' }))} className="text-gray-200 hover:bg-gray-700">
-                    All Severities
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'critical' }))} className="text-gray-200 hover:bg-gray-700">
-                    Critical
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'high' }))} className="text-gray-200 hover:bg-gray-700">
-                    High
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'medium' }))} className="text-gray-200 hover:bg-gray-700">
-                    Medium
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'low' }))} className="text-gray-200 hover:bg-gray-700">
-                    Low
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700">
-                    {filters.resolved === 'all' ? 'All' :
-                     filters.resolved === 'false' ? 'Unresolved' : 'Resolved'}
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'all' }))} className="text-gray-200 hover:bg-gray-700">
-                    All
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'false' }))} className="text-gray-200 hover:bg-gray-700">
-                    Unresolved
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'true' }))} className="text-gray-200 hover:bg-gray-700">
-                    Resolved
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700">
-                    {filters.timeRange === '24h' ? 'Last 24h' :
-                     filters.timeRange === '7d' ? 'Last 7 days' : 'Last 30 days'}
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '24h' }))} className="text-gray-200 hover:bg-gray-700">
-                    Last 24h
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '7d' }))} className="text-gray-200 hover:bg-gray-700">
-                    Last 7 days
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '30d' }))} className="text-gray-200 hover:bg-gray-700">
-                    Last 30 days
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline" 
+                  size="sm"
+                  className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                  onClick={() => setFilters(prev => ({ ...prev, severity: 'all' }))}
+                >
+                  All Severities
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm" 
+                  className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                  onClick={() => setFilters(prev => ({ ...prev, resolved: 'all' }))}
+                >
+                  All Status
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                  onClick={() => setFilters(prev => ({ ...prev, timeRange: '24h' }))}
+                >
+                  Last 24h
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
