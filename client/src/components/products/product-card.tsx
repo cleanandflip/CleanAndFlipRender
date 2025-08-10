@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { SmartLink } from "@/components/ui/smart-link";
 import { Badge } from "@/components/ui/badge";
-import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { UnifiedCard } from "@/components/ui/UnifiedCard";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -21,7 +21,6 @@ import { routes } from "@/config/routes";
 import { StockIndicator } from "@/components/ui/StockIndicator";
 import { ProductPrice } from "@/components/ui/ProductPrice";
 import { AddToCartButton } from "@/components/AddToCartButton";
-import { layout, iconSizes, typography, interactions } from "@/config/dimensions";
 
 interface ProductCardProps {
   product: Product;
@@ -39,37 +38,37 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
   if (compact) {
     return (
       <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
-        <UnifiedCard variant="interactive" className="overflow-hidden cursor-pointer">
+        <Card className="overflow-hidden bg-card-hover cursor-pointer">
           {hasImage ? (
             <img 
               src={mainImage}
               alt={product.name}
-              className={`w-full h-32 object-cover ${layout.card.imageBorderRadius}`}
+              className="w-full h-32 object-cover"
             />
           ) : (
-            <div className="w-full h-32 bg-background-secondary flex items-center justify-center">
+            <div className="w-full h-32 bg-bg-card-bg flex items-center justify-center">
               <div className="text-center text-text-muted">
-                <div className={`text-2xl mb-2`}>📦</div>
-                <div className={typography.tiny}>No Image</div>
+                <div className="text-2xl mb-2">📦</div>
+                <div className="text-xs">No Image</div>
               </div>
             </div>
           )}
           <div className="p-3">
-            <h4 className={`${typography.h4.weight} ${typography.tiny} line-clamp-2 mb-1`}>{product.name}</h4>
-            <p className={`text-accent-blue font-bold ${typography.tiny}`}>${product.price}</p>
+            <h4 className="font-semibold text-sm line-clamp-2 mb-1">{product.name}</h4>
+            <p className="text-accent-blue font-bold text-sm">${product.price}</p>
           </div>
-        </UnifiedCard>
+        </Card>
       </SmartLink>
     );
   }
 
   if (viewMode === 'list') {
     return (
-      <UnifiedCard variant="elevated" padding="lg">
-        <div className={`flex ${layout.gridGap.desktop}`}>
+      <Card className="p-6">
+        <div className="flex gap-6">
           {/* Image */}
           <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
-            <div className={`w-32 h-32 flex-shrink-0 overflow-hidden ${layout.card.imageBorderRadius} cursor-pointer group`}>
+            <div className="w-32 h-32 flex-shrink-0 overflow-hidden rounded-lg cursor-pointer group">
               {hasImage ? (
                 <img
                   src={mainImage}
@@ -155,7 +154,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             </div>
           </div>
         </div>
-      </UnifiedCard>
+      </Card>
     );
   }
 

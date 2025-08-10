@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "@/hooks/use-cart";
@@ -47,14 +47,14 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               <SheetTitle className="font-bebas text-xl">
                 SHOPPING CART
               </SheetTitle>
-              <UnifiedButton
+              <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => handleOpenChange(false)}
                 className="hover:bg-white/10"
               >
                 <X size={20} />
-              </UnifiedButton>
+              </Button>
             </div>
             {cartCount > 0 && (
               <p className="text-text-secondary text-sm">
@@ -88,12 +88,12 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     Start shopping to add items to your cart.
                   </p>
                   <Link href={ROUTES.PRODUCTS}>
-                    <UnifiedButton 
-                      variant="primary"
+                    <Button 
+                      className="bg-accent-blue hover:bg-blue-500"
                       onClick={() => handleOpenChange(false)}
                     >
                       Start Shopping
-                    </UnifiedButton>
+                    </Button>
                   </Link>
                 </div>
               </div>
@@ -229,24 +229,23 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   {/* Action Buttons */}
                   <div className="space-y-3">
                     <Link href={ROUTES.CART}>
-                      <UnifiedButton 
-                        variant="secondary" 
-                        className="w-full"
+                      <Button 
+                        variant="outline" 
+                        className="w-full bg-card border-bg-card-border"
                         onClick={() => handleOpenChange(false)}
                       >
                         View Cart
-                      </UnifiedButton>
+                      </Button>
                     </Link>
                     
                     <Link href={ROUTES.CHECKOUT}>
-                      <UnifiedButton 
-                        variant="primary"
-                        className="w-full"
+                      <Button 
+                        className="w-full bg-accent-blue hover:bg-blue-500 text-primary"
                         onClick={() => handleOpenChange(false)}
                       >
                         Checkout
                         <ArrowRight className="ml-2" size={16} />
-                      </UnifiedButton>
+                      </Button>
                     </Link>
                   </div>
 

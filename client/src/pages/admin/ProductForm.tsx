@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { useLocation, useParams } from 'wouter';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { UnifiedButton } from '@/components/ui/UnifiedButton';
-import { UnifiedInput } from '@/components/ui/UnifiedInput';
-import { UnifiedTextarea } from '@/components/ui/UnifiedTextarea';
-import { UnifiedCard, UnifiedCardContent } from '@/components/ui/UnifiedCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { PriceInput } from '@/components/ui/price-input';
 import { StandardDropdown } from '@/components/ui';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Upload, X } from 'lucide-react';
 import { broadcastProductUpdate } from '@/lib/queryClient';
@@ -299,10 +299,10 @@ export function ProductForm() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="flex items-center gap-4">
-        <UnifiedButton variant="ghost" size="md" onClick={() => navigate('/admin')}>
+        <Button variant="ghost" onClick={() => navigate('/admin')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Admin
-        </UnifiedButton>
+        </Button>
         <h1 className="text-3xl font-bold">
           {isEdit ? 'Edit Product' : 'Create New Product'}
         </h1>
@@ -310,14 +310,16 @@ export function ProductForm() {
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
-        <UnifiedCard variant="elevated" padding="lg">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Basic Information</h3>
-          <UnifiedCardContent>
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <UnifiedInput
+                <Label htmlFor="name">Product Name *</Label>
+                <Input
                   id="name"
-                  label="Product Name *"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   placeholder="e.g., Rogue Ohio Power Bar"
@@ -332,6 +334,7 @@ export function ProductForm() {
                   value={formData.brand}
                   placeholder="Search or select a brand..."
                   onChange={(brand) => setFormData({...formData, brand: Array.isArray(brand) ? brand[0] : brand})}
+                  searchable={true}
                   allowCustom={true}
                   required={true}
                 />
@@ -339,22 +342,24 @@ export function ProductForm() {
             </div>
             
             <div>
-              <UnifiedTextarea
+              <Label htmlFor="description">Description</Label>
+              <Textarea
                 id="description"
-                label="Description"
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
                 placeholder="Detailed product description..."
-                minRows={4}
+                rows={4}
               />
             </div>
-          </UnifiedCardContent>
-        </UnifiedCard>
+          </CardContent>
+        </Card>
         
         {/* Pricing & Inventory */}
-        <UnifiedCard variant="elevated" padding="lg">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Pricing & Inventory</h3>
-          <UnifiedCardContent>
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>Pricing & Inventory</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="price">Price *</Label>
@@ -367,25 +372,25 @@ export function ProductForm() {
               </div>
               
               <div>
-                <UnifiedInput
+                <Label htmlFor="stock">Stock Quantity *</Label>
+                <Input
                   id="stock"
-                  label="Stock Quantity *"
                   type="number"
                   min="0"
-                  value={formData.stockQuantity.toString()}
+                  value={formData.stockQuantity}
                   onChange={(e) => setFormData({...formData, stockQuantity: parseInt(e.target.value) || 0})}
                   required
                 />
               </div>
               
               <div>
-                <UnifiedInput
+                <Label htmlFor="weight">Weight (lbs)</Label>
+                <Input
                   id="weight"
-                  label="Weight (lbs)"
                   type="number"
                   step="0.1"
                   min="0"
-                  value={formData.weight.toString()}
+                  value={formData.weight}
                   onChange={(e) => setFormData({...formData, weight: parseFloat(e.target.value) || 0})}
                 />
               </div>
@@ -457,7 +462,7 @@ export function ProductForm() {
                   )}
                   
                   {/* Remove button */}
-                  <UnifiedButton
+                  <Button
                     type="button"
                     variant="destructive"
                     size="sm"
@@ -469,12 +474,12 @@ export function ProductForm() {
                     }}
                   >
                     <X className="w-3 h-3" />
-                  </UnifiedButton>
+                  </Button>
                   
                   {/* Reorder buttons */}
                   <div className="absolute bottom-2 left-2 right-2 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
                     {index > 0 && (
-                      <UnifiedButton
+                      <Button
                         type="button"
                         size="sm"
                         variant="secondary"
@@ -483,10 +488,10 @@ export function ProductForm() {
                         title="Move left"
                       >
                         ←
-                      </UnifiedButton>
+                      </Button>
                     )}
                     {index < imagePreview.length - 1 && (
-                      <UnifiedButton
+                      <Button
                         type="button"
                         size="sm"
                         variant="secondary"
@@ -495,7 +500,7 @@ export function ProductForm() {
                         title="Move right"
                       >
                         →
-                      </UnifiedButton>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -540,24 +545,35 @@ export function ProductForm() {
         
         {/* Submit Buttons */}
         <div className="flex gap-4">
-          <UnifiedButton
+          <button
             type="submit"
-            variant="primary"
-            size="lg"
             disabled={submitMutation.isPending}
-            loading={submitMutation.isPending}
+            className={`px-6 py-3 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2 ${
+              submitMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            style={{
+              background: 'rgba(75, 85, 99, 0.4)',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
+              color: 'white',
+              fontWeight: '500'
+            }}
           >
             {submitMutation.isPending ? 'Saving...' : (isEdit ? 'Update Product' : 'Create Product')}
-          </UnifiedButton>
+          </button>
           
-          <UnifiedButton
+          <button
             type="button"
-            variant="secondary"
-            size="lg"
             onClick={() => navigate('/admin')}
+            className="px-6 py-3 rounded-lg transition-all duration-200 focus:outline-none flex items-center gap-2"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(156, 163, 175, 0.4)',
+              color: 'white',
+              fontWeight: '500'
+            }}
           >
             Cancel
-          </UnifiedButton>
+          </button>
         </div>
       </form>
     </div>

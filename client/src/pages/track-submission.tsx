@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
-import { UnifiedCard, UnifiedCardContent } from '@/components/ui/UnifiedCard';
-import { UnifiedInput } from '@/components/ui/UnifiedInput';
-import { UnifiedButton } from '@/components/ui/UnifiedButton';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -101,33 +101,33 @@ export default function TrackSubmission() {
         </div>
         
         {/* Search Bar */}
-        <UnifiedCard variant="elevated" padding="lg" className="mb-8">
+        <Card className="p-6 mb-8">
           <form onSubmit={handleSearch} className="flex gap-4">
-            <UnifiedInput
+            <Input
               type="text"
               placeholder="Enter reference number (e.g., REF-20250731-1234)"
               value={referenceInput}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReferenceInput(e.target.value)}
+              onChange={(e) => setReferenceInput(e.target.value)}
               className="flex-1 glass border-border"
             />
-            <UnifiedButton type="submit" className="bg-accent-blue hover:bg-blue-600">
+            <Button type="submit" className="bg-accent-blue hover:bg-blue-600">
               <Search className="w-4 h-4 mr-2" />
               Track
-            </UnifiedButton>
+            </Button>
           </form>
-        </UnifiedCard>
+        </Card>
         
         {/* Loading State */}
         {isLoading && (
-          <UnifiedCard variant="elevated" padding="lg" className="text-center">
+          <Card className="p-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-blue mx-auto"></div>
             <p className="mt-4 text-text-secondary">Loading submission details...</p>
-          </UnifiedCard>
+          </Card>
         )}
         
         {/* Error State */}
         {error && (
-          <UnifiedCard variant="elevated" padding="lg" className="text-center border-red-500/30">
+          <Card className="p-8 text-center border-red-500/30">
             <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
             <p className="text-red-400 text-lg mb-2">Submission Not Found</p>
             <p className="text-text-muted">
@@ -136,14 +136,14 @@ export default function TrackSubmission() {
             <p className="text-sm text-text-muted mt-2">
               Please check your reference number and try again.
             </p>
-          </UnifiedCard>
+          </Card>
         )}
         
         {/* Submission Details */}
         {submission && (
           <div className="space-y-6">
             {/* Status Card */}
-            <UnifiedCard variant="elevated" padding="lg">
+            <Card className="p-6">
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <h2 className="font-bebas text-2xl mb-2">SUBMISSION STATUS</h2>
@@ -151,14 +151,14 @@ export default function TrackSubmission() {
                     <code className="text-sm bg-gray-800 px-3 py-1 rounded text-accent-blue">
                       {(submission as any).referenceNumber}
                     </code>
-                    <UnifiedButton
+                    <Button
                       variant="ghost"
                       size="icon"
                       onClick={copyReference}
                       className="h-8 w-8"
                     >
                       <Copy className="w-4 h-4" />
-                    </UnifiedButton>
+                    </Button>
                   </div>
                 </div>
                 
@@ -189,10 +189,10 @@ export default function TrackSubmission() {
                   </>
                 )}
               </div>
-            </UnifiedCard>
+            </Card>
             
             {/* Equipment Details */}
-            <UnifiedCard variant="elevated" padding="lg">
+            <Card className="p-6">
               <h3 className="font-bebas text-xl mb-4">EQUIPMENT DETAILS</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -214,11 +214,11 @@ export default function TrackSubmission() {
                   </div>
                 )}
               </div>
-            </UnifiedCard>
+            </Card>
             
             {/* Pickup Information */}
             {(submission as any).scheduledPickupDate && (
-              <UnifiedCard variant="elevated" padding="lg">
+              <Card className="p-6">
                 <h3 className="font-bebas text-xl mb-4">PICKUP INFORMATION</h3>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -236,15 +236,15 @@ export default function TrackSubmission() {
                     </div>
                   )}
                 </div>
-              </UnifiedCard>
+              </Card>
             )}
             
             {/* Decline Reason */}
             {(submission as any).status === 'declined' && (submission as any).declineReason && (
-              <UnifiedCard variant="elevated" padding="lg" className="border-red-500/30">
+              <Card className="p-6 border-red-500/30">
                 <h3 className="font-bebas text-xl mb-4 text-red-400">DECLINE REASON</h3>
                 <p className="text-text-secondary">{(submission as any).declineReason}</p>
-              </UnifiedCard>
+              </Card>
             )}
           </div>
         )}

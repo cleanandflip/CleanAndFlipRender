@@ -1,6 +1,6 @@
 import * as React from "react"
+
 import { cn } from "@/lib/utils"
-import { forms, interactions } from "@/config/dimensions"
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, ...props }, ref) => {
@@ -8,8 +8,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       <input
         type={type}
         className={cn(
-          // Use standardized dimensions from config
-          `flex ${forms.input.height} w-full ${forms.input.borderRadius} border border-input bg-input ${forms.input.padding} py-2 ${forms.input.fontSize} text-input-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-primary placeholder:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${interactions.disabled.opacity} ${interactions.disabled.cursor} touch-manipulation`,
+          "flex h-10 sm:h-9 w-full rounded-md border border-input bg-input px-3 py-2 text-base sm:text-sm text-input-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-primary placeholder:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation", // Prevent zoom on iOS
           className
         )}
         ref={ref}

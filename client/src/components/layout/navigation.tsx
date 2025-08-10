@@ -8,7 +8,7 @@ import Logo from "@/components/common/logo";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code, LayoutGrid, Code2 } from "lucide-react";
-import { heights, iconSizes, layout, interactions } from "@/config/dimensions";
+
 import { ROUTES } from "@/config/routes";
 
 export default function Navigation() {

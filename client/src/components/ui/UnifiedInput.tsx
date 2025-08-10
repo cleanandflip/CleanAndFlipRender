@@ -1,90 +1,93 @@
-/**
- * UNIFIED INPUT COMPONENT - PHASE 5: INPUT FIELD UNIFICATION
- * Standardized input component following design system specifications
- * August 10, 2025 - Professional UI Modernization
- */
-
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { INPUTS, HEIGHTS } from '@/config/dimensions';
+import { HEIGHTS, FORMS } from '@/config/dimensions';
 
 interface UnifiedInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
   required?: boolean;
-  variant?: 'default' | 'ghost' | 'filled';
+  icon?: React.ReactNode;
+  iconPosition?: 'left' | 'right';
 }
 
-export const UnifiedInput = React.forwardRef<HTMLInputElement, UnifiedInputProps>(({
+export const UnifiedInput: React.FC<UnifiedInputProps> = ({
   label,
   error,
   helperText,
-  required = false,
-  variant = 'default',
+  required,
+  icon,
+  iconPosition = 'left',
   className,
   id,
   ...props
-}, ref) => {
+}) => {
   const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
 
-  const getInputClasses = () => {
-    const baseClasses = 'w-full px-3 text-base border rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed';
-    
-    // Height specification: ALL text inputs MUST be h-10 (40px) EXACTLY
-    const heightClass = 'h-10'; // HEIGHTS.input enforcement
-    
-    const variantClasses = {
-      default: 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:border-blue-500',
-      ghost: 'border-transparent bg-gray-50 dark:bg-gray-700 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800',
-      filled: 'border-gray-200 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800'
-    };
-
-    const errorClasses = error ? 'border-red-500 focus:ring-red-500' : '';
-
-    return cn(
-      baseClasses,
-      heightClass,
-      variantClasses[variant],
-      errorClasses,
-      className
-    );
-  };
+  const inputClasses = cn(
+    // Standard height for ALL text inputs
+    HEIGHTS.input,
+    'px-3 text-base border rounded-lg transition-colors',
+    'focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+    'disabled:opacity-50 disabled:cursor-not-allowed',
+    'dark:bg-gray-800 dark:border-gray-600 dark:text-white',
+    {
+      'border-red-500 focus:ring-red-500 focus:border-red-500': error,
+      'pl-10': icon && iconPosition === 'left',
+      'pr-10': icon && iconPosition === 'right',
+    },
+    className
+  );
 
   return (
-    <div className="space-y-2">
+    <div className={FORMS.fieldSpacing}>
       {label && (
         <label 
           htmlFor={inputId}
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          className={cn('block text-sm font-medium', FORMS.labelMargin)}
         >
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       
-      <input
-        ref={ref}
-        id={inputId}
-        className={getInputClasses()}
-        {...props}
-      />
+      <div className="relative">
+        {icon && iconPosition === 'left' && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            {React.cloneElement(icon as React.ReactElement, {
+              className: 'w-5 h-5'
+            })}
+          </div>
+        )}
+        
+        <input
+          id={inputId}
+          className={inputClasses}
+          {...props}
+        />
+        
+        {icon && iconPosition === 'right' && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+            {React.cloneElement(icon as React.ReactElement, {
+              className: 'w-5 h-5'
+            })}
+          </div>
+        )}
+      </div>
       
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+        <p className={cn('text-sm text-red-600', FORMS.errorMargin)}>
           {error}
         </p>
       )}
       
       {helperText && !error && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className={cn('text-sm text-gray-500', FORMS.errorMargin)}>
           {helperText}
         </p>
       )}
     </div>
   );
-});
-
-UnifiedInput.displayName = "UnifiedInput";
+};
 
 export default UnifiedInput;

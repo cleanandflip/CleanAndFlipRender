@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import Logo from "@/components/common/logo";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { Card } from "@/components/shared/AnimatedComponents";
+import { Button, Card } from "@/components/shared/AnimatedComponents";
 import ProductCard from "@/components/products/product-card";
 import { DollarSign, Dumbbell, TrendingUp, Users, Clock, CheckCircle } from "lucide-react";
 import CategoryGrid from "@/components/categories/category-grid";
@@ -107,9 +107,9 @@ export default function Home() {
                 </p>
               </div>
               <Link href="/sell-to-us">
-                <UnifiedButton variant="success" size="lg" className="w-full text-lg">
+                <Button variant="success" size="lg" className="w-full text-lg">
                   Get Cash Offer
-                </UnifiedButton>
+                </Button>
               </Link>
             </Card>
 
@@ -125,9 +125,9 @@ export default function Home() {
                 </p>
               </div>
               <Link href="/products">
-                <UnifiedButton variant="primary" size="lg" className="w-full text-lg">
+                <Button variant="primary" size="lg" className="w-full text-lg">
                   Shop Equipment
-                </UnifiedButton>
+                </Button>
               </Link>
             </Card>
           </motion.div>

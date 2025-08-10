@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/admin/DashboardLayout';
 import { Pagination } from '@/components/admin/Pagination';
-import { UnifiedButton } from '@/components/ui/UnifiedButton';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   StandardDropdown
@@ -320,14 +320,14 @@ export function ProductsManager() {
           </div>
           
           <div className="glass glass-hover rounded-lg p-1">
-            <UnifiedButton 
-              variant="secondary" 
+            <Button 
+              variant="ghost" 
               size="sm"
               onClick={() => setFilters(defaultFilters)}
-              className="h-8"
+              className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               Clear Filters
-            </UnifiedButton>
+            </Button>
           </div>
         </div>
       }
@@ -356,30 +356,30 @@ export function ProductsManager() {
             </p>
             <div className="glass glass-hover rounded-lg p-1">
               <div className="flex gap-1">
-                <UnifiedButton
-                  variant="secondary"
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={() => handleBulkAction('duplicate')}
-                  className="h-8"
+                  className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   Duplicate
-                </UnifiedButton>
-                <UnifiedButton
-                  variant="secondary"
+                </Button>
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={() => handleBulkAction('deactivate')}
-                  className="h-8"
+                  className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   Deactivate
-                </UnifiedButton>
-                <UnifiedButton
-                  variant="danger"
+                </Button>
+                <Button
+                  variant="destructive"
                   size="sm"
                   onClick={() => handleBulkAction('delete')}
-                  className="h-8"
+                  className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   Delete
-                </UnifiedButton>
+                </Button>
               </div>
             </div>
           </div>
@@ -448,33 +448,33 @@ export function ProductsManager() {
               
               <div className="glass glass-hover rounded-lg p-1 mt-3">
                 <div className="flex gap-1">
-                  <UnifiedButton 
+                  <Button 
                     size="sm" 
-                    variant="secondary" 
-                    className="flex-1 h-8"
+                    variant="ghost" 
+                    className="flex-1 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     onClick={() => handleViewProduct(product)}
                     title="View Product"
                   >
                     <Eye className="w-4 h-4" />
-                  </UnifiedButton>
-                  <UnifiedButton 
+                  </Button>
+                  <Button 
                     size="sm" 
-                    variant="secondary" 
-                    className="flex-1 h-8"
+                    variant="ghost" 
+                    className="flex-1 h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     onClick={() => handleEditProduct(product)}
                     title="Edit Product"
                   >
                     <Edit className="w-4 h-4" />
-                  </UnifiedButton>
-                  <UnifiedButton 
+                  </Button>
+                  <Button 
                     size="sm" 
-                    variant="danger" 
-                    className="flex-1 h-8"
+                    variant="destructive" 
+                    className="flex-1 h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     onClick={() => handleDeleteProduct(product)}
                     title="Delete Product"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </UnifiedButton>
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -545,32 +545,32 @@ export function ProductsManager() {
                 
                 <div className="col-span-2">
                   <div className="flex gap-2">
-                    <UnifiedButton 
+                    <Button 
                       size="sm" 
-                      variant="secondary" 
+                      variant="outline" 
                       className="glass border-border"
                       onClick={() => handleViewProduct(product)}
                       title="View Product"
                     >
                       <Eye className="w-4 h-4" />
-                    </UnifiedButton>
-                    <UnifiedButton 
+                    </Button>
+                    <Button 
                       size="sm" 
-                      variant="secondary" 
+                      variant="outline" 
                       className="glass border-border"
                       onClick={() => handleEditProduct(product)}
                       title="Edit Product"
                     >
                       <Edit className="w-4 h-4" />
-                    </UnifiedButton>
-                    <UnifiedButton 
+                    </Button>
+                    <Button 
                       size="sm" 
-                      variant="danger"
+                      variant="destructive"
                       onClick={() => handleDeleteProduct(product)}
                       title="Delete Product"
                     >
                       <Trash2 className="w-4 h-4" />
-                    </UnifiedButton>
+                    </Button>
                   </div>
                 </div>
               </div>

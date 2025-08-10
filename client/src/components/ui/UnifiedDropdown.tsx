@@ -88,6 +88,32 @@ export function UnifiedDropdown({
   };
 
   // Style variants matching your theme - UNIFIED with Input/Textarea styling
+  const buttonStyles = {
+    default: cn(
+      "w-full px-3 py-2 rounded-md", // UNIFIED: Match Input/Textarea padding and border radius
+      "text-left flex items-center justify-between",
+      "transition-all duration-200",
+      "border h-10", // UNIFIED: Match Input height
+      !disabled && "hover:border-opacity-60",
+      disabled && "opacity-50 cursor-not-allowed",
+      isOpen && "ring-2 ring-opacity-40",
+      error && "border-red-500"
+    ),
+    ghost: cn(
+      "px-3 py-2 rounded-lg",
+      "text-left flex items-center gap-2",
+      "transition-all duration-200",
+      !disabled && "hover:bg-white hover:bg-opacity-10",
+      disabled && "opacity-50 cursor-not-allowed"
+    ),
+    nav: cn(
+      "flex items-center gap-2 px-3 py-2",
+      "rounded-lg transition-all duration-200",
+      !disabled && "hover:bg-white hover:bg-opacity-10",
+      disabled && "opacity-50 cursor-not-allowed"
+    )
+  };
+
   const dropdownStyles = {
     backgroundColor: theme.colors.cardBg,
     borderColor: theme.colors.border,
@@ -95,16 +121,17 @@ export function UnifiedDropdown({
     color: theme.colors.textPrimary,
   };
 
-  const buttonClasses = cn(
-    'w-full h-10 px-3 text-base border rounded-lg transition-colors',
-    'focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
-    'disabled:opacity-50 disabled:cursor-not-allowed',
-    'dark:bg-gray-800 dark:border-gray-600 dark:text-white',
-    'flex items-center justify-between',
-    isOpen && 'border-blue-500 ring-2 ring-blue-500/20',
-    variant === 'ghost' && 'bg-transparent border-transparent',
-    variant === 'nav' && 'bg-transparent border-gray-600'
-  );
+  const buttonStyle = {
+    backgroundColor: variant === 'ghost' || variant === 'nav' 
+      ? 'transparent' 
+      : 'var(--input)', // UNIFIED: Use same background as Input and Textarea components
+    borderColor: 'var(--border)', // UNIFIED: Use same border as other form fields
+    color: 'var(--input-foreground)', // UNIFIED: Use same text color as other form fields
+    ...(isOpen && { 
+      borderColor: theme.colors.accent,
+      boxShadow: `0 0 0 3px ${theme.colors.accentFocus}`
+    })
+  };
 
   return (
     <div className={cn("relative", className)} ref={dropdownRef}>
@@ -118,10 +145,16 @@ export function UnifiedDropdown({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={buttonClasses}
+        className={buttonStyles[variant]}
+        style={buttonStyle}
       >
         <span 
-          className={cn("truncate text-white", selectedOptions.length && "text-white")}
+          className={cn("truncate", !selectedOptions.length && "text-white")}
+          style={{ 
+            color: selectedOptions.length 
+              ? 'var(--input-foreground)' // UNIFIED: Same text color as other inputs
+              : 'white' // UNIFIED: Same placeholder color as other inputs
+          }}
         >
           {multiple
             ? selectedOptions.length > 0 
@@ -133,11 +166,12 @@ export function UnifiedDropdown({
         <div className="flex items-center gap-2 ml-2">
           {clearable && selectedValues.length > 0 && !disabled && (
             <X 
-              className="w-4 h-4 opacity-60 hover:opacity-100 transition-opacity text-gray-400"
+              className="w-4 h-4 opacity-60 hover:opacity-100 transition-opacity"
               onClick={(e) => {
                 e.stopPropagation();
                 onChange(multiple ? [] : '');
               }}
+              style={{ color: theme.colors.textSecondary }}
             />
           )}
           <ChevronDown 
@@ -153,7 +187,12 @@ export function UnifiedDropdown({
       {/* Dropdown Menu */}
       {isOpen && !disabled && (
         <div 
-          className="absolute z-50 w-full mt-2 rounded-lg shadow-xl dropdown-scrollable overflow-hidden bg-gray-800 border border-gray-600 backdrop-blur-lg animate-in slide-in-from-top-1 duration-200"
+          className="absolute z-50 w-full mt-2 rounded-lg shadow-xl dropdown-scrollable overflow-hidden"
+          style={{
+            ...dropdownStyles,
+            boxShadow: theme.effects.shadow,
+            animation: 'slideDown 0.2s ease-out'
+          }}
         >
           {normalizedOptions.length === 0 ? (
             <div className="px-4 py-3 text-center text-gray-400">
