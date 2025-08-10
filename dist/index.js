@@ -692,18 +692,29 @@ function getCurrentEnvironment() {
 function getDatabaseConfig() {
   const environment = getCurrentEnvironment();
   if (environment === "production") {
-    const prodUrl = process.env.DATABASE_URL_PROD;
+    let prodUrl = process.env.DATABASE_URL_PROD;
     if (!prodUrl) {
-      console.error("[DB] \u274C CRITICAL: DATABASE_URL_PROD is required for production!");
-      console.error("[DB] Available database URLs:");
-      console.error(`[DB]   DATABASE_URL: ${process.env.DATABASE_URL ? "Set" : "Missing"}`);
-      console.error(`[DB]   DATABASE_URL_PROD: ${process.env.DATABASE_URL_PROD ? "Set" : "Missing"}`);
-      throw new Error("DATABASE_URL_PROD must be set for production environment. Add it to Replit Secrets.");
+      console.log("[DB] DATABASE_URL_PROD not found, checking DATABASE_URL for production compatibility...");
+      const fallbackUrl = process.env.DATABASE_URL;
+      if (fallbackUrl && fallbackUrl.includes("muddy-moon")) {
+        console.log("[DB] \u2705 DATABASE_URL contains production database (muddy-moon), using it");
+        prodUrl = fallbackUrl;
+      } else if (fallbackUrl && fallbackUrl.includes("lingering-flower")) {
+        console.error("[DB] \u274C CRITICAL: DATABASE_URL points to development database in production!");
+        throw new Error("SECURITY: Cannot use development database (lingering-flower) in production!");
+      } else {
+        console.error("[DB] \u274C CRITICAL: No production database URL available!");
+        console.error("[DB] Available URLs:");
+        console.error(`[DB]   DATABASE_URL: ${process.env.DATABASE_URL ? "Set" : "Missing"}`);
+        console.error(`[DB]   DATABASE_URL_PROD: ${process.env.DATABASE_URL_PROD ? "Set" : "Missing"}`);
+        console.error("[DB] Please set DATABASE_URL to your production database in Replit deployment settings.");
+        throw new Error("No production database URL configured. Set DATABASE_URL in deployment environment.");
+      }
     }
     if (prodUrl.includes("lingering-flower")) {
       throw new Error("CRITICAL: Cannot use development database (lingering-flower) in production!");
     }
-    console.log("[DB] \u2705 Using DATABASE_URL_PROD for production environment");
+    console.log("[DB] \u2705 Using production database for deployment");
     return {
       url: prodUrl,
       name: "production",
