@@ -18,20 +18,30 @@ router.get('/google/callback',
   async (req, res) => {
     const user = req.user as any;
     
-    Logger.debug('[AUTH] Google callback for user:', user?.id);
+    Logger.info('[AUTH] Google callback for user:', user?.id, 'profileComplete:', user?.profileComplete, 'onboardingStep:', user?.onboardingStep);
     
-    // Force redirect to onboarding for new Google users
-    if (!user.profileComplete || user.onboardingStep > 0) {
-      // Redirect to onboarding with step
-      const step = user.onboardingStep || 1;
-      Logger.debug('[AUTH] Redirecting to onboarding step:', step);
-      res.redirect('/onboarding?step=' + step + '&new=true');
-    } else {
-      // Redirect to dashboard or original destination
+    try {
+      // Check current user state from database to get fresh data
+      const [dbUser] = await db.select().from(users).where(eq(users.id, user.id));
+      
+      if (dbUser) {
+        // Force redirect to onboarding for new Google users or incomplete profiles
+        if (!dbUser.profileComplete || (dbUser.onboardingStep && dbUser.onboardingStep > 0)) {
+          const step = dbUser.onboardingStep || 1;
+          Logger.info('[AUTH] Redirecting Google user to onboarding step:', step);
+          return res.redirect('/onboarding?step=' + step + '&google=true&new=true');
+        }
+      }
+      
+      // Redirect to dashboard for completed profiles
       const returnTo = (req.session as any)?.returnTo || '/dashboard';
       delete (req.session as any)?.returnTo;
-      Logger.debug('[AUTH] Redirecting to:', returnTo);
+      Logger.info('[AUTH] Redirecting completed Google user to:', returnTo);
       res.redirect(returnTo);
+      
+    } catch (error) {
+      Logger.error('[AUTH] Error in Google callback:', error);
+      res.redirect('/login?error=callback_error');
     }
   }
 );

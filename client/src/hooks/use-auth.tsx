@@ -56,7 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user && !isLoading && !user.profileComplete && (user.onboardingStep || 0) > 0) {
       const currentPath = window.location.pathname;
-      if (currentPath !== '/onboarding') {
+      // Don't redirect if already on onboarding or if user just logged in with Google
+      if (currentPath !== '/onboarding' && !window.location.search.includes('google=true')) {
+        console.log('[AUTH] Auto-redirecting to onboarding for incomplete profile');
         window.location.href = `/onboarding?step=${user.onboardingStep || 1}&auto=true`;
       }
     }

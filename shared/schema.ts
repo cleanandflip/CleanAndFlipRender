@@ -55,6 +55,7 @@ export const users = pgTable("users", {
   zipCode: varchar("zip_code", { length: 10 }),
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  isLocalCustomer: boolean("is_local_customer").default(false),
   role: userRoleEnum("role").default("user"),
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),

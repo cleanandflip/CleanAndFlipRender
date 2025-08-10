@@ -28,14 +28,27 @@ export default function Onboarding() {
     phone: ""
   });
 
-  // Get step from URL params
+  // Get step from URL params and handle Google OAuth users
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlStep = urlParams.get('step');
+    const isGoogleUser = urlParams.get('google') === 'true';
+    const isNewUser = urlParams.get('new') === 'true';
+    
+    console.log('[ONBOARDING] URL params:', { urlStep, isGoogleUser, isNewUser });
+    
     if (urlStep) {
       setStep(parseInt(urlStep));
     }
-  }, []);
+    
+    // Show welcome message for new Google users
+    if (isGoogleUser && isNewUser) {
+      toast({
+        title: "Welcome to Clean & Flip!",
+        description: "Let's complete your profile setup to get started.",
+      });
+    }
+  }, [toast]);
 
   const handleInputChange = (field: keyof OnboardingData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
