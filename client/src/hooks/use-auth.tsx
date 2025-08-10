@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -51,6 +51,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnWindowFocus: false, // Don't check auth on window focus
     refetchOnMount: true, // CRITICAL FIX: Always check fresh auth state
   });
+
+  // Auto-redirect to onboarding for incomplete profiles
+  useEffect(() => {
+    if (user && !isLoading && !user.profileComplete && (user.onboardingStep || 0) > 0) {
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/onboarding') {
+        window.location.href = `/onboarding?step=${user.onboardingStep || 1}&auto=true`;
+      }
+    }
+  }, [user, isLoading]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {

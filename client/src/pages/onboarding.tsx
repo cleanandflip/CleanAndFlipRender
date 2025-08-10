@@ -53,10 +53,7 @@ export default function Onboarding() {
 
     setLoading(true);
     try {
-      await apiRequest('/api/auth/onboarding/address', {
-        method: 'POST',
-        body: JSON.stringify(formData)
-      });
+      await apiRequest('/api/auth/onboarding/address', 'POST', formData);
       
       setStep(2);
       toast({
@@ -77,18 +74,14 @@ export default function Onboarding() {
   const handleComplete = async () => {
     setLoading(true);
     try {
-      const response = await apiRequest('/api/auth/onboarding/complete', {
-        method: 'POST'
-      });
-      
-      const data = await response.json();
+      const data = await apiRequest('/api/auth/onboarding/complete', 'POST');
       
       toast({
         title: "Welcome!",
         description: "Your profile setup is complete"
       });
       
-      navigate(data.redirect || '/dashboard');
+      navigate((data as any).redirect || '/dashboard');
     } catch (error) {
       toast({
         title: "Error",

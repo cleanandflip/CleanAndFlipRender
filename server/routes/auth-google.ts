@@ -20,14 +20,17 @@ router.get('/google/callback',
     
     Logger.debug('[AUTH] Google callback for user:', user?.id);
     
-    // Check if profile is complete
-    if (!user.profileComplete) {
-      // Redirect to onboarding
-      res.redirect('/onboarding?step=' + (user.onboardingStep || 1));
+    // Force redirect to onboarding for new Google users
+    if (!user.profileComplete || user.onboardingStep > 0) {
+      // Redirect to onboarding with step
+      const step = user.onboardingStep || 1;
+      Logger.debug('[AUTH] Redirecting to onboarding step:', step);
+      res.redirect('/onboarding?step=' + step + '&new=true');
     } else {
       // Redirect to dashboard or original destination
       const returnTo = (req.session as any)?.returnTo || '/dashboard';
       delete (req.session as any)?.returnTo;
+      Logger.debug('[AUTH] Redirecting to:', returnTo);
       res.redirect(returnTo);
     }
   }
