@@ -1132,10 +1132,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSubmissions(userId?: string): Promise<EquipmentSubmission[]> {
-    let query = db.select().from(equipmentSubmissions);
+    const query = db
+      .select()
+      .from(equipmentSubmissions)
+      .$dynamic();
     
     if (userId) {
-      query = query.where(eq(equipmentSubmissions.userId, userId));
+      return await query
+        .where(eq(equipmentSubmissions.userId, userId))
+        .orderBy(desc(equipmentSubmissions.createdAt));
     }
     
     return await query.orderBy(desc(equipmentSubmissions.createdAt));

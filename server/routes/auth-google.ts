@@ -18,7 +18,11 @@ router.get('/google/callback',
   async (req, res) => {
     const user = req.user as any;
     
-    Logger.info('[AUTH] Google callback for user:', user?.id, 'profileComplete:', user?.profileComplete, 'onboardingStep:', user?.onboardingStep);
+    Logger.info('[AUTH] Google callback for user:', { 
+      id: user?.id, 
+      profileComplete: user?.profileComplete, 
+      onboardingStep: user?.onboardingStep 
+    });
     
     try {
       // Check current user state from database to get fresh data
@@ -28,8 +32,9 @@ router.get('/google/callback',
         // Force redirect to onboarding for new Google users or incomplete profiles
         if (!dbUser.profileComplete || (dbUser.onboardingStep && dbUser.onboardingStep > 0)) {
           const step = dbUser.onboardingStep || 1;
-          Logger.info('[AUTH] Redirecting Google user to onboarding step:', step);
-          return res.redirect('/onboarding?step=' + step + '&google=true&new=true');
+          const isNewUser = !dbUser.profileComplete && dbUser.onboardingStep === 1;
+          Logger.info('[AUTH] Redirecting Google user to onboarding step:', step, 'isNewUser:', isNewUser);
+          return res.redirect(`/onboarding?step=${step}&google=true&new=${isNewUser}`);
         }
       }
       
