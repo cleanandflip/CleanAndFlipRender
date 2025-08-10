@@ -10,7 +10,11 @@ async function migrateToProduction() {
   console.log(`📤 Loaded export data: ${exportData.users.length} users, ${exportData.products.length} products, ${exportData.categories.length} categories`);
   
   // Connect to production database
-  const prodUrl = 'postgresql://neondb_owner:npg_7Qd8voYykPql@ep-lucky-credit-afcslqgy.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require';
+  const prodUrl = process.env.DATABASE_URL;
+  if (!prodUrl) {
+    console.error('[FATAL] DATABASE_URL not found in environment variables');
+    process.exit(1);
+  }
   const sql = neon(prodUrl);
   
   try {
