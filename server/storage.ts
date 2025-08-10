@@ -38,6 +38,21 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  createUserFromGoogle(userData: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    googleId: string;
+    profileImageUrl?: string;
+    authProvider: string;
+    isEmailVerified: boolean;
+  }): Promise<User>;
+  updateUserGoogleInfo(id: string, googleData: {
+    googleId: string;
+    profileImageUrl?: string;
+    isEmailVerified: boolean;
+    authProvider: string;
+  }): Promise<User>;
   updateUserStripeInfo(id: string, customerId: string, subscriptionId?: string): Promise<User>;
   updateUserAddress(id: string, addressData: {
     street?: string;
@@ -171,6 +186,67 @@ export class DatabaseStorage implements IStorage {
       }
       throw error;
     }
+  }
+
+  async createUserFromGoogle(userData: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    googleId: string;
+    profileImageUrl?: string;
+    authProvider: string;
+    isEmailVerified: boolean;
+  }): Promise<User> {
+    const userToInsert = {
+      email: normalizeEmail(userData.email),
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      googleId: userData.googleId,
+      profileImageUrl: userData.profileImageUrl,
+      authProvider: userData.authProvider,
+      isEmailVerified: userData.isEmailVerified,
+      role: "user" as const, // Default role for Google users
+      password: null, // No password for OAuth users
+    };
+    
+    try {
+      const [user] = await db
+        .insert(users)
+        .values(userToInsert)
+        .returning();
+      return user;
+    } catch (error: any) {
+      Logger.error('Error creating Google user:', error.message);
+      if (error.code === '57P01') {
+        // Retry once on connection termination
+        const [user] = await db
+          .insert(users)
+          .values(userToInsert)
+          .returning();
+        return user;
+      }
+      throw error;
+    }
+  }
+
+  async updateUserGoogleInfo(id: string, googleData: {
+    googleId: string;
+    profileImageUrl?: string;
+    isEmailVerified: boolean;
+    authProvider: string;
+  }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        googleId: googleData.googleId,
+        profileImageUrl: googleData.profileImageUrl,
+        isEmailVerified: googleData.isEmailVerified,
+        authProvider: googleData.authProvider,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
   }
 
   async updateUserStripeInfo(id: string, customerId: string, subscriptionId?: string): Promise<User> {

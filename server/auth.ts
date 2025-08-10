@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Express } from "express";
 import session from "express-session";
 import bcrypt from "bcryptjs";
@@ -118,7 +119,7 @@ export function setupAuth(app: Express) {
         Logger.debug(`User found, checking password for: ${normalizedEmail}`);
         Logger.debug(`User password hash exists: ${!!user.password}`);
         
-        const passwordMatch = await comparePasswords(password, user.password);
+        const passwordMatch = user.password ? await comparePasswords(password, user.password) : false;
         if (!passwordMatch) {
           Logger.debug(`Invalid password for email: ${normalizedEmail}`);
           return done(null, false, { 
@@ -139,6 +140,66 @@ export function setupAuth(app: Express) {
       }
     }),
   );
+
+  // Google OAuth Strategy
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          callbackURL: "/api/auth/google/callback"
+        },
+        async (accessToken, refreshToken, profile, done) => {
+          try {
+            const email = profile.emails?.[0]?.value;
+            if (!email) {
+              return done(new Error("No email found in Google profile"), undefined);
+            }
+
+            const normalizedEmail = normalizeEmail(email);
+            Logger.debug(`Google OAuth attempt for email: ${normalizedEmail}`);
+
+            // Check if user already exists by email
+            let user = await storage.getUserByEmail(normalizedEmail);
+            
+            if (user) {
+              // Update user with Google info if not already set
+              if (!user.googleId) {
+                user = await storage.updateUserGoogleInfo(user.id, {
+                  googleId: profile.id,
+                  profileImageUrl: profile.photos?.[0]?.value,
+                  isEmailVerified: true,
+                  authProvider: 'google'
+                });
+              }
+              Logger.debug(`Existing user logged in via Google: ${normalizedEmail}`);
+              return done(null, user);
+            } else {
+              // Create new user from Google profile
+              const newUser = await storage.createUserFromGoogle({
+                email: normalizedEmail,
+                firstName: profile.name?.givenName || profile.displayName?.split(' ')[0] || 'User',
+                lastName: profile.name?.familyName || profile.displayName?.split(' ').slice(1).join(' ') || '',
+                googleId: profile.id,
+                profileImageUrl: profile.photos?.[0]?.value,
+                authProvider: 'google',
+                isEmailVerified: true
+              });
+              
+              Logger.debug(`New user created via Google: ${normalizedEmail}`);
+              return done(null, newUser);
+            }
+          } catch (error: any) {
+            Logger.error('Google OAuth error:', error.message);
+            return done(error, undefined);
+          }
+        }
+      )
+    );
+  } else {
+    Logger.warn('Google OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
+  }
 
   // CRITICAL FIX: Proper Passport serialization - store only user ID
   passport.serializeUser((user, done) => {
@@ -452,6 +513,20 @@ export function setupAuth(app: Express) {
       sessionData: req.session,
     });
   });
+
+  // Google OAuth routes
+  app.get("/api/auth/google", 
+    passport.authenticate("google", { 
+      scope: ["profile", "email"] 
+    })
+  );
+
+  app.get("/api/auth/google/callback",
+    passport.authenticate("google", { 
+      successRedirect: "/dashboard",
+      failureRedirect: "/login?error=oauth_failed" 
+    })
+  );
 
   // Note: /api/user endpoint is defined in routes.ts to avoid conflicts
 }

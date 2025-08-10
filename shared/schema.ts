@@ -45,7 +45,7 @@ export const userRoleEnum = pgEnum("user_role", [
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique().notNull(),
-  password: varchar("password").notNull(),
+  password: varchar("password"), // Make optional for OAuth users
   firstName: varchar("first_name").notNull(),
   lastName: varchar("last_name").notNull(),
   phone: varchar("phone"), // Optional field
@@ -58,6 +58,11 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").default("user"),
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
+  // OAuth fields
+  googleId: varchar("google_id").unique(),
+  profileImageUrl: text("profile_image_url"),
+  authProvider: varchar("auth_provider").default("local"), // 'local', 'google'
+  isEmailVerified: boolean("is_email_verified").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
