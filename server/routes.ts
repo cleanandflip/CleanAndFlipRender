@@ -145,8 +145,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced logging with spam reduction
   app.use(createRequestLogger());
   
-  // Setup security headers
+  // Setup enhanced security headers with input sanitization
   setupSecurityHeaders(app);
+  
+  // Enhanced security and performance monitoring
+  try {
+    const { securityHeaders, apiSecurityHeaders } = await import('./middleware/securityHeaders.js');
+    const { sanitizeInput } = await import('./middleware/inputSanitization.js');
+    const { requestLogger, apiRequestLogger, adminRequestLogger } = await import('./middleware/requestLogger.js');
+    const { PerformanceMonitor, performanceMiddleware } = await import('./services/performanceMonitor.js');
+    
+    // Apply enhanced middleware
+    app.use(securityHeaders());
+    app.use(performanceMiddleware());
+    app.use(requestLogger());
+    
+    // API-specific middleware
+    app.use('/api/', apiSecurityHeaders());
+    app.use('/api/', apiRequestLogger());
+    app.use('/api/', sanitizeInput());
+    
+    // Admin-specific middleware 
+    app.use('/api/admin/', adminRequestLogger());
+    
+    Logger.info('Enhanced security and performance monitoring middleware loaded');
+  } catch (error) {
+    Logger.warn('Some enhanced middleware failed to load:', error);
+  }
   
   // CORS configuration
   app.use(cors(corsOptions));
@@ -1165,6 +1190,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Security test endpoint removed for production
+
+  // Error Management Routes - Import and register first
+  try {
+    const { errorManagementRoutes } = await import('./routes/admin/error-management.js');
+    app.use('/api/admin', errorManagementRoutes);
+    Logger.info('Error management routes registered successfully');
+  } catch (error) {
+    Logger.error('Failed to register error management routes:', error);
+  }
+
+  // System Management Routes
+  try {
+    const { systemManagementRoutes } = await import('./routes/admin/system-management.js');
+    app.use('/api/admin/system', systemManagementRoutes);
+    Logger.info('System management routes registered successfully');
+  } catch (error) {
+    Logger.error('Failed to register system management routes:', error);
+  }
 
   app.get("/api/admin/stats", adminLimiter, requireRole('developer'), async (req, res) => {
     try {

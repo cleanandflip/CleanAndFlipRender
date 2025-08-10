@@ -461,6 +461,57 @@ export const insertWishlistSchema = createInsertSchema(wishlists).omit({
 
 // Types
 export type User = typeof users.$inferSelect;
+
+// Error Logging Tables
+export const errorLogs = pgTable("error_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  error_type: varchar("error_type").notNull(), // 'error', 'warning', 'info'
+  severity: varchar("severity").notNull(), // 'critical', 'high', 'medium', 'low'
+  message: text("message").notNull(),
+  stack_trace: text("stack_trace"),
+  file_path: varchar("file_path"),
+  line_number: integer("line_number"),
+  column_number: integer("column_number"),
+  user_id: varchar("user_id").references(() => users.id),
+  user_email: varchar("user_email"),
+  user_ip: varchar("user_ip"),
+  user_agent: text("user_agent"),
+  url: varchar("url"),
+  method: varchar("method"),
+  request_body: jsonb("request_body"),
+  response_status: integer("response_status"),
+  browser: varchar("browser"),
+  os: varchar("os"),
+  device_type: varchar("device_type"),
+  session_id: varchar("session_id"),
+  environment: varchar("environment").default("production"),
+  resolved: boolean("resolved").default(false),
+  resolved_by: varchar("resolved_by").references(() => users.id),
+  resolved_at: timestamp("resolved_at"),
+  notes: text("notes"),
+  occurrence_count: integer("occurrence_count").default(1),
+  first_seen: timestamp("first_seen").defaultNow(),
+  last_seen: timestamp("last_seen").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_error_logs_severity").on(table.severity),
+  index("idx_error_logs_type").on(table.error_type),
+  index("idx_error_logs_user").on(table.user_id),
+  index("idx_error_logs_resolved").on(table.resolved),
+  index("idx_error_logs_created").on(table.created_at),
+]);
+
+export const errorLogInstances = pgTable("error_log_instances", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  error_log_id: varchar("error_log_id").references(() => errorLogs.id, { onDelete: "cascade" }),
+  occurred_at: timestamp("occurred_at").defaultNow(),
+  context: jsonb("context"),
+});
+
+export type ErrorLog = typeof errorLogs.$inferSelect;
+export type InsertErrorLog = typeof errorLogs.$inferInsert;
+export type ErrorLogInstance = typeof errorLogInstances.$inferSelect;
+export type InsertErrorLogInstance = typeof errorLogInstances.$inferInsert;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UserOnboarding = typeof userOnboarding.$inferSelect;
 export type InsertUserOnboarding = typeof userOnboarding.$inferInsert;

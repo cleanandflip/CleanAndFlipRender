@@ -14,6 +14,8 @@ import CartDrawer from "@/components/cart/cart-drawer";
 import { PageLoader } from "@/components/ui/page-loader";
 import { environment } from "@/lib/environment";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { Analytics } from "@/components/Analytics";
+import { PWAInstaller } from "@/components/PWAInstaller";
 
 // Import critical pages directly to avoid lazy loading issues with routing
 import Home from "@/pages/home";
@@ -34,8 +36,9 @@ const ProductForm = lazy(() => import("@/pages/admin/ProductForm").then(module =
 const Orders = lazy(() => import("@/pages/orders"));
 const About = lazy(() => import("@/pages/about"));
 const Contact = lazy(() => import("@/pages/contact"));
-const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
-const TermsOfService = lazy(() => import("@/pages/terms-of-service"));
+const LegalPrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
+const LegalTermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
+const ErrorDashboard = lazy(() => import("@/pages/admin/ErrorDashboard"));
 const AuthPage = lazy(() => import("@/pages/auth"));
 const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
@@ -93,6 +96,8 @@ function Router() {
       <div className="min-h-screen flex flex-col">
         {/* Athletic atmosphere overlay */}
         <div className="gym-atmosphere" />
+        <Analytics />
+        <PWAInstaller />
         <Navigation />
         <CartDrawer />
         <ScrollRestoration />
@@ -105,8 +110,8 @@ function Router() {
               <Route path={ROUTES.PRODUCT_DETAIL} component={ProductDetail} />
               <Route path={ROUTES.ABOUT} component={About} />
               <Route path={ROUTES.CONTACT} component={Contact} />
-              <Route path="/privacy-policy" component={PrivacyPolicy} />
-              <Route path="/terms-of-service" component={TermsOfService} />
+              <Route path="/privacy-policy" component={LegalPrivacyPolicy} />
+              <Route path="/terms-of-service" component={LegalTermsOfService} />
               
               {/* Shopping Routes - Profile completion required */}
               <Route path={ROUTES.CART} component={() => (
@@ -138,6 +143,11 @@ function Router() {
               <Route path={ROUTES.ADMIN} component={AdminDashboard} />
               <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
               <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
+              <Route path="/admin/errors" component={ErrorDashboard} />
+              
+              {/* Legal Routes */}
+              <Route path="/terms-of-service" component={LegalTermsOfService} />
+              <Route path="/privacy-policy" component={LegalPrivacyPolicy} />
               
               {/* 404 */}
               <Route component={NotFound} />
