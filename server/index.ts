@@ -9,6 +9,10 @@ import fs from 'fs';
 import path from 'path';
 
 const app = express();
+
+// CRITICAL: Trust proxy headers for correct redirects
+app.set('trust proxy', true);
+
 // Reduced limits since images now go directly to Cloudinary
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ limit: '1mb', extended: false }));

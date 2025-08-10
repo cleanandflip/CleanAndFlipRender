@@ -39,6 +39,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, userData: Partial<InsertUser>): Promise<User>;
   createUserFromGoogle(userData: {
     email: string;
     firstName: string;
@@ -256,6 +257,18 @@ export class DatabaseStorage implements IStorage {
       .set({
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscriptionId,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...userData,
         updatedAt: new Date(),
       })
       .where(eq(users.id, id))

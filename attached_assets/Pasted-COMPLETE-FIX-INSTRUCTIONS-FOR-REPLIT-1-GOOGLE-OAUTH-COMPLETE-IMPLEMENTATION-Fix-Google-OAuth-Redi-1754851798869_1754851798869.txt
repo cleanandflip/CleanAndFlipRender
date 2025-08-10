@@ -1,0 +1,779 @@
+COMPLETE FIX INSTRUCTIONS FOR REPLIT
+1. GOOGLE OAUTH COMPLETE IMPLEMENTATION
+Fix Google OAuth Redirect Issues
+typescript// FILE: server/routes/auth-google.ts
+// REPLACE THE ENTIRE FILE WITH THIS:
+
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Router } from 'express';
+import { storage } from '../storage';
+
+const router = Router();
+
+// Configure Google OAuth Strategy
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: '/api/auth/google/callback', // Use relative URL
+  proxy: true, // CRITICAL: Trust proxy headers
+  passReqToCallback: true
+}, async (req, accessToken, refreshToken, profile, done) => {
+  try {
+    // Check if user exists by email
+    let user = await storage.getUserByEmail(profile.emails[0].value);
+    
+    if (!user) {
+      // Create new Google user
+      user = await storage.createUser({
+        googleId: profile.id,
+        email: profile.emails[0].value,
+        firstName: profile.name.givenName,
+        lastName: profile.name.familyName,
+        profileImageUrl: profile.photos[0]?.value,
+        emailVerified: true,
+        authProvider: 'google',
+        profileComplete: false, // MUST complete onboarding
+        onboardingStep: 0,
+        // No password field for Google users
+      });
+    } else if (!user.googleId) {
+      // Link existing account with Google
+      await storage.updateUser(user.id, {
+        googleId: profile.id,
+        profileImageUrl: profile.photos[0]?.value,
+        emailVerified: true,
+        authProvider: 'google' // Update provider
+      });
+    }
+    
+    return done(null, user);
+  } catch (error) {
+    return done(error, null);
+  }
+}));
+
+// Initiate Google OAuth
+router.get('/api/auth/google', (req, res, next) => {
+  // Store return URL for after auth
+  req.session.returnTo = req.query.returnTo || req.headers.referer || '/dashboard';
+  
+  // Save session before redirect
+  req.session.save((err) => {
+    if (err) console.error('Session save error:', err);
+    
+    passport.authenticate('google', {
+      scope: ['profile', 'email']
+    })(req, res, next);
+  });
+});
+
+// Handle Google OAuth callback
+router.get('/api/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/auth?error=google_auth_failed' }),
+  async (req, res) => {
+    const user = req.user;
+    
+    // Determine base URL for redirect
+    const host = req.get('host');
+    const baseUrl = host.includes('cleanandflip.com') 
+      ? 'https://cleanandflip.com'
+      : host.includes('cleanflip.replit.app')
+      ? 'https://cleanflip.replit.app'
+      : '';
+    
+    // New Google users MUST complete onboarding
+    if (!user.profileComplete && user.authProvider === 'google') {
+      res.redirect(`${baseUrl}/onboarding?source=google&required=true`);
+    } else {
+      const returnUrl = req.session.returnTo || '/dashboard';
+      delete req.session.returnTo;
+      res.redirect(`${baseUrl}${returnUrl}`);
+    }
+  }
+);
+
+export default router;
+Fix Express Configuration
+typescript// FILE: server/index.ts
+// ADD these lines at the top of your Express setup:
+
+import express from 'express';
+const app = express();
+
+// CRITICAL: Trust proxy headers for correct redirects
+app.set('trust proxy', true);
+
+// Session configuration (update existing)
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  rolling: true, // Reset expiry on activity
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    sameSite: 'lax', // Required for OAuth
+    // Don't set domain - auto-detect
+  },
+  store: new PostgresStore({
+    conString: process.env.DATABASE_URL,
+    tableName: 'sessions',
+    ttl: 30 * 24 * 60 * 60
+  })
+}));
+2. ONBOARDING FIXES (GOOGLE USERS ONLY)
+Fix Onboarding Flow with Geoapify
+typescript// FILE: client/src/pages/onboarding.tsx
+// REPLACE THE ENTIRE FILE WITH THIS:
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/use-auth';
+import { toast } from 'sonner';
+
+const OnboardingPage = () => {
+  const { user, refetch } = useAuth();
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem('onboarding_progress');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  // Only Google OAuth users need onboarding
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    
+    // Non-Google users skip onboarding
+    if (user.authProvider !== 'google') {
+      navigate('/dashboard');
+      return;
+    }
+    
+    // Already completed
+    if (user.profileComplete) {
+      navigate('/dashboard');
+      return;
+    }
+    
+    // Resume from saved step
+    if (user.onboardingStep > 0) {
+      setCurrentStep(user.onboardingStep);
+    }
+  }, [user]);
+
+  // Save progress on every update
+  useEffect(() => {
+    localStorage.setItem('onboarding_progress', JSON.stringify(formData));
+  }, [formData]);
+
+  const completeOnboarding = async () => {
+    try {
+      const response = await fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          address: formData.address,
+          phone: formData.phone,
+          preferences: formData.preferences
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        localStorage.removeItem('onboarding_progress');
+        
+        if (result.isLocalCustomer) {
+          toast.success('Welcome! You qualify for free local pickup in Asheville!');
+        }
+        
+        await refetch(); // Refresh user data
+        navigate(result.redirectUrl || '/dashboard');
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Failed to complete onboarding');
+      }
+    } catch (error) {
+      toast.error('Network error. Please try again.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-2xl mx-auto">
+        {/* Progress bar */}
+        <div className="mb-8">
+          <div className="flex justify-between mb-2">
+            <span className="text-sm text-gray-600">Step {currentStep} of 3</span>
+            <span className="text-sm text-gray-600">{Math.round((currentStep / 3) * 100)}% Complete</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(currentStep / 3) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          {currentStep === 1 && (
+            <AddressForm 
+              onNext={(data) => {
+                setFormData({ ...formData, address: data });
+                setCurrentStep(2);
+              }}
+              initialData={formData.address}
+            />
+          )}
+          
+          {currentStep === 2 && (
+            <ContactForm 
+              onNext={(data) => {
+                setFormData({ ...formData, phone: data });
+                setCurrentStep(3);
+              }}
+              onBack={() => setCurrentStep(1)}
+              initialData={formData.phone}
+            />
+          )}
+          
+          {currentStep === 3 && (
+            <PreferencesForm 
+              onNext={(data) => {
+                setFormData({ ...formData, preferences: data });
+                completeOnboarding();
+              }}
+              onBack={() => setCurrentStep(2)}
+              initialData={formData.preferences}
+            />
+          )}
+        </div>
+
+        <p className="text-center text-sm text-gray-500 mt-4">
+          Google account users must complete profile to continue
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ADDRESS FORM WITH GEOAPIFY
+const AddressForm = ({ onNext, initialData }) => {
+  const [address, setAddress] = useState(initialData || {});
+  const [suggestions, setSuggestions] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchText, setSearchText] = useState('');
+
+  const GEOAPIFY_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY;
+  
+  if (!GEOAPIFY_KEY) {
+    console.error('CRITICAL: Add VITE_GEOAPIFY_API_KEY to .env file');
+  }
+
+  const searchAddress = async (text) => {
+    if (text.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://api.geoapify.com/v1/geocode/autocomplete?` +
+        `text=${encodeURIComponent(text)}&` +
+        `apiKey=${GEOAPIFY_KEY}&` +
+        `limit=5&` +
+        `filter=countrycode:us&` +
+        `format=json`
+      );
+
+      if (!response.ok) throw new Error('Geoapify API error');
+
+      const data = await response.json();
+      
+      const parsed = data.results?.map(result => ({
+        formatted: result.formatted,
+        street: result.housenumber ? `${result.housenumber} ${result.street}` : result.street || result.name,
+        city: result.city || result.county,
+        state: result.state_code || result.state,
+        zipCode: result.postcode,
+        lat: result.lat,
+        lon: result.lon
+      })) || [];
+
+      setSuggestions(parsed);
+    } catch (error) {
+      console.error('Address search error:', error);
+      setSuggestions([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const selectAddress = (suggestion) => {
+    setAddress({
+      street: suggestion.street,
+      city: suggestion.city,
+      state: suggestion.state,
+      zipCode: suggestion.zipCode,
+      latitude: suggestion.lat,
+      longitude: suggestion.lon
+    });
+    setSuggestions([]);
+    setSearchText(suggestion.formatted);
+  };
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">Where should we deliver?</h2>
+      
+      <div className="relative mb-4">
+        <input
+          type="text"
+          value={searchText}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+            searchAddress(e.target.value);
+          }}
+          placeholder="Start typing your address..."
+          className="w-full p-3 border rounded-lg"
+        />
+        
+        {isSearching && (
+          <div className="absolute right-3 top-3">
+            <div className="animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent" />
+          </div>
+        )}
+
+        {suggestions.length > 0 && (
+          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+            {suggestions.map((suggestion, i) => (
+              <button
+                key={i}
+                onClick={() => selectAddress(suggestion)}
+                className="w-full text-left p-3 hover:bg-gray-50 border-b last:border-0"
+              >
+                {suggestion.formatted}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <input
+          type="text"
+          value={address.street || ''}
+          onChange={(e) => setAddress({...address, street: e.target.value})}
+          placeholder="Street Address"
+          required
+          className="w-full p-3 border rounded-lg"
+        />
+        
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="text"
+            value={address.city || ''}
+            onChange={(e) => setAddress({...address, city: e.target.value})}
+            placeholder="City"
+            required
+            className="p-3 border rounded-lg"
+          />
+          
+          <input
+            type="text"
+            value={address.state || ''}
+            onChange={(e) => setAddress({...address, state: e.target.value.toUpperCase())}
+            placeholder="State"
+            maxLength={2}
+            required
+            className="p-3 border rounded-lg"
+          />
+        </div>
+        
+        <input
+          type="text"
+          value={address.zipCode || ''}
+          onChange={(e) => setAddress({...address, zipCode: e.target.value})}
+          placeholder="ZIP Code"
+          required
+          className="w-full p-3 border rounded-lg"
+        />
+        
+        <input
+          type="text"
+          value={address.apartment || ''}
+          onChange={(e) => setAddress({...address, apartment: e.target.value})}
+          placeholder="Apartment, suite, etc. (optional)"
+          className="w-full p-3 border rounded-lg"
+        />
+      </div>
+
+      <button
+        onClick={() => onNext(address)}
+        disabled={!address.street || !address.city || !address.state || !address.zipCode}
+        className="w-full mt-6 bg-blue-600 text-white p-3 rounded-lg disabled:opacity-50"
+      >
+        Continue
+      </button>
+    </div>
+  );
+};
+
+export default OnboardingPage;
+Fix Protected Route Logic
+typescript// FILE: client/src/components/ProtectedRoute.tsx
+// UPDATE the checkProfileCompletion function:
+
+const checkProfileCompletion = (user: User, location: string): boolean => {
+  // Only force onboarding at checkout for Google users
+  const requiresCompleteProfile = ['/checkout', '/orders'].some(route => 
+    location.startsWith(route)
+  );
+  
+  if (requiresCompleteProfile && !user.profileComplete && user.authProvider === 'google') {
+    window.location.href = `/onboarding?return=${encodeURIComponent(location)}`;
+    return false;
+  }
+  
+  // Let everyone browse products freely
+  return true;
+};
+3. PROFILE PAGE FOR GOOGLE USERS
+typescript// FILE: client/src/pages/profile.tsx
+// ADD this logic to handle Google vs regular users:
+
+const ProfilePage = () => {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState(user);
+  
+  const isGoogleUser = user?.authProvider === 'google';
+  
+  return (
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Profile Settings</h1>
+      
+      <div className="bg-white rounded-lg p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">Account Information</h2>
+        
+        {/* Email - Read-only for Google users */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Email</label>
+          <input
+            type="email"
+            value={profile.email}
+            disabled={isGoogleUser}
+            className={`w-full p-2 border rounded ${isGoogleUser ? 'bg-gray-100' : ''}`}
+          />
+          {isGoogleUser && (
+            <p className="text-xs text-gray-500 mt-1">
+              Email managed by Google account
+            </p>
+          )}
+        </div>
+        
+        {/* Password section - HIDE for Google users */}
+        {!isGoogleUser && (
+          <div className="border-t pt-4 mt-4">
+            <h3 className="font-medium mb-3">Change Password</h3>
+            <button className="btn btn-secondary">Change Password</button>
+          </div>
+        )}
+        
+        {/* Google account indicator */}
+        {isGoogleUser && (
+          <div className="bg-blue-50 p-4 rounded-lg mt-4">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              </svg>
+              <div>
+                <p className="font-medium">Google Account</p>
+                <p className="text-sm text-gray-600">
+                  Signed in with Google. Password managed by Google.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Editable profile fields */}
+      <div className="bg-white rounded-lg p-6">
+        <h2 className="text-lg font-semibold mb-4">Profile Information</h2>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            value={profile.firstName}
+            onChange={(e) => setProfile({...profile, firstName: e.target.value})}
+            placeholder="First Name"
+            className="p-2 border rounded"
+          />
+          <input
+            type="text"
+            value={profile.lastName}
+            onChange={(e) => setProfile({...profile, lastName: e.target.value})}
+            placeholder="Last Name"
+            className="p-2 border rounded"
+          />
+        </div>
+        
+        <input
+          type="tel"
+          value={profile.phone}
+          onChange={(e) => setProfile({...profile, phone: e.target.value})}
+          placeholder="Phone Number"
+          className="w-full mt-4 p-2 border rounded"
+        />
+        
+        <button className="mt-6 bg-blue-600 text-white px-6 py-2 rounded">
+          Save Changes
+        </button>
+      </div>
+    </div>
+  );
+};
+4. DATABASE UPDATES
+sql-- RUN THESE SQL COMMANDS:
+
+-- 1. Fix users table for Google OAuth
+ALTER TABLE users 
+  ALTER COLUMN password DROP NOT NULL;
+
+-- 2. Add wishlist functionality
+CREATE TABLE IF NOT EXISTS wishlists (
+  id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id VARCHAR REFERENCES users(id) ON DELETE CASCADE,
+  product_id VARCHAR REFERENCES products(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, product_id)
+);
+
+-- 3. Add product delivery options
+ALTER TABLE products 
+  ADD COLUMN IF NOT EXISTS available_local_pickup BOOLEAN DEFAULT true,
+  ADD COLUMN IF NOT EXISTS available_shipping BOOLEAN DEFAULT true,
+  ADD COLUMN IF NOT EXISTS shipping_cost DECIMAL(10,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS shipping_time VARCHAR(100) DEFAULT '3-5 business days';
+
+-- 4. Add product reviews
+CREATE TABLE IF NOT EXISTS reviews (
+  id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id VARCHAR REFERENCES products(id) ON DELETE CASCADE,
+  user_id VARCHAR REFERENCES users(id) ON DELETE CASCADE,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  verified_purchase BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(product_id, user_id)
+);
+
+-- 5. Add performance indexes
+CREATE INDEX IF NOT EXISTS idx_products_active_featured ON products(status, featured) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_products_search_fast ON products USING GIN(search_vector) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_orders_user_date ON orders(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_google_email ON users(email) WHERE auth_provider = 'google';
+5. ADD MISSING API ENDPOINTS
+typescript// FILE: server/routes/wishlist.ts
+// CREATE NEW FILE:
+
+import { Router } from 'express';
+import { requireAuth } from '../middleware/auth';
+import { db } from '../config/database';
+
+const router = Router();
+
+// Add to wishlist
+router.post('/api/wishlist/:productId', requireAuth, async (req, res) => {
+  try {
+    await db.query(
+      'INSERT INTO wishlists (user_id, product_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [req.user.id, req.params.productId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add to wishlist' });
+  }
+});
+
+// Remove from wishlist
+router.delete('/api/wishlist/:productId', requireAuth, async (req, res) => {
+  try {
+    await db.query(
+      'DELETE FROM wishlists WHERE user_id = $1 AND product_id = $2',
+      [req.user.id, req.params.productId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove from wishlist' });
+  }
+});
+
+// Get user's wishlist
+router.get('/api/wishlist', requireAuth, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT p.* FROM products p 
+       JOIN wishlists w ON w.product_id = p.id 
+       WHERE w.user_id = $1 
+       ORDER BY w.created_at DESC`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get wishlist' });
+  }
+});
+
+export default router;
+typescript// FILE: server/routes/user-routes.ts
+// ADD onboarding completion endpoint:
+
+router.post('/api/onboarding/complete', requireAuth, async (req, res) => {
+  try {
+    const { address, phone, preferences } = req.body;
+    
+    // Validate required fields for Google users
+    if (req.user.authProvider === 'google') {
+      if (!address?.street || !address?.city || !address?.state || !address?.zipCode) {
+        return res.status(400).json({ error: 'Complete address required' });
+      }
+      if (!phone) {
+        return res.status(400).json({ error: 'Phone number required' });
+      }
+    }
+
+    // Update user profile
+    await storage.updateUser(req.user.id, {
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      apartment: address.apartment,
+      latitude: address.latitude,
+      longitude: address.longitude,
+      phoneNumber: phone,
+      emailNotifications: preferences?.emailNotifications ?? true,
+      smsNotifications: preferences?.smsNotifications ?? false,
+      profileComplete: true,
+      onboardingStep: 4,
+      onboardingCompletedAt: new Date(),
+      isLocalCustomer: address.zipCode?.startsWith('287') || address.zipCode?.startsWith('288')
+    });
+
+    const returnUrl = req.query.return || '/dashboard';
+    const isLocal = address.zipCode?.startsWith('287') || address.zipCode?.startsWith('288');
+    
+    res.json({ 
+      success: true, 
+      redirectUrl: returnUrl,
+      isLocalCustomer: isLocal
+    });
+  } catch (error) {
+    console.error('Onboarding error:', error);
+    res.status(500).json({ error: 'Failed to complete onboarding' });
+  }
+});
+6. ENVIRONMENT VARIABLES
+bash# ADD TO .env FILE:
+
+# Google OAuth
+GOOGLE_CLIENT_ID=175755446489-99tv7tr193418gj38ah07gdrvrfObbns.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=[Your actual secret from Google Console]
+
+# Geoapify for address search
+VITE_GEOAPIFY_API_KEY=[Get free key from https://www.geoapify.com/]
+
+# Session
+SESSION_SECRET=[Generate a random 32+ character string]
+
+# Environment
+NODE_ENV=production
+7. FIX EQUIPMENT SUBMISSION CLARITY
+typescript// FILE: client/src/pages/sell/index.tsx
+// UPDATE the header to be VERY clear:
+
+const SellToUsPage = () => {
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      {/* CLEAR HEADER - Users are selling TO you */}
+      <div className="bg-blue-50 border-2 border-blue-200 p-6 mb-8 rounded-lg">
+        <h1 className="text-2xl font-bold mb-2">Sell Your Equipment TO Clean & Flip</h1>
+        <p className="text-lg mb-4">We buy quality sports equipment directly from you!</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div className="flex items-center">
+            <span className="text-2xl mr-2">📸</span>
+            <span>Submit photos & details</span>
+          </div>
+          <div className="flex items-center">
+            <span className="text-2xl mr-2">💰</span>
+            <span>Get our cash offer</span>
+          </div>
+          <div className="flex items-center">
+            <span className="text-2xl mr-2">🚚</span>
+            <span>We pickup locally</span>
+          </div>
+        </div>
+        <p className="text-xs text-gray-600 mt-4 p-2 bg-yellow-50 rounded">
+          ⚠️ Note: You're selling equipment TO us. Only we list items for sale on this site.
+        </p>
+      </div>
+      
+      {/* Rest of submission form */}
+    </div>
+  );
+};
+8. UPDATE NAVIGATION
+typescript// FILE: client/src/components/layout/navigation.tsx
+// UPDATE navigation items:
+
+const navigationItems = [
+  { label: 'Shop', href: '/products' },
+  { label: 'Categories', href: '/categories' },
+  { label: 'Sell to Us', href: '/sell' }, // Changed from "Sell Equipment"
+  { label: 'Cart', href: '/cart', authRequired: true },
+  { label: 'Orders', href: '/orders', authRequired: true }
+];
+TESTING CHECKLIST
+After implementing all fixes, test:
+
+Google OAuth Flow:
+
+ Sign in with Google on cleanandflip.com redirects back to cleanandflip.com
+ Sign in with Google on cleanflip.replit.app redirects back to replit app
+ New Google users are forced to complete onboarding
+ Existing Google users skip onboarding
+
+
+Onboarding:
+
+ Geoapify address search works
+ Can't skip onboarding for Google users
+ Address saves correctly to database
+ Local customers (287/288 ZIP) are identified
+
+
+Profile:
+
+ Google users don't see password fields
+ Google users see Google account indicator
+ Regular users can change password
+
+
+Features:
+
+ Wishlist add/remove works
+ Products show local/shipping options
+ Cart persists for guests
+ Equipment submission is clearly "sell TO us"
+
+
+
+This completes all necessary fixes for proper Google OAuth implementation and user flow.
