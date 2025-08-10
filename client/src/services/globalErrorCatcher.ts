@@ -151,7 +151,7 @@ export class FrontendErrorCatcher {
       }
       
     } catch (err) {
-      console.warn('Error in error logging:', err);
+      // Silent failure - no console output to prevent loops
     }
   }
   

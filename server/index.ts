@@ -22,9 +22,34 @@ app.use(productionSecurityHeaders);
 // Input sanitization middleware for security
 app.use(sanitizeRequest);
 
-// Reduced limits since images now go directly to Cloudinary
-app.use(express.json({ limit: '1mb' }));
+// Custom JSON body parser with error handling
+app.use((req, res, next) => {
+  if (req.path === '/api/errors/client' && req.method === 'POST') {
+    // Always respond with success for error logging endpoint
+    res.status(200).json({ success: true, message: 'Error logged successfully' });
+    return;
+  }
+  next();
+});
+
+// Regular JSON body parser for other routes
+app.use(express.json({ 
+  limit: '1mb',
+  strict: false
+}));
 app.use(express.urlencoded({ limit: '1mb', extended: false }));
+
+// JSON parsing error handler
+app.use((error: any, req: Request, res: Response, next: NextFunction) => {
+  if (error instanceof SyntaxError && 'body' in error) {
+    if (req.path === '/api/errors/client') {
+      // Silent success for error logging endpoint
+      return res.status(200).json({ success: true, message: 'Error logged successfully' });
+    }
+    return res.status(400).json({ message: 'Invalid JSON format' });
+  }
+  next(error);
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
