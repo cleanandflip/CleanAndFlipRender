@@ -8,8 +8,8 @@ import ProductList from "@/components/products/ProductList";
 import FilterSidebar from "@/components/products/filter-sidebar";
 import { UnifiedSearch } from "@/components/ui";
 import FilterChip from "@/components/products/filter-chip";
-import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { UnifiedCard } from "@/components/ui/UnifiedCard";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/shared/AnimatedComponents";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Filter, Grid, List } from "lucide-react";
 import { ApiError } from "@/components/error-boundary";
@@ -364,20 +364,20 @@ export default function Products() {
                 ))}
                 
                 {/* Reset All Filters Button */}
-                <UnifiedButton 
+                <Button 
                   variant="danger" 
                   size="sm" 
                   onClick={handleResetFilters}
                 >
                   Reset All
-                </UnifiedButton>
+                </Button>
               </div>
             </div>
           )}
         </div>
 
         {/* Search and Controls */}
-        <UnifiedCard className="p-6 mb-8">
+        <Card className="p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex-1 max-w-md">
               <UnifiedSearch
@@ -396,7 +396,7 @@ export default function Products() {
                     ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
                     : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
                 }`}>
-                  <UnifiedButton
+                  <Button
                     variant={viewMode === 'grid' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => {
@@ -411,15 +411,16 @@ export default function Products() {
                       };
                       NavigationStateManager.saveState('/products', currentState, location);
                     }}
-                    icon={<Grid size={16} />}
-                  />
+                  >
+                    <Grid size={16} />
+                  </Button>
                 </div>
                 <div className={`glass glass-hover rounded-lg p-1 transition-all duration-300 ${
                   viewMode === 'list' 
                     ? 'ring-2 ring-blue-400 bg-blue-500/20 shadow-lg shadow-blue-500/20' 
                     : 'ring-1 ring-blue-500/20 hover:ring-blue-400/40'
                 }`}>
-                  <UnifiedButton
+                  <Button
                     variant={viewMode === 'list' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => {
@@ -434,14 +435,15 @@ export default function Products() {
                       };
                       NavigationStateManager.saveState('/products', currentState, location);
                     }}
-                    icon={<List size={16} />}
-                  />
+                  >
+                    <List size={16} />
+                  </Button>
                 </div>
               </div>
 
               {/* Filter Toggle */}
               <div className="glass glass-hover rounded-lg p-1 ring-1 ring-blue-500/20 hover:ring-blue-400/40 transition-all duration-300">
-                <UnifiedButton
+                <Button
                   variant="secondary"
                   size="sm"
                   onClick={() => {
@@ -459,15 +461,15 @@ export default function Products() {
                     NavigationStateManager.saveState('/products', currentState, location);
                   }}
                   className="relative gap-2"
-                  icon={<Filter size={16} />}
                 >
+                  <Filter size={16} />
                   Filters
                   {activeFilterCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-blue-500/30">
                       {activeFilterCount}
                     </span>
                   )}
-                </UnifiedButton>
+                </Button>
               </div>
             </div>
           </div>
@@ -488,7 +490,7 @@ export default function Products() {
               </span>
             )}
           </div>
-        </UnifiedCard>
+        </Card>
 
         <div className="flex gap-8">
           {/* Filters Sidebar */}
@@ -508,12 +510,12 @@ export default function Products() {
             {isLoading && !data ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <UnifiedCard key={i} className="p-4">
+                  <Card key={i} className="p-4">
                     <Skeleton className="w-full h-48 mb-4" />
                     <Skeleton className="h-6 w-3/4 mb-2" />
                     <Skeleton className="h-4 w-1/2 mb-2" />
                     <Skeleton className="h-6 w-1/4" />
-                  </UnifiedCard>
+                  </Card>
                 ))}
               </div>
             ) : data && data.products.length > 0 ? (
@@ -524,53 +526,53 @@ export default function Products() {
                 {totalPages > 1 && (
                   <div className="mt-12 flex justify-center">
                     <div className="flex gap-2">
-                      <UnifiedButton
+                      <Button
                         variant="secondary"
                         disabled={currentPage === 0}
                         onClick={() => setCurrentPage(currentPage - 1)}
                       >
                         Previous
-                      </UnifiedButton>
+                      </Button>
                       
                       {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                         const pageNum = currentPage < 3 ? i : currentPage - 2 + i;
                         if (pageNum >= totalPages) return null;
                         
                         return (
-                          <UnifiedButton
+                          <Button
                             key={pageNum}
                             variant={pageNum === currentPage ? "primary" : "secondary"}
                             onClick={() => setCurrentPage(pageNum)}
                           >
                             {pageNum + 1}
-                          </UnifiedButton>
+                          </Button>
                         );
                       })}
                       
-                      <UnifiedButton
+                      <Button
                         variant="secondary"
                         disabled={currentPage === totalPages - 1}
                         onClick={() => setCurrentPage(currentPage + 1)}
                       >
                         Next
-                      </UnifiedButton>
+                      </Button>
                     </div>
                   </div>
                 )}
               </>
             ) : (
-              <UnifiedCard className="p-12 text-center">
+              <Card className="p-12 text-center">
                 <h3 className="text-xl font-semibold mb-4">No products found</h3>
                 <p className="text-text-secondary mb-6">
                   Try adjusting your search terms or filters to find what you're looking for.
                 </p>
-                <UnifiedButton
+                <Button
                   onClick={() => handleFilterChange({})}
                   variant="primary"
                 >
                   Clear Filters
-                </UnifiedButton>
-              </UnifiedCard>
+                </Button>
+              </Card>
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { UnifiedCard } from "@/components/ui/UnifiedCard";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { ROUTES } from "@/config/routes";
 
@@ -82,23 +82,21 @@ export class ErrorBoundary extends Component<Props, State> {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <UnifiedButton
+                  <button
                     onClick={this.handleRetry}
-                    variant="primary"
-                    size="lg"
-                    icon={<RefreshCw className="w-5 h-5" />}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
                   >
+                    <RefreshCw className="w-5 h-5" />
                     Try Again
-                  </UnifiedButton>
+                  </button>
                   
-                  <UnifiedButton
+                  <button
                     onClick={this.handleGoHome}
-                    variant="outline"
-                    size="lg"
-                    icon={<Home className="w-5 h-5" />}
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-all border border-gray-700"
                   >
+                    <Home className="w-5 h-5" />
                     Home
-                  </UnifiedButton>
+                  </button>
                 </div>
               </div>
 

@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { CARDS, INTERACTIONS } from '@/config/dimensions';
 
 interface UnifiedCardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'default' | 'elevated' | 'outlined' | 'filled';
