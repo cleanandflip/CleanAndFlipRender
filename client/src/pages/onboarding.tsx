@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import AddressAutocomplete from "@/components/ui/address-autocomplete";
 
 interface OnboardingData {
   street: string;
@@ -13,6 +14,8 @@ interface OnboardingData {
   state: string;
   zipCode: string;
   phone: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export default function Onboarding() {
@@ -52,6 +55,18 @@ export default function Onboarding() {
 
   const handleInputChange = (field: keyof OnboardingData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddressSelect = (address: any) => {
+    setFormData(prev => ({
+      ...prev,
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      latitude: address.coordinates?.lat,
+      longitude: address.coordinates?.lng
+    }));
   };
 
   const handleAddressSubmit = async () => {
@@ -120,43 +135,55 @@ export default function Onboarding() {
             {step === 1 ? (
               <>
                 <div>
-                  <Label htmlFor="street">Street Address</Label>
-                  <Input
-                    id="street"
-                    value={formData.street}
-                    onChange={(e) => handleInputChange('street', e.target.value)}
-                    placeholder="123 Main St"
+                  <Label htmlFor="address">Address</Label>
+                  <AddressAutocomplete
+                    onChange={handleAddressSelect}
+                    placeholder="Start typing your address..."
+                    className="w-full"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                
+                {/* Manual address fields (auto-filled by search) */}
+                <div className="space-y-4 pt-2">
                   <div>
-                    <Label htmlFor="city">City</Label>
+                    <Label htmlFor="street">Street Address</Label>
                     <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                      placeholder="Asheville"
+                      id="street"
+                      value={formData.street}
+                      onChange={(e) => handleInputChange('street', e.target.value)}
+                      placeholder="123 Main St"
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        value={formData.city}
+                        onChange={(e) => handleInputChange('city', e.target.value)}
+                        placeholder="Asheville"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="state">State</Label>
+                      <Input
+                        id="state"
+                        value={formData.state}
+                        onChange={(e) => handleInputChange('state', e.target.value)}
+                        placeholder="NC"
+                        maxLength={2}
+                      />
+                    </div>
+                  </div>
                   <div>
-                    <Label htmlFor="state">State</Label>
+                    <Label htmlFor="zipCode">ZIP Code</Label>
                     <Input
-                      id="state"
-                      value={formData.state}
-                      onChange={(e) => handleInputChange('state', e.target.value)}
-                      placeholder="NC"
-                      maxLength={2}
+                      id="zipCode"
+                      value={formData.zipCode}
+                      onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                      placeholder="28801"
                     />
                   </div>
-                </div>
-                <div>
-                  <Label htmlFor="zipCode">ZIP Code</Label>
-                  <Input
-                    id="zipCode"
-                    value={formData.zipCode}
-                    onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                    placeholder="28801"
-                  />
                 </div>
                 <div>
                   <Label htmlFor="phone">Phone Number (Optional)</Label>

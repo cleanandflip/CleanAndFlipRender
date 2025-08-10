@@ -29,20 +29,19 @@ router.get('/google/callback',
       const [dbUser] = await db.select().from(users).where(eq(users.id, user.id));
       
       if (dbUser) {
-        // Force redirect to onboarding for new Google users or incomplete profiles
-        if (!dbUser.profileComplete || (dbUser.onboardingStep && dbUser.onboardingStep > 0)) {
+        // ALWAYS redirect to onboarding for incomplete profiles (FORCE)
+        if (!dbUser.profileComplete) {
           const step = dbUser.onboardingStep || 1;
-          const isNewUser = !dbUser.profileComplete && dbUser.onboardingStep === 1;
-          Logger.info('[AUTH] Redirecting Google user to onboarding:', { step, isNewUser });
-          return res.redirect(`/onboarding?step=${step}&google=true&new=${isNewUser}`);
+          const isNewUser = dbUser.onboardingStep === 1;
+          Logger.info('[AUTH] FORCING Google user to onboarding (incomplete profile):', { step, isNewUser });
+          // Force redirect to full URL to prevent bypassing
+          return res.redirect(`${req.protocol}://${req.get('host')}/onboarding?step=${step}&google=true&new=${isNewUser}`);
         }
       }
       
-      // Redirect to dashboard for completed profiles
-      const returnTo = (req.session as any)?.returnTo || '/dashboard';
-      delete (req.session as any)?.returnTo;
-      Logger.info('[AUTH] Redirecting completed Google user to:', returnTo);
-      res.redirect(returnTo);
+      // Only allow dashboard access if profile is complete
+      Logger.info('[AUTH] Redirecting completed Google user to dashboard');
+      res.redirect(`${req.protocol}://${req.get('host')}/dashboard`);
       
     } catch (error) {
       Logger.error('[AUTH] Error in Google callback:', error);
@@ -53,18 +52,20 @@ router.get('/google/callback',
 
 // Onboarding endpoints
 router.post('/onboarding/address', requireAuth, async (req, res) => {
-  const { street, city, state, zipCode, phone } = req.body;
+  const { street, city, state, zipCode, phone, latitude, longitude } = req.body;
   const userId = (req.user as any).id;
   
   try {
-    // Update user address and phone
+    // Update user address, phone, and geolocation data
     await db.update(users)
       .set({
         street,
         city,
         state,
-        zipCode,
+        zipCode: zipCode,
         phone,
+        latitude: latitude || null,
+        longitude: longitude || null,
         onboardingStep: 2,
         updatedAt: new Date()
       })
