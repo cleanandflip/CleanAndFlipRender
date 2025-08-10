@@ -29,13 +29,13 @@ router.get('/google/callback',
       const [dbUser] = await db.select().from(users).where(eq(users.id, user.id));
       
       if (dbUser) {
-        // ALWAYS redirect to onboarding for incomplete profiles (FORCE)
+        // Don't force onboarding immediately - let them browse first
         if (!dbUser.profileComplete) {
-          const step = dbUser.onboardingStep || 1;
-          const isNewUser = dbUser.onboardingStep === 1;
-          Logger.info('[AUTH] FORCING Google user to onboarding (incomplete profile):', { step, isNewUser });
-          // Force redirect to full URL to prevent bypassing
-          return res.redirect(`${req.protocol}://${req.get('host')}/onboarding?step=${step}&google=true&new=${isNewUser}`);
+          const onboardingStep = dbUser.onboardingStep ?? 0;
+          const isNewUser = onboardingStep <= 1;
+          Logger.info('[AUTH] New Google user - allowing browsing, will prompt at checkout:', { isNewUser, onboardingStep });
+          // Let them browse with welcome message instead of forcing onboarding
+          return res.redirect(`${req.protocol}://${req.get('host')}/products?welcome=true&google=true&new=${isNewUser}`);
         }
       }
       

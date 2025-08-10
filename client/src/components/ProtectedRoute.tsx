@@ -25,9 +25,16 @@ export function ProtectedRoute({ children, requireCompleteProfile = false }: Pro
     return <Redirect to="/login" />;
   }
   
-  // FORCE onboarding if profile incomplete and not already on onboarding page
+  // Only require profile completion for checkout - NOT for general browsing
   if (requireCompleteProfile && !user.profileComplete && !window.location.pathname.includes('onboarding')) {
-    return <Redirect to="/onboarding" />;
+    // Check if this is a checkout route that requires complete profile
+    const isCheckoutRoute = window.location.pathname.includes('/checkout') || 
+                           window.location.pathname.includes('/payment') ||
+                           window.location.pathname.includes('/order');
+    
+    if (isCheckoutRoute) {
+      return <Redirect to="/onboarding?checkout=true" />;
+    }
   }
   
   return <>{children}</>;

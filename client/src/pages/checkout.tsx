@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ShoppingCart, CreditCard, Truck, Lock, ArrowLeft } from "lucide-react";
+import { ProfilePrompt } from "@/components/checkout/ProfilePrompt";
 
 // Load Stripe
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
@@ -197,6 +198,9 @@ export default function Checkout() {
             </Button>
           </Link>
         </div>
+
+        {/* Profile completion prompt for Google OAuth users */}
+        <ProfilePrompt />
 
         {/* Progress Steps */}
         <div className="mb-8">

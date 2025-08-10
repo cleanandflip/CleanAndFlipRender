@@ -13,6 +13,7 @@ import Footer from "@/components/layout/footer";
 import CartDrawer from "@/components/cart/cart-drawer";
 import { PageLoader } from "@/components/ui/page-loader";
 import { environment } from "@/lib/environment";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Import critical pages directly to avoid lazy loading issues with routing
 import Home from "@/pages/home";
@@ -105,7 +106,12 @@ function Router() {
               
               {/* Shopping Routes */}
               <Route path={ROUTES.CART} component={Cart} />
-              <Route path={ROUTES.CHECKOUT} component={Checkout} />
+              {/* Checkout requires profile completion */}
+              <Route path={ROUTES.CHECKOUT} component={() => (
+                <ProtectedRoute requireCompleteProfile={true}>
+                  <Checkout />
+                </ProtectedRoute>
+              )} />
               
               {/* Auth Routes */}
               <Route path={ROUTES.LOGIN} component={AuthPage} />

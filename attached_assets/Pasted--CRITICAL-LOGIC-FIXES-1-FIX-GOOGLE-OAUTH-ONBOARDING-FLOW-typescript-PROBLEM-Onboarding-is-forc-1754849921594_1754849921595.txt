@@ -1,0 +1,427 @@
+🔧 CRITICAL LOGIC FIXES
+1. FIX GOOGLE OAUTH ONBOARDING FLOW
+typescript// PROBLEM: Onboarding is forced on ALL users, blocking them from browsing
+// FIX: Only force onboarding for Google OAuth users at checkout
+
+// In client/src/components/ProtectedRoute.tsx:
+const checkProfileCompletion = (user: User, location: string): boolean => {
+  // Only require complete profile for checkout/orders
+  const requiresCompleteProfile = ['/checkout', '/orders'].some(route => 
+    location.startsWith(route)
+  );
+  
+  // Google OAuth users must complete onboarding before checkout
+  if (requiresCompleteProfile && !user.profileComplete && user.authProvider === 'google') {
+    const returnUrl = encodeURIComponent(location);
+    window.location.href = `/onboarding?return=${returnUrl}`;
+    return false;
+  }
+  
+  // Let everyone browse without completing profile
+  return true;
+};
+
+// In server/routes/auth-google.ts - fix redirect logic:
+const redirectAfterGoogleAuth = (user: User): string => {
+  // Don't force onboarding immediately - let them browse first
+  if (!user.profileComplete) {
+    return '/products?welcome=true'; // Show welcome message, not onboarding
+  }
+  return '/dashboard';
+};
+2. ADD MISSING WISHLIST FUNCTIONALITY
+typescript// Frontend references wishlist but backend doesn't have it
+
+// Add to server/routes/wishlist.ts:
+router.post('/api/wishlist/:productId', requireAuth, async (req, res) => {
+  const { productId } = req.params;
+  const userId = req.user.id;
+  
+  try {
+    await db.query(
+      'INSERT INTO wishlists (user_id, product_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [userId, productId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add to wishlist' });
+  }
+});
+
+router.delete('/api/wishlist/:productId', requireAuth, async (req, res) => {
+  await db.query(
+    'DELETE FROM wishlists WHERE user_id = $1 AND product_id = $2',
+    [req.user.id, req.params.productId]
+  );
+  res.json({ success: true });
+});
+
+router.get('/api/wishlist', requireAuth, async (req, res) => {
+  const items = await db.query(
+    `SELECT p.* FROM products p 
+     JOIN wishlists w ON w.product_id = p.id 
+     WHERE w.user_id = $1`,
+    [req.user.id]
+  );
+  res.json(items.rows);
+});
+3. FIX CART PERSISTENCE ISSUES
+typescript// PROBLEM: Cart doesn't persist properly for guest users
+// In server/routes/cart.ts:
+
+router.get('/api/cart', async (req, res) => {
+  let cartItems = [];
+  
+  if (req.user) {
+    // Authenticated user - get from database
+    cartItems = await storage.getCartItems(req.user.id);
+  } else {
+    // Guest user - use session cart
+    if (!req.session.guestCart) {
+      req.session.guestCart = [];
+    }
+    cartItems = req.session.guestCart;
+  }
+  
+  res.json(cartItems);
+});
+
+// Merge guest cart on login
+router.post('/api/cart/merge', requireAuth, async (req, res) => {
+  if (req.session.guestCart && req.session.guestCart.length > 0) {
+    // Merge guest cart items into user's cart
+    for (const item of req.session.guestCart) {
+      await storage.addToCart(req.user.id, item.productId, item.quantity);
+    }
+    // Clear guest cart
+    delete req.session.guestCart;
+  }
+  res.json({ success: true });
+});
+4. FIX PRODUCT SEARCH & FILTERING
+typescript// PROBLEM: Search is slow (245ms) and missing filter options
+// In server/routes/products.ts:
+
+router.get('/api/products', async (req, res) => {
+  const {
+    search,
+    category,
+    brand,
+    condition,
+    minPrice,
+    maxPrice,
+    availability, // 'local' | 'shipping' | 'both'
+    sort = 'newest',
+    page = 1,
+    limit = 20
+  } = req.query;
+  
+  let query = `
+    SELECT p.*, c.name as category_name 
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    WHERE p.status = 'active'
+  `;
+  
+  const params = [];
+  let paramCount = 0;
+  
+  // Add filters
+  if (search) {
+    params.push(search);
+    query += ` AND p.search_vector @@ plainto_tsquery($${++paramCount})`;
+  }
+  
+  if (category) {
+    params.push(category);
+    query += ` AND p.category_id = $${++paramCount}`;
+  }
+  
+  if (brand) {
+    params.push(brand);
+    query += ` AND p.brand = $${++paramCount}`;
+  }
+  
+  if (condition) {
+    params.push(condition);
+    query += ` AND p.condition = $${++paramCount}`;
+  }
+  
+  if (minPrice) {
+    params.push(minPrice);
+    query += ` AND p.price >= $${++paramCount}`;
+  }
+  
+  if (maxPrice) {
+    params.push(maxPrice);
+    query += ` AND p.price <= $${++paramCount}`;
+  }
+  
+  if (availability === 'local') {
+    query += ` AND p.available_local_pickup = true`;
+  } else if (availability === 'shipping') {
+    query += ` AND p.available_shipping = true`;
+  }
+  
+  // Add sorting
+  switch(sort) {
+    case 'price_asc':
+      query += ` ORDER BY p.price ASC`;
+      break;
+    case 'price_desc':
+      query += ` ORDER BY p.price DESC`;
+      break;
+    case 'name':
+      query += ` ORDER BY p.name ASC`;
+      break;
+    default:
+      query += ` ORDER BY p.created_at DESC`;
+  }
+  
+  // Add pagination
+  const offset = (page - 1) * limit;
+  params.push(limit, offset);
+  query += ` LIMIT $${++paramCount} OFFSET $${++paramCount}`;
+  
+  const result = await db.query(query, params);
+  
+  // Get total count for pagination
+  const countQuery = `
+    SELECT COUNT(*) FROM products p 
+    WHERE p.status = 'active' ${/* same filters without pagination */}
+  `;
+  const countResult = await db.query(countQuery, params.slice(0, -2));
+  
+  res.json({
+    products: result.rows,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total: parseInt(countResult.rows[0].count),
+      pages: Math.ceil(countResult.rows[0].count / limit)
+    }
+  });
+});
+5. FIX CHECKOUT FLOW
+typescript// PROBLEM: Checkout doesn't handle local pickup vs shipping properly
+// In client/src/pages/checkout.tsx:
+
+const CheckoutPage = () => {
+  const { cart } = useCart();
+  const { user } = useAuth();
+  const [deliveryMethod, setDeliveryMethod] = useState('shipping');
+  
+  // Check if any items are local-only or shipping-only
+  const localOnlyItems = cart.filter(item => 
+    item.product.available_local_pickup && !item.product.available_shipping
+  );
+  const shippingOnlyItems = cart.filter(item => 
+    !item.product.available_local_pickup && item.product.available_shipping
+  );
+  
+  // Calculate shipping cost
+  const shippingCost = deliveryMethod === 'local' ? 0 : 
+    cart.reduce((total, item) => total + (item.product.shipping_cost || 0), 0);
+  
+  // If user is local (Asheville area), show local pickup option
+  const isLocalCustomer = user?.zipCode?.startsWith('287') || 
+                          user?.zipCode?.startsWith('288');
+  
+  return (
+    <div>
+      {/* Delivery method selection */}
+      {isLocalCustomer && localOnlyItems.length === 0 && (
+        <div className="mb-6">
+          <h3>Delivery Method</h3>
+          <label>
+            <input
+              type="radio"
+              value="local"
+              checked={deliveryMethod === 'local'}
+              onChange={(e) => setDeliveryMethod(e.target.value)}
+            />
+            Free Local Pickup (Asheville)
+          </label>
+          <label>
+            <input
+              type="radio"
+              value="shipping"
+              checked={deliveryMethod === 'shipping'}
+              onChange={(e) => setDeliveryMethod(e.target.value)}
+            />
+            Ship to Address (${shippingCost.toFixed(2)})
+          </label>
+        </div>
+      )}
+      
+      {/* Show which items require specific delivery */}
+      {localOnlyItems.length > 0 && (
+        <div className="bg-yellow-50 p-4 mb-4">
+          <p>These items are available for local pickup only:</p>
+          {localOnlyItems.map(item => (
+            <div key={item.id}>{item.product.name}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+6. FIX ADMIN DASHBOARD ANALYTICS
+typescript// PROBLEM: Admin dashboard missing key metrics
+// In server/routes/admin.ts:
+
+router.get('/api/admin/dashboard/metrics', requireAuth, requireRole('developer'), async (req, res) => {
+  const metrics = {};
+  
+  // Revenue metrics
+  const revenue = await db.query(`
+    SELECT 
+      SUM(total_amount) as total_revenue,
+      COUNT(*) as total_orders,
+      AVG(total_amount) as avg_order_value
+    FROM orders 
+    WHERE status = 'completed'
+    AND created_at >= NOW() - INTERVAL '30 days'
+  `);
+  metrics.revenue = revenue.rows[0];
+  
+  // Product metrics
+  const products = await db.query(`
+    SELECT 
+      COUNT(*) as total_products,
+      COUNT(*) FILTER (WHERE status = 'active') as active_products,
+      COUNT(*) FILTER (WHERE stock_quantity = 0) as out_of_stock
+    FROM products
+  `);
+  metrics.products = products.rows[0];
+  
+  // User metrics
+  const users = await db.query(`
+    SELECT 
+      COUNT(*) as total_users,
+      COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') as new_users,
+      COUNT(*) FILTER (WHERE is_local_customer = true) as local_customers
+    FROM users
+  `);
+  metrics.users = users.rows[0];
+  
+  // Equipment submission metrics
+  const submissions = await db.query(`
+    SELECT 
+      COUNT(*) as total_submissions,
+      COUNT(*) FILTER (WHERE status = 'pending') as pending_review,
+      COUNT(*) FILTER (WHERE status = 'accepted') as accepted,
+      AVG(offer_amount) as avg_offer
+    FROM equipment_submissions
+    WHERE created_at >= NOW() - INTERVAL '30 days'
+  `);
+  metrics.submissions = submissions.rows[0];
+  
+  res.json(metrics);
+});
+7. FIX ORDER STATUS WORKFLOW
+typescript// PROBLEM: Order status transitions not properly enforced
+// In server/routes/orders.ts:
+
+const validStatusTransitions = {
+  'pending': ['confirmed', 'cancelled'],
+  'confirmed': ['processing', 'cancelled'],
+  'processing': ['shipped', 'cancelled'],
+  'shipped': ['delivered'],
+  'delivered': ['refunded'],
+  'cancelled': [],
+  'refunded': []
+};
+
+router.put('/api/orders/:id/status', requireAuth, requireRole('developer'), async (req, res) => {
+  const { id } = req.params;
+  const { status, notes } = req.body;
+  
+  // Get current order status
+  const order = await storage.getOrder(id);
+  if (!order) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+  
+  // Check if transition is valid
+  const allowedStatuses = validStatusTransitions[order.status];
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ 
+      error: `Cannot change status from ${order.status} to ${status}` 
+    });
+  }
+  
+  // Handle status-specific logic
+  if (status === 'cancelled' || status === 'refunded') {
+    // Restore inventory
+    const items = await storage.getOrderItems(id);
+    for (const item of items) {
+      await storage.incrementStock(item.product_id, item.quantity);
+    }
+  }
+  
+  // Update status
+  await storage.updateOrderStatus(id, status, notes);
+  
+  // Send notifications
+  if (status === 'shipped') {
+    await emailService.sendShippingNotification(order);
+  } else if (status === 'delivered') {
+    await emailService.sendDeliveryConfirmation(order);
+  }
+  
+  res.json({ success: true });
+});
+8. DO YOU NEED REDIS?
+typescript// NO - Redis is NOT absolutely necessary for your scale
+// You can achieve good performance with:
+
+// 1. Database query optimization (add these indexes):
+CREATE INDEX idx_products_active_featured ON products(status, featured) WHERE status = 'active';
+CREATE INDEX idx_products_search_fast ON products USING GIN(search_vector) WHERE status = 'active';
+CREATE INDEX idx_orders_user_date ON orders(user_id, created_at DESC);
+
+// 2. In-memory caching for small datasets:
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCached(key, fetchFn) {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.time < CACHE_TTL) {
+    return cached.data;
+  }
+  const data = fetchFn();
+  cache.set(key, { data, time: Date.now() });
+  return data;
+}
+
+// Use for categories, featured products, etc.
+9. DO YOU NEED SENTRY?
+typescript// NO - Sentry is NOT absolutely necessary
+// You can use built-in logging:
+
+// Simple error tracking in server/middleware/errorHandler.ts:
+app.use((err, req, res, next) => {
+  // Log to file for production
+  const errorLog = {
+    timestamp: new Date().toISOString(),
+    method: req.method,
+    url: req.url,
+    error: err.message,
+    stack: err.stack,
+    user: req.user?.id
+  };
+  
+  console.error('ERROR:', errorLog);
+  
+  // In production, write to error log file
+  if (process.env.NODE_ENV === 'production') {
+    fs.appendFileSync('errors.log', JSON.stringify(errorLog) + '\n');
+  }
+  
+  res.status(err.status || 500).json({
+    error: process.env.NODE_ENV === 'production' ? 
+      'An error occurred' : err.message
+  });
+});
+These are the core logic fixes needed. No UI changes, no unnecessary dependencies - just fixing what's broken and adding what's missing.

@@ -224,7 +224,16 @@ export const cartItems = pgTable("cart_items", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Removed equipment submissions and wishlist tables for single-seller model
+// Wishlists table for user favorite products
+export const wishlists = pgTable("wishlists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_wishlists_user").on(table.userId),
+  index("idx_wishlists_product").on(table.productId),
+]);
 
 // Activity logs for real analytics tracking
 export const activityLogs = pgTable("activity_logs", {
@@ -307,6 +316,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   addresses: many(addresses),
   activities: many(activityLogs),
   equipmentSubmissions: many(equipmentSubmissions),
+  wishlists: many(wishlists),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -320,6 +330,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   }),
   orderItems: many(orderItems),
   cartItems: many(cartItems),
+  wishlists: many(wishlists),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
@@ -371,6 +382,17 @@ export const equipmentSubmissionsRelations = relations(equipmentSubmissions, ({ 
   user: one(users, {
     fields: [equipmentSubmissions.userId],
     references: [users.id],
+  }),
+}));
+
+export const wishlistsRelations = relations(wishlists, ({ one }) => ({
+  user: one(users, {
+    fields: [wishlists.userId],
+    references: [users.id],
+  }),
+  product: one(products, {
+    fields: [wishlists.productId],
+    references: [products.id],
   }),
 }));
 
@@ -432,6 +454,11 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   createdAt: true,
 });
 
+export const insertWishlistSchema = createInsertSchema(wishlists).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -471,7 +498,8 @@ export type InsertAddress = z.infer<typeof insertAddressSchema>;
 export type EquipmentSubmission = typeof equipmentSubmissions.$inferSelect;
 export type InsertEquipmentSubmission = z.infer<typeof insertEquipmentSubmissionSchema>;
 
-// Removed Wishlist types for single-seller model
+export type Wishlist = typeof wishlists.$inferSelect;
+export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
