@@ -176,7 +176,7 @@ export default function AuthPage() {
                 <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-4">
                     <Label htmlFor="email" className="text-white font-medium text-xl">Email</Label>
-                    <UnifiedInput
+                    <Input
                       id="email"
                       name="email"
                       type="email"
@@ -188,7 +188,7 @@ export default function AuthPage() {
                   </div>
                   <div className="space-y-4">
                     <Label htmlFor="password" className="text-white font-medium text-xl">Password</Label>
-                    <UnifiedInput
+                    <Input
                       id="password"
                       name="password"
                       type="password"
@@ -205,7 +205,7 @@ export default function AuthPage() {
                       </Link>
                     </div>
                   </div>
-                  <UnifiedButton
+                  <Button
                     type="submit"
                     variant="primary"
                     size="lg"
@@ -214,7 +214,7 @@ export default function AuthPage() {
                     disabled={loginMutation.isPending}
                   >
                     {loginMutation.isPending ? "Signing In..." : "Sign In"}
-                  </UnifiedButton>
+                  </Button>
                 </form>
                 
                 <div className="mt-6">
@@ -239,7 +239,7 @@ export default function AuthPage() {
                 <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-5">
                   {/* Name fields */}
                   <div className="grid grid-cols-2 gap-4">
-                    <UnifiedInput
+                    <Input
                       id="firstName"
                       name="firstName"
                       type="text"
@@ -248,7 +248,7 @@ export default function AuthPage() {
                       placeholder="First Name"
                       onFocus={scrollToForm}
                     />
-                    <UnifiedInput
+                    <Input
                       id="lastName"
                       name="lastName"
                       type="text"
@@ -260,7 +260,7 @@ export default function AuthPage() {
                   </div>
                   
                   {/* Contact */}
-                  <UnifiedInput
+                  <Input
                     id="email"
                     name="email"
                     type="email"
@@ -270,7 +270,7 @@ export default function AuthPage() {
                     onFocus={scrollToForm}
                   />
                   
-                  <UnifiedInput
+                  <Input
                     id="phone"
                     name="phone"
                     type="tel"
@@ -353,7 +353,7 @@ export default function AuthPage() {
                     )}
                   </div>
 
-                  <UnifiedButton
+                  <Button
                     type="submit"
                     variant="primary"
                     size="lg"
@@ -362,7 +362,7 @@ export default function AuthPage() {
                     disabled={registerMutation.isPending || !passwordsMatch || (!!password && !isPasswordValid(password))}
                   >
                     {registerMutation.isPending ? "Creating Account..." : "Create Account"}
-                  </UnifiedButton>
+                  </Button>
                 </form>
                 
                 <div className="mt-6">

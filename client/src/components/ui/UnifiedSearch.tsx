@@ -189,6 +189,8 @@ export function UnifiedSearch({
   // Remove body scroll prevention - allow page scroll while dropdown is open
 
   const handleSearch = useCallback((searchQuery: string) => {
+    console.log('handleSearch:', searchQuery, 'variant:', variant);
+    
     // Handle empty/clear case
     if (!searchQuery?.trim()) {
       setQuery('');
@@ -243,8 +245,13 @@ export function UnifiedSearch({
   };
 
   const handleTrendingClick = (item: string) => {
+    console.log('🔥 TRENDING CLICK TRIGGERED:', item);
+    console.log('Current variant:', variant);
+    console.log('Current query state:', query);
+    
     setQuery(item);
     setTimeout(() => {
+      console.log('🚀 EXECUTING SEARCH FOR:', item);
       handleSearch(item);
     }, 50); // Increased timeout for better state sync
   };

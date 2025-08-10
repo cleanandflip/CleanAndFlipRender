@@ -14,7 +14,6 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
-import { formLayouts } from "@/config/dimensions"
 
 const Form = FormProvider
 
@@ -81,7 +80,7 @@ const FormItem = React.forwardRef<
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} className={cn(formLayouts.structure.fieldSpacing.replace('space-y-4', 'space-y-2'), className)} {...props} />
+      <div ref={ref} className={cn("space-y-2", className)} {...props} />
     </FormItemContext.Provider>
   )
 })
@@ -96,12 +95,7 @@ const FormLabel = React.forwardRef<
   return (
     <Label
       ref={ref}
-      className={cn(
-        formLayouts.structure.labelToInput, 
-        "text-sm font-medium",
-        error && "text-destructive", 
-        className
-      )}
+      className={cn(error && "text-destructive", className)}
       htmlFor={formItemId}
       {...props}
     />
@@ -141,7 +135,7 @@ const FormDescription = React.forwardRef<
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-sm text-muted-foreground-foreground", className)}
       {...props}
     />
   )

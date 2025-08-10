@@ -47,14 +47,12 @@ export const componentClasses = {
       border border-[rgba(255,255,255,0.08)]
       rounded-lg
       transition-all duration-300
-      p-4 sm:p-6
     `,
     interactive: `
       hover:bg-[#2D3548]
       hover:border-[rgba(255,255,255,0.12)]
       hover:shadow-xl hover:shadow-black/20
       cursor-pointer
-      hover:scale-105 active:scale-95
     `,
     glow: `
       hover:shadow-[0_0_30px_rgba(59,130,246,0.15)]

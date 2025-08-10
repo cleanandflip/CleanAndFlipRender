@@ -74,21 +74,15 @@ export const typography = {
   tiny: 'text-xs',   // 12px - timestamps only
 } as const;
 
-// Icon sizing system - Phase 6 Standardization
+// Icon sizing system - consistent across all uses
 export const iconSizes = {
-  // Size-based scaling (STANDARD)
-  xs: 'w-3 h-3',          // 12px - Tiny indicators only
-  sm: 'w-4 h-4',          // 16px - In h-8 buttons, inline text
-  md: 'w-5 h-5',          // 20px - In h-10 buttons (DEFAULT)
-  lg: 'w-6 h-6',          // 24px - In h-12 buttons, navigation
-  xl: 'w-8 h-8',          // 32px - Hero sections, standalone
-  
-  // Context-based aliases (for clarity)
-  inline: 'w-4 h-4',      // Text inline icons
-  button: 'w-5 h-5',      // Standard button icons
-  nav: 'w-6 h-6',         // Navigation icons
-  hero: 'w-8 h-8',        // Feature/hero icons
-  logo: 'w-10 h-10'       // Brand/logo icons
+  // Context-based sizing
+  buttonSm: 'w-4 h-4',    // 16px - in h-8 buttons
+  buttonMd: 'w-5 h-5',    // 20px - in h-10 buttons (default)
+  buttonLg: 'w-6 h-6',    // 24px - in h-12 buttons
+  nav: 'w-6 h-6',         // 24px - navigation icons
+  standalone: 'w-6 h-6',  // 24px - default standalone
+  inline: 'w-4 h-4',      // 16px - tiny icons in text
 } as const;
 
 // Layout dimensions
@@ -251,26 +245,6 @@ export const grids = {
     defaultGap: 'gap-4',      // 16px
     itemAlignment: 'items-center',
     mobileStack: 'flex-col sm:flex-row'
-  }
-} as const;
-
-// Form layout specifications
-export const formLayouts = {
-  structure: {
-    fieldSpacing: 'space-y-4',       // 16px between fields
-    sectionSpacing: 'space-y-6',     // 24px between sections
-    labelToInput: 'mb-2',            // 8px
-    errorToField: 'mt-1',            // 4px
-    submitSection: 'mt-6',           // 24px
-    buttonGroup: 'flex gap-3',       // 12px between buttons
-    twoColumn: 'grid grid-cols-1 md:grid-cols-2 gap-4',
-    fullWidth: 'col-span-full'
-  },
-  
-  validation: {
-    required: 'text-red-500 ml-1',
-    error: 'text-sm text-red-600 dark:text-red-400',
-    success: 'text-sm text-green-600 dark:text-green-400'
   }
 } as const;
 
