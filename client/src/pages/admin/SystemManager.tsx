@@ -44,11 +44,18 @@ export function SystemManager() {
   const { data: systemHealth, isLoading } = useQuery({
     queryKey: ['admin-system-health'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/system/health', {
-        credentials: 'include'
-      });
-      if (!res.ok) throw new Error('Failed to fetch system health');
-      return res.json();
+      try {
+        const res = await fetch('/api/admin/system/health', {
+          credentials: 'include'
+        });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return await res.json();
+      } catch (error) {
+        console.error('Failed to fetch system health:', error);
+        throw error;
+      }
     },
     refetchInterval: 30000 // Refresh every 30 seconds
   });

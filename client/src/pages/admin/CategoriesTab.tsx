@@ -37,13 +37,21 @@ export function CategoriesTab() {
   } = useQuery({
     queryKey: ['/api/admin/categories'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/categories', {
-        credentials: 'include'
-      });
-      if (!res.ok) throw new Error('Failed to fetch categories');
-      const data = await res.json();
-      console.log('Categories API response:', data);
-      return data;
+      try {
+        const res = await fetch('/api/admin/categories', {
+          credentials: 'include'
+        });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`);
+        }
+        const data = await res.json();
+        console.log('Categories API response:', data);
+        return data;
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        throw error;
+      }
     }
   });
 

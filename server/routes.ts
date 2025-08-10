@@ -1234,8 +1234,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Error Management Routes - Import and register first
   try {
-    const { errorManagementRoutes } = await import('./routes/admin/error-management.js');
-    app.use('/api/admin', errorManagementRoutes);
+    const errorManagementModule = await import('./routes/admin/error-management.js');
+    app.use('/api/admin', errorManagementModule.default);
     Logger.info('Error management routes registered successfully');
   } catch (error) {
     Logger.error('Failed to register error management routes:', error);

@@ -124,7 +124,8 @@ function CategoryEditModal({
       });
       
       if (!response.ok) {
-        throw new Error('Failed to save category');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
       
       return response.json();

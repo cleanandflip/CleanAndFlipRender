@@ -32,9 +32,17 @@ export function UsersTab() {
   const { data: usersData, isLoading, refetch } = useQuery({
     queryKey: ['admin-users', searchQuery],
     queryFn: async () => {
-      const res = await fetch('/api/users', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch users');
-      return res.json();
+      try {
+        const res = await fetch('/api/users', { credentials: 'include' });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`);
+        }
+        return await res.json();
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        throw error;
+      }
     }
   });
 
@@ -77,19 +85,21 @@ export function UsersTab() {
         credentials: 'include',
       });
       
-      if (res.ok) {
-        refetch(); // Refresh the data
-        toast({
-          title: "User Deleted",
-          description: `${user.firstName} ${user.lastName} has been permanently deleted`,
-        });
-      } else {
-        throw new Error('Failed to delete user');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`);
       }
+      
+      refetch(); // Refresh the data
+      toast({
+        title: "User Deleted",
+        description: `${user.firstName} ${user.lastName} has been permanently deleted`,
+      });
     } catch (error) {
+      console.error('Failed to delete user:', error);
       toast({
         title: "Delete Failed",
-        description: "Failed to delete user. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to delete user. Please try again.",
         variant: "destructive",
       });
     }

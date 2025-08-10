@@ -123,8 +123,8 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to save product');
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || `HTTP ${res.status}: ${res.statusText}`);
       }
       
       return res.json();

@@ -55,31 +55,28 @@ const OnboardingPage = () => {
         })
       });
       
-      if (response.ok) {
-        const result = await response.json();
-        localStorage.removeItem('onboarding_progress');
-        
-        if (result.isLocalCustomer) {
-          toast({
-            title: "Welcome!",
-            description: "You qualify for free local pickup in Asheville!",
-          });
-        }
-        
-        // Refresh will happen automatically
-        navigate(result.redirectUrl || '/dashboard');
-      } else {
-        const error = await response.json();
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      localStorage.removeItem('onboarding_progress');
+      
+      if (result.isLocalCustomer) {
         toast({
-          title: "Error",
-          description: error.message || 'Failed to complete onboarding',
-          variant: "destructive",
+          title: "Welcome!",
+          description: "You qualify for free local pickup in Asheville!",
         });
       }
-    } catch (error) {
+      
+      // Refresh will happen automatically
+      navigate(result.redirectUrl || '/dashboard');
+    } catch (error: any) {
+      console.error('Onboarding completion failed:', error);
       toast({
-        title: "Network Error",
-        description: 'Please try again.',
+        title: "Error",
+        description: error.message || 'Failed to complete onboarding',
         variant: "destructive",
       });
     }

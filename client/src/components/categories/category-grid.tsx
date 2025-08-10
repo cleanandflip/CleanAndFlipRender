@@ -16,11 +16,17 @@ export default function CategoryGrid() {
   const { data: categories = [], isLoading } = useQuery<Category[]>({
     queryKey: ['/api/categories', 'active'],
     queryFn: async () => {
-      const response = await fetch('/api/categories?active=true');
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
+      try {
+        const response = await fetch('/api/categories?active=true');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        throw error; // Re-throw for TanStack Query to handle
       }
-      return response.json();
     },
     staleTime: 0, // Always fresh for real-time updates
     refetchInterval: 30000 // Refresh every 30 seconds

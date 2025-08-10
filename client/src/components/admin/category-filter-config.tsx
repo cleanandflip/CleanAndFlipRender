@@ -31,9 +31,16 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
   const { data: filterOptions } = useQuery({
     queryKey: ['/api/admin/products/filter-options'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/products/filter-options');
-      if (!response.ok) throw new Error('Failed to fetch filter options');
-      return response.json();
+      try {
+        const response = await fetch('/api/admin/products/filter-options');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to fetch filter options:', error);
+        throw error;
+      }
     }
   });
 

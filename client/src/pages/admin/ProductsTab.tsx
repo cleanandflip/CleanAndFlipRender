@@ -50,12 +50,20 @@ export function ProductsTab() {
         limit: '20'
       });
       
-      const res = await fetch(`/api/admin/products?${params}`, {
-        credentials: 'include'
-      });
-      
-      if (!res.ok) throw new Error('Failed to fetch products');
-      return res.json();
+      try {
+        const res = await fetch(`/api/admin/products?${params}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`);
+        }
+        return await res.json();
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+        throw error;
+      }
     }
   });
 

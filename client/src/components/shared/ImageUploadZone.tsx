@@ -61,11 +61,16 @@ export const ImageUploadZone: React.FC<ImageUploadZoneProps> = ({
   const handleFiles = async (files: File[]) => {
     if (files.length === 0) return;
     
-    const urls = await uploadImages(files);
-    if (urls.length > 0) {
-      const newImages = [...currentImages, ...urls];
-      setCurrentImages(newImages);
-      onUploadComplete(newImages);
+    try {
+      const urls = await uploadImages(files);
+      if (urls.length > 0) {
+        const newImages = [...currentImages, ...urls];
+        setCurrentImages(newImages);
+        onUploadComplete(newImages);
+      }
+    } catch (error) {
+      console.error('Failed to upload images:', error);
+      // The uploadImages hook should handle user-facing errors
     }
   };
 

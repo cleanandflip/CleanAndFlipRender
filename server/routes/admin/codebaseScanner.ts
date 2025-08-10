@@ -60,6 +60,11 @@ router.post('/scan-codebase', async (req, res) => {
 
     // File scanning logic
     const scanFile = async (filePath: string, relativeFilePath: string): Promise<void> => {
+      // Skip scanning the scanner itself to avoid false positives
+      if (relativeFilePath.includes('codebaseScanner.ts')) {
+        return;
+      }
+      
       try {
         const content = await fs.readFile(filePath, 'utf-8');
         const lines = content.split('\n');

@@ -101,27 +101,51 @@ export default function ErrorDashboard() {
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== 'all' && value !== '') params.append(key, value);
       });
-      const response = await fetch(`/api/admin/errors?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch errors');
-      return response.json();
+      try {
+        const response = await fetch(`/api/admin/errors?${params}`);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to fetch errors:', error);
+        throw error;
+      }
     }
   });
 
   const { data: trends } = useQuery({
     queryKey: ['/api/admin/errors/trends', filters.timeRange],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/errors/trends?timeRange=${filters.timeRange}`);
-      if (!response.ok) throw new Error('Failed to fetch error trends');
-      return response.json();
+      try {
+        const response = await fetch(`/api/admin/errors/trends?timeRange=${filters.timeRange}`);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to fetch error trends:', error);
+        throw error;
+      }
     }
   });
 
   const { data: stats } = useQuery({
     queryKey: ['/api/admin/errors/stats'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/errors/stats');
-      if (!response.ok) throw new Error('Failed to fetch error stats');
-      return response.json();
+      try {
+        const response = await fetch('/api/admin/errors/stats');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to fetch error stats:', error);
+        throw error;
+      }
     }
   });
 

@@ -73,6 +73,40 @@ router.get('/errors/stats', async (req, res) => {
   }
 });
 
+// Log new errors from client
+router.post('/errors/log', async (req, res) => {
+  try {
+    const { 
+      message, 
+      stack, 
+      component, 
+      action, 
+      severity = 'medium',
+      url,
+      userAgent,
+      userContext 
+    } = req.body;
+
+    await ErrorLogger.logError({
+      message,
+      stack,
+      component,
+      action,
+      severity,
+      url,
+      userAgent,
+      userContext,
+      userId: req.user?.id,
+      ip: req.ip
+    });
+
+    res.status(201).json({ success: true });
+  } catch (error) {
+    console.error('Failed to log error:', error);
+    res.status(500).json({ error: 'Failed to log error' });
+  }
+});
+
 // Get specific error details
 router.get('/errors/:id', async (req, res) => {
   try {
@@ -224,18 +258,44 @@ router.post('/errors/performance', async (req, res) => {
   }
 });
 
-// Route for frontend to log errors
+// Route for frontend to log errors - standardized with proper error creation
 router.post('/errors/log', async (req, res) => {
   try {
     const errorData = req.body;
     
-    // Add server-side context
-    errorData.user_ip = req.ip;
-    errorData.user_agent = req.headers['user-agent'];
-    errorData.environment = process.env.NODE_ENV || 'development';
+    // Create proper error object
+    const error = new Error(errorData.message || 'Client-side error');
+    if (errorData.stack) {
+      error.stack = errorData.stack;
+    }
     
-    // Log the error
-    await ErrorLogger.logError(errorData);
+    const context = {
+      req: {
+        url: errorData.url || req.url,
+        userAgent: req.headers['user-agent'],
+        ip: req.ip
+      },
+      user: errorData.userContext,
+      component: errorData.component,
+      action: errorData.action,
+      metadata: {
+        breadcrumbs: errorData.breadcrumbs,
+        clientSide: true,
+        level: errorData.level || 'error',
+        timestamp: errorData.timestamp || new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        ...errorData.metadata
+      }
+    };
+    
+    // Log based on severity level
+    if (errorData.level === 'error' || !errorData.level) {
+      await ErrorLogger.logError(error, context);
+    } else if (errorData.level === 'warning') {
+      await ErrorLogger.logWarning(errorData.message, context);
+    } else {
+      await ErrorLogger.logInfo(errorData.message, context);
+    }
     
     res.json({ success: true, message: 'Error logged successfully' });
   } catch (error) {

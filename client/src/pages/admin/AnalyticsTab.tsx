@@ -9,9 +9,16 @@ export function AnalyticsTab() {
   const { data: analyticsData, isLoading } = useQuery({
     queryKey: ['admin-analytics'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/analytics', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch analytics');
-      return res.json();
+      try {
+        const res = await fetch('/api/admin/analytics', { credentials: 'include' });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return await res.json();
+      } catch (error) {
+        console.error('Failed to fetch analytics:', error);
+        throw error;
+      }
     },
     refetchInterval: 30000
   });

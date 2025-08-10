@@ -35,11 +35,16 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
     queryFn: async () => {
-      const response = await fetch('/api/categories?active=true');
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
+      try {
+        const response = await fetch('/api/categories?active=true');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        throw error;
       }
-      return response.json();
     }
   });
 
@@ -47,11 +52,16 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
   const { data: brandsData = [] } = useQuery<string[]>({
     queryKey: ["/api/brands"],
     queryFn: async () => {
-      const response = await fetch('/api/brands');
-      if (!response.ok) {
-        throw new Error('Failed to fetch brands');
+      try {
+        const response = await fetch('/api/brands');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to fetch brands:', error);
+        throw error;
       }
-      return response.json();
     }
   });
 

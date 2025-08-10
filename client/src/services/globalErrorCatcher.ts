@@ -139,7 +139,7 @@ export class FrontendErrorCatcher {
       errorData.timestamp = new Date();
       
       // Send to backend
-      await fetch('/api/admin/errors/log', {
+      await fetch('/api/errors/client', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(errorData),
