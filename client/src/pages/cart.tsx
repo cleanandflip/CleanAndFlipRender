@@ -5,10 +5,76 @@ import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { useCart } from "@/hooks/use-cart";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, CheckCircle } from "lucide-react";
+
+const CartSummary = ({ subtotal, isLocal }: { subtotal: number; isLocal: boolean }) => {
+  const shipping = 0; // Will be calculated at checkout
+  const tax = subtotal * 0.08; // 8% tax rate
+  const total = subtotal + shipping + tax;
+
+  return (
+    <Card className="p-6 sticky top-32">
+      <h2 className="font-bebas text-2xl mb-6">ORDER SUMMARY</h2>
+      
+      <div className="space-y-4">
+        <div className="flex justify-between">
+          <span>Subtotal</span>
+          <span>${subtotal.toFixed(2)}</span>
+        </div>
+        
+        <div className="flex justify-between">
+          <span>Delivery</span>
+          {isLocal ? (
+            <span className="font-medium text-emerald-600">FREE</span>
+          ) : (
+            <span>Calculated at checkout</span>
+          )}
+        </div>
+        
+        <div className="flex justify-between">
+          <span>Tax</span>
+          <span>${tax.toFixed(2)}</span>
+        </div>
+        
+        <Separator className="bg-glass-border" />
+        
+        <div className="flex justify-between font-semibold text-lg">
+          <span>Total</span>
+          <span>${total.toFixed(2)}</span>
+        </div>
+        
+        {/* Clean Local Benefits Notice */}
+        {isLocal && (
+          <div className="pt-3 border-t border-gray-200">
+            <div className="flex items-start gap-2">
+              <div className="w-1 h-1 bg-emerald-500 rounded-full mt-1.5" />
+              <p className="text-xs text-gray-600">
+                You qualify for free local delivery as an Asheville area resident
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <Link href="/checkout">
+        <Button className="w-full mt-6">
+          Proceed to Checkout
+          <ArrowRight className="ml-2" size={18} />
+        </Button>
+      </Link>
+      
+      <div className="mt-4 text-center text-sm text-text-muted">
+        🔒 Secure checkout with 256-bit SSL encryption
+      </div>
+    </Card>
+  );
+};
 
 function Cart() {
   const { cartItems, updateQuantity, removeFromCart, cartTotal, cartCount, isLoading } = useCart();
+  const { user } = useAuth();
+  const isLocal = user?.isLocalCustomer;
   
   // Validate cart on mount and listen for product updates
   useEffect(() => {
@@ -205,62 +271,7 @@ function Cart() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <Card className="p-6 sticky top-32">
-              <h2 className="font-bebas text-2xl mb-6">ORDER SUMMARY</h2>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span>Shipping</span>
-                  <span>
-                    {shipping === 0 ? (
-                      <span className="text-green-400">Free</span>
-                    ) : (
-                      `$${shipping.toFixed(2)}`
-                    )}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between">
-                  <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
-                </div>
-                
-                <Separator className="bg-glass-border" />
-                
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Shipping Notice */}
-              {shipping > 0 && (
-                <div className="mt-4 p-3 glass rounded-lg text-sm text-text-secondary">
-                  <p>Free shipping on orders over $100</p>
-                  <p className="text-accent-blue">
-                    Add ${(100 - subtotal).toFixed(2)} more to qualify
-                  </p>
-                </div>
-              )}
-
-              {/* Checkout Button */}
-              <Link href="/checkout">
-                <Button className="w-full mt-6">
-                  Proceed to Checkout
-                  <ArrowRight className="ml-2" size={18} />
-                </Button>
-              </Link>
-
-              {/* Security Notice */}
-              <div className="mt-4 text-center text-sm text-text-muted">
-                🔒 Secure checkout with 256-bit SSL encryption
-              </div>
-            </Card>
+            <CartSummary subtotal={subtotal} isLocal={!!isLocal} />
           </div>
         </div>
       </div>

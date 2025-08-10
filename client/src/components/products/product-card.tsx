@@ -30,6 +30,9 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, viewMode = 'grid', compact = false }: ProductCardProps) {
+  const { user } = useAuth();
+  const isLocal = user?.isLocalCustomer;
+  
   // Handle both string URLs and image objects with url property
   const imageData = product.images?.[0];
   const mainImage = typeof imageData === 'string' ? imageData : (imageData as any)?.url;
@@ -192,6 +195,15 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
               </div>
             )}
             
+            {/* Local Delivery Badge - Top Right Corner */}
+            {isLocal && (
+              <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded">
+                <span className="text-[10px] text-emerald-400 font-medium">
+                  FREE DELIVERY
+                </span>
+              </div>
+            )}
+            
             {/* Subtle hover overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
@@ -211,9 +223,22 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             )}
             
             {/* Price */}
-            <p className="text-2xl font-bold text-white mb-4 group-hover:text-slate-100 transition-colors">
+            <p className="text-2xl font-bold text-white mb-2 group-hover:text-slate-100 transition-colors">
               ${product.price}
             </p>
+            
+            {/* Subtle Delivery Note */}
+            <div className="mb-4">
+              {isLocal ? (
+                <span className="text-[11px] text-emerald-400">
+                  ✓ Free local delivery
+                </span>
+              ) : (
+                <span className="text-[11px] text-gray-400">
+                  + Shipping
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </SmartLink>

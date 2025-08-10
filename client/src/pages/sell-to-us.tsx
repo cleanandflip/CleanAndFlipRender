@@ -71,11 +71,31 @@ const EQUIPMENT_BRANDS = [
   'HulkFit'
 ];
 
+const SellPageHeader = ({ isLocal }: { isLocal: boolean }) => (
+  <div className="mb-8">
+    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      Sell Your Equipment
+    </h1>
+    <p className="text-gray-600">
+      Get a fair price for your fitness equipment
+    </p>
+    
+    {/* Elegant Local Benefit */}
+    {isLocal && (
+      <div className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-600">
+        <CheckCircle className="h-4 w-4" />
+        <span>Free pickup service available in your area</span>
+      </div>
+    )}
+  </div>
+);
+
 export default function SellToUs() {
   // ALL HOOKS MUST BE AT THE TOP - React Rules of Hooks
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
+  const isLocal = user?.isLocalCustomer;
   
   // CRITICAL FIX: Force fresh auth check when accessing sell-to-us
   useEffect(() => {
@@ -307,7 +327,15 @@ export default function SellToUs() {
             <Card className="p-6 text-center">
               <Truck className="mx-auto mb-4 text-warning" size={40} />
               <h3 className="font-bebas text-xl mb-2">FREE PICKUP</h3>
-              <p className="text-text-secondary">We handle pickup and payment</p>
+              <p className="text-text-secondary">
+                {isLocal ? "Available in your area - we come to you!" : "We handle pickup and payment"}
+              </p>
+              {isLocal && (
+                <div className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-600">
+                  <CheckCircle className="h-3 w-3" />
+                  <span>Local service available</span>
+                </div>
+              )}
             </Card>
           </div>
         </div>

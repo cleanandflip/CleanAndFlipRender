@@ -9,6 +9,7 @@ import { CartProvider } from "@/hooks/use-cart";
 import { AuthProvider } from "@/hooks/use-auth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Navigation from "@/components/layout/navigation";
+import { LocalStatusBar } from "@/components/layout/LocalStatusBar";
 import Footer from "@/components/layout/footer";
 import CartDrawer from "@/components/cart/cart-drawer";
 import { PageLoader } from "@/components/ui/page-loader";
@@ -99,6 +100,7 @@ function Router() {
         <Analytics />
         <PWAInstaller />
         <Navigation />
+        <LocalStatusBar />
         <CartDrawer />
         <ScrollRestoration />
         <main className="flex-1">
