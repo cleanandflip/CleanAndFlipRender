@@ -46,6 +46,7 @@ export default function ErrorDashboard() {
     timeRange: '24h',
     search: ''
   });
+  const [activeTab, setActiveTab] = useState('all');
 
   const { data: errors, isLoading: errorsLoading, refetch: refetchErrors } = useQuery({
     queryKey: ['/api/admin/errors', filters],
@@ -89,6 +90,49 @@ export default function ErrorDashboard() {
     } catch (error) {
       console.error('Failed to resolve error:', error);
     }
+  };
+
+  const ErrorListContent = ({ errors, errorsLoading, handleResolveError, tabType }: {
+    errors: ErrorLog[];
+    errorsLoading: boolean;
+    handleResolveError: (id: string) => void;
+    tabType: string;
+  }) => {
+    if (errorsLoading) {
+      return (
+        <div className="text-center py-8">
+          <div className="text-gray-400">Loading errors...</div>
+        </div>
+      );
+    }
+
+    if (!errors || errors.length === 0) {
+      const emptyMessage = {
+        all: "No errors found",
+        unresolved: "No unresolved errors - Great job!",
+        resolved: "No resolved errors yet"
+      };
+
+      return (
+        <Card className="bg-gray-900 border-gray-800">
+          <CardContent className="text-center py-8">
+            <CheckCircle className="w-12 h-12 mx-auto text-green-500 mb-4" />
+            <h3 className="text-lg font-medium text-gray-200">{emptyMessage[tabType as keyof typeof emptyMessage]}</h3>
+            <p className="text-gray-400">
+              {tabType === 'unresolved' ? 'All errors have been resolved' : 'No errors match your current filters'}
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {errors.map((error: ErrorLog) => (
+          <ErrorCard key={error.id} error={error} />
+        ))}
+      </div>
+    );
   };
 
   const ErrorCard = ({ error }: { error: ErrorLog }) => {
@@ -200,6 +244,16 @@ export default function ErrorDashboard() {
     );
   };
 
+  // Filter errors based on active tab
+  const filteredErrors = errors?.filter((error: ErrorLog) => {
+    if (activeTab === 'unresolved') return !error.resolved;
+    if (activeTab === 'resolved') return error.resolved;
+    return true; // 'all' tab shows everything
+  }) || [];
+
+  const unresolvedCount = errors?.filter((error: ErrorLog) => !error.resolved).length || 0;
+  const resolvedCount = errors?.filter((error: ErrorLog) => error.resolved).length || 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -259,70 +313,82 @@ export default function ErrorDashboard() {
           </div>
         )}
 
-        {/* Filters */}
-        <Card className="bg-gray-900 border-gray-800">
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap gap-4">
-              <div className="flex-1 min-w-[200px]">
-                <Input
-                  placeholder="Search errors..."
-                  value={filters.search}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="bg-gray-800 border-gray-700 text-gray-200 placeholder:text-gray-400"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline" 
-                  size="sm"
-                  className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
-                  onClick={() => setFilters(prev => ({ ...prev, severity: 'all' }))}
-                >
-                  All Severities
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm" 
-                  className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
-                  onClick={() => setFilters(prev => ({ ...prev, resolved: 'all' }))}
-                >
-                  All Status
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
-                  onClick={() => setFilters(prev => ({ ...prev, timeRange: '24h' }))}
-                >
-                  Last 24h
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Error Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-800 border-gray-700">
+            <TabsTrigger value="all" className="data-[state=active]:bg-gray-700">
+              All ({errors?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="unresolved" className="data-[state=active]:bg-red-800">
+              Unresolved ({unresolvedCount})
+            </TabsTrigger>
+            <TabsTrigger value="resolved" className="data-[state=active]:bg-green-800">
+              Resolved ({resolvedCount})
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Error List */}
-        <div>
-          {errorsLoading ? (
-            <div className="text-center py-8">Loading errors...</div>
-          ) : errors && errors.length > 0 ? (
-            <div className="space-y-4">
-              {errors.map((error: ErrorLog) => (
-                <ErrorCard key={error.id} error={error} />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="text-center py-8">
-                <CheckCircle className="w-12 h-12 mx-auto text-green-500 mb-4" />
-                <h3 className="text-lg font-medium">No Errors Found</h3>
-                <p className="text-muted-foreground">
-                  No errors match your current filters
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+          {/* Filters */}
+          <Card className="bg-gray-900 border-gray-800 mt-4">
+            <CardContent className="pt-6">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex-1 min-w-[200px]">
+                  <Input
+                    placeholder="Search errors..."
+                    value={filters.search}
+                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className="bg-gray-800 border-gray-700 text-gray-200 placeholder:text-gray-400"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline" 
+                    size="sm"
+                    className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                    onClick={() => setFilters(prev => ({ ...prev, severity: 'all' }))}
+                  >
+                    All Severities
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
+                    onClick={() => setFilters(prev => ({ ...prev, timeRange: '24h' }))}
+                  >
+                    Last 24h
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Error List Content */}
+          <TabsContent value="all" className="mt-4">
+            <ErrorListContent 
+              errors={filteredErrors} 
+              errorsLoading={errorsLoading} 
+              handleResolveError={handleResolveError}
+              tabType="all"
+            />
+          </TabsContent>
+          
+          <TabsContent value="unresolved" className="mt-4">
+            <ErrorListContent 
+              errors={filteredErrors} 
+              errorsLoading={errorsLoading} 
+              handleResolveError={handleResolveError}
+              tabType="unresolved"
+            />
+          </TabsContent>
+          
+          <TabsContent value="resolved" className="mt-4">
+            <ErrorListContent 
+              errors={filteredErrors} 
+              errorsLoading={errorsLoading} 
+              handleResolveError={handleResolveError}
+              tabType="resolved"
+            />
+          </TabsContent>
+        </Tabs>
       </div>
   );
 }
