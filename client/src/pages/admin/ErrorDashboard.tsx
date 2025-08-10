@@ -140,105 +140,86 @@ export default function ErrorDashboard() {
     const SeverityIcon = severityInfo.icon;
 
     return (
-      <Card className="mb-4 bg-gray-900 border-gray-800">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3 flex-wrap">
-              <Badge className={`${severityInfo.color} text-white font-medium`}>
+      <Card className="mb-3 bg-gray-900 border-gray-700 hover:border-gray-600 transition-colors">
+        <CardContent className="p-4">
+          {/* Header Row */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Badge className={`${severityInfo.color} text-white text-xs px-2 py-1`}>
                 <SeverityIcon className="w-3 h-3 mr-1" />
                 {severityInfo.label}
               </Badge>
-              <Badge variant="outline" className="border-gray-600 text-gray-300">
-                {error.error_type}
-              </Badge>
               {error.resolved && (
-                <Badge variant="secondary" className="bg-green-800 text-green-100">
+                <Badge className="bg-green-700 text-green-100 text-xs px-2 py-1">
                   ✓ Resolved
                 </Badge>
               )}
-              <span className="text-sm text-gray-400 font-medium">
-                {error.occurrence_count}x occurrences
+              <span className="text-xs text-gray-500">
+                {error.occurrence_count}x
               </span>
             </div>
             {!error.resolved && (
               <Button
                 size="sm"
-                variant="outline"
                 onClick={() => handleResolveError(error.id)}
-                className="bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700 hover:border-gray-500"
+                className="h-7 text-xs bg-green-700 hover:bg-green-600 text-white border-0"
               >
-                <CheckCircle className="w-4 h-4 mr-1" />
-                Resolve
+                Mark Resolved
               </Button>
             )}
           </div>
-          <div className="mt-3">
-            <h3 className="font-semibold text-gray-200 text-base leading-relaxed">
+
+          {/* Error Message */}
+          <div className="mb-3">
+            <h3 className="text-sm font-medium text-gray-100 leading-tight">
               {error.message}
             </h3>
           </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-4">
-            {/* Primary Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              {error.url && (
-                <div className="bg-gray-800 rounded px-3 py-2">
-                  <span className="text-gray-400 font-medium">URL:</span>
-                  <br />
-                  <span className="text-gray-200 break-all">{error.url}</span>
-                </div>
-              )}
-              {error.browser && error.browser !== 'Unknown' && (
-                <div className="bg-gray-800 rounded px-3 py-2">
-                  <span className="text-gray-400 font-medium">Browser:</span>
-                  <br />
-                  <span className="text-gray-200">{error.browser}</span>
-                </div>
-              )}
-            </div>
 
-            {/* Secondary Info */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-400">
-              {error.file_path && (
-                <div>
-                  <span className="font-medium text-gray-300">File:</span>
-                  <br />
-                  <span>{error.file_path.split('/').pop()}</span>
-                  {error.line_number && <span>:{error.line_number}</span>}
-                </div>
-              )}
-              {error.method && (
-                <div>
-                  <span className="font-medium text-gray-300">Method:</span>
-                  <br />
-                  <span>{error.method}</span>
-                </div>
-              )}
-              <div>
-                <span className="font-medium text-gray-300">First Seen:</span>
-                <br />
-                <span>{new Date(error.created_at).toLocaleString()}</span>
+          {/* Compact Info Grid */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-400 mb-3">
+            {error.url && (
+              <div className="truncate">
+                <span className="text-gray-500">URL:</span> {error.url.replace(/^https?:\/\/[^\/]+/, '')}
               </div>
-              <div>
-                <span className="font-medium text-gray-300">Last Seen:</span>
-                <br />
-                <span>{new Date(error.last_seen).toLocaleString()}</span>
-              </div>
-            </div>
-
-            {/* Stack Trace */}
-            {error.stack_trace && (
-              <details className="mt-4">
-                <summary className="cursor-pointer text-sm font-medium text-gray-300 hover:text-gray-200 p-2 bg-gray-800 rounded">
-                  View Stack Trace
-                </summary>
-                <pre className="mt-2 p-3 bg-black rounded text-xs overflow-x-auto whitespace-pre-wrap text-gray-300 border border-gray-700">
-                  {error.stack_trace}
-                </pre>
-              </details>
             )}
+            <div>
+              <span className="text-gray-500">First:</span> {new Date(error.created_at).toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              })}
+            </div>
+            {error.file_path && (
+              <div className="truncate">
+                <span className="text-gray-500">File:</span> {error.file_path.split('/').pop()}{error.line_number && `:${error.line_number}`}
+              </div>
+            )}
+            <div>
+              <span className="text-gray-500">Last:</span> {new Date(error.last_seen).toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric', 
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              })}
+            </div>
           </div>
+
+          {/* Stack Trace Toggle */}
+          {error.stack_trace && (
+            <details className="group">
+              <summary className="cursor-pointer text-xs text-blue-400 hover:text-blue-300 select-none">
+                <span className="group-open:rotate-90 inline-block transform transition-transform">▶</span>
+                Stack Trace
+              </summary>
+              <pre className="mt-2 p-2 bg-black rounded text-xs overflow-x-auto text-gray-300 border border-gray-800 max-h-48 overflow-y-auto">
+                {error.stack_trace}
+              </pre>
+            </details>
+          )}
         </CardContent>
       </Card>
     );
@@ -327,39 +308,15 @@ export default function ErrorDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Filters */}
-          <Card className="bg-gray-900 border-gray-800 mt-4">
-            <CardContent className="pt-6">
-              <div className="flex flex-wrap gap-4">
-                <div className="flex-1 min-w-[200px]">
-                  <Input
-                    placeholder="Search errors..."
-                    value={filters.search}
-                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                    className="bg-gray-800 border-gray-700 text-gray-200 placeholder:text-gray-400"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline" 
-                    size="sm"
-                    className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
-                    onClick={() => setFilters(prev => ({ ...prev, severity: 'all' }))}
-                  >
-                    All Severities
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
-                    onClick={() => setFilters(prev => ({ ...prev, timeRange: '24h' }))}
-                  >
-                    Last 24h
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Simple Search Bar */}
+          <div className="mb-4">
+            <Input
+              placeholder="Search errors by message, URL, or file..."
+              value={filters.search}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              className="bg-gray-800 border-gray-600 text-gray-200 placeholder:text-gray-400 h-10"
+            />
+          </div>
 
           {/* Error List Content */}
           <TabsContent value="all" className="mt-4">
