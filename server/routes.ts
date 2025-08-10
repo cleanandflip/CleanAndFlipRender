@@ -35,6 +35,7 @@ import {
   requestLogging, 
   errorTracking 
 } from "./middleware/monitoring";
+import { ErrorLogger } from "./services/errorLogger";
 import { autoSyncProducts } from "./middleware/product-sync";
 import { runPenetrationTests } from "./security/penetration-tests";
 import { setupCompression } from "./config/compression";
@@ -67,6 +68,7 @@ function broadcastCartUpdate(userId: string, action: string = 'update', data?: a
 import googleAuthRoutes from "./routes/auth-google";
 import stripeWebhookRoutes from './routes/stripe-webhooks';
 import adminMetricsRoutes from './routes/admin-metrics';
+import errorManagementRoutes from './routes/admin/error-management';
 import crypto from 'crypto';
 import { 
   users, 
@@ -201,6 +203,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin metrics routes  
   app.use('/api/admin', adminMetricsRoutes);
+  
+  // Error management routes  
+  app.use('/api/admin', errorManagementRoutes);
+  
+  // Client-side error reporting endpoint (public)
+  app.post('/api/errors/client', async (req, res) => {
+    try {
+      const errorData = req.body;
+      
+      // Create error from client-side data
+      const error = new Error(errorData.message);
+      error.stack = errorData.stack;
+      
+      const context = {
+        req: {
+          url: errorData.url,
+          userAgent: errorData.userAgent,
+          ip: req.ip
+        },
+        user: errorData.userContext,
+        component: errorData.component,
+        action: errorData.action,
+        metadata: {
+          breadcrumbs: errorData.breadcrumbs,
+          timestamp: errorData.timestamp
+        }
+      };
+      
+      await ErrorLogger.logError(error, context);
+      
+      res.json({ success: true, message: 'Error logged successfully' });
+    } catch (error) {
+      Logger.error('Failed to log client error:', error);
+      res.status(500).json({ error: 'Failed to log error' });
+    }
+  });
   
   // Initialize search indexes
   await initializeSearchIndexes();

@@ -219,4 +219,4 @@ router.post('/errors/performance', async (req, res) => {
   }
 });
 
-export { router as errorManagementRoutes };
+export default router;

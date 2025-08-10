@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { errorReporter } from '@/services/errorReporter';
+import { clientErrorLogger } from '@/lib/errorLogger';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,15 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error to our error reporting service
-    errorReporter.captureComponentError(error, errorInfo);
+    clientErrorLogger.logComponentError(
+      error, 
+      'ErrorBoundary', 
+      'component-crash',
+      {
+        componentStack: errorInfo.componentStack,
+        errorBoundary: true
+      }
+    );
     
     // Store error ID for user reference
     this.setState({ errorId: Date.now().toString() });
