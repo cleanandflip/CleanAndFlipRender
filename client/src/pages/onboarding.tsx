@@ -122,8 +122,8 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 pt-safe-top pb-safe-bottom">
+      <div className="max-w-md w-full mx-4">
         <Card>
           <CardHeader>
             <CardTitle>Complete Your Profile</CardTitle>
@@ -154,7 +154,7 @@ export default function Onboarding() {
                       placeholder="123 Main St"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="city">City</Label>
                       <Input

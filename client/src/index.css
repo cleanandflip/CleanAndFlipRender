@@ -60,6 +60,31 @@ body {
   overflow-x: hidden;
 }
 
+/* Mobile optimizations */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific styles */
+  body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  input, textarea, button {
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+}
+
+/* Scrollbar improvements for mobile */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Custom scrollbar styling for search dropdown */
 .scrollbar-thin {
   scrollbar-width: thin;

@@ -366,7 +366,7 @@ export default function Navigation() {
                   <Menu size={20} />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="bg-secondary border-bg-secondary-border">
+              <SheetContent side="right" className="bg-secondary border-bg-secondary-border w-full sm:w-[320px] max-w-[85vw] pt-safe-top">
                 <div className="flex items-center justify-between mb-8">
                   <Logo />
                   <Button
@@ -378,7 +378,7 @@ export default function Navigation() {
                   </Button>
                 </div>
                 
-                <nav className="space-y-4">
+                <nav className="space-y-3 pb-safe-bottom">
                   {navigation.map((item) => (
                     <Button
                       key={item.name}
@@ -387,7 +387,7 @@ export default function Navigation() {
                         handleNavigation(item.href);
                         setIsMobileMenuOpen(false);
                       }}
-                      className="w-full justify-start"
+                      className="w-full justify-start h-12 text-base font-medium"
                       disabled={isActive(item.href)}
                     >
                       {item.name}

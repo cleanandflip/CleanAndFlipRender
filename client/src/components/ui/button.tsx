@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Loader2 } from 'lucide-react';
 
 const buttonVariants = cva(
-  "btn",
+  "btn touch-manipulation", // Prevent double-tap zoom
   {
     variants: {
       variant: {
@@ -21,10 +21,11 @@ const buttonVariants = cva(
         success: "btn-success",
       },
       size: {
-        default: "btn-md",
-        sm: "btn-sm",
-        lg: "btn-lg",
-        icon: "btn-sm w-10 p-0",
+        default: "btn-md h-10 sm:h-9 px-4 sm:px-3 py-2 text-base sm:text-sm",
+        sm: "btn-sm h-9 sm:h-8 px-3 sm:px-2 text-sm sm:text-xs",
+        lg: "btn-lg h-12 sm:h-11 px-6 sm:px-8 text-base",
+        icon: "btn-sm w-10 sm:w-9 h-10 sm:h-9 p-0",
+        mobile: "h-12 px-4 py-3 text-base w-full", // Mobile-optimized large button
       },
     },
     defaultVariants: {
