@@ -212,26 +212,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const errorData = req.body;
       
-      // Create error from client-side data
-      const error = new Error(errorData.message);
-      error.stack = errorData.stack;
+      // Simple validation
+      if (!errorData || !errorData.message) {
+        return res.status(400).json({ error: 'Invalid error data' });
+      }
       
-      const context = {
-        req: {
-          url: errorData.url,
-          userAgent: errorData.userAgent,
-          ip: req.ip
-        },
-        user: errorData.userContext,
+      // Log the error data directly to console for now (simplified approach)
+      Logger.warn(`[CLIENT ERROR] ${errorData.message}`, {
+        stack: errorData.stack,
+        url: errorData.url,
+        userAgent: errorData.userAgent || req.get('User-Agent'),
         component: errorData.component,
         action: errorData.action,
-        metadata: {
-          breadcrumbs: errorData.breadcrumbs,
-          timestamp: errorData.timestamp
-        }
-      };
-      
-      await ErrorLogger.logError(error, context);
+        timestamp: errorData.timestamp || new Date().toISOString(),
+        ip: req.ip
+      });
       
       res.json({ success: true, message: 'Error logged successfully' });
     } catch (error) {

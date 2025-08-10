@@ -1,4 +1,4 @@
-import { useAuth } from '@/hooks/useAuth';
+// Client-side error logging service
 
 interface Breadcrumb {
   type: string;
@@ -138,18 +138,16 @@ export class FrontendErrorCatcher {
       errorData.browser = navigator.userAgent;
       errorData.timestamp = new Date();
       
-      // DISABLED - was causing crash loop due to 400 errors
-      // await fetch('/api/errors/client', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(errorData),
-      //   credentials: 'include'
-      // }).catch(err => {
-      //   // Fallback - don't let error logging cause more errors
-      //   console.warn('Failed to log error to backend:', err);
-      // });
-      
-      console.warn('Error captured (logging disabled to prevent loop):', errorData.message);
+      // Re-enabled with improved error handling
+      await fetch('/api/errors/client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(errorData),
+        credentials: 'include'
+      }).catch(err => {
+        // Fallback - don't let error logging cause more errors
+        // Silent failure to prevent recursive loops
+      });
       
     } catch (err) {
       console.warn('Error in error logging:', err);

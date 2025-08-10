@@ -76,19 +76,18 @@ class ClientErrorLogger {
 
   async logError(errorData: ClientErrorData) {
     try {
-      // DISABLED - preventing crash loop
-      // await fetch('/api/errors/client', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   credentials: 'include',
-      //   body: JSON.stringify(errorData)
-      // });
-      console.warn('Error captured (disabled):', errorData.message);
+      // Re-enabled with improved error handling
+      await fetch('/api/errors/client', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(errorData)
+      });
     } catch (err) {
       // Silently fail to avoid recursive errors
-      console.warn('Failed to log client error:', err);
+      // No console output to prevent loops
     }
   }
 
