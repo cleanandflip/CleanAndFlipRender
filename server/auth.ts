@@ -9,6 +9,7 @@ import connectPg from "connect-pg-simple";
 import { normalizeEmail, parseCityStateZip, isLocalZip, validateCityStateZip, normalizePhone } from "@shared/utils";
 import { authLimiter } from "./middleware/security";
 import { Logger, LogLevel } from "./utils/logger";
+import { getDatabaseConfig } from "./config/database";
 
 declare global {
   namespace Express {
@@ -63,12 +64,17 @@ function validatePassword(password: string): { isValid: boolean; errors: string[
 export function setupAuth(app: Express) {
   const PostgresSessionStore = connectPg(session);
   
+  // Use the unified database configuration for session storage
+  const dbConfig = getDatabaseConfig();
+  console.log('[SESSION] Using database:', dbConfig.name);
+  console.log('[SESSION] Environment:', dbConfig.environment);
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
     resave: false,
     saveUninitialized: false,
     store: new PostgresSessionStore({
-      conString: process.env.DATABASE_URL,
+      conString: dbConfig.url,
       createTableIfMissing: false, // Don't create table - already exists
       schemaName: 'public',
       tableName: 'sessions', // Use existing sessions table
