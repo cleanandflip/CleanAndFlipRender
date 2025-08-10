@@ -217,6 +217,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/health', healthLive);
   app.get('/health/live', healthLive);
   app.get('/health/ready', healthReady);
+
+  // GEOApify Proxy - avoid CORS issues with direct client calls
+  app.get("/api/geocode/autocomplete", async (req, res) => {
+    try {
+      const { text } = req.query;
+      
+      if (!text || typeof text !== 'string' || text.length < 3) {
+        return res.json({ results: [] });
+      }
+
+      const apiKey = process.env.VITE_GEOAPIFY_API_KEY;
+      if (!apiKey) {
+        console.error('VITE_GEOAPIFY_API_KEY missing in server environment');
+        return res.status(500).json({ error: 'API key not configured' });
+      }
+
+      const url = `https://api.geoapify.com/v1/geocode/autocomplete?` +
+        `text=${encodeURIComponent(text)}&` +
+        `apiKey=${apiKey}&` +
+        `filter=countrycode:us&` +
+        `limit=5&` +
+        `format=json`;
+
+      console.log('🔍 Server-side GEOApify request:', { text, maskedUrl: url.replace(apiKey, '***') });
+
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('GEOApify API Error:', response.status, errorText);
+        return res.status(500).json({ error: 'Geocoding service error' });
+      }
+
+      const data = await response.json();
+      console.log('✅ GEOApify success:', data.results?.length || 0, 'results');
+      
+      res.json(data);
+    } catch (error) {
+      console.error('Geocoding proxy error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
   
   // Debug session endpoint for troubleshooting (development only)
   if (process.env.NODE_ENV === 'development') {

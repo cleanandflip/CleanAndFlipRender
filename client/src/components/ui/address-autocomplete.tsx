@@ -75,33 +75,31 @@ export function AddressAutocomplete({
       setIsLoading(true);
       
       try {
-        const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
-        console.log('🔑 API Key check:', {
-          exists: !!apiKey,
-          length: apiKey ? apiKey.length : 0,
-          first4: apiKey ? apiKey.substring(0, 4) : 'none'
-        });
-        
-        if (!apiKey) {
-          console.error('❌ CRITICAL: Geoapify API key missing - check VITE_GEOAPIFY_API_KEY in environment');
-          setSuggestions([]);
-          setShowDropdown(false);
-          return;
-        }
+        // API key handled server-side in proxy now
+        console.log('🔑 Using server-side proxy for GEOApify API');
         
         console.log('🔍 Searching for:', debouncedInput);
         
-        const response = await fetch(
-          `https://api.geoapify.com/v1/geocode/autocomplete?` +
-          `text=${encodeURIComponent(debouncedInput)}&` +
-          `apiKey=${apiKey}&` +
-          `filter=countrycode:us&` +
-          `limit=5&` +
-          `format=json`
-        );
+        // Use backend proxy to avoid CORS issues
+        const url = `/api/geocode/autocomplete?text=${encodeURIComponent(debouncedInput)}`;
+        console.log('🌐 Proxy API URL:', url);
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
         
         console.log('📡 Response status:', response.status);
         
+        console.log('📡 Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          type: response.type
+        });
+
         if (response.ok) {
           const data = await response.json();
           console.log('📦 Raw API data:', data);
@@ -119,22 +117,27 @@ export function AddressAutocomplete({
             setSuggestions(parsed);
             setShowDropdown(parsed.length > 0);
           } else {
-            console.warn('⚠️ No results in API response');
+            console.warn('⚠️ No results in API response:', data);
             setSuggestions([]);
             setShowDropdown(false);
           }
         } else {
           const errorText = await response.text();
-          console.error('❌ API Error:', response.status, errorText);
+          console.error('❌ API Error:', response.status, response.statusText, errorText);
         }
       } catch (error) {
         console.error('🚫 Address search failed:', error);
         console.error('🔍 Error details:', {
           message: error instanceof Error ? error.message : 'Unknown error',
           stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : 'Unknown',
+          toString: error?.toString(),
           apiKey: !!apiKey,
-          searchTerm: debouncedInput
+          searchTerm: debouncedInput,
+          errorType: typeof error
         });
+        setSuggestions([]);
+        setShowDropdown(false);
       } finally {
         setIsLoading(false);
       }
