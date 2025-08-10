@@ -39,6 +39,13 @@ export function AddressAutocomplete({
   className = ""
 }: AddressAutocompleteProps) {
   const [input, setInput] = useState(value);
+  
+  // Update input when value prop changes (from parent)
+  useEffect(() => {
+    if (value !== input) {
+      setInput(value);
+    }
+  }, [value]);
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -91,19 +98,26 @@ export function AddressAutocomplete({
           const data = await response.json();
           console.log('📦 Raw API data:', data);
           
-          const parsed = data.results?.map((result: any) => ({
-            formatted: result.formatted,
-            street: result.housenumber ? `${result.housenumber} ${result.street}` : result.street || result.name || result.address_line1,
-            city: result.city || result.county,
-            state: result.state_code || result.state,
-            zipCode: result.postcode
-          })) || [];
-          
-          console.log('✅ Parsed suggestions:', parsed);
-          setSuggestions(parsed);
-          setShowDropdown(parsed.length > 0);
+          if (data.results && Array.isArray(data.results)) {
+            const parsed = data.results.map((result: any) => ({
+              formatted: result.formatted,
+              street: result.housenumber ? `${result.housenumber} ${result.street}` : result.street || result.name || result.address_line1,
+              city: result.city || result.county,
+              state: result.state_code || result.state,
+              zipCode: result.postcode
+            }));
+            
+            console.log('✅ Parsed suggestions:', parsed);
+            setSuggestions(parsed);
+            setShowDropdown(parsed.length > 0);
+          } else {
+            console.warn('⚠️ No results in API response');
+            setSuggestions([]);
+            setShowDropdown(false);
+          }
         } else {
-          console.error('❌ API Error:', response.status);
+          const errorText = await response.text();
+          console.error('❌ API Error:', response.status, errorText);
         }
       } catch (error) {
         console.error('🚫 Address search failed:', error);
@@ -126,8 +140,8 @@ export function AddressAutocomplete({
       zipCode: suggestion.zipCode || ''
     };
     
-    // Update input with formatted address
-    setInput(suggestion.formatted || suggestion.street || '');
+    // Update input with just the street address (not full formatted)
+    setInput(suggestion.street || '');
     
     // Mark that we just selected to prevent re-searching
     setJustSelected(true);
@@ -138,6 +152,8 @@ export function AddressAutocomplete({
     
     // Send data to parent
     onAddressSelect(addressData);
+    
+    console.log('🎉 Address selection complete!');
   };
   
   // Close dropdown when clicking outside

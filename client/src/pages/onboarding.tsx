@@ -210,7 +210,7 @@ const AddressForm = ({ onNext, initialData }: any) => {
   const handleAddressSelect = (addressData: any) => {
     console.log('📍 Address selected:', addressData);
     // Populate the 4 main fields from autocomplete
-    setFormData(prev => ({
+    setFormData((prev: any) => ({
       ...prev,
       street: addressData.street,
       city: addressData.city,
@@ -235,60 +235,70 @@ const AddressForm = ({ onNext, initialData }: any) => {
       <h2 className="text-2xl font-bold mb-4 text-white">Where should we deliver?</h2>
       
       <div className="space-y-4">
-        {/* Address Autocomplete - populates the fields below */}
-        <AddressAutocomplete 
-          onAddressSelect={handleAddressSelect}
-          placeholder="Start typing your street address..."
-        />
-        
-        {/* Individual fields that get populated */}
-        <input
-          type="text"
-          value={formData.street}
-          onChange={(e) => setFormData({...formData, street: e.target.value})}
-          placeholder="Street Address"
-          required
-          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-        />
-        
-        {/* Apartment field - USER FILLS MANUALLY */}
-        <input
-          type="text"
-          value={formData.apartment}
-          onChange={(e) => setFormData({...formData, apartment: e.target.value})}
-          placeholder="Apartment, suite, etc. (optional)"
-          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-        />
-        
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            type="text"
-            value={formData.city}
-            onChange={(e) => setFormData({...formData, city: e.target.value})}
-            placeholder="City"
-            required
-            className="p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-          />
-          
-          <input
-            type="text"
-            value={formData.state}
-            onChange={(e) => setFormData({...formData, state: e.target.value.toUpperCase()})}
-            placeholder="State"
-            maxLength={2}
-            required
-            className="p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+        {/* Smart Address Search - Single field that autocompletes and populates below fields */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Street Address (start typing for suggestions)
+          </label>
+          <AddressAutocomplete 
+            onAddressSelect={handleAddressSelect}
+            placeholder="123 Main Street..."
+            value={formData.street}
           />
         </div>
         
-        <input
-          type="text"
-          value={formData.zipCode}
-          onChange={(e) => setFormData({...formData, zipCode: e.target.value})}
-          placeholder="ZIP Code"
-          required
-          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-        />
+        {/* Apartment field - USER FILLS MANUALLY */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Apartment / Suite (optional)
+          </label>
+          <input
+            type="text"
+            value={formData.apartment}
+            onChange={(e) => setFormData({...formData, apartment: e.target.value})}
+            placeholder="Apt 5B, Suite 200, etc."
+            className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">City</label>
+            <input
+              type="text"
+              value={formData.city}
+              onChange={(e) => setFormData({...formData, city: e.target.value})}
+              placeholder="City"
+              required
+              className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">State</label>
+            <input
+              type="text"
+              value={formData.state}
+              onChange={(e) => setFormData({...formData, state: e.target.value.toUpperCase()})}
+              placeholder="CA"
+              maxLength={2}
+              required
+              className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">ZIP Code</label>
+          <input
+            type="text"
+            value={formData.zipCode}
+            onChange={(e) => setFormData({...formData, zipCode: e.target.value})}
+            placeholder="12345"
+            required
+            className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+          />
+        </div>
       </div>
 
       <button
