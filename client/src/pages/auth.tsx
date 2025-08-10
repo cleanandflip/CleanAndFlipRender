@@ -218,15 +218,15 @@ export default function AuthPage() {
                 </form>
                 
                 <div className="mt-6">
-                  <div className="relative">
+                  <div className="text-center text-sm text-gray-400 mb-4">
+                    Or continue with
+                  </div>
+                  <div className="relative mb-6">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-gray-600"></div>
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-2 bg-dark-surface text-gray-400">Or continue with</span>
-                    </div>
                   </div>
-                  <div className="mt-6">
+                  <div>
                     <GoogleSignInButton disabled={loginMutation.isPending} />
                   </div>
                 </div>
@@ -372,15 +372,15 @@ export default function AuthPage() {
                 </form>
                 
                 <div className="mt-6">
-                  <div className="relative">
+                  <div className="text-center text-sm text-gray-400 mb-4">
+                    Or continue with
+                  </div>
+                  <div className="relative mb-6">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-gray-600"></div>
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-2 bg-dark-surface text-gray-400">Or continue with</span>
-                    </div>
                   </div>
-                  <div className="mt-6">
+                  <div>
                     <GoogleSignInButton disabled={registerMutation.isPending} />
                   </div>
                 </div>
