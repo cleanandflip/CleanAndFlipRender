@@ -56,16 +56,20 @@ export function AddressAutocomplete({
   // Debounce input for API calls
   const debouncedInput = useDebounce(input, 500);
   
+  // Reset justSelected flag after selection
+  useEffect(() => {
+    if (justSelected) {
+      const timer = setTimeout(() => {
+        setJustSelected(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [justSelected]);
+
   // Fetch address suggestions
   useEffect(() => {
-    // Don't search if user just selected an address
-    if (justSelected) {
-      setJustSelected(false);
-      return;
-    }
-    
-    // Don't search for short inputs
-    if (!debouncedInput || debouncedInput.length < 3) {
+    // Don't search for short inputs or if just selected
+    if (!debouncedInput || debouncedInput.length < 3 || justSelected) {
       setSuggestions([]);
       setShowDropdown(false);
       return;
@@ -188,7 +192,10 @@ export function AddressAutocomplete({
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
-    setJustSelected(false); // Reset flag when user types
+    // Only reset flag if user is manually typing (not from address selection)
+    if (!justSelected) {
+      setJustSelected(false);
+    }
   };
   
   // Handle input focus
@@ -222,15 +229,16 @@ export function AddressAutocomplete({
       
       {/* Suggestions dropdown */}
       {showDropdown && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-60 overflow-auto">
           {suggestions.map((suggestion: any, index) => (
             <button
               key={index}
               type="button"
               onClick={() => handleSelect(suggestion)}
-              className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors border-b border-gray-700 last:border-0"
+              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-blue-600 hover:text-white transition-colors border-b border-gray-600 last:border-0 focus:outline-none focus:bg-blue-600"
             >
-              {suggestion.formatted}
+              <div className="font-medium">{suggestion.street}</div>
+              <div className="text-xs text-gray-300 mt-1">{suggestion.city}, {suggestion.state} {suggestion.zipCode}</div>
             </button>
           ))}
         </div>
