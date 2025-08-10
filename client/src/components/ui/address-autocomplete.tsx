@@ -56,13 +56,11 @@ export function AddressAutocomplete({
   // Debounce input for API calls
   const debouncedInput = useDebounce(input, 500);
   
-  // Reset justSelected flag after selection - increased delay to prevent unwanted searches
+  // Keep justSelected flag true longer and reset only when user manually types
   useEffect(() => {
     if (justSelected) {
-      const timer = setTimeout(() => {
-        setJustSelected(false);
-      }, 3000); // Increased to 3 seconds
-      return () => clearTimeout(timer);
+      // Don't auto-reset - let user typing handle it
+      return;
     }
   }, [justSelected]);
 
@@ -141,7 +139,7 @@ export function AddressAutocomplete({
           stack: error instanceof Error ? error.stack : undefined,
           name: error instanceof Error ? error.name : 'Unknown',
           toString: error?.toString(),
-          apiKey: !!apiKey,
+
           searchTerm: debouncedInput,
           errorType: typeof error
         });
@@ -202,11 +200,14 @@ export function AddressAutocomplete({
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    const previousValue = input;
     setInput(newValue);
     
-    // If user manually changes the input after selection, allow searching again
-    if (justSelected && newValue !== input) {
-      setJustSelected(false);
+    // Only reset justSelected if user manually typed something different
+    // (not just from our automatic setting)
+    if (justSelected && newValue !== previousValue && newValue.length !== previousValue.length) {
+      // User is manually typing - allow searches again
+      setTimeout(() => setJustSelected(false), 100);
     }
   };
   
@@ -265,3 +266,6 @@ export function AddressAutocomplete({
     </div>
   );
 }
+
+// Add default export to fix import issues
+export default AddressAutocomplete;

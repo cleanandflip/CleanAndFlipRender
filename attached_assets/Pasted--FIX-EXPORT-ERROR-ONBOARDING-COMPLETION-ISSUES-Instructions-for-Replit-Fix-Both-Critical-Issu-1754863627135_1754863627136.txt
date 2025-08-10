@@ -1,0 +1,221 @@
+🔧 FIX EXPORT ERROR & ONBOARDING COMPLETION ISSUES
+Instructions for Replit - Fix Both Critical Issues:
+📌 ISSUE 1: Fix Address Autocomplete Export Error
+The component uses named export but somewhere it's being imported as default. Fix:
+typescript// At the BOTTOM of address-autocomplete.tsx, ADD:
+export default AddressAutocomplete;
+
+// OR change all imports from:
+import AddressAutocomplete from '@/components/ui/address-autocomplete';
+
+// TO:
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
+📌 ISSUE 2: Fix Onboarding Not Saving & Looping
+Check the Onboarding Completion Logic:
+typescript// client/src/pages/onboarding.tsx
+// Look for the completion handler:
+
+const completeOnboarding = async () => {
+  try {
+    // MAKE SURE all data is being sent
+    const response = await fetch('/api/onboarding/complete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // IMPORTANT: Include cookies
+      body: JSON.stringify({
+        // Address data
+        street: formData.street,
+        apartment: formData.apartment,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        
+        // Contact data
+        phoneNumber: formData.phoneNumber,
+        
+        // Preferences
+        emailNotifications: formData.emailNotifications,
+        smsNotifications: formData.smsNotifications,
+        
+        // Mark as complete
+        profileComplete: true,
+        onboardingStep: 4 // Completed
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to complete onboarding');
+    }
+
+    // Invalidate auth query to refresh user data
+    queryClient.invalidateQueries(['/api/auth/user']);
+    
+    // Navigate to dashboard
+    navigate('/dashboard');
+    
+  } catch (error) {
+    console.error('Onboarding completion error:', error);
+    toast.error('Failed to save your information. Please try again.');
+  }
+};
+Fix the Backend Onboarding Endpoint:
+typescript// server/routes/onboarding.ts (or wherever your onboarding route is)
+
+router.post('/api/onboarding/complete', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const {
+      street,
+      apartment,
+      city,
+      state,
+      zipCode,
+      phoneNumber,
+      emailNotifications,
+      smsNotifications
+    } = req.body;
+
+    // Combine street and apartment for storage
+    const fullStreet = apartment 
+      ? `${street}, ${apartment}`
+      : street;
+
+    // UPDATE the user in database
+    const updateQuery = `
+      UPDATE users 
+      SET 
+        street = $1,
+        city = $2,
+        state = $3,
+        zip_code = $4,
+        phone = $5,
+        email_notifications = $6,
+        sms_notifications = $7,
+        profile_complete = true,
+        onboarding_step = 4,
+        updated_at = NOW()
+      WHERE id = $8
+      RETURNING *
+    `;
+
+    const result = await db.query(updateQuery, [
+      fullStreet,
+      city,
+      state,
+      zipCode,
+      phoneNumber,
+      emailNotifications || false,
+      smsNotifications || false,
+      userId
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update session user data
+    req.user = result.rows[0];
+
+    res.json({ 
+      success: true, 
+      user: result.rows[0],
+      message: 'Onboarding completed successfully'
+    });
+
+  } catch (error) {
+    console.error('Onboarding completion error:', error);
+    res.status(500).json({ error: 'Failed to complete onboarding' });
+  }
+});
+Fix the Auth Hook to Check Profile Completion:
+typescript// client/src/hooks/use-auth.tsx
+
+export function useAuth() {
+  const { data: user, refetch } = useQuery({
+    queryKey: ['/api/auth/user'],
+    queryFn: async () => {
+      const response = await fetch('/api/auth/user', {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        return null;
+      }
+      
+      return response.json();
+    }
+  });
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if user needs onboarding
+  useEffect(() => {
+    if (user && !user.profileComplete && !location.pathname.startsWith('/onboarding')) {
+      navigate('/onboarding');
+    }
+  }, [user, location, navigate]);
+
+  return {
+    user,
+    isAuthenticated: !!user,
+    isProfileComplete: user?.profileComplete || user?.profile_complete, // Check both formats
+    refetchUser: refetch
+  };
+}
+Fix Protected Route to Prevent Onboarding Loop:
+typescript// client/src/components/ProtectedRoute.tsx
+
+const ProtectedRoute = ({ children, requireComplete = true }) => {
+  const { user, isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  // Not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+
+  // Check if profile is complete
+  const isComplete = user?.profileComplete || user?.profile_complete;
+  
+  // If profile incomplete and not on onboarding page
+  if (requireComplete && !isComplete && !location.pathname.startsWith('/onboarding')) {
+    return <Navigate to="/onboarding" replace />;
+  }
+  
+  // If profile IS complete but still on onboarding page
+  if (isComplete && location.pathname.startsWith('/onboarding')) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+📌 QUICK DIAGNOSTIC CHECK:
+Run these SQL queries to check the database:
+sql-- Check if profile_complete is being set
+SELECT id, email, profile_complete, onboarding_step, street, city, state, zip_code 
+FROM users 
+WHERE email = 'your-email@example.com';
+
+-- If profile_complete is false, manually fix it:
+UPDATE users 
+SET profile_complete = true, onboarding_step = 4 
+WHERE email = 'your-email@example.com';
+📌 VERIFY THESE POINTS:
+
+✅ Address fields in database match: street, city, state, zip_code
+✅ Profile complete flag: Both profileComplete and profile_complete checked
+✅ Session includes cookies: credentials: 'include' in all fetch calls
+✅ User data refreshes: queryClient.invalidateQueries after completion
+✅ Redirect logic: Goes to /dashboard not back to /onboarding
+
+📌 IMMEDIATE FIX SUMMARY:
+
+Export Fix: Add export default AddressAutocomplete; to address-autocomplete.tsx
+Onboarding Save: Ensure /api/onboarding/complete updates profile_complete = true
+Redirect Fix: After successful save, navigate to /dashboard not /onboarding
+Session Update: Make sure user session is updated with new profile data
+
+This should fix both the import error and the onboarding loop issue!
