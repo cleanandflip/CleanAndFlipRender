@@ -39,7 +39,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
   if (compact) {
     return (
       <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
-        <UnifiedCard variant="interactive" className="overflow-hidden cursor-pointer">
+        <UnifiedCard variant="elevated" className="overflow-hidden cursor-pointer">
           {hasImage ? (
             <img 
               src={mainImage}

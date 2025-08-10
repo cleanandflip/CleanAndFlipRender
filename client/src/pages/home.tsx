@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import Logo from "@/components/common/logo";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { Card } from "@/components/shared/AnimatedComponents";
+import { UnifiedCard } from "@/components/ui/UnifiedCard";
 import ProductCard from "@/components/products/product-card";
 import { DollarSign, Dumbbell, TrendingUp, Users, Clock, CheckCircle } from "lucide-react";
 import CategoryGrid from "@/components/categories/category-grid";
@@ -96,7 +96,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             {/* Selling Path */}
-            <Card interactive glow className="p-10 text-center">
+            <UnifiedCard className="p-10 text-center">
               <div className="mb-8">
                 <DollarSign className="mb-6 mx-auto text-green-400 w-16 h-16" />
                 <h2 className="font-bebas text-4xl mb-3 text-white">
@@ -111,10 +111,10 @@ export default function Home() {
                   Get Cash Offer
                 </UnifiedButton>
               </Link>
-            </Card>
+            </UnifiedCard>
 
             {/* Buying Path */}
-            <Card interactive glow className="p-10 text-center">
+            <UnifiedCard className="p-10 text-center">
               <div className="mb-8">
                 <Dumbbell className="mb-6 mx-auto text-blue-400 w-16 h-16" />
                 <h2 className="font-bebas text-4xl mb-3 text-white">
@@ -129,7 +129,7 @@ export default function Home() {
                   Shop Equipment
                 </UnifiedButton>
               </Link>
-            </Card>
+            </UnifiedCard>
           </motion.div>
 
           {/* Trust Bar - Enhanced */}
@@ -139,7 +139,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
           >
-            <Card className="flex flex-col items-center p-4">
+            <UnifiedCard className="flex flex-col items-center p-4">
               <TrendingUp className="mb-2 text-blue-400 w-6 h-6" />
               <span className="font-bold text-lg text-white">
                 452
@@ -147,8 +147,8 @@ export default function Home() {
               <span className="text-sm text-gray-400">
                 Transactions
               </span>
-            </Card>
-            <Card className="flex flex-col items-center p-4">
+            </UnifiedCard>
+            <UnifiedCard className="flex flex-col items-center p-4">
               <Users className="mb-2 text-blue-400 w-6 h-6" />
               <span className="font-bold text-lg text-white">
                 Asheville
@@ -156,8 +156,8 @@ export default function Home() {
               <span className="text-sm text-gray-400">
                 Local
               </span>
-            </Card>
-            <Card className="flex flex-col items-center p-4">
+            </UnifiedCard>
+            <UnifiedCard className="flex flex-col items-center p-4">
               <Clock className="mb-2 text-blue-400 w-6 h-6" />
               <span className="font-bold text-lg text-white">
                 Same Day
@@ -165,8 +165,8 @@ export default function Home() {
               <span className="text-sm text-gray-400">
                 Cash
               </span>
-            </Card>
-            <Card className="flex flex-col items-center p-4">
+            </UnifiedCard>
+            <UnifiedCard className="flex flex-col items-center p-4">
               <CheckCircle className="mb-2 text-green-400 w-6 h-6" />
               <span className="font-bold text-lg text-white">
                 Inspected
@@ -174,7 +174,7 @@ export default function Home() {
               <span className="text-sm text-gray-400">
                 Every Item
               </span>
-            </Card>
+            </UnifiedCard>
           </motion.div>
         </div>
       </section>
@@ -198,7 +198,7 @@ export default function Home() {
               </h2>
 
               {/* Sellers Process */}
-              <Card className="p-8">
+              <UnifiedCard className="p-8">
                 <h3 className="font-bebas text-3xl mb-8 tracking-wider text-green-400">
                   SELL YOUR EQUIPMENT
                 </h3>
@@ -233,10 +233,10 @@ export default function Home() {
                     Start Selling →
                   </UnifiedButton>
                 </Link>
-              </Card>
+              </UnifiedCard>
 
               {/* Buyers Process */}
-              <Card className="p-8">
+              <UnifiedCard className="p-8">
                 <h3 className="font-bebas text-3xl mb-8 tracking-wider text-blue-400">
                   BUY QUALITY GEAR
                 </h3>
@@ -286,7 +286,7 @@ export default function Home() {
                     Start Shopping →
                   </UnifiedButton>
                 </Link>
-              </Card>
+              </UnifiedCard>
             </motion.div>
 
             {/* Right Side - Latest Activity */}
@@ -301,7 +301,7 @@ export default function Home() {
               </h3>
 
               {/* Live Stats */}
-              <Card className="p-8">
+              <UnifiedCard className="p-8">
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <span className="text-lg text-gray-300">
@@ -328,7 +328,7 @@ export default function Home() {
                     </span>
                   </div>
                 </div>
-              </Card>
+              </UnifiedCard>
 
               {/* Live Sync Status */}
               <div className="flex items-center gap-2 mb-4">
@@ -348,11 +348,11 @@ export default function Home() {
                   ))}
                 </div>
               ) : (
-                <Card className="p-8 text-center">
+                <UnifiedCard className="p-8 text-center">
                   <span className="text-lg text-gray-300">
                     {featuredProducts === undefined ? 'Loading latest items...' : 'No items available yet'}
                   </span>
-                </Card>
+                </UnifiedCard>
               )}
             </motion.div>
           </div>
