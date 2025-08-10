@@ -13,6 +13,7 @@ import Logo from "@/components/common/logo";
 import { PasswordInput } from "@/components/auth/password-input";
 import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
 import { SecurityNotice } from "@/components/auth/security-notice";
+import { GoogleSignInButton } from "@/components/auth/google-signin-button";
 import type { RegisterData } from "@shared/schema";
 
 export default function AuthPage() {
@@ -215,6 +216,20 @@ export default function AuthPage() {
                     {loginMutation.isPending ? "Signing In..." : "Sign In"}
                   </Button>
                 </form>
+                
+                <div className="mt-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-600"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-dark-surface text-gray-400">Or continue with</span>
+                    </div>
+                  </div>
+                  <div className="mt-6">
+                    <GoogleSignInButton disabled={loginMutation.isPending} />
+                  </div>
+                </div>
               </Card>
             </TabsContent>
 
@@ -355,6 +370,20 @@ export default function AuthPage() {
                     {registerMutation.isPending ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
+                
+                <div className="mt-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-600"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-dark-surface text-gray-400">Or continue with</span>
+                    </div>
+                  </div>
+                  <div className="mt-6">
+                    <GoogleSignInButton disabled={registerMutation.isPending} />
+                  </div>
+                </div>
 
                 {/* Security info as subtle footer */}
                 <div className="mt-6 pt-4 border-t border-border/50">
