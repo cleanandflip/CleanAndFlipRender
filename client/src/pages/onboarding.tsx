@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../hooks/use-auth';
 import { toast } from '@/hooks/use-toast';
+import { ShoppingCart } from 'lucide-react';
 
 const OnboardingPage = () => {
   const { user } = useAuth();
@@ -70,8 +71,17 @@ const OnboardingPage = () => {
         });
       }
       
-      // Refresh will happen automatically
-      navigate(result.redirectUrl || '/dashboard');
+      // Check URL params to see if user came from cart
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromCart = urlParams.get('from') === 'cart';
+      
+      if (fromCart) {
+        // User came from cart, redirect them back to cart
+        navigate('/cart');
+      } else {
+        // Normal onboarding flow
+        navigate(result.redirectUrl || '/dashboard');
+      }
     } catch (error: any) {
       console.error('Onboarding completion failed:', error);
       toast({
@@ -82,9 +92,28 @@ const OnboardingPage = () => {
     }
   };
 
+  // Check if user came from cart for contextual messaging
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromCart = urlParams.get('from') === 'cart';
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-2xl mx-auto">
+        {/* Contextual message for cart users */}
+        {fromCart && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center">
+              <ShoppingCart className="h-5 w-5 text-blue-600 mr-2" />
+              <div>
+                <h3 className="text-sm font-medium text-blue-800">Complete Profile to Access Cart</h3>
+                <p className="text-sm text-blue-600 mt-1">
+                  To shop with us, we need your shipping address and contact info. This helps us provide accurate shipping costs and better service.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Progress bar */}
         <div className="mb-8">
           <div className="flex justify-between mb-2">

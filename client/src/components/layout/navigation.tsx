@@ -7,6 +7,7 @@ import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code, LayoutGrid, Code2 } from "lucide-react";
 
 import { ROUTES } from "@/config/routes";
@@ -20,6 +21,7 @@ export default function Navigation() {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const { cartCount } = useCart();
   const { user, logoutMutation } = useAuth();
+  const { toast } = useToast();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
 
@@ -84,9 +86,27 @@ export default function Navigation() {
     setLocation(href);
   };
 
-  // Cart button toggle behavior
+  // Cart button toggle behavior with profile completion check
   const handleCartClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    
+    // Check if user needs to complete profile before accessing cart
+    if (user && !user.profileComplete) {
+      toast({
+        title: "Complete Your Profile",
+        description: "Please complete your profile information to access your cart and shop with us. This helps us provide better service and shipping options.",
+        variant: "default",
+        action: (
+          <button 
+            onClick={() => setLocation('/onboarding?from=cart')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+          >
+            Complete Profile
+          </button>
+        )
+      });
+      return;
+    }
     
     if (!isCartOpen) {
       // Save current location before opening cart
