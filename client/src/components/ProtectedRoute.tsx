@@ -27,7 +27,20 @@ export function ProtectedRoute({ children, requireCompleteProfile = false }: Pro
   
   // Require profile completion for shopping functionality
   if (requireCompleteProfile && !user.profileComplete && !window.location.pathname.includes('onboarding')) {
-    return <Redirect to="/onboarding?required=true" />;
+    // Determine specific step needed based on user data
+    let step = 1;
+    const fromPath = window.location.pathname;
+    
+    // Check what data is missing to determine the right step
+    if (!user.street || !user.city || !user.state || !user.zipCode) {
+      step = 1; // Address step
+    } else if (!user.phone) {
+      step = 2; // Phone step  
+    } else if (!user.profileComplete) {
+      step = 3; // Preferences step
+    }
+    
+    return <Redirect to={`/onboarding?step=${step}&from=${fromPath.replace('/', '')}&required=true`} />;
   }
   
   return <>{children}</>;

@@ -13,28 +13,49 @@ const OnboardingPage = () => {
     return saved ? JSON.parse(saved) : {};
   });
 
-  // Only Google OAuth users need onboarding
+  // Handle onboarding for incomplete profiles
   useEffect(() => {
     if (!user) {
       navigate('/auth');
       return;
     }
     
-    // Non-Google users skip onboarding
-    if (user.authProvider !== 'google') {
-      navigate('/dashboard');
-      return;
-    }
-    
-    // Already completed
+    // Already completed - redirect based on where they came from
     if (user.profileComplete) {
-      navigate('/dashboard');
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromPath = urlParams.get('from');
+      
+      if (fromPath === 'cart') {
+        navigate('/cart');
+      } else {
+        navigate('/dashboard');
+      }
       return;
     }
     
-    // Resume from saved step
-    if (user.onboardingStep && user.onboardingStep > 0) {
+    // Check URL params for specific step
+    const urlParams = new URLSearchParams(window.location.search);
+    const stepParam = urlParams.get('step');
+    
+    if (stepParam) {
+      const targetStep = parseInt(stepParam);
+      if (targetStep >= 1 && targetStep <= 3) {
+        setCurrentStep(targetStep);
+      }
+    } else if (user.onboardingStep && user.onboardingStep > 0) {
+      // Resume from saved step
       setCurrentStep(user.onboardingStep);
+    } else {
+      // Determine starting step based on missing data
+      let step = 1;
+      if (!user.street || !user.city || !user.state || !user.zipCode) {
+        step = 1; // Address step
+      } else if (!user.phone) {
+        step = 2; // Phone step  
+      } else if (!user.profileComplete) {
+        step = 3; // Preferences step
+      }
+      setCurrentStep(step);
     }
   }, [user, navigate]);
 
@@ -99,15 +120,19 @@ const OnboardingPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-2xl mx-auto">
-        {/* Contextual message for cart users */}
-        {fromCart && (
+        {/* Contextual message for users coming from protected pages */}
+        {(fromCart || urlParams.get('from')) && (
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center">
               <ShoppingCart className="h-5 w-5 text-blue-600 mr-2" />
               <div>
-                <h3 className="text-sm font-medium text-blue-800">Complete Profile to Access Cart</h3>
+                <h3 className="text-sm font-medium text-blue-800">
+                  {fromCart ? 'Complete Profile to Access Cart' : `Complete Profile to Continue`}
+                </h3>
                 <p className="text-sm text-blue-600 mt-1">
-                  To shop with us, we need your shipping address and contact info. This helps us provide accurate shipping costs and better service.
+                  {currentStep === 1 && "We need your shipping address to calculate delivery costs and provide local pickup options."}
+                  {currentStep === 2 && "Your phone number helps us contact you about orders and delivery updates."}
+                  {currentStep === 3 && "Just a few final preferences to personalize your experience."}
                 </p>
               </div>
             </div>

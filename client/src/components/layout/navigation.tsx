@@ -92,16 +92,28 @@ export default function Navigation() {
     
     // Check if user needs to complete profile before accessing cart
     if (user && !user.profileComplete) {
+      // Determine what step they need to start from
+      let step = 1;
+      if (!user.street || !user.city || !user.state || !user.zipCode) {
+        step = 1; // Address step
+      } else if (!user.phone) {
+        step = 2; // Phone step  
+      } else if (!user.profileComplete) {
+        step = 3; // Preferences step
+      }
+      
+      const stepText = step === 1 ? "shipping address" : step === 2 ? "phone number" : "preferences";
+      
       toast({
         title: "Complete Your Profile",
-        description: "Please complete your profile information to access your cart and shop with us. This helps us provide better service and shipping options.",
+        description: `Please add your ${stepText} to access your cart and shop with us. This helps us provide better service and shipping options.`,
         variant: "default",
         action: (
           <button 
-            onClick={() => setLocation('/onboarding?from=cart')}
+            onClick={() => setLocation(`/onboarding?step=${step}&from=cart`)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
           >
-            Complete Profile
+            Add ${stepText === "preferences" ? "Info" : stepText}
           </button>
         )
       });
