@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../hooks/use-auth';
 import { toast } from '@/hooks/use-toast';
@@ -208,6 +208,15 @@ const AddressForm = ({ onNext, initialData }: any) => {
     console.error('CRITICAL: Add VITE_GEOAPIFY_API_KEY to .env file');
   }
 
+  // Debounce function to avoid too many API calls
+  const debounce = useCallback((func: Function, delay: number) => {
+    let timeoutId: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func.apply(null, args), delay);
+    };
+  }, []);
+
   const searchAddress = async (text: string) => {
     if (text.length < 3) {
       setSuggestions([]);
@@ -216,6 +225,9 @@ const AddressForm = ({ onNext, initialData }: any) => {
 
     setIsSearching(true);
     try {
+      console.log('🔍 Searching for:', text);
+      console.log('🔑 API Key available:', !!GEOAPIFY_KEY);
+      
       const response = await fetch(
         `https://api.geoapify.com/v1/geocode/autocomplete?` +
         `text=${encodeURIComponent(text)}&` +
@@ -225,13 +237,20 @@ const AddressForm = ({ onNext, initialData }: any) => {
         `format=json`
       );
 
-      if (!response.ok) throw new Error('Geoapify API error');
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        throw new Error(`Geoapify API error: ${response.status}`);
+      }
 
       const data = await response.json();
+      console.log('📦 API Response:', data);
       
       const parsed = data.results?.map((result: any) => ({
         formatted: result.formatted,
-        street: result.housenumber ? `${result.housenumber} ${result.street}` : result.street || result.name,
+        street: result.housenumber ? `${result.housenumber} ${result.street}` : result.street || result.name || result.address_line1,
         city: result.city || result.county,
         state: result.state_code || result.state,
         zipCode: result.postcode,
@@ -239,26 +258,43 @@ const AddressForm = ({ onNext, initialData }: any) => {
         lon: result.lon
       })) || [];
 
+      console.log('✅ Parsed suggestions:', parsed);
       setSuggestions(parsed);
     } catch (error) {
-      console.error('Address search error:', error);
+      console.error('🚫 Address search error:', error);
       setSuggestions([]);
     } finally {
       setIsSearching(false);
     }
   };
 
+  // Debounced search function - fix for React strict mode
+  const debouncedSearch = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (text: string) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => searchAddress(text), 300);
+      };
+    })(),
+    [searchAddress]
+  );
+
   const selectAddress = (suggestion: any) => {
-    setAddress({
-      street: suggestion.street,
-      city: suggestion.city,
-      state: suggestion.state,
-      zipCode: suggestion.zipCode,
+    console.log('🎯 Selected suggestion:', suggestion);
+    const newAddress = {
+      street: suggestion.street || '',
+      city: suggestion.city || '',
+      state: suggestion.state || '',
+      zipCode: suggestion.zipCode || '',
       latitude: suggestion.lat,
-      longitude: suggestion.lon
-    });
+      longitude: suggestion.lon,
+      apartment: address.apartment || ''
+    };
+    setAddress(newAddress);
     setSuggestions([]);
-    setSearchText(suggestion.formatted);
+    setSearchText(suggestion.formatted || suggestion.street || '');
+    console.log('📍 Updated address:', newAddress);
   };
 
   return (
@@ -271,7 +307,7 @@ const AddressForm = ({ onNext, initialData }: any) => {
           value={searchText}
           onChange={(e) => {
             setSearchText(e.target.value);
-            searchAddress(e.target.value);
+            debouncedSearch(e.target.value);
           }}
           placeholder="Start typing your address..."
           className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
