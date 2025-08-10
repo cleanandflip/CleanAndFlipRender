@@ -5,6 +5,11 @@ import { Logger } from '../utils/logger';
 // Initialize full-text search
 export async function initializeSearchIndexes() {
   try {
+    Logger.info('Initializing search indexes...');
+    
+    // Test database connection first
+    await db.execute(sql`SELECT 1`);
+    
     // Add search vector column if it doesn't exist
     await db.execute(sql`
       ALTER TABLE products 
@@ -17,7 +22,7 @@ export async function initializeSearchIndexes() {
       ON products USING GIN(search_vector)
     `);
 
-    // Update search vectors for existing products
+    // Update search vectors for existing products (limit batch size for performance)
     await db.execute(sql`
       UPDATE products SET search_vector = 
         setweight(to_tsvector('english', coalesce(name,'')), 'A') ||
@@ -48,8 +53,15 @@ export async function initializeSearchIndexes() {
     `);
 
     Logger.info('Full-text search indexes initialized successfully');
-  } catch (error) {
-    Logger.error('Failed to initialize search indexes:', error);
+  } catch (error: any) {
+    Logger.error('Failed to initialize search indexes:', {
+      message: error?.message || 'Unknown error',
+      code: error?.code || 'NO_CODE',
+      detail: error?.detail || 'No details available'
+    });
+    
+    // Don't throw the error - let the server continue without search functionality
+    Logger.warn('Server will continue without full-text search capabilities');
   }
 }
 

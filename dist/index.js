@@ -3389,6 +3389,8 @@ init_logger();
 import { sql as sql5 } from "drizzle-orm";
 async function initializeSearchIndexes() {
   try {
+    Logger.info("Initializing search indexes...");
+    await db.execute(sql5`SELECT 1`);
     await db.execute(sql5`
       ALTER TABLE products 
       ADD COLUMN IF NOT EXISTS search_vector tsvector
@@ -3424,7 +3426,12 @@ async function initializeSearchIndexes() {
     `);
     Logger.info("Full-text search indexes initialized successfully");
   } catch (error) {
-    Logger.error("Failed to initialize search indexes:", error);
+    Logger.error("Failed to initialize search indexes:", {
+      message: error?.message || "Unknown error",
+      code: error?.code || "NO_CODE",
+      detail: error?.detail || "No details available"
+    });
+    Logger.warn("Server will continue without full-text search capabilities");
   }
 }
 
@@ -3509,7 +3516,9 @@ async function registerRoutes(app2) {
   app2.use(transactionMiddleware);
   app2.use(autoSyncProducts);
   setupAuth(app2);
-  await initializeSearchIndexes();
+  initializeSearchIndexes().catch((error) => {
+    Logger.error("Search index initialization failed but server will continue:", error);
+  });
   app2.get("/health", healthLive);
   app2.get("/health/live", healthLive);
   app2.get("/health/ready", healthReady);
