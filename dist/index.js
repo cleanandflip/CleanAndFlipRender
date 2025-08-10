@@ -675,72 +675,96 @@ var init_logger = __esm({
 });
 
 // server/db.ts
-import { neon, neonConfig } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
-import { sql as drizzleSql } from "drizzle-orm";
-var getDatabaseUrl, DATABASE_URL, sql2, db, verifyDatabaseConnection;
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { WebSocket } from "ws";
+import { sql as sql2 } from "drizzle-orm";
+var poolConfig, pool, keepAlive, keepAliveInterval, db;
 var init_db = __esm({
   "server/db.ts"() {
     "use strict";
     init_schema();
     init_logger();
-    neonConfig.fetchConnectionCache = true;
-    getDatabaseUrl = () => {
-      console.log("[DB] Initializing database connection...");
-      console.log("[DB] NODE_ENV:", process.env.NODE_ENV);
-      console.log("[DB] Has DATABASE_URL:", !!process.env.DATABASE_URL);
-      if (process.env.DATABASE_URL) {
-        return process.env.DATABASE_URL;
-      }
-      if (process.env.PGUSER && process.env.PGPASSWORD && process.env.PGHOST && process.env.PGDATABASE) {
-        const fallbackUrl = `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT || 5432}/${process.env.PGDATABASE}?sslmode=require`;
-        console.log("[DB] Using fallback URL construction from PG components");
-        return fallbackUrl;
-      }
-      console.error("[DB] \u274C CRITICAL: No database configuration found!");
+    neonConfig.webSocketConstructor = WebSocket;
+    neonConfig.pipelineConnect = false;
+    neonConfig.useSecureWebSocket = true;
+    console.log("[DB] Initializing database connection...");
+    console.log("[DB] NODE_ENV:", process.env.NODE_ENV);
+    console.log("[DB] Has DATABASE_URL:", !!process.env.DATABASE_URL);
+    if (!process.env.DATABASE_URL) {
+      console.error("[DB] \u274C CRITICAL: DATABASE_URL is not set!");
       console.error(
         "[DB] Available env vars (non-sensitive):",
         Object.keys(process.env).filter(
           (k) => !k.includes("SECRET") && !k.includes("KEY") && !k.includes("TOKEN") && !k.includes("PASSWORD")
         ).join(", ")
       );
-      throw new Error("No database configuration found - DATABASE_URL or PG components missing");
-    };
-    DATABASE_URL = getDatabaseUrl();
+      throw new Error("DATABASE_URL environment variable is not set");
+    }
     try {
-      const dbUrl = new URL(DATABASE_URL);
+      const dbUrl = new URL(process.env.DATABASE_URL);
       console.log("[DB] Connecting to host:", dbUrl.hostname);
       console.log("[DB] Database name:", dbUrl.pathname.substring(1));
     } catch (e) {
       console.error("[DB] Invalid DATABASE_URL format");
     }
-    sql2 = neon(DATABASE_URL);
-    db = drizzle(sql2, { schema: schema_exports });
-    verifyDatabaseConnection = async (maxRetries = 3) => {
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          const result = await db.execute(drizzleSql`SELECT current_database() as db, current_user as user, version() as version`);
-          const info = result.rows?.[0];
-          console.log("[DB] \u2705 Database connected successfully");
-          console.log(`[DB] Database: ${info.db}, User: ${info.user}`);
-          console.log(`[DB] PostgreSQL Version: ${info.version?.split(",")[0] || "unknown"}`);
-          return true;
-        } catch (err) {
-          console.error(`[DB] \u274C Connection attempt ${attempt}/${maxRetries} failed:`, err.message);
-          if (attempt < maxRetries) {
-            const delay = attempt * 2e3;
-            console.log(`[DB] Retrying in ${delay}ms...`);
-            await new Promise((resolve) => setTimeout(resolve, delay));
-          } else {
-            console.error("[DB] \u274C All connection attempts failed");
-            console.error("[DB] This may cause authentication and database features to fail");
-            return false;
+    poolConfig = {
+      connectionString: process.env.DATABASE_URL,
+      max: 20,
+      idleTimeoutMillis: 3e4,
+      connectionTimeoutMillis: 1e4,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 1e4,
+      statement_timeout: 3e4,
+      query_timeout: 3e4
+    };
+    pool = new Pool(poolConfig);
+    pool.on("error", (err) => {
+      Logger.error("Database pool error:", err.message);
+      if (err.code === "57P01" || err.message?.includes("terminating connection")) {
+        Logger.info("Connection terminated, creating new pool...");
+        pool = new Pool(poolConfig);
+      }
+    });
+    pool.on("connect", () => {
+    });
+    keepAlive = async () => {
+      try {
+        const client = await pool.connect();
+        await client.query("SELECT 1");
+        client.release();
+      } catch (error) {
+        if (process.env.NODE_ENV !== "production") {
+          Logger.error("Keep-alive query failed:", error.message);
+          if (error.code === "57P01" || error.message?.includes("connection")) {
+            Logger.info("Recreating pool due to connection issues...");
+            pool = new Pool(poolConfig);
           }
         }
       }
-      return false;
     };
-    verifyDatabaseConnection();
+    keepAliveInterval = process.env.NODE_ENV === "production" ? 10 * 60 * 1e3 : 5 * 60 * 1e3;
+    setInterval(keepAlive, keepAliveInterval);
+    db = drizzle({ client: pool, schema: schema_exports });
+    db.execute(sql2`SELECT current_database() as db, current_user as user, version() as version`).then((result) => {
+      const info = result.rows[0];
+      console.log("[DB] \u2705 Database connected successfully");
+      console.log(`[DB] Database: ${info.db}, User: ${info.user}`);
+      console.log(`[DB] PostgreSQL Version: ${info.version?.split(",")[0] || "unknown"}`);
+    }).catch((err) => {
+      console.error("[DB] \u274C Database connection failed:", err.message);
+      console.error("[DB] This will cause authentication and other database features to fail");
+    });
+    process.on("SIGTERM", async () => {
+      Logger.info("Gracefully shutting down database connections...");
+      await pool.end();
+      process.exit(0);
+    });
+    process.on("SIGINT", async () => {
+      Logger.info("Gracefully shutting down database connections...");
+      await pool.end();
+      process.exit(0);
+    });
   }
 });
 
@@ -1628,7 +1652,7 @@ __export(websocket_exports, {
   setupWebSocket: () => setupWebSocket,
   wsManager: () => wsManager
 });
-import { WebSocketServer, WebSocket } from "ws";
+import { WebSocketServer, WebSocket as WebSocket2 } from "ws";
 function setupWebSocket(server2) {
   wsManager = new WebSocketManager(server2);
   return wsManager;
@@ -1717,7 +1741,7 @@ var init_websocket = __esm({
         const message = JSON.stringify(data);
         let successCount = 0;
         this.clients.forEach((client, id) => {
-          if (id !== excludeClientId && client.ws.readyState === WebSocket.OPEN) {
+          if (id !== excludeClientId && client.ws.readyState === WebSocket2.OPEN) {
             try {
               client.ws.send(message);
               successCount++;
@@ -1735,7 +1759,7 @@ var init_websocket = __esm({
         const message = JSON.stringify(data);
         let successCount = 0;
         this.clients.forEach((client) => {
-          if (client.role === role && client.ws.readyState === WebSocket.OPEN) {
+          if (client.role === role && client.ws.readyState === WebSocket2.OPEN) {
             try {
               client.ws.send(message);
               successCount++;
@@ -1756,7 +1780,7 @@ var init_websocket = __esm({
               return;
             }
             client.isAlive = false;
-            if (client.ws.readyState === WebSocket.OPEN) {
+            if (client.ws.readyState === WebSocket2.OPEN) {
               client.ws.ping();
             }
           });
@@ -3365,8 +3389,6 @@ init_logger();
 import { sql as sql5 } from "drizzle-orm";
 async function initializeSearchIndexes() {
   try {
-    Logger.info("Initializing search indexes...");
-    await db.execute(sql5`SELECT 1`);
     await db.execute(sql5`
       ALTER TABLE products 
       ADD COLUMN IF NOT EXISTS search_vector tsvector
@@ -3402,12 +3424,7 @@ async function initializeSearchIndexes() {
     `);
     Logger.info("Full-text search indexes initialized successfully");
   } catch (error) {
-    Logger.error("Failed to initialize search indexes:", {
-      message: error?.message || "Unknown error",
-      code: error?.code || "NO_CODE",
-      detail: error?.detail || "No details available"
-    });
-    Logger.warn("Server will continue without full-text search capabilities");
+    Logger.error("Failed to initialize search indexes:", error);
   }
 }
 
@@ -3492,9 +3509,7 @@ async function registerRoutes(app2) {
   app2.use(transactionMiddleware);
   app2.use(autoSyncProducts);
   setupAuth(app2);
-  initializeSearchIndexes().catch((error) => {
-    Logger.error("Search index initialization failed but server will continue:", error);
-  });
+  await initializeSearchIndexes();
   app2.get("/health", healthLive);
   app2.get("/health/live", healthLive);
   app2.get("/health/ready", healthReady);

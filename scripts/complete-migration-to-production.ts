@@ -4,11 +4,7 @@ async function completeMigrationToProduction() {
   console.log('🚀 COMPLETING MIGRATION TO 100GB PRODUCTION DATABASE');
   console.log('='.repeat(65));
   
-  const productionUrl = process.env.DATABASE_URL;
-  if (!productionUrl) {
-    console.error('[FATAL] DATABASE_URL not found in environment variables');
-    process.exit(1);
-  }
+  const productionUrl = 'postgresql://neondb_owner:npg_7Qd8voYykPql@ep-lucky-credit-afcslqgy.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require';
   const sql = neon(productionUrl);
   
   try {
@@ -85,7 +81,7 @@ async function completeMigrationToProduction() {
     console.log('5. Delete old unused databases for cleanup');
     
     console.log('\n🌟 PRODUCTION DATABASE URL:');
-    console.log('Using DATABASE_URL from environment variables (secure)');
+    console.log('postgresql://neondb_owner:npg_7Qd8voYykPql@ep-lucky-credit-afcslqgy.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require');
     
   } catch (error) {
     console.error('❌ Migration verification failed:', error);

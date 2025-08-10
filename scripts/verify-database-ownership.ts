@@ -7,12 +7,12 @@ async function verifyDatabaseOwnership() {
   const databases = [
     {
       name: 'Production (100GB)',
-      url: process.env.DATABASE_URL,
+      url: 'postgresql://neondb_owner:npg_7Qd8voYykPql@ep-lucky-credit-afcslqgy.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require',
       storage: '100GB'
     },
     {
       name: 'Replit Development',
-      url: process.env.DATABASE_URL_BACKUP, // Alternative backup URL if available
+      url: 'postgresql://neondb_owner:mpg_4Sy5s1sNPMT@ep-old-sky-afb0k7bc-2.us-west-2.aws.neon.tech/neondb?sslmode=require',
       storage: 'Standard'
     }
   ];

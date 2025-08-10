@@ -161,10 +161,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
   
-  // Initialize search indexes (non-blocking)
-  initializeSearchIndexes().catch(error => {
-    Logger.error('Search index initialization failed but server will continue:', error);
-  });
+  // Initialize search indexes
+  await initializeSearchIndexes();
   
   // Health check endpoints
   app.get('/health', healthLive);

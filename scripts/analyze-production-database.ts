@@ -5,11 +5,7 @@ async function analyzeProductionDatabase() {
   console.log('='.repeat(60));
   
   // Connect to the production database
-  const prodUrl = process.env.DATABASE_URL;
-  if (!prodUrl) {
-    console.error('[FATAL] DATABASE_URL not found in environment variables');
-    process.exit(1);
-  }
+  const prodUrl = 'postgresql://neondb_owner:npg_7Qd8voYykPql@ep-lucky-credit-afcslqgy.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require';
   const sql = neon(prodUrl);
   
   try {
