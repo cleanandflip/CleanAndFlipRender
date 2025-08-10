@@ -4,21 +4,7 @@ export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
-    screens: {
-      'xs': '475px',     // Extra small devices
-      'sm': '640px',     // Small devices  
-      'md': '768px',     // Tablets
-      'lg': '1024px',    // Desktop
-      'xl': '1280px',    // Large desktop
-      '2xl': '1536px',   // Extra large
-    },
     extend: {
-      spacing: {
-        'safe-top': 'env(safe-area-inset-top)',
-        'safe-bottom': 'env(safe-area-inset-bottom)',
-        'safe-left': 'env(safe-area-inset-left)',
-        'safe-right': 'env(safe-area-inset-right)',
-      },
       fontFamily: {
         'bebas': ['Bebas Neue', 'cursive'],
         'sans': ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],

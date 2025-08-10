@@ -94,8 +94,8 @@ export function DashboardLayout({
           </div>
           
           {/* Search and Filters Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-4">
-            <div className="relative flex-1 sm:max-w-md">
+          <div className="flex items-center gap-4 mt-4">
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
               <Input
                 placeholder={searchPlaceholder}
@@ -104,7 +104,7 @@ export function DashboardLayout({
                   setSearchQuery(e.target.value);
                   onSearch(e.target.value);
                 }}
-                className="pl-10 h-10 sm:h-8"
+                className="pl-10"
                 style={{
                   backgroundColor: theme.colors.bg.primary,
                   borderColor: theme.colors.border.default,
@@ -127,28 +127,26 @@ export function DashboardLayout({
               )}
             </Button>
 
-            <div className="flex flex-wrap gap-2 sm:gap-1">
-              {viewMode === 'both' && onViewChange && (
-                <div className="flex gap-1">
-                  <Button
-                    variant={currentView === 'list' ? 'primary' : 'outline'}
-                    size="sm"
-                    onClick={() => onViewChange('list')}
-                    className="h-10 sm:h-8"
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={currentView === 'grid' ? 'primary' : 'outline'}
-                    size="sm"
-                    onClick={() => onViewChange('grid')}
-                    className="h-10 sm:h-8"
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
+            {viewMode === 'both' && onViewChange && (
+              <div className="flex gap-1">
+                <Button
+                  variant={currentView === 'list' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => onViewChange('list')}
+                  className="h-8"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={currentView === 'grid' ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => onViewChange('grid')}
+                  className="h-8"
+                >
+                  <Grid className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
 
             {sortOptions && onSort && (
               <div className="flex items-center gap-2">

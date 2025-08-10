@@ -39,7 +39,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="bg-card border-bg-card-border w-full sm:w-[400px] max-w-[100vw] p-0">
+      <SheetContent side="right" className="bg-card border-bg-card-border w-full sm:w-96 p-0">
         <div className="flex flex-col h-full">
           {/* Header */}
           <SheetHeader className="p-6 pb-4">
@@ -110,7 +110,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                             <img
                               src={item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100"}
                               alt={item.product.name}
-                              className="w-20 h-20 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                              className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                               onClick={() => handleOpenChange(false)}
                             />
                           </Link>
@@ -140,24 +140,24 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                             </div>
 
                             <div className="flex items-center justify-between">
-                              {/* Quantity Controls - Touch friendly */}
+                              {/* Quantity Controls */}
                               <div className="flex items-center bg-card rounded">
                                 <button
                                   onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                                  className="p-2 hover:bg-white/10 transition-colors touch-manipulation"
+                                  className="p-1 hover:bg-white/10 transition-colors"
                                   disabled={item.quantity <= 1}
                                 >
-                                  <Minus size={16} />
+                                  <Minus size={12} />
                                 </button>
-                                <span className="px-3 py-2 text-sm min-w-[3rem] text-center">
+                                <span className="px-2 py-1 text-sm min-w-[2rem] text-center">
                                   {item.quantity}
                                 </span>
                                 <button
                                   onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                  className="p-2 hover:bg-white/10 transition-colors touch-manipulation"
+                                  className="p-1 hover:bg-white/10 transition-colors"
                                   disabled={!item.product.stockQuantity || item.quantity >= item.product.stockQuantity}
                                 >
-                                  <Plus size={16} />
+                                  <Plus size={12} />
                                 </button>
                               </div>
 

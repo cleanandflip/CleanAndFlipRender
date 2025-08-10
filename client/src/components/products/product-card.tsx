@@ -197,21 +197,21 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           </div>
           
           {/* Product Info Section */}
-          <div className="p-3 sm:p-4 pb-2">
+          <div className="p-4 pb-2">
             {/* Title */}
-            <h3 className="font-medium text-white mb-1 line-clamp-2 text-sm sm:text-base group-hover:text-slate-100 transition-colors duration-200">
+            <h3 className="font-medium text-white mb-1 line-clamp-1 group-hover:text-slate-100 transition-colors duration-200">
               {product.name}
             </h3>
             
             {/* Brand */}
             {product.brand && (
-              <p className="text-gray-400 text-xs sm:text-sm mb-2 sm:mb-3 group-hover:text-gray-300 transition-colors">
+              <p className="text-gray-400 text-sm mb-3 group-hover:text-gray-300 transition-colors">
                 {product.brand}
               </p>
             )}
             
             {/* Price */}
-            <p className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4 group-hover:text-slate-100 transition-colors">
+            <p className="text-2xl font-bold text-white mb-4 group-hover:text-slate-100 transition-colors">
               ${product.price}
             </p>
           </div>
@@ -219,12 +219,12 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       </SmartLink>
       
       {/* Static Add to Cart Button */}
-      <div className="px-3 sm:px-4 pb-3 sm:pb-4" onClick={(e) => e.stopPropagation()}>
+      <div className="px-4 pb-4" onClick={(e) => e.stopPropagation()}>
         <AddToCartButton
           productId={product.id}
           stock={product.stockQuantity}
           size="sm"
-          className="w-full h-10 sm:h-9 text-sm"
+          className="w-full"
         />
       </div>
     </div>

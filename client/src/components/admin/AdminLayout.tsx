@@ -59,8 +59,8 @@ export function AdminLayout({ children, currentTab }: AdminLayoutProps) {
 
       {/* Tab Navigation */}
       <div className="border-b border-gray-800 bg-[#1e293b]/30">
-        <div className="container mx-auto px-4 sm:px-6">
-          <nav className="flex overflow-x-auto scrollbar-hide space-x-1 -mb-px">
+        <div className="container mx-auto px-6">
+          <nav className="flex space-x-1 -mb-px">
             {ADMIN_TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -70,9 +70,9 @@ export function AdminLayout({ children, currentTab }: AdminLayoutProps) {
                   key={tab.id}
                   onClick={() => navigate(`/admin/${tab.id}`)}
                   className={cn(
-                    "flex items-center gap-2 px-3 sm:px-4 py-3 whitespace-nowrap",
+                    "flex items-center gap-2 px-4 py-3",
                     "border-b-2 transition-all duration-200",
-                    "text-xs sm:text-sm font-medium flex-shrink-0",
+                    "text-sm font-medium",
                     isActive ? [
                       "border-blue-500 text-white",
                       "bg-blue-500/10"
@@ -83,7 +83,7 @@ export function AdminLayout({ children, currentTab }: AdminLayoutProps) {
                   )}
                 >
                   <Icon className="w-4 h-4" />
-                  <span className="hidden xs:inline">{tab.label}</span>
+                  {tab.label}
                 </button>
               );
             })}
