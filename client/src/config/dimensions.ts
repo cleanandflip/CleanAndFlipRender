@@ -74,15 +74,21 @@ export const typography = {
   tiny: 'text-xs',   // 12px - timestamps only
 } as const;
 
-// Icon sizing system - consistent across all uses
+// Icon sizing system - Phase 6 Standardization
 export const iconSizes = {
-  // Context-based sizing
-  buttonSm: 'w-4 h-4',    // 16px - in h-8 buttons
-  buttonMd: 'w-5 h-5',    // 20px - in h-10 buttons (default)
-  buttonLg: 'w-6 h-6',    // 24px - in h-12 buttons
-  nav: 'w-6 h-6',         // 24px - navigation icons
-  standalone: 'w-6 h-6',  // 24px - default standalone
-  inline: 'w-4 h-4',      // 16px - tiny icons in text
+  // Size-based scaling (STANDARD)
+  xs: 'w-3 h-3',          // 12px - Tiny indicators only
+  sm: 'w-4 h-4',          // 16px - In h-8 buttons, inline text
+  md: 'w-5 h-5',          // 20px - In h-10 buttons (DEFAULT)
+  lg: 'w-6 h-6',          // 24px - In h-12 buttons, navigation
+  xl: 'w-8 h-8',          // 32px - Hero sections, standalone
+  
+  // Context-based aliases (for clarity)
+  inline: 'w-4 h-4',      // Text inline icons
+  button: 'w-5 h-5',      // Standard button icons
+  nav: 'w-6 h-6',         // Navigation icons
+  hero: 'w-8 h-8',        // Feature/hero icons
+  logo: 'w-10 h-10'       // Brand/logo icons
 } as const;
 
 // Layout dimensions

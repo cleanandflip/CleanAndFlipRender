@@ -149,7 +149,7 @@ export function SubmissionsList({
                   onChange={(action) => {
                     // Handle submission actions (edit, note, archive, delete)
                   }}
-                  size="sm"
+
                   className="border-none bg-transparent"
                 />
               </div>

@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { BUTTONS, ICONS, HEIGHTS, TOUCH } from '@/config/dimensions';
+import { Loader2 } from 'lucide-react';
 
 interface UnifiedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'icon' | 'text' | 'success' | 'danger' | 'ghost' | 'outline';
@@ -73,10 +73,11 @@ export const UnifiedButton = React.forwardRef<HTMLButtonElement, UnifiedButtonPr
 
   const getIconSize = () => {
     switch (size) {
-      case 'sm': return 'w-4 h-4';
-      case 'md': return 'w-5 h-5';
-      case 'lg': return 'w-6 h-6';
-      case 'xl': return 'w-6 h-6';
+      case 'xs': return 'w-3 h-3'; // xs - tiny indicators
+      case 'sm': return 'w-4 h-4'; // sm - inline text icons
+      case 'md': return 'w-5 h-5'; // md - standard button icons
+      case 'lg': return 'w-6 h-6'; // lg - large buttons, navigation
+      case 'xl': return 'w-8 h-8'; // xl - hero buttons
       default: return 'w-5 h-5';
     }
   };

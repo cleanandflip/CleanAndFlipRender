@@ -110,12 +110,12 @@ export default function Navigation() {
   return (
     <>
       {/* Main Navigation - Enhanced Spacing & Polish */}
-      <nav className="fixed top-4 left-4 right-4 z-50 rounded-xl px-6 lg:px-8 py-4 max-w-7xl mx-auto overflow-visible" style={{ 
+      <nav className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-50 rounded-lg sm:rounded-xl px-4 sm:px-6 lg:px-8 py-3 sm:py-4 max-w-7xl mx-auto overflow-visible" style={{ 
         background: 'rgba(35, 41, 55, 0.4)', 
         backdropFilter: 'blur(12px)',
         border: '1px solid rgba(255, 255, 255, 0.08)' 
       }}>
-        <div className="flex items-center justify-between w-full gap-6">
+        <div className="flex items-center justify-between w-full gap-3 sm:gap-6">
           {/* Left Side - Logo */}
           <div className="flex items-center flex-shrink-0">
             <button onClick={(e) => handleNavigation(ROUTES.HOME, e)}>
@@ -123,8 +123,8 @@ export default function Navigation() {
             </button>
           </div>
 
-          {/* Center - Navigation Menu with Enhanced Spacing */}
-          <div className="hidden lg:flex items-center space-x-8">
+          {/* Center - Navigation Menu with Enhanced Mobile Spacing */}
+          <div className="hidden sm:flex lg:flex items-center space-x-4 lg:space-x-8">
             {navigation.map((item) => (
               <button
                 key={item.name}
