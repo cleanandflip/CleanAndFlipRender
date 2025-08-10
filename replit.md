@@ -38,16 +38,20 @@ PostgreSQL is the primary database, utilizing:
 - **Schema**: Key tables include users, products, categories, orders, cart items, and equipment submissions with proper relationships.
 
 ### Authentication and Authorization
-A multi-layered security approach with simplified role-based access control and production database deployment:
-- **User Authentication**: Session-based auth via Passport.js local strategy.
-- **Password Security**: bcrypt with 12 salt rounds.
+A comprehensive multi-layered security approach with Google OAuth integration and simplified role-based access control:
+- **User Authentication**: Session-based auth via Passport.js with both local strategy and Google OAuth2.
+- **Google Sign-In**: Fully integrated Google OAuth using passport-google-oauth20 with automatic user creation/linking.
+- **Password Security**: bcrypt with 12 salt rounds for local accounts.
+- **OAuth Security**: Google profile verification with email-based account linking for existing users.
 - **Role Management**: Simplified two-role system (user/developer) with middleware-enforced permissions.
+- **Multi-Provider Support**: Users can sign in with email/password or Google account seamlessly.
 - **Local User Detection**: Automatic Asheville, NC zip code detection for local service determination.
 - **Rate Limiting**: Tiered rate limiting for general API, auth, and developer operations.
-- **Password Reset**: Secure token-based recovery.
+- **Password Reset**: Secure token-based recovery for local accounts.
 - **Session Management**: Secure session configuration with consolidated database connections.
 - **Security Practices**: Implements security headers, input sanitization, and SQL injection prevention.
-- **Production Database**: Complete dual-database system with environment-aware connections and full data migration capabilities (completed August 2025).
+- **Production Database**: Complete dual-database system with environment-aware connections and full data migration capabilities.
+- **OAuth Integration Completed**: August 2025 - Google Sign-In fully functional with database schema supporting both authentication methods.
 
 ### Unified UI and Live Sync
 The admin dashboard features a unified component architecture (AdminLayout, UnifiedMetricCard, UnifiedDataTable, UnifiedButton) with 7 consistent tabs. A comprehensive real-time synchronization system is implemented across all admin components and the user-facing home page using WebSockets, providing live updates for data changes. This includes advanced animations for a professional user experience.

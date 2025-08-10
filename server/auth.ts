@@ -148,7 +148,9 @@ export function setupAuth(app: Express) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: "/api/auth/google/callback"
+          callbackURL: process.env.NODE_ENV === 'production' 
+            ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'your-domain.replit.app'}/api/auth/google/callback`
+            : "/api/auth/google/callback"
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
@@ -174,7 +176,10 @@ export function setupAuth(app: Express) {
                 });
               }
               Logger.debug(`Existing user logged in via Google: ${normalizedEmail}`);
-              return done(null, user);
+              return done(null, {
+                ...user,
+                role: user.role || 'user'
+              } as any);
             } else {
               // Create new user from Google profile
               const newUser = await storage.createUserFromGoogle({
@@ -188,7 +193,10 @@ export function setupAuth(app: Express) {
               });
               
               Logger.debug(`New user created via Google: ${normalizedEmail}`);
-              return done(null, newUser);
+              return done(null, {
+                ...newUser,
+                role: newUser.role || 'user'
+              } as any);
             }
           } catch (error: any) {
             Logger.error('Google OAuth error:', error.message);
@@ -508,7 +516,7 @@ export function setupAuth(app: Express) {
     res.json({
       sessionExists: !!req.session,
       sessionID: req.sessionID,
-      userId: req.session?.passport?.user,
+      userId: (req.session as any)?.passport?.user,
       isAuthenticated: req.isAuthenticated?.() || false,
       sessionData: req.session,
     });
@@ -523,8 +531,8 @@ export function setupAuth(app: Express) {
 
   app.get("/api/auth/google/callback",
     passport.authenticate("google", { 
-      successRedirect: "/dashboard",
-      failureRedirect: "/login?error=oauth_failed" 
+      successRedirect: "/",
+      failureRedirect: "/auth?error=oauth_failed" 
     })
   );
 
