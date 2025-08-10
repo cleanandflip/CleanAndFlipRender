@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface UnifiedButtonProps {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   icon?: LucideIcon;
   onClick?: () => void;
@@ -25,7 +25,8 @@ export function UnifiedButton({
     primary: "bg-blue-500 hover:bg-blue-600 text-white",
     secondary: "bg-white/10 hover:bg-white/20 text-white border border-gray-700",
     danger: "bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50",
-    ghost: "hover:bg-white/10 text-gray-400 hover:text-white"
+    ghost: "hover:bg-white/10 text-gray-400 hover:text-white",
+    outline: "bg-transparent hover:bg-white/10 text-gray-300 border border-gray-600 hover:border-gray-500"
   };
 
   const sizes = {
