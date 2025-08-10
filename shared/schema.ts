@@ -60,11 +60,28 @@ export const users = pgTable("users", {
   stripeSubscriptionId: varchar("stripe_subscription_id"),
   // OAuth fields
   googleId: varchar("google_id").unique(),
+  googleEmail: varchar("google_email"),
+  googlePicture: text("google_picture"),
   profileImageUrl: text("profile_image_url"),
   authProvider: varchar("auth_provider").default("local"), // 'local', 'google'
   isEmailVerified: boolean("is_email_verified").default(false),
+  profileComplete: boolean("profile_complete").default(false),
+  onboardingStep: integer("onboarding_step").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User onboarding tracking table
+export const userOnboarding = pgTable("user_onboarding", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  addressCompleted: boolean("address_completed").default(false),
+  phoneCompleted: boolean("phone_completed").default(false),
+  preferencesCompleted: boolean("preferences_completed").default(false),
+  stripeCustomerCreated: boolean("stripe_customer_created").default(false),
+  welcomeEmailSent: boolean("welcome_email_sent").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 // Categories
@@ -417,6 +434,8 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UserOnboarding = typeof userOnboarding.$inferSelect;
+export type InsertUserOnboarding = typeof userOnboarding.$inferInsert;
 
 // Registration specific type that includes additional fields
 export const registerDataSchema = insertUserSchema.extend({

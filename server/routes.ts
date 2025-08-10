@@ -63,6 +63,7 @@ function broadcastCartUpdate(userId: string, action: string = 'update', data?: a
     Logger.debug(`[WS] Cart update broadcasted: ${action} for user ${userId}`);
   }
 }
+import googleAuthRoutes from "./routes/auth-google";
 import crypto from 'crypto';
 import { 
   users, 
@@ -160,6 +161,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication
   setupAuth(app);
+  
+  // Google OAuth routes
+  app.use('/api/auth', googleAuthRoutes);
   
   // Initialize search indexes
   await initializeSearchIndexes();

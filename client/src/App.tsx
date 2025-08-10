@@ -19,6 +19,7 @@ import Home from "@/pages/home";
 import Products from "@/pages/products";
 import ProductDetail from "@/pages/product-detail";
 import Cart from "@/pages/cart";
+import Onboarding from "@/pages/onboarding";
 import NotFound from "@/pages/not-found";
 
 // Lazy load less critical pages for better code splitting
@@ -108,6 +109,7 @@ function Router() {
               
               {/* Auth Routes */}
               <Route path={ROUTES.LOGIN} component={AuthPage} />
+              <Route path="/onboarding" component={Onboarding} />
               <Route path="/forgot-password" component={ForgotPassword} />
               <Route path="/reset-password" component={ResetPassword} />
               

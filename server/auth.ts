@@ -11,6 +11,7 @@ import { normalizeEmail, parseCityStateZip, isLocalZip, validateCityStateZip, no
 import { authLimiter } from "./middleware/security";
 import { Logger, LogLevel } from "./utils/logger";
 import { getDatabaseConfig } from "./config/database";
+import { initializeGoogleAuth } from './auth/google-strategy';
 
 declare global {
   namespace Express {
@@ -63,6 +64,9 @@ function validatePassword(password: string): { isValid: boolean; errors: string[
 // These functions are now imported from shared/utils.ts
 
 export function setupAuth(app: Express) {
+  // Initialize Google OAuth strategy
+  initializeGoogleAuth();
+  
   const PostgresSessionStore = connectPg(session);
   
   // Use the unified database configuration for session storage

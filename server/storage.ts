@@ -26,6 +26,7 @@ import {
   type InsertEquipmentSubmission,
   type ActivityLog,
   type InsertActivityLog,
+  userOnboarding,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike, isNotNull } from "drizzle-orm";
