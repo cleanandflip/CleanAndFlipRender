@@ -16,7 +16,7 @@ import { environment } from "@/lib/environment";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Analytics } from "@/components/Analytics";
 import { PWAInstaller } from "@/components/PWAInstaller";
-import { LocalBenefitsBanner } from "@/components/shared/LocalBenefitsBanner";
+import { StickyHeader } from "@/components/layout/StickyHeader";
 import { FloatingLocalInfo } from "@/components/shared/FloatingLocalInfo";
 
 // Import critical pages directly to avoid lazy loading issues with routing
@@ -100,8 +100,7 @@ function Router() {
         <div className="gym-atmosphere" />
         <Analytics />
         <PWAInstaller />
-        <Navigation />
-        <LocalBenefitsBanner />
+        <StickyHeader />
         <CartDrawer />
         <FloatingLocalInfo />
         <ScrollRestoration />

@@ -10,47 +10,67 @@ export function LocalBenefitsBanner() {
   const isAshevilleArea = userZip.startsWith('287') || userZip.startsWith('288');
   
   return (
-    <div className={`w-full py-3 px-4 ${isLocal ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'} border-y`}>
-      <div className="max-w-7xl mx-auto flex items-center justify-center space-x-8">
+    <div className={`
+      w-full 
+      py-2 px-4 
+      ${isLocal ? 'bg-green-950/90' : 'bg-gray-900/95'} 
+      backdrop-blur-md
+      border-b border-gray-800
+      shadow-sm
+    `}>
+      <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 md:gap-6">
         
         {/* SELLING TO US */}
-        <div className={`flex items-center space-x-2 ${!isLocal ? 'opacity-50' : ''}`}>
-          <Package className={`h-5 w-5 ${isLocal ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`} />
-          <span className={`text-sm font-medium ${isLocal ? 'text-green-800 dark:text-green-300' : 'text-gray-500 line-through'}`}>
-            FREE Pickup When You Sell to Us
+        <div className={`flex items-center gap-2 ${!isLocal ? 'opacity-40' : ''}`}>
+          <div className={`p-1 rounded ${isLocal ? 'bg-green-900/50' : ''}`}>
+            <Package className={`h-3.5 w-3.5 ${isLocal ? 'text-green-400' : 'text-gray-500'}`} />
+          </div>
+          <span className={`text-xs md:text-sm font-medium whitespace-nowrap ${
+            isLocal ? 'text-green-400' : 'text-gray-500 line-through decoration-gray-600'
+          }`}>
+            FREE Pickup When You Sell
           </span>
-          {isLocal && <span className="text-xs bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 px-2 py-0.5 rounded">ACTIVE</span>}
+          {isLocal && (
+            <span className="hidden sm:inline-flex text-[10px] bg-green-900/50 text-green-400 px-1.5 py-0.5 rounded font-semibold">
+              ACTIVE
+            </span>
+          )}
         </div>
         
-        <div className="text-gray-300 dark:text-gray-600">|</div>
+        <div className="text-gray-700 hidden md:block">•</div>
         
         {/* BUYING FROM US */}
-        <div className={`flex items-center space-x-2 ${!isLocal ? 'opacity-50' : ''}`}>
-          <Truck className={`h-5 w-5 ${isLocal ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`} />
-          <span className={`text-sm font-medium ${isLocal ? 'text-green-800 dark:text-green-300' : 'text-gray-500 line-through'}`}>
-            FREE Delivery When You Buy From Us
+        <div className={`flex items-center gap-2 ${!isLocal ? 'opacity-40' : ''}`}>
+          <div className={`p-1 rounded ${isLocal ? 'bg-green-900/50' : ''}`}>
+            <Truck className={`h-3.5 w-3.5 ${isLocal ? 'text-green-400' : 'text-gray-500'}`} />
+          </div>
+          <span className={`text-xs md:text-sm font-medium whitespace-nowrap ${
+            isLocal ? 'text-green-400' : 'text-gray-500 line-through decoration-gray-600'
+          }`}>
+            FREE Delivery When You Buy
           </span>
-          {isLocal && <span className="text-xs bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 px-2 py-0.5 rounded">ACTIVE</span>}
+          {isLocal && (
+            <span className="hidden sm:inline-flex text-[10px] bg-green-900/50 text-green-400 px-1.5 py-0.5 rounded font-semibold">
+              ACTIVE
+            </span>
+          )}
         </div>
         
-        {/* Location Indicator */}
-        <div className="flex items-center space-x-2 ml-4">
-          <MapPin className="h-4 w-4 text-gray-500" />
-          <span className="text-xs text-gray-600 dark:text-gray-400">
-            {isLocal ? '📍 Asheville Area' : `Your ZIP: ${userZip || 'Not Set'}`}
+        {/* Location Indicator - Right Side */}
+        <div className="hidden md:flex items-center gap-1.5 ml-auto pl-4">
+          <MapPin className="h-3 w-3 text-gray-500" />
+          <span className="text-[11px] text-gray-500 font-medium">
+            {isLocal ? '📍 Asheville Area' : `ZIP: ${userZip || 'Not Set'}`}
           </span>
         </div>
       </div>
       
-      {/* Non-local message */}
-      {!isLocal && user && (
-        <div className="text-center mt-2">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            These benefits are available for Asheville area customers (ZIP 287xx-288xx). 
-            <span className="font-medium"> Standard shipping rates apply to your area.</span>
-          </p>
-        </div>
-      )}
+      {/* Mobile Location Badge */}
+      <div className="flex md:hidden justify-center mt-1">
+        <span className="text-[10px] text-gray-500">
+          {isLocal ? '📍 Asheville Area Resident' : `Your ZIP: ${userZip || 'Not Set'}`}
+        </span>
+      </div>
     </div>
   );
 }
