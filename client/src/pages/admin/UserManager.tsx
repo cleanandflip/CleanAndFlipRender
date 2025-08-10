@@ -155,11 +155,11 @@ export function UserManager() {
                         size="sm"
                         onClick={() => handleRoleChange(
                           Number(user.id), 
-                          user.role === 'admin' ? 'user' : 'admin'
+                          user.role === 'developer' ? 'user' : 'developer'
                         )}
                       >
                         <Shield className="w-4 h-4 mr-1" />
-                        {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                        {user.role === 'developer' ? 'Remove Developer' : 'Make Developer'}
                       </Button>
                       <Button
                         variant="outline"

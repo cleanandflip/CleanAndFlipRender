@@ -12,13 +12,13 @@ async function completeMigrationToProduction() {
     console.log('📊 VERIFYING MIGRATION COMPLETENESS:');
     
     const dataVerification = await Promise.all([
-      sql`SELECT COUNT(*) as count FROM users WHERE role = 'admin'`,
+      sql`SELECT COUNT(*) as count FROM users WHERE role = 'developer'`,
       sql`SELECT COUNT(*) as count FROM users WHERE role = 'user'`,
       sql`SELECT COUNT(*) as count FROM products WHERE price > 0`,
       sql`SELECT COUNT(*) as count FROM categories WHERE name IS NOT NULL`
     ]);
     
-    console.log(`   Admin Users: ${dataVerification[0][0]?.count}`);
+    console.log(`   Developer Users: ${dataVerification[0][0]?.count}`);
     console.log(`   Regular Users: ${dataVerification[1][0]?.count}`);
     console.log(`   Products with Pricing: ${dataVerification[2][0]?.count}`);
     console.log(`   Named Categories: ${dataVerification[3][0]?.count}`);
@@ -26,18 +26,18 @@ async function completeMigrationToProduction() {
     // Test critical functionality
     console.log('\n🔐 TESTING CRITICAL FUNCTIONALITY:');
     
-    // Verify admin user
-    const adminUser = await sql`
+    // Verify developer user
+    const developerUser = await sql`
       SELECT email, first_name, role, password IS NOT NULL as has_password
       FROM users 
       WHERE email = 'cleanandflipyt@gmail.com'
     `;
     
-    if (adminUser.length > 0) {
-      console.log(`   ✅ Admin User: ${adminUser[0].email} (${adminUser[0].role})`);
-      console.log(`   ✅ Password Hash: ${adminUser[0].has_password ? 'Present' : 'Missing'}`);
+    if (developerUser.length > 0) {
+      console.log(`   ✅ Developer User: ${developerUser[0].email} (${developerUser[0].role})`);
+      console.log(`   ✅ Password Hash: ${developerUser[0].has_password ? 'Present' : 'Missing'}`);
     } else {
-      console.log('   ❌ Admin user not found');
+      console.log('   ❌ Developer user not found');
     }
     
     // Check product catalog readiness

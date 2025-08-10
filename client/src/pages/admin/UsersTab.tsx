@@ -15,7 +15,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'user' | 'admin' | 'developer';
+  role: 'user' | 'developer';
   isActive: boolean;
   lastLogin: string;
   createdAt: string;
@@ -155,11 +155,9 @@ export function UsersTab() {
         <span className={cn(
           "px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit",
           user.role === 'developer' ? "bg-purple-500/20 text-purple-400" :
-          user.role === 'admin' ? "bg-red-500/20 text-red-400" :
           "bg-blue-500/20 text-blue-400"
         )}>
           {user.role === 'developer' && <Crown className="w-3 h-3" />}
-          {user.role === 'admin' && <Shield className="w-3 h-3" />}
           {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
         </span>
       )

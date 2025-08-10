@@ -50,7 +50,7 @@ async function testAllDashboardTabs() {
       tests: [
         { name: 'Get Users', endpoint: '/api/admin/users' },
         { name: 'Search Users', endpoint: '/api/admin/users?search=dean' },
-        { name: 'Filter by Role', endpoint: '/api/admin/users?role=admin' },
+        { name: 'Filter by Role', endpoint: '/api/admin/users?role=developer' },
         { name: 'Sort Users', endpoint: '/api/admin/users?sortBy=name&sortOrder=asc' }
       ]
     },
