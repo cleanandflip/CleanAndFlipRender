@@ -24,22 +24,24 @@ export const createEnhancedRateLimit = (maxRequests: number, windowMs: number = 
   });
 };
 
-// Production-ready security headers with strict CSP
+// Production-ready security headers with development allowances
 export const productionSecurityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: [
         "'self'", 
-        "'unsafe-inline'", // Required for Tailwind CSS
+        "'unsafe-inline'", // Required for Tailwind CSS and development
         "https://fonts.googleapis.com"
       ],
       scriptSrc: [
         "'self'", 
+        "'unsafe-inline'", // Required for development HMR
         "'unsafe-eval'", // Required for Vite in development
         "https://js.stripe.com",
         "https://accounts.google.com",
-        "https://apis.google.com"
+        "https://apis.google.com",
+        ...(process.env.NODE_ENV === 'development' ? ["'unsafe-eval'", "'unsafe-inline'"] : [])
       ],
       imgSrc: [
         "'self'", 
@@ -56,7 +58,8 @@ export const productionSecurityHeaders = helmet({
         "https://accounts.google.com",
         "https://oauth2.googleapis.com",
         "wss:", // WebSocket connections
-        "ws:" // Development WebSocket
+        "ws:", // Development WebSocket
+        ...(process.env.NODE_ENV === 'development' ? ["http://localhost:*", "ws://localhost:*", "wss://localhost:*"] : [])
       ],
       fontSrc: [
         "'self'", 
