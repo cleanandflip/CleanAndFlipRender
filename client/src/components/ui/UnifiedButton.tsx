@@ -11,7 +11,7 @@ interface UnifiedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   children?: React.ReactNode;
 }
 
-export const UnifiedButton: React.FC<UnifiedButtonProps> = ({
+export const UnifiedButton = React.forwardRef<HTMLButtonElement, UnifiedButtonProps>(({
   variant = 'primary',
   size = 'md',
   icon,
@@ -21,7 +21,7 @@ export const UnifiedButton: React.FC<UnifiedButtonProps> = ({
   children,
   disabled,
   ...props
-}) => {
+}, ref) => {
   const getButtonClasses = () => {
     const baseClasses = 'inline-flex items-center justify-center font-medium transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
     
@@ -96,6 +96,7 @@ export const UnifiedButton: React.FC<UnifiedButtonProps> = ({
 
   return (
     <button
+      ref={ref}
       className={getButtonClasses()}
       disabled={disabled || loading}
       {...props}
@@ -103,6 +104,8 @@ export const UnifiedButton: React.FC<UnifiedButtonProps> = ({
       {renderContent()}
     </button>
   );
-};
+});
+
+UnifiedButton.displayName = "UnifiedButton";
 
 export default UnifiedButton;
