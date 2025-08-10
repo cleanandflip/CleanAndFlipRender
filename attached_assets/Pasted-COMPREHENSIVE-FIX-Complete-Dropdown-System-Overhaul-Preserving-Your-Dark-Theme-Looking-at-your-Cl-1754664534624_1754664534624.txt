@@ -1,0 +1,772 @@
+COMPREHENSIVE FIX: Complete Dropdown System Overhaul (Preserving Your Dark Theme)
+Looking at your Clean & Flip website's dark navy theme with blue accents, I'll fix all dropdowns while keeping your exact styling intact.
+
+PHASE 0: CAPTURE YOUR EXACT THEME FIRST
+typescript// Create: /client/src/constants/theme.ts
+// This preserves your EXACT Clean & Flip colors
+
+export const CLEANFLIP_THEME = {
+  // Your exact dark navy/gray theme
+  colors: {
+    // Backgrounds
+    pageBg: '#0F172A',           // Dark navy page background
+    cardBg: 'rgba(30, 41, 59, 0.5)',  // Card backgrounds
+    inputBg: 'rgba(30, 41, 59, 0.8)', // Input/dropdown backgrounds
+    
+    // Borders
+    border: 'rgba(148, 163, 184, 0.2)',  // Subtle borders
+    borderHover: 'rgba(148, 163, 184, 0.4)',
+    
+    // Text
+    textPrimary: '#F1F5F9',      // Off-white primary text
+    textSecondary: '#94A3B8',    // Muted gray text
+    textPlaceholder: '#64748B',  // Placeholder gray
+    
+    // Your blue accent (from buttons)
+    accent: '#3B82F6',           // Primary blue
+    accentHover: '#2563EB',      // Darker blue on hover
+    accentFocus: 'rgba(59, 130, 246, 0.4)',
+    
+    // States
+    hover: 'rgba(148, 163, 184, 0.1)',
+    selected: 'rgba(59, 130, 246, 0.2)',
+    disabled: 'rgba(100, 116, 139, 0.5)',
+  },
+  
+  // Effects
+  effects: {
+    blur: 'blur(12px)',
+    shadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  }
+};
+
+PHASE 1: REMOVE BROKEN DROPDOWN CODE ONLY
+bashTASK: Delete ONLY the broken dropdown logic, NOT styling
+
+1. FIND and DELETE these specific broken implementations:
+   # Remove broken dropdown components
+   rm -f client/src/components/ui/dropdown-menu.tsx
+   rm -f client/src/components/ui/select.tsx
+   rm -f client/src/components/ui/popover.tsx
+   rm -f client/src/components/ui/command.tsx
+   
+2. KEEP all your existing:
+   - Button components and styles
+   - Navigation styles
+   - Card styles
+   - Any working UI components
+
+3. Remove ONLY these packages (dropdown-related):
+   npm uninstall @radix-ui/react-dropdown-menu
+   npm uninstall @radix-ui/react-select
+   npm uninstall @radix-ui/react-popover
+   npm uninstall cmdk
+   
+   # DO NOT remove framer-motion, lucide-react, or tailwind
+
+PHASE 2: CREATE THEME-MATCHED UNIFIED COMPONENTS
+File 1: /client/src/components/ui/UnifiedDropdown.tsx
+typescript// UNIFIED DROPDOWN MATCHING YOUR EXACT THEME
+import { useState, useRef, useEffect } from 'react';
+import { ChevronDown, Check, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { CLEANFLIP_THEME as theme } from '@/constants/theme';
+
+export interface DropdownOption {
+  value: string;
+  label: string;
+  icon?: React.ReactNode;
+  disabled?: boolean;
+}
+
+interface UnifiedDropdownProps {
+  options: DropdownOption[] | string[];
+  value: string | string[];
+  onChange: (value: string | string[]) => void;
+  placeholder?: string;
+  label?: string;
+  error?: string;
+  disabled?: boolean;
+  required?: boolean;
+  clearable?: boolean;
+  multiple?: boolean;
+  className?: string;
+  variant?: 'default' | 'ghost' | 'nav';
+}
+
+export function UnifiedDropdown({
+  options,
+  value,
+  onChange,
+  placeholder = "Select...",
+  label,
+  error,
+  disabled = false,
+  required = false,
+  clearable = false,
+  multiple = false,
+  className = "",
+  variant = 'default'
+}: UnifiedDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Normalize options
+  const normalizedOptions: DropdownOption[] = options.map(opt => 
+    typeof opt === 'string' ? { value: opt, label: opt } : opt
+  );
+
+  const selectedValues = Array.isArray(value) ? value : [value].filter(Boolean);
+  const selectedOptions = normalizedOptions.filter(opt => 
+    selectedValues.includes(opt.value)
+  );
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setIsOpen(false);
+      });
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const handleSelect = (option: DropdownOption) => {
+    if (option.disabled) return;
+
+    if (multiple) {
+      const newValues = selectedValues.includes(option.value)
+        ? selectedValues.filter(v => v !== option.value)
+        : [...selectedValues, option.value];
+      onChange(newValues);
+    } else {
+      onChange(option.value);
+      setIsOpen(false);
+    }
+  };
+
+  // Style variants matching your theme
+  const buttonStyles = {
+    default: cn(
+      "w-full px-4 py-2.5 rounded-lg",
+      "text-left flex items-center justify-between",
+      "transition-all duration-200",
+      "border",
+      !disabled && "hover:border-opacity-60",
+      disabled && "opacity-50 cursor-not-allowed",
+      isOpen && "ring-2 ring-opacity-40",
+      error && "border-red-500"
+    ),
+    ghost: cn(
+      "px-3 py-2 rounded-lg",
+      "text-left flex items-center gap-2",
+      "transition-all duration-200",
+      !disabled && "hover:bg-white hover:bg-opacity-10",
+      disabled && "opacity-50 cursor-not-allowed"
+    ),
+    nav: cn(
+      "flex items-center gap-2 px-3 py-2",
+      "rounded-lg transition-all duration-200",
+      !disabled && "hover:bg-white hover:bg-opacity-10",
+      disabled && "opacity-50 cursor-not-allowed"
+    )
+  };
+
+  const dropdownStyles = {
+    backgroundColor: theme.colors.cardBg,
+    borderColor: theme.colors.border,
+    backdropFilter: theme.effects.blur,
+    color: theme.colors.textPrimary,
+  };
+
+  const buttonStyle = {
+    backgroundColor: variant === 'ghost' || variant === 'nav' 
+      ? 'transparent' 
+      : theme.colors.inputBg,
+    borderColor: theme.colors.border,
+    color: theme.colors.textPrimary,
+    ...(isOpen && { 
+      borderColor: theme.colors.accent,
+      boxShadow: `0 0 0 3px ${theme.colors.accentFocus}`
+    })
+  };
+
+  return (
+    <div className={cn("relative", className)} ref={dropdownRef}>
+      {label && (
+        <label 
+          className="block text-sm font-medium mb-2"
+          style={{ color: theme.colors.textSecondary }}
+        >
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+      )}
+      
+      <button
+        type="button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={buttonStyles[variant]}
+        style={buttonStyle}
+      >
+        <span 
+          className={cn("truncate", !selectedOptions.length && "opacity-60")}
+          style={{ 
+            color: selectedOptions.length 
+              ? theme.colors.textPrimary 
+              : theme.colors.textPlaceholder 
+          }}
+        >
+          {multiple
+            ? selectedOptions.length > 0 
+              ? `${selectedOptions.length} selected`
+              : placeholder
+            : selectedOptions[0]?.label || placeholder}
+        </span>
+        
+        <div className="flex items-center gap-2 ml-2">
+          {clearable && selectedValues.length > 0 && !disabled && (
+            <X 
+              className="w-4 h-4 opacity-60 hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(multiple ? [] : '');
+              }}
+              style={{ color: theme.colors.textSecondary }}
+            />
+          )}
+          <ChevronDown 
+            className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")}
+            style={{ color: theme.colors.textSecondary }}
+          />
+        </div>
+      </button>
+
+      {error && (
+        <p className="mt-1 text-sm text-red-500">{error}</p>
+      )}
+
+      {/* Dropdown Menu */}
+      {isOpen && !disabled && (
+        <div 
+          className="absolute z-50 w-full mt-2 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-auto"
+          style={{
+            ...dropdownStyles,
+            boxShadow: theme.effects.shadow,
+            animation: 'slideDown 0.2s ease-out'
+          }}
+        >
+          {normalizedOptions.length === 0 ? (
+            <div 
+              className="px-4 py-3 text-center"
+              style={{ color: theme.colors.textSecondary }}
+            >
+              No options available
+            </div>
+          ) : (
+            normalizedOptions.map((option, index) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleSelect(option)}
+                disabled={option.disabled}
+                className={cn(
+                  "w-full px-4 py-2.5 text-left",
+                  "flex items-center justify-between",
+                  "transition-colors duration-150",
+                  !option.disabled && "hover:bg-white hover:bg-opacity-5",
+                  option.disabled && "opacity-50 cursor-not-allowed",
+                  index !== 0 && "border-t"
+                )}
+                style={{
+                  color: theme.colors.textPrimary,
+                  borderColor: theme.colors.border,
+                  ...(selectedValues.includes(option.value) && {
+                    backgroundColor: theme.colors.selected
+                  })
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  {option.icon && <span className="w-5 h-5">{option.icon}</span>}
+                  <span>{option.label}</span>
+                </div>
+                {selectedValues.includes(option.value) && (
+                  <Check 
+                    className="w-4 h-4" 
+                    style={{ color: theme.colors.accent }}
+                  />
+                )}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+File 2: /client/src/components/ui/UnifiedSearch.tsx
+typescript// UNIFIED SEARCH MATCHING YOUR THEME
+import { useState, useRef, useEffect } from 'react';
+import { Search, X, TrendingUp, Clock, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useLocation } from 'wouter';
+import { CLEANFLIP_THEME as theme } from '@/constants/theme';
+
+export interface SearchResult {
+  id: string;
+  type: 'product' | 'category' | 'page';
+  title: string;
+  subtitle?: string;
+  url: string;
+  image?: string;
+  price?: string;
+}
+
+interface UnifiedSearchProps {
+  placeholder?: string;
+  className?: string;
+  showTrending?: boolean;
+  showRecent?: boolean;
+  apiEndpoint?: string;
+  onSearch?: (query: string) => void;
+  onSelect?: (result: SearchResult) => void;
+  variant?: 'navbar' | 'page';
+}
+
+export function UnifiedSearch({
+  placeholder = "Search equipment...",
+  className = "",
+  showTrending = true,
+  showRecent = true,
+  apiEndpoint = "/api/search",
+  onSearch,
+  onSelect,
+  variant = 'navbar'
+}: UnifiedSearchProps) {
+  const [query, setQuery] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debouncedQuery = useDebounce(query, 300);
+  const [, navigate] = useLocation();
+
+  const trendingItems = ['Dumbbells', 'Bench Press', 'Protein', 'Yoga Mat'];
+
+  // Load recent searches
+  useEffect(() => {
+    const recent = localStorage.getItem('recentSearches');
+    if (recent) {
+      setRecentSearches(JSON.parse(recent).slice(0, 5));
+    }
+  }, []);
+
+  // Fetch results
+  useEffect(() => {
+    if (debouncedQuery.length >= 2) {
+      setLoading(true);
+      fetch(`${apiEndpoint}?q=${encodeURIComponent(debouncedQuery)}`)
+        .then(res => res.json())
+        .then(data => {
+          setResults(data.results || []);
+          setLoading(false);
+        })
+        .catch(() => {
+          setResults([]);
+          setLoading(false);
+        });
+    } else {
+      setResults([]);
+    }
+  }, [debouncedQuery, apiEndpoint]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const handleSearch = (searchQuery: string) => {
+    const newRecent = [searchQuery, ...recentSearches.filter(s => s !== searchQuery)].slice(0, 5);
+    setRecentSearches(newRecent);
+    localStorage.setItem('recentSearches', JSON.stringify(newRecent));
+    
+    if (onSearch) {
+      onSearch(searchQuery);
+    } else {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+    
+    setIsOpen(false);
+    setQuery('');
+  };
+
+  const handleSelect = (result: SearchResult) => {
+    if (onSelect) {
+      onSelect(result);
+    } else {
+      navigate(result.url);
+    }
+    setIsOpen(false);
+    setQuery('');
+  };
+
+  const inputStyle = {
+    backgroundColor: theme.colors.inputBg,
+    borderColor: theme.colors.border,
+    color: theme.colors.textPrimary,
+  };
+
+  const dropdownStyle = {
+    backgroundColor: theme.colors.cardBg,
+    borderColor: theme.colors.border,
+    backdropFilter: theme.effects.blur,
+    boxShadow: theme.effects.shadow,
+  };
+
+  return (
+    <div ref={searchRef} className={cn("relative", className)}>
+      <div className="relative">
+        <Search 
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
+          style={{ color: theme.colors.textSecondary }}
+        />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setIsOpen(true)}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' && query) {
+              handleSearch(query);
+            }
+          }}
+          placeholder={placeholder}
+          className={cn(
+            "w-full pl-10 pr-10 py-2.5 rounded-lg",
+            "border transition-all duration-200",
+            "focus:outline-none focus:ring-2",
+            "placeholder:opacity-60"
+          )}
+          style={{
+            ...inputStyle,
+            ...(isOpen && {
+              borderColor: theme.colors.accent,
+              boxShadow: `0 0 0 3px ${theme.colors.accentFocus}`
+            })
+          }}
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery('');
+              inputRef.current?.focus();
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100 transition-opacity"
+          >
+            <X className="w-4 h-4" style={{ color: theme.colors.textSecondary }} />
+          </button>
+        )}
+      </div>
+
+      {/* Search Dropdown */}
+      {isOpen && (
+        <div 
+          className={cn(
+            "absolute z-50 w-full mt-2 rounded-lg overflow-hidden max-h-96 overflow-auto",
+            variant === 'navbar' && "min-w-[400px]"
+          )}
+          style={{
+            ...dropdownStyle,
+            animation: 'slideDown 0.2s ease-out'
+          }}
+        >
+          {loading ? (
+            <div className="p-6 text-center">
+              <Loader2 
+                className="w-6 h-6 animate-spin mx-auto mb-2" 
+                style={{ color: theme.colors.textSecondary }}
+              />
+              <p style={{ color: theme.colors.textSecondary }}>Searching...</p>
+            </div>
+          ) : query.length >= 2 && results.length > 0 ? (
+            <div>
+              <div 
+                className="px-3 py-2 border-b"
+                style={{ borderColor: theme.colors.border }}
+              >
+                <p 
+                  className="text-xs uppercase tracking-wider"
+                  style={{ color: theme.colors.textSecondary }}
+                >
+                  Search Results
+                </p>
+              </div>
+              {results.map(result => (
+                <button
+                  key={result.id}
+                  onClick={() => handleSelect(result)}
+                  className="w-full px-4 py-3 hover:bg-white hover:bg-opacity-5 transition-colors text-left flex items-center gap-3"
+                  style={{ color: theme.colors.textPrimary }}
+                >
+                  {result.image && (
+                    <img 
+                      src={result.image} 
+                      alt={result.title}
+                      className="w-10 h-10 object-cover rounded"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <div className="font-medium">{result.title}</div>
+                    {result.subtitle && (
+                      <div 
+                        className="text-sm"
+                        style={{ color: theme.colors.textSecondary }}
+                      >
+                        {result.subtitle}
+                      </div>
+                    )}
+                  </div>
+                  {result.price && (
+                    <div 
+                      className="font-semibold"
+                      style={{ color: theme.colors.accent }}
+                    >
+                      {result.price}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div>
+              {showRecent && recentSearches.length > 0 && !query && (
+                <div>
+                  <div 
+                    className="px-3 py-2 border-b flex items-center gap-2"
+                    style={{ borderColor: theme.colors.border }}
+                  >
+                    <Clock className="w-3 h-3" style={{ color: theme.colors.textSecondary }} />
+                    <p 
+                      className="text-xs uppercase tracking-wider"
+                      style={{ color: theme.colors.textSecondary }}
+                    >
+                      Recent
+                    </p>
+                  </div>
+                  {recentSearches.map((search, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setQuery(search);
+                        handleSearch(search);
+                      }}
+                      className="w-full px-4 py-2.5 hover:bg-white hover:bg-opacity-5 text-left transition-colors"
+                      style={{ color: theme.colors.textPrimary }}
+                    >
+                      {search}
+                    </button>
+                  ))}
+                </div>
+              )}
+              
+              {showTrending && !query && (
+                <div>
+                  <div 
+                    className="px-3 py-2 border-b flex items-center gap-2"
+                    style={{ borderColor: theme.colors.border }}
+                  >
+                    <TrendingUp className="w-3 h-3" style={{ color: theme.colors.textSecondary }} />
+                    <p 
+                      className="text-xs uppercase tracking-wider"
+                      style={{ color: theme.colors.textSecondary }}
+                    >
+                      Trending
+                    </p>
+                  </div>
+                  {trendingItems.map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setQuery(item);
+                        handleSearch(item);
+                      }}
+                      className="w-full px-4 py-2.5 hover:bg-white hover:bg-opacity-5 text-left transition-colors"
+                      style={{ color: theme.colors.textPrimary }}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {query.length > 0 && query.length < 2 && (
+                <div 
+                  className="p-4 text-center"
+                  style={{ color: theme.colors.textSecondary }}
+                >
+                  Type at least 2 characters to search
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+PHASE 3: ADD ANIMATION STYLES (PRESERVE EXISTING)
+css/* Add to your existing globals.css - DO NOT REMOVE OTHER STYLES */
+
+/* Dropdown animations only */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Preserve scrollbar styling if you have it */
+.overflow-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-auto::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 3px;
+}
+
+PHASE 4: UPDATE COMPONENTS (MINIMAL CHANGES)
+Navigation User Dropdown Fix
+typescript// In your Navigation component, replace ONLY the dropdown part:
+import { UnifiedDropdown } from '@/components/ui/UnifiedDropdown';
+
+// Keep your existing navigation structure, just replace the user dropdown:
+<UnifiedDropdown
+  variant="nav"  // Uses transparent background like your current nav
+  options={[
+    { value: 'dashboard', label: 'Dashboard' },
+    { value: 'orders', label: 'Order History' },
+    ...(user?.role === 'admin' ? [{ value: 'admin', label: 'Admin Dashboard' }] : []),
+    { value: 'logout', label: 'Sign Out' }
+  ]}
+  value=""
+  onChange={(value) => {
+    switch(value) {
+      case 'logout': handleLogout(); break;
+      default: navigate(`/${value}`);
+    }
+  }}
+  placeholder={user?.email || 'CF'}
+/>
+Sell Equipment Form Fix
+typescript// Replace broken dropdowns with:
+<UnifiedDropdown
+  label="Condition"
+  required
+  options={['Excellent', 'Good', 'Fair', 'Poor']}
+  value={condition}
+  onChange={setCondition}
+  placeholder="Select condition"
+/>
+
+<UnifiedDropdown
+  label="Brand"
+  options={brandOptions}
+  value={brand}
+  onChange={setBrand}
+  placeholder="Search or select a brand..."
+/>
+Shop Page Search Fix
+typescript// Replace search bar with:
+<UnifiedSearch
+  placeholder="Search weightlifting equipment..."
+  className="w-full"
+  variant="page"
+/>
+
+PHASE 5: SAFE CLEANUP
+bash# Only remove broken packages, keep working ones:
+npm uninstall @radix-ui/react-dropdown-menu @radix-ui/react-select cmdk
+
+# DO NOT REMOVE:
+# - framer-motion
+# - lucide-react
+# - tailwindcss
+# - @tailwindcss/forms
+# - Your existing UI components
+
+# Test that styles are preserved:
+npm run dev
+# Check that all buttons, cards, and styling remain the same
+
+PHASE 6: VERIFICATION CHECKLIST
+PRESERVE these elements (should look exactly the same):
+□ Dark navy background (#0F172A)
+□ Blue accent buttons (#3B82F6)
+□ Card glassmorphic effects
+□ White/gray text colors
+□ Existing button styles
+□ Navigation bar appearance
+□ Footer appearance
+□ All non-dropdown UI elements
+
+FIX these elements (should now work):
+□ User account dropdown in nav
+□ Condition/Brand dropdowns in forms
+□ Search bars (nav and page)
+□ Admin dashboard dropdowns
+□ Any select/dropdown inputs
+
+TEST:
+□ Colors match exactly as before
+□ No style regressions
+□ All dropdowns functional
+□ Mobile responsive
+□ Dark theme consistent
+
+CRITICAL NOTES:
+
+DO NOT change any existing color values
+DO NOT modify working buttons or cards
+DO NOT alter the navigation bar styling
+ONLY replace the dropdown functionality
+PRESERVE all glassmorphic effects and transparencies
+KEEP your existing dark navy theme exactly as is
+
+This approach fixes only the broken dropdown functionality while preserving your entire Clean & Flip dark theme aesthetic.

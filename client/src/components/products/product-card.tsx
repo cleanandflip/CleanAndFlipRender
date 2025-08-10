@@ -21,7 +21,7 @@ import { routes } from "@/config/routes";
 import { StockIndicator } from "@/components/ui/StockIndicator";
 import { ProductPrice } from "@/components/ui/ProductPrice";
 import { AddToCartButton } from "@/components/AddToCartButton";
-import { iconSizes, typography } from "@/config/dimensions";
+import { layout, iconSizes, typography, interactions } from "@/config/dimensions";
 
 interface ProductCardProps {
   product: Product;
@@ -44,19 +44,19 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             <img 
               src={mainImage}
               alt={product.name}
-              className="w-full h-32 object-cover rounded-lg"
+              className={`w-full h-32 object-cover ${layout.card.imageBorderRadius}`}
             />
           ) : (
             <div className="w-full h-32 bg-background-secondary flex items-center justify-center">
               <div className="text-center text-text-muted">
                 <div className={`text-2xl mb-2`}>📦</div>
-                <div className="text-xs">No Image</div>
+                <div className={typography.tiny}>No Image</div>
               </div>
             </div>
           )}
           <div className="p-3">
-            <h4 className="font-medium text-xs line-clamp-2 mb-1">{product.name}</h4>
-            <p className="text-accent-blue font-bold text-xs">${product.price}</p>
+            <h4 className={`${typography.h4.weight} ${typography.tiny} line-clamp-2 mb-1`}>{product.name}</h4>
+            <p className={`text-accent-blue font-bold ${typography.tiny}`}>${product.price}</p>
           </div>
         </UnifiedCard>
       </SmartLink>
@@ -66,10 +66,10 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
   if (viewMode === 'list') {
     return (
       <UnifiedCard variant="elevated" padding="lg">
-        <div className="flex gap-6">
+        <div className={`flex ${layout.gridGap.desktop}`}>
           {/* Image */}
           <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
-            <div className="w-32 h-32 flex-shrink-0 overflow-hidden rounded-lg cursor-pointer group">
+            <div className={`w-32 h-32 flex-shrink-0 overflow-hidden ${layout.card.imageBorderRadius} cursor-pointer group`}>
               {hasImage ? (
                 <img
                   src={mainImage}

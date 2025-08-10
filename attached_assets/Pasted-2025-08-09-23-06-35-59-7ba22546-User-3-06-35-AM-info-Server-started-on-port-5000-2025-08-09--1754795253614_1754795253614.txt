@@ -1,0 +1,200 @@
+2025-08-09 23:06:35.59
+7ba22546
+User
+3:06:35 AM info: 🚀 Server started on port 5000
+2025-08-09 23:06:35.59
+7ba22546
+User
+[INFO] [STARTUP] Server is now accepting connections on 0.0.0.0:5000
+2025-08-09 23:06:50.10
+7ba22546
+User
+[WS] Client connected: 1rfjzj8gt09jme53rdru (Total: 1)
+2025-08-09 23:06:53.10
+7ba22546
+User
+[WS] Client disconnected: 1rfjzj8gt09jme53rdru (Remaining: 0)
+2025-08-09 23:06:53.24
+7ba22546
+User
+[WS] Client connected: kdon979lq1fme53rg6z (Total: 1)
+2025-08-09 23:06:53.90
+7ba22546
+User
+[WS] Client disconnected: kdon979lq1fme53rg6z (Remaining: 0)
+2025-08-09 23:06:55.01
+7ba22546
+User
+[WS] Client connected: aynfu43qeppme53rhk5 (Total: 1)
+2025-08-09 23:06:55.22
+7ba22546
+User
+[WS] Client disconnected: aynfu43qeppme53rhk5 (Remaining: 0)
+2025-08-09 23:06:59.78
+7ba22546
+User
+[WS] Client connected: qkdrnbo9alrme53rl8r (Total: 1)
+2025-08-09 23:07:02.30
+7ba22546
+User
+[WS] Client disconnected: qkdrnbo9alrme53rl8r (Remaining: 0)
+2025-08-09 23:07:03.41
+7ba22546
+User
+[WS] Client connected: he1jm2jgyime53ro1h (Total: 1)
+2025-08-09 23:07:03.61
+7ba22546
+User
+[INFO] === /api/addresses DEBUG ===
+2025-08-09 23:07:03.61
+7ba22546
+User
+[INFO] Authenticated userId: 3aa64d97-dc82-4fe2-b21d-dd19ec02814b
+2025-08-09 23:07:03.61
+7ba22546
+User
+[ERROR] Error fetching addresses TypeError: Cannot convert undefined or null to object
+2025-08-09 23:07:03.61
+7ba22546
+User
+at Function.entries ()
+2025-08-09 23:07:03.61
+7ba22546
+User
+at orderSelectedFields (file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:53:17)
+2025-08-09 23:07:03.61
+7ba22546
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:63:22
+2025-08-09 23:07:03.61
+7ba22546
+User
+at Array.reduce ()
+2025-08-09 23:07:03.61
+7ba22546
+User
+at orderSelectedFields (file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:53:33)
+2025-08-09 23:07:03.61
+7ba22546
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:684:26
+2025-08-09 23:07:03.61
+7ba22546
+User
+at Object.startActiveSpan (file:///home/runner/workspace/node_modules/drizzle-orm/tracing.js:8:14)
+2025-08-09 23:07:03.61
+7ba22546
+User
+at PgSelectBase._prepare (file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:683:19)
+2025-08-09 23:07:03.61
+7ba22546
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:708:19
+2025-08-09 23:07:03.61
+7ba22546
+User
+at Object.startActiveSpan (file:///home/runner/workspace/node_modules/drizzle-orm/tracing.js:8:14)
+2025-08-09 23:07:04.73
+7ba22546
+User
+[ERROR] Error fetching addresses TypeError: Cannot convert undefined or null to object
+2025-08-09 23:07:04.73
+7ba22546
+User
+at Function.entries ()
+2025-08-09 23:07:04.73
+7ba22546
+User
+at orderSelectedFields (file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:53:17)
+2025-08-09 23:07:04.73
+7ba22546
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:63:22
+2025-08-09 23:07:04.73
+7ba22546
+User
+at Array.reduce ()
+2025-08-09 23:07:04.73
+7ba22546
+User
+at orderSelectedFields (file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:53:33)
+2025-08-09 23:07:04.73
+7ba22546
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:684:26
+2025-08-09 23:07:04.73
+7ba22546
+User
+at Object.startActiveSpan (file:///home/runner/workspace/node_modules/drizzle-orm/tracing.js:8:14)
+2025-08-09 23:07:04.73
+7ba22546
+User
+at PgSelectBase._prepare (file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:683:19)
+2025-08-09 23:07:04.73
+7ba22546
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:708:19
+2025-08-09 23:07:04.73
+7ba22546
+User
+at Object.startActiveSpan (file:///home/runner/workspace/node_modules/drizzle-orm/tracing.js:8:14)
+2025-08-09 23:07:04.73
+7ba22546
+User
+[INFO] === /api/addresses DEBUG ===
+2025-08-09 23:07:04.73
+7ba22546
+User
+[INFO] Authenticated userId: 3aa64d97-dc82-4fe2-b21d-dd19ec02814b
+2025-08-09 23:07:06.86
+7ba22546
+User
+[ERROR] Error fetching addresses TypeError: Cannot convert undefined or null to object
+2025-08-09 23:07:06.86
+7ba22546
+User
+at Function.entries ()
+2025-08-09 23:07:06.86
+7ba22546
+User
+at orderSelectedFields (file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:53:17)
+2025-08-09 23:07:06.86
+7ba22546
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:63:22
+2025-08-09 23:07:06.86
+7ba22546
+User
+at Array.reduce ()
+2025-08-09 23:07:06.86
+7ba22546
+User
+at orderSelectedFields (file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:53:33)
+2025-08-09 23:07:06.86
+7ba22546
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:684:26
+2025-08-09 23:07:06.86
+7ba22546
+User
+at Object.startActiveSpan (file:///home/runner/workspace/node_modules/drizzle-orm/tracing.js:8:14)
+2025-08-09 23:07:06.86
+7ba22546
+User
+at PgSelectBase._prepare (file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:683:19)
+2025-08-09 23:07:06.86
+7ba22546
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:708:19
+2025-08-09 23:07:06.86
+7ba22546
+User
+at Object.startActiveSpan (file:///home/runner/workspace/node_modules/drizzle-orm/tracing.js:8:14)
+2025-08-09 23:07:06.86
+7ba22546
+User
+[INFO] === /api/addresses DEBUG ===
+2025-08-09 23:07:06.86
+7ba22546
+User
+[INFO] Authenticated userId: 3aa64d97-dc82-4fe2-b21d-dd19ec02814b

@@ -3,9 +3,9 @@
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
-// Removed problematic theme import causing transition errors
+import { globalDesignSystem as theme } from '@/styles/design-system/theme'
 import { cn } from "@/lib/utils"
-// Import removed - using standard dimensions
+import { layout, iconSizes, interactions } from "@/config/dimensions"
 
 const Dialog = DialogPrimitive.Root
 
@@ -26,7 +26,7 @@ const DialogOverlay = React.forwardRef<
       className
     )}
     style={{
-      backgroundColor: "rgba(0, 0, 0, 0.8)"
+      backgroundColor: theme.colors.bg.overlay
     }}
     {...props}
   />
@@ -47,19 +47,20 @@ const DialogContent = React.forwardRef<
         className
       )}
       style={{
-        backgroundColor: "white",
-        border: "1px solid #e5e7eb"
+        backgroundColor: theme.colors.bg.secondary,
+        border: `1px solid ${theme.colors.border.default}`,
+        color: theme.colors.text.primary
       }}
       {...props}
     >
       {children}
       <DialogPrimitive.Close 
-        className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+        className={`absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background ${interactions.hover.transition} hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none`}
         style={{
-          fontSize: "1rem"
+          color: theme.colors.text.muted
         }}
       >
-        <X className="h-4 w-4" />
+        <X className={iconSizes.inline} />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

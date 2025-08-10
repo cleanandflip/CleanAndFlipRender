@@ -1,154 +1,284 @@
 /**
- * UNIFIED DIMENSIONS SYSTEM - PHASE 2: MEASUREMENT STANDARDIZATION
- * Single source of truth for ALL measurements in the application
- * August 10, 2025 - Professional UI Modernization
+ * Unified Spacing & Sizing System
+ * Single source of truth for ALL measurements
+ * Base unit: 4px (0.25rem)
  */
 
-// Base unit: 4px (0.25rem) - Foundation for all spacing
-export const BASE_UNIT = 4;
-
-// Core spacing scale - Used throughout the application
+// Core spacing scale - use these everywhere
 export const spacing = {
-  1: '0.25rem',   // 4px - Tiny gaps
-  2: '0.5rem',    // 8px - Icon gaps, small margins
-  3: '0.75rem',   // 12px - Form field gaps
-  4: '1rem',      // 16px - Standard gap, card padding mobile
-  5: '1.25rem',   // 20px - Section gaps mobile
-  6: '1.5rem',    // 24px - Card padding desktop
-  8: '2rem',      // 32px - Large gaps
-  10: '2.5rem',   // 40px - Section spacing mobile
-  12: '3rem',     // 48px - Major section gaps
-  16: '4rem',     // 64px - Section spacing desktop
-  20: '5rem',     // 80px - Page sections
-  24: '6rem'      // 96px - Major page sections
+  xs: '4px',   // space-1 - Tiny gaps
+  sm: '8px',   // space-2 - Icon gaps, small margins
+  md: '12px',  // space-3 - Form field gaps
+  lg: '16px',  // space-4 - Standard gap, card padding mobile
+  xl: '20px',  // space-5 - Section gaps mobile
+  '2xl': '24px', // space-6 - Card padding desktop
+  '3xl': '32px', // space-8 - Large gaps
+  '4xl': '40px', // space-10 - Section spacing mobile
+  '5xl': '48px', // space-12 - Major section gaps
+  '6xl': '64px', // space-16 - Section spacing desktop
+  '7xl': '80px', // space-20 - Page sections
 } as const;
 
-// Component heights - Standardized interactive element heights
+// Interactive element heights - standardized across all components
 export const heights = {
-  // Interactive element heights
-  xs: '1.75rem',  // 28px - Tags, chips only
-  sm: '2rem',     // 32px - Secondary actions
-  md: '2.5rem',   // 40px - DEFAULT for all inputs/buttons
-  lg: '3rem',     // 48px - Primary CTAs
-  xl: '3.5rem',   // 56px - Hero buttons only
+  // Interactive heights
+  xs: '28px', // h-7 - Tags, chips only
+  sm: '32px', // h-8 - Secondary actions
+  md: '40px', // h-10 - DEFAULT for all inputs/buttons
+  lg: '48px', // h-12 - Primary CTAs
+  xl: '56px', // h-14 - Hero buttons only
   
-  // Navigation heights
-  nav: '4rem',        // 64px - Navigation bar
-  navMobile: '3.5rem', // 56px - Mobile nav
-  tab: '3rem',        // 48px - Tab bars
-  
-  // Component specific
-  tableRow: '3.25rem', // 52px - Table rows
-  sidebarItem: '2.75rem', // 44px - Sidebar items
-  modalHeader: '3.5rem'   // 56px - Modal header
+  // Fixed component heights
+  nav: '64px',      // h-16 - Navigation bar
+  navMobile: '56px', // h-14 - Mobile nav
+  tabs: '48px',     // h-12 - Tab bars
+  tableRow: '52px', // h-13 - Table rows
+  sidebarItem: '44px', // h-11 - Sidebar items
 } as const;
 
-// Typography scale - Consistent text hierarchy
+// Typography scale - consistent across all components
 export const typography = {
-  sizes: {
-    xs: '0.75rem',    // 12px - Timestamps only
-    sm: '0.875rem',   // 14px - Labels, captions, metadata
-    base: '1rem',     // 16px - Body text, form inputs
-    lg: '1.125rem',   // 18px - Large body text
-    xl: '1.25rem',    // 20px - Card titles (H3)
-    '2xl': '1.5rem',  // 24px - Section titles mobile (H2)
-    '3xl': '1.875rem', // 30px - Section titles desktop (H2)
-    '4xl': '2.25rem'  // 36px - Page titles desktop (H1)
+  // Headings
+  h1: {
+    desktop: 'text-4xl', // 36px
+    mobile: 'text-3xl',  // 30px
+    weight: 'font-bold',
+    spacing: 'mb-6'
   },
-  weights: {
-    normal: '400',
-    medium: '500',
-    semibold: '600',
-    bold: '700'
+  h2: {
+    desktop: 'text-3xl', // 30px
+    mobile: 'text-2xl',  // 24px
+    weight: 'font-semibold',
+    spacing: 'mb-4'
   },
-  lineHeights: {
-    tight: '1.25',
-    normal: '1.5',
-    relaxed: '1.625',
-    loose: '2'
-  }
+  h3: {
+    desktop: 'text-xl',  // 20px
+    mobile: 'text-lg',   // 18px
+    weight: 'font-semibold',
+    spacing: 'mb-3'
+  },
+  h4: {
+    desktop: 'text-lg',   // 18px
+    mobile: 'text-base',  // 16px
+    weight: 'font-medium',
+    spacing: 'mb-2'
+  },
+  
+  // Body text
+  body: {
+    size: 'text-base',        // 16px
+    lineHeight: 'leading-relaxed', // 1.625
+    spacing: 'mb-4'
+  },
+  small: 'text-sm',  // 14px - labels, captions, metadata
+  tiny: 'text-xs',   // 12px - timestamps only
 } as const;
 
-// Icon sizes - Standardized for consistency
+// Icon sizing system - Phase 6 Standardization
 export const iconSizes = {
-  xs: '1rem',     // 16px - In small buttons, text
-  sm: '1.25rem',  // 20px - In medium buttons
-  md: '1.5rem',   // 24px - In large buttons, navigation
-  lg: '2rem',     // 32px - Standalone, headers
-  xl: '2.5rem'    // 40px - Hero sections
+  // Size-based scaling (STANDARD)
+  xs: 'w-3 h-3',          // 12px - Tiny indicators only
+  sm: 'w-4 h-4',          // 16px - In h-8 buttons, inline text
+  md: 'w-5 h-5',          // 20px - In h-10 buttons (DEFAULT)
+  lg: 'w-6 h-6',          // 24px - In h-12 buttons, navigation
+  xl: 'w-8 h-8',          // 32px - Hero sections, standalone
+  
+  // Context-based aliases (for clarity)
+  inline: 'w-4 h-4',      // Text inline icons
+  button: 'w-5 h-5',      // Standard button icons
+  nav: 'w-6 h-6',         // Navigation icons
+  hero: 'w-8 h-8',        // Feature/hero icons
+  logo: 'w-10 h-10'       // Brand/logo icons
 } as const;
 
-// Border radius - Consistent curvature
-export const borderRadius = {
-  sm: '0.25rem',   // 4px - Small elements
-  md: '0.5rem',    // 8px - Default for inputs/buttons
-  lg: '0.75rem',   // 12px - Cards
-  xl: '1rem',      // 16px - Large cards/modals
-  '2xl': '1.5rem'  // 24px - Hero sections
-} as const;
-
-// Shadows - Elevation system
-export const shadows = {
-  sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-  md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-  lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-  xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
-} as const;
-
-// Layout containers
-export const containers = {
-  maxWidth: {
-    sm: '640px',
-    md: '768px',
-    lg: '1024px',
-    xl: '1280px',
-    '2xl': '1536px'
+// Layout dimensions
+export const layout = {
+  // Containers
+  maxWidth: 'max-w-7xl',  // 1280px
+  containerPadding: {
+    desktop: 'px-6',
+    mobile: 'px-4'
   },
-  padding: {
-    mobile: spacing[4],   // 16px
-    desktop: spacing[6]   // 24px
+  
+  // Section spacing
+  sectionSpacing: {
+    desktop: 'py-16',
+    mobile: 'py-12'
+  },
+  
+  // Grid gaps
+  gridGap: {
+    desktop: 'gap-6',  // 24px
+    mobile: 'gap-4'    // 16px
+  },
+  
+  // Card dimensions
+  card: {
+    padding: {
+      desktop: 'p-6',  // 24px
+      mobile: 'p-4'    // 16px
+    },
+    borderRadius: 'rounded-xl', // 12px
+    imageBorderRadius: 'rounded-lg' // 8px
   }
-} as const;
-
-// Grid gaps
-export const gaps = {
-  mobile: spacing[4],   // 16px
-  desktop: spacing[6]   // 24px
 } as const;
 
 // Form specifications
 export const forms = {
-  fieldSpacing: spacing[4],     // 16px between fields
-  sectionSpacing: spacing[6],   // 24px between sections
-  labelSpacing: spacing[2],     // 8px label to input
-  errorSpacing: spacing[1],     // 4px error to field
-  submitSpacing: spacing[6]     // 24px before submit
+  fieldSpacing: 'space-y-4',    // 16px between fields
+  sectionSpacing: 'space-y-6',  // 24px between sections
+  labelSpacing: 'mb-2',         // 8px label to input
+  errorSpacing: 'mt-1',         // 4px error to field
+  
+  input: {
+    height: 'h-10',             // 40px - ALL text inputs
+    padding: 'px-3',            // 12px horizontal
+    fontSize: 'text-base',      // 16px - prevents zoom
+    borderRadius: 'rounded-lg', // 8px
+  },
+  
+  textarea: {
+    minHeight: 'min-h-[80px]',
+    padding: 'p-3',
+    borderRadius: 'rounded-lg',
+  },
+  
+  label: {
+    fontSize: 'text-sm',       // 14px
+    fontWeight: 'font-medium',
+    spacing: 'mb-2'            // 8px
+  }
 } as const;
 
-// Interactive specifications
+// Interaction states
 export const interactions = {
-  minTouchTarget: '2.75rem', // 44px minimum touch target
-  hoverDuration: '200ms',
-  focusRingWidth: '2px',
-  focusRingOffset: '2px'
+  hover: {
+    transition: 'transition-all duration-200',
+    buttonBrightness: 'hover:brightness-110',
+    cardShadow: 'hover:shadow-lg',
+    cardTransform: 'hover:-translate-y-0.5'
+  },
+  
+  focus: {
+    ring: 'ring-2 ring-offset-2',
+    // No outline-none without alternative
+  },
+  
+  active: {
+    buttonScale: 'active:scale-95',
+    cardShadow: 'active:shadow-sm'
+  },
+  
+  disabled: {
+    opacity: 'opacity-50',
+    cursor: 'cursor-not-allowed'
+  }
 } as const;
 
 // Table specifications
 export const tables = {
-  headerHeight: heights.lg,  // 48px
-  rowHeight: heights.tableRow, // 52px
-  cellPadding: spacing[4]    // 16px
+  container: {
+    overflow: 'overflow-x-auto',
+    borderRadius: layout.card.borderRadius,
+  },
+  
+  header: {
+    height: 'h-12',           // 48px
+    fontSize: 'text-sm',      // 14px
+    fontWeight: 'font-semibold',
+    textAlign: 'text-left',
+    padding: 'px-4'
+  },
+  
+  row: {
+    height: 'h-13',           // 52px
+    border: 'border-b',
+    hover: 'hover:bg-gray-50',
+    padding: 'px-4'
+  },
+  
+  cell: {
+    padding: 'py-3 px-4',
+    fontSize: 'text-sm',
+    verticalAlign: 'align-middle'
+  },
+  
+  actionButton: {
+    size: 'h-8 w-8',          // 32px
+    iconSize: iconSizes.inline // w-4 h-4 (16px)
+  }
 } as const;
 
-// Modal specifications
+// Modal/Dialog specifications  
 export const modals = {
-  maxWidth: '32rem',        // 512px default
-  padding: spacing[6],      // 24px
-  headerHeight: heights.modalHeader, // 56px
-  borderRadius: borderRadius.xl // 16px
+  container: {
+    maxWidth: 'max-w-lg',     // 512px default
+    padding: layout.card.padding.desktop, // p-6 (24px)
+    borderRadius: 'rounded-2xl', // 16px
+    margin: 'm-4'             // for mobile safety
+  },
+  
+  header: {
+    height: 'h-14',           // 56px
+    titleSize: 'text-xl',     // 20px
+    titleWeight: 'font-semibold',
+    closeButton: {
+      size: 'w-8 h-8',        // 32px
+      iconSize: iconSizes.inline // w-4 h-4 (16px)
+    }
+  },
+  
+  content: {
+    paddingTop: 'pt-4',       // 16px
+    paddingBottom: 'pb-6',    // 24px
+    spacing: 'space-y-4'      // 16px between elements
+  },
+  
+  footer: {
+    paddingTop: 'pt-4',       // 16px
+    borderTop: 'border-t',
+    buttonGap: 'gap-3',       // 12px
+    buttonHeight: heights.md  // h-10 minimum
+  }
 } as const;
 
-export type SpacingKey = keyof typeof spacing;
-export type HeightKey = keyof typeof heights;
-export type TypographySize = keyof typeof typography.sizes;
-export type IconSize = keyof typeof iconSizes;
+// Grid system specifications
+export const grids = {
+  products: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+  cards: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  
+  flex: {
+    defaultGap: 'gap-4',      // 16px
+    itemAlignment: 'items-center',
+    mobileStack: 'flex-col sm:flex-row'
+  }
+} as const;
+
+// Form layout specifications
+export const formLayouts = {
+  structure: {
+    fieldSpacing: 'space-y-4',       // 16px between fields
+    sectionSpacing: 'space-y-6',     // 24px between sections
+    labelToInput: 'mb-2',            // 8px
+    errorToField: 'mt-1',            // 4px
+    submitSection: 'mt-6',           // 24px
+    buttonGroup: 'flex gap-3',       // 12px between buttons
+    twoColumn: 'grid grid-cols-1 md:grid-cols-2 gap-4',
+    fullWidth: 'col-span-full'
+  },
+  
+  validation: {
+    required: 'text-red-500 ml-1',
+    error: 'text-sm text-red-600 dark:text-red-400',
+    success: 'text-sm text-green-600 dark:text-green-400'
+  }
+} as const;
+
+// Responsive breakpoints helper
+export const responsive = {
+  // Mobile-first approach
+  mobile: '', // No prefix - default
+  tablet: 'sm:', // 640px+
+  desktop: 'lg:', // 1024px+
+  wide: 'xl:' // 1280px+
+} as const;

@@ -1,0 +1,804 @@
+Complete Google OAuth Integration for Clean & Flip
+Based on your codebase audit, you have a session-based auth system with Passport.js. Let's integrate Google OAuth seamlessly with your existing architecture.
+
+PHASE 1: Google Cloud Setup & Secrets
+Step 1: Configure Google OAuth Credentials
+Instructions for Replit: Add these to your Secrets:
+bash# Google OAuth
+GOOGLE_CLIENT_ID = your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET = your-google-client-secret
+GOOGLE_CALLBACK_URL = https://your-app.replit.app/api/auth/google/callback
+
+# For development
+GOOGLE_CALLBACK_URL_DEV = https://your-repl-name.your-username.repl.co/api/auth/google/callback
+
+# Session (update existing)
+SESSION_SECRET = your-existing-secret-keep-this
+
+PHASE 2: Install Required Packages
+bashnpm install passport-google-oauth20 @types/passport-google-oauth20
+
+PHASE 3: Database Schema Updates
+Create Migration: server/db/migrations/add-google-auth.sql
+sql-- Add Google OAuth fields to users table
+ALTER TABLE users 
+ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE,
+ADD COLUMN IF NOT EXISTS google_email VARCHAR(255),
+ADD COLUMN IF NOT EXISTS google_picture TEXT,
+ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) DEFAULT 'local',
+ADD COLUMN IF NOT EXISTS profile_complete BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS onboarding_step INTEGER DEFAULT 0;
+
+-- Create index for faster Google ID lookups
+CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
+CREATE INDEX IF NOT EXISTS idx_users_auth_provider ON users(auth_provider);
+
+-- Create onboarding tracking table
+CREATE TABLE IF NOT EXISTS user_onboarding (
+  id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  address_completed BOOLEAN DEFAULT false,
+  phone_completed BOOLEAN DEFAULT false,
+  preferences_completed BOOLEAN DEFAULT false,
+  stripe_customer_created BOOLEAN DEFAULT false,
+  welcome_email_sent BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+Update Schema: server/db/schema.ts
+typescriptimport { pgTable, varchar, boolean, integer, timestamp, decimal, text, jsonb } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: varchar('id').primaryKey(),
+  email: varchar('email').unique().notNull(),
+  password: varchar('password'), // Now nullable for Google users
+  firstName: varchar('first_name'),
+  lastName: varchar('last_name'),
+  phone: varchar('phone'),
+  
+  // Address fields
+  street: varchar('street'),
+  city: varchar('city'),
+  state: varchar('state'),
+  zipCode: varchar('zip_code'),
+  latitude: decimal('latitude', { precision: 10, scale: 8 }),
+  longitude: decimal('longitude', { precision: 11, scale: 8 }),
+  
+  // Google OAuth fields
+  googleId: varchar('google_id').unique(),
+  googleEmail: varchar('google_email'),
+  googlePicture: text('google_picture'),
+  authProvider: varchar('auth_provider').default('local'),
+  emailVerified: boolean('email_verified').default(false),
+  profileComplete: boolean('profile_complete').default(false),
+  onboardingStep: integer('onboarding_step').default(0),
+  
+  // Existing fields
+  role: varchar('role').default('user'),
+  stripeCustomerId: varchar('stripe_customer_id'),
+  stripeSubscriptionId: varchar('stripe_subscription_id'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+export const userOnboarding = pgTable('user_onboarding', {
+  id: varchar('id').primaryKey(),
+  userId: varchar('user_id').notNull().unique(),
+  addressCompleted: boolean('address_completed').default(false),
+  phoneCompleted: boolean('phone_completed').default(false),
+  preferencesCompleted: boolean('preferences_completed').default(false),
+  stripeCustomerCreated: boolean('stripe_customer_created').default(false),
+  welcomeEmailSent: boolean('welcome_email_sent').default(false),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+PHASE 4: Google OAuth Strategy Implementation
+Create: server/auth/google-strategy.ts
+typescriptimport passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { db } from '../db';
+import { users, userOnboarding } from '../db/schema';
+import { eq } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
+
+const GOOGLE_CONFIG = {
+  clientID: process.env.GOOGLE_CLIENT_ID!,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  callbackURL: process.env.NODE_ENV === 'production' 
+    ? process.env.GOOGLE_CALLBACK_URL!
+    : process.env.GOOGLE_CALLBACK_URL_DEV!,
+  scope: ['profile', 'email']
+};
+
+export function initializeGoogleAuth() {
+  passport.use(new GoogleStrategy(
+    GOOGLE_CONFIG,
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        console.log('[AUTH] Google authentication for:', profile.emails?.[0]?.value);
+        
+        // Extract user info from Google profile
+        const googleId = profile.id;
+        const email = profile.emails?.[0]?.value;
+        const firstName = profile.name?.givenName || '';
+        const lastName = profile.name?.familyName || '';
+        const picture = profile.photos?.[0]?.value;
+        
+        if (!email) {
+          return done(new Error('No email from Google'), null);
+        }
+        
+        // Check if user exists by Google ID
+        let [existingUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.googleId, googleId))
+          .limit(1);
+        
+        if (existingUser) {
+          // Existing Google user - update last login
+          await db.update(users)
+            .set({ 
+              updatedAt: new Date(),
+              googlePicture: picture // Update picture in case it changed
+            })
+            .where(eq(users.id, existingUser.id));
+          
+          console.log('[AUTH] Existing Google user logged in:', email);
+          return done(null, existingUser);
+        }
+        
+        // Check if user exists by email (might be converting from email/password)
+        [existingUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+        
+        if (existingUser) {
+          // User exists with email/password - link Google account
+          await db.update(users)
+            .set({
+              googleId,
+              googleEmail: email,
+              googlePicture: picture,
+              authProvider: 'google',
+              emailVerified: true,
+              updatedAt: new Date()
+            })
+            .where(eq(users.id, existingUser.id));
+          
+          console.log('[AUTH] Linked Google to existing account:', email);
+          return done(null, { ...existingUser, googleId });
+        }
+        
+        // New user - create account
+        const newUserId = uuidv4();
+        
+        const [newUser] = await db.insert(users)
+          .values({
+            id: newUserId,
+            email,
+            googleId,
+            googleEmail: email,
+            googlePicture: picture,
+            firstName,
+            lastName,
+            authProvider: 'google',
+            emailVerified: true,
+            profileComplete: false,
+            onboardingStep: 1,
+            role: 'user'
+          })
+          .returning();
+        
+        // Create onboarding record
+        await db.insert(userOnboarding)
+          .values({
+            id: uuidv4(),
+            userId: newUserId,
+            addressCompleted: false,
+            phoneCompleted: false,
+            preferencesCompleted: false,
+            stripeCustomerCreated: false,
+            welcomeEmailSent: false
+          });
+        
+        console.log('[AUTH] New Google user created:', email);
+        return done(null, newUser);
+        
+      } catch (error) {
+        console.error('[AUTH] Google strategy error:', error);
+        return done(error as Error, null);
+      }
+    }
+  ));
+}
+
+PHASE 5: Update Authentication System
+Update: server/auth.ts
+typescriptimport passport from 'passport';
+import { db } from './db';
+import { users } from './db/schema';
+import { eq } from 'drizzle-orm';
+import { initializeGoogleAuth } from './auth/google-strategy';
+
+// Initialize strategies
+initializeGoogleAuth();
+
+// Existing local strategy remains...
+// Add this to your existing auth.ts
+
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id: string, done) => {
+  try {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    
+    done(null, user || null);
+  } catch (error) {
+    done(error, null);
+  }
+});
+
+// Middleware to check profile completion
+export function requireCompleteProfile(req: any, res: any, next: any) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  if (!req.user.profileComplete) {
+    return res.status(403).json({ 
+      error: 'Profile incomplete',
+      onboardingStep: req.user.onboardingStep,
+      redirect: '/onboarding'
+    });
+  }
+  
+  next();
+}
+
+PHASE 6: API Routes for Google Auth
+Update: server/routes/auth.ts
+typescriptimport { Router } from 'express';
+import passport from 'passport';
+import { db } from '../db';
+import { users, userOnboarding } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+const router = Router();
+
+// Existing routes remain...
+
+// Google OAuth routes
+router.get('/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+router.get('/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login?error=google_auth_failed' }),
+  async (req, res) => {
+    const user = req.user as any;
+    
+    // Check if profile is complete
+    if (!user.profileComplete) {
+      // Redirect to onboarding
+      res.redirect('/onboarding?step=' + (user.onboardingStep || 1));
+    } else {
+      // Redirect to dashboard or original destination
+      const returnTo = req.session.returnTo || '/dashboard';
+      delete req.session.returnTo;
+      res.redirect(returnTo);
+    }
+  }
+);
+
+// Onboarding endpoints
+router.post('/onboarding/address', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  const { street, city, state, zipCode, phone } = req.body;
+  const userId = (req.user as any).id;
+  
+  try {
+    // Update user address and phone
+    await db.update(users)
+      .set({
+        street,
+        city,
+        state,
+        zipCode,
+        phone,
+        onboardingStep: 2,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+    
+    // Update onboarding tracking
+    await db.update(userOnboarding)
+      .set({
+        addressCompleted: true,
+        phoneCompleted: !!phone,
+        updatedAt: new Date()
+      })
+      .where(eq(userOnboarding.userId, userId));
+    
+    res.json({ success: true, nextStep: 2 });
+  } catch (error) {
+    console.error('[ONBOARDING] Address update error:', error);
+    res.status(500).json({ error: 'Failed to update address' });
+  }
+});
+
+router.post('/onboarding/complete', async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  const userId = (req.user as any).id;
+  
+  try {
+    // Create Stripe customer if needed
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    
+    if (!user.stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        metadata: { userId }
+      });
+      
+      await db.update(users)
+        .set({ 
+          stripeCustomerId: customer.id,
+          profileComplete: true,
+          onboardingStep: 0,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+    } else {
+      await db.update(users)
+        .set({ 
+          profileComplete: true,
+          onboardingStep: 0,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+    }
+    
+    // Mark onboarding complete
+    await db.update(userOnboarding)
+      .set({
+        stripeCustomerCreated: true,
+        updatedAt: new Date()
+      })
+      .where(eq(userOnboarding.userId, userId));
+    
+    res.json({ success: true, redirect: '/dashboard' });
+  } catch (error) {
+    console.error('[ONBOARDING] Completion error:', error);
+    res.status(500).json({ error: 'Failed to complete onboarding' });
+  }
+});
+
+// Check auth status
+router.get('/status', (req, res) => {
+  if (req.user) {
+    const user = req.user as any;
+    res.json({
+      authenticated: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileComplete: user.profileComplete,
+        onboardingStep: user.onboardingStep,
+        authProvider: user.authProvider,
+        role: user.role
+      }
+    });
+  } else {
+    res.json({ authenticated: false });
+  }
+});
+
+export default router;
+
+PHASE 7: Frontend Components
+Create: client/src/components/auth/GoogleSignInButton.tsx
+typescriptimport { Button } from '../ui/button';
+import { Chrome } from 'lucide-react';
+
+export function GoogleSignInButton({ 
+  action = 'signin',
+  className = '' 
+}: { 
+  action?: 'signin' | 'signup';
+  className?: string;
+}) {
+  const handleGoogleAuth = () => {
+    // Store current location to return after auth
+    sessionStorage.setItem('authReturnTo', window.location.pathname);
+    window.location.href = '/api/auth/google';
+  };
+  
+  return (
+    <Button
+      onClick={handleGoogleAuth}
+      className={`w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 ${className}`}
+      type="button"
+    >
+      <Chrome className="w-5 h-5 mr-2" />
+      {action === 'signup' ? 'Sign up with Google' : 'Sign in with Google'}
+    </Button>
+  );
+}
+Create: client/src/pages/Onboarding.tsx
+typescriptimport { useState, useEffect } from 'react';
+import { useLocation, useRoute } from 'wouter';
+import { Card } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Progress } from '../components/ui/progress';
+import { useAuth } from '../hooks/useAuth';
+
+export function Onboarding() {
+  const [, setLocation] = useLocation();
+  const [, params] = useRoute('/onboarding');
+  const { user, refetch } = useAuth();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    phone: ''
+  });
+  
+  useEffect(() => {
+    if (user?.profileComplete) {
+      setLocation('/dashboard');
+    }
+    if (user?.onboardingStep) {
+      setStep(user.onboardingStep);
+    }
+  }, [user]);
+  
+  const handleAddressSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/onboarding/address', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        setStep(2);
+        refetch();
+      }
+    } catch (error) {
+      console.error('Address update failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const completeOnboarding = async () => {
+    setLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/onboarding/complete', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLocation(data.redirect || '/dashboard');
+      }
+    } catch (error) {
+      console.error('Onboarding completion failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+      <div className="max-w-2xl mx-auto px-4">
+        <Card className="p-8">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold mb-2">
+              Welcome to Clean & Flip, {user?.firstName}!
+            </h1>
+            <p className="text-gray-600">
+              Let's complete your profile to get started
+            </p>
+            <Progress value={(step / 2) * 100} className="mt-4" />
+          </div>
+          
+          {step === 1 && (
+            <form onSubmit={handleAddressSubmit} className="space-y-4">
+              <h2 className="text-lg font-semibold mb-4">Shipping Address</h2>
+              
+              <div>
+                <Label htmlFor="street">Street Address</Label>
+                <Input
+                  id="street"
+                  required
+                  value={formData.street}
+                  onChange={(e) => setFormData({...formData, street: e.target.value})}
+                  placeholder="123 Main St"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    required
+                    value={formData.city}
+                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    placeholder="Asheville"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    required
+                    maxLength={2}
+                    value={formData.state}
+                    onChange={(e) => setFormData({...formData, state: e.target.value.toUpperCase()})}
+                    placeholder="NC"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="zipCode">ZIP Code</Label>
+                  <Input
+                    id="zipCode"
+                    required
+                    pattern="[0-9]{5}"
+                    value={formData.zipCode}
+                    onChange={(e) => setFormData({...formData, zipCode: e.target.value})}
+                    placeholder="28801"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="phone">Phone (Optional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+              </div>
+              
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? 'Saving...' : 'Continue'}
+              </Button>
+            </form>
+          )}
+          
+          {step === 2 && (
+            <div className="space-y-6">
+              <div className="text-center py-8">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold mb-2">You're All Set!</h2>
+                <p className="text-gray-600 mb-6">
+                  Your profile is complete. Start browsing our premium fitness equipment.
+                </p>
+                <Button onClick={completeOnboarding} disabled={loading} size="lg">
+                  {loading ? 'Setting up...' : 'Go to Dashboard'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>
+  );
+}
+Update: client/src/components/auth/LoginForm.tsx
+typescriptimport { GoogleSignInButton } from './GoogleSignInButton';
+// ... existing imports
+
+export function LoginForm() {
+  // ... existing code
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Sign In</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Google Sign In - Primary */}
+        <GoogleSignInButton action="signin" />
+        
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+          </div>
+        </div>
+        
+        {/* Existing email/password form */}
+        <form onSubmit={handleSubmit}>
+          {/* ... existing form fields */}
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+PHASE 8: Protected Route Updates
+Update: client/src/hooks/useAuth.ts
+typescriptimport { useQuery } from '@tanstack/react-query';
+
+export function useAuth() {
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['auth-status'],
+    queryFn: async () => {
+      const response = await fetch('/api/auth/status', {
+        credentials: 'include'
+      });
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  return {
+    user: data?.user,
+    isAuthenticated: data?.authenticated,
+    isLoading,
+    profileComplete: data?.user?.profileComplete,
+    needsOnboarding: data?.authenticated && !data?.user?.profileComplete,
+    refetch
+  };
+}
+Update: client/src/App.tsx
+typescriptimport { Onboarding } from './pages/Onboarding';
+import { useAuth } from './hooks/useAuth';
+import { useLocation } from 'wouter';
+
+function App() {
+  const { user, needsOnboarding } = useAuth();
+  const [location, setLocation] = useLocation();
+  
+  // Redirect to onboarding if needed
+  useEffect(() => {
+    if (needsOnboarding && !location.includes('/onboarding')) {
+      setLocation('/onboarding');
+    }
+  }, [needsOnboarding, location]);
+  
+  return (
+    <Routes>
+      {/* ... existing routes */}
+      <Route path="/onboarding" component={Onboarding} />
+    </Routes>
+  );
+}
+
+PHASE 9: Session & Security Updates
+Update: server/index.ts
+typescript// Ensure session is configured before passport
+app.use(session({
+  secret: process.env.SESSION_SECRET!,
+  resave: false,
+  saveUninitialized: false,
+  store: new PgSession({
+    pool: sessionPool,
+    tableName: 'sessions'
+  }),
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    sameSite: 'lax'
+  }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Protected route middleware
+app.use('/api/cart', requireAuth);
+app.use('/api/orders', requireAuth);
+app.use('/api/checkout', requireAuth, requireCompleteProfile);
+
+PHASE 10: Testing & Verification
+Create: scripts/test-google-auth.ts
+typescript#!/usr/bin/env node
+
+async function testGoogleAuth() {
+  console.log('🔍 Google OAuth Configuration Test\n');
+  
+  // Check environment variables
+  const required = [
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+    'GOOGLE_CALLBACK_URL',
+    'SESSION_SECRET'
+  ];
+  
+  const missing = required.filter(key => !process.env[key]);
+  
+  if (missing.length > 0) {
+    console.error('❌ Missing required secrets:');
+    missing.forEach(key => console.error(`   - ${key}`));
+    process.exit(1);
+  }
+  
+  console.log('✅ All Google OAuth secrets configured');
+  
+  // Test database fields exist
+  const { db } = require('../server/db');
+  try {
+    await db.raw`SELECT google_id, auth_provider, profile_complete FROM users LIMIT 1`;
+    console.log('✅ Database has Google OAuth fields');
+  } catch (error) {
+    console.error('❌ Database missing Google OAuth fields');
+    console.error('   Run: npm run db:migrate');
+  }
+}
+
+testGoogleAuth();
+
+DEPLOYMENT CHECKLIST
+
+Run database migration: npm run db:migrate
+Set Google OAuth secrets in Replit
+Update Google Cloud Console:
+
+Add https://your-app.replit.app/api/auth/google/callback to authorized redirects
+
+
+Test locally: npm run dev
+Deploy and test production OAuth flow
+
+
+SUCCESS INDICATORS
+✅ Users can click "Sign in with Google"
+✅ New users are redirected to onboarding
+✅ Address collection works after Google auth
+✅ Existing email users can link Google account
+✅ Sessions persist across page refreshes
+✅ Protected routes check profile completion
+✅ Stripe customer created after onboarding
+✅ Cart, checkout, orders work with Google users
+This comprehensive implementation ensures Google OAuth works flawlessly with your existing Clean & Flip architecture!

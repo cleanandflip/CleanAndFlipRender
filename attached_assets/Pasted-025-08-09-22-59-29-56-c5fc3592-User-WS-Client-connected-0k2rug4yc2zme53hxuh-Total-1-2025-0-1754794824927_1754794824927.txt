@@ -1,0 +1,96 @@
+025-08-09 22:59:29.56
+c5fc3592
+User
+[WS] Client connected: 0k2rug4yc2zme53hxuh (Total: 1)
+2025-08-09 22:59:32.05
+c5fc3592
+User
+[WS] Client disconnected: 0k2rug4yc2zme53hxuh (Remaining: 0)
+2025-08-09 22:59:32.15
+c5fc3592
+User
+[WS] Client connected: gw2vltxqprpme53hzue (Total: 1)
+2025-08-09 22:59:33.32
+c5fc3592
+User
+[WS] Client disconnected: gw2vltxqprpme53hzue (Remaining: 0)
+2025-08-09 22:59:34.43
+c5fc3592
+User
+[WS] Client connected: k2rrvxt90ihme53i1ls (Total: 1)
+2025-08-09 22:59:34.48
+c5fc3592
+User
+[WS] Client disconnected: k2rrvxt90ihme53i1ls (Remaining: 0)
+2025-08-09 22:59:36.89
+c5fc3592
+User
+[WS] Client connected: qtfy9sratdme53i3i5 (Total: 1)
+2025-08-09 22:59:39.93
+c5fc3592
+User
+[WS] Client disconnected: qtfy9sratdme53i3i5 (Remaining: 0)
+2025-08-09 22:59:41.04
+c5fc3592
+User
+[WS] Client connected: q1qm0zduq5me53i6pj (Total: 1)
+2025-08-09 22:59:41.98
+c5fc3592
+User
+[INFO] === /api/addresses DEBUG ===
+2025-08-09 22:59:41.98
+c5fc3592
+User
+[INFO] Authenticated userId: 027981eb-7aa5-43fe-a90d-5a66866da288
+2025-08-09 22:59:41.98
+c5fc3592
+User
+[ERROR] Error fetching addresses TypeError: Cannot convert undefined or null to object
+2025-08-09 22:59:41.98
+c5fc3592
+User
+at Function.entries ()
+2025-08-09 22:59:41.98
+c5fc3592
+User
+at orderSelectedFields (file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:53:17)
+2025-08-09 22:59:41.98
+c5fc3592
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:63:22
+2025-08-09 22:59:41.98
+c5fc3592
+User
+at Array.reduce ()
+2025-08-09 22:59:41.98
+c5fc3592
+User
+at orderSelectedFields (file:///home/runner/workspace/node_modules/drizzle-orm/utils.js:53:33)
+2025-08-09 22:59:41.98
+c5fc3592
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:684:26
+2025-08-09 22:59:41.98
+c5fc3592
+User
+at Object.startActiveSpan (file:///home/runner/workspace/node_modules/drizzle-orm/tracing.js:8:14)
+2025-08-09 22:59:41.98
+c5fc3592
+User
+at PgSelectBase._prepare (file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:683:19)
+2025-08-09 22:59:41.98
+c5fc3592
+User
+at file:///home/runner/workspace/node_modules/drizzle-orm/pg-core/query-builders/select.js:708:19
+2025-08-09 22:59:41.98
+c5fc3592
+User
+at Object.startActiveSpan (file:///home/runner/workspace/node_modules/drizzle-orm/tracing.js:8:14)
+2025-08-09 22:59:43.12
+c5fc3592
+User
+[INFO] === /api/addresses DEBUG ===
+2025-08-09 22:59:43.12
+c5fc3592
+User
+[INFO] Authenticated userId: 027981eb-7aa5-43fe-a90d-5a66866da288

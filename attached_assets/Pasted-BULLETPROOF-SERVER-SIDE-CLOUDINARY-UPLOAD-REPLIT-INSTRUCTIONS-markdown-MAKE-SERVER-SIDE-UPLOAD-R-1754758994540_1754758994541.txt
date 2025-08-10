@@ -1,0 +1,482 @@
+BULLETPROOF SERVER-SIDE CLOUDINARY UPLOAD
+
+REPLIT INSTRUCTIONS:
+markdown## MAKE SERVER-SIDE UPLOAD ROCK SOLID
+
+### GOALS:
+- Never hit payload limits
+- Never slow/crash server
+- Properly signed uploads
+- Organized Cloudinary storage
+
+---
+
+### STEP 1: OPTIMIZE SERVER UPLOAD ENDPOINT
+
+FILE: `/server/routes/upload.ts`
+
+CREATE a bulletproof upload system:
+
+```typescript
+import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import { Router } from 'express';
+import sharp from 'sharp'; // npm install sharp
+
+const router = Router();
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true
+});
+
+// Configure multer with strict limits
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max per file
+    files: 8, // Max 8 files per request
+    fields: 10, // Max 10 fields
+    parts: 20 // Max 20 parts total
+  },
+  fileFilter: (req, file, cb) => {
+    // Strict file validation
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    
+    if (!allowedMimes.includes(file.mimetype)) {
+      return cb(new Error(`Invalid file type. Only JPEG, PNG, and WebP allowed`));
+    }
+    
+    // Check file extension too
+    const ext = file.originalname.split('.').pop()?.toLowerCase();
+    if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext || '')) {
+      return cb(new Error('Invalid file extension'));
+    }
+    
+    cb(null, true);
+  }
+});
+
+// Helper: Compress image before upload
+async function optimizeImage(buffer: Buffer): Promise<Buffer> {
+  try {
+    return await sharp(buffer)
+      .resize(1200, 1200, { 
+        fit: 'inside',
+        withoutEnlargement: true 
+      })
+      .jpeg({ 
+        quality: 85,
+        progressive: true 
+      })
+      .toBuffer();
+  } catch (error) {
+    console.error('Sharp optimization failed:', error);
+    return buffer; // Return original if optimization fails
+  }
+}
+
+// Helper: Upload single image to Cloudinary
+async function uploadToCloudinary(
+  buffer: Buffer, 
+  filename: string,
+  folder: string
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: folder,
+        public_id: `${Date.now()}-${filename.replace(/\.[^/.]+$/, '')}`,
+        resource_type: 'image',
+        type: 'upload', // Signed upload
+        overwrite: false,
+        unique_filename: true,
+        
+        // Cloudinary optimizations
+        transformation: [
+          { 
+            width: 1200, 
+            height: 1200, 
+            crop: 'limit',
+            quality: 'auto:good',
+            fetch_format: 'auto' // Auto WebP/AVIF
+          }
+        ],
+        
+        // Additional settings
+        invalidate: true, // Clear CDN cache
+        use_filename: true,
+        tags: [folder], // Tag for organization
+        context: {
+          upload_source: 'clean_flip_app',
+          upload_date: new Date().toISOString()
+        }
+      },
+      (error, result) => {
+        if (error) {
+          console.error('Cloudinary upload error:', error);
+          reject(error);
+        } else if (result) {
+          resolve(result.secure_url);
+        } else {
+          reject(new Error('No result from Cloudinary'));
+        }
+      }
+    );
+    
+    // Stream the buffer to Cloudinary
+    uploadStream.end(buffer);
+  });
+}
+
+// Main upload endpoint
+router.post('/api/upload/images',
+  requireAuth,
+  
+  // Rate limiting middleware (add this)
+  rateLimiter({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // 10 uploads per minute per user
+    message: 'Too many uploads. Please wait a minute.'
+  }),
+  
+  upload.array('images', 8),
+  
+  async (req, res) => {
+    const startTime = Date.now();
+    
+    try {
+      const files = req.files as Express.Multer.File[];
+      
+      if (!files || files.length === 0) {
+        return res.status(400).json({ 
+          error: 'No files provided' 
+        });
+      }
+      
+      // Get folder from request
+      const folder = req.body.folder || 'equipment-submissions';
+      
+      // Validate folder name (security)
+      const validFolders = ['equipment-submissions', 'products', 'avatars'];
+      if (!validFolders.includes(folder)) {
+        return res.status(400).json({ 
+          error: 'Invalid folder' 
+        });
+      }
+      
+      // Process uploads with concurrency limit
+      const uploadResults = [];
+      const errors = [];
+      
+      // Process in batches of 3 to avoid overwhelming server
+      for (let i = 0; i < files.length; i += 3) {
+        const batch = files.slice(i, i + 3);
+        
+        const batchPromises = batch.map(async (file) => {
+          try {
+            // Log for monitoring
+            console.log(`Processing ${file.originalname} (${file.size} bytes)`);
+            
+            // Optimize image with sharp
+            const optimizedBuffer = await optimizeImage(file.buffer);
+            
+            // Upload to Cloudinary
+            const url = await uploadToCloudinary(
+              optimizedBuffer,
+              file.originalname,
+              folder
+            );
+            
+            return { success: true, url, filename: file.originalname };
+            
+          } catch (error) {
+            console.error(`Failed to upload ${file.originalname}:`, error);
+            errors.push({
+              filename: file.originalname,
+              error: error.message
+            });
+            return null;
+          }
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        uploadResults.push(...batchResults.filter(Boolean));
+      }
+      
+      // Free memory immediately
+      files.forEach(file => {
+        file.buffer = null as any;
+      });
+      
+      const processingTime = Date.now() - startTime;
+      console.log(`Upload completed in ${processingTime}ms`);
+      
+      // Return results
+      if (uploadResults.length === 0) {
+        return res.status(500).json({
+          error: 'All uploads failed',
+          details: errors
+        });
+      }
+      
+      res.json({
+        success: true,
+        urls: uploadResults.map(r => r.url),
+        uploaded: uploadResults.length,
+        failed: errors.length,
+        errors: errors.length > 0 ? errors : undefined,
+        processingTime
+      });
+      
+    } catch (error) {
+      console.error('Upload endpoint error:', error);
+      
+      // Clean up memory on error
+      if (req.files) {
+        (req.files as any[]).forEach(file => {
+          file.buffer = null;
+        });
+      }
+      
+      res.status(500).json({
+        error: 'Upload failed',
+        message: error.message
+      });
+    }
+  }
+);
+
+// Cleanup endpoint - delete from Cloudinary
+router.delete('/api/upload/cleanup', requireAuth, async (req, res) => {
+  const { urls } = req.body;
+  
+  if (!urls || !Array.isArray(urls)) {
+    return res.status(400).json({ error: 'Invalid URLs' });
+  }
+  
+  // Extract public IDs from URLs
+  const publicIds = urls.map(url => {
+    const parts = url.split('/');
+    const filename = parts[parts.length - 1];
+    const folder = parts[parts.length - 2];
+    return `${folder}/${filename.split('.')[0]}`;
+  });
+  
+  try {
+    await cloudinary.api.delete_resources(publicIds);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Cleanup error:', error);
+    res.status(500).json({ error: 'Cleanup failed' });
+  }
+});
+
+export default router;
+
+STEP 2: ADD RATE LIMITING
+FILE: /server/middleware/rateLimiter.ts
+typescriptimport rateLimit from 'express-rate-limit';
+
+export const uploadRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 requests per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Too many upload requests. Please wait a minute.'
+    });
+  }
+});
+
+STEP 3: FRONTEND UPLOAD WITH PROGRESS
+FILE: /client/src/hooks/useImageUpload.tsx
+jsxexport function useImageUpload() {
+  const [progress, setProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const uploadImages = async (
+    files: File[], 
+    folder: string = 'equipment-submissions'
+  ): Promise<string[]> => {
+    setIsUploading(true);
+    setProgress(0);
+    
+    try {
+      // Client-side validation
+      const validFiles = files.filter(file => {
+        // Check size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: `${file.name} exceeds 5MB limit`,
+            variant: "destructive"
+          });
+          return false;
+        }
+        
+        // Check type
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Invalid file",
+            description: `${file.name} is not an image`,
+            variant: "destructive"
+          });
+          return false;
+        }
+        
+        return true;
+      });
+      
+      if (validFiles.length === 0) {
+        throw new Error('No valid files to upload');
+      }
+      
+      // Create FormData
+      const formData = new FormData();
+      validFiles.forEach(file => {
+        formData.append('images', file);
+      });
+      formData.append('folder', folder);
+      
+      // Upload with XHR for progress tracking
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = (e.loaded / e.total) * 100;
+            setProgress(Math.round(percentComplete));
+          }
+        });
+        
+        xhr.addEventListener('load', () => {
+          if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            
+            if (response.errors?.length > 0) {
+              toast({
+                title: "Some uploads failed",
+                description: `${response.errors.length} files failed to upload`,
+                variant: "warning"
+              });
+            }
+            
+            resolve(response.urls || []);
+          } else {
+            reject(new Error(`Upload failed: ${xhr.statusText}`));
+          }
+        });
+        
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error during upload'));
+        });
+        
+        xhr.open('POST', '/api/upload/images');
+        xhr.withCredentials = true;
+        xhr.send(formData);
+      });
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
+    } finally {
+      setIsUploading(false);
+      setProgress(0);
+    }
+  };
+  
+  return { uploadImages, progress, isUploading };
+}
+
+STEP 4: MONITORING & CLEANUP
+FILE: /server/utils/monitoring.ts
+typescript// Monitor server memory usage
+export function monitorMemory() {
+  const used = process.memoryUsage();
+  
+  const mb = (bytes: number) => Math.round(bytes / 1024 / 1024);
+  
+  console.log({
+    rss: `${mb(used.rss)}MB`, // Total memory
+    heapTotal: `${mb(used.heapTotal)}MB`,
+    heapUsed: `${mb(used.heapUsed)}MB`,
+    external: `${mb(used.external)}MB`
+  });
+  
+  // Alert if memory usage is high
+  if (used.heapUsed > 500 * 1024 * 1024) { // 500MB
+    console.warn('⚠️ High memory usage detected!');
+    
+    // Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+      console.log('Forced garbage collection');
+    }
+  }
+}
+
+// Call periodically
+setInterval(monitorMemory, 60000); // Every minute
+
+STEP 5: ENVIRONMENT SETUP
+FILE: /.env
+env# Cloudinary (Required)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Server limits
+MAX_FILE_SIZE=5242880  # 5MB in bytes
+MAX_FILES_PER_UPLOAD=8
+UPLOAD_RATE_LIMIT=10   # Per minute
+
+# Node.js memory (add to start script)
+NODE_OPTIONS="--max-old-space-size=512"
+
+KEY POINTS FOR ROCK-SOLID UPLOADS:
+
+Memory Management:
+
+Stream files, don't buffer
+Process in batches
+Clear buffers after use
+Monitor memory usage
+
+
+Rate Limiting:
+
+Per-user upload limits
+Prevent abuse
+Queue system for busy times
+
+
+Error Handling:
+
+Validate everything client-side first
+Return partial success
+Clean up failed uploads
+
+
+Cloudinary Organization:
+
+Use folders (products/, equipment-submissions/)
+Add tags for searching
+Set public IDs for management
+Auto-optimize images
+
+
+Performance:
+
+Compress with sharp before Cloudinary
+Use batching (3 concurrent uploads)
+Add progress tracking
+Cache successful URLs
+
+
+
+This setup will NEVER crash your server and handles everything professionally!

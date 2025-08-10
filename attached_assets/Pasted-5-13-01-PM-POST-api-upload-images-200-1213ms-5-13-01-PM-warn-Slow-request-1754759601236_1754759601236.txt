@@ -1,0 +1,52 @@
+5:13:01 PM POST    /api/upload/images                       200 1213ms
+5:13:01 PM warn: Slow request detected: POST /api/upload/images took 1213ms
+[ERROR] Error creating equipment submission error: null value in column "category" of relation "equipment_submissions" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.createSubmission (/home/runner/workspace/server/storage.ts:1050:26)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:2595:26) {
+  length: 575,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (2649a8c5-2a50-4d27-8d2d-7782ae8854e1, 256d97cb-fcd7-4dda-ba00-9ead28f5ac15, Barbell 45lbs, , null, like_new, great condition, {https://res.cloudinary.com/dv1bgzccd/image/upload/v1754759580/e..., 60.00, 45, null, null, null, null, null, null, f, null, pending, null, null, CF-1754759583301-32X9, 2025-08-09 17:13:03.321433, 2025-08-09 17:13:03.321433).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'equipment_submissions',
+  column: 'category',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+5:13:03 PM POST    /api/equipment-submissions               500 293ms
+[ERROR] Error creating equipment submission error: null value in column "category" of relation "equipment_submissions" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.createSubmission (/home/runner/workspace/server/storage.ts:1050:26)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:2595:26) {
+  length: 575,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (e0de6a26-413d-474b-a578-ce81a5f8ad90, 256d97cb-fcd7-4dda-ba00-9ead28f5ac15, Barbell 45lbs, , null, like_new, great condition, {https://res.cloudinary.com/dv1bgzccd/image/upload/v1754759580/e..., 60.00, 45, null, null, null, null, null, null, f, null, pending, null, null, CF-1754759584857-JJCW, 2025-08-09 17:13:04.875571, 2025-08-09 17:13:04.875571).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'equipment_submissions',
+  column: 'category',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+5:13:04 PM POST    /api/equipment-submissions               500 480ms
