@@ -229,15 +229,15 @@ export default function ErrorDashboard() {
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="min-w-fit whitespace-nowrap px-4">
+                  <UnifiedButton variant="outline" size="sm">
                     {filters.severity === 'all' ? 'All Severities' : 
                      filters.severity === 'critical' ? 'Critical' :
                      filters.severity === 'high' ? 'High' :
                      filters.severity === 'medium' ? 'Medium' : 'Low'}
                     <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
+                  </UnifiedButton>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="z-[9999] min-w-max">
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'all' }))}>
                     All Severities
                   </DropdownMenuItem>
@@ -258,13 +258,13 @@ export default function ErrorDashboard() {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="min-w-fit whitespace-nowrap px-4">
+                  <UnifiedButton variant="outline" size="sm">
                     {filters.resolved === 'all' ? 'All' :
                      filters.resolved === 'false' ? 'Unresolved' : 'Resolved'}
                     <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
+                  </UnifiedButton>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="z-[9999] min-w-max">
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'all' }))}>
                     All
                   </DropdownMenuItem>
@@ -279,13 +279,13 @@ export default function ErrorDashboard() {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="min-w-fit whitespace-nowrap px-4">
+                  <UnifiedButton variant="outline" size="sm">
                     {filters.timeRange === '24h' ? 'Last 24h' :
                      filters.timeRange === '7d' ? 'Last 7 days' : 'Last 30 days'}
                     <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
+                  </UnifiedButton>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="z-[9999] min-w-max">
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '24h' }))}>
                     Last 24h
                   </DropdownMenuItem>
