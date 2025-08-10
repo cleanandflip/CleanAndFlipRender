@@ -3,7 +3,7 @@
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
-import { globalDesignSystem as theme } from '@/styles/design-system/theme'
+// Removed problematic theme import causing transition errors
 import { cn } from "@/lib/utils"
 import { layout, iconSizes, interactions } from "@/config/dimensions"
 
@@ -26,7 +26,7 @@ const DialogOverlay = React.forwardRef<
       className
     )}
     style={{
-      backgroundColor: theme.colors.bg.overlay
+      
     }}
     {...props}
   />
@@ -47,9 +47,9 @@ const DialogContent = React.forwardRef<
         className
       )}
       style={{
-        backgroundColor: theme.colors.bg.secondary,
-        border: `1px solid ${theme.colors.border.default}`,
-        color: theme.colors.text.primary
+        ,
+        ,
+        
       }}
       {...props}
     >
@@ -57,7 +57,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Close 
         className={`absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background ${interactions.hover.transition} hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none`}
         style={{
-          color: theme.colors.text.muted
+          
         }}
       >
         <X className={iconSizes.inline} />

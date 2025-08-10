@@ -5,7 +5,7 @@ import { Search, X, TrendingUp, Clock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useLocation } from 'wouter';
-import { CLEANFLIP_THEME as theme } from '@/constants/theme';
+// Removed problematic theme import causing transition errors
 
 export interface SearchResult {
   id: string;
@@ -263,20 +263,20 @@ export function UnifiedSearch({
   };
 
   const inputStyle = {
-    backgroundColor: theme.colors.inputBg,
-    borderColor: theme.colors.border,
-    color: theme.colors.textPrimary,
+    className="bg-gray-800",
+    className="border-gray-600",
+    className="text-white",
     ...(isOpen && {
-      borderColor: theme.colors.accent,
+      className="border-gray-600",
       boxShadow: `0 0 0 3px ${theme.colors.accentFocus}`
     })
   };
 
   const dropdownStyle = {
-    backgroundColor: theme.colors.cardBg,
-    borderColor: theme.colors.border,
-    backdropFilter: theme.effects.blur,
-    boxShadow: theme.effects.shadow
+    className="bg-gray-800",
+    className="border-gray-600",
+    ,
+    
   };
 
   return (
@@ -284,7 +284,7 @@ export function UnifiedSearch({
       <div className="relative">
         <Search 
           className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-          style={{ color: theme.colors.textSecondary }}
+          style={{ className="text-white"}}
         />
         <input
           ref={inputRef}
@@ -344,7 +344,7 @@ export function UnifiedSearch({
               inputRef.current?.blur();
             }}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:opacity-80"
-            style={{ color: theme.colors.textSecondary }}
+            style={{ className="text-white"}}
           >
             <X className="w-4 h-4" />
           </button>
@@ -391,8 +391,8 @@ export function UnifiedSearch({
         >
           {loading ? (
             <div className="flex items-center justify-center p-6">
-              <Loader2 className="w-6 h-6 animate-spin" style={{ color: theme.colors.accent }} />
-              <span className="ml-2" style={{ color: theme.colors.textSecondary }}>
+              <Loader2 className="w-6 h-6 animate-spin" style={{ className="text-white"}} />
+              <span className="ml-2" style={{ className="text-white"}}>
                 Searching...
               </span>
             </div>
@@ -401,8 +401,8 @@ export function UnifiedSearch({
               <div 
                 className="px-4 py-2 text-xs font-medium uppercase tracking-wider border-b"
                 style={{ 
-                  color: theme.colors.textSecondary,
-                  borderColor: theme.colors.border
+                  className="text-white",
+                  className="border-gray-600"
                 }}
               >
                 Search Results
@@ -421,13 +421,13 @@ export function UnifiedSearch({
                     />
                   )}
                   <div className="flex-1 text-left">
-                    <div style={{ color: theme.colors.textPrimary }}>
+                    <div style={{ className="text-white"}}>
                       {result.title}
                     </div>
                     {result.subtitle && (
                       <div 
                         className="text-sm"
-                        style={{ color: theme.colors.textSecondary }}
+                        style={{ className="text-white"}}
                       >
                         {result.subtitle}
                       </div>
@@ -436,7 +436,7 @@ export function UnifiedSearch({
                   {result.price && (
                     <div 
                       className="font-semibold"
-                      style={{ color: theme.colors.accent }}
+                      style={{ className="text-white"}}
                     >
                       {result.price}
                     </div>
@@ -451,8 +451,8 @@ export function UnifiedSearch({
                   <div 
                     className="px-4 py-2 text-xs font-medium uppercase tracking-wider border-b flex items-center gap-2"
                     style={{ 
-                      color: theme.colors.textSecondary,
-                      borderColor: theme.colors.border
+                      className="text-white",
+                      className="border-gray-600"
                     }}
                   >
                     <Clock className="w-3 h-3" />
@@ -475,7 +475,7 @@ export function UnifiedSearch({
                       }}
                       className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors cursor-pointer"
                       style={{ 
-                        color: theme.colors.textPrimary,
+                        className="text-white",
                         WebkitUserSelect: 'none',
                         userSelect: 'none'
                       }}
@@ -491,8 +491,8 @@ export function UnifiedSearch({
                   <div 
                     className="px-4 py-2 text-xs font-medium uppercase tracking-wider border-b flex items-center gap-2"
                     style={{ 
-                      color: theme.colors.textSecondary,
-                      borderColor: theme.colors.border
+                      className="text-white",
+                      className="border-gray-600"
                     }}
                   >
                     <TrendingUp className="w-3 h-3" />
@@ -515,7 +515,7 @@ export function UnifiedSearch({
                       }}
                       className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors cursor-pointer"
                       style={{ 
-                        color: theme.colors.textPrimary,
+                        className="text-white",
                         WebkitUserSelect: 'none',
                         userSelect: 'none'
                       }}
@@ -529,7 +529,7 @@ export function UnifiedSearch({
               {query.length > 0 && query.length < 2 && (
                 <div 
                   className="px-4 py-6 text-center"
-                  style={{ color: theme.colors.textSecondary }}
+                  style={{ className="text-white"}}
                 >
                   Type at least 2 characters to search
                 </div>
@@ -538,7 +538,7 @@ export function UnifiedSearch({
               {query.length >= 2 && results.length === 0 && !loading && (
                 <div 
                   className="px-4 py-6 text-center"
-                  style={{ color: theme.colors.textSecondary }}
+                  style={{ className="text-white"}}
                 >
                   No results found for "{query}"
                 </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
-import { globalDesignSystem as theme } from '@/styles/design-system/theme';
+// Removed problematic theme import causing transition property errors
 import { componentClasses } from '@/styles/design-system/components';
 import { cn } from '@/lib/utils';
 
@@ -81,13 +81,13 @@ interface InputProps extends HTMLMotionProps<"input"> {
   error?: string;
 }
 
-export const Input: React.FC<InputProps> = ({
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
   variant = 'default',
   label,
   error,
   className,
   ...props
-}) => {
+}, ref) => {
   const inputStyles = cn(
     componentClasses.input.base,
     componentClasses.input.variants[variant],
@@ -99,13 +99,13 @@ export const Input: React.FC<InputProps> = ({
     <div className="space-y-1">
       {label && (
         <label 
-          className="block text-sm font-medium"
-          style={{ color: theme.colors.text.secondary }}
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           {label}
         </label>
       )}
       <motion.input
+        ref={ref}
         className={inputStyles}
         whileFocus={{ scale: 1.01 }}
         transition={{ duration: 0.1 }}
@@ -113,8 +113,7 @@ export const Input: React.FC<InputProps> = ({
       />
       {error && (
         <motion.p
-          className="text-sm"
-          style={{ color: theme.colors.status.error }}
+          className="text-sm text-red-500"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
@@ -123,7 +122,9 @@ export const Input: React.FC<InputProps> = ({
       )}
     </div>
   );
-};
+});
+
+Input.displayName = "Input";
 
 // Toggle Component
 interface ToggleProps {
@@ -159,10 +160,7 @@ export const Toggle: React.FC<ToggleProps> = ({
         />
       </motion.button>
       {label && (
-        <span 
-          className="text-sm font-medium"
-          style={{ color: theme.colors.text.secondary }}
-        >
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
           {label}
         </span>
       )}

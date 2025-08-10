@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CLEANFLIP_THEME as theme } from '@/constants/theme';
+// Removed problematic theme import causing transition errors
 
 export interface DropdownOption {
   value: string;
@@ -87,13 +87,7 @@ export function UnifiedDropdown({
     }
   };
 
-  // Style variants matching your theme - UNIFIED with Input/Textarea styling
-  const dropdownStyles = {
-    backgroundColor: theme.colors.cardBg,
-    borderColor: theme.colors.border,
-    backdropFilter: theme.effects.blur,
-    color: theme.colors.textPrimary,
-  };
+  // Style variants using Tailwind classes - UNIFIED with Input/Textarea styling
 
   const buttonClasses = cn(
     'w-full h-10 px-3 text-base border rounded-lg transition-colors',
