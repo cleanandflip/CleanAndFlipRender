@@ -61,7 +61,7 @@ export function AddressAutocomplete({
     if (justSelected) {
       const timer = setTimeout(() => {
         setJustSelected(false);
-      }, 2000); // Increased to 2 seconds
+      }, 3000); // Increased to 3 seconds
       return () => clearTimeout(timer);
     }
   }, [justSelected]);
@@ -72,6 +72,11 @@ export function AddressAutocomplete({
     if (!debouncedInput || debouncedInput.length < 3 || justSelected) {
       setSuggestions([]);
       setShowDropdown(false);
+      return;
+    }
+
+    // Don't search if the debounced input matches what we just selected
+    if (justSelected && debouncedInput === input) {
       return;
     }
     
@@ -171,11 +176,10 @@ export function AddressAutocomplete({
     setShowDropdown(false);
     setSuggestions([]);
     
-    // Prevent search re-triggering by maintaining selection state longer
+    // Prevent any further searches by clearing debounced value temporarily
     setTimeout(() => {
-      // Double-check the selection state to prevent unwanted searches
       setJustSelected(true);
-    }, 100);
+    }, 50);
     
     // Send data to parent
     onAddressSelect(addressData);
@@ -237,13 +241,20 @@ export function AddressAutocomplete({
       
       {/* Suggestions dropdown */}
       {showDropdown && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-gray-900 border border-gray-500 rounded-lg shadow-2xl max-h-60 overflow-auto backdrop-blur-none">
+        <div 
+          className="absolute z-50 w-full mt-1 rounded-lg shadow-2xl max-h-60 overflow-auto"
+          style={{ 
+            backgroundColor: 'hsl(220, 14%, 12%)', // Dark navy matching theme
+            border: '1px solid hsl(220, 13%, 18%)'
+          }}
+        >
           {suggestions.map((suggestion: any, index) => (
             <button
               key={index}
               type="button"
               onClick={() => handleSelect(suggestion)}
-              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-blue-600 hover:text-white transition-colors border-b border-gray-600 last:border-0 focus:outline-none focus:bg-blue-600 bg-gray-900"
+              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-blue-600 hover:text-white transition-colors border-b border-gray-600 last:border-0 focus:outline-none focus:bg-blue-600"
+              style={{ backgroundColor: 'hsl(220, 14%, 12%)' }}
             >
               <div className="font-semibold text-white">{suggestion.street}</div>
               <div className="text-xs text-gray-400 mt-1">{suggestion.city}, {suggestion.state} {suggestion.zipCode}</div>
