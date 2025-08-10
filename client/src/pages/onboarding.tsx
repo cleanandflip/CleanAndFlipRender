@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '../hooks/use-auth';
 import { toast } from '@/hooks/use-toast';
 import { ShoppingCart } from 'lucide-react';
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 
 const OnboardingPage = () => {
   const { user } = useAuth();
@@ -195,160 +196,75 @@ const OnboardingPage = () => {
   );
 };
 
-// ADDRESS FORM WITH GEOAPIFY
+// ADDRESS FORM WITH GEOAPIFY AUTOCOMPLETE
 const AddressForm = ({ onNext, initialData }: any) => {
-  const [address, setAddress] = useState(initialData || {});
-  const [suggestions, setSuggestions] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchText, setSearchText] = useState('');
+  const [formData, setFormData] = useState({
+    street: initialData?.street || '',
+    apartment: initialData?.apartment || '',
+    city: initialData?.city || '',
+    state: initialData?.state || '',
+    zipCode: initialData?.zipCode || '',
+    ...initialData
+  });
 
-  const GEOAPIFY_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY;
-  
-  if (!GEOAPIFY_KEY) {
-    console.error('CRITICAL: Add VITE_GEOAPIFY_API_KEY to .env file');
-  }
-
-  // Debounce function to avoid too many API calls
-  const debounce = useCallback((func: Function, delay: number) => {
-    let timeoutId: NodeJS.Timeout;
-    return (...args: any[]) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func.apply(null, args), delay);
-    };
-  }, []);
-
-  const searchAddress = async (text: string) => {
-    if (text.length < 3) {
-      setSuggestions([]);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      console.log('🔍 Searching for:', text);
-      console.log('🔑 API Key available:', !!GEOAPIFY_KEY);
-      
-      const response = await fetch(
-        `https://api.geoapify.com/v1/geocode/autocomplete?` +
-        `text=${encodeURIComponent(text)}&` +
-        `apiKey=${GEOAPIFY_KEY}&` +
-        `limit=5&` +
-        `filter=countrycode:us&` +
-        `format=json`
-      );
-
-      console.log('📡 Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ API Error:', errorText);
-        throw new Error(`Geoapify API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('📦 API Response:', data);
-      
-      const parsed = data.results?.map((result: any) => ({
-        formatted: result.formatted,
-        street: result.housenumber ? `${result.housenumber} ${result.street}` : result.street || result.name || result.address_line1,
-        city: result.city || result.county,
-        state: result.state_code || result.state,
-        zipCode: result.postcode,
-        lat: result.lat,
-        lon: result.lon
-      })) || [];
-
-      console.log('✅ Parsed suggestions:', parsed);
-      setSuggestions(parsed);
-    } catch (error) {
-      console.error('🚫 Address search error:', error);
-      setSuggestions([]);
-    } finally {
-      setIsSearching(false);
-    }
+  const handleAddressSelect = (addressData: any) => {
+    console.log('📍 Address selected:', addressData);
+    // Populate the 4 main fields from autocomplete
+    setFormData(prev => ({
+      ...prev,
+      street: addressData.street,
+      city: addressData.city,
+      state: addressData.state,
+      zipCode: addressData.zipCode
+      // apartment stays as user entered it manually
+    }));
   };
 
-  // Debounced search function - fix for React strict mode
-  const debouncedSearch = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return (text: string) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => searchAddress(text), 300);
-      };
-    })(),
-    [searchAddress]
-  );
-
-  const selectAddress = (suggestion: any) => {
-    console.log('🎯 Selected suggestion:', suggestion);
-    const newAddress = {
-      street: suggestion.street || '',
-      city: suggestion.city || '',
-      state: suggestion.state || '',
-      zipCode: suggestion.zipCode || '',
-      latitude: suggestion.lat,
-      longitude: suggestion.lon,
-      apartment: address.apartment || ''
+  const handleSubmit = () => {
+    const completeAddress = {
+      ...formData,
+      latitude: null, // Can be added later if needed
+      longitude: null
     };
-    setAddress(newAddress);
-    setSuggestions([]);
-    setSearchText(suggestion.formatted || suggestion.street || '');
-    console.log('📍 Updated address:', newAddress);
+    console.log('📦 Submitting address:', completeAddress);
+    onNext(completeAddress);
   };
 
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4 text-white">Where should we deliver?</h2>
       
-      <div className="relative mb-4">
+      <div className="space-y-4">
+        {/* Address Autocomplete - populates the fields below */}
+        <AddressAutocomplete 
+          onAddressSelect={handleAddressSelect}
+          placeholder="Start typing your street address..."
+        />
+        
+        {/* Individual fields that get populated */}
         <input
           type="text"
-          value={searchText}
-          onChange={(e) => {
-            setSearchText(e.target.value);
-            debouncedSearch(e.target.value);
-          }}
-          placeholder="Start typing your address..."
+          value={formData.street}
+          onChange={(e) => setFormData({...formData, street: e.target.value})}
+          placeholder="Street Address"
+          required
           className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />
         
-        {isSearching && (
-          <div className="absolute right-3 top-3">
-            <div className="animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent" />
-          </div>
-        )}
-
-        {suggestions.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto">
-            {suggestions.map((suggestion, i) => (
-              <button
-                key={i}
-                onClick={() => selectAddress(suggestion)}
-                className="w-full text-left p-3 text-white hover:bg-gray-600 border-b border-gray-600 last:border-0 transition-colors"
-              >
-                {(suggestion as any).formatted}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-3">
+        {/* Apartment field - USER FILLS MANUALLY */}
         <input
           type="text"
-          value={address.street || ''}
-          onChange={(e) => setAddress({...address, street: e.target.value})}
-          placeholder="Street Address"
-          required
+          value={formData.apartment}
+          onChange={(e) => setFormData({...formData, apartment: e.target.value})}
+          placeholder="Apartment, suite, etc. (optional)"
           className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />
         
         <div className="grid grid-cols-2 gap-3">
           <input
             type="text"
-            value={address.city || ''}
-            onChange={(e) => setAddress({...address, city: e.target.value})}
+            value={formData.city}
+            onChange={(e) => setFormData({...formData, city: e.target.value})}
             placeholder="City"
             required
             className="p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
@@ -356,8 +272,8 @@ const AddressForm = ({ onNext, initialData }: any) => {
           
           <input
             type="text"
-            value={address.state || ''}
-            onChange={(e) => setAddress({...address, state: e.target.value.toUpperCase()})}
+            value={formData.state}
+            onChange={(e) => setFormData({...formData, state: e.target.value.toUpperCase()})}
             placeholder="State"
             maxLength={2}
             required
@@ -367,25 +283,17 @@ const AddressForm = ({ onNext, initialData }: any) => {
         
         <input
           type="text"
-          value={address.zipCode || ''}
-          onChange={(e) => setAddress({...address, zipCode: e.target.value})}
+          value={formData.zipCode}
+          onChange={(e) => setFormData({...formData, zipCode: e.target.value})}
           placeholder="ZIP Code"
           required
-          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-        />
-        
-        <input
-          type="text"
-          value={address.apartment || ''}
-          onChange={(e) => setAddress({...address, apartment: e.target.value})}
-          placeholder="Apartment, suite, etc. (optional)"
           className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />
       </div>
 
       <button
-        onClick={() => onNext(address)}
-        disabled={!address.street || !address.city || !address.state || !address.zipCode}
+        onClick={handleSubmit}
+        disabled={!formData.street || !formData.city || !formData.state || !formData.zipCode}
         className="w-full mt-6 py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         Continue

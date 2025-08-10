@@ -1,274 +1,205 @@
-import { useState, useRef, useEffect } from 'react';
-import { MapPin, Loader2, X, CheckCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useState, useEffect, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
 
-interface ParsedAddress {
+interface AddressData {
   street: string;
   city: string;
   state: string;
   zipCode: string;
-  fullAddress: string;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
 }
 
 interface AddressAutocompleteProps {
+  onAddressSelect: (address: AddressData) => void;
   value?: string;
-  onChange?: (address: ParsedAddress) => void;
-  onAddressSubmit?: (addressData: any) => void;
   placeholder?: string;
   className?: string;
-  required?: boolean;
-  id?: string;
-  name?: string;
-  isLoading?: boolean;
-  initialAddress?: any;
 }
 
-export default function AddressAutocomplete({
-  value = '',
-  onChange,
-  onAddressSubmit,
+// Simple debounce hook
+function useDebounce(value: string, delay: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+export function AddressAutocomplete({ 
+  onAddressSelect, 
+  value = '', 
   placeholder = "Start typing your address...",
-  className,
-  required,
-  id,
-  name,
-  isLoading = false,
-  initialAddress
+  className = ""
 }: AddressAutocompleteProps) {
   const [input, setInput] = useState(value);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState<ParsedAddress | null>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const debouncedInput = useDebounce(input, 300);
-
-  // Geoapify API call
+  const [justSelected, setJustSelected] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Debounce input for API calls
+  const debouncedInput = useDebounce(input, 500);
+  
+  // Fetch address suggestions
   useEffect(() => {
-    if (debouncedInput.length < 3) {
-      setSuggestions([]);
+    // Don't search if user just selected an address
+    if (justSelected) {
+      setJustSelected(false);
       return;
     }
-
-    const searchAddresses = async () => {
-      setLoading(true);
+    
+    // Don't search for short inputs
+    if (!debouncedInput || debouncedInput.length < 3) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+    
+    const fetchSuggestions = async () => {
+      setIsLoading(true);
+      
       try {
         const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
         if (!apiKey) {
-          console.error('VITE_GEOAPIFY_API_KEY not found in environment variables');
-          console.log('Available env vars:', Object.keys(import.meta.env));
+          console.error('Geoapify API key missing');
           return;
         }
-
-        console.log('Making address search request for:', debouncedInput);
+        
+        console.log('🔍 Searching for:', debouncedInput);
+        
         const response = await fetch(
           `https://api.geoapify.com/v1/geocode/autocomplete?` +
           `text=${encodeURIComponent(debouncedInput)}&` +
+          `apiKey=${apiKey}&` +
           `filter=countrycode:us&` +
-          `format=json&` +
-          `apiKey=${apiKey}`
+          `limit=5&` +
+          `format=json`
         );
         
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-        }
+        console.log('📡 Response status:', response.status);
         
-        const data = await response.json();
-        console.log('API response:', data);
-        
-        if (data.results && Array.isArray(data.results)) {
-          setSuggestions(data.results);
-          setShowDropdown(true);
-          console.log(`Found ${data.results.length} suggestions`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('📦 Raw API data:', data);
+          
+          const parsed = data.results?.map((result: any) => ({
+            formatted: result.formatted,
+            street: result.housenumber ? `${result.housenumber} ${result.street}` : result.street || result.name || result.address_line1,
+            city: result.city || result.county,
+            state: result.state_code || result.state,
+            zipCode: result.postcode
+          })) || [];
+          
+          console.log('✅ Parsed suggestions:', parsed);
+          setSuggestions(parsed);
+          setShowDropdown(parsed.length > 0);
         } else {
-          console.log('No results in API response');
-          setSuggestions([]);
+          console.error('❌ API Error:', response.status);
         }
       } catch (error) {
-        console.error('Address search error:', error);
-        setSuggestions([]);
+        console.error('🚫 Address search failed:', error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-
-    searchAddresses();
-  }, [debouncedInput]);
-
-  // Parse Geoapify response
-  const parseAddress = (result: any): ParsedAddress => {
-    // Extract components from Geoapify result
-    const streetNumber = result.housenumber || '';
-    const streetName = result.street || '';
-    const street = `${streetNumber} ${streetName}`.trim();
-    const city = result.city || result.town || result.village || '';
-    const state = result.state_code || result.state || '';
-    const zipCode = result.postcode || '';
     
-    // Format: "123 Main St, Asheville, NC 28806"
-    const fullAddress = `${street}, ${city}, ${state} ${zipCode}`.replace(/\s+/g, ' ').trim();
+    fetchSuggestions();
+  }, [debouncedInput, justSelected]);
+  
+  // Handle address selection
+  const handleSelect = (suggestion: any) => {
+    console.log('🎯 Selected suggestion:', suggestion);
     
-    return {
-      street,
-      city,
-      state,
-      zipCode,
-      fullAddress,
-      coordinates: {
-        lat: result.lat,
-        lng: result.lon
-      }
+    const addressData: AddressData = {
+      street: suggestion.street || '',
+      city: suggestion.city || '',
+      state: suggestion.state || '',
+      zipCode: suggestion.zipCode || ''
     };
-  };
-
-  // Check if address is local to Asheville
-  const isLocalCustomer = (address: ParsedAddress): boolean => {
-    const ashevilleZips = [
-      '28801', '28802', '28803', '28804', '28805', '28806',
-      '28810', '28813', '28814', '28815', '28816'
-    ];
-    return ashevilleZips.includes(address.zipCode);
-  };
-
-  // Handle selection
-  const selectAddress = (result: any) => {
-    const parsed = parseAddress(result);
-    setInput(parsed.fullAddress);
-    setSelectedAddress(parsed);
+    
+    // Update input with formatted address
+    setInput(suggestion.formatted || suggestion.street || '');
+    
+    // Mark that we just selected to prevent re-searching
+    setJustSelected(true);
+    
+    // Close dropdown immediately
     setShowDropdown(false);
     setSuggestions([]);
     
-    // Call the appropriate callback
-    if (onChange) {
-      onChange(parsed);
-    }
-    
-    if (onAddressSubmit) {
-      onAddressSubmit({
-        street: parsed.street,
-        city: parsed.city,
-        state: parsed.state,
-        zipCode: parsed.zipCode,
-        latitude: parsed.coordinates?.lat,
-        longitude: parsed.coordinates?.lng
-      });
-    }
+    // Send data to parent
+    onAddressSelect(addressData);
   };
-
-  // Clear input
-  const clearInput = () => {
-    setInput('');
-    setSuggestions([]);
-    setShowDropdown(false);
-    setSelectedAddress(null);
-    if (onChange) {
-      onChange({
-        street: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        fullAddress: ''
-      });
-    }
-  };
-
-  // Handle input change
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-    if (!e.target.value) clearInput();
-  };
-
-  // Close dropdown on outside click
+  
+  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
       }
     };
+    
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
+  
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+    setJustSelected(false); // Reset flag when user types
+  };
+  
+  // Handle input focus
+  const handleFocus = () => {
+    // Only show dropdown if we have suggestions and didn't just select
+    if (suggestions.length > 0 && !justSelected) {
+      setShowDropdown(true);
+    }
+  };
+  
   return (
-    <div ref={wrapperRef} className="relative">
+    <div className="relative w-full" ref={dropdownRef}>
       <div className="relative">
         <input
+          ref={inputRef}
           type="text"
-          id={id}
-          name={name}
           value={input}
           onChange={handleInputChange}
+          onFocus={handleFocus}
           placeholder={placeholder}
-          required={required}
-          className={cn(
-            "w-full px-3 py-3 bg-input border border-input",
-            "text-input-foreground placeholder:text-white rounded-lg",
-            "focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
-            "transition-all duration-200",
-            className
-          )}
-          autoComplete="off"
+          className={`w-full px-3 py-2 pr-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
         />
         
-        {/* Loading indicator */}
-        {loading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 animate-spin" />
-        )}
-        
-        {/* Clear button */}
-        {!loading && input && (
-          <button
-            type="button"
-            onClick={clearInput}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-input-foreground transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
+        {/* Loading spinner on the right */}
+        {isLoading && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+          </div>
         )}
       </div>
-
+      
       {/* Suggestions dropdown */}
       {showDropdown && suggestions.length > 0 && (
-        <div 
-          className="absolute z-[100] w-full mt-1 bg-popover border border-input rounded-lg shadow-2xl max-h-60 overflow-auto"
-          style={{ top: '100%' }}
-        >
-          {suggestions.map((result, index) => {
-            const parsed = parseAddress(result);
-            return (
-              <button
-                key={result.place_id || index}
-                type="button"
-                onClick={() => selectAddress(result)}
-                className="w-full px-4 py-3 text-left text-input-foreground hover:bg-accent focus:bg-accent focus:outline-none transition-colors border-b border-border last:border-0"
-              >
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="text-input-foreground">
-                      {parsed.street}
-                    </div>
-                    <div className="text-gray-400 text-sm">
-                      {parsed.city}, {parsed.state} {parsed.zipCode}
-                    </div>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Local customer indicator */}
-      {selectedAddress && isLocalCustomer(selectedAddress) && (
-        <div className="mt-2 text-sm text-green-500 flex items-center gap-1">
-          <CheckCircle className="w-4 h-4" />
-          Local pickup available in Asheville
+        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
+          {suggestions.map((suggestion: any, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => handleSelect(suggestion)}
+              className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors border-b border-gray-700 last:border-0"
+            >
+              {suggestion.formatted}
+            </button>
+          ))}
         </div>
       )}
     </div>
