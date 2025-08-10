@@ -230,8 +230,33 @@ export class ErrorLogger {
           notes
         })
         .where(eq(errorLogs.id, errorId));
+      
+      Logger.info(`Error ${errorId} resolved by ${resolvedBy}: ${notes}`);
     } catch (err) {
       Logger.error('Failed to resolve error:', err);
+    }
+  }
+
+  // Bulk resolve errors by fingerprint
+  static async resolveErrorsByFingerprint(message: string, errorType: string, resolvedBy: string, notes?: string): Promise<void> {
+    try {
+      await db
+        .update(errorLogs)
+        .set({
+          resolved: true,
+          resolved_by: resolvedBy,
+          resolved_at: new Date(),
+          notes
+        })
+        .where(and(
+          eq(errorLogs.message, message),
+          eq(errorLogs.error_type, errorType),
+          eq(errorLogs.resolved, false)
+        ));
+        
+      Logger.info(`All errors matching fingerprint ${message}-${errorType} resolved by ${resolvedBy}`);
+    } catch (err) {
+      Logger.error('Failed to bulk resolve errors:', err);
     }
   }
 
