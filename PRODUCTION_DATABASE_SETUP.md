@@ -89,6 +89,11 @@ tsx scripts/database/seed-dev.ts              # Add test products and data
 tsx scripts/database/migrate.ts               # Apply schema changes
 ```
 
+**Production Migration:**
+```bash
+tsx scripts/database/migrate-products-to-production.ts  # Copy real products to production
+```
+
 **Production Maintenance:**
 ```bash
 tsx scripts/database/backup.ts                # Backup production data
