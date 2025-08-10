@@ -208,9 +208,9 @@ export default function ErrorDashboard() {
                                            errorGroup.level === 'warning' ? 'medium' : 'low'];
 
     return (
-      <div className="bg-gray-800/50 rounded-lg border border-gray-700 hover:border-blue-500/50 transition-colors">
+      <div className="bg-gray-800/50 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors">
         {/* Header Row */}
-        <div className="p-4 flex items-center justify-between border-l-2 border-blue-500">
+        <div className="p-4 flex items-center justify-between">
           {/* Left Side */}
           <div className="flex items-center space-x-4 flex-1">
             {/* Severity Badge */}
@@ -245,7 +245,7 @@ export default function ErrorDashboard() {
             
             {/* Trend Sparkline */}
             <div className="w-20 h-8">
-              <Sparkline data={errorGroup.occurrenceTrend} color="#3b82f6" />
+              <Sparkline data={errorGroup.occurrenceTrend} color="#ef4444" />
             </div>
           </div>
           
@@ -352,36 +352,28 @@ export default function ErrorDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center space-x-3 mb-2">
-          <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
-          <h1 className="text-2xl font-bold text-white">Error Logs</h1>
-          <div className="flex items-center space-x-2">
-            <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full border border-blue-500/30">
-              Live Sync
-            </span>
-          </div>
-        </div>
-        <p className="text-gray-400">
+        <h1 className="text-3xl font-bold tracking-tight">Error Dashboard</h1>
+        <p className="text-muted-foreground">
           Monitor and resolve application errors in real-time
         </p>
       </div>
 
-      {/* Summary Stats with Blue Theme */}
+      {/* Sentry-style Summary Stats */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 hover:border-blue-500/50 transition-colors">
-          <div className="text-2xl font-bold text-blue-400">{criticalCount}</div>
+        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+          <div className="text-2xl font-bold text-red-400">{criticalCount}</div>
           <div className="text-xs text-gray-400">Critical Errors</div>
         </div>
-        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 hover:border-blue-500/50 transition-colors">
-          <div className="text-2xl font-bold text-blue-300">{totalCount}</div>
+        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+          <div className="text-2xl font-bold text-orange-400">{totalCount}</div>
           <div className="text-xs text-gray-400">Total Errors (24h)</div>
         </div>
-        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 hover:border-blue-500/50 transition-colors">
-          <div className="text-2xl font-bold text-blue-200">{sentryErrorGroups.reduce((acc, g) => acc + g.usersAffected, 0)}</div>
+        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+          <div className="text-2xl font-bold text-yellow-400">{sentryErrorGroups.reduce((acc, g) => acc + g.usersAffected, 0)}</div>
           <div className="text-xs text-gray-400">Affected Users</div>
         </div>
-        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 hover:border-blue-500/50 transition-colors">
-          <div className="text-2xl font-bold text-blue-100">{totalCount > 0 ? Math.round((resolvedCount / totalCount) * 100) : 0}%</div>
+        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+          <div className="text-2xl font-bold text-green-400">{totalCount > 0 ? Math.round((resolvedCount / totalCount) * 100) : 0}%</div>
           <div className="text-xs text-gray-400">Resolution Rate</div>
         </div>
       </div>
@@ -394,12 +386,12 @@ export default function ErrorDashboard() {
           placeholder="Search errors..."
           value={filters.search}
           onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-          className="flex-1 bg-gray-800 border border-gray-700 focus:border-blue-500 rounded-lg px-4 py-2 text-white placeholder:text-gray-400"
+          className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder:text-gray-400"
         />
         
         {/* Level Filter */}
         <select 
-          className="bg-gray-800 border border-gray-700 focus:border-blue-500 rounded-lg px-4 py-2 text-white"
+          className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
           value={filters.level}
           onChange={(e) => setFilters(prev => ({ ...prev, level: e.target.value }))}
         >
@@ -412,7 +404,7 @@ export default function ErrorDashboard() {
         
         {/* Status Filter */}
         <select 
-          className="bg-gray-800 border border-gray-700 focus:border-blue-500 rounded-lg px-4 py-2 text-white"
+          className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
           value={filters.status}
           onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
         >
@@ -423,7 +415,7 @@ export default function ErrorDashboard() {
         
         {/* Time Filter */}
         <select 
-          className="bg-gray-800 border border-gray-700 focus:border-blue-500 rounded-lg px-4 py-2 text-white"
+          className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
           value={filters.timeRange}
           onChange={(e) => setFilters(prev => ({ ...prev, timeRange: e.target.value }))}
         >
