@@ -218,17 +218,11 @@ export default function AuthPage() {
                 </form>
                 
                 <div className="mt-6">
-                  <div className="text-center text-sm text-gray-400 mb-4">
+                  <div className="text-center text-sm text-gray-400 mb-3">
                     Or continue with
                   </div>
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-600"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <GoogleSignInButton disabled={loginMutation.isPending} />
-                  </div>
+                  <hr className="border-gray-600 mb-4" />
+                  <GoogleSignInButton disabled={loginMutation.isPending} />
                 </div>
               </Card>
             </TabsContent>
@@ -372,17 +366,11 @@ export default function AuthPage() {
                 </form>
                 
                 <div className="mt-6">
-                  <div className="text-center text-sm text-gray-400 mb-4">
+                  <div className="text-center text-sm text-gray-400 mb-3">
                     Or continue with
                   </div>
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-600"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <GoogleSignInButton disabled={registerMutation.isPending} />
-                  </div>
+                  <hr className="border-gray-600 mb-4" />
+                  <GoogleSignInButton disabled={registerMutation.isPending} />
                 </div>
 
                 {/* Security info as subtle footer */}
