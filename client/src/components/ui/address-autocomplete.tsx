@@ -56,12 +56,12 @@ export function AddressAutocomplete({
   // Debounce input for API calls
   const debouncedInput = useDebounce(input, 500);
   
-  // Reset justSelected flag after selection
+  // Reset justSelected flag after selection - increased delay to prevent unwanted searches
   useEffect(() => {
     if (justSelected) {
       const timer = setTimeout(() => {
         setJustSelected(false);
-      }, 1000);
+      }, 2000); // Increased to 2 seconds
       return () => clearTimeout(timer);
     }
   }, [justSelected]);
@@ -167,9 +167,15 @@ export function AddressAutocomplete({
     // Mark that we just selected to prevent re-searching
     setJustSelected(true);
     
-    // Close dropdown immediately
+    // Close dropdown immediately and clear suggestions
     setShowDropdown(false);
     setSuggestions([]);
+    
+    // Prevent search re-triggering by maintaining selection state longer
+    setTimeout(() => {
+      // Double-check the selection state to prevent unwanted searches
+      setJustSelected(true);
+    }, 100);
     
     // Send data to parent
     onAddressSelect(addressData);
@@ -191,9 +197,11 @@ export function AddressAutocomplete({
   
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-    // Only reset flag if user is manually typing (not from address selection)
-    if (!justSelected) {
+    const newValue = e.target.value;
+    setInput(newValue);
+    
+    // If user manually changes the input after selection, allow searching again
+    if (justSelected && newValue !== input) {
       setJustSelected(false);
     }
   };
@@ -229,16 +237,16 @@ export function AddressAutocomplete({
       
       {/* Suggestions dropdown */}
       {showDropdown && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-60 overflow-auto">
+        <div className="absolute z-50 w-full mt-1 bg-gray-900 border border-gray-500 rounded-lg shadow-2xl max-h-60 overflow-auto backdrop-blur-none">
           {suggestions.map((suggestion: any, index) => (
             <button
               key={index}
               type="button"
               onClick={() => handleSelect(suggestion)}
-              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-blue-600 hover:text-white transition-colors border-b border-gray-600 last:border-0 focus:outline-none focus:bg-blue-600"
+              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-blue-600 hover:text-white transition-colors border-b border-gray-600 last:border-0 focus:outline-none focus:bg-blue-600 bg-gray-900"
             >
-              <div className="font-medium">{suggestion.street}</div>
-              <div className="text-xs text-gray-300 mt-1">{suggestion.city}, {suggestion.state} {suggestion.zipCode}</div>
+              <div className="font-semibold text-white">{suggestion.street}</div>
+              <div className="text-xs text-gray-400 mt-1">{suggestion.city}, {suggestion.state} {suggestion.zipCode}</div>
             </button>
           ))}
         </div>
