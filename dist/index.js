@@ -679,14 +679,23 @@ import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 function getCurrentEnvironment() {
   if (process.env.REPLIT_DEPLOYMENT === "true") {
-    console.log("[DB] Environment detected via REPLIT_DEPLOYMENT=true");
+    console.log("[DB] Environment detected via REPLIT_DEPLOYMENT=true \u2192 PRODUCTION");
     return "production";
   }
   if (process.env.NODE_ENV === "production") {
-    console.log("[DB] Environment detected via NODE_ENV=production");
+    console.log("[DB] Environment detected via NODE_ENV=production \u2192 PRODUCTION");
     return "production";
   }
-  console.log("[DB] Environment defaulting to development");
+  const host = process.env.HOST || process.env.HOSTNAME || "localhost";
+  if (host.includes("localhost") || host.includes("127.0.0.1") || host === "0.0.0.0") {
+    console.log("[DB] Environment detected via localhost \u2192 DEVELOPMENT");
+    return "development";
+  }
+  if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
+    console.log("[DB] Environment detected via Replit workspace \u2192 DEVELOPMENT");
+    return "development";
+  }
+  console.log("[DB] Environment defaulting to development (safest option)");
   return "development";
 }
 function getDatabaseConfig() {
@@ -714,7 +723,7 @@ function getDatabaseConfig() {
     if (prodUrl.includes("lingering-flower")) {
       throw new Error("CRITICAL: Cannot use development database (lingering-flower) in production!");
     }
-    console.log("[DB] \u2705 Using production database for deployment");
+    console.log("[DB] \u2705 Using PRODUCTION database (muddy-moon)");
     return {
       url: prodUrl,
       name: "production",
@@ -725,8 +734,13 @@ function getDatabaseConfig() {
   } else {
     const devUrl = process.env.DATABASE_URL_DEV || process.env.DATABASE_URL;
     if (!devUrl) {
-      throw new Error("DATABASE_URL_DEV must be set for development environment");
+      throw new Error("DATABASE_URL must be set for development environment");
     }
+    if (devUrl.includes("muddy-moon")) {
+      console.warn("[DB] \u26A0\uFE0F  WARNING: Development environment using production database!");
+      console.warn("[DB] This is allowed but not recommended for safety");
+    }
+    console.log("[DB] \u2705 Using DEVELOPMENT database (localhost environment)");
     return {
       url: devUrl,
       name: "development",
@@ -2092,6 +2106,7 @@ import Stripe2 from "stripe";
 init_storage();
 init_utils();
 init_logger();
+init_database();
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
@@ -2125,12 +2140,15 @@ function validatePassword(password) {
 }
 function setupAuth(app2) {
   const PostgresSessionStore = connectPg(session);
+  const dbConfig2 = getDatabaseConfig();
+  console.log("[SESSION] Using database:", dbConfig2.name);
+  console.log("[SESSION] Environment:", dbConfig2.environment);
   const sessionSettings = {
     secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
     resave: false,
     saveUninitialized: false,
     store: new PostgresSessionStore({
-      conString: process.env.DATABASE_URL,
+      conString: dbConfig2.url,
       createTableIfMissing: false,
       // Don't create table - already exists
       schemaName: "public",

@@ -11,23 +11,36 @@ export interface DatabaseConfig {
 }
 
 /**
- * Detect current environment
+ * Detect current environment based on multiple factors
  */
 export function getCurrentEnvironment(): 'development' | 'production' {
-  // Check for Replit deployment flag first (most reliable for Replit deployments)
+  // Method 1: Check for Replit deployment flag (most reliable for Replit deployments)
   if (process.env.REPLIT_DEPLOYMENT === 'true') {
-    console.log('[DB] Environment detected via REPLIT_DEPLOYMENT=true');
+    console.log('[DB] Environment detected via REPLIT_DEPLOYMENT=true → PRODUCTION');
     return 'production';
   }
   
-  // Check NODE_ENV
+  // Method 2: Check NODE_ENV
   if (process.env.NODE_ENV === 'production') {
-    console.log('[DB] Environment detected via NODE_ENV=production');
+    console.log('[DB] Environment detected via NODE_ENV=production → PRODUCTION');
     return 'production';
   }
   
-  // Default to development
-  console.log('[DB] Environment defaulting to development');
+  // Method 3: Check if running on localhost/development host
+  const host = process.env.HOST || process.env.HOSTNAME || 'localhost';
+  if (host.includes('localhost') || host.includes('127.0.0.1') || host === '0.0.0.0') {
+    console.log('[DB] Environment detected via localhost → DEVELOPMENT');
+    return 'development';
+  }
+  
+  // Method 4: Check for Replit workspace (development)
+  if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
+    console.log('[DB] Environment detected via Replit workspace → DEVELOPMENT');
+    return 'development';
+  }
+  
+  // Default to development for safety
+  console.log('[DB] Environment defaulting to development (safest option)');
   return 'development';
 }
 
@@ -38,10 +51,9 @@ export function getDatabaseConfig(): DatabaseConfig {
   const environment = getCurrentEnvironment();
   
   if (environment === 'production') {
-    // For production, try DATABASE_URL_PROD first, fallback to DATABASE_URL if it's production-safe
+    // PRODUCTION: Prioritize DATABASE_URL_PROD, fallback to DATABASE_URL if production-safe
     let prodUrl = process.env.DATABASE_URL_PROD;
     
-    // If DATABASE_URL_PROD is not available in deployment, check if DATABASE_URL is production-safe
     if (!prodUrl) {
       console.log('[DB] DATABASE_URL_PROD not found, checking DATABASE_URL for production compatibility...');
       const fallbackUrl = process.env.DATABASE_URL;
@@ -62,12 +74,12 @@ export function getDatabaseConfig(): DatabaseConfig {
       }
     }
     
-    // Final safety check
+    // Security: Block development database in production
     if (prodUrl.includes('lingering-flower')) {
       throw new Error('CRITICAL: Cannot use development database (lingering-flower) in production!');
     }
     
-    console.log('[DB] ✅ Using production database for deployment');
+    console.log('[DB] ✅ Using PRODUCTION database (muddy-moon)');
     
     return {
       url: prodUrl,
@@ -77,11 +89,20 @@ export function getDatabaseConfig(): DatabaseConfig {
       retryDelay: 2000
     };
   } else {
+    // DEVELOPMENT: Use DATABASE_URL_DEV or DATABASE_URL (localhost)
     const devUrl = process.env.DATABASE_URL_DEV || process.env.DATABASE_URL;
     
     if (!devUrl) {
-      throw new Error('DATABASE_URL_DEV must be set for development environment');
+      throw new Error('DATABASE_URL must be set for development environment');
     }
+    
+    // Security: Warn if development is using production database
+    if (devUrl.includes('muddy-moon')) {
+      console.warn('[DB] ⚠️  WARNING: Development environment using production database!');
+      console.warn('[DB] This is allowed but not recommended for safety');
+    }
+    
+    console.log('[DB] ✅ Using DEVELOPMENT database (localhost environment)');
     
     return {
       url: devUrl,
