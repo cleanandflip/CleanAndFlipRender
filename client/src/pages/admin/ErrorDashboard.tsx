@@ -111,14 +111,15 @@ export default function ErrorDashboard() {
               </span>
             </div>
             {!error.resolved && (
-              <UnifiedButton
+              <Button
                 size="sm"
                 variant="outline"
                 onClick={() => handleResolveError(error.id)}
+                className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700"
               >
                 <CheckCircle className="w-4 h-4 mr-1" />
                 Resolve
-              </UnifiedButton>
+              </Button>
             )}
           </div>
         </CardHeader>
