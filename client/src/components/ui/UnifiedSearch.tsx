@@ -263,28 +263,26 @@ export function UnifiedSearch({
   };
 
   const inputStyle = {
-    className="bg-gray-800",
-    className="border-gray-600",
-    className="text-white",
+    backgroundColor: "#1f2937",
+    borderColor: "#4b5563",
+    color: "white",
     ...(isOpen && {
-      className="border-gray-600",
-      boxShadow: `0 0 0 3px ${theme.colors.accentFocus}`
+      borderColor: "#4b5563",
+      boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.5)"
     })
   };
 
   const dropdownStyle = {
-    className="bg-gray-800",
-    className="border-gray-600",
-    ,
-    
+    backgroundColor: "#1f2937",
+    borderColor: "#4b5563",
+    border: "1px solid #4b5563"
   };
 
   return (
     <div className={cn(searchStyles.container, className)} ref={searchRef}>
       <div className="relative">
         <Search 
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-          style={{ className="text-white"}}
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white"
         />
         <input
           ref={inputRef}
@@ -343,8 +341,7 @@ export function UnifiedSearch({
               
               inputRef.current?.blur();
             }}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:opacity-80"
-            style={{ className="text-white"}}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 hover:opacity-80 text-white"
           >
             <X className="w-4 h-4" />
           </button>
@@ -369,7 +366,7 @@ export function UnifiedSearch({
             ...dropdownStyle,
             // Add custom scrollbar styling
             scrollbarWidth: 'thin',
-            scrollbarColor: `${theme.colors.textSecondary} ${theme.colors.cardBg}`
+            scrollbarColor: "#9ca3af #1f2937"
           }}
           onWheel={(e) => {
             // Allow page scroll when not scrolling inside dropdown
@@ -391,8 +388,8 @@ export function UnifiedSearch({
         >
           {loading ? (
             <div className="flex items-center justify-center p-6">
-              <Loader2 className="w-6 h-6 animate-spin" style={{ className="text-white"}} />
-              <span className="ml-2" style={{ className="text-white"}}>
+              <Loader2 className="w-6 h-6 animate-spin text-white" />
+              <span className="ml-2 text-white">
                 Searching...
               </span>
             </div>
@@ -401,8 +398,8 @@ export function UnifiedSearch({
               <div 
                 className="px-4 py-2 text-xs font-medium uppercase tracking-wider border-b"
                 style={{ 
-                  className="text-white",
-                  className="border-gray-600"
+                  color: "white",
+                  borderColor: "#4b5563"
                 }}
               >
                 Search Results
@@ -421,23 +418,17 @@ export function UnifiedSearch({
                     />
                   )}
                   <div className="flex-1 text-left">
-                    <div style={{ className="text-white"}}>
+                    <div className="text-white">
                       {result.title}
                     </div>
                     {result.subtitle && (
-                      <div 
-                        className="text-sm"
-                        style={{ className="text-white"}}
-                      >
+                      <div className="text-sm text-white">
                         {result.subtitle}
                       </div>
                     )}
                   </div>
                   {result.price && (
-                    <div 
-                      className="font-semibold"
-                      style={{ className="text-white"}}
-                    >
+                    <div className="font-semibold text-white">
                       {result.price}
                     </div>
                   )}
@@ -449,10 +440,9 @@ export function UnifiedSearch({
               {showRecent && recentSearches.length > 0 && !query && (
                 <div>
                   <div 
-                    className="px-4 py-2 text-xs font-medium uppercase tracking-wider border-b flex items-center gap-2"
+                    className="px-4 py-2 text-xs font-medium uppercase tracking-wider border-b flex items-center gap-2 text-white"
                     style={{ 
-                      className="text-white",
-                      className="border-gray-600"
+                      borderColor: "#4b5563"
                     }}
                   >
                     <Clock className="w-3 h-3" />
@@ -473,9 +463,8 @@ export function UnifiedSearch({
                         e.preventDefault();
                         e.stopPropagation();
                       }}
-                      className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors cursor-pointer"
+                      className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors cursor-pointer text-white"
                       style={{ 
-                        className="text-white",
                         WebkitUserSelect: 'none',
                         userSelect: 'none'
                       }}
@@ -489,10 +478,9 @@ export function UnifiedSearch({
               {showTrending && !query && (
                 <div>
                   <div 
-                    className="px-4 py-2 text-xs font-medium uppercase tracking-wider border-b flex items-center gap-2"
+                    className="px-4 py-2 text-xs font-medium uppercase tracking-wider border-b flex items-center gap-2 text-white"
                     style={{ 
-                      className="text-white",
-                      className="border-gray-600"
+                      borderColor: "#4b5563"
                     }}
                   >
                     <TrendingUp className="w-3 h-3" />
@@ -513,9 +501,8 @@ export function UnifiedSearch({
                         e.preventDefault();
                         e.stopPropagation();
                       }}
-                      className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors cursor-pointer"
+                      className="w-full px-4 py-2 text-left hover:bg-white hover:bg-opacity-5 transition-colors cursor-pointer text-white"
                       style={{ 
-                        className="text-white",
                         WebkitUserSelect: 'none',
                         userSelect: 'none'
                       }}
@@ -527,19 +514,13 @@ export function UnifiedSearch({
               )}
 
               {query.length > 0 && query.length < 2 && (
-                <div 
-                  className="px-4 py-6 text-center"
-                  style={{ className="text-white"}}
-                >
+                <div className="px-4 py-6 text-center text-white">
                   Type at least 2 characters to search
                 </div>
               )}
 
               {query.length >= 2 && results.length === 0 && !loading && (
-                <div 
-                  className="px-4 py-6 text-center"
-                  style={{ className="text-white"}}
-                >
+                <div className="px-4 py-6 text-center text-white">
                   No results found for "{query}"
                 </div>
               )}
