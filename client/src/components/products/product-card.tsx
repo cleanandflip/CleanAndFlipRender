@@ -21,7 +21,6 @@ import { routes } from "@/config/routes";
 import { StockIndicator } from "@/components/ui/StockIndicator";
 import { ProductPrice } from "@/components/ui/ProductPrice";
 import { AddToCartButton } from "@/components/AddToCartButton";
-import { DeliveryBadge } from './DeliveryBadge';
 
 interface ProductCardProps {
   product: Product;
@@ -136,9 +135,6 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 </div>
               </div>
             </div>
-
-            {/* Delivery Badge */}
-            <DeliveryBadge className="mb-2" />
 
             {/* Stats */}
             <div className="flex items-center gap-6 text-xs text-text-muted">

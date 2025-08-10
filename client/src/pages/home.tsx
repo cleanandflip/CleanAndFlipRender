@@ -11,7 +11,6 @@ import { productEvents } from "@/lib/queryClient";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import type { Product } from "@shared/schema";
-import { LocalServicesSection } from "@/components/shared/LocalServicesSection";
 
 export default function Home() {
   const queryClient = useQueryClient();
@@ -242,9 +241,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Local Services Section */}
-      <LocalServicesSection />
-
       {/* How It Works Section - Full Screen */}
       <section className="min-h-screen flex items-center py-12 px-6">
         <div className="max-w-6xl mx-auto">
@@ -388,7 +384,7 @@ export default function Home() {
                       className="text-lg"
                       style={{ color: theme.colors.text.secondary }}
                     >
-                      Fast delivery to your doorstep
+                      Fast delivery or pickup
                     </span>
                   </div>
                 </div>
