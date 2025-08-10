@@ -1,11 +1,10 @@
 import { ReactNode, useState } from 'react';
 import { globalDesignSystem as theme } from '@/styles/design-system/theme';
 import { Card } from '@/components/ui/card';
-import { UnifiedButton } from '@/components/ui/UnifiedButton';
-import { UnifiedInput } from '@/components/ui/UnifiedInput';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { StandardDropdown } from "@/components/ui";
 import { Search, Filter, RefreshCw, Grid, List, ArrowUpDown } from 'lucide-react';
-import { HEIGHTS, CONTAINERS } from '@/config/dimensions';
 
 interface DashboardLayoutProps {
   title: string;
@@ -70,15 +69,16 @@ export function DashboardLayout({
             
             <div className="flex items-center gap-3">
               {actions}
-              <UnifiedButton
-                variant="secondary"
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={onRefresh}
+                className="gap-2 h-8"
                 disabled={isLoading}
-                icon={<RefreshCw className={isLoading ? 'animate-spin' : ''} />}
               >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
-              </UnifiedButton>
+              </Button>
               
               <StandardDropdown
                 options={[
@@ -95,49 +95,57 @@ export function DashboardLayout({
           
           {/* Search and Filters Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-4">
-            <div className="flex-1 sm:max-w-md">
-              <UnifiedInput
+            <div className="relative flex-1 sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+              <Input
                 placeholder={searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   onSearch(e.target.value);
                 }}
-                icon={<Search />}
-                iconPosition="left"
+                className="pl-10 h-10 sm:h-8"
+                style={{
+                  backgroundColor: theme.colors.bg.primary,
+                  borderColor: theme.colors.border.default,
+                  color: theme.colors.text.primary
+                }}
               />
             </div>
             
-            <UnifiedButton
-              variant="secondary"
-              size="sm"
+            <Button
+              variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              icon={<Filter />}
-              className="relative"
+              className="gap-2 relative h-8"
             >
+              <Filter className="w-4 h-4" />
               Filters
               {activeFiltersCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-blue-500/30">
                   {activeFiltersCount}
                 </span>
               )}
-            </UnifiedButton>
+            </Button>
 
             <div className="flex flex-wrap gap-2 sm:gap-1">
               {viewMode === 'both' && onViewChange && (
                 <div className="flex gap-1">
-                  <UnifiedButton
-                    variant={currentView === 'list' ? 'primary' : 'secondary'}
+                  <Button
+                    variant={currentView === 'list' ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => onViewChange('list')}
-                    icon={<List />}
-                  />
-                  <UnifiedButton
-                    variant={currentView === 'grid' ? 'primary' : 'secondary'}
+                    className="h-10 sm:h-8"
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={currentView === 'grid' ? 'primary' : 'outline'}
                     size="sm"
                     onClick={() => onViewChange('grid')}
-                    icon={<Grid />}
-                  />
+                    className="h-10 sm:h-8"
+                  >
+                    <Grid className="w-4 h-4" />
+                  </Button>
                 </div>
               )}
             </div>

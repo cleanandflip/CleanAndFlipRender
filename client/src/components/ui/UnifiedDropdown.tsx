@@ -136,7 +136,10 @@ export function UnifiedDropdown({
   return (
     <div className={cn("relative", className)} ref={dropdownRef}>
       {label && (
-        <label className="block text-sm font-medium mb-2 text-gray-400">
+        <label 
+          className="block text-sm font-medium mb-2"
+          style={{ color: theme.colors.textSecondary }}
+        >
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
@@ -175,7 +178,8 @@ export function UnifiedDropdown({
             />
           )}
           <ChevronDown 
-            className={cn("w-4 h-4 transition-transform text-gray-400", isOpen && "rotate-180")}
+            className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")}
+            style={{ color: theme.colors.textSecondary }}
           />
         </div>
       </button>
@@ -195,7 +199,10 @@ export function UnifiedDropdown({
           }}
         >
           {normalizedOptions.length === 0 ? (
-            <div className="px-4 py-3 text-center text-gray-400">
+            <div 
+              className="px-4 py-3 text-center"
+              style={{ color: theme.colors.textSecondary }}
+            >
               No options available
             </div>
           ) : (
@@ -206,21 +213,30 @@ export function UnifiedDropdown({
                 onClick={() => handleSelect(option)}
                 disabled={option.disabled}
                 className={cn(
-                  "w-full px-4 py-2.5 text-left text-white border-gray-600",
+                  "w-full px-4 py-2.5 text-left",
                   "flex items-center justify-between",
                   "transition-colors duration-150",
                   !option.disabled && "hover:bg-white hover:bg-opacity-5",
                   option.disabled && "opacity-50 cursor-not-allowed",
-                  index !== 0 && "border-t",
-                  selectedValues.includes(option.value) && "bg-blue-500/20"
+                  index !== 0 && "border-t"
                 )}
+                style={{
+                  color: theme.colors.textPrimary,
+                  borderColor: theme.colors.border,
+                  ...(selectedValues.includes(option.value) && {
+                    backgroundColor: theme.colors.selected
+                  })
+                }}
               >
                 <div className="flex items-center gap-3">
                   {option.icon && <span className="w-5 h-5">{option.icon}</span>}
                   <span>{option.label}</span>
                 </div>
                 {selectedValues.includes(option.value) && (
-                  <Check className="w-4 h-4 text-blue-400" />
+                  <Check 
+                    className="w-4 h-4" 
+                    style={{ color: theme.colors.accent }}
+                  />
                 )}
               </button>
             ))
