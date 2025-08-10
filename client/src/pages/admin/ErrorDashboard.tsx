@@ -8,6 +8,7 @@ import { AlertCircle, CheckCircle, Info, AlertTriangle, Bug, ChevronDown } from 
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
+import { CodebaseScanner } from '@/components/admin/CodebaseScanner';
 interface ErrorLog {
   id: string;
   error_type: string;
@@ -357,6 +358,9 @@ export default function ErrorDashboard() {
           Monitor and resolve application errors in real-time
         </p>
       </div>
+
+      {/* Codebase Scanner */}
+      <CodebaseScanner />
 
       {/* Sentry-style Summary Stats */}
       <div className="grid grid-cols-4 gap-4 mb-6">

@@ -1,14 +1,17 @@
 import { Router } from 'express';
 import { ErrorLogger } from '../../services/errorLogger';
-// Remove unused import
 import { requireAuth, requireRole } from '../../auth';
 import { UnifiedErrorHandler } from '../../middleware/unifiedErrorHandler';
+import codebaseScannerRoutes from './codebaseScanner';
 
 const router = Router();
 
 // Middleware - require developer role for all error management routes
 router.use(requireAuth);
 router.use(requireRole('developer'));
+
+// Mount codebase scanner routes
+router.use('/codebase-scanner', codebaseScannerRoutes);
 
 // Get paginated errors with filters
 router.get('/errors', async (req, res) => {
@@ -218,6 +221,26 @@ router.post('/errors/performance', async (req, res) => {
   } catch (error) {
     console.error('Failed to log performance metric:', error);
     res.status(500).json({ error: 'Failed to log performance metric' });
+  }
+});
+
+// Route for frontend to log errors
+router.post('/errors/log', async (req, res) => {
+  try {
+    const errorData = req.body;
+    
+    // Add server-side context
+    errorData.user_ip = req.ip;
+    errorData.user_agent = req.headers['user-agent'];
+    errorData.environment = process.env.NODE_ENV || 'development';
+    
+    // Log the error
+    await ErrorLogger.logError(errorData);
+    
+    res.json({ success: true, message: 'Error logged successfully' });
+  } catch (error) {
+    console.error('Failed to log frontend error:', error);
+    res.status(500).json({ error: 'Failed to log error' });
   }
 });
 

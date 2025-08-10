@@ -9,6 +9,7 @@ import { db } from './db';
 import { sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
+import { GlobalErrorCatcher } from "./services/globalErrorCatcher";
 
 const app = express();
 
@@ -223,6 +224,9 @@ app.use((req, res, next) => {
     // Use Vite dev server even in production NODE_ENV for development workflow
     await setupVite(app, server);
   }
+  
+  // Initialize global error catching after all routes are set up
+  GlobalErrorCatcher.init(app);
 
   // Server is started by registerRoutes function
   // No need to start it again here

@@ -35,6 +35,22 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)]
 );
 
+// Breadcrumbs table for error context
+export const errorBreadcrumbs = pgTable("error_breadcrumbs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  errorLogId: varchar("error_log_id").references(() => errorLogs.id, { onDelete: 'cascade' }),
+  timestamp: timestamp("timestamp").defaultNow(),
+  type: varchar("type"), // 'navigation', 'click', 'api', 'console'
+  category: varchar("category"),
+  message: text("message"),
+  data: jsonb("data"),
+  level: varchar("level"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type ErrorBreadcrumb = typeof errorBreadcrumbs.$inferSelect;
+export type InsertErrorBreadcrumb = typeof errorBreadcrumbs.$inferInsert;
+
 // User roles enum - Simplified system (user/developer only)
 export const userRoleEnum = pgEnum("user_role", [
   "user",
