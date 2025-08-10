@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Info, AlertTriangle, Bug } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface ErrorLog {
@@ -37,7 +37,7 @@ interface ErrorTrend {
 const severityConfig = {
   critical: { color: 'bg-red-500', icon: AlertCircle, label: 'Critical' },
   high: { color: 'bg-orange-500', icon: AlertTriangle, label: 'High' },
-  medium: { color: 'bg-yellow-500', icon: Alert, label: 'Medium' },
+  medium: { color: 'bg-yellow-500', icon: Bug, label: 'Medium' },
   low: { color: 'bg-blue-500', icon: Info, label: 'Low' }
 };
 
