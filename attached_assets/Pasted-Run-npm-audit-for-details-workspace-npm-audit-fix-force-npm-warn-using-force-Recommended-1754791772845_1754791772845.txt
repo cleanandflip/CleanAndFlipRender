@@ -1,0 +1,686 @@
+Run `npm audit` for details.
+~/workspace$ npm audit fix --force
+npm warn using --force Recommended protections disabled.
+npm warn audit Updating google-auto-auth to 0.4.0, which is a SemVer major change.
+npm warn audit Updating vite to 7.1.1, which is a SemVer major change.
+npm warn audit Updating drizzle-kit to 0.31.4, which is a SemVer major change.
+npm warn audit Updating google-auto-auth to 0.4.0, which is a SemVer major change.
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: vite@7.1.1
+npm warn Found: @types/node@20.16.11
+npm warn node_modules/@types/node
+npm warn   @types/node@"*" from @types/bcrypt@6.0.0
+npm warn   node_modules/@types/bcrypt
+npm warn     @types/bcrypt@"^6.0.0" from the root project
+npm warn   13 more (@types/body-parser, @types/connect, @types/cors, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peerOptional @types/node@"^20.19.0 || >=22.12.0" from vite@7.1.1
+npm warn node_modules/vite
+npm warn   dev vite@"7.1.1" from the root project
+npm warn   2 more (@tailwindcss/vite, @vitejs/plugin-react)
+npm warn
+npm warn Conflicting peer dependency: @types/node@24.2.1
+npm warn node_modules/@types/node
+npm warn   peerOptional @types/node@"^20.19.0 || >=22.12.0" from vite@7.1.1
+npm warn   node_modules/vite
+npm warn     dev vite@"7.1.1" from the root project
+npm warn     2 more (@tailwindcss/vite, @vitejs/plugin-react)
+npm warn deprecated cryptiles@2.0.5: This version has been deprecated in accordance with the hapi support policy (hapi.im/support). Please upgrade to the latest version to get the best features, bug fixes, and security patches. If you are unable to upgrade at this time, paid support is available for older versions (hapi.im/commercial).
+npm warn deprecated google-p12-pem@1.0.5: Package is no longer maintained
+npm warn deprecated google-p12-pem@1.0.5: Package is no longer maintained
+npm warn deprecated sntp@1.0.9: This module moved to @hapi/sntp. Please make sure to switch over as this distribution is no longer supported and may contain bugs and critical security issues.
+npm warn deprecated boom@2.10.1: This version has been deprecated in accordance with the hapi support policy (hapi.im/support). Please upgrade to the latest version to get the best features, bug fixes, and security patches. If you are unable to upgrade at this time, paid support is available for older versions (hapi.im/commercial).
+npm warn deprecated google-p12-pem@0.1.2: Package is no longer maintained
+npm warn deprecated node-uuid@1.4.8: Use uuid module instead
+npm warn deprecated har-validator@2.0.6: this library is no longer supported
+npm warn deprecated hawk@3.1.3: This module moved to @hapi/hawk. Please make sure to switch over as this distribution is no longer supported and may contain bugs and critical security issues.
+npm warn deprecated axios@0.18.1: Critical security vulnerability fixed in v0.21.1. For more information, see https://github.com/axios/axios/pull/3410
+npm warn deprecated axios@0.18.1: Critical security vulnerability fixed in v0.21.1. For more information, see https://github.com/axios/axios/pull/3410
+npm warn deprecated hoek@2.16.3: This version has been deprecated in accordance with the hapi support policy (hapi.im/support). Please upgrade to the latest version to get the best features, bug fixes, and security patches. If you are unable to upgrade at this time, paid support is available for older versions (hapi.im/commercial).
+npm warn deprecated request@2.74.0: request has been deprecated, see https://github.com/request/request/issues/3142
+
+added 103 packages, removed 66 packages, changed 11 packages, and audited 1060 packages in 8s
+
+131 packages are looking for funding
+  run `npm fund` for details
+
+# npm audit report
+
+axios  <=0.29.0
+Severity: high
+Axios vulnerable to Server-Side Request Forgery - https://github.com/advisories/GHSA-4w2v-q235-vp99
+Axios Cross-Site Request Forgery Vulnerability - https://github.com/advisories/GHSA-wf5p-g6vw-rhxx
+axios Inefficient Regular Expression Complexity vulnerability - https://github.com/advisories/GHSA-cph5-m8f7-6c5x
+axios Requests Vulnerable To Possible SSRF and Credential Leakage via Absolute URL - https://github.com/advisories/GHSA-jr5f-v2jv-69x6
+Depends on vulnerable versions of follow-redirects
+No fix available
+node_modules/@google-cloud/common/node_modules/axios
+node_modules/gcs-resumable-upload/node_modules/axios
+  gcp-metadata  0.5.0 - 0.9.0
+  Depends on vulnerable versions of axios
+  node_modules/@google-cloud/common/node_modules/gcp-metadata
+  node_modules/gcs-resumable-upload/node_modules/gcp-metadata
+    google-auth-library  <=5.10.1
+    Depends on vulnerable versions of axios
+    Depends on vulnerable versions of gcp-metadata
+    Depends on vulnerable versions of gtoken
+    Depends on vulnerable versions of gtoken
+    Depends on vulnerable versions of jws
+    Depends on vulnerable versions of request
+    node_modules/@google-cloud/common/node_modules/google-auth-library
+    node_modules/gcs-resumable-upload/node_modules/google-auth-library
+    node_modules/google-auto-auth/node_modules/google-auth-library
+      google-auto-auth  *
+      Depends on vulnerable versions of gcp-metadata
+      Depends on vulnerable versions of google-auth-library
+      Depends on vulnerable versions of google-auth-library
+      Depends on vulnerable versions of request
+      node_modules/@google-cloud/common/node_modules/google-auto-auth
+      node_modules/gcs-resumable-upload/node_modules/google-auto-auth
+      node_modules/google-auto-auth
+        @google-cloud/common  <=0.22.0
+        Depends on vulnerable versions of google-auto-auth
+        Depends on vulnerable versions of request
+        Depends on vulnerable versions of retry-request
+        node_modules/@google-cloud/common
+          @google-cloud/storage  <=2.4.2
+          Depends on vulnerable versions of @google-cloud/common
+          Depends on vulnerable versions of gcs-resumable-upload
+          Depends on vulnerable versions of request
+          node_modules/multer-storage/node_modules/@google-cloud/storage
+        gcs-resumable-upload  <=0.14.1
+        Depends on vulnerable versions of google-auto-auth
+        Depends on vulnerable versions of request
+        node_modules/gcs-resumable-upload
+
+base64url  <3.0.0
+Severity: moderate
+Out-of-bounds Read in base64url - https://github.com/advisories/GHSA-rvg8-pwq2-xj7q
+No fix available
+node_modules/base64url
+node_modules/google-auto-auth/node_modules/jwa/node_modules/base64url
+  jwa  <=1.1.5
+  Depends on vulnerable versions of base64url
+  node_modules/google-auto-auth/node_modules/jwa
+    jws  <=3.1.4
+    Depends on vulnerable versions of base64url
+    Depends on vulnerable versions of jwa
+    node_modules/google-auto-auth/node_modules/jws
+
+bl  <1.2.3
+Severity: moderate
+Remote Memory Exposure in bl - https://github.com/advisories/GHSA-pp7h-53gx-mx7r
+No fix available
+node_modules/bl
+  request  *
+  Depends on vulnerable versions of bl
+  Depends on vulnerable versions of form-data
+  Depends on vulnerable versions of hawk
+  Depends on vulnerable versions of tough-cookie
+  Depends on vulnerable versions of tunnel-agent
+  node_modules/google-auto-auth/node_modules/request
+  node_modules/request
+    gtoken  <=5.0.0
+    Depends on vulnerable versions of google-p12-pem
+    Depends on vulnerable versions of google-p12-pem
+    Depends on vulnerable versions of request
+    node_modules/@google-cloud/common/node_modules/gtoken
+    node_modules/gcs-resumable-upload/node_modules/gtoken
+    node_modules/google-auto-auth/node_modules/gtoken
+    retry-request  <=3.3.2
+    Depends on vulnerable versions of request
+    node_modules/@google-cloud/common/node_modules/retry-request
+
+esbuild  <=0.24.2
+Severity: moderate
+esbuild enables any website to send any requests to the development server and read the response - https://github.com/advisories/GHSA-67mh-4wv8-2f99
+fix available via `npm audit fix --force`
+Will install drizzle-kit@0.18.1, which is a breaking change
+node_modules/@esbuild-kit/core-utils/node_modules/esbuild
+  @esbuild-kit/core-utils  *
+  Depends on vulnerable versions of esbuild
+  node_modules/@esbuild-kit/core-utils
+    @esbuild-kit/esm-loader  *
+    Depends on vulnerable versions of @esbuild-kit/core-utils
+    node_modules/@esbuild-kit/esm-loader
+      drizzle-kit  0.17.5-6b7793f - 0.17.5-e5944eb || 0.18.1-065de38 - 0.18.1-f3800bf || >=0.19.0-07024c4
+      Depends on vulnerable versions of @esbuild-kit/esm-loader
+      node_modules/drizzle-kit
+
+follow-redirects  <=1.15.5
+Severity: high
+Exposure of Sensitive Information to an Unauthorized Actor in follow-redirects - https://github.com/advisories/GHSA-pw2r-vq6v-hr8c
+Follow Redirects improperly handles URLs in the url.parse() function - https://github.com/advisories/GHSA-jchw-25xp-jwwc
+follow-redirects' Proxy-Authorization header kept across hosts - https://github.com/advisories/GHSA-cxjh-pqwp-8mfp
+Exposure of sensitive information in follow-redirects - https://github.com/advisories/GHSA-74fj-2j2h-c42q
+No fix available
+node_modules/@google-cloud/common/node_modules/follow-redirects
+node_modules/gcs-resumable-upload/node_modules/follow-redirects
+
+form-data  <2.5.4
+Severity: critical
+form-data uses unsafe random function in form-data for choosing boundary - https://github.com/advisories/GHSA-fjxv-7rqg-78g4
+No fix available
+node_modules/google-auto-auth/node_modules/form-data
+node_modules/request/node_modules/form-data
+
+hawk  <=9.0.0
+Severity: high
+Uncontrolled Resource Consumption in Hawk - https://github.com/advisories/GHSA-44pw-h2cw-w3vq
+Depends on vulnerable versions of boom
+Depends on vulnerable versions of cryptiles
+Depends on vulnerable versions of hoek
+Depends on vulnerable versions of sntp
+No fix available
+node_modules/hawk
+
+hoek  *
+Severity: high
+hoek subject to prototype pollution via the clone function. - https://github.com/advisories/GHSA-c429-5p7v-vgjp
+Prototype Pollution in hoek - https://github.com/advisories/GHSA-jp4x-w63m-7wgm
+No fix available
+node_modules/hoek
+  boom  *
+  Depends on vulnerable versions of hoek
+  node_modules/boom
+    cryptiles  *
+    Depends on vulnerable versions of boom
+    node_modules/cryptiles
+  sntp  0.0.0 || >=0.1.1
+  Depends on vulnerable versions of hoek
+  node_modules/sntp
+
+node-forge  <=1.2.1
+Severity: high
+Prototype Pollution in node-forge debug API. - https://github.com/advisories/GHSA-5rrq-pxf6-6jx5
+Prototype Pollution in node-forge util.setPath API - https://github.com/advisories/GHSA-wxgw-qj99-44c2
+URL parsing in node-forge could lead to undesired behavior. - https://github.com/advisories/GHSA-gf8q-jrpm-jvxq
+Improper Verification of Cryptographic Signature in `node-forge` - https://github.com/advisories/GHSA-2r2c-g63r-vccr
+Open Redirect in node-forge - https://github.com/advisories/GHSA-8fr3-hfg3-gpgp
+Prototype Pollution in node-forge - https://github.com/advisories/GHSA-92xj-mqp7-vmcj
+Improper Verification of Cryptographic Signature in node-forge - https://github.com/advisories/GHSA-x4jg-mjrx-434g
+Improper Verification of Cryptographic Signature in node-forge - https://github.com/advisories/GHSA-cfm4-qjh2-4765
+No fix available
+node_modules/@google-cloud/common/node_modules/node-forge
+node_modules/gcs-resumable-upload/node_modules/node-forge
+node_modules/google-auto-auth/node_modules/node-forge
+  google-p12-pem  <=3.1.2
+  Depends on vulnerable versions of node-forge
+  Depends on vulnerable versions of node-forge
+  node_modules/@google-cloud/common/node_modules/google-p12-pem
+  node_modules/gcs-resumable-upload/node_modules/google-p12-pem
+  node_modules/google-auto-auth/node_modules/google-p12-pem
+
+
+tough-cookie  <4.1.3
+Severity: moderate
+tough-cookie Prototype Pollution vulnerability - https://github.com/advisories/GHSA-72xf-g2v4-qvf3
+No fix available
+node_modules/google-auto-auth/node_modules/tough-cookie
+node_modules/tough-cookie
+
+tunnel-agent  <0.6.0
+Severity: moderate
+Memory Exposure in tunnel-agent - https://github.com/advisories/GHSA-xc7v-wxcw-j472
+No fix available
+node_modules/google-auto-auth/node_modules/tunnel-agent
+
+29 vulnerabilities (14 moderate, 13 high, 2 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+~/workspace$ npm audit fix --force
+npm warn using --force Recommended protections disabled.
+npm warn audit No fix available for request@*
+npm warn audit No fix available for google-auto-auth@*
+npm warn audit Updating drizzle-kit to 0.18.1, which is a SemVer major change.
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: vite@7.1.1
+npm warn Found: @types/node@20.16.11
+npm warn node_modules/@types/node
+npm warn   @types/node@"*" from @types/bcrypt@6.0.0
+npm warn   node_modules/@types/bcrypt
+npm warn     @types/bcrypt@"^6.0.0" from the root project
+npm warn   13 more (@types/body-parser, @types/connect, @types/cors, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peerOptional @types/node@"^20.19.0 || >=22.12.0" from vite@7.1.1
+npm warn node_modules/vite
+npm warn   peer vite@"^5.2.0 || ^6 || ^7" from @tailwindcss/vite@4.1.11
+npm warn   node_modules/@tailwindcss/vite
+npm warn   2 more (@vitejs/plugin-react, the root project)
+npm warn
+npm warn Conflicting peer dependency: @types/node@24.2.1
+npm warn node_modules/@types/node
+npm warn   peerOptional @types/node@"^20.19.0 || >=22.12.0" from vite@7.1.1
+npm warn   node_modules/vite
+npm warn     peer vite@"^5.2.0 || ^6 || ^7" from @tailwindcss/vite@4.1.11
+npm warn     node_modules/@tailwindcss/vite
+npm warn     2 more (@vitejs/plugin-react, the root project)
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@8.1.0: Glob versions prior to v9 are no longer supported
+
+added 39 packages, removed 26 packages, changed 1 package, and audited 1073 packages in 4s
+
+134 packages are looking for funding
+  run `npm fund` for details
+
+# npm audit report
+
+axios  <=0.29.0
+Severity: high
+Axios vulnerable to Server-Side Request Forgery - https://github.com/advisories/GHSA-4w2v-q235-vp99
+Axios Cross-Site Request Forgery Vulnerability - https://github.com/advisories/GHSA-wf5p-g6vw-rhxx
+axios Inefficient Regular Expression Complexity vulnerability - https://github.com/advisories/GHSA-cph5-m8f7-6c5x
+axios Requests Vulnerable To Possible SSRF and Credential Leakage via Absolute URL - https://github.com/advisories/GHSA-jr5f-v2jv-69x6
+Depends on vulnerable versions of follow-redirects
+No fix available
+node_modules/@google-cloud/common/node_modules/axios
+node_modules/gcs-resumable-upload/node_modules/axios
+  gcp-metadata  0.5.0 - 0.9.0
+  Depends on vulnerable versions of axios
+  node_modules/@google-cloud/common/node_modules/gcp-metadata
+  node_modules/gcs-resumable-upload/node_modules/gcp-metadata
+    google-auth-library  <=5.10.1
+    Depends on vulnerable versions of axios
+    Depends on vulnerable versions of gcp-metadata
+    Depends on vulnerable versions of gtoken
+    Depends on vulnerable versions of gtoken
+    Depends on vulnerable versions of jws
+    Depends on vulnerable versions of request
+    node_modules/@google-cloud/common/node_modules/google-auth-library
+    node_modules/gcs-resumable-upload/node_modules/google-auth-library
+    node_modules/google-auto-auth/node_modules/google-auth-library
+      google-auto-auth  *
+      Depends on vulnerable versions of gcp-metadata
+      Depends on vulnerable versions of google-auth-library
+      Depends on vulnerable versions of google-auth-library
+      Depends on vulnerable versions of request
+      node_modules/@google-cloud/common/node_modules/google-auto-auth
+      node_modules/gcs-resumable-upload/node_modules/google-auto-auth
+      node_modules/google-auto-auth
+        @google-cloud/common  <=0.22.0
+        Depends on vulnerable versions of google-auto-auth
+        Depends on vulnerable versions of request
+        Depends on vulnerable versions of retry-request
+        node_modules/@google-cloud/common
+          @google-cloud/storage  <=2.4.2
+          Depends on vulnerable versions of @google-cloud/common
+          Depends on vulnerable versions of gcs-resumable-upload
+          Depends on vulnerable versions of request
+          node_modules/multer-storage/node_modules/@google-cloud/storage
+        gcs-resumable-upload  <=0.14.1
+        Depends on vulnerable versions of google-auto-auth
+        Depends on vulnerable versions of request
+        node_modules/gcs-resumable-upload
+
+base64url  <3.0.0
+Severity: moderate
+Out-of-bounds Read in base64url - https://github.com/advisories/GHSA-rvg8-pwq2-xj7q
+No fix available
+node_modules/base64url
+node_modules/google-auto-auth/node_modules/jwa/node_modules/base64url
+  jwa  <=1.1.5
+  Depends on vulnerable versions of base64url
+  node_modules/google-auto-auth/node_modules/jwa
+    jws  <=3.1.4
+    Depends on vulnerable versions of base64url
+    Depends on vulnerable versions of jwa
+    node_modules/google-auto-auth/node_modules/jws
+
+bl  <1.2.3
+Severity: moderate
+Remote Memory Exposure in bl - https://github.com/advisories/GHSA-pp7h-53gx-mx7r
+No fix available
+node_modules/bl
+  request  *
+  Depends on vulnerable versions of bl
+  Depends on vulnerable versions of form-data
+  Depends on vulnerable versions of hawk
+  Depends on vulnerable versions of tough-cookie
+  Depends on vulnerable versions of tunnel-agent
+  node_modules/google-auto-auth/node_modules/request
+  node_modules/request
+    gtoken  <=5.0.0
+    Depends on vulnerable versions of google-p12-pem
+    Depends on vulnerable versions of google-p12-pem
+    Depends on vulnerable versions of request
+    node_modules/@google-cloud/common/node_modules/gtoken
+    node_modules/gcs-resumable-upload/node_modules/gtoken
+    node_modules/google-auto-auth/node_modules/gtoken
+    retry-request  <=3.3.2
+    Depends on vulnerable versions of request
+    node_modules/@google-cloud/common/node_modules/retry-request
+
+esbuild  <=0.24.2
+Severity: moderate
+esbuild enables any website to send any requests to the development server and read the response - https://github.com/advisories/GHSA-67mh-4wv8-2f99
+fix available via `npm audit fix --force`
+Will install drizzle-kit@0.31.4, which is a breaking change
+node_modules/drizzle-kit/node_modules/esbuild
+  drizzle-kit  0.9.1 - 0.9.54 || 0.12.9 - 0.18.1 || 0.19.2-9340465 - 0.30.6 || >=1.0.0-beta.1-00df263
+  Depends on vulnerable versions of esbuild
+  node_modules/drizzle-kit
+
+follow-redirects  <=1.15.5
+Severity: high
+Exposure of Sensitive Information to an Unauthorized Actor in follow-redirects - https://github.com/advisories/GHSA-pw2r-vq6v-hr8c
+Follow Redirects improperly handles URLs in the url.parse() function - https://github.com/advisories/GHSA-jchw-25xp-jwwc
+follow-redirects' Proxy-Authorization header kept across hosts - https://github.com/advisories/GHSA-cxjh-pqwp-8mfp
+Exposure of sensitive information in follow-redirects - https://github.com/advisories/GHSA-74fj-2j2h-c42q
+No fix available
+node_modules/@google-cloud/common/node_modules/follow-redirects
+node_modules/gcs-resumable-upload/node_modules/follow-redirects
+
+form-data  <2.5.4
+Severity: critical
+form-data uses unsafe random function in form-data for choosing boundary - https://github.com/advisories/GHSA-fjxv-7rqg-78g4
+No fix available
+node_modules/google-auto-auth/node_modules/form-data
+node_modules/request/node_modules/form-data
+
+hawk  <=9.0.0
+Severity: high
+Uncontrolled Resource Consumption in Hawk - https://github.com/advisories/GHSA-44pw-h2cw-w3vq
+Depends on vulnerable versions of boom
+Depends on vulnerable versions of cryptiles
+Depends on vulnerable versions of hoek
+Depends on vulnerable versions of sntp
+No fix available
+node_modules/hawk
+
+hoek  *
+Severity: high
+hoek subject to prototype pollution via the clone function. - https://github.com/advisories/GHSA-c429-5p7v-vgjp
+Prototype Pollution in hoek - https://github.com/advisories/GHSA-jp4x-w63m-7wgm
+No fix available
+node_modules/hoek
+  boom  *
+  Depends on vulnerable versions of hoek
+  node_modules/boom
+    cryptiles  *
+    Depends on vulnerable versions of boom
+    node_modules/cryptiles
+  sntp  0.0.0 || >=0.1.1
+  Depends on vulnerable versions of hoek
+  node_modules/sntp
+
+node-forge  <=1.2.1
+Severity: high
+Prototype Pollution in node-forge debug API. - https://github.com/advisories/GHSA-5rrq-pxf6-6jx5
+Prototype Pollution in node-forge util.setPath API - https://github.com/advisories/GHSA-wxgw-qj99-44c2
+URL parsing in node-forge could lead to undesired behavior. - https://github.com/advisories/GHSA-gf8q-jrpm-jvxq
+Improper Verification of Cryptographic Signature in `node-forge` - https://github.com/advisories/GHSA-2r2c-g63r-vccr
+Open Redirect in node-forge - https://github.com/advisories/GHSA-8fr3-hfg3-gpgp
+Prototype Pollution in node-forge - https://github.com/advisories/GHSA-92xj-mqp7-vmcj
+Improper Verification of Cryptographic Signature in node-forge - https://github.com/advisories/GHSA-x4jg-mjrx-434g
+Improper Verification of Cryptographic Signature in node-forge - https://github.com/advisories/GHSA-cfm4-qjh2-4765
+No fix available
+node_modules/@google-cloud/common/node_modules/node-forge
+node_modules/gcs-resumable-upload/node_modules/node-forge
+node_modules/google-auto-auth/node_modules/node-forge
+  google-p12-pem  <=3.1.2
+  Depends on vulnerable versions of node-forge
+  Depends on vulnerable versions of node-forge
+  node_modules/@google-cloud/common/node_modules/google-p12-pem
+  node_modules/gcs-resumable-upload/node_modules/google-p12-pem
+  node_modules/google-auto-auth/node_modules/google-p12-pem
+
+
+tough-cookie  <4.1.3
+Severity: moderate
+tough-cookie Prototype Pollution vulnerability - https://github.com/advisories/GHSA-72xf-g2v4-qvf3
+No fix available
+node_modules/google-auto-auth/node_modules/tough-cookie
+node_modules/tough-cookie
+
+tunnel-agent  <0.6.0
+Severity: moderate
+Memory Exposure in tunnel-agent - https://github.com/advisories/GHSA-xc7v-wxcw-j472
+No fix available
+node_modules/google-auto-auth/node_modules/tunnel-agent
+
+27 vulnerabilities (12 moderate, 13 high, 2 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+~/workspace$ npm audit fix --force
+npm warn using --force Recommended protections disabled.
+npm warn audit No fix available for request@*
+npm warn audit Updating drizzle-kit to 0.31.4, which is a SemVer major change.
+npm warn audit No fix available for google-auto-auth@*
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: vite@7.1.1
+npm warn Found: @types/node@20.16.11
+npm warn node_modules/@types/node
+npm warn   @types/node@"*" from @types/bcrypt@6.0.0
+npm warn   node_modules/@types/bcrypt
+npm warn     @types/bcrypt@"^6.0.0" from the root project
+npm warn   13 more (@types/body-parser, @types/connect, @types/cors, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peerOptional @types/node@"^20.19.0 || >=22.12.0" from vite@7.1.1
+npm warn node_modules/vite
+npm warn   peer vite@"^5.2.0 || ^6 || ^7" from @tailwindcss/vite@4.1.11
+npm warn   node_modules/@tailwindcss/vite
+npm warn   2 more (@vitejs/plugin-react, the root project)
+npm warn
+npm warn Conflicting peer dependency: @types/node@24.2.1
+npm warn node_modules/@types/node
+npm warn   peerOptional @types/node@"^20.19.0 || >=22.12.0" from vite@7.1.1
+npm warn   node_modules/vite
+npm warn     peer vite@"^5.2.0 || ^6 || ^7" from @tailwindcss/vite@4.1.11
+npm warn     node_modules/@tailwindcss/vite
+npm warn     2 more (@vitejs/plugin-react, the root project)
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+
+added 26 packages, removed 39 packages, changed 1 package, and audited 1060 packages in 3s
+
+131 packages are looking for funding
+  run `npm fund` for details
+
+# npm audit report
+
+axios  <=0.29.0
+Severity: high
+Axios vulnerable to Server-Side Request Forgery - https://github.com/advisories/GHSA-4w2v-q235-vp99
+Axios Cross-Site Request Forgery Vulnerability - https://github.com/advisories/GHSA-wf5p-g6vw-rhxx
+axios Inefficient Regular Expression Complexity vulnerability - https://github.com/advisories/GHSA-cph5-m8f7-6c5x
+axios Requests Vulnerable To Possible SSRF and Credential Leakage via Absolute URL - https://github.com/advisories/GHSA-jr5f-v2jv-69x6
+Depends on vulnerable versions of follow-redirects
+No fix available
+node_modules/@google-cloud/common/node_modules/axios
+node_modules/gcs-resumable-upload/node_modules/axios
+  gcp-metadata  0.5.0 - 0.9.0
+  Depends on vulnerable versions of axios
+  node_modules/@google-cloud/common/node_modules/gcp-metadata
+  node_modules/gcs-resumable-upload/node_modules/gcp-metadata
+    google-auth-library  <=5.10.1
+    Depends on vulnerable versions of axios
+    Depends on vulnerable versions of gcp-metadata
+    Depends on vulnerable versions of gtoken
+    Depends on vulnerable versions of gtoken
+    Depends on vulnerable versions of jws
+    Depends on vulnerable versions of request
+    node_modules/@google-cloud/common/node_modules/google-auth-library
+    node_modules/gcs-resumable-upload/node_modules/google-auth-library
+    node_modules/google-auto-auth/node_modules/google-auth-library
+      google-auto-auth  *
+      Depends on vulnerable versions of gcp-metadata
+      Depends on vulnerable versions of google-auth-library
+      Depends on vulnerable versions of google-auth-library
+      Depends on vulnerable versions of request
+      node_modules/@google-cloud/common/node_modules/google-auto-auth
+      node_modules/gcs-resumable-upload/node_modules/google-auto-auth
+      node_modules/google-auto-auth
+        @google-cloud/common  <=0.22.0
+        Depends on vulnerable versions of google-auto-auth
+        Depends on vulnerable versions of request
+        Depends on vulnerable versions of retry-request
+        node_modules/@google-cloud/common
+          @google-cloud/storage  <=2.4.2
+          Depends on vulnerable versions of @google-cloud/common
+          Depends on vulnerable versions of gcs-resumable-upload
+          Depends on vulnerable versions of request
+          node_modules/multer-storage/node_modules/@google-cloud/storage
+        gcs-resumable-upload  <=0.14.1
+        Depends on vulnerable versions of google-auto-auth
+        Depends on vulnerable versions of request
+        node_modules/gcs-resumable-upload
+
+base64url  <3.0.0
+Severity: moderate
+Out-of-bounds Read in base64url - https://github.com/advisories/GHSA-rvg8-pwq2-xj7q
+No fix available
+node_modules/base64url
+node_modules/google-auto-auth/node_modules/jwa/node_modules/base64url
+  jwa  <=1.1.5
+  Depends on vulnerable versions of base64url
+  node_modules/google-auto-auth/node_modules/jwa
+    jws  <=3.1.4
+    Depends on vulnerable versions of base64url
+    Depends on vulnerable versions of jwa
+    node_modules/google-auto-auth/node_modules/jws
+
+bl  <1.2.3
+Severity: moderate
+Remote Memory Exposure in bl - https://github.com/advisories/GHSA-pp7h-53gx-mx7r
+No fix available
+node_modules/bl
+  request  *
+  Depends on vulnerable versions of bl
+  Depends on vulnerable versions of form-data
+  Depends on vulnerable versions of hawk
+  Depends on vulnerable versions of tough-cookie
+  Depends on vulnerable versions of tunnel-agent
+  node_modules/google-auto-auth/node_modules/request
+  node_modules/request
+    gtoken  <=5.0.0
+    Depends on vulnerable versions of google-p12-pem
+    Depends on vulnerable versions of google-p12-pem
+    Depends on vulnerable versions of request
+    node_modules/@google-cloud/common/node_modules/gtoken
+    node_modules/gcs-resumable-upload/node_modules/gtoken
+    node_modules/google-auto-auth/node_modules/gtoken
+    retry-request  <=3.3.2
+    Depends on vulnerable versions of request
+    node_modules/@google-cloud/common/node_modules/retry-request
+
+esbuild  <=0.24.2
+Severity: moderate
+esbuild enables any website to send any requests to the development server and read the response - https://github.com/advisories/GHSA-67mh-4wv8-2f99
+fix available via `npm audit fix --force`
+Will install drizzle-kit@0.18.1, which is a breaking change
+node_modules/@esbuild-kit/core-utils/node_modules/esbuild
+  @esbuild-kit/core-utils  *
+  Depends on vulnerable versions of esbuild
+  node_modules/@esbuild-kit/core-utils
+    @esbuild-kit/esm-loader  *
+    Depends on vulnerable versions of @esbuild-kit/core-utils
+    node_modules/@esbuild-kit/esm-loader
+      drizzle-kit  0.17.5-6b7793f - 0.17.5-e5944eb || 0.18.1-065de38 - 0.18.1-f3800bf || >=0.19.0-07024c4
+      Depends on vulnerable versions of @esbuild-kit/esm-loader
+      node_modules/drizzle-kit
+
+follow-redirects  <=1.15.5
+Severity: high
+Exposure of Sensitive Information to an Unauthorized Actor in follow-redirects - https://github.com/advisories/GHSA-pw2r-vq6v-hr8c
+Follow Redirects improperly handles URLs in the url.parse() function - https://github.com/advisories/GHSA-jchw-25xp-jwwc
+follow-redirects' Proxy-Authorization header kept across hosts - https://github.com/advisories/GHSA-cxjh-pqwp-8mfp
+Exposure of sensitive information in follow-redirects - https://github.com/advisories/GHSA-74fj-2j2h-c42q
+No fix available
+node_modules/@google-cloud/common/node_modules/follow-redirects
+node_modules/gcs-resumable-upload/node_modules/follow-redirects
+
+form-data  <2.5.4
+Severity: critical
+form-data uses unsafe random function in form-data for choosing boundary - https://github.com/advisories/GHSA-fjxv-7rqg-78g4
+No fix available
+node_modules/google-auto-auth/node_modules/form-data
+node_modules/request/node_modules/form-data
+
+hawk  <=9.0.0
+Severity: high
+Uncontrolled Resource Consumption in Hawk - https://github.com/advisories/GHSA-44pw-h2cw-w3vq
+Depends on vulnerable versions of boom
+Depends on vulnerable versions of cryptiles
+Depends on vulnerable versions of hoek
+Depends on vulnerable versions of sntp
+No fix available
+node_modules/hawk
+
+hoek  *
+Severity: high
+hoek subject to prototype pollution via the clone function. - https://github.com/advisories/GHSA-c429-5p7v-vgjp
+Prototype Pollution in hoek - https://github.com/advisories/GHSA-jp4x-w63m-7wgm
+No fix available
+node_modules/hoek
+  boom  *
+  Depends on vulnerable versions of hoek
+  node_modules/boom
+    cryptiles  *
+    Depends on vulnerable versions of boom
+    node_modules/cryptiles
+  sntp  0.0.0 || >=0.1.1
+  Depends on vulnerable versions of hoek
+  node_modules/sntp
+
+node-forge  <=1.2.1
+Severity: high
+Prototype Pollution in node-forge debug API. - https://github.com/advisories/GHSA-5rrq-pxf6-6jx5
+Prototype Pollution in node-forge util.setPath API - https://github.com/advisories/GHSA-wxgw-qj99-44c2
+URL parsing in node-forge could lead to undesired behavior. - https://github.com/advisories/GHSA-gf8q-jrpm-jvxq
+Improper Verification of Cryptographic Signature in `node-forge` - https://github.com/advisories/GHSA-2r2c-g63r-vccr
+Open Redirect in node-forge - https://github.com/advisories/GHSA-8fr3-hfg3-gpgp
+Prototype Pollution in node-forge - https://github.com/advisories/GHSA-92xj-mqp7-vmcj
+Improper Verification of Cryptographic Signature in node-forge - https://github.com/advisories/GHSA-x4jg-mjrx-434g
+Improper Verification of Cryptographic Signature in node-forge - https://github.com/advisories/GHSA-cfm4-qjh2-4765
+No fix available
+node_modules/@google-cloud/common/node_modules/node-forge
+node_modules/gcs-resumable-upload/node_modules/node-forge
+node_modules/google-auto-auth/node_modules/node-forge
+  google-p12-pem  <=3.1.2
+  Depends on vulnerable versions of node-forge
+  Depends on vulnerable versions of node-forge
+  node_modules/@google-cloud/common/node_modules/google-p12-pem
+  node_modules/gcs-resumable-upload/node_modules/google-p12-pem
+  node_modules/google-auto-auth/node_modules/google-p12-pem
+
+
+tough-cookie  <4.1.3
+Severity: moderate
+tough-cookie Prototype Pollution vulnerability - https://github.com/advisories/GHSA-72xf-g2v4-qvf3
+No fix available
+node_modules/google-auto-auth/node_modules/tough-cookie
+node_modules/tough-cookie
+
+tunnel-agent  <0.6.0
+Severity: moderate
+Memory Exposure in tunnel-agent - https://github.com/advisories/GHSA-xc7v-wxcw-j472
+No fix available
+node_modules/google-auto-auth/node_modules/tunnel-agent
+
+29 vulnerabilities (14 moderate, 13 high, 2 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
