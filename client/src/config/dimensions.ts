@@ -248,6 +248,26 @@ export const grids = {
   }
 } as const;
 
+// Form layout specifications
+export const formLayouts = {
+  structure: {
+    fieldSpacing: 'space-y-4',       // 16px between fields
+    sectionSpacing: 'space-y-6',     // 24px between sections
+    labelToInput: 'mb-2',            // 8px
+    errorToField: 'mt-1',            // 4px
+    submitSection: 'mt-6',           // 24px
+    buttonGroup: 'flex gap-3',       // 12px between buttons
+    twoColumn: 'grid grid-cols-1 md:grid-cols-2 gap-4',
+    fullWidth: 'col-span-full'
+  },
+  
+  validation: {
+    required: 'text-red-500 ml-1',
+    error: 'text-sm text-red-600 dark:text-red-400',
+    success: 'text-sm text-green-600 dark:text-green-400'
+  }
+} as const;
+
 // Responsive breakpoints helper
 export const responsive = {
   // Mobile-first approach

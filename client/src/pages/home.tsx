@@ -29,7 +29,7 @@ export default function Home() {
   // Real-time WebSocket event listeners for live sync
   useEffect(() => {
     if (lastMessage?.type === 'product_update') {
-      console.log('🔄 Product update received, refreshing featured products...');
+
       refetch();
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     }
@@ -38,12 +38,12 @@ export default function Home() {
   // Legacy event listeners for admin updates
   useEffect(() => {
     const handleProductUpdate = () => {
-      console.log('🔄 Legacy product update event, refreshing...');
+
       refetch();
     };
 
     const handleRefreshProducts = () => {
-      console.log('🔄 Refresh products event, invalidating cache...');
+
       refetch();
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     };

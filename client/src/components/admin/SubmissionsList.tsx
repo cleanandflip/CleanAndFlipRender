@@ -147,7 +147,7 @@ export function SubmissionsList({
                   value=""
                   placeholder="•••"
                   onChange={(action) => {
-                    console.log(`Action selected: ${action}`);
+                    // Handle submission actions (edit, note, archive, delete)
                   }}
                   size="sm"
                   className="border-none bg-transparent"

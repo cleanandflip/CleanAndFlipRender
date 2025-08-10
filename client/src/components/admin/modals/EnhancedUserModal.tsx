@@ -147,7 +147,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
         delete submitData.password;
       }
       
-      console.log('Submitting user data:', { ...submitData, password: submitData.password ? '[HIDDEN]' : undefined });
+
       
       const res = await fetch(endpoint, {
         method,

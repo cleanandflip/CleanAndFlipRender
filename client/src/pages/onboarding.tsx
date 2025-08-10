@@ -38,7 +38,7 @@ export default function Onboarding() {
     const isGoogleUser = urlParams.get('google') === 'true';
     const isNewUser = urlParams.get('new') === 'true';
     
-    console.log('[ONBOARDING] URL params:', { urlStep, isGoogleUser, isNewUser });
+
     
     if (urlStep) {
       setStep(parseInt(urlStep));
