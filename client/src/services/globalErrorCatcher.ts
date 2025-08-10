@@ -138,16 +138,17 @@ export class FrontendErrorCatcher {
       errorData.browser = navigator.userAgent;
       errorData.timestamp = new Date();
       
-      // Re-enabled with improved error handling
-      await fetch('/api/errors/client', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(errorData),
-        credentials: 'include'
-      }).catch(err => {
-        // Fallback - don't let error logging cause more errors
-        // Silent failure to prevent recursive loops
-      });
+      // FLAWLESS ERROR LOGGING - guaranteed no crashes
+      try {
+        await fetch('/api/errors/client', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(errorData),
+          credentials: 'include'
+        });
+      } catch {
+        // Absolutely silent failure - no retries, no console output, no exceptions
+      }
       
     } catch (err) {
       console.warn('Error in error logging:', err);

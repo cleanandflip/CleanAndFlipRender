@@ -75,8 +75,8 @@ class ClientErrorLogger {
   }
 
   async logError(errorData: ClientErrorData) {
+    // FLAWLESS ERROR LOGGING - guaranteed no crashes
     try {
-      // Re-enabled with improved error handling
       await fetch('/api/errors/client', {
         method: 'POST',
         headers: {
@@ -85,9 +85,8 @@ class ClientErrorLogger {
         credentials: 'include',
         body: JSON.stringify(errorData)
       });
-    } catch (err) {
-      // Silently fail to avoid recursive errors
-      // No console output to prevent loops
+    } catch {
+      // Absolutely silent failure - no retries, no console output, no exceptions
     }
   }
 
