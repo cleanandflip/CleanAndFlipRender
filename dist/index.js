@@ -675,19 +675,16 @@ var init_logger = __esm({
 });
 
 // server/db.ts
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { WebSocket } from "ws";
-import { sql as sql2 } from "drizzle-orm";
-var poolConfig, pool, keepAlive, keepAliveInterval, db;
+import { neon, neonConfig } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import { sql as drizzleSql } from "drizzle-orm";
+var sql2, db, verifyDatabaseConnection;
 var init_db = __esm({
   "server/db.ts"() {
     "use strict";
     init_schema();
     init_logger();
-    neonConfig.webSocketConstructor = WebSocket;
-    neonConfig.pipelineConnect = false;
-    neonConfig.useSecureWebSocket = true;
+    neonConfig.fetchConnectionCache = true;
     console.log("[DB] Initializing database connection...");
     console.log("[DB] NODE_ENV:", process.env.NODE_ENV);
     console.log("[DB] Has DATABASE_URL:", !!process.env.DATABASE_URL);
@@ -708,63 +705,33 @@ var init_db = __esm({
     } catch (e) {
       console.error("[DB] Invalid DATABASE_URL format");
     }
-    poolConfig = {
-      connectionString: process.env.DATABASE_URL,
-      max: 20,
-      idleTimeoutMillis: 3e4,
-      connectionTimeoutMillis: 1e4,
-      keepAlive: true,
-      keepAliveInitialDelayMillis: 1e4,
-      statement_timeout: 3e4,
-      query_timeout: 3e4
-    };
-    pool = new Pool(poolConfig);
-    pool.on("error", (err) => {
-      Logger.error("Database pool error:", err.message);
-      if (err.code === "57P01" || err.message?.includes("terminating connection")) {
-        Logger.info("Connection terminated, creating new pool...");
-        pool = new Pool(poolConfig);
-      }
-    });
-    pool.on("connect", () => {
-    });
-    keepAlive = async () => {
-      try {
-        const client = await pool.connect();
-        await client.query("SELECT 1");
-        client.release();
-      } catch (error) {
-        if (process.env.NODE_ENV !== "production") {
-          Logger.error("Keep-alive query failed:", error.message);
-          if (error.code === "57P01" || error.message?.includes("connection")) {
-            Logger.info("Recreating pool due to connection issues...");
-            pool = new Pool(poolConfig);
+    sql2 = neon(process.env.DATABASE_URL);
+    db = drizzle(sql2, { schema: schema_exports });
+    verifyDatabaseConnection = async (maxRetries = 3) => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const result = await db.execute(drizzleSql`SELECT current_database() as db, current_user as user, version() as version`);
+          const info = result.rows?.[0];
+          console.log("[DB] \u2705 Database connected successfully");
+          console.log(`[DB] Database: ${info.db}, User: ${info.user}`);
+          console.log(`[DB] PostgreSQL Version: ${info.version?.split(",")[0] || "unknown"}`);
+          return true;
+        } catch (err) {
+          console.error(`[DB] \u274C Connection attempt ${attempt}/${maxRetries} failed:`, err.message);
+          if (attempt < maxRetries) {
+            const delay = attempt * 2e3;
+            console.log(`[DB] Retrying in ${delay}ms...`);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+          } else {
+            console.error("[DB] \u274C All connection attempts failed");
+            console.error("[DB] This may cause authentication and database features to fail");
+            return false;
           }
         }
       }
+      return false;
     };
-    keepAliveInterval = process.env.NODE_ENV === "production" ? 10 * 60 * 1e3 : 5 * 60 * 1e3;
-    setInterval(keepAlive, keepAliveInterval);
-    db = drizzle({ client: pool, schema: schema_exports });
-    db.execute(sql2`SELECT current_database() as db, current_user as user, version() as version`).then((result) => {
-      const info = result.rows[0];
-      console.log("[DB] \u2705 Database connected successfully");
-      console.log(`[DB] Database: ${info.db}, User: ${info.user}`);
-      console.log(`[DB] PostgreSQL Version: ${info.version?.split(",")[0] || "unknown"}`);
-    }).catch((err) => {
-      console.error("[DB] \u274C Database connection failed:", err.message);
-      console.error("[DB] This will cause authentication and other database features to fail");
-    });
-    process.on("SIGTERM", async () => {
-      Logger.info("Gracefully shutting down database connections...");
-      await pool.end();
-      process.exit(0);
-    });
-    process.on("SIGINT", async () => {
-      Logger.info("Gracefully shutting down database connections...");
-      await pool.end();
-      process.exit(0);
-    });
+    verifyDatabaseConnection();
   }
 });
 
@@ -1652,7 +1619,7 @@ __export(websocket_exports, {
   setupWebSocket: () => setupWebSocket,
   wsManager: () => wsManager
 });
-import { WebSocketServer, WebSocket as WebSocket2 } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 function setupWebSocket(server2) {
   wsManager = new WebSocketManager(server2);
   return wsManager;
@@ -1741,7 +1708,7 @@ var init_websocket = __esm({
         const message = JSON.stringify(data);
         let successCount = 0;
         this.clients.forEach((client, id) => {
-          if (id !== excludeClientId && client.ws.readyState === WebSocket2.OPEN) {
+          if (id !== excludeClientId && client.ws.readyState === WebSocket.OPEN) {
             try {
               client.ws.send(message);
               successCount++;
@@ -1759,7 +1726,7 @@ var init_websocket = __esm({
         const message = JSON.stringify(data);
         let successCount = 0;
         this.clients.forEach((client) => {
-          if (client.role === role && client.ws.readyState === WebSocket2.OPEN) {
+          if (client.role === role && client.ws.readyState === WebSocket.OPEN) {
             try {
               client.ws.send(message);
               successCount++;
@@ -1780,7 +1747,7 @@ var init_websocket = __esm({
               return;
             }
             client.isAlive = false;
-            if (client.ws.readyState === WebSocket2.OPEN) {
+            if (client.ws.readyState === WebSocket.OPEN) {
               client.ws.ping();
             }
           });
