@@ -113,7 +113,9 @@ export interface IStorage {
   getUserOrders(userId: string): Promise<Order[]>;
   getOrder(id: string): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
-  updateOrderStatus(id: string, status: string): Promise<Order>;
+  updateOrderStatus(id: string, status: string, notes?: string): Promise<Order>;
+  updateOrder(id: string, orderData: Partial<Order>): Promise<Order>;
+  getAllUsers(): Promise<User[]>;
   getOrderItems(orderId: string): Promise<(OrderItem & { product: Product })[]>;
   createOrderItems(orderItems: InsertOrderItem[]): Promise<OrderItem[]>;
 
@@ -910,16 +912,35 @@ export class DatabaseStorage implements IStorage {
     return newOrder;
   }
 
-  async updateOrderStatus(id: string, status: string): Promise<Order> {
+  async updateOrderStatus(id: string, status: string, notes?: string): Promise<Order> {
+    const updateData: any = { 
+      status: status as any,
+      updatedAt: new Date() 
+    };
+    if (notes) {
+      updateData.notes = notes;
+    }
+    
     const [updatedOrder] = await db
       .update(orders)
-      .set({ 
-        status: status as any,
-        updatedAt: new Date() 
-      })
+      .set(updateData)
       .where(eq(orders.id, id))
       .returning();
     return updatedOrder;
+  }
+
+  async updateOrder(id: string, orderData: Partial<Order>): Promise<Order> {
+    const [order] = await db
+      .update(orders)
+      .set({ ...orderData, updatedAt: new Date() })
+      .where(eq(orders.id, id))
+      .returning();
+    
+    if (!order) {
+      throw new Error("Order not found");
+    }
+    
+    return order;
   }
 
   async getOrderItems(orderId: string): Promise<(OrderItem & { product: Product })[]> {

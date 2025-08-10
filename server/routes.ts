@@ -65,6 +65,8 @@ function broadcastCartUpdate(userId: string, action: string = 'update', data?: a
   }
 }
 import googleAuthRoutes from "./routes/auth-google";
+import stripeWebhookRoutes from './routes/stripe-webhooks';
+import adminMetricsRoutes from './routes/admin-metrics';
 import crypto from 'crypto';
 import { 
   users, 
@@ -165,6 +167,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Google OAuth routes
   app.use('/api/auth', googleAuthRoutes);
+  
+  // Critical: Stripe webhook routes (must use raw body parser)
+  app.use('/api/stripe', stripeWebhookRoutes);
+  
+  // Admin metrics routes  
+  app.use('/api/admin', adminMetricsRoutes);
   
   // Initialize search indexes
   await initializeSearchIndexes();
