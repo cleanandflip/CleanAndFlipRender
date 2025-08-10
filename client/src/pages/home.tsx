@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import Logo from "@/components/common/logo";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { Button, Card } from "@/components/shared/AnimatedComponents";
 import ProductCard from "@/components/products/product-card";
 import { DollarSign, Dumbbell, TrendingUp, Users, Clock, CheckCircle } from "lucide-react";
@@ -79,13 +80,10 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <h1 className="font-bebas text-6xl md:text-8xl mb-6 tracking-wider leading-tight">
-              <span style={{ color: theme.colors.text.primary }}>THE WEIGHTLIFTING</span><br />
-              <span style={{ color: theme.colors.brand.blue }}>EQUIPMENT EXCHANGE</span>
+              <span className="text-white">THE WEIGHTLIFTING</span><br />
+              <span className="text-blue-400">EQUIPMENT EXCHANGE</span>
             </h1>
-            <p 
-              className="text-xl md:text-2xl max-w-3xl mx-auto mb-12"
-              style={{ color: theme.colors.text.secondary }}
-            >
+            <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 text-gray-300">
               Turn your unused gear into cash. Buy quality equipment you can trust.
             </p>
           </motion.div>
@@ -100,21 +98,11 @@ export default function Home() {
             {/* Selling Path */}
             <Card interactive glow className="p-10 text-center">
               <div className="mb-8">
-                <DollarSign 
-                  className="mb-6 mx-auto" 
-                  size={64} 
-                  style={{ color: theme.colors.brand.green }}
-                />
-                <h2 
-                  className="font-bebas text-4xl mb-3"
-                  style={{ color: theme.colors.text.primary }}
-                >
+                <DollarSign className="mb-6 mx-auto text-green-400 w-16 h-16" />
+                <h2 className="font-bebas text-4xl mb-3 text-white">
                   SELLING?
                 </h2>
-                <p 
-                  className="text-lg"
-                  style={{ color: theme.colors.text.secondary }}
-                >
+                <p className="text-lg text-gray-300">
                   Cash for your equipment
                 </p>
               </div>
@@ -128,21 +116,11 @@ export default function Home() {
             {/* Buying Path */}
             <Card interactive glow className="p-10 text-center">
               <div className="mb-8">
-                <Dumbbell 
-                  className="mb-6 mx-auto" 
-                  size={64} 
-                  style={{ color: theme.colors.brand.blue }}
-                />
-                <h2 
-                  className="font-bebas text-4xl mb-3"
-                  style={{ color: theme.colors.text.primary }}
-                >
+                <Dumbbell className="mb-6 mx-auto text-blue-400 w-16 h-16" />
+                <h2 className="font-bebas text-4xl mb-3 text-white">
                   BUYING?
                 </h2>
-                <p 
-                  className="text-lg"
-                  style={{ color: theme.colors.text.secondary }}
-                >
+                <p className="text-lg text-gray-300">
                   Verified quality gear
                 </p>
               </div>
@@ -162,78 +140,38 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.6 }}
           >
             <Card className="flex flex-col items-center p-4">
-              <TrendingUp 
-                className="mb-2" 
-                size={24} 
-                style={{ color: theme.colors.brand.blue }}
-              />
-              <span 
-                className="font-bold text-lg"
-                style={{ color: theme.colors.text.primary }}
-              >
+              <TrendingUp className="mb-2 text-blue-400 w-6 h-6" />
+              <span className="font-bold text-lg text-white">
                 452
               </span>
-              <span 
-                className="text-sm"
-                style={{ color: theme.colors.text.muted }}
-              >
+              <span className="text-sm text-gray-400">
                 Transactions
               </span>
             </Card>
             <Card className="flex flex-col items-center p-4">
-              <Users 
-                className="mb-2" 
-                size={24} 
-                style={{ color: theme.colors.brand.blue }}
-              />
-              <span 
-                className="font-bold text-lg"
-                style={{ color: theme.colors.text.primary }}
-              >
+              <Users className="mb-2 text-blue-400 w-6 h-6" />
+              <span className="font-bold text-lg text-white">
                 Asheville
               </span>
-              <span 
-                className="text-sm"
-                style={{ color: theme.colors.text.muted }}
-              >
+              <span className="text-sm text-gray-400">
                 Local
               </span>
             </Card>
             <Card className="flex flex-col items-center p-4">
-              <Clock 
-                className="mb-2" 
-                size={24} 
-                style={{ color: theme.colors.brand.blue }}
-              />
-              <span 
-                className="font-bold text-lg"
-                style={{ color: theme.colors.text.primary }}
-              >
+              <Clock className="mb-2 text-blue-400 w-6 h-6" />
+              <span className="font-bold text-lg text-white">
                 Same Day
               </span>
-              <span 
-                className="text-sm"
-                style={{ color: theme.colors.text.muted }}
-              >
+              <span className="text-sm text-gray-400">
                 Cash
               </span>
             </Card>
             <Card className="flex flex-col items-center p-4">
-              <CheckCircle 
-                className="mb-2" 
-                size={24} 
-                style={{ color: theme.colors.brand.green }}
-              />
-              <span 
-                className="font-bold text-lg"
-                style={{ color: theme.colors.text.primary }}
-              >
+              <CheckCircle className="mb-2 text-green-400 w-6 h-6" />
+              <span className="font-bold text-lg text-white">
                 Inspected
               </span>
-              <span 
-                className="text-sm"
-                style={{ color: theme.colors.text.muted }}
-              >
+              <span className="text-sm text-gray-400">
                 Every Item
               </span>
             </Card>
@@ -261,95 +199,53 @@ export default function Home() {
 
               {/* Sellers Process */}
               <Card className="p-8">
-                <h3 
-                  className="font-bebas text-3xl mb-8 tracking-wider"
-                  style={{ color: theme.colors.brand.green }}
-                >
+                <h3 className="font-bebas text-3xl mb-8 tracking-wider text-green-400">
                   SELL YOUR EQUIPMENT
                 </h3>
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4">
-                    <div 
-                      className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg"
-                      style={{ 
-                        backgroundColor: theme.colors.brand.green,
-                        color: theme.colors.text.primary 
-                      }}
-                    >
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg bg-green-400 text-white">
                       1
                     </div>
-                    <span 
-                      className="text-lg"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
+                    <span className="text-lg text-gray-300">
                       Submit photos online
                     </span>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div 
-                      className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg"
-                      style={{ 
-                        backgroundColor: theme.colors.brand.green,
-                        color: theme.colors.text.primary 
-                      }}
-                    >
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg bg-green-400 text-white">
                       2
                     </div>
-                    <span 
-                      className="text-lg"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
+                    <span className="text-lg text-gray-300">
                       Get cash offer in 48hrs
                     </span>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div 
-                      className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg"
-                      style={{ 
-                        backgroundColor: theme.colors.brand.green,
-                        color: theme.colors.text.primary 
-                      }}
-                    >
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg bg-green-400 text-white">
                       3
                     </div>
-                    <span 
-                      className="text-lg"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
+                    <span className="text-lg text-gray-300">
                       We pick up & pay cash
                     </span>
                   </div>
                 </div>
                 <Link href="/sell-to-us">
-                  <Button variant="success" size="lg" className="w-full mt-8">
+                  <UnifiedButton variant="success" size="lg" className="w-full mt-8">
                     Start Selling →
-                  </Button>
+                  </UnifiedButton>
                 </Link>
               </Card>
 
               {/* Buyers Process */}
               <Card className="p-8">
-                <h3 
-                  className="font-bebas text-3xl mb-8 tracking-wider"
-                  style={{ color: theme.colors.brand.blue }}
-                >
+                <h3 className="font-bebas text-3xl mb-8 tracking-wider text-blue-400">
                   BUY QUALITY GEAR
                 </h3>
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4">
-                    <div 
-                      className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg"
-                      style={{ 
-                        backgroundColor: theme.colors.brand.blue,
-                        color: theme.colors.text.primary 
-                      }}
-                    >
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg bg-blue-400 text-white">
                       1
                     </div>
-                    <span 
-                      className="text-lg"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
+                    <span className="text-lg text-gray-300">
                       Browse verified equipment
                     </span>
                   </div>
@@ -380,18 +276,15 @@ export default function Home() {
                     >
                       3
                     </div>
-                    <span 
-                      className="text-lg"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
+                    <span className="text-lg text-gray-300">
                       Fast delivery or pickup
                     </span>
                   </div>
                 </div>
                 <Link href="/products">
-                  <Button variant="primary" size="lg" className="w-full mt-8">
+                  <UnifiedButton variant="primary" size="lg" className="w-full mt-8">
                     Start Shopping →
-                  </Button>
+                  </UnifiedButton>
                 </Link>
               </Card>
             </motion.div>
@@ -403,10 +296,7 @@ export default function Home() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <h3 
-                className="font-bebas text-4xl tracking-wider"
-                style={{ color: theme.colors.text.primary }}
-              >
+              <h3 className="font-bebas text-4xl tracking-wider text-white">
                 LATEST ACTIVITY
               </h3>
 
@@ -414,44 +304,26 @@ export default function Home() {
               <Card className="p-8">
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <span 
-                      className="text-lg"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
+                    <span className="text-lg text-gray-300">
                       Items Available
                     </span>
-                    <span 
-                      className="font-bold text-2xl"
-                      style={{ color: theme.colors.brand.blue }}
-                    >
+                    <span className="font-bold text-2xl text-blue-400">
                       234
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span 
-                      className="text-lg"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
+                    <span className="text-lg text-gray-300">
                       Sold This Week
                     </span>
-                    <span 
-                      className="font-bold text-2xl"
-                      style={{ color: theme.colors.brand.green }}
-                    >
+                    <span className="font-bold text-2xl text-green-400">
                       18
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span 
-                      className="text-lg"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
+                    <span className="text-lg text-gray-300">
                       People Shopping
                     </span>
-                    <span 
-                      className="font-bold text-2xl"
-                      style={{ color: theme.colors.status.warning }}
-                    >
+                    <span className="font-bold text-2xl text-orange-400">
                       12
                     </span>
                   </div>
@@ -463,10 +335,7 @@ export default function Home() {
                 <div 
                   className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
                 ></div>
-                <span 
-                  className="text-xs"
-                  style={{ color: theme.colors.text.muted }}
-                >
+                <span className="text-xs text-gray-500">
                   {isConnected ? 'Live Updates Active' : 'Connecting...'}
                 </span>
               </div>
@@ -480,10 +349,7 @@ export default function Home() {
                 </div>
               ) : (
                 <Card className="p-8 text-center">
-                  <span 
-                    className="text-lg"
-                    style={{ color: theme.colors.text.secondary }}
-                  >
+                  <span className="text-lg text-gray-300">
                     {featuredProducts === undefined ? 'Loading latest items...' : 'No items available yet'}
                   </span>
                 </Card>
@@ -502,16 +368,10 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h2 
-              className="font-bebas text-5xl mb-4"
-              style={{ color: theme.colors.text.primary }}
-            >
+            <h2 className="font-bebas text-5xl mb-4 text-white">
               SHOP BY CATEGORY
             </h2>
-            <p 
-              className="text-lg"
-              style={{ color: theme.colors.text.secondary }}
-            >
+            <p className="text-lg text-gray-300">
               Find exactly what you need for your home gym
             </p>
           </motion.div>

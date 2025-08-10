@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { UnifiedDropdown, UnifiedSearch } from "@/components/ui";
 import { NavigationStateManager } from "@/lib/navigation-state";
@@ -165,21 +165,13 @@ export default function Navigation() {
             </div>
 
             {/* Mobile Search Toggle with Enhanced Touch Target */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden w-11 h-11 flex-shrink-0 transition-all duration-200 hover:bg-white/10"
-              style={{
-                background: 'rgba(75, 85, 99, 0.4)',
-                border: '1px solid rgba(156, 163, 175, 0.4)',
-                backdropFilter: 'blur(8px)',
-                color: 'white',
-                fontWeight: '500'
-              }}
+            <UnifiedButton
+              variant="secondary"
+              size="sm"
+              className="lg:hidden"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-            >
-              <Search size={20} />
-            </Button>
+              icon={<Search className="w-5 h-5" />}
+            />
 
             {/* Account - Professional Dropdown */}
             {user ? (
@@ -189,15 +181,7 @@ export default function Navigation() {
                     e.stopPropagation();
                     setIsUserDropdownOpen(!isUserDropdownOpen);
                   }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none hover:bg-white/20 h-11 min-w-[44px] cursor-pointer"
-                  style={{
-                    background: 'rgba(75, 85, 99, 0.4)',
-                    border: '1px solid rgba(156, 163, 175, 0.4)',
-                    backdropFilter: 'blur(8px)',
-                    color: 'white',
-                    fontWeight: '500',
-                    zIndex: 10
-                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none hover:bg-white/20 h-11 min-w-[44px] cursor-pointer bg-gray-600/40 border border-gray-400/40 backdrop-blur-sm text-white font-medium z-10"
                 >
                   <User className="w-5 h-5 text-gray-300" />
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${
@@ -206,19 +190,11 @@ export default function Navigation() {
                 </button>
 
                 {isUserDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 
-                                  rounded-xl shadow-2xl 
-                                  overflow-hidden z-50"
-                       style={{ 
-                         background: 'rgba(35, 41, 55, 0.4)', 
-                         backdropFilter: 'blur(12px)',
-                         border: '1px solid rgba(255, 255, 255, 0.08)',
-                         zIndex: 9999
-                       }}>
+                  <div className="absolute right-0 mt-2 w-56 rounded-xl shadow-2xl overflow-hidden z-50 bg-slate-700/40 backdrop-blur-lg border border-white/8"
+                       style={{ zIndex: 9999 }}>
                     
                     {/* User Info Section - Display first name initial and role */}
-                    <div className="p-4" 
-                         style={{ background: 'rgba(15, 23, 42, 0.3)' }}>
+                    <div className="p-4 bg-slate-900/30">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gray-600 
                                         rounded-lg flex items-center justify-center">
@@ -315,29 +291,25 @@ export default function Navigation() {
                 
               </div>
             ) : (
-              <Button
+              <UnifiedButton
                 variant="primary"
                 size="sm"
                 onClick={(e) => handleNavigation(ROUTES.LOGIN, e)}
-                className="font-medium px-6 py-2.5 whitespace-nowrap h-11"
+                className="font-medium px-6 py-2.5 whitespace-nowrap"
+                icon={<LogIn />}
+                iconPosition="left"
               >
-                <LogIn className="mr-2 h-4 w-4" />
                 Sign In
-              </Button>
+              </UnifiedButton>
             )}
 
             {/* Cart with Enhanced Touch Target */}
             <div className="relative">
               <button
                 onClick={handleCartClick}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none relative hover:bg-white/10 h-11 min-w-[44px]"
-                style={{
-                  background: 'rgba(75, 85, 99, 0.4)',
-                  border: isCartOpen ? '1px solid #3b82f6' : '1px solid rgba(156, 163, 175, 0.4)',
-                  backdropFilter: 'blur(8px)',
-                  color: 'white',
-                  fontWeight: '500'
-                }}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none relative hover:bg-white/10 h-11 min-w-[44px] bg-gray-600/40 backdrop-blur-sm text-white font-medium ${
+                  isCartOpen ? 'border border-blue-500' : 'border border-gray-400/40'
+                }`}
               >
                 {isCartOpen ? (
                   <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
@@ -358,31 +330,29 @@ export default function Navigation() {
             {/* Mobile Menu */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="lg:hidden w-11 h-11 flex-shrink-0"
-                >
-                  <Menu size={20} />
-                </Button>
+                <UnifiedButton
+                  variant="secondary"
+                  size="sm"
+                  className="lg:hidden"
+                  icon={<Menu className="w-5 h-5" />}
+                />
               </SheetTrigger>
               <SheetContent side="right" className="bg-secondary border-bg-secondary-border w-full sm:w-[320px] max-w-[85vw] pt-safe-top">
                 <div className="flex items-center justify-between mb-8">
                   <Logo />
-                  <Button
-                    variant="outline"
-                    size="icon"
+                  <UnifiedButton
+                    variant="secondary"
+                    size="sm"
                     onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <X size={20} />
-                  </Button>
+                    icon={<X className="w-5 h-5" />}
+                  />
                 </div>
                 
                 <nav className="space-y-3 pb-safe-bottom">
                   {navigation.map((item) => (
-                    <Button
+                    <UnifiedButton
                       key={item.name}
-                      variant={isActive(item.href) ? "primary" : "outline"}
+                      variant={isActive(item.href) ? "primary" : "secondary"}
                       onClick={() => {
                         handleNavigation(item.href);
                         setIsMobileMenuOpen(false);
@@ -391,11 +361,11 @@ export default function Navigation() {
                       disabled={isActive(item.href)}
                     >
                       {item.name}
-                    </Button>
+                    </UnifiedButton>
                   ))}
                   
-                  <Button
-                    variant={isActive("/dashboard") ? "primary" : "outline"}
+                  <UnifiedButton
+                    variant={isActive("/dashboard") ? "primary" : "secondary"}
                     onClick={() => {
                       handleNavigation("/dashboard");
                       setIsMobileMenuOpen(false);
@@ -404,7 +374,7 @@ export default function Navigation() {
                     disabled={isActive("/dashboard")}
                   >
                     Dashboard
-                  </Button>
+                  </UnifiedButton>
                 </nav>
               </SheetContent>
             </Sheet>
