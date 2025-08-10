@@ -124,16 +124,40 @@ export default function ErrorDashboard() {
     }
   });
 
-  const handleResolveError = async (errorId: string) => {
+  const handleResolveError = async (fingerprint: string) => {
     try {
-      await fetch(`/api/admin/errors/${errorId}/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: 'Resolved via dashboard' })
-      });
+      // Find all errors matching this fingerprint
+      const errorsToResolve = errors?.filter(error => 
+        `${error.message}-${error.error_type}` === fingerprint
+      );
+      
+      if (!errorsToResolve || errorsToResolve.length === 0) {
+        console.error('No errors found for fingerprint:', fingerprint);
+        return;
+      }
+
+      // Resolve each error in the group
+      const resolvePromises = errorsToResolve.map(error => 
+        fetch(`/api/admin/errors/${error.id}/resolve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notes: 'Resolved via Sentry-style dashboard' })
+        })
+      );
+
+      const responses = await Promise.all(resolvePromises);
+      
+      // Check if all requests succeeded
+      const allSucceeded = responses.every(response => response.ok);
+      
+      if (!allSucceeded) {
+        throw new Error('Failed to resolve some errors in the group');
+      }
+
+      // Refetch errors to update the list
       refetchErrors();
     } catch (error) {
-      console.error('Failed to resolve error:', error);
+      console.error('Failed to resolve error group:', error);
     }
   };
 

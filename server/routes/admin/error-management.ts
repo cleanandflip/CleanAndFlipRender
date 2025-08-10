@@ -91,10 +91,12 @@ router.get('/errors/:id', async (req, res) => {
 router.post('/errors/:id/resolve', async (req, res) => {
   try {
     const { id } = req.params;
-    const { notes } = req.body;
-    const user = req.user as any;
+    const { notes = 'Resolved via admin dashboard' } = req.body;
+    
+    // Since we may not have user authentication in all cases, handle gracefully
+    const userId = req.user?.id || 'system';
 
-    await ErrorLogger.resolveError(id, user.id, notes);
+    await ErrorLogger.resolveError(id, userId, notes);
     
     res.json({ success: true, message: 'Error resolved successfully' });
   } catch (error) {
