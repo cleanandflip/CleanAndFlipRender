@@ -1,0 +1,1148 @@
+🛒 COMPLETE CHECKOUT FLOW IMPLEMENTATION
+Comprehensive Checkout Process - Cart to Confirmation
+📌 CHECKOUT FLOW OVERVIEW
+1. CART REVIEW → 2. DELIVERY ADDRESS → 3. DELIVERY METHOD → 4. PAYMENT → 5. CONFIRMATION
+
+PHASE 1: CART REVIEW PAGE
+📌 Cart Page Enhancement
+typescript// client/src/pages/cart.tsx - COMPLETE REWRITE
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
+import { useCart } from '@/hooks/use-cart';
+import { Trash2, Plus, Minus, ShoppingBag, Truck, AlertCircle } from 'lucide-react';
+import { formatPrice } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+
+export default function CartPage() {
+  const { user } = useAuth();
+  const { items, updateQuantity, removeItem, getCartTotal, clearCart } = useCart();
+  const navigate = useNavigate();
+  const [stockErrors, setStockErrors] = useState<Record<string, string>>({});
+  
+  const isLocal = user?.is_local_customer;
+  const subtotal = getCartTotal();
+  const shipping = isLocal ? 0 : 9.99;
+  const tax = subtotal * 0.0875; // 8.75% NC tax
+  const total = subtotal + shipping + tax;
+  
+  // Check stock availability
+  useEffect(() => {
+    const checkStock = async () => {
+      const errors: Record<string, string> = {};
+      
+      for (const item of items) {
+        const res = await fetch(`/api/products/${item.product_id}`);
+        const product = await res.json();
+        
+        if (product.stock_quantity < item.quantity) {
+          errors[item.id] = `Only ${product.stock_quantity} available`;
+        }
+      }
+      
+      setStockErrors(errors);
+    };
+    
+    if (items.length > 0) checkStock();
+  }, [items]);
+  
+  const proceedToCheckout = () => {
+    // Validation checks
+    if (items.length === 0) {
+      toast.error('Your cart is empty');
+      return;
+    }
+    
+    if (Object.keys(stockErrors).length > 0) {
+      toast.error('Please fix stock issues before proceeding');
+      return;
+    }
+    
+    if (!user) {
+      navigate('/auth?return=/checkout');
+      return;
+    }
+    
+    if (!user.profile_complete) {
+      navigate('/onboarding?return=/checkout');
+      return;
+    }
+    
+    navigate('/checkout');
+  };
+  
+  if (items.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-4xl mx-auto text-center">
+          <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
+          <p className="text-gray-600 mb-6">Add some equipment to get started!</p>
+          <Button onClick={() => navigate('/products')}>
+            Browse Products
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-6xl mx-auto px-4">
+        <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+        
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Cart Items */}
+          <div className="lg:col-span-2 space-y-4">
+            {items.map((item) => (
+              <div key={item.id} className="bg-white rounded-lg p-6 shadow-sm">
+                <div className="flex gap-4">
+                  <img 
+                    src={item.image_url} 
+                    alt={item.name}
+                    className="w-24 h-24 object-cover rounded"
+                  />
+                  
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{item.name}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{item.condition}</p>
+                    
+                    {/* Stock Error */}
+                    {stockErrors[item.id] && (
+                      <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                        <AlertCircle className="h-4 w-4" />
+                        {stockErrors[item.id]}
+                      </div>
+                    )}
+                    
+                    {/* Quantity Controls */}
+                    <div className="flex items-center gap-2 mt-3">
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        disabled={item.quantity <= 1}
+                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-50"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      
+                      <span className="px-3 py-1 bg-gray-100 rounded">
+                        {item.quantity}
+                      </span>
+                      
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        disabled={stockErrors[item.id] !== undefined}
+                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-50"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                      
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="ml-auto p-2 text-red-600 hover:bg-red-50 rounded"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <p className="font-semibold">{formatPrice(item.price * item.quantity)}</p>
+                    <p className="text-sm text-gray-500">{formatPrice(item.price)} each</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg p-6 shadow-sm sticky top-4">
+              <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+              
+              <div className="space-y-2 pb-4 border-b">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(subtotal)}</span>
+                </div>
+                
+                <div className="flex justify-between text-sm">
+                  <span>Tax (8.75%)</span>
+                  <span>{formatPrice(tax)}</span>
+                </div>
+                
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    {isLocal ? 'FREE Local Delivery' : 'Standard Shipping'}
+                  </span>
+                  <span className={isLocal ? 'text-green-600 font-medium' : ''}>
+                    {isLocal ? 'FREE' : formatPrice(shipping)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex justify-between font-semibold text-lg pt-4">
+                <span>Total</span>
+                <span>{formatPrice(total)}</span>
+              </div>
+              
+              {/* Local Customer Badge */}
+              {isLocal && (
+                <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                  <p className="text-sm text-green-800 font-medium">
+                    ✅ You qualify for FREE local delivery!
+                  </p>
+                </div>
+              )}
+              
+              <Button
+                onClick={proceedToCheckout}
+                disabled={Object.keys(stockErrors).length > 0}
+                className="w-full mt-6"
+                size="lg"
+              >
+                Proceed to Checkout
+              </Button>
+              
+              <button
+                onClick={() => navigate('/products')}
+                className="w-full mt-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+PHASE 2: CHECKOUT PAGE - MULTI-STEP PROCESS
+📌 Main Checkout Component
+typescript// client/src/pages/checkout.tsx - COMPLETE REWRITE
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
+import { useCart } from '@/hooks/use-cart';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import { CheckCircle, Circle, MapPin, Truck, CreditCard } from 'lucide-react';
+import { formatPrice } from '@/lib/utils';
+
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+
+interface CheckoutStep {
+  id: number;
+  name: string;
+  icon: React.ReactNode;
+  completed: boolean;
+}
+
+export default function CheckoutPage() {
+  const { user } = useAuth();
+  const { items, getCartTotal, clearCart } = useCart();
+  const navigate = useNavigate();
+  
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Checkout Data
+  const [checkoutData, setCheckoutData] = useState({
+    deliveryAddress: null as any,
+    deliveryMethod: user?.is_local_customer ? 'local_delivery' : 'standard',
+    paymentIntentId: '',
+    notes: ''
+  });
+  
+  // Calculate totals
+  const isLocal = user?.is_local_customer;
+  const subtotal = getCartTotal();
+  const shipping = checkoutData.deliveryMethod === 'local_delivery' ? 0 : 9.99;
+  const tax = subtotal * 0.0875;
+  const total = subtotal + shipping + tax;
+  
+  // Steps configuration
+  const steps: CheckoutStep[] = [
+    { id: 1, name: 'Delivery Address', icon: <MapPin className="h-5 w-5" />, completed: false },
+    { id: 2, name: 'Delivery Method', icon: <Truck className="h-5 w-5" />, completed: false },
+    { id: 3, name: 'Payment', icon: <CreditCard className="h-5 w-5" />, completed: false }
+  ];
+  
+  // Guard checks
+  useEffect(() => {
+    if (!user || !user.profile_complete) {
+      navigate('/onboarding?return=/checkout');
+    }
+    if (items.length === 0) {
+      navigate('/cart');
+    }
+  }, [user, items]);
+  
+  const nextStep = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+  
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+  
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        {/* Progress Steps */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex items-center flex-1">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 
+                  ${currentStep >= step.id 
+                    ? 'bg-blue-600 border-blue-600 text-white' 
+                    : 'bg-white border-gray-300 text-gray-500'}`}
+                >
+                  {currentStep > step.id ? <CheckCircle className="h-5 w-5" /> : step.icon}
+                </div>
+                
+                <div className="ml-3">
+                  <p className={`text-sm font-medium ${currentStep >= step.id ? 'text-gray-900' : 'text-gray-500'}`}>
+                    {step.name}
+                  </p>
+                </div>
+                
+                {index < steps.length - 1 && (
+                  <div className={`flex-1 h-0.5 mx-4 ${currentStep > step.id ? 'bg-blue-600' : 'bg-gray-300'}`} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Step Content */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          {currentStep === 1 && (
+            <DeliveryAddressStep 
+              user={user}
+              checkoutData={checkoutData}
+              setCheckoutData={setCheckoutData}
+              onNext={nextStep}
+            />
+          )}
+          
+          {currentStep === 2 && (
+            <DeliveryMethodStep
+              user={user}
+              checkoutData={checkoutData}
+              setCheckoutData={setCheckoutData}
+              onNext={nextStep}
+              onBack={prevStep}
+              shipping={shipping}
+            />
+          )}
+          
+          {currentStep === 3 && (
+            <Elements stripe={stripePromise}>
+              <PaymentStep
+                user={user}
+                checkoutData={checkoutData}
+                items={items}
+                total={total}
+                onBack={prevStep}
+                clearCart={clearCart}
+              />
+            </Elements>
+          )}
+        </div>
+        
+        {/* Order Summary Sidebar */}
+        <OrderSummary 
+          items={items}
+          subtotal={subtotal}
+          tax={tax}
+          shipping={shipping}
+          total={total}
+          isLocal={isLocal}
+        />
+      </div>
+    </div>
+  );
+}
+📌 Step 1: Delivery Address Component
+typescript// client/src/components/checkout/DeliveryAddressStep.tsx - CREATE
+
+import { useState, useEffect } from 'react';
+import { Check, Plus, Home, Edit2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
+
+interface SavedAddress {
+  id: string;
+  label: string;
+  street: string;
+  apartment?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  isDefault: boolean;
+}
+
+export function DeliveryAddressStep({ user, checkoutData, setCheckoutData, onNext }) {
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [showNewAddress, setShowNewAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    street: '',
+    apartment: '',
+    city: '',
+    state: '',
+    zipCode: ''
+  });
+  
+  // Load saved addresses
+  useEffect(() => {
+    // Get primary address from user profile
+    const primaryAddress: SavedAddress = {
+      id: 'primary',
+      label: 'Home',
+      street: user.street || '',
+      apartment: user.apartment || '',
+      city: user.city || '',
+      state: user.state || '',
+      zipCode: user.zip_code || '',
+      isDefault: true
+    };
+    
+    setSavedAddresses([primaryAddress]);
+    setSelectedAddressId('primary');
+    setCheckoutData(prev => ({ ...prev, deliveryAddress: primaryAddress }));
+  }, [user]);
+  
+  const handleAddressSelect = (addressId: string) => {
+    const address = savedAddresses.find(a => a.id === addressId);
+    setSelectedAddressId(addressId);
+    setCheckoutData(prev => ({ ...prev, deliveryAddress: address }));
+  };
+  
+  const handleNewAddress = () => {
+    if (!newAddress.street || !newAddress.city || !newAddress.state || !newAddress.zipCode) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    const address: SavedAddress = {
+      id: `new-${Date.now()}`,
+      label: 'New Address',
+      ...newAddress,
+      isDefault: false
+    };
+    
+    setSavedAddresses([...savedAddresses, address]);
+    setSelectedAddressId(address.id);
+    setCheckoutData(prev => ({ ...prev, deliveryAddress: address }));
+    setShowNewAddress(false);
+  };
+  
+  const canProceed = selectedAddressId && checkoutData.deliveryAddress;
+  
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-6">Select Delivery Address</h2>
+      
+      {/* Saved Addresses */}
+      <div className="space-y-3 mb-6">
+        {savedAddresses.map((address) => (
+          <div
+            key={address.id}
+            onClick={() => handleAddressSelect(address.id)}
+            className={`p-4 border-2 rounded-lg cursor-pointer transition-all
+              ${selectedAddressId === address.id 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'}`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center
+                  ${selectedAddressId === address.id 
+                    ? 'border-blue-500 bg-blue-500' 
+                    : 'border-gray-300'}`}
+                >
+                  {selectedAddressId === address.id && (
+                    <Check className="h-3 w-3 text-white" />
+                  )}
+                </div>
+                
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Home className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">{address.label}</span>
+                    {address.isDefault && (
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                  
+                  <p className="text-sm text-gray-600">
+                    {address.street}{address.apartment && `, ${address.apartment}`}<br />
+                    {address.city}, {address.state} {address.zipCode}
+                  </p>
+                  
+                  {/* Local Delivery Badge */}
+                  {user?.is_local_customer && address.zipCode.match(/^28[78]/) && (
+                    <div className="mt-2 inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                      <Check className="h-3 w-3" />
+                      Qualifies for FREE local delivery
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <button className="p-2 hover:bg-gray-100 rounded">
+                <Edit2 className="h-4 w-4 text-gray-500" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Add New Address */}
+      {!showNewAddress ? (
+        <button
+          onClick={() => setShowNewAddress(true)}
+          className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
+        >
+          <div className="flex items-center justify-center gap-2 text-gray-600">
+            <Plus className="h-5 w-5" />
+            <span>Add New Address</span>
+          </div>
+        </button>
+      ) : (
+        <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50">
+          <h3 className="font-medium mb-4">New Delivery Address</h3>
+          
+          <div className="space-y-4">
+            <AddressAutocomplete
+              onAddressSelect={(data) => setNewAddress({ ...newAddress, ...data })}
+              placeholder="Start typing your address..."
+            />
+            
+            <input
+              type="text"
+              placeholder="Apartment, suite, etc. (optional)"
+              value={newAddress.apartment}
+              onChange={(e) => setNewAddress({ ...newAddress, apartment: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg"
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                type="text"
+                placeholder="City"
+                value={newAddress.city}
+                onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                className="px-3 py-2 border rounded-lg"
+              />
+              
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="State"
+                  value={newAddress.state}
+                  onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value.toUpperCase() })}
+                  maxLength={2}
+                  className="px-3 py-2 border rounded-lg"
+                />
+                
+                <input
+                  type="text"
+                  placeholder="ZIP"
+                  value={newAddress.zipCode}
+                  onChange={(e) => setNewAddress({ ...newAddress, zipCode: e.target.value })}
+                  maxLength={5}
+                  className="px-3 py-2 border rounded-lg"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button onClick={handleNewAddress} className="flex-1">
+                Save Address
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowNewAddress(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Continue Button */}
+      <div className="mt-8 flex justify-end">
+        <Button 
+          onClick={onNext}
+          disabled={!canProceed}
+          size="lg"
+        >
+          Continue to Delivery Method
+        </Button>
+      </div>
+    </div>
+  );
+}
+📌 Step 2: Delivery Method Component
+typescript// client/src/components/checkout/DeliveryMethodStep.tsx - CREATE
+
+import { Truck, Package, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { formatPrice } from '@/lib/utils';
+
+export function DeliveryMethodStep({ user, checkoutData, setCheckoutData, onNext, onBack, shipping }) {
+  const isLocal = user?.is_local_customer;
+  
+  const deliveryOptions = [
+    {
+      id: 'local_delivery',
+      name: 'FREE Local Delivery to Your Doorstep',
+      description: 'We\'ll deliver your equipment directly to your door',
+      time: '2-3 business days',
+      price: 0,
+      available: isLocal,
+      icon: <Truck className="h-6 w-6" />,
+      badge: 'LOCAL EXCLUSIVE'
+    },
+    {
+      id: 'standard',
+      name: 'Standard Shipping',
+      description: 'Nationwide shipping via FedEx/UPS',
+      time: '5-7 business days',
+      price: 9.99,
+      available: true,
+      icon: <Package className="h-6 w-6" />,
+      badge: null
+    },
+    {
+      id: 'express',
+      name: 'Express Shipping',
+      description: 'Fast nationwide delivery',
+      time: '2-3 business days',
+      price: 24.99,
+      available: true,
+      icon: <Clock className="h-6 w-6" />,
+      badge: 'FASTEST'
+    }
+  ];
+  
+  const handleMethodSelect = (methodId: string) => {
+    setCheckoutData(prev => ({ ...prev, deliveryMethod: methodId }));
+  };
+  
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-6">Choose Delivery Method</h2>
+      
+      {/* Local Customer Notice */}
+      {isLocal && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Truck className="h-5 w-5 text-green-600" />
+            <p className="text-green-800 font-medium">
+              You qualify for FREE local delivery as an Asheville area resident!
+            </p>
+          </div>
+        </div>
+      )}
+      
+      {/* Delivery Options */}
+      <div className="space-y-3">
+        {deliveryOptions.map((option) => (
+          <div
+            key={option.id}
+            onClick={() => option.available && handleMethodSelect(option.id)}
+            className={`p-4 border-2 rounded-lg transition-all
+              ${!option.available 
+                ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50' 
+                : checkoutData.deliveryMethod === option.id
+                  ? 'border-blue-500 bg-blue-50 cursor-pointer'
+                  : 'border-gray-200 hover:border-gray-300 cursor-pointer'}`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center
+                  ${checkoutData.deliveryMethod === option.id 
+                    ? 'border-blue-500 bg-blue-500' 
+                    : 'border-gray-300'}`}
+                >
+                  {checkoutData.deliveryMethod === option.id && (
+                    <Check className="h-3 w-3 text-white" />
+                  )}
+                </div>
+                
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <div className={option.available ? 'text-gray-700' : 'text-gray-400'}>
+                      {option.icon}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className={`font-medium ${!option.available ? 'line-through' : ''}`}>
+                          {option.name}
+                        </span>
+                        {option.badge && (
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium
+                            ${option.id === 'local_delivery' 
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-blue-100 text-blue-700'}`}>
+                            {option.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{option.description}</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        <Clock className="inline h-3 w-3 mr-1" />
+                        {option.time}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {!option.available && option.id === 'local_delivery' && (
+                    <p className="text-xs text-red-600 mt-2">
+                      Not available for your location (ZIP: {checkoutData.deliveryAddress?.zipCode})
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="text-right">
+                <p className={`font-semibold text-lg
+                  ${option.id === 'local_delivery' && isLocal ? 'text-green-600' : ''}`}>
+                  {option.price === 0 ? 'FREE' : formatPrice(option.price)}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Special Instructions */}
+      <div className="mt-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Delivery Instructions (optional)
+        </label>
+        <textarea
+          value={checkoutData.notes}
+          onChange={(e) => setCheckoutData(prev => ({ ...prev, notes: e.target.value }))}
+          placeholder="Gate code, delivery preferences, etc."
+          className="w-full px-3 py-2 border rounded-lg"
+          rows={3}
+        />
+      </div>
+      
+      {/* Navigation Buttons */}
+      <div className="mt-8 flex justify-between">
+        <Button onClick={onBack} variant="outline" size="lg">
+          Back
+        </Button>
+        <Button onClick={onNext} size="lg">
+          Continue to Payment
+        </Button>
+      </div>
+    </div>
+  );
+}
+📌 Step 3: Payment Component
+typescript// client/src/components/checkout/PaymentStep.tsx - CREATE
+
+import { useState } from 'react';
+import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
+import { useNavigate } from 'react-router-dom';
+import { Lock, CreditCard } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { formatPrice } from '@/lib/utils';
+
+export function PaymentStep({ user, checkoutData, items, total, onBack, clearCart }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!stripe || !elements) return;
+    
+    setIsProcessing(true);
+    setError(null);
+    
+    try {
+      // Create payment intent
+      const response = await fetch('/api/stripe/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          amount: Math.round(total * 100), // Convert to cents
+          items: items.map(item => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          shipping_address: checkoutData.deliveryAddress,
+          shipping_method: checkoutData.deliveryMethod,
+          notes: checkoutData.notes
+        })
+      });
+      
+      const { clientSecret, orderId } = await response.json();
+      
+      // Confirm payment
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement)!,
+          billing_details: {
+            name: `${user.first_name} ${user.last_name}`,
+            email: user.email,
+            address: {
+              line1: checkoutData.deliveryAddress.street,
+              line2: checkoutData.deliveryAddress.apartment,
+              city: checkoutData.deliveryAddress.city,
+              state: checkoutData.deliveryAddress.state,
+              postal_code: checkoutData.deliveryAddress.zipCode,
+              country: 'US'
+            }
+          }
+        }
+      });
+      
+      if (result.error) {
+        setError(result.error.message || 'Payment failed');
+      } else {
+        // Payment successful
+        await clearCart();
+        navigate(`/checkout/success?order_id=${orderId}`);
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+      console.error('Payment error:', err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <h2 className="text-xl font-semibold mb-6">Payment Information</h2>
+      
+      {/* Security Badge */}
+      <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center gap-2">
+          <Lock className="h-4 w-4 text-green-600" />
+          <p className="text-sm text-green-800">
+            Your payment information is secure and encrypted
+          </p>
+        </div>
+      </div>
+      
+      {/* Card Input */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          <CreditCard className="inline h-4 w-4 mr-1" />
+          Card Details
+        </label>
+        <div className="p-3 border rounded-lg">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#424770',
+                  '::placeholder': {
+                    color: '#aab7c4',
+                  },
+                },
+              },
+            }}
+          />
+        </div>
+      </div>
+      
+      {/* Error Message */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+      
+      {/* Order Review */}
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-medium mb-3">Order Summary</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span>Items ({items.length})</span>
+            <span>{formatPrice(getCartTotal())}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Delivery</span>
+            <span className={checkoutData.deliveryMethod === 'local_delivery' ? 'text-green-600 font-medium' : ''}>
+              {checkoutData.deliveryMethod === 'local_delivery' ? 'FREE' : formatPrice(shipping)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Tax</span>
+            <span>{formatPrice(tax)}</span>
+          </div>
+          <div className="pt-2 border-t flex justify-between font-semibold">
+            <span>Total</span>
+            <span>{formatPrice(total)}</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Submit Buttons */}
+      <div className="flex justify-between">
+        <Button 
+          type="button"
+          onClick={onBack} 
+          variant="outline" 
+          size="lg"
+          disabled={isProcessing}
+        >
+          Back
+        </Button>
+        
+        <Button 
+          type="submit"
+          size="lg"
+          disabled={!stripe || isProcessing}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <Lock className="h-4 w-4 mr-2" />
+              Pay {formatPrice(total)}
+            </>
+          )}
+        </Button>
+      </div>
+    </form>
+  );
+}
+📌 Order Success Page
+typescript// client/src/pages/checkout/success.tsx - CREATE
+
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CheckCircle, Package, Truck, Mail } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import confetti from 'canvas-confetti';
+
+export default function CheckoutSuccess() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [order, setOrder] = useState<any>(null);
+  const orderId = searchParams.get('order_id');
+  
+  useEffect(() => {
+    // Trigger confetti
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    
+    // Fetch order details
+    if (orderId) {
+      fetch(`/api/orders/${orderId}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(setOrder);
+    }
+  }, [orderId]);
+  
+  return (
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-2xl mx-auto px-4">
+        <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          
+          <h1 className="text-3xl font-bold mb-2">Order Confirmed!</h1>
+          <p className="text-gray-600 mb-6">
+            Thank you for your purchase. We're preparing your order.
+          </p>
+          
+          {order && (
+            <>
+              <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600 mb-1">Order Number</p>
+                <p className="text-xl font-mono font-bold">{order.order_number}</p>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                <div>
+                  <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">Preparing</p>
+                </div>
+                <div>
+                  <Truck className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">
+                    {order.shipping_method === 'local_delivery' 
+                      ? 'Free Delivery' 
+                      : 'Shipping Soon'}
+                  </p>
+                </div>
+                <div>
+                  <Mail className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">Email Sent</p>
+                </div>
+              </div>
+              
+              {order.shipping_method === 'local_delivery' && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-green-800 font-medium">
+                    🚚 Your order will be delivered FREE to your doorstep in 2-3 business days!
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+          
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => navigate('/orders')} variant="outline">
+              View Order Details
+            </Button>
+            <Button onClick={() => navigate('/products')}>
+              Continue Shopping
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+📌 Backend Order Processing
+typescript// server/routes/stripe-routes.ts - UPDATE create-payment-intent
+
+router.post('/api/stripe/create-payment-intent', requireAuth, async (req, res) => {
+  try {
+    const { amount, items, shipping_address, shipping_method, notes } = req.body;
+    const userId = req.user.id;
+    
+    // Create order in database
+    const orderNumber = `CF-${Date.now().toString(36).toUpperCase()}`;
+    
+    const orderResult = await db.query(`
+      INSERT INTO orders (
+        user_id, 
+        order_number,
+        status, 
+        subtotal, 
+        tax_amount, 
+        shipping_amount, 
+        total_amount,
+        shipping_address,
+        shipping_method,
+        notes,
+        created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+      RETURNING id
+    `, [
+      userId,
+      orderNumber,
+      'pending',
+      amount / 100 * 0.9125, // Subtotal (total minus tax)
+      amount / 100 * 0.0875, // Tax
+      shipping_method === 'local_delivery' ? 0 : 9.99,
+      amount / 100,
+      JSON.stringify(shipping_address),
+      shipping_method,
+      notes
+    ]);
+    
+    const orderId = orderResult.rows[0].id;
+    
+    // Create order items
+    for (const item of items) {
+      await db.query(`
+        INSERT INTO order_items (order_id, product_id, quantity, price)
+        VALUES ($1, $2, $3, $4)
+      `, [orderId, item.product_id, item.quantity, item.price]);
+      
+      // Update product stock
+      await db.query(`
+        UPDATE products 
+        SET stock_quantity = stock_quantity - $1 
+        WHERE id = $2
+      `, [item.quantity, item.product_id]);
+    }
+    
+    // Create Stripe payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'usd',
+      metadata: {
+        orderId,
+        orderNumber,
+        userId
+      }
+    });
+    
+    // Update order with payment intent ID
+    await db.query(`
+      UPDATE orders 
+      SET stripe_payment_intent_id = $1 
+      WHERE id = $2
+    `, [paymentIntent.id, orderId]);
+    
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      orderId
+    });
+    
+  } catch (error) {
+    console.error('Payment intent creation error:', error);
+    res.status(500).json({ error: 'Failed to create payment intent' });
+  }
+});
+📌 Clean Up: Remove Unused Code
+typescript// DELETE these unused files if they exist:
+- client/src/components/checkout/old-checkout.tsx
+- client/src/pages/checkout-old.tsx
+- client/src/components/shipping/pickup-scheduler.tsx (replaced with delivery)
+- server/routes/pickup.ts (no longer needed)
+
+// REMOVE unused imports and functions:
+// Search for and remove:
+- Any references to "pickup" scheduling
+- Unused checkout form components
+- Old payment processing code
+- Deprecated shipping calculators
+VERIFICATION CHECKLIST
+After implementation:
+
+✅ Cart shows correct totals with tax
+✅ Local customers see FREE delivery option
+✅ Address selection uses saved profile address
+✅ Delivery method step shows all options
+✅ Local delivery auto-selected for local customers
+✅ Payment processes through Stripe
+✅ Order created in database
+✅ Stock decremented after purchase
+✅ Success page with confetti
+✅ Order confirmation email sent
+✅ Order appears in user's order history
+
+This creates a flawless, professional checkout flow that handles all edge cases and provides a smooth experience for both local and nationwide customers!
