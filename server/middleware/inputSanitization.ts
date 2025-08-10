@@ -113,6 +113,28 @@ class InputSanitizer {
 export function sanitizeInput(options: SanitizationOptions = {}) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
+      // Skip sanitization for specific routes
+      const skipPaths = [
+        '/api/stripe/webhook',
+        '/api/health', 
+        '/health',
+        '/api/admin/logs',
+        '/api/user/profile/image',
+        '/login',
+        '/register',
+        '/auth/',
+        '/track-activity',
+        '/errors/'
+      ];
+      
+      // Debug logging
+      console.log('Sanitization check - path:', req.path, 'url:', req.url);
+      
+      if (skipPaths.some(path => req.path.includes(path) || req.url.includes(path))) {
+        console.log('Skipping sanitization for:', req.path);
+        return next();
+      }
+
       // Sanitize request body
       if (req.body) {
         req.body = InputSanitizer.validateAndSanitize(req.body, options);
