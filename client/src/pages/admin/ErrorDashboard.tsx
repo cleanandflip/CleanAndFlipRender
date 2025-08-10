@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, CheckCircle, Info, AlertTriangle, Bug, ChevronDown } from 'lucide-react';
-import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 interface ErrorLog {
   id: string;
@@ -229,28 +228,28 @@ export default function ErrorDashboard() {
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <UnifiedButton variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700">
                     {filters.severity === 'all' ? 'All Severities' : 
                      filters.severity === 'critical' ? 'Critical' :
                      filters.severity === 'high' ? 'High' :
                      filters.severity === 'medium' ? 'Medium' : 'Low'}
                     <ChevronDown className="ml-2 h-4 w-4" />
-                  </UnifiedButton>
+                  </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'all' }))}>
+                <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'all' }))} className="text-gray-200 hover:bg-gray-700">
                     All Severities
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'critical' }))}>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'critical' }))} className="text-gray-200 hover:bg-gray-700">
                     Critical
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'high' }))}>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'high' }))} className="text-gray-200 hover:bg-gray-700">
                     High
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'medium' }))}>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'medium' }))} className="text-gray-200 hover:bg-gray-700">
                     Medium
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'low' }))}>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'low' }))} className="text-gray-200 hover:bg-gray-700">
                     Low
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -258,20 +257,20 @@ export default function ErrorDashboard() {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <UnifiedButton variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700">
                     {filters.resolved === 'all' ? 'All' :
                      filters.resolved === 'false' ? 'Unresolved' : 'Resolved'}
                     <ChevronDown className="ml-2 h-4 w-4" />
-                  </UnifiedButton>
+                  </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'all' }))}>
+                <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'all' }))} className="text-gray-200 hover:bg-gray-700">
                     All
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'false' }))}>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'false' }))} className="text-gray-200 hover:bg-gray-700">
                     Unresolved
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'true' }))}>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'true' }))} className="text-gray-200 hover:bg-gray-700">
                     Resolved
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -279,20 +278,20 @@ export default function ErrorDashboard() {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <UnifiedButton variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700">
                     {filters.timeRange === '24h' ? 'Last 24h' :
                      filters.timeRange === '7d' ? 'Last 7 days' : 'Last 30 days'}
                     <ChevronDown className="ml-2 h-4 w-4" />
-                  </UnifiedButton>
+                  </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '24h' }))}>
+                <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '24h' }))} className="text-gray-200 hover:bg-gray-700">
                     Last 24h
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '7d' }))}>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '7d' }))} className="text-gray-200 hover:bg-gray-700">
                     Last 7 days
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '30d' }))}>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '30d' }))} className="text-gray-200 hover:bg-gray-700">
                     Last 30 days
                   </DropdownMenuItem>
                 </DropdownMenuContent>
