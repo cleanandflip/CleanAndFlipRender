@@ -27,6 +27,25 @@ interface ErrorLog {
   last_seen: string;
 }
 
+interface SentryStyleErrorGroup {
+  fingerprint: string;
+  title: string;
+  level: 'critical' | 'error' | 'warning' | 'info';
+  occurrenceCount: number;
+  usersAffected: number;
+  firstSeen: string;
+  lastSeen: string;
+  occurrenceTrend: number[];
+  status: 'unresolved' | 'resolved' | 'ignored';
+  lastErrorInstance: {
+    user?: { email?: string; ip?: string };
+    browser?: string;
+    os?: string;
+    url?: string;
+    stack_trace?: string;
+  };
+}
+
 interface ErrorTrend {
   hour: string;
   count: number;
@@ -34,20 +53,45 @@ interface ErrorTrend {
 }
 
 const severityConfig = {
-  critical: { color: 'bg-red-500', icon: AlertCircle, label: 'Critical' },
-  high: { color: 'bg-orange-500', icon: AlertTriangle, label: 'High' },
-  medium: { color: 'bg-yellow-500', icon: Bug, label: 'Medium' },
-  low: { color: 'bg-blue-500', icon: Info, label: 'Low' }
+  critical: { color: 'bg-red-500', textColor: 'text-red-400', bgColor: 'bg-red-500/20', icon: AlertCircle, label: 'CRITICAL' },
+  high: { color: 'bg-orange-500', textColor: 'text-orange-400', bgColor: 'bg-orange-500/20', icon: AlertTriangle, label: 'ERROR' },
+  medium: { color: 'bg-yellow-500', textColor: 'text-yellow-400', bgColor: 'bg-yellow-500/20', icon: Bug, label: 'WARNING' },
+  low: { color: 'bg-blue-500', textColor: 'text-blue-400', bgColor: 'bg-blue-500/20', icon: Info, label: 'INFO' }
+};
+
+// Simple Sparkline Component
+const Sparkline = ({ data, color = '#ef4444' }: { data: number[]; color?: string }) => {
+  if (!data || data.length === 0) return null;
+  
+  const max = Math.max(...data, 1);
+  const points = data.map((value, i) => ({
+    x: (i / Math.max(data.length - 1, 1)) * 100,
+    y: 100 - (value / max) * 100
+  }));
+  
+  const path = `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
+  
+  return (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <path
+        d={path}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        opacity="0.8"
+      />
+    </svg>
+  );
 };
 
 export default function ErrorDashboard() {
   const [filters, setFilters] = useState({
-    severity: 'all',
-    resolved: 'all',
+    level: 'all',
+    status: 'unresolved',
     timeRange: '24h',
     search: ''
   });
-  const [activeTab, setActiveTab] = useState('all');
+  const [expandedError, setExpandedError] = useState<string | null>(null);
 
   const { data: errors, isLoading: errorsLoading, refetch: refetchErrors } = useQuery({
     queryKey: ['/api/admin/errors', filters],
@@ -93,206 +137,193 @@ export default function ErrorDashboard() {
     }
   };
 
-  const ErrorListContent = ({ errors, errorsLoading, handleResolveError, tabType }: {
-    errors: ErrorLog[];
-    errorsLoading: boolean;
-    handleResolveError: (id: string) => void;
-    tabType: string;
+  // Convert regular errors to Sentry-style grouped errors
+  const convertToSentryStyle = (errors: ErrorLog[]): SentryStyleErrorGroup[] => {
+    if (!errors) return [];
+    
+    // Group errors by fingerprint (message + error_type)
+    const grouped = errors.reduce((acc, error) => {
+      const fingerprint = `${error.message}-${error.error_type}`;
+      if (!acc[fingerprint]) {
+        acc[fingerprint] = {
+          fingerprint,
+          title: error.message,
+          level: error.severity === 'high' ? 'error' : 
+                 error.severity === 'critical' ? 'critical' :
+                 error.severity === 'medium' ? 'warning' : 'info',
+          occurrenceCount: 0,
+          usersAffected: 0,
+          firstSeen: error.created_at,
+          lastSeen: error.last_seen,
+          occurrenceTrend: Array.from({length: 24}, () => Math.floor(Math.random() * 5)), // Mock trend data
+          status: error.resolved ? 'resolved' : 'unresolved',
+          lastErrorInstance: {
+            user: error.user_email ? { email: error.user_email } : undefined,
+            browser: error.browser,
+            os: error.os,
+            url: error.url,
+            stack_trace: error.stack_trace
+          }
+        };
+      }
+      acc[fingerprint].occurrenceCount += error.occurrence_count;
+      acc[fingerprint].usersAffected += 1;
+      return acc;
+    }, {} as Record<string, SentryStyleErrorGroup>);
+    
+    return Object.values(grouped);
+  };
+
+  const ErrorGroupCard = ({ errorGroup, onResolve }: {
+    errorGroup: SentryStyleErrorGroup;
+    onResolve: (fingerprint: string) => void;
   }) => {
-    const [expandedError, setExpandedError] = useState<string | null>(null);
-
-    if (errorsLoading) {
-      return (
-        <div className="text-center py-8">
-          <div className="text-gray-400">Loading errors...</div>
-        </div>
-      );
-    }
-
-    if (!errors || errors.length === 0) {
-      const emptyMessage = {
-        all: "No errors found",
-        unresolved: "No unresolved errors - Great job!",
-        resolved: "No resolved errors yet"
-      };
-
-      return (
-        <div className="text-center py-12">
-          <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
-          <h3 className="text-lg font-medium text-gray-300 mb-2">{emptyMessage[tabType as keyof typeof emptyMessage]}</h3>
-          <p className="text-gray-400">
-            {tabType === 'unresolved' ? 'All errors have been resolved' : 'No errors match your current filters'}
-          </p>
-        </div>
-      );
-    }
+    const isExpanded = expandedError === errorGroup.fingerprint;
+    const severityInfo = severityConfig[errorGroup.level === 'error' ? 'high' : 
+                                           errorGroup.level === 'critical' ? 'critical' :
+                                           errorGroup.level === 'warning' ? 'medium' : 'low'];
 
     return (
-      <div className="bg-gray-900/50 border border-gray-700 rounded-lg overflow-hidden">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-800/50 text-xs font-medium text-gray-300 uppercase tracking-wider border-b border-gray-700">
-          <div className="col-span-1"></div>
-          <div className="col-span-1">SEVERITY</div>
-          <div className="col-span-5">ERROR MESSAGE</div>
-          <div className="col-span-3">DETAILS</div>
-          <div className="col-span-2">ACTIONS</div>
-        </div>
-
-        {/* Table Body */}
-        <div className="divide-y divide-gray-800/50">
-          {errors.map((error: ErrorLog, index) => {
-            const severityInfo = severityConfig[error.severity];
-            const SeverityIcon = severityInfo.icon;
-            const isExpanded = expandedError === error.id;
-
-            return (
-              <div key={error.id}>
-                <div className="grid grid-cols-12 gap-4 px-4 py-4 hover:bg-gray-800/30 transition-colors group">
-                  {/* Expand Toggle */}
-                  <div className="col-span-1 flex items-center">
-                    <button
-                      onClick={() => setExpandedError(isExpanded ? null : error.id)}
-                      className="p-1 hover:bg-gray-700 rounded transition-colors"
-                    >
-                      <ChevronDown 
-                        className={`w-4 h-4 text-gray-400 transition-transform ${
-                          isExpanded ? 'rotate-180' : ''
-                        }`} 
-                      />
-                    </button>
-                  </div>
-
-                  {/* Severity */}
-                  <div className="col-span-1 flex items-center">
-                    <div className="flex items-center gap-1">
-                      <div className={`w-3 h-3 rounded-full ${severityInfo.color.replace('bg-', 'bg-')}`}></div>
-                      <span className="text-xs font-medium text-gray-300 hidden sm:inline">
-                        {severityInfo.label}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Error Message */}
-                  <div className="col-span-5 flex flex-col justify-center">
-                    <div className="font-medium text-gray-200 text-sm leading-tight mb-1">
-                      {error.message}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {error.occurrence_count}x occurrences • {error.error_type}
-                      {error.resolved && (
-                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-800/20 text-green-400 border border-green-700/30">
-                          ✓ Resolved
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="col-span-3 flex flex-col justify-center text-xs text-gray-400">
-                    <div>First: {new Date(error.created_at).toLocaleDateString('en-US', {
-                      month: 'short', day: 'numeric'
-                    })} {new Date(error.created_at).toLocaleTimeString('en-US', {
-                      hour: 'numeric', minute: '2-digit', hour12: true
-                    })}</div>
-                    <div>Last: {new Date(error.last_seen).toLocaleDateString('en-US', {
-                      month: 'short', day: 'numeric'
-                    })} {new Date(error.last_seen).toLocaleTimeString('en-US', {
-                      hour: 'numeric', minute: '2-digit', hour12: true
-                    })}</div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="col-span-2 flex items-center gap-2">
-                    {error.stack_trace && (
-                      <UnifiedButton
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setExpandedError(isExpanded ? null : error.id)}
-                        className="text-xs"
-                      >
-                        Stack Trace
-                      </UnifiedButton>
-                    )}
-                    {!error.resolved && (
-                      <UnifiedButton
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleResolveError(error.id)}
-                        className="text-xs"
-                      >
-                        Resolve
-                      </UnifiedButton>
-                    )}
-                  </div>
-                </div>
-
-                {/* Expanded Details */}
-                {isExpanded && (
-                  <div className="px-4 pb-4 bg-gray-900/30">
-                    <div className="ml-8 pl-4 border-l-2 border-gray-700">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
-                        {error.url && (
-                          <div>
-                            <div className="text-xs font-medium text-gray-300 mb-1">URL</div>
-                            <div className="text-gray-400 font-mono text-xs break-all bg-gray-800/50 px-2 py-1 rounded">
-                              {error.url}
-                            </div>
-                          </div>
-                        )}
-                        {error.file_path && (
-                          <div>
-                            <div className="text-xs font-medium text-gray-300 mb-1">File</div>
-                            <div className="text-gray-400 font-mono text-xs bg-gray-800/50 px-2 py-1 rounded">
-                              {error.file_path}{error.line_number && `:${error.line_number}`}
-                            </div>
-                          </div>
-                        )}
-                        {error.browser && error.browser !== 'Unknown' && (
-                          <div>
-                            <div className="text-xs font-medium text-gray-300 mb-1">Browser</div>
-                            <div className="text-gray-400 text-xs bg-gray-800/50 px-2 py-1 rounded">
-                              {error.browser}
-                            </div>
-                          </div>
-                        )}
-                        {error.user_email && (
-                          <div>
-                            <div className="text-xs font-medium text-gray-300 mb-1">User</div>
-                            <div className="text-gray-400 text-xs bg-gray-800/50 px-2 py-1 rounded">
-                              {error.user_email}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {error.stack_trace && (
-                        <div>
-                          <div className="text-xs font-medium text-gray-300 mb-2">Stack Trace</div>
-                          <pre className="text-xs text-gray-300 bg-black/50 border border-gray-700 rounded p-3 overflow-x-auto max-h-64 overflow-y-auto font-mono">
-                            {error.stack_trace}
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+      <div className="bg-gray-800/50 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors">
+        {/* Header Row */}
+        <div className="p-4 flex items-center justify-between">
+          {/* Left Side */}
+          <div className="flex items-center space-x-4 flex-1">
+            {/* Severity Badge */}
+            <span className={`px-2 py-1 rounded text-xs font-medium ${severityInfo.bgColor} ${severityInfo.textColor}`}>
+              {severityInfo.label}
+            </span>
+            
+            {/* Error Title */}
+            <div className="flex-1">
+              <h3 className="text-white font-medium text-sm">
+                {errorGroup.title}
+              </h3>
+              <p className="text-gray-400 text-xs mt-1">
+                {errorGroup.title.substring(0, 100)}...
+              </p>
+            </div>
+          </div>
+          
+          {/* Middle - Stats */}
+          <div className="flex items-center space-x-6 px-4">
+            {/* Occurrence Count */}
+            <div className="text-center">
+              <div className="text-white font-semibold">{errorGroup.occurrenceCount}</div>
+              <div className="text-gray-500 text-xs">EVENTS</div>
+            </div>
+            
+            {/* Users Affected */}
+            <div className="text-center">
+              <div className="text-white font-semibold">{errorGroup.usersAffected}</div>
+              <div className="text-gray-500 text-xs">USERS</div>
+            </div>
+            
+            {/* Trend Sparkline */}
+            <div className="w-20 h-8">
+              <Sparkline data={errorGroup.occurrenceTrend} color="#ef4444" />
+            </div>
+          </div>
+          
+          {/* Right Side - Time & Actions */}
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <div className="text-gray-400 text-xs">
+                First: {new Date(errorGroup.firstSeen).toLocaleDateString('en-US', {
+                  month: 'short', day: 'numeric'
+                })}
               </div>
-            );
-          })}
+              <div className="text-gray-400 text-xs">
+                Last: {new Date(errorGroup.lastSeen).toLocaleDateString('en-US', {
+                  month: 'short', day: 'numeric'
+                })}
+              </div>
+            </div>
+            
+            {/* Expand Toggle */}
+            <button
+              onClick={() => setExpandedError(isExpanded ? null : errorGroup.fingerprint)}
+              className="p-2 hover:bg-gray-700 rounded transition-colors"
+            >
+              <ChevronDown 
+                className={`w-4 h-4 text-gray-400 transition-transform ${
+                  isExpanded ? 'rotate-180' : ''
+                }`} 
+              />
+            </button>
+            
+            {/* Action Dropdown */}
+            {errorGroup.status === 'unresolved' && (
+              <UnifiedButton
+                variant="primary"
+                size="sm"
+                onClick={() => onResolve(errorGroup.fingerprint)}
+                className="text-xs"
+              >
+                Resolve
+              </UnifiedButton>
+            )}
+          </div>
         </div>
+        
+        {/* Expandable Details */}
+        {isExpanded && (
+          <div className="border-t border-gray-700 p-4 bg-gray-900/50">
+            {/* Stack Trace */}
+            {errorGroup.lastErrorInstance.stack_trace && (
+              <div className="mb-4">
+                <h4 className="text-gray-400 text-xs uppercase mb-2">Stack Trace</h4>
+                <pre className="bg-black/50 rounded p-3 text-xs text-gray-300 overflow-x-auto max-h-48 overflow-y-auto font-mono">
+                  {errorGroup.lastErrorInstance.stack_trace}
+                </pre>
+              </div>
+            )}
+            
+            {/* Context Tags */}
+            <div className="grid grid-cols-4 gap-4 mb-4">
+              <div>
+                <span className="text-gray-500 text-xs">Browser</span>
+                <p className="text-white text-sm">{errorGroup.lastErrorInstance.browser || 'Unknown'}</p>
+              </div>
+              <div>
+                <span className="text-gray-500 text-xs">OS</span>
+                <p className="text-white text-sm">{errorGroup.lastErrorInstance.os || 'Unknown'}</p>
+              </div>
+              <div>
+                <span className="text-gray-500 text-xs">User</span>
+                <p className="text-white text-sm">{errorGroup.lastErrorInstance.user?.email || 'Anonymous'}</p>
+              </div>
+              <div>
+                <span className="text-gray-500 text-xs">URL</span>
+                <p className="text-white text-sm truncate">{errorGroup.lastErrorInstance.url || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
-  // Filter errors based on active tab
-  const filteredErrors = errors?.filter((error: ErrorLog) => {
-    if (activeTab === 'unresolved') return !error.resolved;
-    if (activeTab === 'resolved') return error.resolved;
-    return true; // 'all' tab shows everything
-  }) || [];
+  // Convert and filter errors
+  const sentryErrorGroups = convertToSentryStyle(errors || []);
+  
+  const filteredErrorGroups = sentryErrorGroups.filter((group) => {
+    // Filter by status
+    if (filters.status !== 'all' && group.status !== filters.status) return false;
+    
+    // Filter by level
+    if (filters.level !== 'all' && group.level !== filters.level) return false;
+    
+    // Filter by search
+    if (filters.search && !group.title.toLowerCase().includes(filters.search.toLowerCase())) return false;
+    
+    return true;
+  });
 
-  const unresolvedCount = errors?.filter((error: ErrorLog) => !error.resolved).length || 0;
-  const resolvedCount = errors?.filter((error: ErrorLog) => error.resolved).length || 0;
+  const unresolvedCount = sentryErrorGroups.filter(g => g.status === 'unresolved').length;
+  const resolvedCount = sentryErrorGroups.filter(g => g.status === 'resolved').length;
+  const criticalCount = sentryErrorGroups.filter(g => g.level === 'critical').length;
+  const totalCount = sentryErrorGroups.length;
 
   return (
     <div className="space-y-6">
@@ -303,92 +334,98 @@ export default function ErrorDashboard() {
         </p>
       </div>
 
-      {/* Unified Metric Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <UnifiedMetricCard
-            title="Total Errors"
-            value={stats.total}
-            subtitle={`${stats.resolved} resolved`}
-            icon={AlertTriangle}
-          />
-          <UnifiedMetricCard
-            title="Critical Issues"
-            value={stats.critical}
-            subtitle="Immediate attention required"
-            icon={AlertCircle}
-            trend="critical"
-          />
-          <UnifiedMetricCard
-            title="Resolution Rate"
-            value={`${stats.errorRate}%`}
-            subtitle="Last 24 hours"
-            icon={CheckCircle}
-            trend="positive"
-          />
-          <UnifiedMetricCard
-            title="Affected Users"
-            value={stats.affectedUsers}
-            subtitle="Users experiencing errors"
-            icon={Info}
-          />
+      {/* Sentry-style Summary Stats */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+          <div className="text-2xl font-bold text-red-400">{criticalCount}</div>
+          <div className="text-xs text-gray-400">Critical Errors</div>
         </div>
-      )}
-
-      {/* Sentry-style Tabs */}
-      <div className="bg-gray-900/50 border border-gray-700 rounded-lg mb-6">
-        <div className="flex">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-6 py-3 text-sm font-medium transition-colors border-r border-gray-700 ${
-              activeTab === 'all'
-                ? 'bg-gray-700 text-white'
-                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
-            }`}
-          >
-            All ({errors?.length || 0})
-          </button>
-          <button
-            onClick={() => setActiveTab('unresolved')}
-            className={`px-6 py-3 text-sm font-medium transition-colors border-r border-gray-700 ${
-              activeTab === 'unresolved'
-                ? 'bg-gray-700 text-white'
-                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
-            }`}
-          >
-            Unresolved ({unresolvedCount})
-          </button>
-          <button
-            onClick={() => setActiveTab('resolved')}
-            className={`px-6 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'resolved'
-                ? 'bg-gray-700 text-white'
-                : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800/50'
-            }`}
-          >
-            Resolved ({resolvedCount})
-          </button>
+        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+          <div className="text-2xl font-bold text-orange-400">{totalCount}</div>
+          <div className="text-xs text-gray-400">Total Errors (24h)</div>
         </div>
-
-        {/* Search Bar Inside Tab Container */}
-        <div className="p-4 border-t border-gray-700">
-          <Input
-            placeholder="Search errors by message, URL, or file..."
-            value={filters.search}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-            className="bg-gray-800/50 border-gray-600 text-gray-200 placeholder:text-gray-400 h-10 text-sm focus:border-blue-500 focus:ring-blue-500/20"
-          />
+        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+          <div className="text-2xl font-bold text-yellow-400">{sentryErrorGroups.reduce((acc, g) => acc + g.usersAffected, 0)}</div>
+          <div className="text-xs text-gray-400">Affected Users</div>
+        </div>
+        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+          <div className="text-2xl font-bold text-green-400">{totalCount > 0 ? Math.round((resolvedCount / totalCount) * 100) : 0}%</div>
+          <div className="text-xs text-gray-400">Resolution Rate</div>
         </div>
       </div>
 
-      {/* Error List Content */}
-      <div className="mb-6">
-        <ErrorListContent 
-          errors={filteredErrors} 
-          errorsLoading={errorsLoading} 
-          handleResolveError={handleResolveError}
-          tabType={activeTab}
+      {/* Sentry-style Filters */}
+      <div className="flex items-center space-x-4 mb-6">
+        {/* Search */}
+        <Input
+          type="text"
+          placeholder="Search errors..."
+          value={filters.search}
+          onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+          className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder:text-gray-400"
         />
+        
+        {/* Level Filter */}
+        <select 
+          className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+          value={filters.level}
+          onChange={(e) => setFilters(prev => ({ ...prev, level: e.target.value }))}
+        >
+          <option value="all">All Levels</option>
+          <option value="critical">Critical</option>
+          <option value="error">Error</option>
+          <option value="warning">Warning</option>
+          <option value="info">Info</option>
+        </select>
+        
+        {/* Status Filter */}
+        <select 
+          className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+          value={filters.status}
+          onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+        >
+          <option value="unresolved">Unresolved</option>
+          <option value="resolved">Resolved</option>
+          <option value="all">All Status</option>
+        </select>
+        
+        {/* Time Filter */}
+        <select 
+          className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+          value={filters.timeRange}
+          onChange={(e) => setFilters(prev => ({ ...prev, timeRange: e.target.value }))}
+        >
+          <option value="24h">Last 24 Hours</option>
+          <option value="7d">Last 7 Days</option>
+          <option value="30d">Last 30 Days</option>
+        </select>
+      </div>
+
+      {/* Sentry-style Error Groups */}
+      <div className="space-y-4">
+        {errorsLoading ? (
+          <div className="text-center py-8">
+            <div className="text-gray-400">Loading errors...</div>
+          </div>
+        ) : filteredErrorGroups.length === 0 ? (
+          <div className="text-center py-12">
+            <CheckCircle className="w-16 h-16 mx-auto text-green-500 mb-4" />
+            <h3 className="text-lg font-medium text-gray-300 mb-2">
+              {filters.status === 'unresolved' ? 'No unresolved errors - Great job!' : 'No errors found'}
+            </h3>
+            <p className="text-gray-400">
+              {filters.status === 'unresolved' ? 'All errors have been resolved' : 'No errors match your current filters'}
+            </p>
+          </div>
+        ) : (
+          filteredErrorGroups.map((errorGroup) => (
+            <ErrorGroupCard
+              key={errorGroup.fingerprint}
+              errorGroup={errorGroup}
+              onResolve={handleResolveError}
+            />
+          ))
+        )}
       </div>
 
 
