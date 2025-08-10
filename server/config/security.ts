@@ -83,14 +83,8 @@ export function validateSecurityConfig(): { isValid: boolean; errors: string[] }
       errors.push('ENCRYPTION_KEY should be at least 32 characters long');
     }
     
-    // Developer credentials validation
-    if (!process.env.DEVELOPER_EMAIL) {
-      errors.push('DEVELOPER_EMAIL should be set for production deployment');
-    }
-    
-    if (!process.env.DEVELOPER_PASSWORD) {
-      errors.push('DEVELOPER_PASSWORD should be set for production deployment');
-    }
+    // Developer credentials will be migrated from development database
+    console.log('ℹ️  Developer credentials will be migrated from development database');
     
     // Service keys validation
     const requiredServices = [

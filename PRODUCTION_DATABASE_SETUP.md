@@ -49,25 +49,20 @@ The production database setup has been successfully implemented with complete ad
 **For Production Deployment, add these to Replit Secrets:**
 
 ```bash
-# Database Configuration
+# Database Configuration (Required)
 DATABASE_URL_PROD = [Your production Neon database URL]
-DATABASE_URL_DEV = [Current Replit database URL for development]
 
-# Developer Configuration  
-DEVELOPER_EMAIL = [Primary developer email address]
-DEVELOPER_PASSWORD = [Secure developer password]
-DEVELOPER_FIRST_NAME = [Developer first name]
-DEVELOPER_LAST_NAME = [Developer last name]
-
-# Security Configuration
+# Security Configuration (Recommended)
 SESSION_SECRET = [64-character random string]
 JWT_SECRET = [64-character random string] 
 ENCRYPTION_KEY = [32-character random string]
 
-# Production Settings
+# Production Settings (Optional)
 NODE_ENV = production
 FORCE_SSL = true
 ```
+
+**Note:** Developer credentials are automatically migrated from your development database - no additional secrets needed!
 
 ### 🚀 Usage Commands
 
@@ -89,9 +84,9 @@ tsx scripts/database/seed-dev.ts              # Add test products and data
 tsx scripts/database/migrate.ts               # Apply schema changes
 ```
 
-**Production Migration:**
+**Complete Migration:**
 ```bash
-tsx scripts/database/migrate-products-to-production.ts  # Copy real products to production
+tsx scripts/database/migrate-everything-to-production.ts  # Migrate ALL data to production
 ```
 
 **Production Maintenance:**
@@ -111,25 +106,25 @@ tsx scripts/database/backup.ts                # Backup production data
 
 **⚠️ Production Database:**
 - Status: Not yet configured
-- Requires: DATABASE_URL_PROD and developer credentials in Replit Secrets
+- Requires: Only DATABASE_URL_PROD secret needed
 - Ready: All scripts and configuration files created
 
 ### 🎯 Next Steps for Production Deployment
 
-1. **Configure Production Secrets:**
+1. **Configure Production Database Secret:**
    - Add DATABASE_URL_PROD pointing to new Neon production database
-   - Add DEVELOPER_EMAIL and DEVELOPER_PASSWORD
-   - Add security secrets (SESSION_SECRET, etc.)
+   - Optionally add SESSION_SECRET for enhanced security
 
-2. **Initialize Production Database:**
+2. **Initialize and Migrate:**
    ```bash
-   NODE_ENV=production tsx scripts/database/init-production.ts
+   tsx scripts/database/init-production.ts                    # Setup production schema
+   tsx scripts/database/migrate-everything-to-production.ts   # Copy all your data
    ```
 
 3. **Deploy to Replit:**
    - Click Deploy button in Replit interface
    - Verify production environment detection
-   - Test developer login functionality
+   - Test developer login with your existing credentials
 
 ### 🛡️ Security Features
 

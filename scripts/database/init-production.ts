@@ -31,18 +31,8 @@ async function initializeProduction() {
     process.exit(1);
   }
   
-  const developerEmail = process.env.DEVELOPER_EMAIL;
-  const developerPassword = process.env.DEVELOPER_PASSWORD;
-  const developerFirstName = process.env.DEVELOPER_FIRST_NAME || 'Developer';
-  const developerLastName = process.env.DEVELOPER_LAST_NAME || 'User';
-  
-  if (!developerEmail || !developerPassword) {
-    console.error('❌ DEVELOPER_EMAIL and DEVELOPER_PASSWORD must be set');
-    console.error('Add these to your Replit Secrets:');
-    console.error('  DEVELOPER_EMAIL = your-email@example.com');
-    console.error('  DEVELOPER_PASSWORD = your-secure-password');
-    process.exit(1);
-  }
+  // Developer user will be migrated from development database
+  console.log('ℹ️  Developer user will be migrated from development database');
   
   try {
     const sql = neon(prodUrl);
@@ -73,17 +63,7 @@ async function initializeProduction() {
     
     console.log('🔧 Initializing production data...');
     
-    // Create developer user
-    const hashedPassword = await bcrypt.hash(developerPassword, 12);
-    const [developer] = await db.insert(schema.users).values({
-      email: developerEmail,
-      password: hashedPassword,
-      firstName: developerFirstName,
-      lastName: developerLastName,
-      role: 'developer'
-    }).returning();
-    
-    console.log(`✅ Created developer user: ${developer.email}`);
+    console.log('ℹ️  Skipping developer user creation - will be migrated from development');
     
     // Create essential categories
     const categories = [

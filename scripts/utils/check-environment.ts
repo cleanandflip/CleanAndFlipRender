@@ -42,16 +42,8 @@ async function checkEnvironment() {
   
   // Developer/User Configuration
   console.log('\n👨‍💻 DEVELOPER CONFIGURATION:');
-  const requiredDeveloperVars = ['DEVELOPER_EMAIL', 'DEVELOPER_PASSWORD'];
-  const optionalDeveloperVars = ['DEVELOPER_FIRST_NAME', 'DEVELOPER_LAST_NAME'];
-  
-  for (const varName of requiredDeveloperVars) {
-    console.log(`   ${varName}: ${process.env[varName] ? '✅ Set' : '❌ Missing'}`);
-  }
-  
-  for (const varName of optionalDeveloperVars) {
-    console.log(`   ${varName}: ${process.env[varName] ? '✅ Set' : '⚠️  Optional'}`);
-  }
+  console.log('   Developer user will be migrated from development database');
+  console.log('   No additional secrets required for developer authentication');
   
   // Service Configuration
   console.log('\n🔌 SERVICE CONFIGURATION:');
@@ -151,8 +143,6 @@ async function checkEnvironment() {
   if (environment === 'production') {
     const missingSecrets = [];
     
-    if (!process.env.DEVELOPER_EMAIL) missingSecrets.push('DEVELOPER_EMAIL');
-    if (!process.env.DEVELOPER_PASSWORD) missingSecrets.push('DEVELOPER_PASSWORD');
     if (!process.env.DATABASE_URL_PROD) missingSecrets.push('DATABASE_URL_PROD');
     if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'dev-session-secret-change-in-production') {
       missingSecrets.push('SESSION_SECRET');
