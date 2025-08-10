@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { 
   Package, Grid, FolderOpen, BarChart3, 
-  Users, Settings, CreditCard, ChevronRight, Wifi, WifiOff 
+  Users, Settings, CreditCard, ChevronRight, Wifi, WifiOff, AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -19,6 +19,7 @@ const ADMIN_TABS = [
   { id: 'submissions', label: 'Submissions', icon: FolderOpen },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'users', label: 'Users', icon: Users },
+  { id: 'errors', label: 'Error Logs', icon: AlertTriangle },
   { id: 'system', label: 'System', icon: Settings },
   { id: 'stripe', label: 'Stripe', icon: CreditCard },
 ];
