@@ -118,18 +118,18 @@ const OnboardingPage = () => {
   const fromCart = urlParams.get('from') === 'cart';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-900 py-12">
       <div className="max-w-2xl mx-auto">
         {/* Contextual message for users coming from protected pages */}
         {(fromCart || urlParams.get('from')) && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="mb-6 p-4 bg-blue-950/50 border border-blue-800 rounded-lg">
             <div className="flex items-center">
-              <ShoppingCart className="h-5 w-5 text-blue-600 mr-2" />
+              <ShoppingCart className="h-5 w-5 text-blue-400 mr-2" />
               <div>
-                <h3 className="text-sm font-medium text-blue-800">
+                <h3 className="text-sm font-medium text-blue-300">
                   {fromCart ? 'Complete Profile to Access Cart' : `Complete Profile to Continue`}
                 </h3>
-                <p className="text-sm text-blue-600 mt-1">
+                <p className="text-sm text-blue-200 mt-1">
                   {currentStep === 1 && "We need your shipping address to calculate delivery costs and provide local pickup options."}
                   {currentStep === 2 && "Your phone number helps us contact you about orders and delivery updates."}
                   {currentStep === 3 && "Just a few final preferences to personalize your experience."}
@@ -142,18 +142,18 @@ const OnboardingPage = () => {
         {/* Progress bar */}
         <div className="mb-8">
           <div className="flex justify-between mb-2">
-            <span className="text-sm text-gray-600">Step {currentStep} of 3</span>
-            <span className="text-sm text-gray-600">{Math.round((currentStep / 3) * 100)}% Complete</span>
+            <span className="text-sm text-gray-300">Step {currentStep} of 3</span>
+            <span className="text-sm text-gray-300">{Math.round((currentStep / 3) * 100)}% Complete</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-700 rounded-full h-2">
             <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / 3) * 100}%` }}
             />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm p-8">
+        <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-sm p-8">
           {currentStep === 1 && (
             <AddressForm 
               onNext={(data: any) => {
@@ -187,8 +187,8 @@ const OnboardingPage = () => {
           )}
         </div>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Google account users must complete profile to continue
+        <p className="text-center text-sm text-gray-400 mt-4">
+          Complete your profile to continue shopping
         </p>
       </div>
     </div>
@@ -263,7 +263,7 @@ const AddressForm = ({ onNext, initialData }: any) => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Where should we deliver?</h2>
+      <h2 className="text-2xl font-bold mb-4 text-white">Where should we deliver?</h2>
       
       <div className="relative mb-4">
         <input
@@ -274,7 +274,7 @@ const AddressForm = ({ onNext, initialData }: any) => {
             searchAddress(e.target.value);
           }}
           placeholder="Start typing your address..."
-          className="w-full p-3 border rounded-lg"
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />
         
         {isSearching && (
@@ -284,12 +284,12 @@ const AddressForm = ({ onNext, initialData }: any) => {
         )}
 
         {suggestions.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+          <div className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto">
             {suggestions.map((suggestion, i) => (
               <button
                 key={i}
                 onClick={() => selectAddress(suggestion)}
-                className="w-full text-left p-3 hover:bg-gray-50 border-b last:border-0"
+                className="w-full text-left p-3 text-white hover:bg-gray-600 border-b border-gray-600 last:border-0 transition-colors"
               >
                 {(suggestion as any).formatted}
               </button>
@@ -305,7 +305,7 @@ const AddressForm = ({ onNext, initialData }: any) => {
           onChange={(e) => setAddress({...address, street: e.target.value})}
           placeholder="Street Address"
           required
-          className="w-full p-3 border rounded-lg"
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />
         
         <div className="grid grid-cols-2 gap-3">
@@ -315,7 +315,7 @@ const AddressForm = ({ onNext, initialData }: any) => {
             onChange={(e) => setAddress({...address, city: e.target.value})}
             placeholder="City"
             required
-            className="p-3 border rounded-lg"
+            className="p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
           />
           
           <input
@@ -325,7 +325,7 @@ const AddressForm = ({ onNext, initialData }: any) => {
             placeholder="State"
             maxLength={2}
             required
-            className="p-3 border rounded-lg"
+            className="p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
           />
         </div>
         
@@ -335,7 +335,7 @@ const AddressForm = ({ onNext, initialData }: any) => {
           onChange={(e) => setAddress({...address, zipCode: e.target.value})}
           placeholder="ZIP Code"
           required
-          className="w-full p-3 border rounded-lg"
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />
         
         <input
@@ -343,14 +343,14 @@ const AddressForm = ({ onNext, initialData }: any) => {
           value={address.apartment || ''}
           onChange={(e) => setAddress({...address, apartment: e.target.value})}
           placeholder="Apartment, suite, etc. (optional)"
-          className="w-full p-3 border rounded-lg"
+          className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
         />
       </div>
 
       <button
         onClick={() => onNext(address)}
         disabled={!address.street || !address.city || !address.state || !address.zipCode}
-        className="w-full mt-6 bg-blue-600 text-white p-3 rounded-lg disabled:opacity-50"
+        className="w-full mt-6 py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         Continue
       </button>
@@ -364,7 +364,7 @@ const ContactForm = ({ onNext, onBack, initialData }: any) => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Contact Information</h2>
+      <h2 className="text-2xl font-bold mb-4 text-white">Contact Information</h2>
       
       <input
         type="tel"
@@ -372,20 +372,20 @@ const ContactForm = ({ onNext, onBack, initialData }: any) => {
         onChange={(e) => setPhone(e.target.value)}
         placeholder="Phone Number"
         required
-        className="w-full p-3 border rounded-lg mb-6"
+        className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 mb-6"
       />
       
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="flex-1 bg-gray-300 text-gray-700 p-3 rounded-lg"
+          className="flex-1 bg-gray-600 hover:bg-gray-500 text-white p-3 rounded-lg transition-colors"
         >
           Back
         </button>
         <button
           onClick={() => onNext(phone)}
           disabled={!phone}
-          className="flex-1 bg-blue-600 text-white p-3 rounded-lg disabled:opacity-50"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Continue
         </button>
@@ -403,10 +403,10 @@ const PreferencesForm = ({ onNext, onBack, initialData }: any) => {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Notification Preferences</h2>
+      <h2 className="text-2xl font-bold mb-4 text-white">Notification Preferences</h2>
       
       <div className="space-y-4 mb-6">
-        <label className="flex items-center">
+        <label className="flex items-center text-gray-300">
           <input
             type="checkbox"
             checked={preferences.emailNotifications}
@@ -414,12 +414,12 @@ const PreferencesForm = ({ onNext, onBack, initialData }: any) => {
               ...preferences,
               emailNotifications: e.target.checked
             })}
-            className="mr-3"
+            className="mr-3 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
           />
           Email notifications for orders and updates
         </label>
         
-        <label className="flex items-center">
+        <label className="flex items-center text-gray-300">
           <input
             type="checkbox"
             checked={preferences.smsNotifications}
@@ -427,7 +427,7 @@ const PreferencesForm = ({ onNext, onBack, initialData }: any) => {
               ...preferences,
               smsNotifications: e.target.checked
             })}
-            className="mr-3"
+            className="mr-3 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
           />
           SMS notifications for important updates
         </label>
@@ -436,13 +436,13 @@ const PreferencesForm = ({ onNext, onBack, initialData }: any) => {
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="flex-1 bg-gray-300 text-gray-700 p-3 rounded-lg"
+          className="flex-1 bg-gray-600 hover:bg-gray-500 text-white p-3 rounded-lg transition-colors"
         >
           Back
         </button>
         <button
           onClick={() => onNext(preferences)}
-          className="flex-1 bg-blue-600 text-white p-3 rounded-lg"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg transition-colors"
         >
           Complete Setup
         </button>
