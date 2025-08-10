@@ -6,13 +6,25 @@ import { Logger } from './utils/logger';
 // Configure Neon with better connection handling
 neonConfig.fetchConnectionCache = true;
 
-// Enhanced database connection logging for production deployment
-console.log('[DB] Initializing database connection...');
-console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
-console.log('[DB] Has DATABASE_URL:', !!process.env.DATABASE_URL);
-
-if (!process.env.DATABASE_URL) {
-  console.error('[DB] ❌ CRITICAL: DATABASE_URL is not set!');
+// Robust database connection handling for deployment credential sync issues
+const getDatabaseUrl = () => {
+  console.log('[DB] Initializing database connection...');
+  console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
+  console.log('[DB] Has DATABASE_URL:', !!process.env.DATABASE_URL);
+  
+  // Primary method: Direct DATABASE_URL (should work in both dev and prod)
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+  
+  // Fallback: Build from components (for deployment secret sync issues)
+  if (process.env.PGUSER && process.env.PGPASSWORD && process.env.PGHOST && process.env.PGDATABASE) {
+    const fallbackUrl = `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT || 5432}/${process.env.PGDATABASE}?sslmode=require`;
+    console.log('[DB] Using fallback URL construction from PG components');
+    return fallbackUrl;
+  }
+  
+  console.error('[DB] ❌ CRITICAL: No database configuration found!');
   console.error('[DB] Available env vars (non-sensitive):', 
     Object.keys(process.env).filter(k => 
       !k.includes('SECRET') && 
@@ -21,20 +33,22 @@ if (!process.env.DATABASE_URL) {
       !k.includes('PASSWORD')
     ).join(', ')
   );
-  throw new Error('DATABASE_URL environment variable is not set');
-}
+  throw new Error('No database configuration found - DATABASE_URL or PG components missing');
+};
+
+const DATABASE_URL = getDatabaseUrl();
 
 // Log database host (safe to log)
 try {
-  const dbUrl = new URL(process.env.DATABASE_URL);
+  const dbUrl = new URL(DATABASE_URL);
   console.log('[DB] Connecting to host:', dbUrl.hostname);
   console.log('[DB] Database name:', dbUrl.pathname.substring(1));
 } catch (e) {
   console.error('[DB] Invalid DATABASE_URL format');
 }
 
-// Create connection using the same method that works in testing
-const sql = neon(process.env.DATABASE_URL);
+// Create connection using the resolved DATABASE_URL
+const sql = neon(DATABASE_URL);
 export const db = drizzle(sql, { schema });
 
 // Simple connection test with proper error handling
