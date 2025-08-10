@@ -85,20 +85,7 @@ Other services:
 
 ### 2. Database Configuration
 
-Ensure `drizzle.config.prod.ts` is properly configured:
-
-```typescript
-import type { Config } from "drizzle-kit";
-
-export default {
-  schema: "./shared/schema.ts",
-  out: "./migrations",
-  driver: "pg",
-  dbCredentials: {
-    connectionString: process.env.DATABASE_URL_PROD!,
-  },
-} satisfies Config;
-```
+The project uses the main `drizzle.config.ts` with environment variable overrides for production deployments.
 
 ### 3. Tools Installed
 
@@ -203,7 +190,7 @@ Test these critical features in production:
 **Solution**:
 ```bash
 # Run the command manually with interactive mode
-DATABASE_URL=$DATABASE_URL_PROD npx drizzle-kit push --config=drizzle.config.prod.ts
+DATABASE_URL=$DATABASE_URL_PROD npx drizzle-kit push
 ```
 
 #### Missing Environment Variables

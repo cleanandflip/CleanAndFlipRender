@@ -149,13 +149,13 @@ sync_schema() {
   
   print_info "Syncing schema to production database..."
   
-  # Use production config to push schema
-  if DATABASE_URL=$DATABASE_URL_PROD npx drizzle-kit push --config=drizzle.config.prod.ts --yes 2>/dev/null; then
+  # Use development config with production URL to push schema
+  if DATABASE_URL=$DATABASE_URL_PROD npx drizzle-kit push --yes 2>/dev/null; then
     print_success "Schema sync completed successfully"
   else
     print_warning "Schema sync encountered issues - manual review needed"
     print_info "You may need to run the command interactively:"
-    echo "DATABASE_URL=\$DATABASE_URL_PROD npx drizzle-kit push --config=drizzle.config.prod.ts"
+    echo "DATABASE_URL=\$DATABASE_URL_PROD npx drizzle-kit push"
   fi
 }
 
