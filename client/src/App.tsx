@@ -16,6 +16,7 @@ import { environment } from "@/lib/environment";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Analytics } from "@/components/Analytics";
 import { PWAInstaller } from "@/components/PWAInstaller";
+import { LocalBenefitsBanner } from "@/components/shared/LocalBenefitsBanner";
 import { FloatingLocalInfo } from "@/components/shared/FloatingLocalInfo";
 
 // Import critical pages directly to avoid lazy loading issues with routing
@@ -100,6 +101,7 @@ function Router() {
         <Analytics />
         <PWAInstaller />
         <Navigation />
+        <LocalBenefitsBanner />
         <CartDrawer />
         <FloatingLocalInfo />
         <ScrollRestoration />
