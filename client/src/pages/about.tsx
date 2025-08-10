@@ -241,7 +241,7 @@ export default function About() {
                 className="text-sm"
                 style={{ color: theme.colors.text.secondary }}
               >
-                Safe, secure delivery or pickup options to get your equipment where it needs to go.
+                Safe, secure delivery options to get your equipment delivered to your doorstep.
               </p>
             </Card>
           </div>

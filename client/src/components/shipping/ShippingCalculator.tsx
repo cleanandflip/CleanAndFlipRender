@@ -240,31 +240,31 @@ export function ShippingCalculator({
         </div>
       )}
 
-      {/* Local Pickup Option */}
+      {/* Free Local Delivery Option */}
       <div className="border-t border-border/30 pt-4 mt-6">
         <button
           onClick={() => onShippingSelected({
-            id: 'local-pickup',
-            name: 'Local Pickup',
-            description: 'Pick up at our Asheville, NC location',
+            id: 'local-delivery',
+            name: 'Free Local Delivery to Your Doorstep',
+            description: 'Free delivery to your doorstep in Asheville area',
             price: 0,
-            estimatedDays: 'Available today',
-            carrier: 'pickup',
+            estimatedDays: 'Same day or next day',
+            carrier: 'local_delivery',
             service: 'local'
           })}
           className={`w-full p-4 border-2 rounded-lg transition-all ${
-            selectedOption?.id === 'local-pickup'
+            selectedOption?.id === 'local-delivery'
               ? 'border-accent-blue bg-accent-blue/5' 
               : 'border-border hover:border-accent-blue/50'
           }`}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <MapPin size={20} className="text-accent-blue" />
+              <Truck size={20} className="text-green-500" />
               <div className="text-left">
-                <div className="font-semibold">Local Pickup</div>
-                <div className="text-sm text-text-secondary">Asheville, NC location</div>
-                <div className="text-xs text-text-secondary mt-1">Available today</div>
+                <div className="font-semibold">Free Local Delivery to Your Doorstep</div>
+                <div className="text-sm text-text-secondary">Asheville area residents</div>
+                <div className="text-xs text-text-secondary mt-1">Same day or next day</div>
               </div>
             </div>
             <div className="font-bold text-lg text-green-600">FREE</div>
