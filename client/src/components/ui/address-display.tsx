@@ -25,7 +25,7 @@ export function AddressDisplay({ user, className = "" }: AddressDisplayProps) {
       {user.isLocalCustomer && (
         <span className="text-xs text-green-500 mt-1 inline-flex items-center gap-1">
           <CheckCircle className="w-3 h-3" />
-          Local customer
+          Free local delivery available in Asheville area
         </span>
       )}
     </div>

@@ -140,7 +140,7 @@ function AddressesSection() {
                     {address.isLocal && (
                       <Badge className="bg-green-600 text-white text-xs flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" />
-                        Local Pickup
+                        Local Delivery
                       </Badge>
                     )}
                   </div>
@@ -150,7 +150,7 @@ function AddressesSection() {
                   </p>
                   {address.isLocal && (
                     <p className="text-green-400 text-sm mt-2">
-                      ✓ Local pickup available in Asheville area
+                      ✓ Free local delivery to your doorstep in Asheville area
                     </p>
                   )}
                 </div>

@@ -490,7 +490,7 @@ export default function ProductDetail() {
                     <ul className="space-y-1">
                       <li>• Standard Shipping: 3-5 business days</li>
                       <li>• Expedited Shipping: 1-2 business days</li>
-                      <li>• Local Pickup: Available in Asheville, NC</li>
+                      <li>• Free Local Delivery: Available to your doorstep in Asheville, NC</li>
                     </ul>
                   </div>
                   <div>

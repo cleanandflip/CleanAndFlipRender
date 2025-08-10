@@ -571,7 +571,7 @@ export default function Contact() {
                     className="font-semibold mb-1"
                     style={{ color: theme.colors.text.primary }}
                   >
-                    Local Pickup
+                    Free Local Delivery
                   </h3>
                   <p 
                     className="text-sm"

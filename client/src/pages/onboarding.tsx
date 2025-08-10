@@ -89,7 +89,7 @@ const OnboardingPage = () => {
       if (result.isLocalCustomer) {
         toast({
           title: "Welcome!",
-          description: "You qualify for free local pickup in Asheville!",
+          description: "You qualify for free local delivery to your doorstep in Asheville!",
         });
       }
       
@@ -131,7 +131,7 @@ const OnboardingPage = () => {
                   {fromCart ? 'Complete Profile to Access Cart' : `Complete Profile to Continue`}
                 </h3>
                 <p className="text-sm text-blue-200 mt-1">
-                  {currentStep === 1 && "We need your shipping address to calculate delivery costs and provide local pickup options."}
+                  {currentStep === 1 && "We need your shipping address to calculate delivery costs and provide local delivery options."}
                   {currentStep === 2 && "Your phone number helps us contact you about orders and delivery updates."}
                   {currentStep === 3 && "Just a few final preferences to personalize your experience."}
                 </p>
