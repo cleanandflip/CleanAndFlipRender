@@ -29,13 +29,13 @@ router.get('/google/callback',
       const [dbUser] = await db.select().from(users).where(eq(users.id, user.id));
       
       if (dbUser) {
-        // Don't force onboarding immediately - let them browse first
+        // Force onboarding for incomplete profiles - info needed for shopping
         if (!dbUser.profileComplete) {
           const onboardingStep = dbUser.onboardingStep ?? 0;
           const isNewUser = onboardingStep <= 1;
-          Logger.info('[AUTH] New Google user - allowing browsing, will prompt at checkout:', { isNewUser, onboardingStep });
-          // Let them browse with welcome message instead of forcing onboarding
-          return res.redirect(`${req.protocol}://${req.get('host')}/products?welcome=true&google=true&new=${isNewUser}`);
+          Logger.info('[AUTH] Google user needs profile completion for shopping:', { isNewUser, onboardingStep });
+          // Force onboarding to collect required shipping/contact info
+          return res.redirect(`${req.protocol}://${req.get('host')}/onboarding?google=true&new=${isNewUser}`);
         }
       }
       

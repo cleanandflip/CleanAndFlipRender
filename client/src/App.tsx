@@ -104,9 +104,12 @@ function Router() {
               <Route path={ROUTES.ABOUT} component={About} />
               <Route path={ROUTES.CONTACT} component={Contact} />
               
-              {/* Shopping Routes */}
-              <Route path={ROUTES.CART} component={Cart} />
-              {/* Checkout requires profile completion */}
+              {/* Shopping Routes - Profile completion required */}
+              <Route path={ROUTES.CART} component={() => (
+                <ProtectedRoute requireCompleteProfile={true}>
+                  <Cart />
+                </ProtectedRoute>
+              )} />
               <Route path={ROUTES.CHECKOUT} component={() => (
                 <ProtectedRoute requireCompleteProfile={true}>
                   <Checkout />

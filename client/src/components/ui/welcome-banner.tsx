@@ -9,17 +9,15 @@ export function WelcomeBanner() {
   const [show, setShow] = useState(false);
   
   useEffect(() => {
-    // Check URL parameters for Google OAuth welcome
+    // Check URL parameters for Google OAuth onboarding
     const urlParams = new URLSearchParams(window.location.search);
-    const welcome = urlParams.get('welcome');
     const google = urlParams.get('google');
     const isNew = urlParams.get('new');
     
-    if (welcome === 'true' && google === 'true' && isNew === 'true') {
+    if (google === 'true' && isNew === 'true' && location.includes('/onboarding')) {
       setShow(true);
       // Clean up URL parameters
       const url = new URL(window.location.href);
-      url.searchParams.delete('welcome');
       url.searchParams.delete('google');
       url.searchParams.delete('new');
       window.history.replaceState({}, '', url.toString());
@@ -36,8 +34,8 @@ export function WelcomeBanner() {
             Welcome to Clean & Flip! 🏋️
           </h3>
           <p className="text-blue-800 dark:text-blue-200 text-sm">
-            Thanks for signing up with Google! Browse our premium fitness equipment catalog. 
-            Complete your profile at checkout for shipping and the best experience.
+            Thanks for signing up with Google! Please complete your profile below so we can process orders and handle shipping.
+            This information is required for all shopping functionality.
           </p>
         </div>
         <Button 
