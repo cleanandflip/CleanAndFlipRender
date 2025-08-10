@@ -9,7 +9,6 @@ import { CartProvider } from "@/hooks/use-cart";
 import { AuthProvider } from "@/hooks/use-auth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Navigation from "@/components/layout/navigation";
-import { LocalStatusBar } from "@/components/layout/LocalStatusBar";
 import Footer from "@/components/layout/footer";
 import CartDrawer from "@/components/cart/cart-drawer";
 import { PageLoader } from "@/components/ui/page-loader";
@@ -17,6 +16,8 @@ import { environment } from "@/lib/environment";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Analytics } from "@/components/Analytics";
 import { PWAInstaller } from "@/components/PWAInstaller";
+import { StickyHeader } from "@/components/layout/StickyHeader";
+import { FloatingLocalInfo } from "@/components/shared/FloatingLocalInfo";
 
 // Import critical pages directly to avoid lazy loading issues with routing
 import Home from "@/pages/home";
@@ -99,9 +100,9 @@ function Router() {
         <div className="gym-atmosphere" />
         <Analytics />
         <PWAInstaller />
-        <Navigation />
-        <LocalStatusBar />
+        <StickyHeader />
         <CartDrawer />
+        <FloatingLocalInfo />
         <ScrollRestoration />
         <main className="flex-1">
           <Suspense fallback={<PageLoader />}>

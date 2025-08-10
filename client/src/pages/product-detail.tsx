@@ -24,58 +24,14 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
-  ZoomIn,
-  CheckCircle
+  ZoomIn
 } from "lucide-react";
 import type { Product } from "@shared/schema";
-import { useAuth } from "@/hooks/use-auth";
-
-const DeliveryInfo = ({ isLocal }: { isLocal: boolean }) => (
-  <div className="border-t border-gray-200 pt-6 mt-6">
-    <h3 className="text-sm font-medium text-gray-900 mb-3">Delivery Options</h3>
-    
-    <div className="space-y-2">
-      {/* Local Delivery Option */}
-      <div className={`flex items-center justify-between p-3 rounded-lg border ${
-        isLocal ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-50'
-      }`}>
-        <div className="flex items-center gap-3">
-          <Truck className={`h-4 w-4 ${isLocal ? 'text-emerald-600' : 'text-gray-400'}`} />
-          <div>
-            <p className={`text-sm font-medium ${isLocal ? 'text-gray-900' : 'text-gray-400 line-through'}`}>
-              Free Local Delivery
-            </p>
-            <p className="text-xs text-gray-500">2-3 business days</p>
-          </div>
-        </div>
-        <span className={`text-sm font-semibold ${isLocal ? 'text-emerald-600' : 'text-gray-400'}`}>
-          {isLocal ? 'FREE' : 'Local only'}
-        </span>
-      </div>
-      
-      {/* Standard Shipping */}
-      {!isLocal && (
-        <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-3">
-            <Truck className="h-4 w-4 text-gray-600" />
-            <div>
-              <p className="text-sm font-medium text-gray-900">Standard Shipping</p>
-              <p className="text-xs text-gray-500">5-7 business days</p>
-            </div>
-          </div>
-          <span className="text-sm font-semibold">$9.99</span>
-        </div>
-      )}
-    </div>
-  </div>
-);
 
 export default function ProductDetail() {
   const { id } = useParams();
   const [location, navigate] = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const isLocal = user?.isLocalCustomer;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -527,7 +483,21 @@ export default function ProductDetail() {
             
             <TabsContent value="shipping" className="mt-6">
               <Card className="p-6">
-                <DeliveryInfo isLocal={!!isLocal} />
+                <h3 className="text-xl font-semibold mb-4">Shipping Information</h3>
+                <div className="space-y-4 text-text-secondary">
+                  <div>
+                    <h4 className="font-medium text-white mb-2">Delivery Options</h4>
+                    <ul className="space-y-1">
+                      <li>• Standard Shipping: 3-5 business days</li>
+                      <li>• Expedited Shipping: 1-2 business days</li>
+                      <li>• Free Local Delivery: Available to your doorstep in Asheville, NC</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-white mb-2">Shipping Costs</h4>
+                    <p>Shipping costs are calculated at checkout based on weight and destination.</p>
+                  </div>
+                </div>
               </Card>
             </TabsContent>
             
