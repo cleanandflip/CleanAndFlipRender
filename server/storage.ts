@@ -46,7 +46,7 @@ export interface IStorage {
     zipCode?: string;
     latitude?: number;
     longitude?: number;
-    isLocalCustomer?: boolean;
+
   }): Promise<User>;
 
   // Category operations

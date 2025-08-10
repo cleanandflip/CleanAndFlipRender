@@ -2120,8 +2120,7 @@ function setupAuth(app2) {
         Logger.debug(`Successful login for email: ${normalizedEmail}`);
         return done(null, {
           ...user,
-          role: user.role || "user",
-          isAdmin: user.isAdmin || false
+          role: user.role || "user"
         });
       } catch (error) {
         Logger.error("Login authentication error:", error.message);
@@ -2147,8 +2146,7 @@ function setupAuth(app2) {
       const { password, ...userWithoutPassword } = user;
       const userForSession = {
         ...userWithoutPassword,
-        role: user.role || "user",
-        isAdmin: user.isAdmin || false
+        role: user.role || "user"
       };
       Logger.debug(`[PASSPORT] Successfully deserialized user: ${user.email}`);
       done(null, userForSession);
@@ -2204,11 +2202,8 @@ function setupAuth(app2) {
         });
       }
       let role = "user";
-      if (normalizedEmail.includes("developer") || normalizedEmail.includes("@dev.")) {
+      if (normalizedEmail.includes("developer") || normalizedEmail.includes("@dev.") || normalizedEmail === "admin@cleanandflip.com") {
         role = "developer";
-      }
-      if (normalizedEmail === "admin@cleanandflip.com") {
-        role = "admin";
       }
       const normalizedPhone = phone ? normalizePhone(phone) : void 0;
       const user = await storage.createUser({
@@ -2223,14 +2218,11 @@ function setupAuth(app2) {
         zipCode: zipCode || void 0,
         latitude: latitude ? String(latitude) : void 0,
         longitude: longitude ? String(longitude) : void 0,
-        role,
-        isAdmin: role === "admin" || role === "developer",
-        isLocalCustomer: isLocalCustomer || false
+        role
       });
       const userForSession = {
         ...user,
-        role: user.role || "user",
-        isAdmin: user.isAdmin || false
+        role: user.role || "user"
       };
       req.logIn(userForSession, (err) => {
         if (err) return next(err);
@@ -2249,9 +2241,7 @@ function setupAuth(app2) {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            role: user.role || "user",
-            isAdmin: user.isAdmin,
-            isLocalCustomer: user.isLocalCustomer
+            role: user.role || "user"
           });
         });
       });
@@ -2291,8 +2281,7 @@ function setupAuth(app2) {
       }
       const userForSession = {
         ...user,
-        role: user.role || "user",
-        isAdmin: user.isAdmin || false
+        role: user.role || "user"
       };
       req.logIn(userForSession, (loginErr) => {
         if (loginErr) {
@@ -2321,8 +2310,7 @@ function setupAuth(app2) {
               email: user.email,
               firstName: user.firstName,
               lastName: user.lastName,
-              role: user.role || "user",
-              isAdmin: user.isAdmin || false
+              role: user.role || "user"
             }
           });
         });
@@ -2436,13 +2424,12 @@ function requireRole(roles) {
     const allowedRoles = Array.isArray(roles) ? roles : [roles];
     Logger.debug("RequireRole check:", {
       userRole: user.role,
-      isAdmin: user.isAdmin,
       allowedRoles,
       hasRole: allowedRoles.includes(user.role || "user"),
-      isAdminUser: user.isAdmin
+      isDeveloper: user.role === "developer"
     });
-    if (!allowedRoles.includes(user.role || "user") && !user.isAdmin) {
-      Logger.debug("Permission denied - user lacks required role and is not admin");
+    if (!allowedRoles.includes(user.role || "user") && user.role !== "developer") {
+      Logger.debug("Permission denied - user lacks required role and is not developer");
       return res.status(403).json({ message: "Insufficient permissions" });
     }
     Logger.debug("Permission granted for user:", user.email);
@@ -2462,18 +2449,18 @@ var authMiddleware = {
     }
     return res.status(401).json({ error: "Authentication required", message: "Please log in to continue" });
   },
-  // Check if user is admin (compatible with Passport authentication)
-  requireAdmin: (req, res, next) => {
+  // Check if user is developer (compatible with Passport authentication)
+  requireDeveloper: (req, res, next) => {
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       const user = req.user;
-      if (user.role === "admin" || user.isAdmin) {
+      if (user.role === "developer") {
         return next();
       }
     }
-    if (req.session?.userId && req.session?.role === "admin") {
+    if (req.session?.userId && req.session?.role === "developer") {
       return next();
     }
-    return res.status(403).json({ error: "Admin access required", message: "Admin privileges required for this action" });
+    return res.status(403).json({ error: "Developer access required", message: "Developer privileges required for this action" });
   },
   // Optional auth (guest checkout) - compatible with Passport
   optionalAuth: (req, res, next) => {
@@ -4131,7 +4118,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to create order" });
     }
   });
-  const requireAdmin = async (req, res, next) => {
+  const requireDeveloper = async (req, res, next) => {
     if (!req.isAuthenticated || !req.isAuthenticated()) {
       return res.status(401).json({ error: "Authentication required" });
     }
@@ -4139,7 +4126,7 @@ async function registerRoutes(app2) {
     if (!user) {
       return res.status(401).json({ error: "Authentication required" });
     }
-    if (!user.isAdmin && user.role !== "admin" && user.role !== "developer") {
+    if (user.role !== "developer") {
       return res.status(403).json({ error: "Admin access required" });
     }
     next();
@@ -5083,7 +5070,7 @@ async function registerRoutes(app2) {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        isActive: !user.isAdmin,
+        isActive: user.role !== "developer",
         // Transform field name
         lastLogin: user.updatedAt?.toISOString() || null,
         createdAt: user.createdAt?.toISOString() || null

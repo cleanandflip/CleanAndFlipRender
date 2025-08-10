@@ -16,22 +16,22 @@ export const authMiddleware = {
     return res.status(401).json({ error: 'Authentication required', message: 'Please log in to continue' });
   },
   
-  // Check if user is admin (compatible with Passport authentication)
-  requireAdmin: (req: any, res: Response, next: NextFunction) => {
+  // Check if user is developer (compatible with Passport authentication)
+  requireDeveloper: (req: any, res: Response, next: NextFunction) => {
     // Check Passport authentication first
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       const user = req.user as any;
-      if (user.role === 'admin' || user.isAdmin) {
+      if (user.role === 'developer') {
         return next();
       }
     }
     
     // Fallback to session check for compatibility
-    if (req.session?.userId && req.session?.role === 'admin') {
+    if (req.session?.userId && req.session?.role === 'developer') {
       return next();
     }
     
-    return res.status(403).json({ error: 'Admin access required', message: 'Admin privileges required for this action' });
+    return res.status(403).json({ error: 'Developer access required', message: 'Developer privileges required for this action' });
   },
   
   // Optional auth (guest checkout) - compatible with Passport

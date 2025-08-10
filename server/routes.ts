@@ -957,7 +957,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // REMOVED - Old address endpoints replaced with unified system below
 
   // Admin routes - use passport authentication
-  const requireAdmin = async (req: any, res: any, next: any) => {
+  const requireDeveloper = async (req: any, res: any, next: any) => {
     // Check if user is authenticated via passport
     if (!req.isAuthenticated || !req.isAuthenticated()) {
       return res.status(401).json({ error: "Authentication required" });
@@ -968,8 +968,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Authentication required" });
     }
     
-    // Check if user has admin privileges (allow admin role or isAdmin flag)
-    if (!user.isAdmin && user.role !== 'admin' && user.role !== 'developer') {
+    // Check if user has developer privileges
+    if (user.role !== 'developer') {
       return res.status(403).json({ error: "Admin access required" });
     }
     
@@ -2191,7 +2191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        isActive: !user.isAdmin, // Transform field name
+        isActive: user.role !== 'developer', // Transform field name
         lastLogin: user.updatedAt?.toISOString() || null,
         createdAt: user.createdAt?.toISOString() || null
       }));

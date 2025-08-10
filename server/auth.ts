@@ -18,7 +18,6 @@ declare global {
       firstName?: string | null;
       lastName?: string | null;
       role: string;
-      isAdmin: boolean;
     }
     interface Request {
       userId?: string;
@@ -124,8 +123,7 @@ export function setupAuth(app: Express) {
         Logger.debug(`Successful login for email: ${normalizedEmail}`);
         return done(null, {
           ...user,
-          role: user.role || 'user',
-          isAdmin: user.isAdmin || false
+          role: user.role || 'user'
         });
       } catch (error: any) {
         Logger.error('Login authentication error:', error.message);
@@ -158,8 +156,7 @@ export function setupAuth(app: Express) {
       const { password, ...userWithoutPassword } = user;
       const userForSession = {
         ...userWithoutPassword,
-        role: user.role || 'user',
-        isAdmin: user.isAdmin || false
+        role: user.role || 'user'
       };
       
       Logger.debug(`[PASSPORT] Successfully deserialized user: ${user.email}`);
@@ -232,12 +229,9 @@ export function setupAuth(app: Express) {
       // Local customer status is determined client-side based on Asheville zip codes
 
       // Determine role based on criteria (using normalized email)
-      let role: "user" | "developer" | "admin" = "user";
-      if (normalizedEmail.includes("developer") || normalizedEmail.includes("@dev.")) {
+      let role: "user" | "developer" = "user";
+      if (normalizedEmail.includes("developer") || normalizedEmail.includes("@dev.") || normalizedEmail === "admin@cleanandflip.com") {
         role = "developer";
-      }
-      if (normalizedEmail === "admin@cleanandflip.com") {
-        role = "admin";
       }
 
       // Normalize phone number
@@ -256,14 +250,11 @@ export function setupAuth(app: Express) {
         latitude: latitude ? String(latitude) : undefined,
         longitude: longitude ? String(longitude) : undefined,
         role,
-        isAdmin: role === "admin" || role === "developer",
-        isLocalCustomer: isLocalCustomer || false,
       });
 
       const userForSession = {
         ...user,
-        role: user.role || 'user',
-        isAdmin: user.isAdmin || false
+        role: user.role || 'user'
       };
       // CRITICAL: Use req.logIn to establish Passport session properly
       req.logIn(userForSession, (err) => {
@@ -287,9 +278,7 @@ export function setupAuth(app: Express) {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            role: user.role || 'user',
-            isAdmin: user.isAdmin,
-            isLocalCustomer: user.isLocalCustomer,
+            role: user.role || 'user'
           });
         });
       });
@@ -339,8 +328,7 @@ export function setupAuth(app: Express) {
       
       const userForSession = {
         ...user,
-        role: user.role || 'user',
-        isAdmin: user.isAdmin || false
+        role: user.role || 'user'
       };
       
       // CRITICAL: Use req.logIn to establish Passport session properly
@@ -375,8 +363,7 @@ export function setupAuth(app: Express) {
               email: user.email,
               firstName: user.firstName,
               lastName: user.lastName,
-              role: user.role || 'user',
-              isAdmin: user.isAdmin || false,
+              role: user.role || 'user'
             }
           });
         });
@@ -518,15 +505,14 @@ export function requireRole(roles: string | string[]) {
     
     Logger.debug('RequireRole check:', {
       userRole: user.role,
-      isAdmin: user.isAdmin,
       allowedRoles,
       hasRole: allowedRoles.includes(user.role || 'user'),
-      isAdminUser: user.isAdmin
+      isDeveloper: user.role === 'developer'
     });
     
-    // Allow if user has the required role OR if user is admin (admins can do everything)
-    if (!allowedRoles.includes(user.role || 'user') && !user.isAdmin) {
-      Logger.debug('Permission denied - user lacks required role and is not admin');
+    // Allow if user has the required role OR if user is developer (developers can do everything)
+    if (!allowedRoles.includes(user.role || 'user') && user.role !== 'developer') {
+      Logger.debug('Permission denied - user lacks required role and is not developer');
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 

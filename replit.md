@@ -38,13 +38,14 @@ PostgreSQL is the primary database, utilizing:
 - **Schema**: Key tables include users, products, categories, orders, cart items, and equipment submissions with proper relationships.
 
 ### Authentication and Authorization
-A multi-layered security approach with role-based access control:
+A multi-layered security approach with simplified role-based access control:
 - **User Authentication**: Session-based auth via Passport.js local strategy.
 - **Password Security**: bcrypt with 12 salt rounds.
-- **Role Management**: Admin, developer, and user roles with middleware-enforced permissions.
-- **Rate Limiting**: Tiered rate limiting for general API, auth, and admin operations.
+- **Role Management**: Simplified two-role system (user/developer) with middleware-enforced permissions.
+- **Local User Detection**: Automatic Asheville, NC zip code detection for local service determination.
+- **Rate Limiting**: Tiered rate limiting for general API, auth, and developer operations.
 - **Password Reset**: Secure token-based recovery.
-- **Session Management**: Secure session configuration.
+- **Session Management**: Secure session configuration with consolidated database connections.
 - **Security Practices**: Implements security headers, input sanitization, and SQL injection prevention.
 
 ### Unified UI and Live Sync
