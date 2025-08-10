@@ -33,7 +33,7 @@ router.get('/google/callback',
         if (!dbUser.profileComplete || (dbUser.onboardingStep && dbUser.onboardingStep > 0)) {
           const step = dbUser.onboardingStep || 1;
           const isNewUser = !dbUser.profileComplete && dbUser.onboardingStep === 1;
-          Logger.info('[AUTH] Redirecting Google user to onboarding step:', step, 'isNewUser:', isNewUser);
+          Logger.info('[AUTH] Redirecting Google user to onboarding:', { step, isNewUser });
           return res.redirect(`/onboarding?step=${step}&google=true&new=${isNewUser}`);
         }
       }
