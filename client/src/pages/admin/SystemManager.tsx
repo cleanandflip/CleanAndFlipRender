@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { UnifiedCard } from '@/components/ui/UnifiedCard';
+import { UnifiedButton } from '@/components/ui/UnifiedButton';
 import { Badge } from '@/components/ui/badge';
 import { 
   Settings, 
@@ -88,15 +88,16 @@ export function SystemManager() {
             {sections.map((section) => {
               const Icon = section.icon;
               return (
-                <Button
+                <UnifiedButton
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   variant={activeSection === section.id ? 'primary' : 'ghost'}
+                  size="md"
                   className="w-full justify-start gap-3"
                 >
                   <Icon className="w-4 h-4" />
                   {section.label}
-                </Button>
+                </UnifiedButton>
               );
             })}
           </nav>
@@ -113,7 +114,7 @@ export function SystemManager() {
 
               {/* System Health Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="glass p-4">
+                <UnifiedCard variant="elevated" padding="md" className="glass">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-white">Database</p>
@@ -124,9 +125,9 @@ export function SystemManager() {
                   <div className="mt-2">
                     {getStatusBadge(systemHealth?.database?.status || 'unknown')}
                   </div>
-                </Card>
+                </UnifiedCard>
 
-                <Card className="glass p-4">
+                <UnifiedCard variant="elevated" padding="md" className="glass">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-white">Cache</p>
@@ -137,9 +138,9 @@ export function SystemManager() {
                   <div className="mt-2">
                     {getStatusBadge(systemHealth?.redis?.status || 'warning')}
                   </div>
-                </Card>
+                </UnifiedCard>
 
-                <Card className="glass p-4">
+                <UnifiedCard variant="elevated" padding="md" className="glass">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-white">Storage</p>
@@ -150,9 +151,9 @@ export function SystemManager() {
                   <div className="mt-2">
                     {getStatusBadge(systemHealth?.storage?.status || 'unknown')}
                   </div>
-                </Card>
+                </UnifiedCard>
 
-                <Card className="glass p-4">
+                <UnifiedCard variant="elevated" padding="md" className="glass">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-white">Uptime</p>
@@ -163,7 +164,7 @@ export function SystemManager() {
                   <div className="mt-2">
                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Online</Badge>
                   </div>
-                </Card>
+                </UnifiedCard>
               </div>
 
               {/* Performance Metrics */}

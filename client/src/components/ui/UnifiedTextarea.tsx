@@ -1,38 +1,40 @@
 /**
- * UNIFIED INPUT COMPONENT - PHASE 5: INPUT FIELD UNIFICATION
- * Standardized input component following design system specifications
+ * UNIFIED TEXTAREA COMPONENT - PHASE 5: INPUT FIELD UNIFICATION
+ * Standardized textarea component following design system specifications
  * August 10, 2025 - Professional UI Modernization
  */
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { INPUTS, HEIGHTS } from '@/config/dimensions';
+import { INPUTS } from '@/config/dimensions';
 
-interface UnifiedInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface UnifiedTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
   helperText?: string;
   required?: boolean;
   variant?: 'default' | 'ghost' | 'filled';
+  minRows?: number;
 }
 
-export const UnifiedInput = React.forwardRef<HTMLInputElement, UnifiedInputProps>(({
+export const UnifiedTextarea = React.forwardRef<HTMLTextAreaElement, UnifiedTextareaProps>(({
   label,
   error,
   helperText,
   required = false,
   variant = 'default',
+  minRows = 3,
   className,
   id,
   ...props
 }, ref) => {
-  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
 
-  const getInputClasses = () => {
-    const baseClasses = 'w-full px-3 text-base border rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed';
+  const getTextareaClasses = () => {
+    const baseClasses = 'w-full p-3 text-base border rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed resize-vertical';
     
-    // Height specification: ALL text inputs MUST be h-10 (40px) EXACTLY
-    const heightClass = 'h-10'; // HEIGHTS.input enforcement
+    // Height specification: ALL textareas MUST have min-h-[80px]
+    const heightClass = 'min-h-[80px]'; // INPUTS.textarea.minHeight enforcement
     
     const variantClasses = {
       default: 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:border-blue-500',
@@ -55,7 +57,7 @@ export const UnifiedInput = React.forwardRef<HTMLInputElement, UnifiedInputProps
     <div className="space-y-2">
       {label && (
         <label 
-          htmlFor={inputId}
+          htmlFor={textareaId}
           className="block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
           {label}
@@ -63,10 +65,11 @@ export const UnifiedInput = React.forwardRef<HTMLInputElement, UnifiedInputProps
         </label>
       )}
       
-      <input
+      <textarea
         ref={ref}
-        id={inputId}
-        className={getInputClasses()}
+        id={textareaId}
+        rows={minRows}
+        className={getTextareaClasses()}
         {...props}
       />
       
@@ -85,6 +88,6 @@ export const UnifiedInput = React.forwardRef<HTMLInputElement, UnifiedInputProps
   );
 });
 
-UnifiedInput.displayName = "UnifiedInput";
+UnifiedTextarea.displayName = "UnifiedTextarea";
 
-export default UnifiedInput;
+export default UnifiedTextarea;

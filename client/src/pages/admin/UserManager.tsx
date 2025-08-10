@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { UnifiedCard } from "@/components/ui/UnifiedCard";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { UnifiedInput } from "@/components/ui/UnifiedInput";
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
@@ -85,9 +85,9 @@ export function UserManager() {
 
   if (isLoading) {
     return (
-      <Card className="p-6">
+      <UnifiedCard variant="elevated" padding="lg">
         <div className="text-center">Loading users...</div>
-      </Card>
+      </UnifiedCard>
     );
   }
 
@@ -100,14 +100,14 @@ export function UserManager() {
         </div>
       </div>
 
-      <Card className="p-6">
+      <UnifiedCard variant="elevated" padding="lg">
         <div className="flex items-center gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
+            <UnifiedInput
               placeholder="Search users by name or email..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -150,7 +150,7 @@ export function UserManager() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button
+                      <UnifiedButton
                         variant="outline"
                         size="sm"
                         onClick={() => handleRoleChange(
@@ -160,15 +160,15 @@ export function UserManager() {
                       >
                         <Shield className="w-4 h-4 mr-1" />
                         {user.role === 'developer' ? 'Remove Developer' : 'Make Developer'}
-                      </Button>
-                      <Button
+                      </UnifiedButton>
+                      <UnifiedButton
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteUser(Number(user.id))}
                         disabled={deleteUserMutation.isPending}
                       >
                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </UnifiedButton>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -182,7 +182,7 @@ export function UserManager() {
             No users found matching your search.
           </div>
         )}
-      </Card>
+      </UnifiedCard>
     </div>
   );
 }
