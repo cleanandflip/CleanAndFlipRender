@@ -76,8 +76,16 @@ export function AddressAutocomplete({
       
       try {
         const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
+        console.log('🔑 API Key check:', {
+          exists: !!apiKey,
+          length: apiKey ? apiKey.length : 0,
+          first4: apiKey ? apiKey.substring(0, 4) : 'none'
+        });
+        
         if (!apiKey) {
-          console.error('Geoapify API key missing');
+          console.error('❌ CRITICAL: Geoapify API key missing - check VITE_GEOAPIFY_API_KEY in environment');
+          setSuggestions([]);
+          setShowDropdown(false);
           return;
         }
         
@@ -121,6 +129,12 @@ export function AddressAutocomplete({
         }
       } catch (error) {
         console.error('🚫 Address search failed:', error);
+        console.error('🔍 Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          apiKey: !!apiKey,
+          searchTerm: debouncedInput
+        });
       } finally {
         setIsLoading(false);
       }
