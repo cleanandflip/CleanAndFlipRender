@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, CheckCircle, Info, AlertTriangle, Bug } from 'lucide-react';
+import { AlertCircle, CheckCircle, Info, AlertTriangle, Bug, ChevronDown } from 'lucide-react';
+import { UnifiedButton } from '@/components/admin/UnifiedButton';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 interface ErrorLog {
   id: string;
   error_type: string;
@@ -111,14 +112,14 @@ export default function ErrorDashboard() {
               </span>
             </div>
             {!error.resolved && (
-              <Button
+              <UnifiedButton
                 size="sm"
                 variant="outline"
                 onClick={() => handleResolveError(error.id)}
               >
                 <CheckCircle className="w-4 h-4 mr-1" />
                 Resolve
-              </Button>
+              </UnifiedButton>
             )}
           </div>
         </CardHeader>
@@ -226,47 +227,76 @@ export default function ErrorDashboard() {
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                 />
               </div>
-              <Select
-                value={filters.severity}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, severity: value }))}
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Severity" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Severities</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={filters.resolved}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, resolved: value }))}
-              >
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="false">Unresolved</SelectItem>
-                  <SelectItem value="true">Resolved</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={filters.timeRange}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, timeRange: value }))}
-              >
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Time" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="24h">Last 24h</SelectItem>
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                </SelectContent>
-              </Select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <UnifiedButton variant="outline" size="sm">
+                    {filters.severity === 'all' ? 'All Severities' : 
+                     filters.severity === 'critical' ? 'Critical' :
+                     filters.severity === 'high' ? 'High' :
+                     filters.severity === 'medium' ? 'Medium' : 'Low'}
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </UnifiedButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'all' }))}>
+                    All Severities
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'critical' }))}>
+                    Critical
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'high' }))}>
+                    High
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'medium' }))}>
+                    Medium
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, severity: 'low' }))}>
+                    Low
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <UnifiedButton variant="outline" size="sm">
+                    {filters.resolved === 'all' ? 'All' :
+                     filters.resolved === 'false' ? 'Unresolved' : 'Resolved'}
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </UnifiedButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'all' }))}>
+                    All
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'false' }))}>
+                    Unresolved
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, resolved: 'true' }))}>
+                    Resolved
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <UnifiedButton variant="outline" size="sm">
+                    {filters.timeRange === '24h' ? 'Last 24h' :
+                     filters.timeRange === '7d' ? 'Last 7 days' : 'Last 30 days'}
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </UnifiedButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '24h' }))}>
+                    Last 24h
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '7d' }))}>
+                    Last 7 days
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, timeRange: '30d' }))}>
+                    Last 30 days
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </CardContent>
         </Card>
