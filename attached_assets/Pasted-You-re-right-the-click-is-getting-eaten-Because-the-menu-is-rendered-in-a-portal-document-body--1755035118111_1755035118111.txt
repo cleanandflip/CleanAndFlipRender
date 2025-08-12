@@ -1,3 +1,18 @@
+You’re right—the click is getting “eaten.”
+Because the menu is rendered in a portal (document.body), your outside-click listener (on document.mousedown) fires when you click an option, immediately closing the menu before the option’s onClick runs.
+
+What I changed (core fix)
+Outside-click handler now ignores clicks inside the menu as well as the root.
+
+Switched to pointerdown (works for mouse + touch) and added a single handler.
+
+In the menu container, I stop propagation on pointerdown/click so the document handler never runs for inside clicks.
+
+Drop this in as a full replacement for src/components/ui/Dropdown.tsx:
+
+tsx
+Copy
+Edit
 // src/components/ui/Dropdown.tsx
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -117,14 +132,12 @@ export default function Dropdown({
           "bg-slate-800/70 hover:bg-slate-800",
           "focus:outline-none focus:ring-2 focus:ring-blue-500/60",
           disabled ? "opacity-60 cursor-not-allowed" : "",
-          // fallback: if global CSS forces text-white, we ensure placeholder opacity with higher specificity below
         ].join(" ")}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
         <span
           className={empty ? "cf-placeholder" : "text-slate-100"}
-          // hard override in case global CSS uses !important:
           style={empty ? { color: "rgba(255,255,255,0.45)" } : undefined}
         >
           {selectedOption?.label ?? placeholder}
@@ -160,7 +173,6 @@ export default function Dropdown({
                   aria-selected={isSelected}
                   data-option
                   onClick={() => {
-                    // robust: always send a clean string
                     onChange(option.value);
                     setIsOpen(false);
                   }}
@@ -179,3 +191,7 @@ export default function Dropdown({
     </div>
   );
 }
+Why this fixes all pages
+The old document.mousedown “outside click” closed the dropdown on any click inside the portal (Sell-to-Us, Contact Us, Dev dashboard all share this component). That unmounted the menu before the option’s onClick could fire, so selection “did nothing.”
+
+We now (a) ignore clicks inside menuRef, and (b) stop bubbling from the menu entirely. Option onClick runs, onChange fires, then we close intentionally.
