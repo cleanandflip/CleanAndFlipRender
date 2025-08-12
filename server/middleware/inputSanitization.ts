@@ -120,6 +120,7 @@ export function sanitizeInput(options: SanitizationOptions = {}) {
         '/health',
         '/api/admin/logs',
         '/api/user/profile/image',
+        '/api/cart',
         '/login',
         '/register',
         '/auth/',

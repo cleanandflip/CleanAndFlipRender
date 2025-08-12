@@ -767,7 +767,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", authMiddleware.optionalAuth, async (req, res) => {
     try {
-      Logger.info(`[CART DEBUG] POST /api/cart called - body: ${JSON.stringify(req.body)}, headers: ${JSON.stringify(req.headers)}`);
+      Logger.info(`[CART DEBUG] POST /api/cart reached handler - body: ${JSON.stringify(req.body)}, productId: ${req.body?.productId}, quantity: ${req.body?.quantity}`);
       
       const { productId, quantity = 1 } = req.body;
       
