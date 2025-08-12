@@ -1432,3 +1432,10 @@ body.search-modal-open {
 body.search-open {
   /* overflow: hidden; - Removed to allow page scrolling */
 }
+
+/* Ensure dropdown menus appear above cards and other content */
+.dropdown-portal, 
+.dropdown-menu,
+[data-radix-popper-content-wrapper] {
+  z-index: 60 !important;
+}

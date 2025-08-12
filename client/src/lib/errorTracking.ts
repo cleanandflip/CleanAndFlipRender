@@ -6,6 +6,13 @@ declare global {
   }
 }
 
+const IGNORE_URL_PATTERNS = [
+  /\/public\/js\/beacon\.js$/,                         // optional beacon
+];
+const DOWNGRADE_TO_INFO = [
+  /res\.cloudinary\.com\/clean-flip\/image\/upload\/.*\/categories\/.*\.jpg$/,
+];
+
 export function reportClientError(payload: {
   level?: "error" | "warn" | "info";
   message: string;
@@ -14,6 +21,17 @@ export function reportClientError(payload: {
   extra?: Record<string, any>;
 }) {
   try {
+    const msg = payload.message || "";
+    const matchUrl = /https?:\/\/[^\s]+/i.exec(msg)?.[0]; // extract URL if present
+
+    if (matchUrl && IGNORE_URL_PATTERNS.some(rx => rx.test(matchUrl))) {
+      return; // drop completely
+    }
+    let level = payload.level ?? "error";
+    if (matchUrl && DOWNGRADE_TO_INFO.some(rx => rx.test(matchUrl))) {
+      level = "info";
+    }
+
     fetch("/api/observability/errors", {
       method: "POST",
       headers: { 
@@ -22,11 +40,15 @@ export function reportClientError(payload: {
       },
       body: JSON.stringify({
         service: "client",
-        level: payload.level ?? "error",
+        level,
         env: import.meta.env.MODE === "production" ? "production" : "development",
         url: window.location.pathname + window.location.search,
         message: payload.message,
+        type: payload.type,
         stack: payload.stack,
+        user: (window as any).__CF_USER ? { id: (window as any).__CF_USER.id } : undefined,
+        tags: { ua: navigator.userAgent },
+        extra: payload.extra,
       }),
       keepalive: true, // Allow during page unload
     });

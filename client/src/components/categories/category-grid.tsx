@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Card } from "@/components/shared/AnimatedComponents";
 import { globalDesignSystem as theme } from "@/styles/design-system/theme";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 interface Category {
   id: string;
@@ -98,9 +99,10 @@ export default function CategoryGrid() {
         >
           <div className="aspect-square relative">
             {category.imageUrl ? (
-              <img 
+              <ImageWithFallback
                 src={category.imageUrl} 
                 alt={category.name}
+                logKey={`category:${category.slug || category.name}`}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
               />
             ) : (
