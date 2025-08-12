@@ -1,0 +1,509 @@
+Awesome — here’s a single, unified Dropdown system + a clean rollout plan Replit can follow to replace every dropdown in the site, admin dashboard, and profile menu without breaking search or anything else.
+
+I’m giving you:
+
+A production-ready Dropdown (headless, portal, a11y, keyboard, animations, async-friendly)
+
+A tiny DropdownField for react-hook-form
+
+A Menu variant (for profile/user menus) using the same base
+
+A migration plan to remove all legacy code and wire this everywhere
+
+No color values are hardcoded — just utility/tokens placeholders so it matches your theme.
+
+1) Create the new unified components
+A) src/components/ui/Dropdown.tsx
+tsx
+Copy
+Edit
+import React from "react";
+import { createPortal } from "react-dom";
+
+export type DropdownOption = {
+  value: string;
+  label: string;
+  disabled?: boolean;
+  icon?: React.ReactNode;
+  group?: string; // optional grouping label
+};
+
+export type DropdownProps = {
+  value?: string | null;
+  onChange: (value: string) => void;
+  options: DropdownOption[];
+  placeholder?: string;
+  disabled?: boolean;
+  id?: string;
+  name?: string;
+  ariaLabel?: string;
+  fullWidth?: boolean;                 // trigger width behavior
+  size?: "sm" | "md" | "lg";           // match button/input sizes
+  error?: string | null;
+  loading?: boolean;                   // async loading state
+  withSearch?: boolean;                // search within the panel
+  emptyMessage?: string;
+  className?: string;                  // additional trigger classes
+};
+
+type Coords = { top: number; left: number; width: number };
+
+function usePortalContainer() {
+  const ref = React.useRef<HTMLElement | null>(null);
+  React.useEffect(() => {
+    const el = document.body as HTMLElement;
+    ref.current = el;
+  }, []);
+  return ref.current;
+}
+
+export default function Dropdown({
+  value = "",
+  onChange,
+  options,
+  placeholder = "Select…",
+  disabled,
+  id,
+  name,
+  ariaLabel,
+  fullWidth,
+  size = "md",
+  error,
+  loading,
+  withSearch = false,
+  emptyMessage = "No options",
+  className = "",
+}: DropdownProps) {
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const listRef = React.useRef<HTMLUListElement | null>(null);
+  const [open, setOpen] = React.useState(false);
+  const [coords, setCoords] = React.useState<Coords | null>(null);
+  const [query, setQuery] = React.useState("");
+  const [activeIndex, setActiveIndex] = React.useState<number>(-1);
+
+  const portalRoot = usePortalContainer();
+
+  const current = options.find(o => o.value === value) || null;
+
+  const filtered = React.useMemo(() => {
+    if (!withSearch || !query.trim()) return options;
+    const q = query.toLowerCase();
+    return options.filter(o => o.label.toLowerCase().includes(q));
+  }, [options, withSearch, query]);
+
+  const groups = React.useMemo(() => {
+    const byGroup = new Map<string, DropdownOption[]>();
+    for (const opt of filtered) {
+      const g = opt.group || "__ungrouped__";
+      if (!byGroup.has(g)) byGroup.set(g, []);
+      byGroup.get(g)!.push(opt);
+    }
+    return Array.from(byGroup.entries());
+  }, [filtered]);
+
+  const sizeCls =
+    size === "sm" ? "h-9 text-sm px-3" :
+    size === "lg" ? "h-12 text-base px-4" :
+                    "h-10 text-sm px-3.5";
+
+  // theme classes (replace with your tokens)
+  const triggerBase = [
+    "inline-flex items-center justify-between rounded-lg border",
+    "bg-surface/90 border-surfaceBorder text-foreground",
+    "focus:outline-none focus:ring-2 focus:ring-brand/60 focus:border-transparent",
+    "transition-colors disabled:opacity-60 disabled:cursor-not-allowed",
+    sizeCls, fullWidth ? "w-full" : "w-[min(90vw,320px)]", className
+  ].join(" ");
+
+  const calcPosition = React.useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const top = r.bottom + 8 + window.scrollY;      // sideOffset = 8px
+    const left = r.left + window.scrollX;
+    setCoords({ top, left, width: r.width });
+  }, []);
+
+  const openPanel = React.useCallback(() => {
+    if (disabled) return;
+    setOpen(true);
+    calcPosition();
+    setTimeout(() => {
+      // focus selected or first item
+      const idx = Math.max(
+        0,
+        filtered.findIndex(o => o.value === value)
+      );
+      setActiveIndex(idx);
+      listRef.current?.focus();
+    }, 0);
+  }, [disabled, calcPosition, filtered, value]);
+
+  const closePanel = React.useCallback(() => {
+    setOpen(false);
+    setQuery("");
+    setActiveIndex(-1);
+    triggerRef.current?.focus();
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onScroll = () => calcPosition();
+    const onResize = () => calcPosition();
+    const onClickAway = (e: MouseEvent) => {
+      if (!triggerRef.current || !listRef.current) return;
+      if (
+        !triggerRef.current.contains(e.target as Node) &&
+        !listRef.current.contains(e.target as Node)
+      ) closePanel();
+    };
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
+    document.addEventListener("mousedown", onClickAway);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("mousedown", onClickAway);
+    };
+  }, [open, calcPosition, closePanel]);
+
+  const onTriggerKey = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault(); openPanel();
+    }
+  };
+
+  const onListKey = (e: React.KeyboardEvent) => {
+    const max = filtered.length - 1;
+    if (e.key === "Escape") { e.preventDefault(); closePanel(); return; }
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      const opt = filtered[activeIndex];
+      if (opt && !opt.disabled) { onChange(opt.value); closePanel(); }
+      return;
+    }
+    if (e.key === "ArrowDown") { e.preventDefault(); setActiveIndex(i => Math.min(max, i + 1)); return; }
+    if (e.key === "ArrowUp")   { e.preventDefault(); setActiveIndex(i => Math.max(0, i - 1)); return; }
+    if (e.key === "Home")      { e.preventDefault(); setActiveIndex(0); return; }
+    if (e.key === "End")       { e.preventDefault(); setActiveIndex(max); return; }
+  };
+
+  const menu =
+    open && portalRoot && coords ? createPortal(
+      <div
+        role="presentation"
+        style={{
+          position: "absolute",
+          top: coords.top,
+          left: coords.left,
+          width: coords.width,
+          zIndex: 60, // above cards; keep under modals
+        }}
+        className={[
+          // animation
+          "transition-transform transition-opacity duration-200",
+          "data-[state=open]:opacity-100 data-[state=open]:translate-y-0",
+        ].join(" ")}
+        data-state={open ? "open" : "closed"}
+      >
+        <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl max-h-[56vh] overflow-auto">
+          {withSearch && (
+            <div className="p-2 border-b">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.currentTarget.value)}
+                placeholder="Search…"
+                className="w-full h-9 rounded-md bg-surface border border-surfaceBorder px-2 text-sm outline-none focus:ring-2 focus:ring-brand/60"
+                autoFocus
+              />
+            </div>
+          )}
+          <ul
+            ref={listRef}
+            tabIndex={-1}
+            role="listbox"
+            aria-labelledby={id}
+            onKeyDown={onListKey}
+            className="py-1 outline-none"
+          >
+            {loading && (
+              <li className="px-3 py-2 text-sm opacity-80">Loading…</li>
+            )}
+            {!loading && filtered.length === 0 && (
+              <li className="px-3 py-2 text-sm opacity-80">{emptyMessage}</li>
+            )}
+            {!loading && groups.map(([group, opts], gi) => (
+              <React.Fragment key={`${group}-${gi}`}>
+                {group !== "__ungrouped__" && (
+                  <li className="px-3 pt-2 pb-1 text-xs uppercase tracking-wide opacity-70">{group}</li>
+                )}
+                {opts.map((opt, oi) => {
+                  const index = filtered.indexOf(opt);
+                  const active = index === activeIndex;
+                  const selected = opt.value === value;
+                  return (
+                    <li
+                      key={opt.value}
+                      role="option"
+                      aria-selected={selected}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { if (!opt.disabled) { onChange(opt.value); closePanel(); } }}
+                      className={[
+                        "flex items-center gap-2 px-3 py-2.5 cursor-pointer",
+                        "transition-colors select-none",
+                        opt.disabled ? "opacity-50 cursor-not-allowed" : "",
+                        active ? "bg-muted/60" : "",
+                      ].join(" ")}
+                    >
+                      {opt.icon && <span aria-hidden>{opt.icon}</span>}
+                      <span className="truncate">{opt.label}</span>
+                      {selected && <span className="ml-auto opacity-80">✓</span>}
+                    </li>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </ul>
+        </div>
+      </div>,
+      portalRoot
+    ) : null;
+
+  return (
+    <div className={fullWidth ? "w-full" : "inline-block"}>
+      <button
+        ref={triggerRef}
+        id={id}
+        name={name}
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        className={triggerBase + (error ? " ring-2 ring-destructive/60 border-transparent" : "")}
+        onClick={() => (open ? closePanel() : openPanel())}
+        onKeyDown={onTriggerKey}
+      >
+        <span className="truncate">{current?.label ?? placeholder}</span>
+        <span className="ml-3 opacity-70" aria-hidden>▾</span>
+      </button>
+      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+      {menu}
+    </div>
+  );
+}
+B) src/components/form/DropdownField.tsx (react-hook-form helper)
+tsx
+Copy
+Edit
+import React from "react";
+import { Controller, Control } from "react-hook-form";
+import Dropdown, { DropdownOption, DropdownProps } from "@/components/ui/Dropdown";
+
+type Props<T> = Omit<DropdownProps, "value" | "onChange"> & {
+  control: Control<T>;
+  name: keyof T & string;
+  options: DropdownOption[];
+};
+
+export default function DropdownField<T>({ control, name, options, ...rest }: Props<T>) {
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field, fieldState }) => (
+        <Dropdown
+          {...rest}
+          options={options}
+          value={(field.value as string) ?? ""}
+          onChange={field.onChange}
+          error={fieldState.error?.message ?? null}
+        />
+      )}
+    />
+  );
+}
+C) src/components/ui/Menu.tsx (for profile/user menus)
+Same base behaviors (portal, z-index, animation), but click-only items:
+
+tsx
+Copy
+Edit
+import React from "react";
+import { createPortal } from "react-dom";
+
+export type MenuItem = {
+  label: string;
+  icon?: React.ReactNode;
+  onSelect?: () => void;
+  href?: string;
+  disabled?: boolean;
+  divider?: boolean;
+};
+
+export default function Menu({ trigger, items }: { trigger: React.ReactNode; items: MenuItem[] }) {
+  const [open, setOpen] = React.useState(false);
+  const btnRef = React.useRef<HTMLButtonElement | null>(null);
+  const [coords, setCoords] = React.useState<{top:number;left:number;width:number} | null>(null);
+
+  const calc = () => {
+    const el = btnRef.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    setCoords({ top: r.bottom + 8 + window.scrollY, left: r.left + window.scrollX, width: Math.max(280, r.width) });
+  };
+
+  React.useEffect(() => { if (open) { calc(); } }, [open]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (!btnRef.current) return;
+      const menu = document.getElementById("menu-panel");
+      if (menu && (menu.contains(e.target as Node) || btnRef.current.contains(e.target as Node))) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <>
+      <button ref={btnRef} type="button" onClick={() => setOpen(o => !o)} className="rounded-lg focus:ring-2 focus:ring-brand/60">
+        {trigger}
+      </button>
+      {open && createPortal(
+        <div
+          id="menu-panel"
+          style={{ position: "absolute", top: coords?.top ?? 0, left: coords?.left ?? 0, zIndex: 60, width: coords?.width ?? 280 }}
+          className="rounded-xl border bg-popover text-popover-foreground shadow-xl p-2 transition duration-200"
+        >
+          <ul>
+            {items.map((it, idx) => it.divider ? (
+              <li key={`d-${idx}`} className="my-2 h-px bg-border" />
+            ) : (
+              <li key={it.label}>
+                {it.href ? (
+                  <a href={it.href} className={`flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted/60 ${it.disabled ? "pointer-events-none opacity-60" : ""}`}>
+                    {it.icon && <span aria-hidden>{it.icon}</span>}
+                    <span>{it.label}</span>
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => !it.disabled && it.onSelect?.()}
+                    className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted/60 ${it.disabled ? "pointer-events-none opacity-60" : ""}`}
+                  >
+                    {it.icon && <span aria-hidden>{it.icon}</span>}
+                    <span>{it.label}</span>
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+2) Implementation plan (what Replit must do)
+A) Replace every dropdown
+Create the three files above.
+
+Search & replace all legacy dropdowns across the repo (site + admin + profile):
+
+nginx
+Copy
+Edit
+rg -n "StandardDropdown|SelectTrigger|SelectContent|SelectItem|@radix-ui/react-select|<select\\b" src
+For each match:
+
+Import Dropdown (or DropdownField for forms).
+
+Map old options → { value, label }[] and pass to Dropdown.
+
+Remove direct Radix/shadcn imports from pages. Only Dropdown/DropdownField are allowed.
+
+Profile/user menu: replace the old header menu with Menu and your items (Dashboard, Orders, Dev Dashboard (role-gated), Sign Out).
+
+B) Theme + spacing (no hardcoded colors)
+Hook our classes to your tokens: bg-surface, bg-popover, border-surfaceBorder, text-foreground, ring-brand, bg-muted/60, etc.
+
+Ensure trigger height equals your input/button md height (usually h-10).
+
+Menu z-index ≥ 60 so it never falls behind cards.
+
+Open/close animation 200ms fade + translate (already wired).
+
+Reduced motion is respected (no animation in OS reduce mode via your global utilities).
+
+C) Fix the “dropdown behind card” issue
+We render in a portal to document.body with z-index: 60.
+
+If any container uses transform and causes stacking issues, the portal bypasses it. Nothing else to change.
+
+D) Keep search logic intact
+We did not touch your nav/page search logic or URL param q.
+
+Dropdown’s optional internal search (withSearch) filters only its own options in the panel — it won’t touch site search.
+
+E) Admin dashboard + contact/sell forms
+Convert every <select> and mixed theme dropdown to DropdownField.
+
+Ensure helper/error text is tied using aria-describedby (our component passes error through).
+
+Verify long lists: wrap options in groups via the group key if needed.
+
+F) Delete legacy code and block re-introduction
+Remove old components, stories, and styles:
+
+*Dropdown*.tsx, direct @radix-ui/react-select usage, native <select> wrappers.
+
+Update barrels (index.ts) to stop exporting them.
+
+Add ESLint rules:
+
+js
+Copy
+Edit
+// .eslintrc.cjs
+rules: {
+  "no-restricted-imports": ["error", { "paths": ["@radix-ui/react-select", "@radix-ui/react-dropdown-menu"] }],
+  "no-restricted-syntax": [
+    "error",
+    { "selector": "JSXOpeningElement[name.name='select']", "message": "Use <Dropdown /> instead of native <select>." }
+  ]
+}
+3) Page-specific adjustments Replit must verify
+/sell-to-us: apply the tidy grid we outlined earlier (2 columns desktop, 1 on mobile), ensure all fields (including dropdowns) use the same height/radius and that menus open below the trigger with correct width.
+
+/contact: the “What can we help with?” dropdown uses Dropdown with withSearch=false; set min width 14rem by wrapping with fullWidth where needed.
+
+Profile menu: replace with Menu above. Use your solid popover surface (less transparent) for readability.
+
+Orders/Admin: any status filters/sorts use Dropdown (size="sm").
+
+4) QA checklist (don’t skip)
+ No usages of StandardDropdown, shadcn Select*, or native <select> remain:
+
+nginx
+Copy
+Edit
+rg -n "StandardDropdown|SelectTrigger|SelectItem|@radix-ui/react-select|<select\\b" src
+# expect 0 matches
+ Menu never sits behind cards (z ≥ 60).
+
+ Trigger width aligns with fields; menu matches trigger width; side offset ~8px.
+
+ Keyboard works: Up/Down, Home/End, Enter/Space, Esc, mouse hover.
+
+ Screen reader announces labels; aria-invalid shows for errors.
+
+ Long option lists scroll smoothly; first/last options have comfortable padding.
+
+ Nav/page search behavior is unchanged (search bar still controls ?q=...).
+
+ Profile menu looks higher-contrast and organized; dev items are role-gated.
+
