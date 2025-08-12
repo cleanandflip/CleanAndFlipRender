@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
+import { LRUCache } from 'lru-cache';
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
 import { authMiddleware } from "./middleware/auth";
@@ -129,6 +130,9 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-06-30.basil" as any,
 });
+
+// Create API cache for hot endpoints
+const apiCache = new LRUCache<string, any>({ max: 500, ttl: 5 * 60 * 1000 }); // 5m TTL
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const startupTime = Date.now();
@@ -609,29 +613,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Remove duplicate search route - using the more complete one later
   
   // Categories (public endpoint with rate limiting and caching)
+  // Categories with enhanced LRU caching
   app.get("/api/categories", apiLimiter, async (req, res) => {
     try {
-      const activeOnly = req.query.active === 'true';
+      const active = String(req.query.active ?? 'all');
+      const key = `categories:${active}`;
+      const hit = apiCache.get(key);
       
-      // Try cache first for active categories
-      if (activeOnly) {
-        const cached = await getCachedCategories();
-        if (cached) {
-          return res.json(cached);
-        }
-        
-        const categories = await storage.getActiveCategoriesForHomepage();
-        
-        // Cache the results for 5 minutes
-        if (categories) {
-          await setCachedCategories(categories);
-        }
-        
-        res.json(categories);
-      } else {
-        const categories = await storage.getCategories();
-        res.json(categories);
+      if (hit) {
+        return res.json(hit);
       }
+
+      let data;
+      if (req.query.active === 'true') {
+        data = await storage.getActiveCategoriesForHomepage();
+        
+        // Also try existing cache system
+        if (!data) {
+          const cached = await getCachedCategories();
+          if (cached) data = cached;
+        }
+        
+        // Cache in new LRU system and old cache system
+        if (data) {
+          apiCache.set(key, data);
+          await setCachedCategories(data);
+        }
+      } else {
+        data = await storage.getCategories();
+        apiCache.set(key, data);
+      }
+      
+      res.json(data || []);
     } catch (error) {
       Logger.error("Error fetching categories", error);
       res.status(500).json({ message: "Failed to fetch categories" });
@@ -700,18 +713,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Featured products with LRU caching
   app.get("/api/products/featured", apiLimiter, async (req, res) => {
     try {
-      // Set aggressive no-cache headers for live inventory accuracy
-      res.set({
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'ETag': `W/"featured-${Date.now()}"` // Weak ETag for cache validation
-      });
-      
       const limit = req.query.limit ? Number(req.query.limit) : 8;
+      const key = `products:featured:${limit}`;
+      const hit = apiCache.get(key);
+      
+      if (hit) {
+        return res.json(hit);
+      }
+
       const products = await storage.getFeaturedProducts(limit);
+      apiCache.set(key, products);
       res.json(products);
     } catch (error) {
       Logger.error("Error fetching featured products", error);
@@ -2365,9 +2379,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Activity tracking endpoint - fire and forget for performance
+  // Fire-and-forget activity tracking with instant 202 response
   app.post("/api/track-activity", (req, res) => {
-    res.status(202).json({ ok: true }); // respond immediately
+    // Return immediately with 202 (fire-and-forget)
+    res.status(202).end();
     
+    // Do the work off the request cycle
     setImmediate(async () => {
       try {
         const { eventType, pageUrl, userId } = req.body;
@@ -2377,12 +2394,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eventType,
           pageUrl,
           userId: userId || null,
-          sessionId: String(sessionId)
+          sessionId: String(sessionId),
+          ip: req.ip,
+          userAgent: req.get('user-agent') || null,
+          at: new Date()
         };
         
         await storage.trackActivity(activity);
       } catch (error: any) {
-        Logger.error('Error tracking activity:', error.message);
+        Logger.debug?.('track-activity failed', { error });
       }
     });
   });

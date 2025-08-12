@@ -357,7 +357,7 @@ export const equipmentSubmissions = pgTable("equipment_submissions", {
   sellerEmail: varchar("seller_email").notNull(),
   sellerPhone: varchar("seller_phone"),
   sellerLocation: text("seller_location"), // Free text location
-  isLocalDelivery: boolean("is_local_delivery").default(false),
+  // Removed isLocalDelivery field - column doesn't exist in database
   notes: text("notes"), // Additional seller notes
   status: varchar("status").default("pending"), // 'pending', 'reviewing', 'approved', 'rejected', 'purchased'
   adminNotes: text("admin_notes"), // Internal admin notes

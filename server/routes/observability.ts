@@ -3,6 +3,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
+import { LRUCache } from 'lru-cache';
 import { SimpleErrorStore } from "../data/simpleErrorStore";
 
 const now = () => new Date();
@@ -17,6 +18,9 @@ function fingerprintFromEvent(evt: any) {
   ].join("|");
   return crypto.createHash("sha1").update(base).digest("hex");
 }
+
+// Create series cache for observability data
+const seriesCache = new LRUCache<string, any>({ max: 50, ttl: 10 * 1000 }); // 10s TTL
 
 const router = Router();
 
