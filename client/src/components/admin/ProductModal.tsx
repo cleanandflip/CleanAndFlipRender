@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 // Removed unused Select components - using StandardDropdown instead
-import { StandardDropdown } from '@/components/ui';
+import { Dropdown } from '@/components/ui';
 import { Switch } from '@/components/ui/switch';
 import { Upload, X, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -276,12 +276,12 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
 
             <div>
               <Label htmlFor="category" style={{ color: theme.colors.text.secondary }}>Category *</Label>
-              <StandardDropdown
+              <Dropdown
                 options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
                 value={formData.categoryId}
-                onChange={(value: string | string[]) => setFormData({ ...formData, categoryId: value as string })}
+                onChange={(value: string) => setFormData({ ...formData, categoryId: value })}
                 placeholder="Select category"
-                className="glass border-border"
+                fullWidth={true}
               />
             </div>
 

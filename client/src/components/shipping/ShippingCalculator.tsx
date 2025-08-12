@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StandardDropdown } from "@/components/ui";
+import Dropdown from "@/components/ui/Dropdown";
 import { Card } from "@/components/shared/AnimatedComponents";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";

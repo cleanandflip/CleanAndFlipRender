@@ -18,9 +18,7 @@ export { Separator } from './separator';
 export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './dialog';
 export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from './drawer';
 
-// UNIFIED DROPDOWN SYSTEM - Complete replacement of all legacy dropdowns
-export { UnifiedDropdown, StandardDropdown, NavDropdown, GhostDropdown } from './UnifiedDropdown';
-export type { DropdownOption } from './UnifiedDropdown';
-
-// Backward compatibility exports
-export { StandardDropdown as Dropdown } from './UnifiedDropdown';
+// CANONICAL DROPDOWN SYSTEM - Complete replacement of all legacy dropdowns
+export { default as Dropdown } from './Dropdown';
+export type { DropdownOption } from './Dropdown';
+export { default as DropdownField } from '../form/DropdownField';

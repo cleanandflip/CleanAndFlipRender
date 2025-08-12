@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceInput } from "@/components/ui/price-input";
 import { UnifiedDropdown } from "@/components/ui/UnifiedDropdown";
-import StandardDropdown from "@/components/form/StandardDropdown";
+import DropdownField from "@/components/form/DropdownField";
 import { Textarea } from "@/components/ui/textarea";
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -341,85 +341,51 @@ export default function SellToUs() {
                       )}
                     />
                     
-                    <FormField
+                    <DropdownField
                       control={form.control}
                       name="brand"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <StandardDropdown
-                              label="Brand"
-                              options={EQUIPMENT_BRANDS}
-                              value={field.value || ""}
-                              placeholder="Search or select a brand..."
-                              onChange={field.onChange}
-                              allowCustom={true}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Brand"
+                      options={EQUIPMENT_BRANDS.map(brand => ({ value: brand, label: brand }))}
+                      placeholder="Search or select a brand..."
                     />
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4 mt-4">
-                    <FormField
+                    <DropdownField
                       control={form.control}
                       name="category"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <StandardDropdown
-                              label="Category *"
-                              options={[
-                                { value: "barbells", label: "Barbells" },
-                                { value: "dumbbells", label: "Dumbbells" },
-                                { value: "plates", label: "Weight Plates" },
-                                { value: "racks", label: "Racks & Stands" },
-                                { value: "benches", label: "Benches" },
-                                { value: "cardio", label: "Cardio Equipment" },
-                                { value: "machines", label: "Weight Machines" },
-                                { value: "accessories", label: "Accessories" },
-                                { value: "other", label: "Other" }
-                              ]}
-                              value={field.value || ""}
-                              placeholder="Select category"
-                              onChange={field.onChange}
-                              required={true}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Category"
+                      required={true}
+                      options={[
+                        { value: "barbells", label: "Barbells" },
+                        { value: "dumbbells", label: "Dumbbells" },
+                        { value: "plates", label: "Weight Plates" },
+                        { value: "racks", label: "Racks & Stands" },
+                        { value: "benches", label: "Benches" },
+                        { value: "cardio", label: "Cardio Equipment" },
+                        { value: "machines", label: "Weight Machines" },
+                        { value: "accessories", label: "Accessories" },
+                        { value: "other", label: "Other" }
+                      ]}
+                      placeholder="Select category"
                     />
                     <div></div> {/* Empty div for grid spacing */}
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4 mt-4">
-                    <FormField
+                    <DropdownField
                       control={form.control}
                       name="condition"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <StandardDropdown
-                              label="Condition"
-                              options={[
-                                { value: "new", label: "New" },
-                                { value: "like_new", label: "Like New" },
-                                { value: "good", label: "Good" },
-                                { value: "fair", label: "Fair" },
-                                { value: "needs_repair", label: "Needs Repair" }
-                              ]}
-                              value={field.value || ""}
-                              placeholder="Select condition"
-                              onChange={field.onChange}
-                              required={true}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Condition"
+                      required={true}
+                      options={[
+                        { value: "new", label: "New" },
+                        { value: "like_new", label: "Like New" },
+                        { value: "good", label: "Good" },
+                        { value: "fair", label: "Fair" },
+                        { value: "needs_repair", label: "Needs Repair" }
+                      ]}
+                      placeholder="Select condition"
                     />
                     
                     <FormField

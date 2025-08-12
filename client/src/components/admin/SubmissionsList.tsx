@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { UnifiedDropdown } from '@/components/ui/UnifiedDropdown';
+import { Dropdown } from '@/components/ui';
 import { Eye, Edit, MessageSquare, Archive, Trash2, MoreVertical } from 'lucide-react';
 import { formatStatus, getStatusVariant, formatCurrency } from '@/utils/submissionHelpers';
 
@@ -137,7 +137,7 @@ export function SubmissionsList({
                 </Button>
               </div>
               <div className="glass glass-hover rounded-lg">
-                <UnifiedDropdown
+                <Dropdown
                   options={[
                     { value: 'edit', label: 'Edit' },
                     { value: 'note', label: 'Add Note' },
@@ -146,10 +146,9 @@ export function SubmissionsList({
                   ]}
                   value=""
                   placeholder="•••"
-                  onChange={(action) => {
+                  onChange={(action: string) => {
                     // Action selected
                   }}
-                  className="border-none bg-transparent"
                 />
               </div>
             </div>
