@@ -78,7 +78,7 @@ export class SimplePasswordReset {
       
     } catch (error) {
       console.error('[PasswordReset] Token creation error:', error);
-      throw error;
+      throw new Error(`Failed to create password reset token: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   

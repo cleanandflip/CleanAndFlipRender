@@ -368,6 +368,7 @@ async function checkReact(files: string[]): Promise<SectionReport> {
 
     // Check for missing keys in lists
     const mapRegex = /\.map\s*\(\s*(?:\([^)]*\)|[^=]*)\s*=>\s*<[^>]*>/g;
+    let match;
     while ((match = mapRegex.exec(content)) !== null) {
       if (!match[0].includes('key=')) {
         const lineNumber = content.substring(0, match.index).split('\n').length;

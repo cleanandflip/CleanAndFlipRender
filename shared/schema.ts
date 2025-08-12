@@ -148,7 +148,7 @@ export const products = pgTable("products", {
   condition: productConditionEnum("condition").notNull(),
   status: productStatusEnum("status").default("active"),
   images: jsonb("images").$type<string[]>().default([]),
-  specifications: jsonb("specifications").$type<Record<string, any>>().default({}),
+  specifications: jsonb("specifications").$type<Record<string, string | number | boolean>>().default({}),
   stockQuantity: integer("stock_quantity").default(1),
   views: integer("views").default(0),
   featured: boolean("featured").default(false),

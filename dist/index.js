@@ -30,6 +30,9 @@ __export(schema_exports, {
   equipmentSubmissionStatusEnum: () => equipmentSubmissionStatusEnum,
   equipmentSubmissions: () => equipmentSubmissions,
   equipmentSubmissionsRelations: () => equipmentSubmissionsRelations,
+  errorBreadcrumbs: () => errorBreadcrumbs,
+  errorLogInstances: () => errorLogInstances,
+  errorLogs: () => errorLogs,
   insertActivityLogSchema: () => insertActivityLogSchema,
   insertAddressSchema: () => insertAddressSchema,
   insertCartItemSchema: () => insertCartItemSchema,
@@ -47,6 +50,7 @@ __export(schema_exports, {
   insertReviewSchema: () => insertReviewSchema,
   insertUserEmailPreferencesSchema: () => insertUserEmailPreferencesSchema,
   insertUserSchema: () => insertUserSchema,
+  insertWishlistSchema: () => insertWishlistSchema,
   newsletterSubscribers: () => newsletterSubscribers,
   orderItems: () => orderItems,
   orderItemsRelations: () => orderItemsRelations,
@@ -64,9 +68,12 @@ __export(schema_exports, {
   reviews: () => reviews,
   sessions: () => sessions,
   userEmailPreferences: () => userEmailPreferences,
+  userOnboarding: () => userOnboarding,
   userRoleEnum: () => userRoleEnum,
   users: () => users,
-  usersRelations: () => usersRelations
+  usersRelations: () => usersRelations,
+  wishlists: () => wishlists,
+  wishlistsRelations: () => wishlistsRelations
 });
 import { sql } from "drizzle-orm";
 import {
@@ -86,7 +93,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var tsvector, sessions, userRoleEnum, users, categories, productConditionEnum, productStatusEnum, products, addresses, orderStatusEnum, orders, orderItems, cartItems, activityLogs, emailQueue, equipmentSubmissionStatusEnum, equipmentSubmissions, usersRelations, categoriesRelations, productsRelations, ordersRelations, orderItemsRelations, cartItemsRelations, addressesRelations, equipmentSubmissionsRelations, insertUserSchema, insertCategorySchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCartItemSchema, insertAddressSchema, insertEquipmentSubmissionSchema, insertActivityLogSchema, registerDataSchema, reviews, insertReviewSchema, coupons, insertCouponSchema, orderTracking, insertOrderTrackingSchema, returnRequests, insertReturnRequestSchema, emailLogs, newsletterSubscribers, userEmailPreferences, passwordResetTokens, insertEmailLogSchema, insertNewsletterSubscriberSchema, insertUserEmailPreferencesSchema, insertPasswordResetTokenSchema;
+var tsvector, sessions, errorBreadcrumbs, userRoleEnum, users, userOnboarding, categories, productConditionEnum, productStatusEnum, products, addresses, orderStatusEnum, orders, orderItems, cartItems, wishlists, activityLogs, emailQueue, equipmentSubmissionStatusEnum, equipmentSubmissions, usersRelations, categoriesRelations, productsRelations, ordersRelations, orderItemsRelations, cartItemsRelations, addressesRelations, equipmentSubmissionsRelations, wishlistsRelations, insertUserSchema, insertCategorySchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCartItemSchema, insertAddressSchema, insertEquipmentSubmissionSchema, insertActivityLogSchema, insertWishlistSchema, errorLogs, errorLogInstances, registerDataSchema, reviews, insertReviewSchema, coupons, insertCouponSchema, orderTracking, insertOrderTrackingSchema, returnRequests, insertReturnRequestSchema, emailLogs, newsletterSubscribers, userEmailPreferences, passwordResetTokens, insertEmailLogSchema, insertNewsletterSubscriberSchema, insertUserEmailPreferencesSchema, insertPasswordResetTokenSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -104,6 +111,18 @@ var init_schema = __esm({
       },
       (table) => [index("IDX_session_expire").on(table.expire)]
     );
+    errorBreadcrumbs = pgTable("error_breadcrumbs", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      errorLogId: varchar("error_log_id").references(() => errorLogs.id, { onDelete: "cascade" }),
+      timestamp: timestamp("timestamp").defaultNow(),
+      type: varchar("type"),
+      // 'navigation', 'click', 'api', 'console'
+      category: varchar("category"),
+      message: text("message"),
+      data: jsonb("data"),
+      level: varchar("level"),
+      createdAt: timestamp("created_at").defaultNow()
+    });
     userRoleEnum = pgEnum("user_role", [
       "user",
       "developer"
@@ -111,7 +130,8 @@ var init_schema = __esm({
     users = pgTable("users", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       email: varchar("email").unique().notNull(),
-      password: varchar("password").notNull(),
+      password: varchar("password"),
+      // Make optional for OAuth users
       firstName: varchar("first_name").notNull(),
       lastName: varchar("last_name").notNull(),
       phone: varchar("phone"),
@@ -122,9 +142,31 @@ var init_schema = __esm({
       zipCode: varchar("zip_code", { length: 10 }),
       latitude: decimal("latitude", { precision: 10, scale: 8 }),
       longitude: decimal("longitude", { precision: 11, scale: 8 }),
+      isLocalCustomer: boolean("is_local_customer").default(false),
       role: userRoleEnum("role").default("user"),
       stripeCustomerId: varchar("stripe_customer_id"),
       stripeSubscriptionId: varchar("stripe_subscription_id"),
+      // OAuth fields
+      googleId: varchar("google_id").unique(),
+      googleEmail: varchar("google_email"),
+      googlePicture: text("google_picture"),
+      profileImageUrl: text("profile_image_url"),
+      authProvider: varchar("auth_provider").default("local"),
+      // 'local', 'google'
+      isEmailVerified: boolean("is_email_verified").default(false),
+      profileComplete: boolean("profile_complete").default(false),
+      onboardingStep: integer("onboarding_step").default(0),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    });
+    userOnboarding = pgTable("user_onboarding", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+      addressCompleted: boolean("address_completed").default(false),
+      phoneCompleted: boolean("phone_completed").default(false),
+      preferencesCompleted: boolean("preferences_completed").default(false),
+      stripeCustomerCreated: boolean("stripe_customer_created").default(false),
+      welcomeEmailSent: boolean("welcome_email_sent").default(false),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -251,6 +293,15 @@ var init_schema = __esm({
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
+    wishlists = pgTable("wishlists", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+      productId: varchar("product_id").references(() => products.id, { onDelete: "cascade" }),
+      createdAt: timestamp("created_at").defaultNow()
+    }, (table) => [
+      index("idx_wishlists_user").on(table.userId),
+      index("idx_wishlists_product").on(table.productId)
+    ]);
     activityLogs = pgTable("activity_logs", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       eventType: varchar("event_type").notNull(),
@@ -312,7 +363,7 @@ var init_schema = __esm({
       sellerPhone: varchar("seller_phone"),
       sellerLocation: text("seller_location"),
       // Free text location
-      isLocalPickup: boolean("is_local_pickup").default(false),
+      isLocalDelivery: boolean("is_local_delivery").default(false),
       notes: text("notes"),
       // Additional seller notes
       status: varchar("status").default("pending"),
@@ -336,7 +387,8 @@ var init_schema = __esm({
       cartItems: many(cartItems),
       addresses: many(addresses),
       activities: many(activityLogs),
-      equipmentSubmissions: many(equipmentSubmissions)
+      equipmentSubmissions: many(equipmentSubmissions),
+      wishlists: many(wishlists)
     }));
     categoriesRelations = relations(categories, ({ many }) => ({
       products: many(products)
@@ -347,7 +399,8 @@ var init_schema = __esm({
         references: [categories.id]
       }),
       orderItems: many(orderItems),
-      cartItems: many(cartItems)
+      cartItems: many(cartItems),
+      wishlists: many(wishlists)
     }));
     ordersRelations = relations(orders, ({ one, many }) => ({
       user: one(users, {
@@ -396,6 +449,16 @@ var init_schema = __esm({
         references: [users.id]
       })
     }));
+    wishlistsRelations = relations(wishlists, ({ one }) => ({
+      user: one(users, {
+        fields: [wishlists.userId],
+        references: [users.id]
+      }),
+      product: one(products, {
+        fields: [wishlists.productId],
+        references: [products.id]
+      })
+    }));
     insertUserSchema = createInsertSchema(users).omit({
       id: true,
       createdAt: true,
@@ -441,6 +504,55 @@ var init_schema = __esm({
     insertActivityLogSchema = createInsertSchema(activityLogs).omit({
       id: true,
       createdAt: true
+    });
+    insertWishlistSchema = createInsertSchema(wishlists).omit({
+      id: true,
+      createdAt: true
+    });
+    errorLogs = pgTable("error_logs", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      error_type: varchar("error_type").notNull(),
+      // 'error', 'warning', 'info'
+      severity: varchar("severity").notNull(),
+      // 'critical', 'high', 'medium', 'low'
+      message: text("message").notNull(),
+      stack_trace: text("stack_trace"),
+      file_path: varchar("file_path"),
+      line_number: integer("line_number"),
+      column_number: integer("column_number"),
+      user_id: varchar("user_id").references(() => users.id),
+      user_email: varchar("user_email"),
+      user_ip: varchar("user_ip"),
+      user_agent: text("user_agent"),
+      url: varchar("url"),
+      method: varchar("method"),
+      request_body: jsonb("request_body"),
+      response_status: integer("response_status"),
+      browser: varchar("browser"),
+      os: varchar("os"),
+      device_type: varchar("device_type"),
+      session_id: varchar("session_id"),
+      environment: varchar("environment").default("production"),
+      resolved: boolean("resolved").default(false),
+      resolved_by: varchar("resolved_by").references(() => users.id),
+      resolved_at: timestamp("resolved_at"),
+      notes: text("notes"),
+      occurrence_count: integer("occurrence_count").default(1),
+      first_seen: timestamp("first_seen").defaultNow(),
+      last_seen: timestamp("last_seen").defaultNow(),
+      created_at: timestamp("created_at").defaultNow()
+    }, (table) => [
+      index("idx_error_logs_severity").on(table.severity),
+      index("idx_error_logs_type").on(table.error_type),
+      index("idx_error_logs_user").on(table.user_id),
+      index("idx_error_logs_resolved").on(table.resolved),
+      index("idx_error_logs_created").on(table.created_at)
+    ]);
+    errorLogInstances = pgTable("error_log_instances", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      error_log_id: varchar("error_log_id").references(() => errorLogs.id, { onDelete: "cascade" }),
+      occurred_at: timestamp("occurred_at").defaultNow(),
+      context: jsonb("context")
     });
     registerDataSchema = insertUserSchema.extend({
       confirmPassword: z.string(),
@@ -758,11 +870,17 @@ var init_database = __esm({
 });
 
 // server/db.ts
+var db_exports = {};
+__export(db_exports, {
+  db: () => db,
+  pool: () => pool,
+  withRetry: () => withRetry
+});
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle as drizzle2 } from "drizzle-orm/neon-serverless";
 import { WebSocket } from "ws";
 import { sql as sql2 } from "drizzle-orm";
-var dbConfig, databaseUrl, poolConfig, pool, keepAlive, keepAliveInterval, db;
+var dbConfig, databaseUrl, poolConfig, pool, keepAlive, keepAliveInterval, withRetry, db;
 var init_db = __esm({
   "server/db.ts"() {
     "use strict";
@@ -822,6 +940,26 @@ var init_db = __esm({
     };
     keepAliveInterval = process.env.NODE_ENV === "production" ? 10 * 60 * 1e3 : 5 * 60 * 1e3;
     setInterval(keepAlive, keepAliveInterval);
+    withRetry = async (operation, maxRetries = 3) => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          return await operation();
+        } catch (error) {
+          Logger.error(`Database operation attempt ${attempt} failed:`, error.message);
+          if (error.code === "57P01" || error.message?.includes("terminating connection")) {
+            if (attempt < maxRetries) {
+              Logger.info(`Retrying operation (attempt ${attempt + 1})...`);
+              pool = new Pool(poolConfig);
+              await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt - 1) * 1e3));
+              continue;
+            }
+          }
+          if (attempt === maxRetries) {
+            throw error;
+          }
+        }
+      }
+    };
     db = drizzle2({ client: pool, schema: schema_exports });
     db.execute(sql2`SELECT current_database() as db, current_user as user, version() as version`).then((result) => {
       const info = result.rows[0];
@@ -917,10 +1055,53 @@ var init_storage = __esm({
           throw error;
         }
       }
+      async createUserFromGoogle(userData) {
+        const userToInsert = {
+          email: normalizeEmail(userData.email),
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          googleId: userData.googleId,
+          profileImageUrl: userData.profileImageUrl,
+          authProvider: userData.authProvider,
+          isEmailVerified: userData.isEmailVerified,
+          role: "user",
+          // Default role for Google users
+          password: null
+          // No password for OAuth users
+        };
+        try {
+          const [user] = await db.insert(users).values(userToInsert).returning();
+          return user;
+        } catch (error) {
+          Logger.error("Error creating Google user:", error.message);
+          if (error.code === "57P01") {
+            const [user] = await db.insert(users).values(userToInsert).returning();
+            return user;
+          }
+          throw error;
+        }
+      }
+      async updateUserGoogleInfo(id, googleData) {
+        const [user] = await db.update(users).set({
+          googleId: googleData.googleId,
+          profileImageUrl: googleData.profileImageUrl,
+          isEmailVerified: googleData.isEmailVerified,
+          authProvider: googleData.authProvider,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq(users.id, id)).returning();
+        return user;
+      }
       async updateUserStripeInfo(id, customerId, subscriptionId) {
         const [user] = await db.update(users).set({
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq(users.id, id)).returning();
+        return user;
+      }
+      async updateUser(id, userData) {
+        const [user] = await db.update(users).set({
+          ...userData,
           updatedAt: /* @__PURE__ */ new Date()
         }).where(eq(users.id, id)).returning();
         return user;
@@ -1315,12 +1496,23 @@ var init_storage = __esm({
         const [newOrder] = await db.insert(orders).values(order).returning();
         return newOrder;
       }
-      async updateOrderStatus(id, status) {
-        const [updatedOrder] = await db.update(orders).set({
+      async updateOrderStatus(id, status, notes) {
+        const updateData = {
           status,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(orders.id, id)).returning();
+        };
+        if (notes) {
+          updateData.notes = notes;
+        }
+        const [updatedOrder] = await db.update(orders).set(updateData).where(eq(orders.id, id)).returning();
         return updatedOrder;
+      }
+      async updateOrder(id, orderData) {
+        const [order] = await db.update(orders).set({ ...orderData, updatedAt: /* @__PURE__ */ new Date() }).where(eq(orders.id, id)).returning();
+        if (!order) {
+          throw new Error("Order not found");
+        }
+        return order;
       }
       async getOrderItems(orderId) {
         return await db.select({
@@ -1446,9 +1638,9 @@ var init_storage = __esm({
         return submission;
       }
       async getSubmissions(userId) {
-        let query = db.select().from(equipmentSubmissions);
+        const query = db.select().from(equipmentSubmissions).$dynamic();
         if (userId) {
-          query = query.where(eq(equipmentSubmissions.userId, userId));
+          return await query.where(eq(equipmentSubmissions.userId, userId)).orderBy(desc(equipmentSubmissions.createdAt));
         }
         return await query.orderBy(desc(equipmentSubmissions.createdAt));
       }
@@ -1491,13 +1683,609 @@ var init_storage = __esm({
   }
 });
 
+// server/auth/google-strategy.ts
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { eq as eq2 } from "drizzle-orm";
+import { randomUUID } from "crypto";
+function initializeGoogleAuth() {
+  passport.use(new GoogleStrategy(
+    GOOGLE_CONFIG,
+    async (accessToken, refreshToken, profile2, done) => {
+      try {
+        Logger.debug("[AUTH] Google authentication for:", profile2.emails?.[0]?.value);
+        const googleId = profile2.id;
+        const email = profile2.emails?.[0]?.value;
+        const firstName = profile2.name?.givenName || "";
+        const lastName = profile2.name?.familyName || "";
+        const picture = profile2.photos?.[0]?.value;
+        if (!email) {
+          return done(new Error("No email from Google"), false);
+        }
+        let [existingUser] = await db.select().from(users).where(eq2(users.googleId, googleId)).limit(1);
+        if (existingUser) {
+          await db.update(users).set({
+            updatedAt: /* @__PURE__ */ new Date(),
+            googlePicture: picture
+            // Update picture in case it changed
+          }).where(eq2(users.id, existingUser.id));
+          Logger.debug("[AUTH] Existing Google user logged in:", email);
+          return done(null, {
+            ...existingUser,
+            role: existingUser.role || "user"
+          });
+        }
+        [existingUser] = await db.select().from(users).where(eq2(users.email, email)).limit(1);
+        if (existingUser) {
+          await db.update(users).set({
+            googleId,
+            googleEmail: email,
+            googlePicture: picture,
+            authProvider: "google",
+            isEmailVerified: true,
+            updatedAt: /* @__PURE__ */ new Date()
+          }).where(eq2(users.id, existingUser.id));
+          Logger.debug("[AUTH] Linked Google to existing account:", email);
+          return done(null, {
+            ...existingUser,
+            googleId,
+            role: existingUser.role || "user"
+          });
+        }
+        const newUserId = randomUUID();
+        const [newUser] = await db.insert(users).values({
+          id: newUserId,
+          email,
+          googleId,
+          googleEmail: email,
+          googlePicture: picture,
+          firstName,
+          lastName,
+          authProvider: "google",
+          isEmailVerified: true,
+          profileComplete: false,
+          onboardingStep: 1,
+          role: "user"
+        }).returning();
+        await db.insert(userOnboarding).values({
+          id: randomUUID(),
+          userId: newUserId,
+          addressCompleted: false,
+          phoneCompleted: false,
+          preferencesCompleted: false,
+          stripeCustomerCreated: false,
+          welcomeEmailSent: false
+        });
+        Logger.debug("[AUTH] New Google user created:", email);
+        return done(null, {
+          ...newUser,
+          role: newUser.role || "user"
+        });
+      } catch (error) {
+        Logger.error("[AUTH] Google strategy error:", error);
+        return done(error, false);
+      }
+    }
+  ));
+}
+var GOOGLE_CONFIG;
+var init_google_strategy = __esm({
+  "server/auth/google-strategy.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    init_logger();
+    GOOGLE_CONFIG = {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.NODE_ENV === "production" ? `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "your-domain.replit.app"}/api/auth/google/callback` : "/api/auth/google/callback",
+      scope: ["profile", "email"]
+    };
+  }
+});
+
+// server/auth.ts
+import passport2 from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy2 } from "passport-google-oauth20";
+import session from "express-session";
+import bcrypt from "bcryptjs";
+import connectPg from "connect-pg-simple";
+async function hashPassword(password) {
+  return await bcrypt.hash(password, SALT_ROUNDS);
+}
+async function comparePasswords(supplied, stored) {
+  return await bcrypt.compare(supplied, stored);
+}
+function validatePassword(password) {
+  const errors = [];
+  if (password.length < 8) {
+    errors.push("Password must be at least 8 characters");
+  }
+  if (!/[A-Z]/.test(password)) {
+    errors.push("Include at least one uppercase letter");
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push("Include at least one lowercase letter");
+  }
+  if (!/\d/.test(password)) {
+    errors.push("Include at least one number");
+  }
+  if (!/[!@#$%^&*]/.test(password)) {
+    errors.push("Include at least one special character (!@#$%^&*)");
+  }
+  return { isValid: errors.length === 0, errors };
+}
+function setupAuth(app2) {
+  initializeGoogleAuth();
+  const PostgresSessionStore = connectPg(session);
+  const dbConfig2 = getDatabaseConfig();
+  console.log("[SESSION] Using database:", dbConfig2.name);
+  console.log("[SESSION] Environment:", dbConfig2.environment);
+  const sessionSettings = {
+    secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    store: new PostgresSessionStore({
+      conString: dbConfig2.url,
+      createTableIfMissing: false,
+      // Don't create table - already exists
+      schemaName: "public",
+      tableName: "sessions",
+      // Use existing sessions table
+      errorLog: (err) => {
+        if (err && !err.message?.includes("already exists") && !err.message?.includes("IDX_session_expire")) {
+          Logger.error("Session store error:", err);
+        }
+      }
+    }),
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
+      // CRITICAL: Allow cross-origin cookies  
+      maxAge: 7 * 24 * 60 * 60 * 1e3,
+      // 7 days
+      path: "/"
+      // CRITICAL: Ensure cookie available for all paths
+    },
+    rolling: true
+    // CRITICAL: Reset expiry on activity
+  };
+  app2.set("trust proxy", 1);
+  app2.use(session(sessionSettings));
+  app2.use(passport2.initialize());
+  app2.use(passport2.session());
+  passport2.use(
+    new LocalStrategy({ usernameField: "email" }, async (email, password, done) => {
+      try {
+        const normalizedEmail = normalizeEmail(email);
+        Logger.debug(`Login attempt for email: ${normalizedEmail}`);
+        const user = await storage.getUserByEmail(normalizedEmail);
+        if (!user) {
+          Logger.debug(`User not found for email: ${normalizedEmail}`);
+          return done(null, false, {
+            message: "No account found with this email address. Please check your email or create a new account."
+          });
+        }
+        Logger.debug(`User found, checking password for: ${normalizedEmail}`);
+        Logger.debug(`User password hash exists: ${!!user.password}`);
+        const passwordMatch = user.password ? await comparePasswords(password, user.password) : false;
+        if (!passwordMatch) {
+          Logger.debug(`Invalid password for email: ${normalizedEmail}`);
+          return done(null, false, {
+            message: "Incorrect password. Please check your password and try again."
+          });
+        }
+        Logger.debug(`Successful login for email: ${normalizedEmail}`);
+        return done(null, {
+          ...user,
+          role: user.role || "user"
+        });
+      } catch (error) {
+        Logger.error("Login authentication error:", error.message);
+        return done(error, false, {
+          message: "System error during login. Please try again."
+        });
+      }
+    })
+  );
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport2.use(
+      new GoogleStrategy2(
+        {
+          clientID: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          callbackURL: process.env.NODE_ENV === "production" ? `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "your-domain.replit.app"}/api/auth/google/callback` : "/api/auth/google/callback"
+        },
+        async (accessToken, refreshToken, profile2, done) => {
+          try {
+            const email = profile2.emails?.[0]?.value;
+            if (!email) {
+              return done(new Error("No email found in Google profile"), void 0);
+            }
+            const normalizedEmail = normalizeEmail(email);
+            Logger.debug(`Google OAuth attempt for email: ${normalizedEmail}`);
+            let user = await storage.getUserByEmail(normalizedEmail);
+            if (user) {
+              if (!user.googleId) {
+                user = await storage.updateUserGoogleInfo(user.id, {
+                  googleId: profile2.id,
+                  profileImageUrl: profile2.photos?.[0]?.value,
+                  isEmailVerified: true,
+                  authProvider: "google"
+                });
+              }
+              Logger.debug(`Existing user logged in via Google: ${normalizedEmail}`);
+              return done(null, {
+                ...user,
+                role: user.role || "user"
+              });
+            } else {
+              const newUser = await storage.createUserFromGoogle({
+                email: normalizedEmail,
+                firstName: profile2.name?.givenName || profile2.displayName?.split(" ")[0] || "User",
+                lastName: profile2.name?.familyName || profile2.displayName?.split(" ").slice(1).join(" ") || "",
+                googleId: profile2.id,
+                profileImageUrl: profile2.photos?.[0]?.value,
+                authProvider: "google",
+                isEmailVerified: true
+              });
+              Logger.debug(`New user created via Google: ${normalizedEmail}`);
+              return done(null, {
+                ...newUser,
+                role: newUser.role || "user"
+              });
+            }
+          } catch (error) {
+            Logger.error("Google OAuth error:", error.message);
+            return done(error, void 0);
+          }
+        }
+      )
+    );
+  } else {
+    Logger.warn("Google OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET");
+  }
+  passport2.serializeUser((user, done) => {
+    const userId = user.id;
+    Logger.debug(`[PASSPORT] Serializing user ID: ${userId}`);
+    done(null, userId);
+  });
+  passport2.deserializeUser(async (id, done) => {
+    try {
+      Logger.debug(`[PASSPORT] Deserializing user with ID: ${id}`);
+      const user = await storage.getUser(id);
+      if (!user) {
+        Logger.debug(`[PASSPORT] User not found for ID: ${id}`);
+        return done(null, false);
+      }
+      const { password, ...userWithoutPassword } = user;
+      const userForSession = {
+        ...userWithoutPassword,
+        role: user.role || "user"
+      };
+      Logger.debug(`[PASSPORT] Successfully deserialized user: ${user.email}`);
+      done(null, userForSession);
+    } catch (error) {
+      Logger.error(`[PASSPORT] Deserialization error:`, error);
+      done(error, null);
+    }
+  });
+  app2.post("/api/register", async (req, res, next) => {
+    try {
+      const {
+        email,
+        password,
+        confirmPassword,
+        firstName,
+        lastName,
+        phone,
+        street,
+        city,
+        state,
+        zipCode,
+        latitude,
+        longitude,
+        isLocalCustomer
+      } = req.body;
+      if (!email || !password || !confirmPassword || !firstName || !lastName) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      if (password !== confirmPassword) {
+        return res.status(400).json({ message: "Passwords do not match" });
+      }
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        return res.status(400).json({
+          message: "Password does not meet requirements",
+          errors: passwordValidation.errors
+        });
+      }
+      if (street && (!city || !state || !zipCode)) {
+        return res.status(400).json({
+          message: "Please provide complete address information (street, city, state, zip code)"
+        });
+      }
+      const normalizedEmail = normalizeEmail(email);
+      Logger.debug(`Registration attempt for email: ${normalizedEmail}`);
+      const existingEmail = await storage.getUserByEmail(normalizedEmail);
+      if (existingEmail) {
+        Logger.debug(`Email already exists: ${normalizedEmail}`);
+        return res.status(409).json({
+          error: "Account already exists",
+          details: "An account with this email already exists. Please sign in instead.",
+          code: "EMAIL_EXISTS"
+        });
+      }
+      let role = "user";
+      if (normalizedEmail.includes("developer") || normalizedEmail.includes("@dev.") || normalizedEmail === "admin@cleanandflip.com") {
+        role = "developer";
+      }
+      const normalizedPhone = phone ? normalizePhone(phone) : void 0;
+      const user = await storage.createUser({
+        email: normalizedEmail,
+        password: await hashPassword(password),
+        firstName,
+        lastName,
+        phone: normalizedPhone,
+        street: street || void 0,
+        city: city || void 0,
+        state: state || void 0,
+        zipCode: zipCode || void 0,
+        latitude: latitude ? String(latitude) : void 0,
+        longitude: longitude ? String(longitude) : void 0,
+        role
+      });
+      const userForSession = {
+        ...user,
+        role: user.role || "user"
+      };
+      req.logIn(userForSession, (err) => {
+        if (err) return next(err);
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            Logger.error("Registration session save error:", saveErr);
+            return res.status(500).json({
+              error: "Session persistence failed",
+              details: "Registration successful but session could not be saved. Please try logging in."
+            });
+          }
+          Logger.debug(`Registration successful and session saved for: ${user.email}`);
+          Logger.debug(`Session passport user: ${JSON.stringify(req.session.passport)}`);
+          res.status(201).json({
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role || "user"
+          });
+        });
+      });
+    } catch (error) {
+      Logger.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+  app2.post("/api/login", (req, res, next) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({
+        error: "Missing credentials",
+        details: "Please provide both email and password."
+      });
+    }
+    passport2.authenticate("local", (err, user, info) => {
+      if (err) {
+        Logger.error("Passport authentication error:", err);
+        return res.status(500).json({
+          error: "System error",
+          details: "A system error occurred during login. Please try again."
+        });
+      }
+      if (!user) {
+        const errorResponse = {
+          error: "Authentication failed",
+          details: info?.message || "Invalid credentials",
+          code: info?.code || "INVALID_CREDENTIALS"
+        };
+        if (info?.code === "USER_NOT_FOUND") {
+          errorResponse.suggestion = "Try creating a new account or check your email spelling.";
+        } else if (info?.code === "INVALID_PASSWORD") {
+          errorResponse.suggestion = "Double-check your password or consider password reset.";
+        }
+        return res.status(401).json(errorResponse);
+      }
+      const userForSession = {
+        ...user,
+        role: user.role || "user"
+      };
+      req.logIn(userForSession, (loginErr) => {
+        if (loginErr) {
+          Logger.error("Session creation error:", loginErr);
+          return res.status(500).json({
+            error: "Session error",
+            details: "Login successful but session creation failed. Please try again."
+          });
+        }
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            Logger.error("Session save error:", saveErr);
+            return res.status(500).json({
+              error: "Session persistence failed",
+              details: "Login successful but session could not be saved. Please try again."
+            });
+          }
+          Logger.debug(`Login successful and session saved for: ${email}`);
+          Logger.debug(`Session ID: ${req.sessionID}`);
+          Logger.debug(`Session passport user: ${JSON.stringify(req.session.passport)}`);
+          Logger.debug(`Is authenticated: ${req.isAuthenticated()}`);
+          res.status(200).json({
+            success: true,
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              role: user.role || "user"
+            }
+          });
+        });
+      });
+    })(req, res, next);
+  });
+  app2.post("/api/logout", (req, res, next) => {
+    try {
+      req.session.destroy((err) => {
+        if (err) {
+          Logger.error("Session destruction error:", err);
+          return res.status(500).json({ error: "Logout failed" });
+        }
+        res.clearCookie("connect.sid", {
+          path: "/",
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax"
+        });
+        res.clearCookie("sessionId");
+        res.clearCookie("session");
+        Logger.debug("Session destroyed and cookies cleared for logout");
+        res.json({ success: true });
+      });
+    } catch (error) {
+      Logger.error("Logout error:", error);
+      res.status(500).json({ error: "Logout failed" });
+    }
+  });
+  app2.post("/api/debug/check-email", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email required" });
+      }
+      const normalizedEmail = normalizeEmail(email);
+      const user = await storage.getUserByEmail(normalizedEmail);
+      if (user) {
+        res.json({
+          exists: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            created: user.createdAt,
+            hasPassword: !!user.password
+          }
+        });
+      } else {
+        res.json({
+          exists: false,
+          checkedEmail: normalizedEmail
+        });
+      }
+    } catch (error) {
+      Logger.error("Debug check-email error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.get("/api/session-test", (req, res) => {
+    res.json({
+      sessionExists: !!req.session,
+      sessionID: req.sessionID,
+      userId: req.session?.passport?.user,
+      isAuthenticated: req.isAuthenticated?.() || false,
+      sessionData: req.session
+    });
+  });
+  app2.get(
+    "/api/auth/google",
+    passport2.authenticate("google", {
+      scope: ["profile", "email"]
+    })
+  );
+  app2.get(
+    "/api/auth/google/callback",
+    passport2.authenticate("google", {
+      successRedirect: "/",
+      failureRedirect: "/auth?error=oauth_failed"
+    })
+  );
+}
+function requireAuth(req, res, next) {
+  const endpoint = `${req.method} ${req.path}`;
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    Logger.consolidate(
+      `auth-fail-${endpoint}`,
+      `Authentication failed for ${endpoint}`,
+      3 /* DEBUG */
+    );
+    return res.status(401).json({
+      error: "Authentication required",
+      message: "Please log in to continue"
+    });
+  }
+  const user = req.user;
+  if (!user) {
+    Logger.consolidate(
+      `auth-fail-nouser-${endpoint}`,
+      `No user object for ${endpoint}`,
+      3 /* DEBUG */
+    );
+    return res.status(401).json({
+      error: "Authentication required",
+      message: "Please log in to continue"
+    });
+  }
+  req.userId = user.id;
+  Logger.consolidate(
+    `auth-success-${user.id}-${endpoint}`,
+    `Auth successful for user ${user.id} on ${endpoint}`,
+    3 /* DEBUG */
+  );
+  next();
+}
+function requireRole(roles) {
+  return (req, res, next) => {
+    Logger.debug("RequireRole middleware - Is authenticated:", req.isAuthenticated?.());
+    Logger.debug("RequireRole middleware - User from passport:", req.user);
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    const user = req.user;
+    const allowedRoles = Array.isArray(roles) ? roles : [roles];
+    Logger.debug("RequireRole check:", {
+      userRole: user.role,
+      allowedRoles,
+      hasRole: allowedRoles.includes(user.role || "user"),
+      isDeveloper: user.role === "developer"
+    });
+    if (!allowedRoles.includes(user.role || "user") && user.role !== "developer") {
+      Logger.debug("Permission denied - user lacks required role and is not developer");
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+    Logger.debug("Permission granted for user:", user.email);
+    next();
+  };
+}
+var SALT_ROUNDS;
+var init_auth = __esm({
+  "server/auth.ts"() {
+    "use strict";
+    init_storage();
+    init_utils();
+    init_logger();
+    init_database();
+    init_google_strategy();
+    SALT_ROUNDS = 12;
+  }
+});
+
 // server/services/stripe-sync.ts
 var stripe_sync_exports = {};
 __export(stripe_sync_exports, {
   StripeProductSync: () => StripeProductSync
 });
 import Stripe from "stripe";
-import { eq as eq3 } from "drizzle-orm";
+import { eq as eq4 } from "drizzle-orm";
 var stripe, StripeProductSync;
 var init_stripe_sync = __esm({
   "server/services/stripe-sync.ts"() {
@@ -1528,7 +2316,7 @@ var init_stripe_sync = __esm({
             weight: products.weight,
             dimensions: products.dimensions,
             category: categories.name
-          }).from(products).leftJoin(categories, eq3(products.categoryId, categories.id)).where(eq3(products.id, productId)).limit(1);
+          }).from(products).leftJoin(categories, eq4(products.categoryId, categories.id)).where(eq4(products.id, productId)).limit(1);
           if (!product) {
             throw new Error(`Product ${productId} not found`);
           }
@@ -1602,14 +2390,14 @@ var init_stripe_sync = __esm({
             stripePriceId: stripePrice.id,
             stripeSyncStatus: "synced",
             stripeLastSync: /* @__PURE__ */ new Date()
-          }).where(eq3(products.id, productId));
+          }).where(eq4(products.id, productId));
           Logger.info(`Successfully synced product ${productId} to Stripe`);
         } catch (error) {
           Logger.error(`Failed to sync product ${productId}:`, error);
           await db.update(products).set({
             stripeSyncStatus: "failed",
             stripeLastSync: /* @__PURE__ */ new Date()
-          }).where(eq3(products.id, productId));
+          }).where(eq4(products.id, productId));
           throw error;
         }
       }
@@ -1646,7 +2434,7 @@ var init_stripe_sync = __esm({
           weight: products.weight,
           dimensions: products.dimensions,
           category: categories.name
-        }).from(products).leftJoin(categories, eq3(products.categoryId, categories.id)).orderBy(products.name);
+        }).from(products).leftJoin(categories, eq4(products.categoryId, categories.id)).orderBy(products.name);
         Logger.info(`Found ${allProducts.length} products to sync`);
         let successCount = 0;
         let failCount = 0;
@@ -1702,7 +2490,7 @@ var init_stripe_sync = __esm({
       }
       // Delete product from Stripe
       static async deleteFromStripe(productId) {
-        const [product] = await db.select({ stripeProductId: products.stripeProductId }).from(products).where(eq3(products.id, productId)).limit(1);
+        const [product] = await db.select({ stripeProductId: products.stripeProductId }).from(products).where(eq4(products.id, productId)).limit(1);
         if (product?.stripeProductId) {
           await stripe.products.update(product.stripeProductId, { active: false });
           Logger.info(`Deactivated Stripe product ${product.stripeProductId}`);
@@ -1716,9 +2504,2046 @@ var init_stripe_sync = __esm({
           description: stripeProduct.description || null,
           stripeSyncStatus: "synced",
           stripeLastSync: /* @__PURE__ */ new Date()
-        }).where(eq3(products.stripeProductId, stripeProductId));
+        }).where(eq4(products.stripeProductId, stripeProductId));
       }
     };
+  }
+});
+
+// server/services/errorLogger.ts
+import { eq as eq6, desc as desc3, sql as sql6, and as and4, gte as gte3 } from "drizzle-orm";
+var ErrorLogger;
+var init_errorLogger = __esm({
+  "server/services/errorLogger.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    init_logger();
+    ErrorLogger = class {
+      static async logError(error, context = {}) {
+        try {
+          const severity = this.determineSeverity(error, context);
+          const errorData = this.extractErrorData(error, context, "error", severity);
+          const existingError = await this.findSimilarError(error);
+          if (existingError) {
+            await this.incrementOccurrence(existingError.id);
+            await this.createInstance(existingError.id, context);
+            return existingError.id;
+          }
+          const [newError] = await db.insert(errorLogs).values(errorData).returning();
+          await this.createInstance(newError.id, context);
+          if (severity === "critical") {
+            Logger.error(`CRITICAL ERROR: ${error.message}`, { errorId: newError.id, stack: error.stack });
+          }
+          return newError.id;
+        } catch (logError) {
+          Logger.error("Failed to log error:", logError);
+          return null;
+        }
+      }
+      static async logWarning(message, context = {}) {
+        try {
+          const errorData = {
+            error_type: "warning",
+            severity: "medium",
+            message,
+            ...this.extractContextData(context),
+            environment: process.env.NODE_ENV || "production"
+          };
+          const [warning] = await db.insert(errorLogs).values(errorData).returning();
+          await this.createInstance(warning.id, context);
+          return warning.id;
+        } catch (logError) {
+          Logger.error("Failed to log warning:", logError);
+          return null;
+        }
+      }
+      static async logInfo(message, context = {}) {
+        try {
+          const errorData = {
+            error_type: "info",
+            severity: "low",
+            message,
+            ...this.extractContextData(context),
+            environment: process.env.NODE_ENV || "production"
+          };
+          const [info] = await db.insert(errorLogs).values(errorData).returning();
+          await this.createInstance(info.id, context);
+          return info.id;
+        } catch (logError) {
+          Logger.error("Failed to log info:", logError);
+          return null;
+        }
+      }
+      static async findSimilarError(error) {
+        try {
+          const [existing] = await db.select().from(errorLogs).where(
+            and4(
+              eq6(errorLogs.message, error.message),
+              eq6(errorLogs.resolved, false)
+            )
+          ).limit(1);
+          return existing || null;
+        } catch (err) {
+          Logger.error("Failed to find similar error:", err);
+          return null;
+        }
+      }
+      static async incrementOccurrence(errorId) {
+        try {
+          await db.update(errorLogs).set({
+            occurrence_count: sql6`${errorLogs.occurrence_count} + 1`,
+            last_seen: /* @__PURE__ */ new Date()
+          }).where(eq6(errorLogs.id, errorId));
+        } catch (err) {
+          Logger.error("Failed to increment occurrence:", err);
+        }
+      }
+      static async createInstance(errorLogId, context) {
+        try {
+          await db.insert(errorLogInstances).values({
+            error_log_id: errorLogId,
+            context
+          });
+        } catch (err) {
+          Logger.error("Failed to create error instance:", err);
+        }
+      }
+      static async getErrorTrends(timeRange = "24h") {
+        try {
+          const timeRanges = {
+            "24h": sql6`NOW() - INTERVAL '24 hours'`,
+            "7d": sql6`NOW() - INTERVAL '7 days'`,
+            "30d": sql6`NOW() - INTERVAL '30 days'`
+          };
+          const timeFilter = timeRanges[timeRange] || timeRanges["24h"];
+          const trends = await db.select({
+            hour: sql6`DATE_TRUNC('hour', created_at)`,
+            count: sql6`COUNT(*)`,
+            severity: errorLogs.severity
+          }).from(errorLogs).where(gte3(errorLogs.created_at, timeFilter)).groupBy(sql6`DATE_TRUNC('hour', created_at)`, errorLogs.severity).orderBy(desc3(sql6`DATE_TRUNC('hour', created_at)`));
+          return trends;
+        } catch (err) {
+          Logger.error("Failed to get error trends:", err);
+          return [];
+        }
+      }
+      static async getTopErrors(limit = 10) {
+        try {
+          const topErrors = await db.select().from(errorLogs).where(eq6(errorLogs.resolved, false)).orderBy(desc3(errorLogs.occurrence_count)).limit(limit);
+          return topErrors;
+        } catch (err) {
+          Logger.error("Failed to get top errors:", err);
+          return [];
+        }
+      }
+      static async getErrorsByUser(userId) {
+        try {
+          const userErrors = await db.select().from(errorLogs).where(eq6(errorLogs.user_id, userId)).orderBy(desc3(errorLogs.created_at));
+          return userErrors;
+        } catch (err) {
+          Logger.error("Failed to get errors by user:", err);
+          return [];
+        }
+      }
+      static async getUnresolvedCritical() {
+        try {
+          const criticalErrors = await db.select().from(errorLogs).where(
+            and4(
+              eq6(errorLogs.severity, "critical"),
+              eq6(errorLogs.resolved, false)
+            )
+          ).orderBy(desc3(errorLogs.created_at));
+          return criticalErrors;
+        } catch (err) {
+          Logger.error("Failed to get unresolved critical errors:", err);
+          return [];
+        }
+      }
+      static async resolveError(errorId, resolvedBy, notes) {
+        try {
+          await db.update(errorLogs).set({
+            resolved: true,
+            resolved_by: resolvedBy,
+            resolved_at: /* @__PURE__ */ new Date(),
+            notes
+          }).where(eq6(errorLogs.id, errorId));
+          Logger.info(`Error ${errorId} resolved by ${resolvedBy}: ${notes}`);
+        } catch (err) {
+          Logger.error("Failed to resolve error:", err);
+        }
+      }
+      // Bulk resolve errors by fingerprint
+      static async resolveErrorsByFingerprint(message, errorType, resolvedBy, notes) {
+        try {
+          await db.update(errorLogs).set({
+            resolved: true,
+            resolved_by: resolvedBy,
+            resolved_at: /* @__PURE__ */ new Date(),
+            notes
+          }).where(and4(
+            eq6(errorLogs.message, message),
+            eq6(errorLogs.error_type, errorType),
+            eq6(errorLogs.resolved, false)
+          ));
+          Logger.info(`All errors matching fingerprint ${message}-${errorType} resolved by ${resolvedBy}`);
+        } catch (err) {
+          Logger.error("Failed to bulk resolve errors:", err);
+        }
+      }
+      static async getErrorsWithFilters(filters, options) {
+        try {
+          const { page, limit, timeRange, search } = options;
+          const offset = (page - 1) * limit;
+          let query = db.select().from(errorLogs);
+          const conditions = [];
+          if (filters.severity) {
+            conditions.push(eq6(errorLogs.severity, filters.severity));
+          }
+          if (typeof filters.resolved === "boolean") {
+            conditions.push(eq6(errorLogs.resolved, filters.resolved));
+          }
+          const timeRanges = {
+            "24h": sql6`NOW() - INTERVAL '24 hours'`,
+            "7d": sql6`NOW() - INTERVAL '7 days'`,
+            "30d": sql6`NOW() - INTERVAL '30 days'`
+          };
+          if (timeRanges[timeRange]) {
+            conditions.push(gte3(errorLogs.created_at, timeRanges[timeRange]));
+          }
+          if (search) {
+            conditions.push(sql6`${errorLogs.message} ILIKE ${`%${search}%`}`);
+          }
+          if (conditions.length > 0) {
+            query = query.where(and4(...conditions));
+          }
+          const results = await query.orderBy(desc3(errorLogs.created_at)).limit(limit).offset(offset);
+          return results;
+        } catch (err) {
+          Logger.error("Failed to get errors with filters:", err);
+          return [];
+        }
+      }
+      static async getErrorById(errorId) {
+        try {
+          const [error] = await db.select().from(errorLogs).where(eq6(errorLogs.id, errorId));
+          if (!error) return null;
+          const instances = await db.select().from(errorLogInstances).where(eq6(errorLogInstances.error_log_id, errorId)).orderBy(desc3(errorLogInstances.occurred_at)).limit(10);
+          return { ...error, instances };
+        } catch (err) {
+          Logger.error("Failed to get error by ID:", err);
+          return null;
+        }
+      }
+      static async getErrorStats() {
+        try {
+          const [totalCount] = await db.select({ count: sql6`COUNT(*)` }).from(errorLogs);
+          const [resolvedCount] = await db.select({ count: sql6`COUNT(*)` }).from(errorLogs).where(eq6(errorLogs.resolved, true));
+          const [criticalCount] = await db.select({ count: sql6`COUNT(*)` }).from(errorLogs).where(and4(eq6(errorLogs.severity, "critical"), eq6(errorLogs.resolved, false)));
+          const [affectedUsersCount] = await db.select({ count: sql6`COUNT(DISTINCT ${errorLogs.user_id})` }).from(errorLogs).where(sql6`${errorLogs.user_id} IS NOT NULL`);
+          const errorRate = totalCount.count > 0 ? Math.round(criticalCount.count / totalCount.count * 100) : 0;
+          return {
+            total: totalCount.count || 0,
+            resolved: resolvedCount.count || 0,
+            critical: criticalCount.count || 0,
+            affectedUsers: affectedUsersCount.count || 0,
+            errorRate
+          };
+        } catch (err) {
+          Logger.error("Failed to get error stats:", err);
+          return {
+            total: 0,
+            resolved: 0,
+            critical: 0,
+            affectedUsers: 0,
+            errorRate: 0
+          };
+        }
+      }
+      static determineSeverity(error, context) {
+        const message = error.message.toLowerCase();
+        const stack = error.stack?.toLowerCase() || "";
+        if (message.includes("database") || message.includes("connection") || message.includes("auth") || message.includes("payment") || context.res?.statusCode === 500) {
+          return "critical";
+        }
+        if (message.includes("validation") || message.includes("permission") || context.res?.statusCode === 400 || context.res?.statusCode === 401 || context.res?.statusCode === 403) {
+          return "high";
+        }
+        if (message.includes("not found") || context.res?.statusCode === 404) {
+          return "medium";
+        }
+        return "low";
+      }
+      static extractErrorData(error, context, type, severity) {
+        const stackLines = error.stack?.split("\n") || [];
+        const firstStackLine = stackLines[1] || "";
+        const fileMatch = firstStackLine.match(/at.*\((.+):(\d+):(\d+)\)/);
+        return {
+          error_type: type,
+          severity,
+          message: error.message,
+          stack_trace: error.stack,
+          file_path: fileMatch ? fileMatch[1] : null,
+          line_number: fileMatch ? parseInt(fileMatch[2]) : null,
+          column_number: fileMatch ? parseInt(fileMatch[3]) : null,
+          ...this.extractContextData(context),
+          environment: process.env.NODE_ENV || "production"
+        };
+      }
+      static extractContextData(context) {
+        return {
+          user_id: context.user?.id || null,
+          user_email: context.user?.email || null,
+          user_ip: context.req?.ip || null,
+          user_agent: context.req?.userAgent || null,
+          url: context.req?.url || null,
+          method: context.req?.method || null,
+          request_body: context.req?.body || null,
+          response_status: context.res?.statusCode || null,
+          browser: this.extractBrowser(context.req?.userAgent),
+          os: this.extractOS(context.req?.userAgent),
+          device_type: this.extractDeviceType(context.req?.userAgent),
+          session_id: null
+          // Could be extracted from session
+        };
+      }
+      static extractBrowser(userAgent) {
+        if (!userAgent) return null;
+        const browsers = {
+          "Chrome": /Chrome\/([\d.]+)/,
+          "Firefox": /Firefox\/([\d.]+)/,
+          "Safari": /Safari\/([\d.]+)/,
+          "Edge": /Edge\/([\d.]+)/,
+          "Opera": /Opera\/([\d.]+)/
+        };
+        for (const [browser, regex] of Object.entries(browsers)) {
+          if (regex.test(userAgent)) {
+            return browser;
+          }
+        }
+        return "Unknown";
+      }
+      static extractOS(userAgent) {
+        if (!userAgent) return null;
+        const os = {
+          "Windows": /Windows NT ([\d.]+)/,
+          "MacOS": /Mac OS X ([\d_]+)/,
+          "Linux": /Linux/,
+          "iOS": /iPhone|iPad/,
+          "Android": /Android ([\d.]+)/
+        };
+        for (const [osName, regex] of Object.entries(os)) {
+          if (regex.test(userAgent)) {
+            return osName;
+          }
+        }
+        return "Unknown";
+      }
+      static extractDeviceType(userAgent) {
+        if (!userAgent) return null;
+        if (/iPhone|iPad|iPod/.test(userAgent)) return "Mobile";
+        if (/Android/.test(userAgent) && /Mobile/.test(userAgent)) return "Mobile";
+        if (/Android/.test(userAgent)) return "Tablet";
+        return "Desktop";
+      }
+    };
+  }
+});
+
+// server/routes/admin/codebaseScanner.ts
+import { Router as Router4 } from "express";
+import { promises as fs } from "fs";
+import path from "path";
+var router4, codebaseScanner_default;
+var init_codebaseScanner = __esm({
+  "server/routes/admin/codebaseScanner.ts"() {
+    "use strict";
+    init_auth();
+    init_errorLogger();
+    router4 = Router4();
+    router4.use(requireAuth);
+    router4.use(requireRole("developer"));
+    router4.post("/scan-codebase", async (req, res) => {
+      try {
+        const startTime = Date.now();
+        const results = [];
+        let scannedFiles = 0;
+        console.log("\u{1F50D} Starting codebase scan...");
+        const scanDirectory = async (dir, relativePath = "") => {
+          const entries = await fs.readdir(dir, { withFileTypes: true });
+          for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            const relativeFilePath = path.join(relativePath, entry.name);
+            if (entry.isDirectory()) {
+              if (!["node_modules", ".git", "dist", "build", ".replit"].includes(entry.name)) {
+                await scanDirectory(fullPath, relativeFilePath);
+              }
+            } else if (entry.name.match(/\.(ts|tsx|js|jsx|vue|py|php|rb|java|c|cpp|cs)$/)) {
+              scannedFiles++;
+              await scanFile(fullPath, relativeFilePath);
+            }
+          }
+        };
+        const scanFile = async (filePath, relativeFilePath) => {
+          if (relativeFilePath.includes("codebaseScanner.ts")) {
+            return;
+          }
+          try {
+            const content = await fs.readFile(filePath, "utf-8");
+            const lines = content.split("\n");
+            lines.forEach((line, index2) => {
+              const lineNumber = index2 + 1;
+              const trimmedLine = line.trim();
+              if (trimmedLine.includes("console.log") && !trimmedLine.startsWith("//")) {
+                results.push({
+                  severity: "info",
+                  error_type: "console_log",
+                  message: "Console.log statement found - should be removed in production",
+                  file_path: relativeFilePath,
+                  line_number: lineNumber,
+                  line_content: trimmedLine
+                });
+              }
+              if (trimmedLine.includes("TODO") || trimmedLine.includes("FIXME")) {
+                results.push({
+                  severity: "warning",
+                  error_type: "todo_comment",
+                  message: "TODO/FIXME comment found",
+                  file_path: relativeFilePath,
+                  line_number: lineNumber,
+                  line_content: trimmedLine
+                });
+              }
+              const secretPatterns = [
+                /password\s*=\s*['""][^'""]+['""](?!.*process\.env)/i,
+                /api[_-]?key\s*=\s*['""][^'""]+['""](?!.*process\.env)/i,
+                /secret\s*=\s*['""][^'""]+['""](?!.*process\.env)/i,
+                /token\s*=\s*['""][^'""]+['""](?!.*process\.env)/i
+              ];
+              secretPatterns.forEach((pattern) => {
+                if (pattern.test(trimmedLine) && !trimmedLine.startsWith("//")) {
+                  results.push({
+                    severity: "critical",
+                    error_type: "hardcoded_secret",
+                    message: "Potential hardcoded secret detected",
+                    file_path: relativeFilePath,
+                    line_number: lineNumber,
+                    line_content: "[REDACTED FOR SECURITY]"
+                  });
+                }
+              });
+              if (trimmedLine.includes("eval(") && !trimmedLine.startsWith("//")) {
+                results.push({
+                  severity: "critical",
+                  error_type: "unsafe_eval",
+                  message: "Unsafe eval() usage detected",
+                  file_path: relativeFilePath,
+                  line_number: lineNumber,
+                  line_content: trimmedLine
+                });
+              }
+              const sqlPatterns = [
+                /query\s*\(\s*[`'"][^`'"]*\$\{[^}]+\}/i,
+                /execute\s*\(\s*[`'"][^`'"]*\+/i
+              ];
+              sqlPatterns.forEach((pattern) => {
+                if (pattern.test(trimmedLine) && !trimmedLine.startsWith("//")) {
+                  results.push({
+                    severity: "critical",
+                    error_type: "sql_injection_risk",
+                    message: "Potential SQL injection vulnerability",
+                    file_path: relativeFilePath,
+                    line_number: lineNumber,
+                    line_content: trimmedLine
+                  });
+                }
+              });
+              if (trimmedLine.includes("await ") && !content.includes("try") && !content.includes("catch")) {
+                results.push({
+                  severity: "warning",
+                  error_type: "missing_error_handling",
+                  message: "Async operation without error handling",
+                  file_path: relativeFilePath,
+                  line_number: lineNumber,
+                  line_content: trimmedLine
+                });
+              }
+              if (filePath.includes(".tsx") || filePath.includes(".jsx")) {
+                if (trimmedLine.includes("componentWillMount") || trimmedLine.includes("componentWillReceiveProps")) {
+                  results.push({
+                    severity: "warning",
+                    error_type: "deprecated_react",
+                    message: "Deprecated React lifecycle method",
+                    file_path: relativeFilePath,
+                    line_number: lineNumber,
+                    line_content: trimmedLine
+                  });
+                }
+              }
+              if (trimmedLine.includes("document.getElementById") && trimmedLine.includes("loop")) {
+                results.push({
+                  severity: "warning",
+                  error_type: "performance_issue",
+                  message: "DOM query in loop - potential performance issue",
+                  file_path: relativeFilePath,
+                  line_number: lineNumber,
+                  line_content: trimmedLine
+                });
+              }
+            });
+          } catch (error) {
+            console.error(`Error scanning file ${filePath}:`, error);
+          }
+        };
+        await scanDirectory(process.cwd());
+        const summary = {
+          totalErrors: results.length,
+          critical: results.filter((r) => r.severity === "critical").length,
+          errors: results.filter((r) => r.severity === "error").length,
+          warnings: results.filter((r) => r.severity === "warning").length,
+          info: results.filter((r) => r.severity === "info").length,
+          results: results.sort((a, b) => {
+            const severityOrder = { critical: 0, error: 1, warning: 2, info: 3 };
+            return severityOrder[a.severity] - severityOrder[b.severity];
+          }),
+          scanDuration: Date.now() - startTime,
+          scannedFiles
+        };
+        console.log(`\u2705 Codebase scan completed: ${results.length} issues found in ${scannedFiles} files`);
+        results.filter((r) => r.severity === "critical").forEach((result) => {
+          ErrorLogger.logError({
+            error_type: "codebase_scan_critical",
+            message: `Critical issue found: ${result.message}`,
+            file_path: result.file_path,
+            line_number: result.line_number,
+            environment: process.env.NODE_ENV || "development"
+          });
+        });
+        res.json(summary);
+      } catch (error) {
+        console.error("Codebase scan error:", error);
+        res.status(500).json({
+          error: "Failed to scan codebase",
+          message: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    });
+    router4.get("/scan-history", async (req, res) => {
+      try {
+        const scanResults = await ErrorLogger.getErrorsWithFilters({
+          error_type: "codebase_scan_critical"
+        }, {
+          page: 1,
+          limit: 50,
+          timeRange: "7d",
+          search: ""
+        });
+        res.json(scanResults);
+      } catch (error) {
+        console.error("Failed to get scan history:", error);
+        res.status(500).json({ error: "Failed to get scan history" });
+      }
+    });
+    codebaseScanner_default = router4;
+  }
+});
+
+// server/services/codebase-doctor-service.ts
+import { exec } from "child_process";
+import { promisify } from "util";
+import path2 from "path";
+var execAsync, CodebaseDoctorService;
+var init_codebase_doctor_service = __esm({
+  "server/services/codebase-doctor-service.ts"() {
+    "use strict";
+    execAsync = promisify(exec);
+    CodebaseDoctorService = class _CodebaseDoctorService {
+      static instance;
+      lastScanResults = null;
+      scanHistory = [];
+      constructor() {
+      }
+      static getInstance() {
+        if (!_CodebaseDoctorService.instance) {
+          _CodebaseDoctorService.instance = new _CodebaseDoctorService();
+        }
+        return _CodebaseDoctorService.instance;
+      }
+      async runFullCodebaseAnalysis(options = {}) {
+        try {
+          console.log("Starting comprehensive codebase analysis...");
+          const rootDir = process.cwd();
+          const scriptPath = path2.join(process.cwd(), "scripts", "codebase-doctor.cjs");
+          let command = `node "${scriptPath}" --root "${rootDir}"`;
+          if (options.outputToDatabase) {
+            command += " --db";
+          }
+          console.log(`Executing: ${command}`);
+          const { stdout, stderr } = await execAsync(command, {
+            cwd: rootDir,
+            timeout: 3e5,
+            // 5 minute timeout
+            maxBuffer: 1024 * 1024 * 10
+            // 10MB buffer
+          });
+          if (stderr) {
+            console.warn("Script stderr:", stderr);
+          }
+          let reportData;
+          try {
+            const lines = stdout.split("\n");
+            const jsonStart = lines.findIndex((line) => line.trim().startsWith("{"));
+            if (jsonStart === -1) {
+              throw new Error("No JSON output found in script response");
+            }
+            const jsonOutput = lines.slice(jsonStart).join("\n").trim();
+            reportData = JSON.parse(jsonOutput);
+          } catch (parseError) {
+            console.error("Failed to parse script output:", stdout);
+            throw new Error("Failed to parse codebase analysis results");
+          }
+          const result = await this.enhanceAndCategorizeFindings(reportData);
+          this.lastScanResults = result;
+          this.scanHistory.push({
+            timestamp: result.timestamp,
+            summary: result.summary
+          });
+          if (this.scanHistory.length > 10) {
+            this.scanHistory = this.scanHistory.slice(-10);
+          }
+          console.log(`Codebase analysis completed: ${result.summary.totalFindings} findings`);
+          return result;
+        } catch (error) {
+          console.error("Codebase analysis failed:", error);
+          throw new Error(`Codebase analysis failed: ${error?.message || "Unknown error"}`);
+        }
+      }
+      async enhanceAndCategorizeFindings(report) {
+        const categories2 = {};
+        let totalCritical = 0;
+        let totalWarnings = 0;
+        let totalSuggestions = 0;
+        const findingsArray = report.sections?.flatMap((s) => s.findings) || [];
+        for (const finding of findingsArray) {
+          const enhanced = this.enhanceFinding(finding);
+          const category = enhanced.category || "general";
+          if (!categories2[category]) {
+            categories2[category] = { count: 0, critical: 0, items: [] };
+          }
+          categories2[category].count++;
+          categories2[category].items.push(enhanced);
+          if (enhanced.severity === "FAIL" || enhanced.impact === "critical") {
+            categories2[category].critical++;
+            totalCritical++;
+          } else if (enhanced.severity === "WARN") {
+            totalWarnings++;
+          } else {
+            totalSuggestions++;
+          }
+        }
+        const trends = this.calculateTrends(report.summary);
+        return {
+          timestamp: report.timestamp,
+          summary: {
+            totalFindings: report.summary.totalFindings,
+            criticalIssues: totalCritical,
+            warnings: totalWarnings,
+            suggestions: totalSuggestions
+          },
+          categories: categories2,
+          trends
+        };
+      }
+      enhanceFinding(finding) {
+        const enhanced = {
+          ...finding,
+          impact: this.calculateImpact(finding),
+          effort: this.calculateEffort(finding),
+          priority: 0
+        };
+        enhanced.priority = this.calculatePriority(enhanced);
+        return enhanced;
+      }
+      calculateImpact(finding) {
+        if (finding.id.includes("security") || finding.id.includes("syntax")) {
+          return "critical";
+        }
+        if (finding.severity === "FAIL") {
+          return "high";
+        }
+        if (finding.id.includes("performance") || finding.id.includes("import")) {
+          return "medium";
+        }
+        return "low";
+      }
+      calculateEffort(finding) {
+        if (finding.id.includes("unused") || finding.id.includes("console") || finding.id.includes("todo")) {
+          return "trivial";
+        }
+        if (finding.id.includes("import") || finding.id.includes("missing")) {
+          return "easy";
+        }
+        if (finding.id.includes("security") || finding.id.includes("performance")) {
+          return "medium";
+        }
+        return "hard";
+      }
+      calculatePriority(finding) {
+        const impactScore = {
+          "critical": 10,
+          "high": 7,
+          "medium": 4,
+          "low": 2
+        }[finding.impact];
+        const effortMultiplier = {
+          "trivial": 1,
+          "easy": 0.8,
+          "medium": 0.6,
+          "hard": 0.4
+        }[finding.effort];
+        return Math.round(impactScore * effortMultiplier);
+      }
+      calculateTrends(currentSummary) {
+        if (this.scanHistory.length === 0) {
+          return {
+            improvementFromLastScan: 0,
+            newIssues: 0,
+            resolvedIssues: 0
+          };
+        }
+        const lastScan = this.scanHistory[this.scanHistory.length - 1];
+        const improvement = lastScan.summary.totalFindings - currentSummary.totalFindings;
+        return {
+          improvementFromLastScan: improvement,
+          newIssues: Math.max(0, -improvement),
+          resolvedIssues: Math.max(0, improvement)
+        };
+      }
+      async getQuickHealthCheck() {
+        try {
+          const criticalChecks = [
+            "syntax:typescript",
+            "security:hardcoded-secret",
+            "import:missing",
+            "security:eval"
+          ];
+          const result = await this.runFullCodebaseAnalysis({
+            includeSecurity: true,
+            includeCodeQuality: false,
+            includePerformance: false
+          });
+          const criticalIssues = Object.values(result.categories).flatMap((cat) => cat.items).filter((item) => item.severity === "FAIL" && criticalChecks.includes(item.id));
+          const score = Math.max(0, 100 - result.summary.criticalIssues * 10 - result.summary.warnings * 2);
+          let status = "healthy";
+          if (result.summary.criticalIssues > 0) {
+            status = "critical";
+          } else if (result.summary.warnings > 10) {
+            status = "warning";
+          }
+          return {
+            status,
+            score,
+            keyIssues: criticalIssues.slice(0, 5).map((issue) => issue.title),
+            lastScan: result.timestamp
+          };
+        } catch (error) {
+          console.error("Quick health check failed:", error);
+          return {
+            status: "critical",
+            score: 0,
+            keyIssues: ["Unable to perform health check"],
+            lastScan: void 0
+          };
+        }
+      }
+      getLastScanResults() {
+        return this.lastScanResults;
+      }
+      getScanHistory() {
+        return this.scanHistory;
+      }
+      async generateDetailedReport(format = "json") {
+        if (!this.lastScanResults) {
+          throw new Error("No scan results available. Run analysis first.");
+        }
+        if (format === "json") {
+          return JSON.stringify(this.lastScanResults, null, 2);
+        }
+        let markdown = `# Codebase Health Report
+
+`;
+        markdown += `**Generated:** ${this.lastScanResults.timestamp}
+`;
+        markdown += `**Total Findings:** ${this.lastScanResults.summary.totalFindings}
+`;
+        markdown += `**Critical Issues:** ${this.lastScanResults.summary.criticalIssues}
+
+`;
+        markdown += `## Categories
+
+`;
+        for (const [category, data] of Object.entries(this.lastScanResults.categories)) {
+          markdown += `### ${category.charAt(0).toUpperCase() + category.slice(1)}
+`;
+          markdown += `- Total: ${data.count}
+`;
+          markdown += `- Critical: ${data.critical}
+
+`;
+          const topIssues = data.items.sort((a, b) => b.priority - a.priority).slice(0, 3);
+          if (topIssues.length > 0) {
+            markdown += `**Top Issues:**
+`;
+            for (const issue of topIssues) {
+              markdown += `- ${issue.title} (Priority: ${issue.priority})
+`;
+            }
+            markdown += `
+`;
+          }
+        }
+        return markdown;
+      }
+    };
+  }
+});
+
+// server/routes/admin/error-management.ts
+var error_management_exports = {};
+__export(error_management_exports, {
+  default: () => error_management_default
+});
+import { Router as Router5 } from "express";
+var router5, codebaseDoctor, error_management_default;
+var init_error_management = __esm({
+  "server/routes/admin/error-management.ts"() {
+    "use strict";
+    init_errorLogger();
+    init_auth();
+    init_codebaseScanner();
+    init_codebase_doctor_service();
+    router5 = Router5();
+    router5.use(requireAuth);
+    router5.use(requireRole("developer"));
+    router5.use("/codebase-scanner", codebaseScanner_default);
+    router5.get("/errors", async (req, res) => {
+      try {
+        const {
+          page = 1,
+          limit = 50,
+          severity,
+          resolved,
+          timeRange = "24h",
+          search
+        } = req.query;
+        const filters = {};
+        if (severity && severity !== "all") {
+          filters.severity = severity;
+        }
+        if (resolved && resolved !== "all") {
+          filters.resolved = resolved === "true";
+        }
+        const errors = await ErrorLogger.getErrorsWithFilters(filters, {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          timeRange,
+          search
+        });
+        res.json(errors);
+      } catch (error) {
+        console.error("Failed to get errors:", error);
+        res.status(500).json({ error: "Failed to get errors" });
+      }
+    });
+    router5.get("/errors/trends", async (req, res) => {
+      try {
+        const { timeRange = "24h" } = req.query;
+        res.json([]);
+      } catch (error) {
+        console.error("Failed to get error trends:", error);
+        res.status(500).json({ error: "Failed to get error trends" });
+      }
+    });
+    router5.get("/errors/stats", async (req, res) => {
+      try {
+        const stats = await ErrorLogger.getErrorStats();
+        res.json(stats);
+      } catch (error) {
+        console.error("Failed to get error stats:", error);
+        res.status(500).json({ error: "Failed to get error stats" });
+      }
+    });
+    codebaseDoctor = CodebaseDoctorService.getInstance();
+    router5.post("/codebase/analyze", async (req, res) => {
+      try {
+        const options = {
+          includePerformance: req.body.includePerformance !== false,
+          includeSecurity: req.body.includeSecurity !== false,
+          includeCodeQuality: req.body.includeCodeQuality !== false,
+          outputToDatabase: req.body.outputToDatabase === true
+        };
+        const result = await codebaseDoctor.runFullCodebaseAnalysis(options);
+        res.json(result);
+      } catch (error) {
+        console.error("Codebase analysis failed:", error);
+        res.status(500).json({ error: "Codebase analysis failed", details: error?.message || "Unknown error" });
+      }
+    });
+    router5.get("/codebase/health", async (req, res) => {
+      try {
+        const health = await codebaseDoctor.getQuickHealthCheck();
+        res.json(health);
+      } catch (error) {
+        console.error("Health check failed:", error);
+        res.status(500).json({ error: "Health check failed", details: error?.message || "Unknown error" });
+      }
+    });
+    router5.get("/codebase/last-scan", async (req, res) => {
+      try {
+        const lastScan = codebaseDoctor.getLastScanResults();
+        if (!lastScan) {
+          return res.status(404).json({ error: "No previous scan results found" });
+        }
+        res.json(lastScan);
+      } catch (error) {
+        console.error("Failed to get last scan:", error);
+        res.status(500).json({ error: "Failed to get last scan results" });
+      }
+    });
+    router5.get("/codebase/history", async (req, res) => {
+      try {
+        const history = codebaseDoctor.getScanHistory();
+        res.json(history);
+      } catch (error) {
+        console.error("Failed to get scan history:", error);
+        res.status(500).json({ error: "Failed to get scan history" });
+      }
+    });
+    router5.get("/codebase/report", async (req, res) => {
+      try {
+        const format = req.query.format === "markdown" ? "markdown" : "json";
+        const report = await codebaseDoctor.generateDetailedReport(format);
+        if (format === "markdown") {
+          res.setHeader("Content-Type", "text/markdown");
+          res.setHeader("Content-Disposition", 'attachment; filename="codebase-report.md"');
+        } else {
+          res.setHeader("Content-Type", "application/json");
+        }
+        res.send(report);
+      } catch (error) {
+        console.error("Failed to generate report:", error);
+        res.status(500).json({ error: "Failed to generate report", details: error?.message || "Unknown error" });
+      }
+    });
+    router5.post("/errors/log", async (req, res) => {
+      try {
+        const {
+          message,
+          stack,
+          component,
+          action,
+          severity = "medium",
+          url,
+          userAgent,
+          userContext
+        } = req.body;
+        await ErrorLogger.logError({
+          message,
+          stack,
+          component,
+          action,
+          severity,
+          url,
+          userAgent,
+          userContext,
+          userId: req.user?.id,
+          ip: req.ip
+        });
+        res.status(201).json({ success: true });
+      } catch (error) {
+        console.error("Failed to log error:", error);
+        res.status(500).json({ error: "Failed to log error" });
+      }
+    });
+    router5.get("/errors/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const error = await ErrorLogger.getErrorById(id);
+        if (!error) {
+          return res.status(404).json({ error: "Error not found" });
+        }
+        res.json(error);
+      } catch (error) {
+        console.error("Failed to get error:", error);
+        res.status(500).json({ error: "Failed to get error" });
+      }
+    });
+    router5.post("/errors/:id/resolve", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { notes = "Resolved via admin dashboard" } = req.body;
+        const userId = req.user?.id || "system";
+        await ErrorLogger.resolveError(id, userId, notes);
+        res.json({ success: true, message: "Error resolved successfully" });
+      } catch (error) {
+        console.error("Failed to resolve error:", error);
+        res.status(500).json({ error: "Failed to resolve error" });
+      }
+    });
+    router5.post("/errors/bulk-resolve", async (req, res) => {
+      try {
+        const { errorIds, notes } = req.body;
+        const user = req.user;
+        for (const errorId of errorIds) {
+          await ErrorLogger.resolveError(errorId, user.id, notes);
+        }
+        res.json({
+          success: true,
+          message: `${errorIds.length} errors resolved successfully`
+        });
+      } catch (error) {
+        console.error("Failed to bulk resolve errors:", error);
+        res.status(500).json({ error: "Failed to bulk resolve errors" });
+      }
+    });
+    router5.post("/errors/client", async (req, res) => {
+      try {
+        const errorData = req.body;
+        const error = new Error(errorData.message);
+        error.stack = errorData.stack;
+        const context = {
+          req: {
+            url: errorData.url,
+            userAgent: errorData.userAgent,
+            ip: req.ip
+          },
+          user: errorData.userContext,
+          component: errorData.component,
+          action: errorData.action,
+          metadata: {
+            breadcrumbs: errorData.breadcrumbs,
+            clientSide: true,
+            ...errorData.metadata
+          }
+        };
+        await ErrorLogger.logError(error, context);
+        res.status(200).json({ success: true });
+      } catch (error) {
+        console.error("Failed to log client error:", error);
+        res.status(500).json({ error: "Failed to log error" });
+      }
+    });
+    router5.post("/errors/client-log", async (req, res) => {
+      try {
+        const logData = req.body;
+        const context = {
+          req: {
+            url: logData.url,
+            userAgent: logData.userAgent,
+            ip: req.ip
+          },
+          user: logData.userContext,
+          action: logData.action,
+          metadata: {
+            breadcrumbs: logData.breadcrumbs,
+            clientSide: true,
+            level: logData.level,
+            ...logData.metadata
+          }
+        };
+        if (logData.level === "error") {
+          await ErrorLogger.logError(new Error(logData.message), context);
+        } else if (logData.level === "warning") {
+          await ErrorLogger.logWarning(logData.message, context);
+        } else {
+          await ErrorLogger.logInfo(logData.message, context);
+        }
+        res.status(200).json({ success: true });
+      } catch (error) {
+        console.error("Failed to log client message:", error);
+        res.status(500).json({ error: "Failed to log message" });
+      }
+    });
+    router5.post("/errors/performance", async (req, res) => {
+      try {
+        const metric = req.body;
+        await ErrorLogger.logInfo(`Performance: ${metric.name} took ${metric.value}ms`, {
+          req: {
+            url: metric.url,
+            ip: req.ip
+          },
+          metadata: {
+            performance: true,
+            metric: metric.name,
+            value: metric.value,
+            timestamp: metric.timestamp
+          }
+        });
+        res.status(200).json({ success: true });
+      } catch (error) {
+        console.error("Failed to log performance metric:", error);
+        res.status(500).json({ error: "Failed to log performance metric" });
+      }
+    });
+    router5.post("/errors/log", async (req, res) => {
+      try {
+        const errorData = req.body;
+        const error = new Error(errorData.message || "Client-side error");
+        if (errorData.stack) {
+          error.stack = errorData.stack;
+        }
+        const context = {
+          req: {
+            url: errorData.url || req.url,
+            userAgent: req.headers["user-agent"],
+            ip: req.ip
+          },
+          user: errorData.userContext,
+          component: errorData.component,
+          action: errorData.action,
+          metadata: {
+            breadcrumbs: errorData.breadcrumbs,
+            clientSide: true,
+            level: errorData.level || "error",
+            timestamp: errorData.timestamp || (/* @__PURE__ */ new Date()).toISOString(),
+            environment: process.env.NODE_ENV || "development",
+            ...errorData.metadata
+          }
+        };
+        if (errorData.level === "error" || !errorData.level) {
+          await ErrorLogger.logError(error, context);
+        } else if (errorData.level === "warning") {
+          await ErrorLogger.logWarning(errorData.message, context);
+        } else {
+          await ErrorLogger.logInfo(errorData.message, context);
+        }
+        res.json({ success: true, message: "Error logged successfully" });
+      } catch (error) {
+        console.error("Failed to log frontend error:", error);
+        res.status(500).json({ error: "Failed to log error" });
+      }
+    });
+    error_management_default = router5;
+  }
+});
+
+// server/middleware/securityHeaders.ts
+var securityHeaders_exports = {};
+__export(securityHeaders_exports, {
+  apiSecurityHeaders: () => apiSecurityHeaders,
+  securityHeaders: () => securityHeaders
+});
+function securityHeaders() {
+  return (req, res, next) => {
+    const isProduction = process.env.NODE_ENV === "production";
+    const isDev = process.env.NODE_ENV === "development";
+    const developmentCSP = `
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' *.googleapis.com *.gstatic.com *.stripe.com js.stripe.com;
+      style-src 'self' 'unsafe-inline' *.googleapis.com fonts.googleapis.com;
+      font-src 'self' fonts.gstatic.com;
+      img-src 'self' data: blob: *.cloudinary.com *.stripe.com *.googleusercontent.com;
+      connect-src 'self' ws: wss: *.stripe.com api.stripe.com *.neon.tech vitals.vercel-insights.com;
+      frame-src 'self' *.stripe.com js.stripe.com;
+      object-src 'none';
+      base-uri 'self';
+      upgrade-insecure-requests;
+    `.replace(/\s+/g, " ").trim();
+    const productionCSP = `
+      default-src 'self';
+      script-src 'self' *.googleapis.com *.gstatic.com *.stripe.com js.stripe.com 'sha256-[YOUR-SCRIPT-HASH]';
+      style-src 'self' 'unsafe-inline' *.googleapis.com fonts.googleapis.com;
+      font-src 'self' fonts.gstatic.com;
+      img-src 'self' data: blob: *.cloudinary.com *.stripe.com *.googleusercontent.com;
+      connect-src 'self' wss: *.stripe.com api.stripe.com *.neon.tech vitals.vercel-insights.com;
+      frame-src 'self' *.stripe.com js.stripe.com;
+      object-src 'none';
+      base-uri 'self';
+      upgrade-insecure-requests;
+    `.replace(/\s+/g, " ").trim();
+    res.setHeader("Content-Security-Policy", isDev ? developmentCSP : productionCSP);
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    if (req.secure || req.headers["x-forwarded-proto"] === "https") {
+      res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+    }
+    res.setHeader(
+      "Permissions-Policy",
+      "geolocation=(), microphone=(), camera=(), payment=(self), fullscreen=(self)"
+    );
+    res.removeHeader("X-Powered-By");
+    next();
+  };
+}
+function apiSecurityHeaders() {
+  return (req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    res.setHeader("Access-Control-Max-Age", "86400");
+    next();
+  };
+}
+var init_securityHeaders = __esm({
+  "server/middleware/securityHeaders.ts"() {
+    "use strict";
+  }
+});
+
+// server/middleware/inputSanitization.ts
+var inputSanitization_exports = {};
+__export(inputSanitization_exports, {
+  InputSanitizer: () => InputSanitizer,
+  sanitizeInput: () => sanitizeInput,
+  sanitizeProductInput: () => sanitizeProductInput,
+  sanitizeSearchInput: () => sanitizeSearchInput,
+  sanitizeUserInput: () => sanitizeUserInput
+});
+import DOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
+function sanitizeInput(options = {}) {
+  return (req, res, next) => {
+    try {
+      const skipPaths = [
+        "/api/stripe/webhook",
+        "/api/health",
+        "/health",
+        "/api/admin/logs",
+        "/api/user/profile/image",
+        "/login",
+        "/register",
+        "/auth/",
+        "/track-activity",
+        "/errors/"
+      ];
+      console.log("Sanitization check - path:", req.path, "url:", req.url);
+      if (skipPaths.some((path6) => req.path.includes(path6) || req.url.includes(path6))) {
+        console.log("Skipping sanitization for:", req.path);
+        return next();
+      }
+      if (req.body) {
+        req.body = InputSanitizer.validateAndSanitize(req.body, options);
+      }
+      if (req.query) {
+        req.query = InputSanitizer.sanitizeObject(req.query, {
+          stripTags: true,
+          maxLength: 500
+        });
+      }
+      if (req.params) {
+        req.params = InputSanitizer.sanitizeObject(req.params, {
+          stripTags: true,
+          maxLength: 100
+        });
+      }
+      next();
+    } catch (error) {
+      res.status(400).json({
+        error: "Invalid input data",
+        message: "Request contains potentially unsafe content"
+      });
+    }
+  };
+}
+var window, purify, InputSanitizer, sanitizeUserInput, sanitizeProductInput, sanitizeSearchInput;
+var init_inputSanitization = __esm({
+  "server/middleware/inputSanitization.ts"() {
+    "use strict";
+    window = new JSDOM("").window;
+    purify = DOMPurify(window);
+    InputSanitizer = class {
+      static defaultOptions = {
+        stripTags: true,
+        maxLength: 1e4,
+        allowedTags: [],
+        allowedAttributes: {}
+      };
+      static sanitizeString(input, options = {}) {
+        const opts = { ...this.defaultOptions, ...options };
+        if (!input || typeof input !== "string") return "";
+        let sanitized = opts.maxLength ? input.slice(0, opts.maxLength) : input;
+        if (opts.stripTags) {
+          sanitized = purify.sanitize(sanitized, {
+            ALLOWED_TAGS: opts.allowedTags || [],
+            ALLOWED_ATTR: Object.values(opts.allowedAttributes || {}).flat(),
+            KEEP_CONTENT: true
+          });
+        }
+        sanitized = sanitized.replace(/javascript:/gi, "").replace(/vbscript:/gi, "").replace(/data:text\/html/gi, "").replace(/on\w+\s*=/gi, "");
+        return sanitized.trim();
+      }
+      static sanitizeObject(obj, options = {}) {
+        if (!obj) return obj;
+        if (typeof obj === "string") {
+          return this.sanitizeString(obj, options);
+        }
+        if (Array.isArray(obj)) {
+          return obj.map((item) => this.sanitizeObject(item, options));
+        }
+        if (typeof obj === "object") {
+          const sanitized = {};
+          for (const [key, value] of Object.entries(obj)) {
+            const cleanKey = this.sanitizeString(key, { stripTags: true, maxLength: 100 });
+            sanitized[cleanKey] = this.sanitizeObject(value, options);
+          }
+          return sanitized;
+        }
+        return obj;
+      }
+      static validateAndSanitize(data, schema) {
+        const sqlInjectionPatterns = [
+          /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi,
+          /(\b(OR|AND)\s+\w+\s*=\s*\w+)/gi,
+          /(--|\/\*|\*\/)/g,
+          /(\b\d+\s*=\s*\d+\b)/g,
+          // 1=1 type patterns
+          /('|"|;|\||&)/g
+          // Common injection characters
+        ];
+        const xssPatterns = [
+          /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+          /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
+          /javascript:/gi,
+          /vbscript:/gi,
+          /on\w+\s*=/gi
+        ];
+        const sanitized = this.sanitizeObject(data, {
+          stripTags: true,
+          maxLength: 5e3
+        });
+        const dataString = JSON.stringify(sanitized).toLowerCase();
+        for (const pattern of [...sqlInjectionPatterns, ...xssPatterns]) {
+          if (pattern.test(dataString)) {
+            throw new Error("Input contains potentially malicious content");
+          }
+        }
+        return sanitized;
+      }
+    };
+    sanitizeUserInput = sanitizeInput({
+      allowedTags: [],
+      stripTags: true,
+      maxLength: 1e3
+    });
+    sanitizeProductInput = sanitizeInput({
+      allowedTags: ["b", "i", "u", "br", "p"],
+      allowedAttributes: {},
+      stripTags: false,
+      maxLength: 5e3
+    });
+    sanitizeSearchInput = sanitizeInput({
+      stripTags: true,
+      maxLength: 200
+    });
+  }
+});
+
+// server/middleware/requestLogger.ts
+var requestLogger_exports = {};
+__export(requestLogger_exports, {
+  adminRequestLogger: () => adminRequestLogger,
+  apiRequestLogger: () => apiRequestLogger,
+  errorLogger: () => errorLogger,
+  requestLogger: () => requestLogger2
+});
+var RequestLogger, requestLogger2, apiRequestLogger, adminRequestLogger, errorLogger;
+var init_requestLogger = __esm({
+  "server/middleware/requestLogger.ts"() {
+    "use strict";
+    init_logger();
+    RequestLogger = class _RequestLogger {
+      static isSpamEndpoint(url) {
+        const spamPatterns = [
+          /^\/api\/products\/featured$/,
+          /^\/api\/categories/,
+          /^\/api\/cart$/,
+          /^\/clean-flip-logo/,
+          /^\/api\/user$/,
+          /^\/@vite/,
+          /^\/@react-refresh/,
+          /\.js$|\.css$|\.png$|\.jpg$|\.jpeg$|\.gif$|\.svg$|\.ico$/
+        ];
+        return spamPatterns.some((pattern) => pattern.test(url));
+      }
+      static shouldLogRequest(req) {
+        if (req.url.startsWith("/api/admin/")) return true;
+        if (req.url.startsWith("/api/errors/")) return true;
+        if (req.url.startsWith("/api/auth/")) return true;
+        if (process.env.NODE_ENV === "development" && this.isSpamEndpoint(req.url)) {
+          return false;
+        }
+        return true;
+      }
+      static extractUserInfo(req) {
+        const userId = req.user?.id || req.user?.claims?.sub;
+        const ip = req.ip || req.connection.remoteAddress || "unknown";
+        return { userId, ip };
+      }
+      static requestLogger() {
+        return (req, res, next) => {
+          if (!_RequestLogger.shouldLogRequest(req)) {
+            return next();
+          }
+          const startTime = Date.now();
+          const { userId, ip } = _RequestLogger.extractUserInfo(req);
+          const requestData = {
+            method: req.method,
+            url: req.url,
+            userAgent: req.get("User-Agent"),
+            ip,
+            userId
+          };
+          const originalEnd = res.end;
+          res.end = function(...args) {
+            const duration = Date.now() - startTime;
+            const contentLength = res.get("Content-Length");
+            const responseData = {
+              ...requestData,
+              duration,
+              statusCode: res.statusCode,
+              contentLength: contentLength ? parseInt(contentLength) : void 0
+            };
+            if (res.statusCode >= 500) {
+              Logger.error(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`, responseData);
+            } else if (res.statusCode >= 400) {
+              Logger.warn(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`, responseData);
+            } else if (res.statusCode >= 300) {
+              Logger.info(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+            } else {
+              Logger.info(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+            }
+            originalEnd.apply(this, args);
+          };
+          next();
+        };
+      }
+      static apiRequestLogger() {
+        return (req, res, next) => {
+          const startTime = Date.now();
+          const { userId, ip } = _RequestLogger.extractUserInfo(req);
+          const originalEnd = res.end;
+          res.end = function(...args) {
+            const duration = Date.now() - startTime;
+            const logData = {
+              method: req.method,
+              url: req.url,
+              userAgent: req.get("User-Agent"),
+              ip,
+              userId,
+              duration,
+              statusCode: res.statusCode,
+              contentLength: res.get("Content-Length") ? parseInt(res.get("Content-Length")) : void 0
+            };
+            if (res.statusCode >= 400) {
+              Logger.warn(`API ${req.method} ${req.url} ${res.statusCode} ${duration}ms`, logData);
+            } else {
+              Logger.info(`API ${req.method} ${req.url} ${res.statusCode} ${duration}ms`, logData);
+            }
+            originalEnd.apply(this, args);
+          };
+          next();
+        };
+      }
+      static adminRequestLogger() {
+        return (req, res, next) => {
+          const startTime = Date.now();
+          const { userId, ip } = _RequestLogger.extractUserInfo(req);
+          Logger.info(`ADMIN REQUEST: ${req.method} ${req.url}`, {
+            userId,
+            ip,
+            userAgent: req.get("User-Agent")
+          });
+          const originalEnd = res.end;
+          res.end = function(...args) {
+            const duration = Date.now() - startTime;
+            Logger.info(`ADMIN RESPONSE: ${req.method} ${req.url} ${res.statusCode} ${duration}ms`, {
+              userId,
+              ip,
+              duration,
+              statusCode: res.statusCode
+            });
+            originalEnd.apply(this, args);
+          };
+          next();
+        };
+      }
+      static errorLogger() {
+        return (error, req, res, next) => {
+          const { userId, ip } = _RequestLogger.extractUserInfo(req);
+          Logger.error(`Request Error: ${req.method} ${req.url}`, {
+            error: error.message,
+            stack: error.stack,
+            userId,
+            ip,
+            userAgent: req.get("User-Agent"),
+            body: req.method !== "GET" ? req.body : void 0
+          });
+          next(error);
+        };
+      }
+    };
+    ({ requestLogger: requestLogger2, apiRequestLogger, adminRequestLogger, errorLogger } = RequestLogger);
+  }
+});
+
+// server/services/performanceMonitor.ts
+var performanceMonitor_exports = {};
+__export(performanceMonitor_exports, {
+  PerformanceMonitor: () => PerformanceMonitor,
+  performanceMiddleware: () => performanceMiddleware
+});
+function performanceMiddleware() {
+  return (req, res, next) => {
+    const startTime = process.hrtime.bigint();
+    const originalEnd = res.end;
+    res.end = function(...args) {
+      const endTime = process.hrtime.bigint();
+      const duration = Number(endTime - startTime) / 1e6;
+      const userId = req.user?.id || req.user?.claims?.sub;
+      PerformanceMonitor.recordMetric("request_duration", duration, {
+        route: req.route?.path || req.url,
+        method: req.method,
+        statusCode: res.statusCode,
+        userId,
+        userAgent: req.get("User-Agent")
+      });
+      if (Math.random() < 0.01) {
+        const memoryUsage = process.memoryUsage();
+        PerformanceMonitor.recordMetric("memory_heap_used", memoryUsage.heapUsed);
+        PerformanceMonitor.recordMetric("memory_heap_total", memoryUsage.heapTotal);
+        PerformanceMonitor.recordMetric("memory_rss", memoryUsage.rss);
+      }
+      originalEnd.apply(this, args);
+    };
+    next();
+  };
+}
+var PerformanceMonitor;
+var init_performanceMonitor = __esm({
+  "server/services/performanceMonitor.ts"() {
+    "use strict";
+    init_logger();
+    PerformanceMonitor = class {
+      static metrics = [];
+      static MAX_METRICS = 1e4;
+      static METRIC_RETENTION_HOURS = 24;
+      static monitoringInterval = null;
+      static startMonitoring() {
+        if (this.monitoringInterval) return;
+        this.monitoringInterval = setInterval(() => {
+          this.cleanupOldMetrics();
+        }, 5 * 60 * 1e3);
+        Logger.info("Performance monitoring started");
+      }
+      static stopMonitoring() {
+        if (this.monitoringInterval) {
+          clearInterval(this.monitoringInterval);
+          this.monitoringInterval = null;
+          Logger.info("Performance monitoring stopped");
+        }
+      }
+      static cleanupOldMetrics() {
+        const cutoff = new Date(Date.now() - this.METRIC_RETENTION_HOURS * 60 * 60 * 1e3);
+        const initialCount = this.metrics.length;
+        this.metrics = this.metrics.filter((metric) => new Date(metric.timestamp) > cutoff);
+        if (this.metrics.length > this.MAX_METRICS) {
+          this.metrics = this.metrics.slice(-this.MAX_METRICS);
+        }
+        const cleaned = initialCount - this.metrics.length;
+        if (cleaned > 0) {
+          Logger.info(`Cleaned up ${cleaned} old performance metrics`);
+        }
+      }
+      static recordMetric(name, value, context) {
+        const metric = {
+          name,
+          value,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          context
+        };
+        this.metrics.unshift(metric);
+        if (this.metrics.length > this.MAX_METRICS) {
+          this.metrics = this.metrics.slice(0, this.MAX_METRICS);
+        }
+        if (name === "request_duration" && value > 1e3) {
+          Logger.warn(`Slow request detected: ${context?.method} ${context?.route} took ${value}ms`);
+        }
+      }
+      static getMetrics(name, limit = 1e3) {
+        let filteredMetrics = name ? this.metrics.filter((m) => m.name === name) : this.metrics;
+        return filteredMetrics.slice(0, limit);
+      }
+      static getMetricsSummary(timeWindow = "hour") {
+        let cutoff;
+        switch (timeWindow) {
+          case "hour":
+            cutoff = new Date(Date.now() - 60 * 60 * 1e3);
+            break;
+          case "day":
+            cutoff = new Date(Date.now() - 24 * 60 * 60 * 1e3);
+            break;
+          default:
+            cutoff = /* @__PURE__ */ new Date(0);
+        }
+        const recentMetrics = this.metrics.filter((m) => new Date(m.timestamp) > cutoff);
+        const summary = {};
+        const groupedMetrics = {};
+        recentMetrics.forEach((metric) => {
+          if (!groupedMetrics[metric.name]) {
+            groupedMetrics[metric.name] = [];
+          }
+          groupedMetrics[metric.name].push(metric.value);
+        });
+        Object.entries(groupedMetrics).forEach(([name, values]) => {
+          if (values.length === 0) return;
+          const sorted = values.sort((a, b) => a - b);
+          const sum2 = values.reduce((a, b) => a + b, 0);
+          summary[name] = {
+            count: values.length,
+            avg: sum2 / values.length,
+            min: sorted[0],
+            max: sorted[sorted.length - 1],
+            p95: sorted[Math.floor(sorted.length * 0.95)] || sorted[sorted.length - 1]
+          };
+        });
+        return summary;
+      }
+      static getSystemStats() {
+        return {
+          totalMetrics: this.metrics.length,
+          memoryUsage: process.memoryUsage(),
+          uptime: process.uptime(),
+          cpuUsage: process.cpuUsage()
+        };
+      }
+      static getTopSlowRoutes(limit = 10) {
+        const requestMetrics = this.metrics.filter(
+          (m) => m.name === "request_duration" && m.context?.route && m.context?.method
+        );
+        const routeStats = {};
+        requestMetrics.forEach((metric) => {
+          const key = `${metric.context.method} ${metric.context.route}`;
+          if (!routeStats[key]) {
+            routeStats[key] = {
+              durations: [],
+              method: metric.context.method,
+              route: metric.context.route
+            };
+          }
+          routeStats[key].durations.push(metric.value);
+        });
+        return Object.entries(routeStats).map(([, stats]) => ({
+          route: stats.route,
+          method: stats.method,
+          avgDuration: Math.round(stats.durations.reduce((a, b) => a + b, 0) / stats.durations.length),
+          count: stats.durations.length,
+          maxDuration: Math.max(...stats.durations)
+        })).sort((a, b) => b.avgDuration - a.avgDuration).slice(0, limit);
+      }
+    };
+  }
+});
+
+// server/services/systemMonitor.ts
+var SystemMonitor;
+var init_systemMonitor = __esm({
+  "server/services/systemMonitor.ts"() {
+    "use strict";
+    init_logger();
+    init_performanceMonitor();
+    SystemMonitor = class {
+      static alerts = [];
+      static monitoringInterval = null;
+      static ALERT_RETENTION_HOURS = 24;
+      static MAX_ALERTS = 100;
+      static startMonitoring() {
+        if (this.monitoringInterval) return;
+        this.monitoringInterval = setInterval(() => {
+          this.checkSystemHealth();
+        }, 6e4);
+        Logger.info("System monitoring started");
+      }
+      static stopMonitoring() {
+        if (this.monitoringInterval) {
+          clearInterval(this.monitoringInterval);
+          this.monitoringInterval = null;
+          Logger.info("System monitoring stopped");
+        }
+      }
+      static async checkSystemHealth() {
+        try {
+          const health = await this.getSystemHealth();
+          this.checkMemoryUsage(health.memory);
+          this.checkDatabaseHealth(health.database);
+          this.checkPerformanceMetrics(health.performance);
+          if (health.status !== "healthy") {
+            Logger.warn("System health warning detected", { health });
+          }
+        } catch (error) {
+          this.addAlert("critical", "System health check failed", error);
+        }
+      }
+      static async getSystemHealth() {
+        const memoryUsage = process.memoryUsage();
+        const uptime = process.uptime();
+        const performanceMetrics = PerformanceMonitor.getMetricsSummary("hour");
+        const memoryUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
+        const memoryTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
+        const memoryPercent = memoryUsedMB / memoryTotalMB * 100;
+        let dbStatus = "connected";
+        let dbLatency = 0;
+        try {
+          const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+          const start = Date.now();
+          await db2.execute("SELECT 1");
+          dbLatency = Date.now() - start;
+        } catch (error) {
+          dbStatus = "disconnected";
+          dbLatency = -1;
+        }
+        const avgResponseTime = performanceMetrics.request_duration?.avg || 0;
+        const errorRate = this.calculateErrorRate();
+        const requestsPerMinute = this.calculateRequestsPerMinute();
+        let status = "healthy";
+        if (memoryPercent > 85 || dbStatus === "disconnected" || avgResponseTime > 1e3) {
+          status = "critical";
+        } else if (memoryPercent > 70 || avgResponseTime > 500 || errorRate > 5) {
+          status = "warning";
+        }
+        return {
+          status,
+          uptime: Math.floor(uptime),
+          memory: {
+            used: memoryUsedMB,
+            total: memoryTotalMB,
+            percentage: Math.round(memoryPercent)
+          },
+          database: {
+            status: dbStatus,
+            latency: dbLatency
+          },
+          performance: {
+            avgResponseTime: Math.round(avgResponseTime),
+            errorRate: Math.round(errorRate * 100) / 100,
+            requestsPerMinute: Math.round(requestsPerMinute)
+          },
+          alerts: this.getActiveAlerts(),
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        };
+      }
+      static checkMemoryUsage(memory) {
+        if (memory.percentage > 90) {
+          this.addAlert("critical", `Critical memory usage: ${memory.percentage}%`);
+        } else if (memory.percentage > 80) {
+          this.addAlert("warning", `High memory usage: ${memory.percentage}%`);
+        }
+      }
+      static checkDatabaseHealth(database) {
+        if (database.status === "disconnected") {
+          this.addAlert("critical", "Database connection lost");
+        } else if (database.latency > 1e3) {
+          this.addAlert("warning", `High database latency: ${database.latency}ms`);
+        }
+      }
+      static checkPerformanceMetrics(performance) {
+        if (performance.avgResponseTime > 2e3) {
+          this.addAlert("critical", `Very slow response time: ${performance.avgResponseTime}ms`);
+        } else if (performance.avgResponseTime > 1e3) {
+          this.addAlert("warning", `Slow response time: ${performance.avgResponseTime}ms`);
+        }
+        if (performance.errorRate > 10) {
+          this.addAlert("critical", `High error rate: ${performance.errorRate}%`);
+        } else if (performance.errorRate > 5) {
+          this.addAlert("warning", `Elevated error rate: ${performance.errorRate}%`);
+        }
+      }
+      static calculateErrorRate() {
+        const metrics = PerformanceMonitor.getMetrics("request_duration", 100);
+        if (metrics.length === 0) return 0;
+        const errorRequests = metrics.filter(
+          (m) => m.context?.statusCode && m.context.statusCode >= 400
+        ).length;
+        return errorRequests / metrics.length * 100;
+      }
+      static calculateRequestsPerMinute() {
+        const oneMinuteAgo = new Date(Date.now() - 6e4);
+        const metrics = PerformanceMonitor.getMetrics("request_duration", 1e3);
+        const recentRequests = metrics.filter(
+          (m) => new Date(m.timestamp) > oneMinuteAgo
+        );
+        return recentRequests.length;
+      }
+      static addAlert(level, message, context) {
+        const alert = {
+          id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          level,
+          message,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          resolved: false
+        };
+        this.alerts.unshift(alert);
+        if (this.alerts.length > this.MAX_ALERTS) {
+          this.alerts = this.alerts.slice(0, this.MAX_ALERTS);
+        }
+        const cutoff = new Date(Date.now() - this.ALERT_RETENTION_HOURS * 60 * 60 * 1e3);
+        this.alerts = this.alerts.filter((a) => new Date(a.timestamp) > cutoff);
+        Logger[level === "critical" ? "error" : level === "warning" ? "warn" : "info"](
+          `System Alert [${level.toUpperCase()}]: ${message}`,
+          context
+        );
+      }
+      static getActiveAlerts() {
+        return this.alerts.filter((a) => !a.resolved);
+      }
+      static getAllAlerts() {
+        return [...this.alerts];
+      }
+      static resolveAlert(alertId) {
+        const alert = this.alerts.find((a) => a.id === alertId);
+        if (alert) {
+          alert.resolved = true;
+          Logger.info(`System alert resolved: ${alert.message}`);
+          return true;
+        }
+        return false;
+      }
+      static clearResolvedAlerts() {
+        const initialCount = this.alerts.length;
+        this.alerts = this.alerts.filter((a) => !a.resolved);
+        const clearedCount = initialCount - this.alerts.length;
+        if (clearedCount > 0) {
+          Logger.info(`Cleared ${clearedCount} resolved system alerts`);
+        }
+        return clearedCount;
+      }
+    };
+  }
+});
+
+// server/routes/admin/system-management.ts
+var system_management_exports = {};
+__export(system_management_exports, {
+  systemManagementRoutes: () => router6
+});
+import { Router as Router6 } from "express";
+var router6;
+var init_system_management = __esm({
+  "server/routes/admin/system-management.ts"() {
+    "use strict";
+    init_auth();
+    init_systemMonitor();
+    init_performanceMonitor();
+    init_errorLogger();
+    init_logger();
+    router6 = Router6();
+    router6.use(requireAuth);
+    router6.use(requireRole("developer"));
+    router6.get("/health", async (req, res) => {
+      try {
+        const systemHealth = await SystemMonitor.getSystemHealth();
+        const performanceStats = PerformanceMonitor.getSystemStats();
+        const errorStats = await ErrorLogger.getErrorStats();
+        const response = {
+          system: systemHealth,
+          performance: performanceStats,
+          errors: errorStats,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        };
+        res.json(response);
+      } catch (error) {
+        Logger.error("Failed to get system health:", error);
+        res.status(500).json({ error: "Failed to get system health" });
+      }
+    });
+    router6.get("/performance", async (req, res) => {
+      try {
+        const { timeWindow = "hour", metricName, limit = 1e3 } = req.query;
+        const summary = PerformanceMonitor.getMetricsSummary(timeWindow);
+        const metrics = PerformanceMonitor.getMetrics(metricName, parseInt(limit));
+        const slowRoutes = PerformanceMonitor.getTopSlowRoutes(10);
+        res.json({
+          summary,
+          metrics,
+          slowRoutes,
+          totalMetrics: metrics.length
+        });
+      } catch (error) {
+        Logger.error("Failed to get performance metrics:", error);
+        res.status(500).json({ error: "Failed to get performance metrics" });
+      }
+    });
+    router6.get("/alerts", async (req, res) => {
+      try {
+        const { resolved = false } = req.query;
+        const alerts = resolved === "true" ? SystemMonitor.getAllAlerts() : SystemMonitor.getActiveAlerts();
+        res.json({
+          alerts,
+          totalAlerts: alerts.length
+        });
+      } catch (error) {
+        Logger.error("Failed to get system alerts:", error);
+        res.status(500).json({ error: "Failed to get system alerts" });
+      }
+    });
+    router6.post("/alerts/:alertId/resolve", async (req, res) => {
+      try {
+        const { alertId } = req.params;
+        const resolved = SystemMonitor.resolveAlert(alertId);
+        if (resolved) {
+          res.json({ success: true, message: "Alert resolved successfully" });
+        } else {
+          res.status(404).json({ error: "Alert not found" });
+        }
+      } catch (error) {
+        Logger.error("Failed to resolve alert:", error);
+        res.status(500).json({ error: "Failed to resolve alert" });
+      }
+    });
+    router6.post("/alerts/cleanup", async (req, res) => {
+      try {
+        const clearedCount = SystemMonitor.clearResolvedAlerts();
+        res.json({
+          success: true,
+          message: `Cleared ${clearedCount} resolved alerts`
+        });
+      } catch (error) {
+        Logger.error("Failed to cleanup alerts:", error);
+        res.status(500).json({ error: "Failed to cleanup alerts" });
+      }
+    });
+    router6.get("/database", async (req, res) => {
+      try {
+        const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+        const startTime = Date.now();
+        await db2.execute("SELECT 1");
+        const latency = Date.now() - startTime;
+        const sizeQuery = await db2.execute(`
+      SELECT 
+        pg_size_pretty(pg_database_size(current_database())) as database_size,
+        pg_size_pretty(pg_total_relation_size('users')) as users_table_size,
+        pg_size_pretty(pg_total_relation_size('products')) as products_table_size,
+        pg_size_pretty(pg_total_relation_size('orders')) as orders_table_size
+    `);
+        const statsQuery = await db2.execute(`
+      SELECT 
+        schemaname,
+        tablename,
+        n_tup_ins as inserts,
+        n_tup_upd as updates,
+        n_tup_del as deletes,
+        n_live_tup as live_tuples,
+        n_dead_tup as dead_tuples,
+        last_vacuum,
+        last_autovacuum,
+        last_analyze,
+        last_autoanalyze
+      FROM pg_stat_user_tables 
+      ORDER BY n_live_tup DESC
+      LIMIT 10
+    `);
+        res.json({
+          status: "connected",
+          latency,
+          size_info: sizeQuery.rows[0],
+          table_stats: statsQuery.rows,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        });
+      } catch (error) {
+        Logger.error("Failed to get database status:", error);
+        res.status(500).json({
+          error: "Failed to get database status",
+          status: "disconnected"
+        });
+      }
+    });
+    router6.get("/logs", async (req, res) => {
+      try {
+        const {
+          level = "info",
+          limit = 100,
+          timeRange = "1h"
+        } = req.query;
+        res.json({
+          logs: [],
+          totalCount: 0,
+          filters: {
+            level,
+            limit: parseInt(limit),
+            timeRange
+          },
+          message: "Log aggregation system not yet implemented"
+        });
+      } catch (error) {
+        Logger.error("Failed to get system logs:", error);
+        res.status(500).json({ error: "Failed to get system logs" });
+      }
+    });
+    router6.post("/diagnostics", async (req, res) => {
+      try {
+        const diagnostics = {
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          tests: []
+        };
+        try {
+          const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+          const start = Date.now();
+          await db2.execute("SELECT 1");
+          diagnostics.tests.push({
+            name: "Database Connection",
+            status: "passed",
+            duration: Date.now() - start,
+            message: "Database connection successful"
+          });
+        } catch (error) {
+          diagnostics.tests.push({
+            name: "Database Connection",
+            status: "failed",
+            error: error.message
+          });
+        }
+        const memUsage = process.memoryUsage();
+        const memPercent = memUsage.heapUsed / memUsage.heapTotal * 100;
+        diagnostics.tests.push({
+          name: "Memory Usage",
+          status: memPercent > 85 ? "warning" : "passed",
+          value: `${Math.round(memPercent)}%`,
+          message: `Heap usage: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB / ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`
+        });
+        try {
+          const { execSync } = __require("child_process");
+          const diskUsage = execSync("df -h / | tail -1").toString().trim();
+          diagnostics.tests.push({
+            name: "Disk Usage",
+            status: "passed",
+            value: diskUsage.split(/\s+/)[4],
+            message: `Disk usage information: ${diskUsage}`
+          });
+        } catch (error) {
+          diagnostics.tests.push({
+            name: "Disk Usage",
+            status: "skipped",
+            message: "Disk usage check not available in this environment"
+          });
+        }
+        const perfStats = PerformanceMonitor.getMetricsSummary("hour");
+        const avgResponseTime = perfStats.request_duration?.avg || 0;
+        diagnostics.tests.push({
+          name: "Response Time",
+          status: avgResponseTime > 1e3 ? "warning" : "passed",
+          value: `${Math.round(avgResponseTime)}ms`,
+          message: `Average response time over last hour`
+        });
+        res.json(diagnostics);
+      } catch (error) {
+        Logger.error("Failed to run diagnostics:", error);
+        res.status(500).json({ error: "Failed to run diagnostics" });
+      }
+    });
   }
 });
 
@@ -1903,7 +4728,7 @@ __export(referenceGenerator_exports, {
   generateReferenceNumber: () => generateReferenceNumber,
   generateUniqueReference: () => generateUniqueReference
 });
-import { eq as eq4 } from "drizzle-orm";
+import { eq as eq7 } from "drizzle-orm";
 function generateReferenceNumber() {
   const date = /* @__PURE__ */ new Date();
   const year = date.getFullYear();
@@ -1917,7 +4742,7 @@ async function generateUniqueReference() {
   let isUnique = false;
   while (!isUnique) {
     reference = generateReferenceNumber();
-    const existing = await db.select().from(equipmentSubmissions).where(eq4(equipmentSubmissions.referenceNumber, reference)).limit(1);
+    const existing = await db.select().from(equipmentSubmissions).where(eq7(equipmentSubmissions.referenceNumber, reference)).limit(1);
     isUnique = existing.length === 0;
   }
   return reference;
@@ -1935,7 +4760,7 @@ var simple_password_reset_exports = {};
 __export(simple_password_reset_exports, {
   SimplePasswordReset: () => SimplePasswordReset
 });
-import { sql as sql7 } from "drizzle-orm";
+import { sql as sql9 } from "drizzle-orm";
 import { Resend } from "resend";
 import crypto2 from "crypto";
 import bcryptjs from "bcryptjs";
@@ -1950,7 +4775,7 @@ var init_simple_password_reset = __esm({
       async findUser(email) {
         console.log(`[PasswordReset] Looking for: ${email}`);
         try {
-          const result = await db.execute(sql7`
+          const result = await db.execute(sql9`
         SELECT id, email, first_name, last_name 
         FROM users 
         WHERE LOWER(email) = LOWER(${email.trim()})
@@ -1960,9 +4785,9 @@ var init_simple_password_reset = __esm({
             console.log(`[PasswordReset] \u2705 Found user: ${result.rows[0].email}`);
             return result.rows[0];
           }
-          const countResult = await db.execute(sql7`SELECT COUNT(*) as total FROM users`);
+          const countResult = await db.execute(sql9`SELECT COUNT(*) as total FROM users`);
           console.log(`[PasswordReset] Total users in DB: ${countResult.rows[0]?.total || 0}`);
-          const debugResult = await db.execute(sql7`SELECT email FROM users LIMIT 3`);
+          const debugResult = await db.execute(sql9`SELECT email FROM users LIMIT 3`);
           console.log("[PasswordReset] Sample emails in DB:");
           debugResult.rows.forEach((r) => console.log(`  - ${r.email}`));
           console.log(`[PasswordReset] \u274C User not found: ${email}`);
@@ -1977,7 +4802,7 @@ var init_simple_password_reset = __esm({
         const token = crypto2.randomBytes(32).toString("hex");
         const expires = new Date(Date.now() + 36e5);
         try {
-          await db.execute(sql7`
+          await db.execute(sql9`
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,
           user_id UUID NOT NULL,
@@ -1987,10 +4812,10 @@ var init_simple_password_reset = __esm({
           created_at TIMESTAMP DEFAULT NOW()
         )
       `);
-          await db.execute(sql7`
+          await db.execute(sql9`
         DELETE FROM password_reset_tokens WHERE user_id = ${userId}
       `);
-          await db.execute(sql7`
+          await db.execute(sql9`
         INSERT INTO password_reset_tokens (user_id, token, expires_at) 
         VALUES (${userId}, ${token}, ${expires})
       `);
@@ -1998,7 +4823,7 @@ var init_simple_password_reset = __esm({
           return token;
         } catch (error) {
           console.error("[PasswordReset] Token creation error:", error);
-          throw error;
+          throw new Error(`Failed to create password reset token: ${error instanceof Error ? error.message : "Unknown error"}`);
         }
       }
       // SEND EMAIL
@@ -2058,7 +4883,7 @@ var init_simple_password_reset = __esm({
       // VALIDATE TOKEN
       async validateToken(token) {
         try {
-          const result = await db.execute(sql7`
+          const result = await db.execute(sql9`
         SELECT * FROM password_reset_tokens 
         WHERE token = ${token} AND used = FALSE AND expires_at > NOW()
       `);
@@ -2077,10 +4902,10 @@ var init_simple_password_reset = __esm({
         }
         try {
           const hashedPassword = await bcryptjs.hash(newPassword, 12);
-          await db.execute(sql7`
+          await db.execute(sql9`
         UPDATE users SET password = ${hashedPassword} WHERE id = ${tokenData.user_id}
       `);
-          await db.execute(sql7`
+          await db.execute(sql9`
         UPDATE password_reset_tokens SET used = TRUE WHERE id = ${tokenData.id}
       `);
           console.log("[PasswordReset] Password updated successfully");
@@ -2095,428 +4920,13 @@ var init_simple_password_reset = __esm({
 });
 
 // server/index.ts
-import express2 from "express";
+import express3 from "express";
 
 // server/routes.ts
 init_storage();
+init_auth();
 import { createServer } from "http";
-import Stripe2 from "stripe";
-
-// server/auth.ts
-init_storage();
-init_utils();
-init_logger();
-init_database();
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import session from "express-session";
-import bcrypt from "bcryptjs";
-import connectPg from "connect-pg-simple";
-var SALT_ROUNDS = 12;
-async function hashPassword(password) {
-  return await bcrypt.hash(password, SALT_ROUNDS);
-}
-async function comparePasswords(supplied, stored) {
-  return await bcrypt.compare(supplied, stored);
-}
-function validatePassword(password) {
-  const errors = [];
-  if (password.length < 8) {
-    errors.push("Password must be at least 8 characters");
-  }
-  if (!/[A-Z]/.test(password)) {
-    errors.push("Include at least one uppercase letter");
-  }
-  if (!/[a-z]/.test(password)) {
-    errors.push("Include at least one lowercase letter");
-  }
-  if (!/\d/.test(password)) {
-    errors.push("Include at least one number");
-  }
-  if (!/[!@#$%^&*]/.test(password)) {
-    errors.push("Include at least one special character (!@#$%^&*)");
-  }
-  return { isValid: errors.length === 0, errors };
-}
-function setupAuth(app2) {
-  const PostgresSessionStore = connectPg(session);
-  const dbConfig2 = getDatabaseConfig();
-  console.log("[SESSION] Using database:", dbConfig2.name);
-  console.log("[SESSION] Environment:", dbConfig2.environment);
-  const sessionSettings = {
-    secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
-    resave: false,
-    saveUninitialized: false,
-    store: new PostgresSessionStore({
-      conString: dbConfig2.url,
-      createTableIfMissing: false,
-      // Don't create table - already exists
-      schemaName: "public",
-      tableName: "sessions",
-      // Use existing sessions table
-      errorLog: (err) => {
-        if (err && !err.message?.includes("already exists") && !err.message?.includes("IDX_session_expire")) {
-          Logger.error("Session store error:", err);
-        }
-      }
-    }),
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      sameSite: "lax",
-      // CRITICAL: Allow cross-origin cookies  
-      maxAge: 7 * 24 * 60 * 60 * 1e3,
-      // 7 days
-      path: "/"
-      // CRITICAL: Ensure cookie available for all paths
-    },
-    rolling: true
-    // CRITICAL: Reset expiry on activity
-  };
-  app2.set("trust proxy", 1);
-  app2.use(session(sessionSettings));
-  app2.use(passport.initialize());
-  app2.use(passport.session());
-  passport.use(
-    new LocalStrategy({ usernameField: "email" }, async (email, password, done) => {
-      try {
-        const normalizedEmail = normalizeEmail(email);
-        Logger.debug(`Login attempt for email: ${normalizedEmail}`);
-        const user = await storage.getUserByEmail(normalizedEmail);
-        if (!user) {
-          Logger.debug(`User not found for email: ${normalizedEmail}`);
-          return done(null, false, {
-            message: "No account found with this email address. Please check your email or create a new account."
-          });
-        }
-        Logger.debug(`User found, checking password for: ${normalizedEmail}`);
-        Logger.debug(`User password hash exists: ${!!user.password}`);
-        const passwordMatch = await comparePasswords(password, user.password);
-        if (!passwordMatch) {
-          Logger.debug(`Invalid password for email: ${normalizedEmail}`);
-          return done(null, false, {
-            message: "Incorrect password. Please check your password and try again."
-          });
-        }
-        Logger.debug(`Successful login for email: ${normalizedEmail}`);
-        return done(null, {
-          ...user,
-          role: user.role || "user"
-        });
-      } catch (error) {
-        Logger.error("Login authentication error:", error.message);
-        return done(error, false, {
-          message: "System error during login. Please try again."
-        });
-      }
-    })
-  );
-  passport.serializeUser((user, done) => {
-    const userId = user.id;
-    Logger.debug(`[PASSPORT] Serializing user ID: ${userId}`);
-    done(null, userId);
-  });
-  passport.deserializeUser(async (id, done) => {
-    try {
-      Logger.debug(`[PASSPORT] Deserializing user with ID: ${id}`);
-      const user = await storage.getUser(id);
-      if (!user) {
-        Logger.debug(`[PASSPORT] User not found for ID: ${id}`);
-        return done(null, false);
-      }
-      const { password, ...userWithoutPassword } = user;
-      const userForSession = {
-        ...userWithoutPassword,
-        role: user.role || "user"
-      };
-      Logger.debug(`[PASSPORT] Successfully deserialized user: ${user.email}`);
-      done(null, userForSession);
-    } catch (error) {
-      Logger.error(`[PASSPORT] Deserialization error:`, error);
-      done(error, null);
-    }
-  });
-  app2.post("/api/register", async (req, res, next) => {
-    try {
-      const {
-        email,
-        password,
-        confirmPassword,
-        firstName,
-        lastName,
-        phone,
-        street,
-        city,
-        state,
-        zipCode,
-        latitude,
-        longitude,
-        isLocalCustomer
-      } = req.body;
-      if (!email || !password || !confirmPassword || !firstName || !lastName) {
-        return res.status(400).json({ message: "Missing required fields" });
-      }
-      if (password !== confirmPassword) {
-        return res.status(400).json({ message: "Passwords do not match" });
-      }
-      const passwordValidation = validatePassword(password);
-      if (!passwordValidation.isValid) {
-        return res.status(400).json({
-          message: "Password does not meet requirements",
-          errors: passwordValidation.errors
-        });
-      }
-      if (street && (!city || !state || !zipCode)) {
-        return res.status(400).json({
-          message: "Please provide complete address information (street, city, state, zip code)"
-        });
-      }
-      const normalizedEmail = normalizeEmail(email);
-      Logger.debug(`Registration attempt for email: ${normalizedEmail}`);
-      const existingEmail = await storage.getUserByEmail(normalizedEmail);
-      if (existingEmail) {
-        Logger.debug(`Email already exists: ${normalizedEmail}`);
-        return res.status(409).json({
-          error: "Account already exists",
-          details: "An account with this email already exists. Please sign in instead.",
-          code: "EMAIL_EXISTS"
-        });
-      }
-      let role = "user";
-      if (normalizedEmail.includes("developer") || normalizedEmail.includes("@dev.") || normalizedEmail === "admin@cleanandflip.com") {
-        role = "developer";
-      }
-      const normalizedPhone = phone ? normalizePhone(phone) : void 0;
-      const user = await storage.createUser({
-        email: normalizedEmail,
-        password: await hashPassword(password),
-        firstName,
-        lastName,
-        phone: normalizedPhone,
-        street: street || void 0,
-        city: city || void 0,
-        state: state || void 0,
-        zipCode: zipCode || void 0,
-        latitude: latitude ? String(latitude) : void 0,
-        longitude: longitude ? String(longitude) : void 0,
-        role
-      });
-      const userForSession = {
-        ...user,
-        role: user.role || "user"
-      };
-      req.logIn(userForSession, (err) => {
-        if (err) return next(err);
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            Logger.error("Registration session save error:", saveErr);
-            return res.status(500).json({
-              error: "Session persistence failed",
-              details: "Registration successful but session could not be saved. Please try logging in."
-            });
-          }
-          Logger.debug(`Registration successful and session saved for: ${user.email}`);
-          Logger.debug(`Session passport user: ${JSON.stringify(req.session.passport)}`);
-          res.status(201).json({
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role || "user"
-          });
-        });
-      });
-    } catch (error) {
-      Logger.error("Registration error:", error);
-      res.status(500).json({ message: "Registration failed" });
-    }
-  });
-  app2.post("/api/login", (req, res, next) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({
-        error: "Missing credentials",
-        details: "Please provide both email and password."
-      });
-    }
-    passport.authenticate("local", (err, user, info) => {
-      if (err) {
-        Logger.error("Passport authentication error:", err);
-        return res.status(500).json({
-          error: "System error",
-          details: "A system error occurred during login. Please try again."
-        });
-      }
-      if (!user) {
-        const errorResponse = {
-          error: "Authentication failed",
-          details: info?.message || "Invalid credentials",
-          code: info?.code || "INVALID_CREDENTIALS"
-        };
-        if (info?.code === "USER_NOT_FOUND") {
-          errorResponse.suggestion = "Try creating a new account or check your email spelling.";
-        } else if (info?.code === "INVALID_PASSWORD") {
-          errorResponse.suggestion = "Double-check your password or consider password reset.";
-        }
-        return res.status(401).json(errorResponse);
-      }
-      const userForSession = {
-        ...user,
-        role: user.role || "user"
-      };
-      req.logIn(userForSession, (loginErr) => {
-        if (loginErr) {
-          Logger.error("Session creation error:", loginErr);
-          return res.status(500).json({
-            error: "Session error",
-            details: "Login successful but session creation failed. Please try again."
-          });
-        }
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            Logger.error("Session save error:", saveErr);
-            return res.status(500).json({
-              error: "Session persistence failed",
-              details: "Login successful but session could not be saved. Please try again."
-            });
-          }
-          Logger.debug(`Login successful and session saved for: ${email}`);
-          Logger.debug(`Session ID: ${req.sessionID}`);
-          Logger.debug(`Session passport user: ${JSON.stringify(req.session.passport)}`);
-          Logger.debug(`Is authenticated: ${req.isAuthenticated()}`);
-          res.status(200).json({
-            success: true,
-            user: {
-              id: user.id,
-              email: user.email,
-              firstName: user.firstName,
-              lastName: user.lastName,
-              role: user.role || "user"
-            }
-          });
-        });
-      });
-    })(req, res, next);
-  });
-  app2.post("/api/logout", (req, res, next) => {
-    try {
-      req.session.destroy((err) => {
-        if (err) {
-          Logger.error("Session destruction error:", err);
-          return res.status(500).json({ error: "Logout failed" });
-        }
-        res.clearCookie("connect.sid", {
-          path: "/",
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax"
-        });
-        res.clearCookie("sessionId");
-        res.clearCookie("session");
-        Logger.debug("Session destroyed and cookies cleared for logout");
-        res.json({ success: true });
-      });
-    } catch (error) {
-      Logger.error("Logout error:", error);
-      res.status(500).json({ error: "Logout failed" });
-    }
-  });
-  app2.post("/api/debug/check-email", async (req, res) => {
-    try {
-      const { email } = req.body;
-      if (!email) {
-        return res.status(400).json({ error: "Email required" });
-      }
-      const normalizedEmail = normalizeEmail(email);
-      const user = await storage.getUserByEmail(normalizedEmail);
-      if (user) {
-        res.json({
-          exists: true,
-          user: {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            created: user.createdAt,
-            hasPassword: !!user.password
-          }
-        });
-      } else {
-        res.json({
-          exists: false,
-          checkedEmail: normalizedEmail
-        });
-      }
-    } catch (error) {
-      Logger.error("Debug check-email error:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-  app2.get("/api/session-test", (req, res) => {
-    res.json({
-      sessionExists: !!req.session,
-      sessionID: req.sessionID,
-      userId: req.session?.passport?.user,
-      isAuthenticated: req.isAuthenticated?.() || false,
-      sessionData: req.session
-    });
-  });
-}
-function requireAuth(req, res, next) {
-  const endpoint = `${req.method} ${req.path}`;
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    Logger.consolidate(
-      `auth-fail-${endpoint}`,
-      `Authentication failed for ${endpoint}`,
-      3 /* DEBUG */
-    );
-    return res.status(401).json({
-      error: "Authentication required",
-      message: "Please log in to continue"
-    });
-  }
-  const user = req.user;
-  if (!user) {
-    Logger.consolidate(
-      `auth-fail-nouser-${endpoint}`,
-      `No user object for ${endpoint}`,
-      3 /* DEBUG */
-    );
-    return res.status(401).json({
-      error: "Authentication required",
-      message: "Please log in to continue"
-    });
-  }
-  req.userId = user.id;
-  Logger.consolidate(
-    `auth-success-${user.id}-${endpoint}`,
-    `Auth successful for user ${user.id} on ${endpoint}`,
-    3 /* DEBUG */
-  );
-  next();
-}
-function requireRole(roles) {
-  return (req, res, next) => {
-    Logger.debug("RequireRole middleware - Is authenticated:", req.isAuthenticated?.());
-    Logger.debug("RequireRole middleware - User from passport:", req.user);
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    const user = req.user;
-    const allowedRoles = Array.isArray(roles) ? roles : [roles];
-    Logger.debug("RequireRole check:", {
-      userRole: user.role,
-      allowedRoles,
-      hasRole: allowedRoles.includes(user.role || "user"),
-      isDeveloper: user.role === "developer"
-    });
-    if (!allowedRoles.includes(user.role || "user") && user.role !== "developer") {
-      Logger.debug("Permission denied - user lacks required role and is not developer");
-      return res.status(403).json({ message: "Insufficient permissions" });
-    }
-    Logger.debug("Permission granted for user:", user.email);
-    next();
-  };
-}
+import Stripe3 from "stripe";
 
 // server/middleware/auth.ts
 var authMiddleware = {
@@ -2713,31 +5123,6 @@ function setupSecurityHeaders(app2) {
     next();
   });
 }
-function sanitizeInput(req, res, next) {
-  const sanitize = (obj) => {
-    if (typeof obj === "string") {
-      return obj.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "").replace(/javascript:/gi, "").replace(/on\w+\s*=/gi, "").trim();
-    }
-    if (typeof obj === "object" && obj !== null) {
-      const sanitized = Array.isArray(obj) ? [] : {};
-      for (const key in obj) {
-        sanitized[key] = sanitize(obj[key]);
-      }
-      return sanitized;
-    }
-    return obj;
-  };
-  if (req.body) {
-    req.body = sanitize(req.body);
-  }
-  if (req.query) {
-    req.query = sanitize(req.query);
-  }
-  if (req.params) {
-    req.params = sanitize(req.params);
-  }
-  next();
-}
 var corsOptions = {
   origin: process.env.NODE_ENV === "production" ? process.env.FRONTEND_URL || "https://your-domain.com" : true,
   // Allow all origins in development
@@ -2756,6 +5141,27 @@ var corsOptions = {
   maxAge: 86400
   // 24 hours
 };
+
+// server/middleware/requireProfile.ts
+init_logger();
+function requireCompleteProfile(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  const user = req.user;
+  if (!user.profileComplete) {
+    Logger.info("[MIDDLEWARE] Blocking incomplete profile access:", {
+      userId: user.id,
+      path: req.path
+    });
+    return res.status(403).json({
+      error: "Profile incomplete",
+      redirect: "/onboarding",
+      message: "You must complete your profile to access this resource"
+    });
+  }
+  next();
+}
 
 // server/middleware/validation.ts
 init_logger();
@@ -2826,7 +5232,7 @@ function preventXSS(req, res, next) {
 init_db();
 init_schema();
 init_logger();
-import { eq as eq2, and as and2 } from "drizzle-orm";
+import { eq as eq3, and as and2 } from "drizzle-orm";
 async function withTransaction(operation) {
   return await db.transaction(async (tx) => {
     return await operation(tx);
@@ -2834,7 +5240,7 @@ async function withTransaction(operation) {
 }
 async function atomicStockUpdate(productId, quantityToReduce, tx = db) {
   try {
-    const product = await tx.select().from(products).where(eq2(products.id, productId)).for("update").limit(1);
+    const product = await tx.select().from(products).where(eq3(products.id, productId)).for("update").limit(1);
     if (product.length === 0) {
       return { success: false, error: "Product not found" };
     }
@@ -2849,7 +5255,7 @@ async function atomicStockUpdate(productId, quantityToReduce, tx = db) {
     await tx.update(products).set({
       stockQuantity: currentStock - quantityToReduce,
       updatedAt: /* @__PURE__ */ new Date()
-    }).where(eq2(products.id, productId));
+    }).where(eq3(products.id, productId));
     return { success: true, availableStock: currentStock - quantityToReduce };
   } catch (error) {
     Logger.error("Atomic stock update error:", error);
@@ -2860,14 +5266,14 @@ async function atomicCartOperation(userId, productId, quantity, operation) {
   return await withTransaction(async (tx) => {
     try {
       const existingCartItem = await tx.select().from(cartItems).where(and2(
-        eq2(cartItems.userId, userId),
-        eq2(cartItems.productId, productId)
+        eq3(cartItems.userId, userId),
+        eq3(cartItems.productId, productId)
       )).for("update").limit(1);
       if (operation === "remove") {
         if (existingCartItem.length === 0) {
           return { success: false, error: "Cart item not found" };
         }
-        await tx.delete(cartItems).where(eq2(cartItems.id, existingCartItem[0].id));
+        await tx.delete(cartItems).where(eq3(cartItems.id, existingCartItem[0].id));
         return { success: true };
       }
       if (operation === "add" || operation === "update") {
@@ -2892,7 +5298,7 @@ async function atomicCartOperation(userId, productId, quantity, operation) {
           const [updatedItem] = await tx.update(cartItems).set({
             quantity: newQuantity,
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq2(cartItems.id, existingCartItem[0].id)).returning();
+          }).where(eq3(cartItems.id, existingCartItem[0].id)).returning();
           return { success: true, cartItem: updatedItem };
         } else {
           const [newItem] = await tx.insert(cartItems).values({
@@ -2928,7 +5334,7 @@ async function atomicOrderCreation(userId, cartItemsData) {
         subtotal: totalAmount.toString(),
         items: cartItemsData
       }).returning();
-      await tx.delete(cartItems).where(eq2(cartItems.userId, userId));
+      await tx.delete(cartItems).where(eq3(cartItems.userId, userId));
       return { success: true, orderId: order.id };
     } catch (error) {
       Logger.error("Atomic order creation error:", error);
@@ -3133,10 +5539,19 @@ function getCache() {
 // server/config/cache.ts
 var cache = getCache();
 async function getCachedCategories() {
-  return await cache.get("categories:active");
+  try {
+    return await cache.get("categories:active");
+  } catch (error) {
+    console.error("Cache get operation failed:", error);
+    return null;
+  }
 }
 async function setCachedCategories(categories2) {
-  await cache.set("categories:active", categories2, 300);
+  try {
+    await cache.set("categories:active", categories2, 300);
+  } catch (error) {
+    console.error("Cache set operation failed:", error);
+  }
 }
 async function closeRedisConnection() {
 }
@@ -3326,6 +5741,372 @@ function createRequestLogger() {
 // server/routes.ts
 init_logger();
 init_db();
+
+// server/routes/auth-google.ts
+init_storage();
+init_auth();
+import passport3 from "passport";
+import { Strategy as GoogleStrategy3 } from "passport-google-oauth20";
+import { Router } from "express";
+var router = Router();
+passport3.use(new GoogleStrategy3({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: "/api/auth/google/callback",
+  // Use relative URL
+  proxy: true,
+  // CRITICAL: Trust proxy headers
+  passReqToCallback: true
+}, async (req, accessToken, refreshToken, profile2, done) => {
+  try {
+    const email = profile2.emails?.[0]?.value;
+    if (!email) {
+      return done(new Error("No email from Google profile"), null);
+    }
+    let user = await storage.getUserByEmail(email);
+    if (!user) {
+      user = await storage.createUser({
+        googleId: profile2.id,
+        email,
+        firstName: profile2.name?.givenName || "",
+        lastName: profile2.name?.familyName || "",
+        profileImageUrl: profile2.photos?.[0]?.value || "",
+        isEmailVerified: true,
+        authProvider: "google",
+        profileComplete: false,
+        // MUST complete onboarding
+        onboardingStep: 0
+        // No password field for Google users
+      });
+    } else if (!user.googleId) {
+      await storage.updateUserGoogleInfo(user.id, {
+        googleId: profile2.id,
+        profileImageUrl: profile2.photos?.[0]?.value || "",
+        isEmailVerified: true,
+        authProvider: "google"
+        // Update provider
+      });
+    }
+    return done(null, user);
+  } catch (error) {
+    return done(error, null);
+  }
+}));
+router.get("/google", (req, res, next) => {
+  req.session.returnTo = req.query.returnTo || req.headers.referer || "/dashboard";
+  req.session.save((err) => {
+    if (err) console.error("Session save error:", err);
+    passport3.authenticate("google", {
+      scope: ["profile", "email"]
+    })(req, res, next);
+  });
+});
+router.get(
+  "/google/callback",
+  passport3.authenticate("google", { failureRedirect: "/auth?error=google_auth_failed" }),
+  async (req, res) => {
+    const user = req.user;
+    const host = req.get("host");
+    const baseUrl = host?.includes("cleanandflip.com") ? "https://cleanandflip.com" : host?.includes("cleanflip.replit.app") ? "https://cleanflip.replit.app" : "";
+    if (!user.profileComplete && user.authProvider === "google") {
+      res.redirect(`${baseUrl}/onboarding?source=google&required=true`);
+    } else {
+      const returnUrl = req.session.returnTo || "/dashboard";
+      delete req.session.returnTo;
+      res.redirect(`${baseUrl}${returnUrl}`);
+    }
+  }
+);
+router.post("/onboarding/complete", requireAuth, async (req, res) => {
+  try {
+    const { address, phone, preferences } = req.body;
+    const user = req.user;
+    if (user.authProvider === "google") {
+      if (!address?.street || !address?.city || !address?.state || !address?.zipCode) {
+        return res.status(400).json({ error: "Complete address required" });
+      }
+      if (!phone) {
+        return res.status(400).json({ error: "Phone number required" });
+      }
+    }
+    await storage.updateUser(user.id, {
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      phone,
+      latitude: address.latitude ? String(address.latitude) : void 0,
+      longitude: address.longitude ? String(address.longitude) : void 0,
+      profileComplete: true,
+      onboardingStep: 4,
+      isLocalCustomer: address.zipCode?.startsWith("287") || address.zipCode?.startsWith("288"),
+      updatedAt: /* @__PURE__ */ new Date()
+    });
+    const returnUrl = req.query.return || "/dashboard";
+    const isLocal = address.zipCode?.startsWith("287") || address.zipCode?.startsWith("288");
+    res.json({
+      success: true,
+      redirectUrl: returnUrl,
+      isLocalCustomer: isLocal
+    });
+  } catch (error) {
+    console.error("Onboarding error:", error);
+    res.status(500).json({ error: "Failed to complete onboarding" });
+  }
+});
+var auth_google_default = router;
+
+// server/routes/stripe-webhooks.ts
+init_storage();
+init_logger();
+import { Router as Router2 } from "express";
+import Stripe2 from "stripe";
+import express from "express";
+var router2 = Router2();
+var stripe2 = new Stripe2(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-07-30.basil"
+});
+router2.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  // CRITICAL: Use raw body for signature verification
+  async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    let event;
+    try {
+      event = stripe2.webhooks.constructEvent(
+        req.body,
+        // Must be raw body
+        sig,
+        webhookSecret
+      );
+      Logger.info(`[STRIPE] Webhook received: ${event.type}`, {
+        id: event.id,
+        created: event.created
+      });
+    } catch (err) {
+      Logger.error("Stripe webhook signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    try {
+      switch (event.type) {
+        case "payment_intent.succeeded":
+          await handlePaymentSucceeded(event.data.object);
+          break;
+        case "payment_intent.payment_failed":
+          await handlePaymentFailed(event.data.object);
+          break;
+        case "payment_intent.canceled":
+          await handlePaymentCanceled(event.data.object);
+          break;
+        case "checkout.session.completed":
+          await handleCheckoutCompleted(event.data.object);
+          break;
+        default:
+          Logger.debug(`[STRIPE] Unhandled event type: ${event.type}`);
+      }
+      res.json({ received: true });
+    } catch (error) {
+      Logger.error("Error processing webhook:", error);
+      res.status(500).json({ error: "Webhook processing failed" });
+    }
+  }
+);
+async function handlePaymentSucceeded(paymentIntent) {
+  const orderId = paymentIntent.metadata.orderId;
+  if (!orderId) {
+    Logger.error("No orderId in payment intent metadata");
+    return;
+  }
+  Logger.info(`[STRIPE] Payment succeeded for order: ${orderId}`);
+  await storage.updateOrderStatus(orderId, "confirmed");
+  const order = await storage.getOrder(orderId);
+  if (order) {
+    Logger.info(`[STRIPE] Order ${orderId} confirmed, email sent to ${order.userId}`);
+  }
+}
+async function handlePaymentFailed(paymentIntent) {
+  const orderId = paymentIntent.metadata.orderId;
+  if (!orderId) {
+    Logger.error("No orderId in payment intent metadata");
+    return;
+  }
+  Logger.warn(`[STRIPE] Payment failed for order: ${orderId}`);
+  await storage.updateOrderStatus(orderId, "payment_failed");
+  await restoreInventoryForOrder(orderId);
+}
+async function handlePaymentCanceled(paymentIntent) {
+  const orderId = paymentIntent.metadata.orderId;
+  if (!orderId) {
+    Logger.error("No orderId in payment intent metadata");
+    return;
+  }
+  Logger.info(`[STRIPE] Payment canceled for order: ${orderId}`);
+  await storage.updateOrderStatus(orderId, "cancelled");
+  await restoreInventoryForOrder(orderId);
+}
+async function handleCheckoutCompleted(session2) {
+  const orderId = session2.metadata?.orderId;
+  if (!orderId) {
+    Logger.error("No orderId in checkout session metadata");
+    return;
+  }
+  Logger.info(`[STRIPE] Checkout completed for order: ${orderId}`);
+}
+async function restoreInventoryForOrder(orderId) {
+  try {
+    const orderItems2 = await storage.getOrderItems(orderId);
+    for (const item of orderItems2) {
+      const product = await storage.getProduct(item.productId);
+      if (product) {
+        await storage.updateProduct(item.productId, {
+          stockQuantity: (product.stockQuantity || 0) + item.quantity
+        });
+        Logger.debug(`[INVENTORY] Restored ${item.quantity} units for product ${item.productId}`);
+      }
+    }
+    Logger.info(`[INVENTORY] Inventory restored for cancelled/failed order: ${orderId}`);
+  } catch (error) {
+    Logger.error("Error restoring inventory:", error);
+  }
+}
+var stripe_webhooks_default = router2;
+
+// server/routes/admin-metrics.ts
+init_storage();
+init_auth();
+init_db();
+init_schema();
+init_logger();
+import { Router as Router3 } from "express";
+import { eq as eq5, gte as gte2, sql as sql5, and as and3, desc as desc2 } from "drizzle-orm";
+var router3 = Router3();
+router3.get("/metrics", requireAuth, requireRole("developer"), async (req, res) => {
+  try {
+    const metrics = {};
+    const today = /* @__PURE__ */ new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayMetrics = await db.select({
+      ordersToday: sql5`COUNT(*) FILTER (WHERE created_at >= ${today})`,
+      revenueToday: sql5`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${today}), 0)`,
+      customersToday: sql5`COUNT(DISTINCT user_id) FILTER (WHERE created_at >= ${today})`
+    }).from(orders).where(sql5`status != 'cancelled'`);
+    metrics.today = todayMetrics[0];
+    const inventoryMetrics = await db.select({
+      outOfStock: sql5`COUNT(*) FILTER (WHERE stock_quantity = 0)`,
+      lowStock: sql5`COUNT(*) FILTER (WHERE stock_quantity BETWEEN 1 AND 5)`,
+      totalProducts: sql5`COUNT(*)`,
+      inventoryValue: sql5`COALESCE(SUM(CAST(price AS NUMERIC) * stock_quantity), 0)`
+    }).from(products).where(eq5(products.status, "active"));
+    metrics.inventory = inventoryMetrics[0];
+    const submissionMetrics = await db.select({
+      pendingReview: sql5`COUNT(*)`
+    }).from(equipmentSubmissions).where(eq5(equipmentSubmissions.status, "pending"));
+    metrics.submissions = submissionMetrics[0];
+    const thirtyDaysAgo = /* @__PURE__ */ new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const topProducts = await db.select({
+      name: products.name,
+      id: products.id,
+      sold: sql5`COUNT(${orderItems.id})`,
+      revenue: sql5`COALESCE(SUM(CAST(${orderItems.price} AS NUMERIC) * ${orderItems.quantity}), 0)`
+    }).from(products).leftJoin(orderItems, eq5(products.id, orderItems.productId)).leftJoin(orders, eq5(orderItems.orderId, orders.id)).where(
+      and3(
+        gte2(orders.createdAt, thirtyDaysAgo),
+        eq5(orders.status, "delivered")
+      )
+    ).groupBy(products.id, products.name).orderBy(desc2(sql5`COUNT(${orderItems.id})`)).limit(5);
+    metrics.topProducts = topProducts;
+    const weekAgo = /* @__PURE__ */ new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const twoWeeksAgo = /* @__PURE__ */ new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    const weeklyComparison = await db.select({
+      thisWeekOrders: sql5`COUNT(*) FILTER (WHERE created_at >= ${weekAgo})`,
+      lastWeekOrders: sql5`COUNT(*) FILTER (WHERE created_at >= ${twoWeeksAgo} AND created_at < ${weekAgo})`,
+      thisWeekRevenue: sql5`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${weekAgo}), 0)`,
+      lastWeekRevenue: sql5`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${twoWeeksAgo} AND created_at < ${weekAgo}), 0)`
+    }).from(orders).where(sql5`status != 'cancelled'`);
+    metrics.weekly = weeklyComparison[0];
+    if (metrics.weekly) {
+      metrics.weekly.orderGrowth = metrics.weekly.lastWeekOrders > 0 ? ((metrics.weekly.thisWeekOrders - metrics.weekly.lastWeekOrders) / metrics.weekly.lastWeekOrders * 100).toFixed(1) : 0;
+      metrics.weekly.revenueGrowth = metrics.weekly.lastWeekRevenue > 0 ? ((metrics.weekly.thisWeekRevenue - metrics.weekly.lastWeekRevenue) / metrics.weekly.lastWeekRevenue * 100).toFixed(1) : 0;
+    }
+    Logger.info("[ADMIN] Metrics calculated successfully");
+    res.json(metrics);
+  } catch (error) {
+    Logger.error("Error calculating admin metrics:", error);
+    res.status(500).json({ error: "Failed to calculate metrics" });
+  }
+});
+router3.put("/orders/:id/status", requireAuth, requireRole("developer"), async (req, res) => {
+  try {
+    const { status, trackingNumber, carrier, notes } = req.body;
+    const orderId = req.params.id;
+    const ORDER_STATUS_MACHINE = {
+      "pending": ["confirmed", "cancelled"],
+      "confirmed": ["processing", "cancelled"],
+      "processing": ["shipped", "cancelled"],
+      "shipped": ["delivered", "returned"],
+      "delivered": ["returned"],
+      "cancelled": [],
+      "returned": ["refunded"],
+      "refunded": []
+    };
+    const order = await storage.getOrder(orderId);
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+    const allowedStatuses = ORDER_STATUS_MACHINE[order.status];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        error: `Cannot change from ${order.status} to ${status}`,
+        allowedStatuses
+      });
+    }
+    switch (status) {
+      case "cancelled":
+      case "returned":
+        const items = await storage.getOrderItems(orderId);
+        for (const item of items) {
+          const product = await storage.getProduct(item.productId);
+          if (product) {
+            await storage.updateProduct(item.productId, {
+              stockQuantity: (product.stockQuantity || 0) + item.quantity
+            });
+          }
+        }
+        Logger.info(`[ADMIN] Inventory restored for ${status} order: ${orderId}`);
+        break;
+      case "shipped":
+        if (!trackingNumber || !carrier) {
+          return res.status(400).json({ error: "Tracking number and carrier required for shipped status" });
+        }
+        await storage.updateOrder(orderId, { trackingNumber, carrier });
+        Logger.info(`[ADMIN] Order ${orderId} marked as shipped with ${carrier} tracking: ${trackingNumber}`);
+        break;
+      case "refunded":
+        Logger.info(`[ADMIN] Order ${orderId} marked for refund processing`);
+        break;
+    }
+    await storage.updateOrderStatus(orderId, status, notes);
+    Logger.info(`[ADMIN] Order ${orderId} status updated from ${order.status} to ${status}`);
+    res.json({
+      success: true,
+      orderId,
+      previousStatus: order.status,
+      newStatus: status
+    });
+  } catch (error) {
+    Logger.error("Error updating order status:", error);
+    res.status(500).json({ error: "Failed to update order status" });
+  }
+});
+var admin_metrics_default = router3;
+
+// server/routes.ts
+init_error_management();
 init_schema();
 import crypto from "crypto";
 
@@ -3369,7 +6150,7 @@ function convertSubmissionsToCSV(submissions) {
 }
 
 // server/routes.ts
-import { eq as eq5, desc as desc2, ilike as ilike2, sql as sql6, and as and3, or as or3, gte as gte2, lte as lte2, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
+import { eq as eq8, desc as desc4, ilike as ilike2, sql as sql8, and as and5, or as or3, gte as gte4, lte as lte3, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
 
 // server/utils/startup-banner.ts
 init_logger();
@@ -3467,25 +6248,25 @@ var initRedis = async () => {
 // server/config/search.ts
 init_db();
 init_logger();
-import { sql as sql5 } from "drizzle-orm";
+import { sql as sql7 } from "drizzle-orm";
 async function initializeSearchIndexes() {
   try {
-    await db.execute(sql5`
+    await db.execute(sql7`
       ALTER TABLE products 
       ADD COLUMN IF NOT EXISTS search_vector tsvector
     `);
-    await db.execute(sql5`
+    await db.execute(sql7`
       CREATE INDEX IF NOT EXISTS idx_products_search 
       ON products USING GIN(search_vector)
     `);
-    await db.execute(sql5`
+    await db.execute(sql7`
       UPDATE products SET search_vector = 
         setweight(to_tsvector('english', coalesce(name,'')), 'A') ||
         setweight(to_tsvector('english', coalesce(description,'')), 'B') ||
         setweight(to_tsvector('english', coalesce(brand,'')), 'C')
       WHERE search_vector IS NULL
     `);
-    await db.execute(sql5`
+    await db.execute(sql7`
       CREATE OR REPLACE FUNCTION update_product_search_vector()
       RETURNS TRIGGER AS $$
       BEGIN
@@ -3497,7 +6278,7 @@ async function initializeSearchIndexes() {
       END;
       $$ LANGUAGE plpgsql;
     `);
-    await db.execute(sql5`
+    await db.execute(sql7`
       DROP TRIGGER IF EXISTS trigger_update_product_search_vector ON products;
       CREATE TRIGGER trigger_update_product_search_vector
         BEFORE INSERT OR UPDATE ON products
@@ -3567,7 +6348,7 @@ function broadcastCartUpdate(userId, action = "update", data) {
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Missing required Stripe secret: STRIPE_SECRET_KEY");
 }
-var stripe2 = new Stripe2(process.env.STRIPE_SECRET_KEY, {
+var stripe3 = new Stripe3(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-06-30.basil"
 });
 async function registerRoutes(app2) {
@@ -3582,18 +6363,69 @@ async function registerRoutes(app2) {
   setupCompression(app2);
   app2.use(createRequestLogger());
   setupSecurityHeaders(app2);
+  try {
+    const { securityHeaders: securityHeaders2, apiSecurityHeaders: apiSecurityHeaders2 } = await Promise.resolve().then(() => (init_securityHeaders(), securityHeaders_exports));
+    const { sanitizeInput: sanitizeInput3 } = await Promise.resolve().then(() => (init_inputSanitization(), inputSanitization_exports));
+    const { requestLogger: requestLogger3, apiRequestLogger: apiRequestLogger2, adminRequestLogger: adminRequestLogger2 } = await Promise.resolve().then(() => (init_requestLogger(), requestLogger_exports));
+    const { PerformanceMonitor: PerformanceMonitor2, performanceMiddleware: performanceMiddleware2 } = await Promise.resolve().then(() => (init_performanceMonitor(), performanceMonitor_exports));
+    app2.use(securityHeaders2());
+    app2.use(performanceMiddleware2());
+    app2.use(requestLogger3());
+    app2.use("/api/", apiSecurityHeaders2());
+    app2.use("/api/", apiRequestLogger2());
+    app2.use("/api/", (req, res, next) => {
+      if (req.path.includes("/login") || req.path.includes("/register") || req.path.includes("/auth/")) {
+        return next();
+      }
+      return sanitizeInput3()(req, res, next);
+    });
+    app2.use("/api/admin/", adminRequestLogger2());
+    Logger.info("Enhanced security and performance monitoring middleware loaded");
+  } catch (error) {
+    Logger.warn("Some enhanced middleware failed to load:", error);
+  }
   app2.use(cors(corsOptions));
   app2.use(performanceMonitoring);
-  app2.use(sanitizeInput);
   app2.use(preventXSS);
   app2.use(preventSQLInjection);
   app2.use(transactionMiddleware);
   app2.use(autoSyncProducts);
   setupAuth(app2);
+  app2.use("/api/auth", auth_google_default);
+  app2.use("/api/stripe", stripe_webhooks_default);
+  app2.use("/api/admin", admin_metrics_default);
+  app2.use("/api/admin", error_management_default);
   await initializeSearchIndexes();
   app2.get("/health", healthLive);
   app2.get("/health/live", healthLive);
   app2.get("/health/ready", healthReady);
+  app2.get("/api/geocode/autocomplete", async (req, res) => {
+    try {
+      const { text: text2 } = req.query;
+      if (!text2 || typeof text2 !== "string" || text2.length < 3) {
+        return res.json({ results: [] });
+      }
+      const apiKey = process.env.VITE_GEOAPIFY_API_KEY;
+      if (!apiKey) {
+        console.error("VITE_GEOAPIFY_API_KEY missing in server environment");
+        return res.status(500).json({ error: "API key not configured" });
+      }
+      const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(text2)}&apiKey=${apiKey}&filter=countrycode:us&limit=5&format=json`;
+      console.log("\u{1F50D} Server-side GEOApify request:", { text: text2, maskedUrl: url.replace(apiKey, "***") });
+      const response = await fetch(url);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("GEOApify API Error:", response.status, errorText);
+        return res.status(500).json({ error: "Geocoding service error" });
+      }
+      const data = await response.json();
+      console.log("\u2705 GEOApify success:", data.results?.length || 0, "results");
+      res.json(data);
+    } catch (error) {
+      console.error("Geocoding proxy error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
   if (process.env.NODE_ENV === "development") {
     app2.get("/api/debug/session", (req, res) => {
       res.json({
@@ -4093,7 +6925,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to validate cart" });
     }
   });
-  app2.get("/api/orders", requireAuth, async (req, res) => {
+  app2.get("/api/orders", requireAuth, requireCompleteProfile, async (req, res) => {
     try {
       const userId = req.userId;
       const limit = req.query.limit ? Number(req.query.limit) : 50;
@@ -4161,10 +6993,10 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to track submission" });
     }
   });
-  app2.post("/api/create-payment-intent", requireAuth, async (req, res) => {
+  app2.post("/api/create-payment-intent", requireAuth, requireCompleteProfile, async (req, res) => {
     try {
       const { amount, currency = "usd", metadata } = req.body;
-      const paymentIntent = await stripe2.paymentIntents.create({
+      const paymentIntent = await stripe3.paymentIntents.create({
         amount: Math.round(amount * 100),
         // Convert to cents
         currency,
@@ -4182,7 +7014,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Error creating payment intent: " + error.message });
     }
   });
-  app2.post("/api/orders", requireAuth, async (req, res) => {
+  app2.post("/api/orders", requireAuth, requireCompleteProfile, async (req, res) => {
     try {
       const validatedData = insertOrderSchema.parse(req.body);
       const order = await storage.createOrder(validatedData);
@@ -4222,20 +7054,20 @@ async function registerRoutes(app2) {
     };
     try {
       try {
-        await db.execute(sql6`SELECT subcategory FROM products LIMIT 1`);
+        await db.execute(sql8`SELECT subcategory FROM products LIMIT 1`);
         results.tables["products.subcategory"] = "exists";
       } catch (e) {
         results.tables["products.subcategory"] = "missing";
         results.issues.push("products.subcategory column missing");
       }
       try {
-        await db.execute(sql6`SELECT street FROM users LIMIT 1`);
+        await db.execute(sql8`SELECT street FROM users LIMIT 1`);
         results.tables["users.street"] = "exists";
       } catch (e) {
         results.tables["users.street"] = "missing";
         results.issues.push("users.street column missing");
       }
-      const addressCheck = await db.execute(sql6`
+      const addressCheck = await db.execute(sql8`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_name = 'addresses'
@@ -4271,11 +7103,11 @@ async function registerRoutes(app2) {
           title: products.name,
           subtitle: products.brand,
           price: products.price,
-          image: sql6`${products.images}->0`,
-          type: sql6`'product'`
+          image: sql8`${products.images}->0`,
+          type: sql8`'product'`
         }).from(products).where(
-          and3(
-            eq5(products.status, "active"),
+          and5(
+            eq8(products.status, "active"),
             or3(
               ilike2(products.name, searchTerm),
               ilike2(products.brand, searchTerm),
@@ -4293,10 +7125,10 @@ async function registerRoutes(app2) {
         const categoryResults = await db.select({
           id: categories.id,
           title: categories.name,
-          type: sql6`'category'`
+          type: sql8`'category'`
         }).from(categories).where(
-          and3(
-            eq5(categories.isActive, true),
+          and5(
+            eq8(categories.isActive, true),
             ilike2(categories.name, searchTerm)
           )
         ).limit(5);
@@ -4309,9 +7141,9 @@ async function registerRoutes(app2) {
       const suggestions = await db.select({
         term: products.name,
         category: categories.name
-      }).from(products).leftJoin(categories, eq5(products.categoryId, categories.id)).where(
-        and3(
-          eq5(products.status, "active"),
+      }).from(products).leftJoin(categories, eq8(products.categoryId, categories.id)).where(
+        and5(
+          eq8(products.status, "active"),
           ilike2(products.name, searchTerm)
         )
       ).limit(5);
@@ -4341,6 +7173,20 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "Failed to fetch popular searches" });
     }
   });
+  try {
+    const errorManagementModule = await Promise.resolve().then(() => (init_error_management(), error_management_exports));
+    app2.use("/api/admin", errorManagementModule.default);
+    Logger.info("Error management routes registered successfully");
+  } catch (error) {
+    Logger.error("Failed to register error management routes:", error);
+  }
+  try {
+    const { systemManagementRoutes } = await Promise.resolve().then(() => (init_system_management(), system_management_exports));
+    app2.use("/api/admin/system", systemManagementRoutes);
+    Logger.info("System management routes registered successfully");
+  } catch (error) {
+    Logger.error("Failed to register system management routes:", error);
+  }
   app2.get("/api/admin/stats", adminLimiter, requireRole("developer"), async (req, res) => {
     try {
       const stats = await storage.getAdminStats();
@@ -4379,27 +7225,27 @@ async function registerRoutes(app2) {
         );
       }
       if (role !== "all") {
-        conditions.push(eq5(users.role, role));
+        conditions.push(eq8(users.role, role));
       }
-      const usersQuery = db.select().from(users).where(conditions.length > 0 ? and3(...conditions) : void 0).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
+      const usersQuery = db.select().from(users).where(conditions.length > 0 ? and5(...conditions) : void 0).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
       switch (sortBy) {
         case "created":
-          usersQuery.orderBy(sortOrder === "desc" ? desc2(users.createdAt) : asc2(users.createdAt));
+          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.createdAt) : asc2(users.createdAt));
           break;
         case "name":
-          usersQuery.orderBy(sortOrder === "desc" ? desc2(users.firstName) : asc2(users.firstName));
+          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.firstName) : asc2(users.firstName));
           break;
         case "email":
-          usersQuery.orderBy(sortOrder === "desc" ? desc2(users.email) : asc2(users.email));
+          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.email) : asc2(users.email));
           break;
         default:
-          usersQuery.orderBy(desc2(users.createdAt));
+          usersQuery.orderBy(desc4(users.createdAt));
       }
       const usersList = await usersQuery;
       const usersWithStats = await Promise.all(
         usersList.map(async (user) => {
           try {
-            const userOrders = await db.select().from(orders).where(eq5(orders.userId, user.id));
+            const userOrders = await db.select().from(orders).where(eq8(orders.userId, user.id));
             const completedUserOrders = userOrders.filter(
               (o) => o.status === "delivered"
             );
@@ -4422,7 +7268,7 @@ async function registerRoutes(app2) {
           }
         })
       );
-      const totalUsersResult = await db.select({ count: count() }).from(users).where(conditions.length > 0 ? and3(...conditions) : void 0);
+      const totalUsersResult = await db.select({ count: count() }).from(users).where(conditions.length > 0 ? and5(...conditions) : void 0);
       res.json({
         users: usersWithStats,
         total: totalUsersResult[0]?.count || 0,
@@ -4493,7 +7339,7 @@ async function registerRoutes(app2) {
             productId: orderItems.productId,
             quantity: orderItems.quantity,
             productName: products.name
-          }).from(orderItems).innerJoin(products, eq5(orderItems.productId, products.id)).where(eq5(orderItems.orderId, order.id));
+          }).from(orderItems).innerJoin(products, eq8(orderItems.productId, products.id)).where(eq8(orderItems.orderId, order.id));
           orderItemsData.forEach((item) => {
             const key = item.productName;
             productSales[key] = (productSales[key] || 0) + (item.quantity || 1);
@@ -4521,7 +7367,7 @@ async function registerRoutes(app2) {
           name: products.name,
           views: products.views,
           price: products.price
-        }).from(products).orderBy(desc2(products.views)).limit(5);
+        }).from(products).orderBy(desc4(products.views)).limit(5);
         topProductsList = realTopProducts.map((p) => ({
           name: p.name,
           sales: 0,
@@ -4541,7 +7387,7 @@ async function registerRoutes(app2) {
         stockQuantity: products.stockQuantity,
         price: products.price,
         featured: products.featured
-      }).from(products).orderBy(desc2(products.views)).limit(10);
+      }).from(products).orderBy(desc4(products.views)).limit(10);
       const totalInventoryValue = allProducts.reduce((sum2, product) => {
         return sum2 + (parseFloat(product.price) || 0) * (product.stockQuantity || 0);
       }, 0);
@@ -4612,7 +7458,7 @@ async function registerRoutes(app2) {
           id: categories.id,
           name: categories.name
         }
-      }).from(products).leftJoin(categories, eq5(products.categoryId, categories.id));
+      }).from(products).leftJoin(categories, eq8(products.categoryId, categories.id));
       const conditions = [];
       if (search) {
         conditions.push(
@@ -4624,24 +7470,24 @@ async function registerRoutes(app2) {
         );
       }
       if (category !== "all") {
-        conditions.push(eq5(products.categoryId, category));
+        conditions.push(eq8(products.categoryId, category));
       }
       const minPrice = parseFloat(priceMin);
       const maxPrice = parseFloat(priceMax);
       if (minPrice > 0) {
-        conditions.push(gte2(sql6`CAST(${products.price} AS NUMERIC)`, minPrice));
+        conditions.push(gte4(sql8`CAST(${products.price} AS NUMERIC)`, minPrice));
       }
       if (maxPrice < 1e4) {
-        conditions.push(lte2(sql6`CAST(${products.price} AS NUMERIC)`, maxPrice));
+        conditions.push(lte3(sql8`CAST(${products.price} AS NUMERIC)`, maxPrice));
       }
       if (conditions.length > 0) {
-        query = query.where(and3(...conditions));
+        query = query.where(and5(...conditions));
       }
-      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql6`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
-      query = query.orderBy(sortOrder === "desc" ? desc2(sortColumn) : asc2(sortColumn));
-      let countQuery = db.select({ count: sql6`count(*)` }).from(products);
+      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql8`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
+      query = query.orderBy(sortOrder === "desc" ? desc4(sortColumn) : asc2(sortColumn));
+      let countQuery = db.select({ count: sql8`count(*)` }).from(products);
       if (conditions.length > 0) {
-        countQuery = countQuery.where(and3(...conditions));
+        countQuery = countQuery.where(and5(...conditions));
       }
       const [totalResult] = await countQuery;
       const total = totalResult?.count || 0;
@@ -4744,7 +7590,7 @@ async function registerRoutes(app2) {
         condition: products.condition,
         category: categories.name,
         createdAt: products.createdAt
-      }).from(products).leftJoin(categories, eq5(products.categoryId, categories.id));
+      }).from(products).leftJoin(categories, eq8(products.categoryId, categories.id));
       if (format === "csv") {
         const headers = ["ID", "Name", "Price", "Stock", "Brand", "Condition", "Category", "Created"];
         const rows = allProducts.map((p) => [
@@ -4818,7 +7664,7 @@ async function registerRoutes(app2) {
         displayOrder: categories.displayOrder,
         createdAt: categories.createdAt,
         updatedAt: categories.updatedAt,
-        productCount: sql6`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
+        productCount: sql8`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
       }).from(categories);
       const conditions = [];
       if (search) {
@@ -4830,12 +7676,12 @@ async function registerRoutes(app2) {
         );
       }
       if (conditions.length > 0) {
-        query = query.where(and3(...conditions));
+        query = query.where(and5(...conditions));
       }
-      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql6`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
-      query = query.orderBy(sortOrder === "desc" ? desc2(sortColumn) : asc2(sortColumn));
+      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql8`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
+      query = query.orderBy(sortOrder === "desc" ? desc4(sortColumn) : asc2(sortColumn));
       const result = await query;
-      const totalProducts = await db.select({ count: sql6`COUNT(*)` }).from(products);
+      const totalProducts = await db.select({ count: sql8`COUNT(*)` }).from(products);
       const activeCategories = result.filter((cat) => cat.isActive).length;
       const emptyCategories = result.filter((cat) => Number(cat.productCount) === 0).length;
       res.json({
@@ -4927,7 +7773,7 @@ async function registerRoutes(app2) {
         return res.status(400).json({ error: "Categories array is required" });
       }
       for (const update of categoryUpdates) {
-        await db.update(categories).set({ displayOrder: update.order }).where(eq5(categories.id, update.id));
+        await db.update(categories).set({ displayOrder: update.order }).where(eq8(categories.id, update.id));
       }
       res.json({ success: true });
     } catch (error) {
@@ -4938,14 +7784,14 @@ async function registerRoutes(app2) {
   app2.delete("/api/admin/categories/:id", requireRole("developer"), async (req, res) => {
     try {
       const { id } = req.params;
-      const productCount = await db.select({ count: sql6`COUNT(*)` }).from(products).where(eq5(products.categoryId, id));
+      const productCount = await db.select({ count: sql8`COUNT(*)` }).from(products).where(eq8(products.categoryId, id));
       if (productCount[0]?.count > 0) {
         return res.status(400).json({
           error: "Cannot delete category with products",
           message: `This category has ${productCount[0].count} products. Remove products first.`
         });
       }
-      await db.delete(categories).where(eq5(categories.id, id));
+      await db.delete(categories).where(eq8(categories.id, id));
       res.json({ success: true });
     } catch (error) {
       Logger.error("Error deleting category", error);
@@ -4960,7 +7806,7 @@ async function registerRoutes(app2) {
       let dbLatency = 0;
       try {
         const start = Date.now();
-        await db.select({ test: sql6`1` });
+        await db.select({ test: sql8`1` });
         dbLatency = Date.now() - start;
       } catch (error) {
         dbStatus = "Disconnected";
@@ -5004,9 +7850,9 @@ async function registerRoutes(app2) {
     try {
       const memoryUsage = process.memoryUsage();
       const uptime = process.uptime();
-      const [userCount] = await db.select({ count: sql6`COUNT(*)` }).from(users);
-      const [productCount] = await db.select({ count: sql6`COUNT(*)` }).from(products);
-      const [orderCount] = await db.select({ count: sql6`COUNT(*)` }).from(orders);
+      const [userCount] = await db.select({ count: sql8`COUNT(*)` }).from(users);
+      const [productCount] = await db.select({ count: sql8`COUNT(*)` }).from(products);
+      const [orderCount] = await db.select({ count: sql8`COUNT(*)` }).from(orders);
       const systemInfo = {
         application: {
           name: "Clean & Flip Admin",
@@ -5077,7 +7923,7 @@ async function registerRoutes(app2) {
         latitude: users.latitude,
         longitude: users.longitude,
         isLocalCustomer: users.isLocalCustomer
-      }).from(users).where(eq5(users.id, userId)).limit(1);
+      }).from(users).where(eq8(users.id, userId)).limit(1);
       Logger.info("5. DB query result:", userWithAddress);
       if (!userWithAddress.length) {
         return res.status(404).json({ error: "User not found" });
@@ -5122,7 +7968,7 @@ async function registerRoutes(app2) {
         longitude: longitude ? parseFloat(longitude) : null,
         isLocalCustomer: isLocal,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq5(users.id, userId)).returning();
+      }).where(eq8(users.id, userId)).returning();
       res.json({
         success: true,
         address: {
@@ -5337,7 +8183,7 @@ async function registerRoutes(app2) {
         cleanData.password = updateData.password;
       }
       Logger.info(`Updating user ${id} with data:`, { ...cleanData, password: cleanData.password ? "[HIDDEN]" : void 0 });
-      const [updatedUser] = await db.update(users).set(cleanData).where(eq5(users.id, id)).returning();
+      const [updatedUser] = await db.update(users).set(cleanData).where(eq8(users.id, id)).returning();
       if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -5379,7 +8225,7 @@ async function registerRoutes(app2) {
       if (!["user", "developer"].includes(role)) {
         return res.status(400).json({ error: 'Invalid role. Must be "user" or "developer"' });
       }
-      const [existingUser] = await db.select().from(users).where(eq5(users.email, email)).limit(1);
+      const [existingUser] = await db.select().from(users).where(eq8(users.email, email)).limit(1);
       if (existingUser) {
         return res.status(400).json({ error: "User with this email already exists" });
       }
@@ -5506,7 +8352,7 @@ async function registerRoutes(app2) {
       const totalCount = totalResult[0]?.total || 0;
       const conditions = [];
       if (status && status !== "all") {
-        conditions.push(eq5(equipmentSubmissions.status, status));
+        conditions.push(eq8(equipmentSubmissions.status, status));
       }
       if (search) {
         conditions.push(
@@ -5517,16 +8363,16 @@ async function registerRoutes(app2) {
         );
       }
       if (isLocal !== void 0 && isLocal !== null) {
-        conditions.push(eq5(equipmentSubmissions.isLocal, isLocal === "true"));
+        conditions.push(eq8(equipmentSubmissions.isLocal, isLocal === "true"));
       }
       const query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql6`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
-      }).from(equipmentSubmissions).leftJoin(users, eq5(equipmentSubmissions.userId, users.id)).orderBy(desc2(equipmentSubmissions.createdAt)).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
-      const submissions = conditions.length > 0 ? await query.where(and3(...conditions)) : await query;
+      }).from(equipmentSubmissions).leftJoin(users, eq8(equipmentSubmissions.userId, users.id)).orderBy(desc4(equipmentSubmissions.createdAt)).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
+      const submissions = conditions.length > 0 ? await query.where(and5(...conditions)) : await query;
       const statusCounts = await db.select({
         status: equipmentSubmissions.status,
         count: count()
@@ -5578,7 +8424,7 @@ async function registerRoutes(app2) {
         Logger.error("No userId found in authentication sources");
         return res.json([]);
       }
-      const submissions = await db.select().from(equipmentSubmissions).where(eq5(equipmentSubmissions.userId, userId)).orderBy(desc2(equipmentSubmissions.createdAt));
+      const submissions = await db.select().from(equipmentSubmissions).where(eq8(equipmentSubmissions.userId, userId)).orderBy(desc4(equipmentSubmissions.createdAt));
       res.json(submissions || []);
     } catch (error) {
       Logger.error("Error fetching user submissions:", error);
@@ -5595,9 +8441,9 @@ async function registerRoutes(app2) {
         return res.status(401).json({ error: "Authentication required" });
       }
       const submission = await db.select().from(equipmentSubmissions).where(
-        and3(
-          eq5(equipmentSubmissions.id, id),
-          eq5(equipmentSubmissions.userId, userId)
+        and5(
+          eq8(equipmentSubmissions.id, id),
+          eq8(equipmentSubmissions.userId, userId)
         )
       ).limit(1);
       if (!submission || submission.length === 0) {
@@ -5624,7 +8470,7 @@ async function registerRoutes(app2) {
         statusHistory: newHistory,
         updatedAt: /* @__PURE__ */ new Date(),
         adminNotes: `User cancelled: ${reason || "No reason provided"}`
-      }).where(eq5(equipmentSubmissions.id, id));
+      }).where(eq8(equipmentSubmissions.id, id));
       Logger.info(`Equipment submission cancelled by user: ${id}`);
       res.json({ success: true, message: "Submission cancelled successfully" });
     } catch (error) {
@@ -5668,7 +8514,7 @@ async function registerRoutes(app2) {
       }
       const results = await Promise.allSettled(
         submissionIds.map(
-          (id) => db.update(equipmentSubmissions).set(updateData).where(eq5(equipmentSubmissions.id, id))
+          (id) => db.update(equipmentSubmissions).set(updateData).where(eq8(equipmentSubmissions.id, id))
         )
       );
       const successCount = results.filter((r) => r.status === "fulfilled").length;
@@ -5689,7 +8535,7 @@ async function registerRoutes(app2) {
       } = req.query;
       const conditions = [];
       if (status && status !== "all") {
-        conditions.push(eq5(equipmentSubmissions.status, status));
+        conditions.push(eq8(equipmentSubmissions.status, status));
       }
       if (search) {
         conditions.push(
@@ -5700,17 +8546,17 @@ async function registerRoutes(app2) {
         );
       }
       if (isLocal !== void 0 && isLocal !== null) {
-        conditions.push(eq5(equipmentSubmissions.isLocal, isLocal === "true"));
+        conditions.push(eq8(equipmentSubmissions.isLocal, isLocal === "true"));
       }
       let query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql6`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
-      }).from(equipmentSubmissions).leftJoin(users, eq5(equipmentSubmissions.userId, users.id)).orderBy(desc2(equipmentSubmissions.createdAt));
+      }).from(equipmentSubmissions).leftJoin(users, eq8(equipmentSubmissions.userId, users.id)).orderBy(desc4(equipmentSubmissions.createdAt));
       if (conditions.length > 0) {
-        query = query.where(and3(...conditions));
+        query = query.where(and5(...conditions));
       }
       const submissions = await query;
       if (format === "csv") {
@@ -5846,10 +8692,10 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/stripe/transactions", requireRole("developer"), async (req, res) => {
     try {
-      const stripe3 = new Stripe2(process.env.STRIPE_SECRET_KEY, {
+      const stripe4 = new Stripe3(process.env.STRIPE_SECRET_KEY, {
         apiVersion: "2024-06-20"
       });
-      const paymentIntents = await stripe3.paymentIntents.list({
+      const paymentIntents = await stripe4.paymentIntents.list({
         limit: 10,
         expand: ["data.customer"]
       });
@@ -5985,6 +8831,24 @@ async function registerRoutes(app2) {
     }
     process.exit(1);
   });
+  const checkUserPurchaseHistory = async (userId, productId) => {
+    try {
+      const [purchase] = await db.select().from(orderItems).innerJoin(orders, eq8(orders.id, orderItems.orderId)).where(
+        and5(
+          eq8(orders.userId, userId),
+          eq8(orderItems.productId, productId),
+          or3(
+            eq8(orders.status, "delivered"),
+            eq8(orders.status, "confirmed")
+          )
+        )
+      ).limit(1);
+      return !!purchase;
+    } catch (error) {
+      Logger.warn("Failed to check purchase history:", error);
+      return false;
+    }
+  };
   app2.post("/api/reviews", authMiddleware.requireAuth, async (req, res) => {
     try {
       const { productId, rating, comment } = req.body;
@@ -5997,8 +8861,7 @@ async function registerRoutes(app2) {
         userId,
         rating,
         comment: comment || "",
-        verifiedPurchase: false,
-        // TODO: Check if user actually purchased this product
+        verifiedPurchase: await checkUserPurchaseHistory(userId, productId),
         createdAt: /* @__PURE__ */ new Date(),
         updatedAt: /* @__PURE__ */ new Date()
       }).returning();
@@ -6010,7 +8873,7 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/reviews/:productId", async (req, res) => {
     try {
-      const productReviews = await db.select().from(reviews).where(eq5(reviews.productId, req.params.productId)).orderBy(desc2(reviews.createdAt));
+      const productReviews = await db.select().from(reviews).where(eq8(reviews.productId, req.params.productId)).orderBy(desc4(reviews.createdAt));
       res.json(productReviews);
     } catch (error) {
       Logger.error("Error fetching reviews", error);
@@ -6023,9 +8886,9 @@ async function registerRoutes(app2) {
       if (!code) {
         return res.status(400).json({ error: "Coupon code required" });
       }
-      const coupon = await db.select().from(coupons).where(and3(
-        eq5(coupons.code, code.toUpperCase()),
-        eq5(coupons.active, true)
+      const coupon = await db.select().from(coupons).where(and5(
+        eq8(coupons.code, code.toUpperCase()),
+        eq8(coupons.active, true)
       )).limit(1);
       if (!coupon.length) {
         return res.status(404).json({ error: "Invalid coupon code" });
@@ -6062,7 +8925,7 @@ async function registerRoutes(app2) {
   app2.post("/api/inventory/check", async (req, res) => {
     try {
       const { productId, quantity = 1 } = req.body;
-      const product = await db.select().from(products).where(eq5(products.id, productId)).limit(1);
+      const product = await db.select().from(products).where(eq8(products.id, productId)).limit(1);
       if (!product.length) {
         return res.status(404).json({ error: "Product not found" });
       }
@@ -6103,15 +8966,15 @@ async function registerRoutes(app2) {
 }
 
 // server/vite.ts
-import express from "express";
-import fs from "fs";
-import path2 from "path";
+import express2 from "express";
+import fs2 from "fs";
+import path4 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path from "path";
+import path3 from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var vite_config_default = defineConfig({
   plugins: [
@@ -6125,14 +8988,14 @@ var vite_config_default = defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets")
+      "@": path3.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path3.resolve(import.meta.dirname, "shared"),
+      "@assets": path3.resolve(import.meta.dirname, "attached_assets")
     }
   },
-  root: path.resolve(import.meta.dirname, "client"),
+  root: path3.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path3.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     target: "es2020",
     minify: "terser",
@@ -6209,13 +9072,13 @@ async function setupVite(app2, server2) {
   app2.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = path2.resolve(
+      const clientTemplate = path4.resolve(
         import.meta.dirname,
         "..",
         "client",
         "index.html"
       );
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      let template = await fs2.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
@@ -6229,15 +9092,15 @@ async function setupVite(app2, server2) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
-  if (!fs.existsSync(distPath)) {
+  const distPath = path4.resolve(import.meta.dirname, "public");
+  if (!fs2.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
-  app2.use(express.static(distPath));
+  app2.use(express2.static(distPath));
   app2.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
+    res.sendFile(path4.resolve(distPath, "index.html"));
   });
 }
 
@@ -6326,17 +9189,343 @@ function getEnvironmentInfo() {
   };
 }
 
+// server/middleware/security-enhancements.ts
+init_logger();
+import rateLimit2 from "express-rate-limit";
+import helmet2 from "helmet";
+var productionSecurityHeaders = helmet2({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        // Required for Tailwind CSS and development
+        "https://fonts.googleapis.com"
+      ],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        // Required for development HMR
+        "'unsafe-eval'",
+        // Required for Vite in development
+        "https://js.stripe.com",
+        "https://accounts.google.com",
+        "https://apis.google.com",
+        ...process.env.NODE_ENV === "development" ? ["'unsafe-eval'", "'unsafe-inline'"] : []
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https:",
+        "blob:",
+        "https://res.cloudinary.com",
+        // Cloudinary images
+        "https://lh3.googleusercontent.com"
+        // Google profile images
+      ],
+      connectSrc: [
+        "'self'",
+        "https://api.stripe.com",
+        "https://api.geoapify.com",
+        "https://accounts.google.com",
+        "https://oauth2.googleapis.com",
+        "wss:",
+        // WebSocket connections
+        "ws:",
+        // Development WebSocket
+        ...process.env.NODE_ENV === "development" ? ["http://localhost:*", "ws://localhost:*", "wss://localhost:*"] : []
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com"
+      ],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: [
+        "https://js.stripe.com",
+        "https://hooks.stripe.com",
+        "https://accounts.google.com"
+      ],
+      frameAncestors: ["'none'"],
+      // Prevent clickjacking
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: []
+      // Force HTTPS in production
+    }
+  },
+  crossOriginEmbedderPolicy: false,
+  // Allow Stripe and Google integration
+  hsts: {
+    maxAge: 31536e3,
+    includeSubDomains: true,
+    preload: true
+  },
+  noSniff: true,
+  xssFilter: true,
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  permissionsPolicy: {
+    camera: ["none"],
+    microphone: ["none"],
+    geolocation: ["self"],
+    payment: ["self", "https://js.stripe.com"]
+  }
+});
+
+// server/utils/input-sanitization.ts
+init_logger();
+import DOMPurify2 from "dompurify";
+import { JSDOM as JSDOM2 } from "jsdom";
+var window2 = new JSDOM2("").window;
+var purify2 = DOMPurify2(window2);
+purify2.addHook("beforeSanitizeElements", function(node) {
+  if (node.hasAttribute && node.hasAttribute("onclick")) {
+    node.removeAttribute("onclick");
+  }
+  if (node.hasAttribute && node.hasAttribute("onload")) {
+    node.removeAttribute("onload");
+  }
+});
+var InputSanitizer2 = class {
+  /**
+   * Sanitize HTML content using DOMPurify
+   */
+  static sanitizeHtml(input, options = {}) {
+    if (!input || typeof input !== "string") {
+      return "";
+    }
+    const {
+      allowHtml = false,
+      allowLinks = false,
+      maxLength = 1e4,
+      stripWhitespace = true
+    } = options;
+    try {
+      let sanitized = input;
+      if (sanitized.length > maxLength) {
+        sanitized = sanitized.substring(0, maxLength);
+        Logger.warn(`Input truncated to ${maxLength} characters`);
+      }
+      if (allowHtml) {
+        const allowedTags = allowLinks ? ["b", "i", "em", "strong", "p", "br", "a"] : ["b", "i", "em", "strong", "p", "br"];
+        const allowedAttributes = allowLinks ? { "a": ["href", "title"] } : {};
+        sanitized = purify2.sanitize(sanitized, {
+          ALLOWED_TAGS: allowedTags,
+          ALLOWED_ATTR: Object.keys(allowedAttributes).length > 0 ? Object.values(allowedAttributes).flat() : [],
+          FORBID_SCRIPT: true,
+          FORBID_STYLE: true,
+          SAFE_FOR_TEMPLATES: true
+        });
+      } else {
+        sanitized = purify2.sanitize(sanitized, { ALLOWED_TAGS: [] });
+      }
+      sanitized = this.removeDangerousPatterns(sanitized);
+      if (stripWhitespace) {
+        sanitized = sanitized.trim().replace(/\s+/g, " ");
+      }
+      return sanitized;
+    } catch (error) {
+      Logger.error("HTML sanitization error:", error);
+      return "";
+    }
+  }
+  /**
+   * Sanitize user input for database storage
+   */
+  static sanitizeUserInput(input) {
+    if (input === null || input === void 0) {
+      return input;
+    }
+    if (typeof input === "string") {
+      return this.sanitizeString(input);
+    }
+    if (Array.isArray(input)) {
+      return input.map((item) => this.sanitizeUserInput(item));
+    }
+    if (typeof input === "object") {
+      const sanitized = {};
+      for (const [key, value] of Object.entries(input)) {
+        const cleanKey = this.sanitizeString(key);
+        sanitized[cleanKey] = this.sanitizeUserInput(value);
+      }
+      return sanitized;
+    }
+    return input;
+  }
+  /**
+   * Sanitize a single string value
+   */
+  static sanitizeString(input) {
+    if (!input || typeof input !== "string") {
+      return "";
+    }
+    let sanitized = input;
+    sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+    sanitized = this.removeDangerousPatterns(sanitized);
+    sanitized = sanitized.trim();
+    if (sanitized.length > 1e4) {
+      sanitized = sanitized.substring(0, 1e4);
+    }
+    return sanitized;
+  }
+  /**
+   * Remove dangerous patterns that could be used for attacks
+   */
+  static removeDangerousPatterns(input) {
+    const sqlPatterns = [
+      /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|SCRIPT)\b)/gi,
+      /(--|\/\*|\*\/|;)/g,
+      /(\bOR\b|\bAND\b).*?=.*?=?/gi
+    ];
+    const xssPatterns = [
+      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
+      /javascript:/gi,
+      /vbscript:/gi,
+      /onload\s*=/gi,
+      /onclick\s*=/gi,
+      /onmouseover\s*=/gi
+    ];
+    const ldapPatterns = [
+      /[()&|!]/g
+    ];
+    const cmdPatterns = [
+      /[;&|`$]/g,
+      /\b(cat|ls|pwd|rm|mkdir|chmod|chown|ps|kill|curl|wget)\b/gi
+    ];
+    let sanitized = input;
+    [...sqlPatterns, ...xssPatterns, ...ldapPatterns, ...cmdPatterns].forEach((pattern) => {
+      sanitized = sanitized.replace(pattern, "");
+    });
+    return sanitized;
+  }
+  /**
+   * Validate email format
+   */
+  static validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && email.length <= 254;
+  }
+  /**
+   * Sanitize file names for upload
+   */
+  static sanitizeFileName(fileName) {
+    if (!fileName || typeof fileName !== "string") {
+      return "unknown";
+    }
+    let sanitized = fileName.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/_+/g, "_").substring(0, 255);
+    if (!sanitized.includes(".")) {
+      sanitized += ".txt";
+    }
+    return sanitized;
+  }
+};
+var sanitizeRequest = (req, res, next) => {
+  try {
+    if (req.body) {
+      req.body = InputSanitizer2.sanitizeUserInput(req.body);
+    }
+    if (req.query) {
+      req.query = InputSanitizer2.sanitizeUserInput(req.query);
+    }
+    if (req.params) {
+      req.params = InputSanitizer2.sanitizeUserInput(req.params);
+    }
+    next();
+  } catch (error) {
+    Logger.error("Request sanitization error:", error);
+    res.status(400).json({ error: "Invalid input format" });
+  }
+};
+
 // server/index.ts
 init_db();
-import { sql as sql8 } from "drizzle-orm";
-import fs2 from "fs";
-import path3 from "path";
-var app = express2();
-app.use(express2.json({ limit: "1mb" }));
-app.use(express2.urlencoded({ limit: "1mb", extended: false }));
+import { sql as sql10 } from "drizzle-orm";
+import fs3 from "fs";
+import path5 from "path";
+
+// server/services/globalErrorCatcher.ts
+init_errorLogger();
+var GlobalErrorCatcher = class _GlobalErrorCatcher {
+  static instance;
+  static init(app2) {
+    if (!this.instance) {
+      this.instance = new _GlobalErrorCatcher();
+      this.instance.setupHandlers(app2);
+    }
+  }
+  setupHandlers(app2) {
+    process.on("uncaughtException", async (error) => {
+      await ErrorLogger.logError({
+        severity: "critical",
+        error_type: "uncaught_exception",
+        message: error.message,
+        stack_trace: error.stack,
+        environment: process.env.NODE_ENV || "development"
+      });
+      console.error("Uncaught Exception:", error);
+    });
+    process.on("unhandledRejection", async (reason, promise) => {
+      await ErrorLogger.logError({
+        severity: "critical",
+        error_type: "unhandled_rejection",
+        message: reason?.message || String(reason),
+        stack_trace: reason?.stack,
+        environment: process.env.NODE_ENV || "development"
+      });
+      console.error("Unhandled Rejection:", reason);
+    });
+    app2.use((err, req, res, next) => {
+      ErrorLogger.logError({
+        severity: err.status >= 500 ? "critical" : "error",
+        error_type: "express_error",
+        message: err.message,
+        stack_trace: err.stack,
+        url: req.url,
+        method: req.method,
+        user_id: req.user?.id,
+        user_ip: req.ip,
+        user_agent: req.headers["user-agent"]
+      }).catch(console.error);
+      next(err);
+    });
+  }
+  // Method to manually log errors from anywhere in the application
+  static async logError(errorData) {
+    return ErrorLogger.logError(errorData);
+  }
+};
+
+// server/index.ts
+var app = express3();
+app.set("trust proxy", true);
+app.use(productionSecurityHeaders);
+app.use(sanitizeRequest);
+app.use((req, res, next) => {
+  if (req.path === "/api/errors/client" && req.method === "POST") {
+    res.status(200).json({ success: true, message: "Error logged successfully" });
+    return;
+  }
+  next();
+});
+app.use(express3.json({
+  limit: "1mb",
+  strict: false
+}));
+app.use(express3.urlencoded({ limit: "1mb", extended: false }));
+app.use((error, req, res, next) => {
+  if (error instanceof SyntaxError && "body" in error) {
+    if (req.path === "/api/errors/client") {
+      return res.status(200).json({ success: true, message: "Error logged successfully" });
+    }
+    return res.status(400).json({ message: "Invalid JSON format" });
+  }
+  next(error);
+});
 app.use((req, res, next) => {
   const start = Date.now();
-  const path4 = req.path;
+  const path6 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -6345,8 +9534,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path4.startsWith("/api")) {
-      let logLine = `${req.method} ${path4} ${res.statusCode} in ${duration}ms`;
+    if (path6.startsWith("/api")) {
+      let logLine = `${req.method} ${path6} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -6403,7 +9592,7 @@ app.use((req, res, next) => {
   setInterval(async () => {
     try {
       const deleted = await db.execute(
-        sql8`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
+        sql10`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
       );
       if (deleted.rowCount && deleted.rowCount > 0) {
         Logger.info(`[CLEANUP] Removed ${deleted.rowCount} expired password reset tokens`);
@@ -6477,10 +9666,11 @@ app.use((req, res, next) => {
       });
     }
   });
-  const isProductionBuild = fs2.existsSync(path3.resolve(import.meta.dirname, "public"));
+  const isProductionBuild = fs3.existsSync(path5.resolve(import.meta.dirname, "public"));
   if (isProductionBuild) {
     serveStatic(app);
   } else {
     await setupVite(app, server2);
   }
+  GlobalErrorCatcher.init(app);
 })();

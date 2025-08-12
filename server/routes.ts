@@ -165,9 +165,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // API-specific middleware
     app.use('/api/', apiSecurityHeaders());
     app.use('/api/', apiRequestLogger());
-    // Temporarily disable enhanced sanitization to fix login issues
-    // TODO: Re-enable with proper auth route exclusion
-    // app.use('/api/', sanitizeInput());
+    // Enable sanitization with auth route exclusion
+    app.use('/api/', (req, res, next) => {
+      // Skip sanitization for auth routes to prevent login issues
+      if (req.path.includes('/login') || req.path.includes('/register') || req.path.includes('/auth/')) {
+        return next();
+      }
+      return sanitizeInput()(req, res, next);
+    });
     
     // Admin-specific middleware 
     app.use('/api/admin/', adminRequestLogger());
@@ -3389,6 +3394,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ===== NEW E-COMMERCE API ENDPOINTS =====
   
+  // Helper function to check if user has purchased the product
+  const checkUserPurchaseHistory = async (userId: string, productId: string): Promise<boolean> => {
+    try {
+      const [purchase] = await db.select()
+        .from(orderItems)
+        .innerJoin(orders, eq(orders.id, orderItems.orderId))
+        .where(
+          and(
+            eq(orders.userId, userId),
+            eq(orderItems.productId, productId),
+            or(
+              eq(orders.status, 'delivered'),
+              eq(orders.status, 'confirmed')
+            )
+          )
+        )
+        .limit(1);
+      return !!purchase;
+    } catch (error) {
+      Logger.warn('Failed to check purchase history:', error);
+      return false; // Allow review if check fails to avoid blocking users
+    }
+  };
+  
   // Product Reviews & Ratings
   app.post("/api/reviews", authMiddleware.requireAuth, async (req, res) => {
     try {
@@ -3404,7 +3433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         rating,
         comment: comment || '',
-        verifiedPurchase: false, // TODO: Check if user actually purchased this product
+        verifiedPurchase: await checkUserPurchaseHistory(userId, productId),
         createdAt: new Date(),
         updatedAt: new Date()
       }).returning();

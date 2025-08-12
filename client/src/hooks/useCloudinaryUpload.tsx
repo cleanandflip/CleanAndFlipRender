@@ -20,7 +20,7 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
   const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
   
   const compressImage = (file: File, maxWidth = 1200, quality = 0.8): Promise<File> => {
-    return new Promise((resolve) => {
+    return new Promise<File>((resolve) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d')!;
       const img = new Image();

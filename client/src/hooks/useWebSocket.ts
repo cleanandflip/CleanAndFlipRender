@@ -23,7 +23,7 @@ export function useWebSocket() {
     if (ws.current?.readyState === WebSocket.OPEN) return;
     
     setStatus('connecting');
-    console.log('🔄 Connecting to WebSocket...');
+    // Connecting to WebSocket
     
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -34,7 +34,7 @@ export function useWebSocket() {
       ws.current.onopen = () => {
         setStatus('connected');
         setReconnectAttempts(0);
-        console.log('✅ WebSocket connected');
+        // WebSocket connected successfully
         
         // Send authentication
         const userStr = localStorage.getItem('user');
@@ -76,7 +76,7 @@ export function useWebSocket() {
 
       ws.current.onclose = (event) => {
         setStatus('disconnected');
-        console.log('❌ WebSocket disconnected:', event.code, event.reason);
+        // WebSocket disconnected - attempting reconnection
         
         // Auto-reconnect with exponential backoff
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
@@ -88,7 +88,7 @@ export function useWebSocket() {
         
         reconnectTimeout.current = setTimeout(() => {
           if (reconnectAttempts < 5) { // Limit reconnection attempts
-            console.log(`Reconnecting... (attempt ${reconnectAttempts + 1})`);
+            // Attempting reconnection
             connect();
           }
         }, delay);
@@ -106,7 +106,7 @@ export function useWebSocket() {
   }, []); // Stable connect function - no dependencies to prevent cycling
 
   const handleMessage = useCallback((data: WebSocketMessage) => {
-    console.log('📨 WebSocket message:', data);
+    // Processing WebSocket message
     
     // Handle different message types
     switch (data.type) {

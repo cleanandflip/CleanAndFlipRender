@@ -7,9 +7,8 @@ import { ErrorLogger } from '../../services/errorLogger';
 const router = Router();
 
 // Middleware - require developer role
-// TEMPORARY: Remove auth requirement for testing codebase doctor
-// router.use(requireAuth);
-// router.use(requireRole('developer'));
+router.use(requireAuth);
+router.use(requireRole('developer'));
 
 interface ScanResult {
   severity: 'critical' | 'error' | 'warning' | 'info';

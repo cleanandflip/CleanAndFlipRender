@@ -135,7 +135,7 @@ export class CodebaseDoctorService {
     let totalSuggestions = 0;
 
     // Process findings from new report format
-    const findingsArray = report.findings || [];
+    const findingsArray = (report as any).sections?.flatMap((s: any) => s.findings) || [];
     for (const finding of findingsArray) {
       const enhanced = this.enhanceFinding(finding);
       
