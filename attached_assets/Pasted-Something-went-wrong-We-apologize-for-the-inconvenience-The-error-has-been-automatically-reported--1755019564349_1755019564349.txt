@@ -1,0 +1,19 @@
+Something went wrong
+We apologize for the inconvenience. The error has been automatically reported to our team.
+
+Error ID: 1755019525206
+
+Error Details (Development)
+StandardDropdown is not defined
+
+ReferenceError: StandardDropdown is not defined
+    at Object.render (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/src/pages/sell-to-us.tsx:741:21)
+    at Controller (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-GTJUZCIC.js?v=d225d509:345:35)
+    at renderWithHooks (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=d225d509:11596:26)
+    at mountIndeterminateComponent (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=d225d509:14974:21)
+    at beginWork (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=d225d509:15962:22)
+    at beginWork$1 (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=d225d509:19806:22)
+    at performUnitOfWork (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=d225d509:19251:20)
+    at workLoopSync (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=d225d509:19190:13)
+    at renderRootSync (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=d225d509:19169:15)
+    at recoverFromConcurrentError (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=d225d509:18786:28)

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceInput } from "@/components/ui/price-input";
 import { UnifiedDropdown } from "@/components/ui/UnifiedDropdown";
+import StandardDropdown from "@/components/form/StandardDropdown";
 import { Textarea } from "@/components/ui/textarea";
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
