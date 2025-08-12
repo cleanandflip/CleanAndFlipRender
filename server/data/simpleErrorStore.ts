@@ -19,7 +19,7 @@ export const SimpleErrorStore = {
       await db.execute(sql`
         INSERT INTO errors_raw (event_id, created_at, level, env, service, url, message, stack, fingerprint)
         VALUES (${eventId}, NOW(), ${data.level}, ${data.env || 'development'}, ${data.service}, 
-                ${data.url || ''}, ${data.message}, ${JSON.stringify([data.stack || ''])}, ${fingerprint})
+                ${data.url || ''}, ${data.message}, ${data.stack || ''}, ${fingerprint})
       `);
 
       // Update or create issue
@@ -148,7 +148,9 @@ export const SimpleErrorStore = {
       return result.rows.map((row: any) => ({
         ...row,
         createdAt: new Date(row.created_at).toISOString(),
-        stack: row.stack && row.stack !== '' ? JSON.parse(row.stack) : [],
+        stack: row.stack && row.stack !== '' ? 
+          (row.stack.startsWith('[') || row.stack.startsWith('{') ? 
+            JSON.parse(row.stack) : [row.stack]) : [],
       }));
     } catch (error) {
       console.error('Failed to get raw events for issue:', error);
@@ -182,6 +184,36 @@ export const SimpleErrorStore = {
       console.error('Failed to set ignored status:', error);
       return false;
     }
+  },
+
+  async findEventsSince(since: Date) {
+    try {
+      const result = await db.execute(sql`
+        SELECT event_id, created_at, level, env, service, url, message, stack, fingerprint
+        FROM errors_raw 
+        WHERE created_at >= ${since}
+        ORDER BY created_at DESC
+      `);
+      
+      return result.rows.map((row: any) => ({
+        ...row,
+        createdAt: new Date(row.created_at).toISOString(),
+        stack: row.stack && row.stack !== '' ? 
+          (row.stack.startsWith('[') || row.stack.startsWith('{') ? 
+            JSON.parse(row.stack) : [row.stack]) : [],
+      }));
+    } catch (error) {
+      console.error('Failed to find events since date:', error);
+      return [];
+    }
+  },
+
+  async markResolved(fingerprint: string, resolved: boolean) {
+    return this.setResolved(fingerprint, resolved);
+  },
+
+  async markIgnored(fingerprint: string, ignored: boolean) {
+    return this.setIgnored(fingerprint, ignored);
   },
 
   createFingerprint(message: string, stack?: string): string {

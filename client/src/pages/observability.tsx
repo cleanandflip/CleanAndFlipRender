@@ -52,13 +52,14 @@ export default function ObservabilityPage() {
   const queryClient = useQueryClient();
 
   const { data: issuesData, isLoading } = useQuery({
-    queryKey: ["obs:issues", q, level, env, status, page, limit],
+    queryKey: ["obs:issues", q, level, env, status, page, limit, timeRange],
     queryFn: () =>
       obsApi.issues({
         q,
         level: level || undefined,
         env: env || undefined,
         resolved: status === "all" ? undefined : status === "resolved",
+        days: parseInt(timeRange, 10),
         page,
         limit,
       }),
@@ -105,13 +106,25 @@ export default function ObservabilityPage() {
     });
   }, [items, showIgnored, showTestEvents]);
 
+  const days = parseInt(timeRange, 10);
+  const byDay = days > 1;
+
   const series = Array.isArray(seriesData) ? seriesData : [];
   const chartData = series
     .map((r: any) => {
-      const t = toDateSafe(r.hour);
-      return { timeStr: t ? t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "", count: Number(r.count) || 0 };
+      const t = toDateSafe(r.ts || r.hour);
+      return {
+        label: t
+          ? (byDay
+              ? t.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+              : t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))
+          : "",
+        count: Number(r.count) || 0,
+      };
     })
-    .filter((d: any) => d.timeStr);
+    .filter((d: any) => d.label);
+
+  const errorsInRange = chartData.reduce((s, d) => s + d.count, 0);
 
   const getLevelBadgeColor = (lvl: string) =>
     lvl === "error" ? "destructive" : lvl === "warn" ? "outline" : lvl === "info" ? "secondary" : "default";
@@ -150,7 +163,7 @@ export default function ObservabilityPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="timeStr" tick={{ fontSize: 12 }} />
+                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
                   <Line type="monotone" dataKey="count" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
@@ -163,7 +176,7 @@ export default function ObservabilityPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Total Issues</p><p className="text-2xl font-bold">{issuesData?.total || 0}</p></div><AlertCircle className="h-8 w-8 text-red-500" /></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Errors in Range</p><p className="text-2xl font-bold">{chartData.reduce((s, d) => s + d.count, 0)}</p></div><TrendingUp className="h-8 w-8 text-orange-500" /></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Errors in Range</p><p className="text-2xl font-bold">{errorsInRange}</p></div><TrendingUp className="h-8 w-8 text-orange-500" /></div></CardContent></Card>
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Resolved</p><p className="text-2xl font-bold">{items.filter((i: Issue) => i.resolved).length}</p></div><CheckCircle className="h-8 w-8 text-green-500" /></div></CardContent></Card>
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Active</p><p className="text-2xl font-bold">{items.filter((i: Issue) => !i.resolved && !i.ignored).length}</p></div><AlertTriangle className="h-8 w-8 text-red-500" /></div></CardContent></Card>
       </div>
