@@ -29,11 +29,11 @@ export default function SearchBar({
   }, []);
 
   // Trigger re-render when busy changes for spinner
-  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
   React.useEffect(() => {
     const unsubscribe = searchService.subscribeBusy(forceUpdate);
     return unsubscribe;
-  }, []);
+  }, [forceUpdate]);
 
   const commit = React.useCallback((searchValue: string) => {
     const current = searchService.getQuery();
@@ -109,10 +109,10 @@ export default function SearchBar({
           autoFocus={autoFocus}
           aria-label="Search products"
           className={[
-            // RESPONSIVE WIDTH
-            "h-10 w-full sm:w-[min(46vw,520px)] md:w-[420px] lg:w-[520px]",
-            // Padding to reserve icon + clear/spinner
-            "pl-10 pr-10",
+            // RESPONSIVE WIDTH - proportional on desktop, full on mobile
+            "h-10 w-full sm:w-[min(90vw,360px)]",
+            // Padding for icon + single clear/spinner
+            "pl-10 pr-8",
             // Shape/typography (match buttons height/rounding)
             "rounded-lg text-sm",
             // Theme styling
@@ -123,10 +123,9 @@ export default function SearchBar({
           ].join(" ")}
         />
 
-        {/* Right-side cluster: spinner OR clear */}
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {/* Loading spinner when busy */}
-          {searchService.isBusy() && (
+        {/* Right-side: spinner OR clear - only show one at a time */}
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
+          {searchService.isBusy() ? (
             <svg
               className="h-4 w-4 animate-spin opacity-80 text-blue-500"
               viewBox="0 0 24 24"
@@ -135,17 +134,14 @@ export default function SearchBar({
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" opacity="0.25" />
               <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="3" fill="none" />
             </svg>
-          )}
-
-          {/* Clear button (shows only if there's text) */}
-          {value && (
+          ) : value && (
             <button
               type="button"
               onClick={clear}
               aria-label="Clear search"
               className="grid h-6 w-6 place-items-center rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500/60 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             >
-              <span className="block leading-none text-base">×</span>
+              <span className="text-lg leading-none">×</span>
             </button>
           )}
         </div>

@@ -1,0 +1,74 @@
+Got it — here’s exactly what to hand Replit so they can fix the search bar width, double X issue, and loading spinner overlap while keeping the clean, unified look.
+
+SearchBar Fix Instructions for Replit
+1. Width Control
+On desktop: limit the max width to around 300–360px so it blends with the header and doesn’t stretch awkwardly.
+
+On mobile: allow 100% width so it’s easy to tap and type.
+
+tsx
+Copy
+Edit
+className={[
+  "h-10 w-full sm:w-[min(90vw,360px)]", // responsive width
+  "pl-10 pr-8",                        // padding for icon + single clear/spinner
+  "rounded-lg text-sm",
+  "bg-header/70 border border-headerBorder",
+  "focus:ring-2 focus:ring-brand/60 focus:border-transparent",
+  "placeholder:opacity-70 transition-colors"
+].join(" ")}
+2. Single Clear Button
+Right now there are two “X”s:
+
+One is your native browser clear button for <input type="search">
+
+One is your custom “clear search” button.
+
+Fix: hide the browser’s native clear icon using CSS:
+
+css
+Copy
+Edit
+/* Hide default search input clear icon */
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  display: none;
+}
+Put this in your global.css or header component styles.
+
+3. Spinner + Clear Button Alignment
+Only show one element on the right at a time:
+Spinner if loading, otherwise Clear (X) if there’s a search term.
+
+tsx
+Copy
+Edit
+<div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
+  {searchService.isBusy() ? (
+    <svg
+      className="h-4 w-4 animate-spin opacity-80"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" opacity="0.25" />
+      <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="3" fill="none" />
+    </svg>
+  ) : value && (
+    <button
+      type="button"
+      onClick={clear}
+      aria-label="Clear search"
+      className="grid h-6 w-6 place-items-center rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-brand/60"
+    >
+      <span className="text-lg leading-none">×</span>
+    </button>
+  )}
+</div>
+4. Visual Checks Before Shipping
+✅ Width looks proportional to the rest of the header on desktop.
+✅ On mobile, search fills row width and is easy to use.
+✅ Only one “X” is ever visible.
+✅ Spinner never overlaps other icons.
+✅ Nav buttons stay aligned vertically with the search field.
+
