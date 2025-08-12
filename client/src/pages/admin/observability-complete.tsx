@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { obsApi } from "@/api/observability";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Dropdown, Checkbox } from "@/components/ui/Dropdown";
 import { AlertTriangle, CheckCircle, XCircle, Search, TrendingUp } from "lucide-react";
 
 interface Issue {
@@ -67,18 +65,26 @@ function fmtDateTime(date: Date | null): string {
 }
 
 export default function ObservabilityPage() {
-  const queryClient = useQueryClient();
-
-  // Filters state - defaults to show critical issues first
+  // Filters state
   const [q, setQ] = useState("");
-  const [level, setLevel] = useState<"all"|"error"|"warn"|"info">("error");
-  const [env, setEnv] = useState<"all"|"production"|"development">("all");
+  const [level, setLevel] = useState("error");
+  const [env, setEnv] = useState("all");
   const [resolved, setResolved] = useState(false);
   const [ignored, setIgnored] = useState(false);
   const [showTestEvents, setShowTestEvents] = useState(false);
   const [page, setPage] = useState(1);
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState("24");
+
+  // Data state
+  const [issuesData, setIssuesData] = useState<{ items: Issue[]; total: number } | null>(null);
+  const [issueDetails, setIssueDetails] = useState<{ issue: Issue } | null>(null);
+  const [issueEvents, setIssueEvents] = useState<ErrorEvent[]>([]);
+  const [seriesData, setSeriesData] = useState<Array<{ hour: string; count: number }>>([]);
+  
+  // Loading and error states
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Debounced search
   const [debouncedQ, setDebouncedQ] = useState(q);
@@ -87,87 +93,111 @@ export default function ObservabilityPage() {
     return () => clearTimeout(timer);
   }, [q]);
 
-  // Issues query with filters
-  const { data: issuesData, isLoading } = useQuery({
-    queryKey: ["obs:issues", debouncedQ, level, env, resolved, ignored, page],
-    queryFn: () => obsApi.issues({
-      q: debouncedQ, 
-      level: level === "all" ? undefined : level, 
-      env: env === "all" ? undefined : env,
-      resolved,
-      ignored,
-      page,
-      limit: 20
-    }),
-    placeholderData: (prev) => prev,
-  });
+  // Fetch issues
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
 
-  // Issue details query
-  const { data: issueDetails } = useQuery({
-    queryKey: ["obs:issue", selectedIssue],
-    queryFn: () => selectedIssue ? obsApi.issue(selectedIssue) : null,
-    enabled: !!selectedIssue,
-  });
+    const params = new URLSearchParams({
+      q: debouncedQ,
+      level: level === "all" ? "" : level,
+      env: env === "all" ? "" : env,
+      resolved: resolved.toString(),
+      ignored: ignored.toString(),
+      page: page.toString(),
+      limit: "20"
+    });
 
-  // Issue events query
-  const { data: issueEvents } = useQuery({
-    queryKey: ["obs:issue-events", selectedIssue],
-    queryFn: () => selectedIssue ? obsApi.events(selectedIssue) : null,
-    enabled: !!selectedIssue,
-  });
+    fetch(`/api/observability/issues?${params}`, { credentials: "include" })
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(data => {
+        if (!cancelled) {
+          setIssuesData(data);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          console.error("Failed to load issues:", err);
+          setError(true);
+          setLoading(false);
+        }
+      });
 
-  // Chart data query
-  const { data: seriesData } = useQuery({
-    queryKey: ["obs:series", timeRange],
-    queryFn: () => obsApi.series(parseInt(timeRange)),
-  });
+    return () => { cancelled = true; };
+  }, [debouncedQ, level, env, resolved, ignored, page]);
 
-  // Mutations for actions
-  const resolveMutation = useMutation({
-    mutationFn: (fp: string) => obsApi.resolve(fp),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
-      queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
-      setSelectedIssue(null);
-    },
-  });
+  // Fetch issue details
+  useEffect(() => {
+    if (!selectedIssue) {
+      setIssueDetails(null);
+      setIssueEvents([]);
+      return;
+    }
 
-  const reopenMutation = useMutation({
-    mutationFn: (fp: string) => obsApi.reopen(fp),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
-      queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
-    },
-  });
+    Promise.all([
+      fetch(`/api/observability/issue/${selectedIssue}`, { credentials: "include" }),
+      fetch(`/api/observability/events/${selectedIssue}`, { credentials: "include" })
+    ])
+      .then(([issueRes, eventsRes]) => Promise.all([issueRes.json(), eventsRes.json()]))
+      .then(([issue, events]) => {
+        setIssueDetails(issue);
+        setIssueEvents(events);
+      })
+      .catch(err => console.error("Failed to load issue details:", err));
+  }, [selectedIssue]);
 
-  const ignoreMutation = useMutation({
-    mutationFn: (fp: string) => obsApi.ignore(fp),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
-      setSelectedIssue(null);
-    },
-  });
+  // Fetch series data
+  useEffect(() => {
+    fetch("/api/observability/series?days=1", { credentials: "include" })
+      .then(r => r.json())
+      .then(data => setSeriesData(data))
+      .catch(err => console.error("Failed to load series data:", err));
+  }, []);
 
-  const unignoreMutation = useMutation({
-    mutationFn: (fp: string) => obsApi.unignore(fp),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
-    },
-  });
+  // Issue actions
+  const performAction = async (action: string, fingerprint: string) => {
+    setActionLoading(action);
+    try {
+      const response = await fetch(`/api/observability/${action}/${fingerprint}`, {
+        method: "POST",
+        credentials: "include"
+      });
+      
+      if (response.ok) {
+        // Refresh issues list
+        setIssuesData(prev => prev ? {
+          ...prev,
+          items: prev.items.map(item => 
+            item.fingerprint === fingerprint 
+              ? { 
+                  ...item, 
+                  resolved: action === "resolve" ? true : action === "reopen" ? false : item.resolved,
+                  ignored: action === "ignore" ? true : action === "unignore" ? false : item.ignored
+                } 
+              : item
+          )
+        } : null);
+        
+        if (selectedIssue === fingerprint) {
+          setSelectedIssue(null);
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to ${action} issue:`, err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   // Safe data access
-  const items = Array.isArray(issuesData?.items) ? issuesData.items : [];
-  const series = Array.isArray(seriesData) ? seriesData : [];
+  const items = issuesData?.items || [];
 
-  // Transform chart data
-  const chartData = series.map((r: any) => {
-    const time = toDateSafe(r.hour);
-    return {
-      time: time ? time.getTime() : 0,
-      timeStr: time ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-      count: Number(r.count) || 0
-    };
-  }).filter((point: any) => point.time > 0);
+  // Filter out test events from display unless explicitly requested
+  const displayItems = showTestEvents ? items : items.filter((item: Issue) => {
+    return !item.title.toLowerCase().includes('test');
+  });
 
   const getLevelBadgeColor = (level: string) => {
     switch (level) {
@@ -184,16 +214,11 @@ export default function ObservabilityPage() {
     return <AlertTriangle className="h-4 w-4 text-red-500" />;
   };
 
-  // Filter out test events from display unless explicitly requested
-  const displayItems = showTestEvents ? items : items.filter((item: Issue) => {
-    return !item.title.toLowerCase().includes('test');
-  });
-
   return (
     <div className="p-6 space-y-6">
       {/* Header & Metrics */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Observability</h1>
+        <h1 className="text-2xl font-bold">Error Tracking</h1>
         <div className="flex gap-4">
           <Card className="p-4">
             <div className="flex items-center gap-2">
@@ -237,67 +262,45 @@ export default function ObservabilityPage() {
 
             <div className="flex gap-2 items-center">
               <Label>Level:</Label>
-              <Select value={level} onValueChange={(value) => setLevel(value as any)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LEVELS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Dropdown
+                options={LEVELS}
+                value={level}
+                onChange={setLevel}
+                className="w-32"
+              />
             </div>
 
             <div className="flex gap-2 items-center">
               <Label>Environment:</Label>
-              <Select value={env} onValueChange={(value) => setEnv(value as any)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Environment" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ENVS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Dropdown
+                options={ENVS}
+                value={env}
+                onChange={setEnv}
+                className="w-32"
+              />
             </div>
 
             <div className="flex gap-2 items-center">
               <Label>Status:</Label>
-              <Select value={resolved.toString()} onValueChange={(value) => setResolved(value === "true")}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Dropdown
+                options={STATUSES}
+                value={resolved.toString()}
+                onChange={(value) => setResolved(value === "true")}
+                className="w-32"
+              />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="show-ignored"
-                checked={ignored}
-                onChange={(e) => setIgnored(e.target.checked)}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor="show-ignored">Show ignored</Label>
-            </div>
+            <Checkbox
+              checked={ignored}
+              onChange={setIgnored}
+              label="Show ignored"
+            />
 
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="show-test"
-                checked={showTestEvents}
-                onChange={(e) => setShowTestEvents(e.target.checked)}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor="show-test">Show test events</Label>
-            </div>
+            <Checkbox
+              checked={showTestEvents}
+              onChange={setShowTestEvents}
+              label="Show test events"
+            />
           </div>
         </CardContent>
       </Card>
@@ -308,11 +311,15 @@ export default function ObservabilityPage() {
           <CardTitle>Issues ({displayItems.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Loading...</div>
+          {loading ? (
+            <div className="text-center py-8">Loading issues...</div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-600">
+              Couldn't load issues. Try refreshing the page.
+            </div>
           ) : displayItems.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No issues found
+              No issues found for current filters
             </div>
           ) : (
             <div className="space-y-2">
@@ -375,36 +382,36 @@ export default function ObservabilityPage() {
               <div className="flex gap-2">
                 {!issueDetails.issue.resolved ? (
                   <Button
-                    onClick={() => resolveMutation.mutate(selectedIssue!)}
-                    disabled={resolveMutation.isPending}
+                    onClick={() => performAction("resolve", selectedIssue!)}
+                    disabled={actionLoading === "resolve"}
                   >
-                    {resolveMutation.isPending ? "Resolving..." : "Mark Resolved"}
+                    {actionLoading === "resolve" ? "Resolving..." : "Mark Resolved"}
                   </Button>
                 ) : (
                   <Button
                     variant="outline"
-                    onClick={() => reopenMutation.mutate(selectedIssue!)}
-                    disabled={reopenMutation.isPending}
+                    onClick={() => performAction("reopen", selectedIssue!)}
+                    disabled={actionLoading === "reopen"}
                   >
-                    {reopenMutation.isPending ? "Reopening..." : "Reopen"}
+                    {actionLoading === "reopen" ? "Reopening..." : "Reopen"}
                   </Button>
                 )}
 
                 {!issueDetails.issue.ignored ? (
                   <Button
                     variant="outline"
-                    onClick={() => ignoreMutation.mutate(selectedIssue!)}
-                    disabled={ignoreMutation.isPending}
+                    onClick={() => performAction("ignore", selectedIssue!)}
+                    disabled={actionLoading === "ignore"}
                   >
-                    {ignoreMutation.isPending ? "Ignoring..." : "Ignore"}
+                    {actionLoading === "ignore" ? "Ignoring..." : "Ignore"}
                   </Button>
                 ) : (
                   <Button
                     variant="outline"
-                    onClick={() => unignoreMutation.mutate(selectedIssue!)}
-                    disabled={unignoreMutation.isPending}
+                    onClick={() => performAction("unignore", selectedIssue!)}
+                    disabled={actionLoading === "unignore"}
                   >
-                    {unignoreMutation.isPending ? "Unignoring..." : "Unignore"}
+                    {actionLoading === "unignore" ? "Unignoring..." : "Unignore"}
                   </Button>
                 )}
               </div>
@@ -421,7 +428,7 @@ export default function ObservabilityPage() {
                         </div>
                         {event.stack && event.stack.length > 0 && (
                           <div className="text-xs text-muted-foreground mt-1 font-mono">
-                            {event.stack[0]}
+                            {Array.isArray(event.stack) ? event.stack[0] : event.stack}
                           </div>
                         )}
                       </div>

@@ -69,7 +69,7 @@ import googleAuthRoutes from "./routes/auth-google";
 import stripeWebhookRoutes from './routes/stripe-webhooks';
 import adminMetricsRoutes from './routes/admin-metrics';
 import errorManagementRoutes from './routes/admin/error-management';
-import observabilityRoutes from './routes/observability';
+import observabilityNewRoutes from './routes/observability-new';
 import crypto from 'crypto';
 import { 
   users, 
@@ -214,8 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/admin', errorManagementRoutes);
   
   // Observability routes (local Sentry-style error tracking)
-  // Legacy observability routes (keep for compatibility)
-  app.use('/api/observability/legacy', observabilityRoutes);
+  // Legacy observability routes (keep for compatibility) - disabled for now
   
   // New enhanced observability system with proper filtering and actions
   const newObservabilityRouter = (await import('./routes/observability-new')).default;
