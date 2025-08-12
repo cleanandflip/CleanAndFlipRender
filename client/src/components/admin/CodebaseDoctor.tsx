@@ -104,11 +104,7 @@ export function CodebaseDoctor() {
   // Run analysis mutation
   const analysisMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/admin/codebase/analyze', {
-        method: 'POST',
-        body: JSON.stringify(analysisOptions),
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return await apiRequest('/api/admin/codebase/analyze', 'POST', analysisOptions);
     },
     onSuccess: () => {
       toast({
@@ -301,7 +297,7 @@ export function CodebaseDoctor() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-400 mb-2">
-              {lastScan?.trends.improvementFromLastScan > 0 ? '+' : ''}{lastScan?.trends.improvementFromLastScan || 0}
+              {(lastScan?.trends?.improvementFromLastScan ?? 0) > 0 ? '+' : ''}{lastScan?.trends?.improvementFromLastScan ?? 0}
             </div>
             <div className="text-xs text-gray-400">
               Since last scan
@@ -565,14 +561,14 @@ export function CodebaseDoctor() {
                     <CardContent className="p-4">
                       <div className="text-center">
                         <div className={`text-2xl font-bold ${
-                          lastScan.trends.improvementFromLastScan > 0 
+                          (lastScan?.trends?.improvementFromLastScan ?? 0) > 0 
                             ? 'text-green-400' 
-                            : lastScan.trends.improvementFromLastScan < 0 
+                            : (lastScan?.trends?.improvementFromLastScan ?? 0) < 0 
                               ? 'text-red-400' 
                               : 'text-gray-400'
                         }`}>
-                          {lastScan.trends.improvementFromLastScan > 0 ? '+' : ''}
-                          {lastScan.trends.improvementFromLastScan}
+                          {(lastScan?.trends?.improvementFromLastScan ?? 0) > 0 ? '+' : ''}
+                          {lastScan?.trends?.improvementFromLastScan ?? 0}
                         </div>
                         <div className="text-sm text-gray-400">Net Change</div>
                       </div>
@@ -580,14 +576,14 @@ export function CodebaseDoctor() {
                   </Card>
                 </div>
 
-                {scanHistory && scanHistory.length > 1 && (
+                {scanHistory && Array.isArray(scanHistory) && scanHistory.length > 1 && (
                   <Card className="bg-gray-700 border-gray-600">
                     <CardHeader>
                       <CardTitle className="text-white">Scan History</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        {scanHistory.slice(-5).map((scan: any, index: number) => (
+                        {(scanHistory as any[]).slice(-5).map((scan: any, index: number) => (
                           <div key={index} className="flex items-center justify-between p-2 bg-gray-800 rounded">
                             <div className="text-sm text-gray-300">
                               {formatTimestamp(scan.timestamp)}
