@@ -767,14 +767,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", authMiddleware.optionalAuth, async (req, res) => {
     try {
+      Logger.info(`[CART DEBUG] POST /api/cart called - body: ${JSON.stringify(req.body)}, headers: ${JSON.stringify(req.headers)}`);
+      
       const { productId, quantity = 1 } = req.body;
       
       // Basic validation
       if (!productId) {
+        Logger.warn(`[CART DEBUG] Missing productId in request`);
         return res.status(400).json({ error: 'Product ID is required' });
       }
       
       if (!quantity || quantity < 1) {
+        Logger.warn(`[CART DEBUG] Invalid quantity: ${quantity}`);
         return res.status(400).json({ error: 'Valid quantity is required' });
       }
       
@@ -856,10 +860,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(cartItem);
       }
     } catch (error: any) {
-      Logger.error("Error adding to cart", error);
+      Logger.error("[CART DEBUG] Error adding to cart", error);
       
       // Send specific error message to frontend
       const errorMessage = error?.message || "Failed to add to cart";
+      Logger.error(`[CART DEBUG] Sending error response: ${errorMessage}`);
       res.status(500).json({ error: errorMessage });
     }
   });
