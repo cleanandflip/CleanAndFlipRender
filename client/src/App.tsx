@@ -38,7 +38,7 @@ const About = lazy(() => import("@/pages/about"));
 const Contact = lazy(() => import("@/pages/contact"));
 const LegalPrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
 const LegalTermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
-const ObservabilityPage = lazy(() => import("@/pages/admin/observability"));
+const ObservabilityPage = lazy(() => import("@/pages/admin/observability-fixed"));
 const AuthPage = lazy(() => import("@/pages/auth"));
 const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));

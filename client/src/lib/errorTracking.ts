@@ -24,22 +24,9 @@ export function reportClientError(payload: {
         service: "client",
         level: payload.level ?? "error",
         env: import.meta.env.MODE === "production" ? "production" : "development",
-        release: import.meta.env.VITE_APP_RELEASE,
         url: window.location.pathname + window.location.search,
         message: payload.message,
-        type: payload.type,
         stack: payload.stack,
-        user: window.__USER ? { id: window.__USER.id } : undefined,
-        tags: { 
-          ua: navigator.userAgent,
-          viewport: `${window.innerWidth}x${window.innerHeight}`,
-          referrer: document.referrer || undefined
-        },
-        extra: {
-          ...payload.extra,
-          timestamp: new Date().toISOString(),
-          href: window.location.href
-        },
       }),
       keepalive: true, // Allow during page unload
     });

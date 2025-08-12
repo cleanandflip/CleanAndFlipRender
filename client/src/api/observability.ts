@@ -64,7 +64,7 @@ export const obsApi = {
       credentials: "include" 
     });
     if (!response.ok) throw new Error(await response.text());
-    return response.json() as Promise<Issue>;
+    return response.json() as Promise<{ issue: Issue; events: ErrorEvent[] }>;
   },
 
   events: async (fingerprint: string, limit = 50) => {

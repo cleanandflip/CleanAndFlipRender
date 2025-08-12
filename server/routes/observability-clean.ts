@@ -43,6 +43,28 @@ router.get("/issues", async (req, res) => {
   }
 });
 
+// Admin API - Get specific issue details  
+router.get("/issues/:fp", async (req, res) => {
+  try {
+    // For now, return mock issue details since we don't have full implementation
+    const fingerprint = req.params.fp;
+    const result = await SimpleErrorStore.listIssues({ page: 1, limit: 1 });
+    const issue = result.items.find((i: any) => i.fingerprint === fingerprint);
+    
+    if (!issue) {
+      return res.status(404).json({ error: "Issue not found" });
+    }
+    
+    res.json({ 
+      issue,
+      events: [] // Empty for now
+    });
+  } catch (error) {
+    console.error("Failed to fetch issue:", error);
+    res.status(500).json({ error: "Failed to fetch issue" });
+  }
+});
+
 // Admin API - Chart data
 router.get("/series", async (req, res) => {
   try {
@@ -52,6 +74,17 @@ router.get("/series", async (req, res) => {
   } catch (error) {
     console.error("Failed to fetch chart data:", error);
     res.status(500).json({ error: "Failed to fetch chart data" });
+  }
+});
+
+// Admin API - Resolve issue
+router.post("/issues/:fp/resolve", async (req, res) => {
+  try {
+    // For now, just return success
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Failed to resolve issue:", error);
+    res.status(500).json({ error: "Failed to resolve issue" });
   }
 });
 

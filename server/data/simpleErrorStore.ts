@@ -64,8 +64,17 @@ export const SimpleErrorStore = {
 
       const total = await db.execute(sql`SELECT COUNT(*) as count FROM issues`);
       
+      // Normalize date fields to ISO strings
+      const items = result.rows.map(row => ({
+        ...row,
+        firstSeen: new Date(row.first_seen).toISOString(),
+        lastSeen: new Date(row.last_seen).toISOString(),
+        first_seen: undefined, // Remove underscore version
+        last_seen: undefined,   // Remove underscore version
+      }));
+      
       return {
-        items: result.rows,
+        items,
         total: total.rows[0]?.count || 0,
         page,
         limit
@@ -88,7 +97,13 @@ export const SimpleErrorStore = {
         ORDER BY hour
       `);
       
-      return result.rows;
+      // Normalize date fields to ISO strings
+      const series = result.rows.map(row => ({
+        hour: new Date(row.hour).toISOString(),
+        count: Number(row.count) || 0
+      }));
+      
+      return series;
     } catch (error) {
       console.error('Failed to get chart data:', error);
       return [];
