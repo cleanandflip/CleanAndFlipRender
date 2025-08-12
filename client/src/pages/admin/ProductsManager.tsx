@@ -5,7 +5,7 @@ import { Pagination } from '@/components/admin/Pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  StandardDropdown
+  Dropdown
 } from '@/components/ui';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -268,7 +268,7 @@ export function ProductsManager() {
       }}
       filters={
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <StandardDropdown
+          <Dropdown
             options={[
               { value: 'all', label: 'All Categories' },
               { value: 'barbells', label: 'Barbells' },
@@ -283,7 +283,7 @@ export function ProductsManager() {
             className="glass border-border"
           />
           
-          <StandardDropdown
+          <Dropdown
             options={[
               { value: 'all', label: 'All Statuses' },
               { value: 'active', label: 'Active' },

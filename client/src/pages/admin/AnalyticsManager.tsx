@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/admin/DashboardLayout';
 import { MetricCard } from '@/components/admin/MetricCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { StandardDropdown } from '@/components/ui';
+import { Dropdown } from '@/components/ui';
 // Using simplified date picker approach instead of complex calendar
 // import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 // import { Calendar } from '@/components/ui/calendar';
@@ -123,7 +123,7 @@ export function AnalyticsManager() {
       isLoading={isLoading}
       filters={
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <StandardDropdown
+          <Dropdown
             options={quickDateRanges.map(range => ({
               value: range.days.toString(),
               label: range.label
@@ -140,7 +140,7 @@ export function AnalyticsManager() {
             className="glass border-border"
           />
           
-          <StandardDropdown
+          <Dropdown
             options={[
               { value: 'revenue', label: 'Revenue' },
               { value: 'orders', label: 'Orders' },
@@ -153,7 +153,7 @@ export function AnalyticsManager() {
             className="glass border-border"
           />
           
-          <StandardDropdown
+          <Dropdown
             options={[
               { value: 'hour', label: 'Hourly' },
               { value: 'day', label: 'Daily' },

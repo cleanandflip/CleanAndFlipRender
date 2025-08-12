@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { StandardDropdown } from '@/components/ui';
+import { Dropdown } from '@/components/ui';
 // Removed legacy popover imports - using unified dropdown system
 // Removed legacy calendar import - using unified system
 import { 
@@ -406,7 +406,7 @@ export function SubmissionsManager() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <StandardDropdown
+            <Dropdown
               options={[
                 { value: 'all', label: 'All Statuses' },
                 { value: 'pending', label: 'Pending' },
@@ -422,7 +422,7 @@ export function SubmissionsManager() {
               className="glass border-border"
             />
             
-            <StandardDropdown
+            <Dropdown
               options={[
                 { value: 'all', label: 'All Locations' },
                 { value: 'true', label: 'Local (Asheville)' },

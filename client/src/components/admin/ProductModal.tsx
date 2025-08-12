@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-// Removed unused Select components - using StandardDropdown instead
+// Removed unused Select components - using unified Dropdown system
 import { Dropdown } from '@/components/ui';
 import { Switch } from '@/components/ui/switch';
 import { Upload, X, Plus } from 'lucide-react';
