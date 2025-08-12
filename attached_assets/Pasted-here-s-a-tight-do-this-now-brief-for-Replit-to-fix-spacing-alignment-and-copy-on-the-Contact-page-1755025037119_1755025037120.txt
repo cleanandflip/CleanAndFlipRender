@@ -1,0 +1,196 @@
+here’s a tight, do-this-now brief for Replit to fix spacing, alignment, and copy on the Contact page while keeping our theme and new components.
+
+Contact page polish (layout, spacing, clarity)
+1) Card container
+Wrap the form card with consistent padding & max width.
+
+max-w-4xl mx-auto
+
+p-6 md:p-8 lg:p-10
+
+rounded-2xl
+
+Vertical spacing to sections below: mb-10 lg:mb-12
+
+2) Header row
+Title row inside card:
+
+Flex align: flex items-center gap-3 mb-6 md:mb-8
+
+Icon sized h-5 w-5 (not huge), opaque ~70%
+
+Heading text-xl md:text-2xl font-semibold
+
+Optional subtext under heading (1–2 lines max): mt-1 text-sm opacity-80
+
+3) Form grid (consistent rhythm)
+Use a single grid everywhere:
+
+Wrapper: grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5
+
+Field blocks (label, control, helper) use the same structure:
+
+Label: block text-sm font-medium
+
+Control wrapper: mt-2
+
+Helper/error: mt-1 text-xs
+
+Controls:
+
+Inputs/Textareas: our shared components (Input, Textarea)
+
+Dropdown: our unified Dropdown with fullWidth
+
+All controls height h-10 (textarea rows 5–6)
+
+Specific row map:
+
+Row 1: Full Name* (L) | Email Address* (R)
+
+Row 2: Topic (Dropdown, L) | Subject* (R)
+
+Row 3 (full width): Message* (Textarea rows=6)
+
+Required asterisk: include * only in label text; no duplicate in placeholders.
+
+4) Placeholders & value clarity
+Rely on global placeholder rule (already added):
+
+Keep --placeholder-opacity: .55
+
+Do not hardcode lighter colors per field; remove local placeholder overrides.
+
+5) Helper copy & small print
+Under Message (full width), show the SLA note as small print:
+
+Text: “We typically respond within 24 hours during business hours. For urgent matters, please call us directly.”
+
+Style: mt-2 text-xs opacity-80
+
+Move “* Required fields” to the bottom-left of the card:
+
+mt-3 text-xs opacity-70
+
+Do not duplicate helper text lines; one per field max.
+
+6) Submit button block
+Place outside the grid, below card content:
+
+Container: mt-6
+
+Button: same primary as site
+
+Layout:
+
+Mobile: full width w-full
+
+Desktop: w-auto and right-aligned with the card: md:ml-auto
+
+States:
+
+Loading: spinner + aria-busy="true"
+
+Disabled when invalid or submitting
+
+7) Validation & errors (spacing and a11y)
+On invalid field:
+
+Control gets: aria-invalid="true"
+
+Show error text directly under control: mt-1 text-xs text-destructive
+
+Link with aria-describedby
+
+Keep error spacing identical to helper spacing (no jumps).
+
+8) Dropdown panel layering (no clipping)
+Ensure the Topic dropdown menu uses portal + z-index:
+
+In Dropdown, we already render to document.body with z-[60]
+
+Confirm no form/card wrapper sets overflow:hidden on the card content (it’s fine on the outer card)
+
+Panel width: equal to trigger, offset 8px, max-h-[56vh], scrollable.
+
+9) Micro-interactions (subtle)
+Controls hover: hover:bg-surface/95 (already in shared components)
+
+Dropdown items: subtle tint + 1px glide (already applied)
+
+Respect reduced motion (no translate when prefers-reduced-motion)
+
+10) Copy tweaks (short & scannable)
+Field placeholders:
+
+Full Name → “Your full name”
+
+Email → “your@email.com”
+
+Subject → “Brief subject line”
+
+Message → “Tell us how we can help you…”
+
+Topic options: keep the existing set; ensure capitalization consistent.
+
+11) Responsive checks
+At md breakpoint, inputs align in two columns; below md, full width.
+
+No overlapping of the dropdown panel with the submit button (thanks to portal).
+
+Card paddings scale: p-6 (sm), p-8 (md), p-10 (lg)
+
+12) Success and failure feedback
+On successful submit:
+
+Show a non-blocking toast and inline success banner at top of card:
+
+role="status", aria-live="polite"
+
+On failure:
+
+Inline error banner with retry CTA
+
+Code pointers (minimal changes)
+Contact page layout
+
+Wrap form fields in:
+
+tsx
+Copy
+Edit
+<div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">...</div>
+Keep labels/controls/helpers in a Field wrapper for consistency (as used on sell-to-us page).
+
+Dropdown (Topic)
+
+tsx
+Copy
+Edit
+<Dropdown fullWidth value={watch("topic") ?? ""} onChange={(v)=>setValue("topic", v, { shouldDirty:true })} options={TOPIC_OPTIONS} placeholder="What can we help with?" />
+Submit area
+
+tsx
+Copy
+Edit
+<div className="mt-6 md:flex md:justify-end">
+  <Button type="submit" disabled={isSubmitting || !isValid} aria-busy={isSubmitting}>
+    {isSubmitting ? "Sending…" : "Send Message"}
+  </Button>
+</div>
+Acceptance checklist
+ Even vertical rhythm: same gap between every field (no crowded lines).
+
+ Two columns align at md+; single column on mobile.
+
+ Placeholders are clearly lighter than values across all fields.
+
+ Topic dropdown opens below the trigger, never behind the card, matches trigger width.
+
+ Helper text and error text positions are consistent and readable.
+
+ Submit button aligns right on desktop, full width on mobile, with loading state.
+
+ Success/failure feedback is clear and accessible.
+
+ No legacy placeholder or per-field hacks remain (rg -n "::placeholder|placeholder:" src shows only in global CSS and shared components).

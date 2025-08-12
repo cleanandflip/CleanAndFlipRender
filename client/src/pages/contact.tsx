@@ -1,17 +1,16 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Card, Input } from "@/components/shared/AnimatedComponents";
+import { Card } from "@/components/shared/AnimatedComponents";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dropdown } from "@/components/ui";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import { 
   Mail, 
   Phone, 
@@ -27,10 +26,20 @@ const contactSchema = z.object({
   email: z.string().email("Valid email is required"),
   subject: z.string().min(1, "Subject is required"),
   message: z.string().min(10, "Message must be at least 10 characters"),
-  category: z.string().min(1, "Please select a category"),
+  topic: z.string().min(1, "Please select a topic"),
 });
 
 type ContactForm = z.infer<typeof contactSchema>;
+
+const TOPIC_OPTIONS = [
+  { value: "selling", label: "Selling Equipment" },
+  { value: "buying", label: "Buying Equipment" },
+  { value: "order", label: "Order Support" },
+  { value: "shipping", label: "Shipping & Delivery" },
+  { value: "returns", label: "Returns & Refunds" },
+  { value: "general", label: "General Question" },
+  { value: "partnership", label: "Partnership Inquiry" }
+];
 
 export default function Contact() {
   const { toast } = useToast();
@@ -39,7 +48,11 @@ export default function Contact() {
   const form = useForm<ContactForm>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
-      category: "",
+      name: "",
+      email: "",
+      subject: "",
+      message: "",
+      topic: "",
     },
   });
 
@@ -72,555 +85,296 @@ export default function Contact() {
 
   if (isSubmitted) {
     return (
-      <motion.div 
-        className="min-h-screen pt-32 px-6"
-        style={{ backgroundColor: theme.colors.bg.primary }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div className="min-h-screen pt-32 px-6">
         <div className="max-w-4xl mx-auto">
           <Card className="p-12 text-center">
-            <CheckCircle 
-              className="mx-auto mb-6" 
-              size={64} 
-              style={{ color: theme.colors.brand.green }}
-            />
-            <h1 
-              className="font-bebas text-4xl mb-4"
-              style={{ color: theme.colors.text.primary }}
-            >
-              MESSAGE SENT!
-            </h1>
-            <p 
-              className="text-lg mb-8"
-              style={{ color: theme.colors.text.secondary }}
-            >
+            <CheckCircle className="mx-auto mb-6 text-success" size={64} />
+            <h1 className="font-bebas text-4xl mb-4 text-foreground">MESSAGE SENT!</h1>
+            <p className="text-lg mb-8 text-text-secondary">
               Thank you for contacting Clean & Flip. We've received your message and 
               will get back to you within 24 hours.
             </p>
             <div className="grid md:grid-cols-2 gap-6 mb-8">
               <div className="text-center">
-                <Clock 
-                  className="mx-auto mb-2" 
-                  size={32} 
-                  style={{ color: theme.colors.brand.blue }}
-                />
-                <h3 
-                  className="font-semibold mb-1"
-                  style={{ color: theme.colors.text.primary }}
-                >
-                  Quick Response
-                </h3>
-                <p 
-                  className="text-sm"
-                  style={{ color: theme.colors.text.muted }}
-                >
-                  24-hour response guarantee
-                </p>
+                <Clock className="mx-auto mb-2 text-accent-blue" size={32} />
+                <h3 className="font-semibold mb-1 text-foreground">Quick Response</h3>
+                <p className="text-sm text-text-muted">24-hour response guarantee</p>
               </div>
               <div className="text-center">
-                <MessageSquare 
-                  className="mx-auto mb-2" 
-                  size={32} 
-                  style={{ color: theme.colors.brand.green }}
-                />
-                <h3 
-                  className="font-semibold mb-1"
-                  style={{ color: theme.colors.text.primary }}
-                >
-                  Personal Service
-                </h3>
-                <p 
-                  className="text-sm"
-                  style={{ color: theme.colors.text.muted }}
-                >
-                  Direct response from our team
-                </p>
+                <MessageSquare className="mx-auto mb-2 text-success" size={32} />
+                <h3 className="font-semibold mb-1 text-foreground">Personal Service</h3>
+                <p className="text-sm text-text-muted">Direct response from our team</p>
               </div>
             </div>
             <Button 
               onClick={() => setIsSubmitted(false)}
-              variant="secondary" 
+              variant="outline" 
               size="lg"
             >
               Send Another Message
             </Button>
           </Card>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div 
-      className="min-h-screen pt-32 px-6 pb-12"
-      style={{ backgroundColor: theme.colors.bg.primary }}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <div className="min-h-screen pt-32 px-6 pb-12">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <motion.div 
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
+        <div className="text-center mb-16">
           <h1 className="font-bebas text-6xl md:text-8xl mb-6">
-            <span style={{ color: theme.colors.text.primary }}>CONTACT </span>
-            <span style={{ color: theme.colors.brand.blue }}>US</span>
+            CONTACT <span className="text-accent-blue">US</span>
           </h1>
-          <p 
-            className="text-xl max-w-3xl mx-auto"
-            style={{ color: theme.colors.text.secondary }}
-          >
+          <p className="text-xl text-text-secondary max-w-3xl mx-auto">
             Have questions about buying or selling equipment? Need help with an order? 
             We're here to help and respond to all inquiries within 24 hours.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid lg:grid-cols-3 gap-12">
           {/* Contact Form */}
-          <motion.div 
-            className="lg:col-span-2"
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
+          <div className="lg:col-span-2">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <Card className="p-6">
-                  <h2 
-                    className="font-bebas text-2xl mb-6 flex items-center"
-                    style={{ color: theme.colors.text.primary }}
-                  >
-                    <Send 
-                      className="mr-3" 
-                      size={28} 
-                      style={{ color: theme.colors.brand.blue }}
-                    />
-                    SEND US A MESSAGE
-                  </h2>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <Card className="max-w-4xl mx-auto p-6 md:p-8 lg:p-10 rounded-2xl mb-10 lg:mb-12">
+                  {/* Header row */}
+                  <div className="flex items-center gap-3 mb-6 md:mb-8">
+                    <Send className="h-5 w-5 opacity-70" />
+                    <div>
+                      <h2 className="text-xl md:text-2xl font-semibold">Send Us a Message</h2>
+                      <p className="mt-1 text-sm opacity-80">We'll get back to you within 24 hours</p>
+                    </div>
+                  </div>
                   
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              placeholder="Your full name"
-                              className="field"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  {/* Form grid with consistent rhythm */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                    {/* Row 1: Full Name & Email */}
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium">
+                        Full Name <span className="text-destructive">*</span>
+                      </label>
+                      <div className="mt-2">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  id="name"
+                                  placeholder="Your full name"
+                                  className="h-10"
+                                  aria-invalid={!!form.formState.errors.name}
+                                  aria-describedby={form.formState.errors.name ? "name-error" : undefined}
+                                />
+                              </FormControl>
+                              <FormMessage id="name-error" className="mt-1 text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
                     
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email Address *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              type="email"
-                              placeholder="your@email.com"
-                              className="field"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium">
+                        Email Address <span className="text-destructive">*</span>
+                      </label>
+                      <div className="mt-2">
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  id="email"
+                                  type="email"
+                                  placeholder="your@email.com"
+                                  className="h-10"
+                                  aria-invalid={!!form.formState.errors.email}
+                                  aria-describedby={form.formState.errors.email ? "email-error" : undefined}
+                                />
+                              </FormControl>
+                              <FormMessage id="email-error" className="mt-1 text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
 
-                  <div className="grid md:grid-cols-2 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="category"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Dropdown
-                              options={[
-                                { value: "selling", label: "Selling Equipment" },
-                                { value: "buying", label: "Buying Equipment" },
-                                { value: "order", label: "Order Support" },
-                                { value: "shipping", label: "Shipping & Delivery" },
-                                { value: "returns", label: "Returns & Refunds" },
-                                { value: "general", label: "General Question" },
-                                { value: "partnership", label: "Partnership Inquiry" }
-                              ]}
-                              value={field.value || ""}
-                              placeholder="What can we help with?"
-                              onChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Row 2: Topic & Subject */}
+                    <div>
+                      <label htmlFor="topic" className="block text-sm font-medium">
+                        Topic <span className="text-destructive">*</span>
+                      </label>
+                      <div className="mt-2">
+                        <FormField
+                          control={form.control}
+                          name="topic"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Dropdown
+                                  fullWidth
+                                  value={field.value || ""}
+                                  onChange={(v) => field.onChange(v)}
+                                  options={TOPIC_OPTIONS}
+                                  placeholder="What can we help with?"
+                                  aria-invalid={!!form.formState.errors.topic}
+                                  aria-describedby={form.formState.errors.topic ? "topic-error" : undefined}
+                                />
+                              </FormControl>
+                              <FormMessage id="topic-error" className="mt-1 text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
                     
-                    <FormField
-                      control={form.control}
-                      name="subject"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Subject *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              placeholder="Brief subject line"
-                              className="field"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div>
+                      <label htmlFor="subject" className="block text-sm font-medium">
+                        Subject <span className="text-destructive">*</span>
+                      </label>
+                      <div className="mt-2">
+                        <FormField
+                          control={form.control}
+                          name="subject"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  id="subject"
+                                  placeholder="Brief subject line"
+                                  className="h-10"
+                                  aria-invalid={!!form.formState.errors.subject}
+                                  aria-describedby={form.formState.errors.subject ? "subject-error" : undefined}
+                                />
+                              </FormControl>
+                              <FormMessage id="subject-error" className="mt-1 text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row 3: Message (full width) */}
+                    <div className="md:col-span-2">
+                      <label htmlFor="message" className="block text-sm font-medium">
+                        Message <span className="text-destructive">*</span>
+                      </label>
+                      <div className="mt-2">
+                        <FormField
+                          control={form.control}
+                          name="message"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Textarea 
+                                  {...field} 
+                                  id="message"
+                                  placeholder="Tell us how we can help you…"
+                                  rows={6}
+                                  className="resize-vertical"
+                                  aria-invalid={!!form.formState.errors.message}
+                                  aria-describedby={form.formState.errors.message ? "message-error" : undefined}
+                                />
+                              </FormControl>
+                              <FormMessage id="message-error" className="mt-1 text-xs" />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      {/* SLA note under Message */}
+                      <p className="mt-2 text-xs opacity-80">
+                        We typically respond within 24 hours during business hours. For urgent matters, please call us directly.
+                      </p>
+                    </div>
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="message"
-                    render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <FormLabel>Message *</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            {...field} 
-                            placeholder="Tell us how we can help you..."
-                            className="field min-h-[120px]"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div 
-                    className="mt-6 text-sm"
-                    style={{ color: theme.colors.text.muted }}
-                  >
-                    <p>* Required fields</p>
-                    <p className="mt-1">
-                      We typically respond within 24 hours during business hours. 
-                      For urgent matters, please call us directly.
-                    </p>
-                  </div>
+                  {/* Required fields note at bottom-left */}
+                  <p className="mt-3 text-xs opacity-70">* Required fields</p>
                 </Card>
 
-                <Button 
-                  type="submit" 
-                  variant="primary"
-                  size="lg"
-                  className="w-full py-3"
-                  loading={submitMutation.isPending}
-                  disabled={submitMutation.isPending}
-                >
-                  {submitMutation.isPending ? "Sending..." : "Send Message"}
-                </Button>
+                {/* Submit button block */}
+                <div className="mt-6 md:flex md:justify-end">
+                  <Button 
+                    type="submit" 
+                    disabled={submitMutation.isPending || !form.formState.isValid}
+                    aria-busy={submitMutation.isPending}
+                    className="w-full md:w-auto"
+                  >
+                    {submitMutation.isPending ? "Sending…" : "Send Message"}
+                  </Button>
+                </div>
               </form>
             </Form>
-          </motion.div>
+          </div>
 
-          {/* Contact Information */}
-          <motion.div 
-            className="lg:col-span-1 space-y-6"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-          >
-            {/* Direct Contact */}
+          {/* Contact Info Sidebar */}
+          <div className="space-y-6">
             <Card className="p-6">
-              <h3 
-                className="font-bebas text-xl mb-6"
-                style={{ color: theme.colors.text.primary }}
-              >
-                DIRECT CONTACT
-              </h3>
+              <h3 className="font-bebas text-xl mb-4">GET IN TOUCH</h3>
               
               <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Mail 
-                    className="mt-1 flex-shrink-0" 
-                    size={20} 
-                    style={{ color: theme.colors.brand.blue }}
-                  />
+                <div className="flex items-center gap-3">
+                  <Mail className="h-5 w-5 text-accent-blue" />
                   <div>
-                    <h4 
-                      className="font-semibold mb-1"
-                      style={{ color: theme.colors.text.primary }}
-                    >
-                      Email
-                    </h4>
-                    <a 
-                      href="mailto:support@cleanandflip.com"
-                      className="transition-colors"
-                      style={{ 
-                        color: theme.colors.text.secondary
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLElement).style.color = theme.colors.brand.blue;
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLElement).style.color = theme.colors.text.secondary;
-                      }}
-                    >
-                      support@cleanandflip.com
-                    </a>
+                    <p className="font-medium">Email</p>
+                    <p className="text-sm text-text-muted">contact@cleanandflip.com</p>
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-3">
-                  <Phone 
-                    className="mt-1 flex-shrink-0" 
-                    size={20} 
-                    style={{ color: theme.colors.brand.green }}
-                  />
+                <div className="flex items-center gap-3">
+                  <Phone className="h-5 w-5 text-success" />
                   <div>
-                    <h4 
-                      className="font-semibold mb-1"
-                      style={{ color: theme.colors.text.primary }}
-                    >
-                      Phone
-                    </h4>
-                    <a 
-                      href="tel:+18285550123"
-                      className="transition-colors"
-                      style={{ 
-                        color: theme.colors.text.secondary
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLElement).style.color = theme.colors.brand.green;
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLElement).style.color = theme.colors.text.secondary;
-                      }}
-                    >
-                      (828) 555-0123
-                    </a>
+                    <p className="font-medium">Phone</p>
+                    <p className="text-sm text-text-muted">(828) 555-LIFT</p>
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-3">
-                  <MapPin 
-                    className="mt-1 flex-shrink-0" 
-                    size={20} 
-                    style={{ color: theme.colors.status.error }}
-                  />
+                <div className="flex items-center gap-3">
+                  <MapPin className="h-5 w-5 text-warning" />
                   <div>
-                    <h4 
-                      className="font-semibold mb-1"
-                      style={{ color: theme.colors.text.primary }}
-                    >
-                      Location
-                    </h4>
-                    <p 
-                      className=""
-                      style={{ color: theme.colors.text.secondary }}
-                    >
-                      Asheville, NC<br />
-                      Serving Western North Carolina
-                    </p>
+                    <p className="font-medium">Location</p>
+                    <p className="text-sm text-text-muted">Asheville, NC</p>
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-3">
-                  <Clock 
-                    className="mt-1 flex-shrink-0" 
-                    size={20} 
-                    style={{ color: theme.colors.status.warning }}
-                  />
+                <div className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-text-muted" />
                   <div>
-                    <h4 
-                      className="font-semibold mb-1"
-                      style={{ color: theme.colors.text.primary }}
-                    >
-                      Hours
-                    </h4>
-                    <p 
-                      className=""
-                      style={{ color: theme.colors.text.secondary }}
-                    >
-                      Monday - Friday<br />
-                      9:00 AM - 5:00 PM EST
-                    </p>
+                    <p className="font-medium">Hours</p>
+                    <p className="text-sm text-text-muted">Mon-Fri 9AM-6PM</p>
                   </div>
                 </div>
               </div>
             </Card>
 
-            {/* Response Time */}
             <Card className="p-6">
-              <h3 
-                className="font-bebas text-xl mb-4"
-                style={{ color: theme.colors.text.primary }}
-              >
-                RESPONSE GUARANTEE
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: theme.colors.brand.green }}
-                  ></div>
-                  <div>
-                    <div 
-                      className="font-semibold"
-                      style={{ color: theme.colors.text.primary }}
-                    >
-                      Email inquiries
-                    </div>
-                    <div 
-                      className="text-sm"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
-                      Within 24 hours
-                    </div>
-                  </div>
+              <h3 className="font-bebas text-xl mb-4">RESPONSE TIME</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm">General Inquiries</span>
+                  <span className="text-sm font-medium text-success">24 hours</span>
                 </div>
-                
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: theme.colors.status.warning }}
-                  ></div>
-                  <div>
-                    <div 
-                      className="font-semibold"
-                      style={{ color: theme.colors.text.primary }}
-                    >
-                      Equipment evaluations
-                    </div>
-                    <div 
-                      className="text-sm"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
-                      Within 48 hours
-                    </div>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="text-sm">Order Support</span>
+                  <span className="text-sm font-medium text-warning">4 hours</span>
                 </div>
-                
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: theme.colors.brand.blue }}
-                  ></div>
-                  <div>
-                    <div 
-                      className="font-semibold"
-                      style={{ color: theme.colors.text.primary }}
-                    >
-                      Phone calls
-                    </div>
-                    <div 
-                      className="text-sm"
-                      style={{ color: theme.colors.text.secondary }}
-                    >
-                      Same business day
-                    </div>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="text-sm">Urgent Issues</span>
+                  <span className="text-sm font-medium text-accent-blue">1 hour</span>
                 </div>
               </div>
             </Card>
-          </motion.div>
+          </div>
         </div>
-
-        {/* Service Area Map */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-        >
-          <Card className="p-8 mt-12">
-            <h2 
-              className="font-bebas text-2xl mb-6 text-center"
-              style={{ color: theme.colors.text.primary }}
-            >
-              SERVICE AREA
-            </h2>
-            <div className="text-center">
-              <p 
-                className="mb-6"
-                style={{ color: theme.colors.text.secondary }}
-              >
-                We primarily serve the greater Asheville, NC area with pickup and delivery services. 
-                Shipping is available throughout the continental United States.
-              </p>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <MapPin 
-                    className="mx-auto mb-2" 
-                    size={32} 
-                    style={{ color: theme.colors.brand.blue }}
-                  />
-                  <h3 
-                    className="font-semibold mb-1"
-                    style={{ color: theme.colors.text.primary }}
-                  >
-                    Free Local Delivery
-                  </h3>
-                  <p 
-                    className="text-sm"
-                    style={{ color: theme.colors.text.secondary }}
-                  >
-                    Free within 25 miles of Asheville
-                  </p>
-                </div>
-                <div className="text-center">
-                  <Phone 
-                    className="mx-auto mb-2" 
-                    size={32} 
-                    style={{ color: theme.colors.brand.green }}
-                  />
-                  <h3 
-                    className="font-semibold mb-1"
-                    style={{ color: theme.colors.text.primary }}
-                  >
-                    Regional Delivery
-                  </h3>
-                  <p 
-                    className="text-sm"
-                    style={{ color: theme.colors.text.secondary }}
-                  >
-                    Available throughout Western NC
-                  </p>
-                </div>
-                <div className="text-center">
-                  <Mail 
-                    className="mx-auto mb-2" 
-                    size={32} 
-                    style={{ color: theme.colors.status.warning }}
-                  />
-                  <h3 
-                    className="font-semibold mb-1"
-                    style={{ color: theme.colors.text.primary }}
-                  >
-                    Nationwide Shipping
-                  </h3>
-                  <p 
-                    className="text-sm"
-                    style={{ color: theme.colors.text.secondary }}
-                  >
-                    Professional freight services available
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 }
