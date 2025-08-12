@@ -16,10 +16,12 @@ export const SimpleErrorStore = {
     
     try {
       // Insert raw error (don't specify id column - let it auto-increment)
+      const env = data.env || 'development';
+      const url = data.url || null;
+      const stack = data.stack || null;
       await db.execute(sql`
         INSERT INTO errors_raw (event_id, created_at, level, env, service, url, message, stack, fingerprint)
-        VALUES (${eventId}, NOW(), ${data.level}, ${data.env || 'development'}, ${data.service}, 
-                ${data.url || ''}, ${data.message}, ${data.stack || ''}, ${fingerprint})
+        VALUES (${eventId}, NOW(), ${data.level}, ${env}, ${data.service}, ${url}, ${data.message}, ${stack}, ${fingerprint})
       `);
 
       // Update or create issue
@@ -28,18 +30,20 @@ export const SimpleErrorStore = {
       `);
 
       if (existingIssue.rows.length > 0) {
-        // Update existing issue
+        // Update existing issue - use explicit arithmetic
         await db.execute(sql`
           UPDATE issues 
-          SET count = count + 1, last_seen = NOW()
+          SET count = COALESCE(count, 0) + 1, 
+              last_seen = NOW()
           WHERE fingerprint = ${fingerprint}
         `);
       } else {
         // Create new issue
         const title = data.message.split('\n')[0].slice(0, 160) || 'Error';
+        const envJson = JSON.stringify({ [data.env || 'development']: 1 });
         await db.execute(sql`
           INSERT INTO issues (fingerprint, title, level, service, first_seen, last_seen, count, resolved, ignored, affected_users, envs, sample_event_id)
-          VALUES (${fingerprint}, ${title}, ${data.level}, ${data.service}, NOW(), NOW(), 1, false, false, 1, '{"' + ${data.env || 'development'} + '": 1}', ${eventId})
+          VALUES (${fingerprint}, ${title}, ${data.level}, ${data.service}, NOW(), NOW(), 1, false, false, 1, ${envJson}, ${eventId})
         `);
       }
 

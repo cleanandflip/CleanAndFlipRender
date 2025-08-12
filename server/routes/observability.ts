@@ -60,6 +60,10 @@ router.post("/errors", async (req, res) => {
     res.status(202).json({ ok: true, eventId: event.eventId });
   } catch (e) {
     console.error("observability.ingest failed:", e);
+    if (e instanceof z.ZodError) {
+      console.error("Validation errors:", e.errors);
+      return res.status(400).json({ error: "Validation failed", details: e.errors });
+    }
     res.status(400).json({ error: "Invalid payload" });
   }
 });
