@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { ErrorStore } from "../data/errorStore";
+import { errorEventSchema } from "../observability/schema";
 import crypto from "crypto";
 
 // Generate UUID without external dependency

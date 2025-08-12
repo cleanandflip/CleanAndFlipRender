@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Controller, Control, FieldPath, FieldValues } from "react-hook-form";
-import Dropdown, { DropdownOption } from "@/components/ui/Dropdown";
+import UnifiedDropdown, { Option as DropdownOption } from "@/components/ui/UnifiedDropdown";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 
 type DropdownFieldProps<

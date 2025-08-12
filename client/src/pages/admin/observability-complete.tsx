@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
-import { Dropdown, Checkbox } from "@/components/ui/Dropdown";
+import UnifiedDropdown from "@/components/ui/UnifiedDropdown";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AlertTriangle, CheckCircle, XCircle, Search, TrendingUp } from "lucide-react";
 
 interface Issue {
@@ -262,45 +263,51 @@ export default function ObservabilityPage() {
 
             <div className="flex gap-2 items-center">
               <Label>Level:</Label>
-              <Dropdown
+              <UnifiedDropdown
                 options={LEVELS}
                 value={level}
                 onChange={setLevel}
-                className="w-32"
+                width={128}
               />
             </div>
 
             <div className="flex gap-2 items-center">
               <Label>Environment:</Label>
-              <Dropdown
+              <UnifiedDropdown
                 options={ENVS}
                 value={env}
                 onChange={setEnv}
-                className="w-32"
+                width={160}
               />
             </div>
 
             <div className="flex gap-2 items-center">
               <Label>Status:</Label>
-              <Dropdown
+              <UnifiedDropdown
                 options={STATUSES}
                 value={resolved.toString()}
                 onChange={(value) => setResolved(value === "true")}
-                className="w-32"
+                width={128}
               />
             </div>
 
-            <Checkbox
-              checked={ignored}
-              onChange={setIgnored}
-              label="Show ignored"
-            />
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="show-ignored"
+                checked={ignored}
+                onCheckedChange={setIgnored}
+              />
+              <Label htmlFor="show-ignored">Show ignored</Label>
+            </div>
 
-            <Checkbox
-              checked={showTestEvents}
-              onChange={setShowTestEvents}
-              label="Show test events"
-            />
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="show-test-events"
+                checked={showTestEvents}
+                onCheckedChange={setShowTestEvents}
+              />
+              <Label htmlFor="show-test-events">Show test events</Label>
+            </div>
           </div>
         </CardContent>
       </Card>

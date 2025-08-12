@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceInput } from "@/components/ui/price-input";
-import Dropdown from "@/components/ui/Dropdown";
+import UnifiedDropdown from "@/components/ui/UnifiedDropdown";
 import DropdownField from "@/components/form/DropdownField";
 import { Textarea } from "@/components/ui/textarea";
 

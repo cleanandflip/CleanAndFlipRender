@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { AlertTriangle, CheckCircle, XCircle, Clock, Users, Activity, TrendingUp, AlertCircle } from "lucide-react";
 import { toDateSafe, fmtDateTime } from "@/lib/dates";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import Dropdown, { type DropdownOption } from "@/components/ui/Dropdown";
+import UnifiedDropdown, { type Option as DropdownOption } from "@/components/ui/UnifiedDropdown";
 
 // Unified dropdown options
 const LEVELS: DropdownOption[] = [
