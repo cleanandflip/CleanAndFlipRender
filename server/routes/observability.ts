@@ -104,8 +104,8 @@ router.get("/issues", async (req, res) => {
 router.get("/issues/:fp", async (req, res) => {
   try {
     const [issue, events] = await Promise.all([
-      ErrorStore.getIssue(req.params.fp),
-      ErrorStore.getRawForIssue(req.params.fp, 50),
+      SimpleErrorStore.getIssue(req.params.fp),
+      SimpleErrorStore.getRawForIssue(req.params.fp, 50),
     ]);
     
     if (!issue) {
@@ -122,7 +122,7 @@ router.get("/issues/:fp", async (req, res) => {
 // Admin API - Resolve issue
 router.put("/issues/:fp/resolve", async (req, res) => {
   try {
-    await ErrorStore.setResolved(req.params.fp, true);
+    await SimpleErrorStore.setResolved(req.params.fp, true);
     res.json({ ok: true });
   } catch (error) {
     console.error("Failed to resolve issue:", error);
@@ -133,7 +133,7 @@ router.put("/issues/:fp/resolve", async (req, res) => {
 // Admin API - Reopen issue
 router.put("/issues/:fp/reopen", async (req, res) => {
   try {
-    await ErrorStore.setResolved(req.params.fp, false);
+    await SimpleErrorStore.setResolved(req.params.fp, false);
     res.json({ ok: true });
   } catch (error) {
     console.error("Failed to reopen issue:", error);
@@ -144,7 +144,7 @@ router.put("/issues/:fp/reopen", async (req, res) => {
 // Admin API - Ignore issue
 router.put("/issues/:fp/ignore", async (req, res) => {
   try {
-    await ErrorStore.setIgnored(req.params.fp, true);
+    await SimpleErrorStore.setIgnored(req.params.fp, true);
     res.json({ ok: true });
   } catch (error) {
     console.error("Failed to ignore issue:", error);

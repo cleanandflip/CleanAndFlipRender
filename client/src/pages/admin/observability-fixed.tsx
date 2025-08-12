@@ -9,27 +9,28 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { AlertTriangle, CheckCircle, XCircle, Clock, Users, Activity, TrendingUp, AlertCircle } from "lucide-react";
 import { toDateSafe, fmtDateTime } from "@/lib/dates";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import Dropdown, { type DropdownOption } from "@/components/ui/Dropdown";
 
 // Unified dropdown options
-const LEVELS = [
-  { label: "All levels", value: "all" },
+const LEVELS: DropdownOption[] = [
+  { label: "All levels", value: "" },
   { label: "Error", value: "error" },
   { label: "Warn", value: "warn" },
   { label: "Info", value: "info" },
 ];
 
-const ENVS = [
-  { label: "All envs", value: "all" },
+const ENVS: DropdownOption[] = [
+  { label: "All envs", value: "" },
   { label: "Production", value: "production" },
   { label: "Development", value: "development" },
 ];
 
-const STATUSES = [
+const STATUSES: DropdownOption[] = [
   { label: "Unresolved", value: "false" },
   { label: "Resolved", value: "true" },
 ];
 
-const TIME_RANGES = [
+const TIME_RANGES: DropdownOption[] = [
   { label: "Last 24h", value: "1" },
   { label: "Last 7d", value: "7" },
   { label: "Last 30d", value: "30" },
@@ -37,8 +38,8 @@ const TIME_RANGES = [
 
 export default function ObservabilityPage() {
   const [q, setQ] = useState("");
-  const [level, setLevel] = useState<string>("all");
-  const [env, setEnv] = useState<string>("all");
+  const [level, setLevel] = useState<string>("");
+  const [env, setEnv] = useState<string>("");
   const [resolved, setResolved] = useState(false);
   const [page, setPage] = useState(1);
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
@@ -52,13 +53,13 @@ export default function ObservabilityPage() {
     queryKey: ["obs:issues", q, level, env, resolved, page, limit],
     queryFn: () => obsApi.issues({ 
       q, 
-      level: level === "all" ? undefined : level, 
-      env: env === "all" ? undefined : env, 
+      level: level || undefined, 
+      env: env || undefined, 
       resolved, 
       page, 
       limit 
     }),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
   });
 
   // Issue details query
@@ -83,7 +84,11 @@ export default function ObservabilityPage() {
 
   // Mutations
   const resolveMutation = useMutation({
-    mutationFn: obsApi.resolve,
+    mutationFn: (fingerprint: string) => 
+      fetch(`/api/observability/issues/${fingerprint}/resolve`, { 
+        method: 'POST',
+        credentials: 'include'
+      }).then(res => res.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
       setSelectedIssue(null);
@@ -102,7 +107,7 @@ export default function ObservabilityPage() {
       timeStr: time ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
       count: Number(r.count) || 0
     };
-  }).filter(point => point.time > 0);
+  }).filter((point: any) => point.time > 0);
 
   const getLevelBadgeColor = (level: string) => {
     switch (level) {
@@ -119,34 +124,18 @@ export default function ObservabilityPage() {
     return <AlertTriangle className="h-4 w-4 text-red-500" />;
   };
 
-  // Simple dropdown component since we don't have the unified one yet
-  const SimpleSelect = ({ value, onChange, options, placeholder }: {
-    value: string;
-    onChange: (value: string) => void;
-    options: { label: string; value: string }[];
-    placeholder?: string;
-  }) => (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="px-3 py-2 border rounded-md bg-white dark:bg-gray-900 text-sm min-w-32"
-    >
-      {placeholder && <option value="">{placeholder}</option>}
-      {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
-  );
+
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Error Tracking</h1>
         <div className="flex items-center gap-2">
-          <SimpleSelect
+          <Dropdown
             value={timeRange}
             onChange={setTimeRange}
             options={TIME_RANGES}
+            placeholder="Time Range"
           />
         </div>
       </div>
@@ -246,22 +235,23 @@ export default function ObservabilityPage() {
               onChange={(e) => setQ(e.target.value)}
               className="flex-1 min-w-64"
             />
-            <SimpleSelect
+            <Dropdown
               value={level}
               onChange={setLevel}
               options={LEVELS}
               placeholder="Level"
             />
-            <SimpleSelect
+            <Dropdown
               value={env}
               onChange={setEnv}
               options={ENVS}
               placeholder="Environment"
             />
-            <SimpleSelect
+            <Dropdown
               value={resolved ? "true" : "false"}
               onChange={(v) => setResolved(v === "true")}
               options={STATUSES}
+              placeholder="Status"
             />
           </div>
         </CardContent>
@@ -294,7 +284,7 @@ export default function ObservabilityPage() {
                       <div>
                         <div className="font-medium">{issue.title}</div>
                         <div className="text-sm text-muted-foreground">
-                          {issue.fingerprint} • {issue.service}
+                          {issue.fingerprint} • {issue.service || 'unknown'}
                         </div>
                       </div>
                     </div>
@@ -329,7 +319,7 @@ export default function ObservabilityPage() {
                 <h3 className="font-semibold mb-2">Overview</h3>
                 <div className="space-y-2 text-sm">
                   <div>Title: {issueDetails.issue.title}</div>
-                  <div>Service: {issueDetails.issue.service}</div>
+                  <div>Service: {issueDetails.issue.service || 'unknown'}</div>
                   <div>Level: <Badge variant={getLevelBadgeColor(issueDetails.issue.level)}>{issueDetails.issue.level}</Badge></div>
                   <div>Count: {issueDetails.issue.count}</div>
                   <div>First seen: {fmtDateTime(toDateSafe(issueDetails.issue.firstSeen))}</div>

@@ -65,7 +65,7 @@ export const SimpleErrorStore = {
       const total = await db.execute(sql`SELECT COUNT(*) as count FROM issues`);
       
       // Normalize date fields to ISO strings
-      const items = result.rows.map(row => ({
+      const items = result.rows.map((row: any) => ({
         ...row,
         firstSeen: new Date(row.first_seen).toISOString(),
         lastSeen: new Date(row.last_seen).toISOString(),
@@ -98,7 +98,7 @@ export const SimpleErrorStore = {
       `);
       
       // Normalize date fields to ISO strings
-      const series = result.rows.map(row => ({
+      const series = result.rows.map((row: any) => ({
         hour: new Date(row.hour).toISOString(),
         count: Number(row.count) || 0
       }));
@@ -107,6 +107,80 @@ export const SimpleErrorStore = {
     } catch (error) {
       console.error('Failed to get chart data:', error);
       return [];
+    }
+  },
+
+  async getIssue(fingerprint: string) {
+    try {
+      const result = await db.execute(sql`
+        SELECT fingerprint, title, level, service, first_seen, last_seen, count, resolved, ignored
+        FROM issues 
+        WHERE fingerprint = ${fingerprint}
+        LIMIT 1
+      `);
+      
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const issue = result.rows[0] as any;
+      return {
+        ...issue,
+        firstSeen: new Date(issue.first_seen).toISOString(),
+        lastSeen: new Date(issue.last_seen).toISOString(),
+      };
+    } catch (error) {
+      console.error('Failed to get issue:', error);
+      return null;
+    }
+  },
+
+  async getRawForIssue(fingerprint: string, limit: number = 50) {
+    try {
+      const result = await db.execute(sql`
+        SELECT event_id, created_at, level, env, service, url, message, stack
+        FROM errors_raw 
+        WHERE fingerprint = ${fingerprint}
+        ORDER BY created_at DESC
+        LIMIT ${limit}
+      `);
+      
+      return result.rows.map((row: any) => ({
+        ...row,
+        createdAt: new Date(row.created_at).toISOString(),
+        stack: row.stack && row.stack !== '' ? JSON.parse(row.stack) : [],
+      }));
+    } catch (error) {
+      console.error('Failed to get raw events for issue:', error);
+      return [];
+    }
+  },
+
+  async setResolved(fingerprint: string, resolved: boolean) {
+    try {
+      await db.execute(sql`
+        UPDATE issues 
+        SET resolved = ${resolved}
+        WHERE fingerprint = ${fingerprint}
+      `);
+      return true;
+    } catch (error) {
+      console.error('Failed to set resolved status:', error);
+      return false;
+    }
+  },
+
+  async setIgnored(fingerprint: string, ignored: boolean) {
+    try {
+      await db.execute(sql`
+        UPDATE issues 
+        SET ignored = ${ignored}
+        WHERE fingerprint = ${fingerprint}
+      `);
+      return true;
+    } catch (error) {
+      console.error('Failed to set ignored status:', error);
+      return false;
     }
   },
 
