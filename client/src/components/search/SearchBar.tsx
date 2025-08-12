@@ -70,12 +70,7 @@ export default function SearchBar({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           autoFocus={autoFocus}
-          className="w-full pl-10 pr-20 py-3 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{
-            backgroundColor: theme.colors.background.card,
-            borderColor: theme.colors.border.default,
-            color: theme.colors.text.primary
-          }}
+          className="w-full pl-10 pr-20 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {searchQuery && (
           <button

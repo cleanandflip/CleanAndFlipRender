@@ -14,16 +14,10 @@ export default function ProductsPage() {
         <WelcomeBanner />
         
         <div className="mb-8">
-          <h1 
-            className="text-3xl font-bold mb-2"
-            style={{ color: theme.colors.text.primary }}
-          >
+          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
             {categoryLabel === "All Categories" ? "Fitness Equipment" : categoryLabel}
           </h1>
-          <p 
-            className="text-lg mb-4"
-            style={{ color: theme.colors.text.secondary }}
-          >
+          <p className="text-lg mb-4 text-gray-600 dark:text-gray-400">
             {total} item{total !== 1 ? 's' : ''} available
           </p>
           <SearchBar />

@@ -27,10 +27,7 @@ export default function CategoryTabs() {
 
   return (
     <nav aria-label="Product Categories" className="space-y-2">
-      <h3 
-        className="font-bebas text-2xl mb-4 tracking-wider"
-        style={{ color: theme.colors.text.primary }}
-      >
+      <h3 className="font-bebas text-2xl mb-4 tracking-wider text-gray-900 dark:text-white">
         CATEGORIES
       </h3>
       <ul className="space-y-1">
@@ -51,9 +48,9 @@ export default function CategoryTabs() {
                   }
                 `}
                 style={{
-                  color: active ? theme.colors.brand.blue : theme.colors.text.secondary,
-                  backgroundColor: active ? `${theme.colors.brand.blue}20` : 'transparent',
-                  borderLeftColor: active ? theme.colors.brand.blue : 'transparent'
+                  color: active ? '#3B82F6' : '#6B7280',
+                  backgroundColor: active ? '#3B82F620' : 'transparent',
+                  borderLeftColor: active ? '#3B82F6' : 'transparent'
                 }}
               >
                 {label}
