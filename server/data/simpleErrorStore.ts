@@ -158,32 +158,30 @@ export const SimpleErrorStore = {
     }
   },
 
+  async getIssueStatus(fingerprint: string) {
+    const result = await db.execute(sql`
+      SELECT fingerprint, resolved, ignored, updated_at
+      FROM obs_issue_status WHERE fingerprint = ${fingerprint}
+    `);
+    return result.rows[0] ?? null;
+  },
+
   async setResolved(fingerprint: string, resolved: boolean) {
-    try {
-      await db.execute(sql`
-        UPDATE issues 
-        SET resolved = ${resolved}
-        WHERE fingerprint = ${fingerprint}
-      `);
-      return true;
-    } catch (error) {
-      console.error('Failed to set resolved status:', error);
-      return false;
-    }
+    await db.execute(sql`
+      INSERT INTO obs_issue_status (fingerprint, resolved, ignored)
+        VALUES (${fingerprint}, ${resolved}, COALESCE((SELECT ignored FROM obs_issue_status WHERE fingerprint=${fingerprint}), FALSE))
+      ON CONFLICT (fingerprint)
+        DO UPDATE SET resolved = EXCLUDED.resolved, updated_at = now()
+    `);
   },
 
   async setIgnored(fingerprint: string, ignored: boolean) {
-    try {
-      await db.execute(sql`
-        UPDATE issues 
-        SET ignored = ${ignored}
-        WHERE fingerprint = ${fingerprint}
-      `);
-      return true;
-    } catch (error) {
-      console.error('Failed to set ignored status:', error);
-      return false;
-    }
+    await db.execute(sql`
+      INSERT INTO obs_issue_status (fingerprint, resolved, ignored)
+        VALUES (${fingerprint}, COALESCE((SELECT resolved FROM obs_issue_status WHERE fingerprint=${fingerprint}), FALSE), ${ignored})
+      ON CONFLICT (fingerprint)
+        DO UPDATE SET ignored = EXCLUDED.ignored, updated_at = now()
+    `);
   },
 
   async findEventsSince(since: Date) {

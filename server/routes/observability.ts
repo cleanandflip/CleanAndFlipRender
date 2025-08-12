@@ -156,7 +156,18 @@ router.get("/issues", async (req, res) => {
       );
       const total = items.length;
       const start = (page - 1) * limit;
-      result = { items: items.slice(start, start + limit), total };
+      result = { items: items.slice(start, start + limit), total, page, limit };
+    }
+
+    // Merge status flags for all items
+    if (result && Array.isArray(result.items)) {
+      await Promise.all(result.items.map(async (it: any) => {
+        const st = await SimpleErrorStore.getIssueStatus(it.fingerprint);
+        if (st) { 
+          it.resolved = !!st.resolved; 
+          it.ignored = !!st.ignored; 
+        }
+      }));
     }
 
     res.json(result);
@@ -203,6 +214,14 @@ router.get("/issues/:fp", async (req, res) => {
     }
 
     if (!issue) return res.status(404).json({ error: "Issue not found" });
+
+    // Merge status flags
+    const st = await SimpleErrorStore.getIssueStatus(fp);
+    if (st && issue) { 
+      issue.resolved = !!st.resolved; 
+      issue.ignored = !!st.ignored; 
+    }
+
     res.json({ issue });
   } catch (e) {
     console.error("observability.issue failed:", e);
@@ -224,20 +243,43 @@ router.get("/issues/:fp/events", async (req, res) => {
 
 // 5) actions
 router.put("/issues/:fp/resolve", async (req, res) => {
-  try { await SimpleErrorStore.markResolved(req.params.fp, true); res.json({ ok: true }); }
-  catch (e) { console.error("observability.resolve failed:", e); res.status(500).json({ error: "Failed to resolve issue" }); }
+  try { 
+    await SimpleErrorStore.setResolved(req.params.fp, true); 
+    res.json({ ok: true }); 
+  } catch (e) { 
+    console.error(e); 
+    res.status(500).json({ error: "Failed to resolve" }); 
+  }
 });
+
 router.put("/issues/:fp/reopen", async (req, res) => {
-  try { await SimpleErrorStore.markResolved(req.params.fp, false); res.json({ ok: true }); }
-  catch (e) { console.error("observability.reopen failed:", e); res.status(500).json({ error: "Failed to reopen issue" }); }
+  try { 
+    await SimpleErrorStore.setResolved(req.params.fp, false); 
+    res.json({ ok: true }); 
+  } catch (e) { 
+    console.error(e); 
+    res.status(500).json({ error: "Failed to reopen" }); 
+  }
 });
+
 router.put("/issues/:fp/ignore", async (req, res) => {
-  try { await SimpleErrorStore.markIgnored(req.params.fp, true); res.json({ ok: true }); }
-  catch (e) { console.error("observability.ignore failed:", e); res.status(500).json({ error: "Failed to ignore issue" }); }
+  try { 
+    await SimpleErrorStore.setIgnored(req.params.fp, true); 
+    res.json({ ok: true }); 
+  } catch (e) { 
+    console.error(e); 
+    res.status(500).json({ error: "Failed to ignore" }); 
+  }
 });
+
 router.put("/issues/:fp/unignore", async (req, res) => {
-  try { await SimpleErrorStore.markIgnored(req.params.fp, false); res.json({ ok: true }); }
-  catch (e) { console.error("observability.unignore failed:", e); res.status(500).json({ error: "Failed to unignore issue" }); }
+  try { 
+    await SimpleErrorStore.setIgnored(req.params.fp, false); 
+    res.json({ ok: true }); 
+  } catch (e) { 
+    console.error(e); 
+    res.status(500).json({ error: "Failed to unignore" }); 
+  }
 });
 
 // 6) series for chart

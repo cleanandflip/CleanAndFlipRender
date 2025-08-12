@@ -1,0 +1,203 @@
+I see why “Mark Resolved” / “Ignore” don’t do anything:
+
+Your issues list can be built from raw events (fallback aggregation), but the resolve/ignore actions try to update a record that doesn’t exist anywhere.
+
+Even when the actions hit the endpoints, there’s nowhere persistent to store resolved / ignored, so the next fetch rebuilds from events and the flags reset.
+
+Fix it once with a tiny status table + 4 solid endpoints + client revalidation.
+
+Tell Replit to do this exactly
+1) DB: add a tiny status table (no migrations drama)
+Create if missing:
+
+sql
+Copy
+Edit
+-- Persistent status per fingerprint
+CREATE TABLE IF NOT EXISTS obs_issue_status (
+  fingerprint TEXT PRIMARY KEY,
+  resolved    BOOLEAN NOT NULL DEFAULT FALSE,
+  ignored     BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Helpful index if you ever filter by flags
+CREATE INDEX IF NOT EXISTS idx_obs_issue_status_flags
+  ON obs_issue_status (resolved, ignored);
+2) Store: implement status helpers
+server/data/simpleErrorStore.ts (or wherever your store lives):
+
+ts
+Copy
+Edit
+import { db } from "../db"; // adjust import
+
+export const SimpleErrorStore = {
+  // ...existing methods (addError, findEventsSince, getIssueEvents, listIssues, etc.)
+
+  async getIssueStatus(fingerprint: string) {
+    const { rows } = await db.query(
+      `SELECT fingerprint, resolved, ignored, updated_at
+       FROM obs_issue_status WHERE fingerprint = $1`,
+      [fingerprint]
+    );
+    return rows[0] ?? null;
+  },
+
+  async setResolved(fingerprint: string, resolved: boolean) {
+    await db.query(
+      `INSERT INTO obs_issue_status (fingerprint, resolved, ignored)
+         VALUES ($1, $2, COALESCE((SELECT ignored FROM obs_issue_status WHERE fingerprint=$1), FALSE))
+       ON CONFLICT (fingerprint)
+         DO UPDATE SET resolved = EXCLUDED.resolved, updated_at = now()`,
+      [fingerprint, resolved]
+    );
+  },
+
+  async setIgnored(fingerprint: string, ignored: boolean) {
+    await db.query(
+      `INSERT INTO obs_issue_status (fingerprint, resolved, ignored)
+         VALUES ($1, COALESCE((SELECT resolved FROM obs_issue_status WHERE fingerprint=$1), FALSE), $2)
+       ON CONFLICT (fingerprint)
+         DO UPDATE SET ignored = EXCLUDED.ignored, updated_at = now()`,
+      [fingerprint, ignored]
+    );
+  },
+};
+3) Routes: wire the 4 actions and merge status everywhere
+In server/routes/observability.ts:
+
+A) Action endpoints (PUT)
+ts
+Copy
+Edit
+router.put("/issues/:fp/resolve", async (req, res) => {
+  try { await SimpleErrorStore.setResolved(req.params.fp, true);  res.json({ ok: true }); }
+  catch (e) { console.error(e); res.status(500).json({ error: "Failed to resolve" }); }
+});
+router.put("/issues/:fp/reopen", async (req, res) => {
+  try { await SimpleErrorStore.setResolved(req.params.fp, false); res.json({ ok: true }); }
+  catch (e) { console.error(e); res.status(500).json({ error: "Failed to reopen"  }); }
+});
+router.put("/issues/:fp/ignore", async (req, res) => {
+  try { await SimpleErrorStore.setIgnored(req.params.fp, true);   res.json({ ok: true }); }
+  catch (e) { console.error(e); res.status(500).json({ error: "Failed to ignore"  }); }
+});
+router.put("/issues/:fp/unignore", async (req, res) => {
+  try { await SimpleErrorStore.setIgnored(req.params.fp, false);  res.json({ ok: true }); }
+  catch (e) { console.error(e); res.status(500).json({ error: "Failed to unignore"}); }
+});
+B) Merge status flags in list/details (works for both materialized and fallback issues)
+In /issues handler, after you build each item (either from store or from event aggregation), merge:
+
+ts
+Copy
+Edit
+// after items array is built (before filtering/pagination):
+await Promise.all(items.map(async (it: any) => {
+  const st = await SimpleErrorStore.getIssueStatus(it.fingerprint);
+  if (st) { it.resolved = !!st.resolved; it.ignored = !!st.ignored; }
+}));
+In /issues/:fp, before responding:
+
+ts
+Copy
+Edit
+const st = await SimpleErrorStore.getIssueStatus(fp);
+if (st && issue) { issue.resolved = !!st.resolved; issue.ignored = !!st.ignored; }
+Now flags persist no matter how the issues list was generated.
+
+4) Ingest error you hit earlier (column "id" does not exist)
+You fixed chart/list, but ingest still failed earlier. Ensure your addError does not insert/return a non-existent id column (or create it as BIGSERIAL). Recommended INSERT:
+
+ts
+Copy
+Edit
+await db.query(
+  `INSERT INTO obs_events (
+     event_id, created_at, service, level, env, message, type, url, method, status_code, stack, fingerprint, extra
+   ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+   ON CONFLICT (event_id) DO NOTHING`,
+  [evt.eventId, evt.createdAt, evt.service, evt.level, evt.env, evt.message,
+   evt.type ?? null, evt.url ?? null, evt.method ?? null, evt.statusCode ?? null,
+   Array.isArray(evt.stack) ? evt.stack : [], evt.fingerprint ?? null, evt.extra ?? null]
+);
+(If you want an id, add a BIGSERIAL id to obs_events as in my previous message.)
+
+5) Client: make the buttons hit these endpoints + refresh
+In client/src/pages/observability.tsx (or your admin page):
+
+tsx
+Copy
+Edit
+const resolveMutation = useMutation({
+  mutationFn: (fp: string) => obsApi.resolve(fp),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
+    if (selectedIssue) queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
+  },
+});
+const reopenMutation = useMutation({
+  mutationFn: (fp: string) => obsApi.reopen(fp),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
+    if (selectedIssue) queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
+  },
+});
+const ignoreMutation = useMutation({
+  mutationFn: ({ fingerprint, ignored }: { fingerprint: string; ignored: boolean }) =>
+    ignored ? obsApi.ignore(fingerprint) : obsApi.unignore(fingerprint),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
+    if (selectedIssue) queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
+  },
+});
+And in the drawer buttons:
+
+tsx
+Copy
+Edit
+{!issueDetails.issue.resolved ? (
+  <Button onClick={() => resolveMutation.mutate(selectedIssue!)} disabled={resolveMutation.isPending}>
+    Mark Resolved
+  </Button>
+) : (
+  <Button variant="outline" onClick={() => reopenMutation.mutate(selectedIssue!)} disabled={reopenMutation.isPending}>
+    Reopen
+  </Button>
+)}
+<Button
+  variant="outline"
+  onClick={() => ignoreMutation.mutate({ fingerprint: selectedIssue!, ignored: !issueDetails.issue.ignored })}
+  disabled={ignoreMutation.isPending}
+>
+  {issueDetails.issue.ignored ? "Unignore" : "Ignore"}
+</Button>
+If your UI already calls these, the persistence layer above is the missing piece.
+
+6) Days filter (“Last 24h / 7d / 30d”) final check
+Client already sends days in both the issues and series requests and includes timeRange in the queryKey.
+
+Server: ensure your /issues handler uses the since window in both the native store call and in the fallback path (code above does).
+
+Series route should emit { ts, count } for clean axis labels.
+
+Quick verification steps
+bash
+Copy
+Edit
+# 1) Apply SQL, restart server
+pnpm dev
+
+# 2) Seed three test errors (button or curl)
+curl -X POST http://localhost:3000/api/observability/errors -H 'Content-Type: application/json' \
+  -d '{"service":"client","level":"error","env":"development","message":"VERIFICATION A","stack":"at x()"}'
+
+# 3) Mark one resolved, one ignored
+curl -X PUT http://localhost:3000/api/observability/issues/<fingerprintA>/resolve
+curl -X PUT http://localhost:3000/api/observability/issues/<fingerprintB>/ignore
+
+# 4) UI
+- Switch 24h/7d/30d and see list & chart both change
+- Open an issue: buttons should flip the state instantly
+- Refresh: flags persist (coming from obs_issue_status)

@@ -107,16 +107,25 @@ export default function ObservabilityPage() {
 
   const resolveMutation = useMutation({
     mutationFn: (fp: string) => obsApi.resolve(fp),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["obs:issues"] }); setSelectedIssue(null); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
+      if (selectedIssue) queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
+    },
   });
   const reopenMutation = useMutation({
     mutationFn: (fp: string) => obsApi.reopen(fp),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["obs:issues"] }); setSelectedIssue(null); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
+      if (selectedIssue) queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
+    },
   });
   const ignoreMutation = useMutation({
     mutationFn: ({ fingerprint, ignored }: { fingerprint: string; ignored: boolean }) =>
       ignored ? obsApi.ignore(fingerprint) : obsApi.unignore(fingerprint),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["obs:issues"] }); setSelectedIssue(null); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
+      if (selectedIssue) queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
+    },
   });
 
   const items = Array.isArray(issuesData?.items) ? issuesData.items : [];
