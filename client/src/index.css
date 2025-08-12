@@ -11,11 +11,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --- Unify placeholder appearance site-wide --- */
+:root {
+  /* tune once here; all fields inherit */
+  --placeholder-opacity: 0.55;  /* lighter than value text, still readable */
+}
+
+input::placeholder,
+textarea::placeholder {
+  opacity: var(--placeholder-opacity);
+}
+
+/* cross-browser compatibility */
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder { opacity: var(--placeholder-opacity); }
+input::-moz-placeholder,
+textarea::-moz-placeholder { opacity: var(--placeholder-opacity); }
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder { opacity: var(--placeholder-opacity); }
+
+/* Make placeholder different enough from actual text on focus too */
+input:focus::placeholder,
+textarea:focus::placeholder { opacity: calc(var(--placeholder-opacity) - 0.1); }
+
+/* --- Autofill normalization (Chrome/Safari) --- */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  /* keep theme colors; remove yellow glow */
+  -webkit-text-fill-color: inherit !important;
+  transition: background-color 9999s ease-out 0s;
+  box-shadow: 0 0 0px 1000px transparent inset !important;
+}
+
 /* Accessibility: respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .hover\:translate-x-\[1px\] { transform: none !important; }
   .transition-\[background,transform,opacity\] { 
     transition: background-color 0.15s ease-out; 
+  }
+  .field-hover-anim { 
+    transition: background-color 0.15s ease; 
+    transform: none !important; 
   }
 }
 

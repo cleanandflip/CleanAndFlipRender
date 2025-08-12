@@ -296,7 +296,7 @@ export default function AuthPage() {
                         });
                       }}
                       placeholder="Start typing your address..."
-                      className="h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 placeholder:text-white text-white"
+                      className="h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white"
                     />
                   </div>
                   
@@ -308,7 +308,7 @@ export default function AuthPage() {
                         name="password"
                         placeholder="Password"
                         required
-                        className={`h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 placeholder:text-white text-white ${
+                        className={`h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white ${
                           password && !isPasswordValid(password) ? 'border-red-500/50' : 
                           password && isPasswordValid(password) ? 'border-green-500/50' : ''
                         }`}
@@ -337,7 +337,7 @@ export default function AuthPage() {
                       name="confirmPassword"
                       placeholder="Confirm Password"
                       required
-                      className={`h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 placeholder:text-white text-white ${
+                      className={`h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white ${
                         !passwordsMatch && confirmPassword ? 'border-red-500/50' : 
                         passwordsMatch && confirmPassword && password ? 'border-green-500/50' : ''
                       }`}

@@ -39,13 +39,15 @@ export default function Dropdown({
                  : size === "lg" ? "h-12 text-base px-4"
                  : "h-10 text-sm px-3.5";
 
+  const isPlaceholder = !current;
   const triggerCls = [
     "inline-flex items-center justify-between rounded-lg border",
     "bg-background border-border text-foreground",
-    "hover:bg-muted/20",
+    "hover:bg-muted/20 transition-[background,box-shadow] duration-150 field-hover-anim",
     "focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-transparent",
-    "transition-colors disabled:opacity-60 disabled:cursor-not-allowed",
-    sizeCls, fullWidth ? "w-full" : "w-[min(90vw,320px)]", className
+    "disabled:opacity-60 disabled:cursor-not-allowed",
+    sizeCls, fullWidth ? "w-full" : "w-[min(90vw,320px)]", className,
+    isPlaceholder ? "opacity-90" : "",
   ].join(" ");
 
   const calc = () => {
@@ -131,7 +133,9 @@ export default function Dropdown({
         onClick={() => (open ? closeMenu() : openMenu())}
         onKeyDown={onTriggerKey}
       >
-        <span className="truncate">{current?.label ?? placeholder}</span>
+        <span className={`truncate ${isPlaceholder ? "opacity-[var(--placeholder-opacity)]" : ""}`}>
+          {current?.label ?? placeholder}
+        </span>
         <span className="ml-3 opacity-70" aria-hidden>▾</span>
       </button>
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}

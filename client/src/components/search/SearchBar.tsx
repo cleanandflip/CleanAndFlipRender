@@ -148,7 +148,7 @@ export default function SearchBar({
             "bg-white/90 dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700",
             // Focus & transitions
             "focus:ring-2 focus:ring-blue-500/60 focus:border-transparent",
-            "placeholder:opacity-70 transition-colors"
+            "transition-colors"
           ].join(" ")}
         />
 

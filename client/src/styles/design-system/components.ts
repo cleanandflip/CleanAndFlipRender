@@ -67,7 +67,7 @@ export const componentClasses = {
       border border-[rgba(255,255,255,0.08)]
       rounded-lg
       transition-all duration-200
-      placeholder:text-[#64748B]
+      /* placeholder handled by global CSS vars */
       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
     `,
     

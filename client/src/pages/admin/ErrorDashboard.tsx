@@ -415,7 +415,7 @@ export default function ErrorDashboard() {
           placeholder="Search errors..."
           value={filters.search}
           onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-          className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder:text-gray-400"
+          className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
         />
         
         {/* Level Filter */}
