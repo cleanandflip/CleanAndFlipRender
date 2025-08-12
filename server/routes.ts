@@ -768,11 +768,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cart", authMiddleware.optionalAuth, async (req, res) => {
     try {
       const { productId, quantity = 1 } = req.body;
+      
+      // Basic validation
+      if (!productId) {
+        return res.status(400).json({ error: 'Product ID is required' });
+      }
+      
+      if (!quantity || quantity < 1) {
+        return res.status(400).json({ error: 'Valid quantity is required' });
+      }
+      
       // SECURITY FIX: Only use authenticated userId from middleware
       const userId = req.userId; // Set by requireAuth middleware
       const sessionId = req.sessionID;
       
-      Logger.debug(`Cart request - userId: ${userId}, sessionId: ${sessionId}`);
+      Logger.debug(`Cart request - userId: ${userId}, sessionId: ${sessionId}, productId: ${productId}, quantity: ${quantity}`);
       
       // 1. Check product availability first
       const product = await storage.getProduct(productId);
