@@ -1,16 +1,17 @@
+// src/components/ui/Dropdown.tsx
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 
 export interface DropdownOption {
   label: string;
-  value: string;
+  value: string; // IMPORTANT: we standardize on string values across the app
 }
 
 interface DropdownProps {
   options: DropdownOption[];
-  value: string | null;
-  onChange: (value: string) => void;
+  value: string | null;                 // controlled value (string or null)
+  onChange: (value: string) => void;    // will be called with a string
   placeholder?: string;
   className?: string;
   menuClassName?: string;
@@ -36,13 +37,14 @@ export default function Dropdown({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const selectedOption = options.find((opt) => opt.value === value) ?? null;
+  // normalize: value must be string or null
+  const current = typeof value === "string" ? value : null;
+  const selectedOption = options.find((opt) => opt.value === current) ?? null;
 
-  // Open/close outside click
+  // Close on outside click
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
-      if (!rootRef.current) return;
-      if (!rootRef.current.contains(e.target as Node)) setIsOpen(false);
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setIsOpen(false);
     };
     if (isOpen) {
       document.addEventListener("mousedown", handleOutside);
@@ -71,15 +73,12 @@ export default function Dropdown({
     };
   }, [isOpen, updateMenuPos]);
 
-  // Simple keyboard navigation
+  // Minimal keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => {
       const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>("[data-option]") ?? []);
-      const idx = Math.max(
-        0,
-        items.findIndex((n) => n === document.activeElement)
-      );
+      const idx = Math.max(0, items.findIndex((n) => n === document.activeElement));
       if (e.key === "Escape") setIsOpen(false);
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -90,7 +89,7 @@ export default function Dropdown({
         (items[idx - 1] ?? items[items.length - 1])?.focus();
       }
       if (e.key === "Enter") {
-        (document.activeElement as HTMLButtonElement)?.click();
+        (document.activeElement as HTMLButtonElement | null)?.click();
       }
     };
     document.addEventListener("keydown", handler);
@@ -106,13 +105,18 @@ export default function Dropdown({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((o) => !o)}
-        className={`flex items-center justify-between w-full px-3 py-2 text-sm rounded-md border border-white/10 
-          bg-slate-800/70 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 
-          ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+        className={[
+          "flex items-center justify-between w-full",
+          "px-3 py-2 text-sm rounded-md",
+          "border border-white/10",
+          "bg-slate-800/70 hover:bg-slate-800",
+          "focus:outline-none focus:ring-2 focus:ring-blue-500/60",
+          disabled ? "opacity-60 cursor-not-allowed" : "",
+        ].join(" ")}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <span className={selectedOption ? "text-slate-100" : "text-slate-400"}>
+        <span className={selectedOption ? "text-slate-100" : "text-white/45"}>
           {selectedOption?.label ?? placeholder}
         </span>
         <ChevronDown className={`w-4 h-4 text-slate-300 transition-transform ${isOpen ? "rotate-180" : ""}`} />
@@ -124,22 +128,32 @@ export default function Dropdown({
             ref={menuRef}
             role="listbox"
             style={{ position: "absolute", left: menuPos.left, top: menuPos.top, width: menuPos.width, zIndex: 60 }}
-            className={`rounded-md border border-white/10 bg-[#121822]/95 backdrop-blur shadow-xl max-h-60 overflow-auto 
-              animate-[fadeIn_120ms_ease-out] ${menuClassName}`}
+            className={[
+              "rounded-md border border-white/10",
+              "bg-[#121822]/95 backdrop-blur",
+              "shadow-xl shadow-black/30",
+              "max-h-60 overflow-auto",
+              "animate-[fadeIn_120ms_ease-out]",
+              menuClassName || "",
+            ].join(" ")}
           >
             {options.map((option) => {
-              const isSelected = option.value === value;
+              const isSelected = option.value === current;
               return (
                 <button
                   key={option.value}
                   type="button"
+                  role="option"
+                  aria-selected={isSelected}
                   data-option
                   onClick={() => {
-                    onChange(option.value);
+                    onChange(option.value); // ← ensures selection works everywhere
                     setIsOpen(false);
                   }}
-                  className={`w-full px-3 py-2 text-sm text-left transition-colors 
-                    ${isSelected ? "bg-blue-500/10 text-blue-300" : "text-slate-100 hover:bg-white/5"}`}
+                  className={[
+                    "w-full px-3 py-2 text-sm text-left transition-colors",
+                    isSelected ? "bg-blue-500/10 text-blue-300" : "text-slate-100 hover:bg-white/5",
+                  ].join(" ")}
                 >
                   {option.label}
                 </button>

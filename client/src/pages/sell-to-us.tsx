@@ -362,7 +362,7 @@ export default function SellToUs() {
                           <FormItem>
                             <FormControl>
                               <Dropdown
-                                value={field.value || ""}
+                                value={field.value || null}
                                 onChange={(v) => field.onChange(v)}
                                 options={EQUIPMENT_BRANDS.map(brand => ({ value: brand, label: brand }))}
                                 placeholder="Search or select a brand…"
@@ -387,7 +387,7 @@ export default function SellToUs() {
                           <FormItem>
                             <FormControl>
                               <Dropdown
-                                value={field.value || ""}
+                                value={field.value || null}
                                 onChange={(v) => field.onChange(v)}
                                 options={[
                                   { value: "barbells", label: "Barbells" },
@@ -421,7 +421,7 @@ export default function SellToUs() {
                           <FormItem>
                             <FormControl>
                               <Dropdown
-                                value={field.value || ""}
+                                value={field.value || null}
                                 onChange={(v) => field.onChange(v)}
                                 options={[
                                   { value: "new", label: "New" },

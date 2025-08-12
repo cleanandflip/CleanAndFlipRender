@@ -285,7 +285,7 @@ export default function ObservabilityPage() {
               <Label>Status:</Label>
               <Dropdown
                 options={STATUSES}
-                value={resolved.toString()}
+                value={resolved ? "true" : "false"}
                 onChange={(value) => setResolved(value === "true")}
                 className="w-32"
               />
@@ -295,7 +295,7 @@ export default function ObservabilityPage() {
               <Checkbox
                 id="show-ignored"
                 checked={ignored}
-                onCheckedChange={setIgnored}
+                onCheckedChange={(checked) => setIgnored(checked === true)}
               />
               <Label htmlFor="show-ignored">Show ignored</Label>
             </div>
@@ -304,7 +304,7 @@ export default function ObservabilityPage() {
               <Checkbox
                 id="show-test-events"
                 checked={showTestEvents}
-                onCheckedChange={setShowTestEvents}
+                onCheckedChange={(checked) => setShowTestEvents(checked === true)}
               />
               <Label htmlFor="show-test-events">Show test events</Label>
             </div>
