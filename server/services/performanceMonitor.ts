@@ -80,8 +80,11 @@ export class PerformanceMonitor {
       this.metrics = this.metrics.slice(0, this.MAX_METRICS);
     }
 
-    // Log slow operations
-    if (name === 'request_duration' && value > 1000) {
+    // Log slow operations - higher threshold for dev environment
+    const DEV = process.env.NODE_ENV !== "production";
+    const SLOW_MS = DEV ? 2000 : 700;
+    
+    if (name === 'request_duration' && value > SLOW_MS) {
       Logger.warn(`Slow request detected: ${context?.method} ${context?.route} took ${value}ms`);
     }
   }

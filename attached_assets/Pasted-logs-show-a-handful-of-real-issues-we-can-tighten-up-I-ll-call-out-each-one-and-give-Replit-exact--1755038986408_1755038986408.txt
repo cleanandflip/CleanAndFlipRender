@@ -1,0 +1,252 @@
+logs show a handful of real issues we can tighten up. I’ll call out each one and give Replit exact, drop-in fixes.
+
+What the logs say (quick map)
+✅ Startup clean, DB connected, WS up.
+
+⚠️ Many 400s to /api/observability/errors early in the session (validation mismatch).
+
+⚠️ Occasional slow requests (dev): /, index.css, /api/products/featured, /api/cart, POST /api/track-activity.
+
+🗣️ Noisy “Sanitization check” lines every request (info spam).
+
+⚠️ A single 401 /api/user from HeadlessChrome (expected, but don’t warn).
+
+✅ Latest ingest shows 202 (OK), series/issues endpoints aligned.
+
+Below are precise fixes so these stop showing up for good.
+
+1) Observability: make ingest flexible (fix those 400s)
+The 400s happen when the client sends a stack array (or missing message) that fails strict validation. Let’s accept both shapes and normalize.
+
+server/routes/observability.ts — replace the schema + normalization
+ts
+Copy
+Edit
+import { z } from "zod";
+import crypto from "crypto";
+
+// Accept string OR string[]
+const IngestSchema = z.object({
+  service: z.enum(["client", "server"]).default("client"),
+  level: z.enum(["error", "warn", "info"]).default("error"),
+  env: z.enum(["production", "development"]).default(process.env.NODE_ENV === "production" ? "production" : "development"),
+  release: z.string().optional(),
+  url: z.string().optional(),
+  method: z.string().optional(),
+  statusCode: z.coerce.number().optional(),
+  message: z.string().optional(),                              // allow missing; we’ll default
+  type: z.string().optional(),
+  stack: z.union([z.string(), z.array(z.string())]).optional(), // ← key change
+  extra: z.record(z.any()).optional(),
+});
+
+function normalizeStack(raw?: string | string[]): string[] {
+  const lines = Array.isArray(raw) ? raw : (raw ? raw.split("\n") : []);
+  return lines
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .filter((l) => !l.includes("node_modules") && !l.includes("(internal"))
+    .map((l) => l.replace(/\(\w+:\/\/.*?\)/g, "()").replace(/:\d+:\d+/g, ":__:__"));
+}
+
+function fingerprintFromEvent(msg = "", stackTop = "", service = "", type = "") {
+  return crypto.createHash("sha1").update([msg, stackTop, service, type].join("|")).digest("hex");
+}
+
+router.post("/errors", async (req, res) => {
+  try {
+    const parsed = IngestSchema.parse(req.body ?? {});
+    const stack = normalizeStack(parsed.stack);
+    const message = (parsed.message && parsed.message.trim()) || "Unknown error";
+    const fp = fingerprintFromEvent(message, stack[0] ?? "", parsed.service, parsed.type ?? "");
+
+    const event = {
+      eventId: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      fingerprint: fp,                     // store the same fp we group by
+      ...parsed,
+      message,
+      stack,
+    };
+
+    await SimpleErrorStore.addError(event); // ensure INSERT writes fingerprint column
+    return res.status(202).json({ ok: true, eventId: event.eventId, fingerprint: fp });
+  } catch (e) {
+    // Don’t spam console; return a short message and keep the server quiet in dev
+    return res.status(400).json({ error: "Invalid error payload" });
+  }
+});
+Also make sure your obs_events table has a fingerprint TEXT NOT NULL column (see SQL in section 4).
+
+2) Observability: keep list/details flags in sync (final polish)
+You already wired persistence; make list responses always reflect truth by bulk-merging flags before filtering:
+
+server/data/simpleErrorStore.ts — add bulk getter
+ts
+Copy
+Edit
+export async function getStatusesBulk(fingerprints: string[]) {
+  if (!fingerprints.length) return new Map<string, { resolved: boolean; ignored: boolean }>();
+  const { rows } = await db.query(
+    `SELECT fingerprint, resolved, ignored FROM obs_issue_status WHERE fingerprint = ANY($1::text[])`,
+    [fingerprints]
+  );
+  const map = new Map();
+  rows.forEach((r: any) => map.set(r.fingerprint, { resolved: !!r.resolved, ignored: !!r.ignored }));
+  return map;
+}
+server/routes/observability.ts — in /issues handler, after building items
+ts
+Copy
+Edit
+let items = /* …existing materialized or fallback array… */;
+
+// Merge flags in bulk, then apply the "resolved" filter
+const statuses = await SimpleErrorStore.getStatusesBulk(items.map((i: any) => i.fingerprint));
+items.forEach((it: any) => {
+  const s = statuses.get(it.fingerprint);
+  it.resolved = s ? s.resolved : false;
+  it.ignored  = s ? s.ignored  : false;
+});
+
+// Normalize filter param and then filter
+const resolvedRaw = req.query.resolved;
+const statusFilter = resolvedRaw === undefined ? "all" : (String(resolvedRaw) === "true" ? "resolved" : "unresolved");
+if (statusFilter === "resolved")   items = items.filter((i: any) => i.resolved);
+if (statusFilter === "unresolved") items = items.filter((i: any) => !i.resolved);
+server/routes/observability.ts — in /issues/:fp
+ts
+Copy
+Edit
+const st = await SimpleErrorStore.getIssueStatus(fp);
+if (issue) {
+  issue.resolved = st ? !!st.resolved : false;
+  issue.ignored  = st ? !!st.ignored  : false;
+}
+3) Quiet the log spam (sanitizer + auth noise) and keep useful signals
+A) Demote “Sanitization check” to DEBUG and sample it
+Wherever you log those lines (likely server/middleware/sanitize.ts):
+
+ts
+Copy
+Edit
+const SHOULD_LOG = process.env.SANITIZER_LOG === "debug";
+let lastLog = 0;
+
+function maybeLogSanitization(msg: string) {
+  if (!SHOULD_LOG) return;
+  const now = Date.now();
+  if (now - lastLog > 30_000) {           // log at most every 30s
+    logger.debug(msg);
+    lastLog = now;
+  }
+}
+Replace the current logger.info(...) calls with maybeLogSanitization(...).
+Set SANITIZER_LOG=debug locally if you ever need it back.
+
+B) Don’t warn on expected 401s from headless health checks
+Where you log 401s (auth middleware or /api/user handler):
+
+ts
+Copy
+Edit
+const ua = (req.headers["user-agent"] || "").toString();
+const isHeadless = /HeadlessChrome|curl|healthcheck/i.test(ua);
+if (res.statusCode === 401 && isHeadless) {
+  logger.debug("Auth 401 (headless) %s", req.originalUrl);
+} else if (res.statusCode >= 400) {
+  logger.warn("API %s %s %d %dms", req.method, req.originalUrl, res.statusCode, duration);
+}
+4) DB: indexes + schema confirmations (clear the slow API spikes)
+You’re occasionally slow on featured and cart. Add the right indexes and you’ll see those bumps disappear.
+
+sql
+Copy
+Edit
+-- Products: common filters
+CREATE INDEX IF NOT EXISTS idx_products_status          ON products (status);
+CREATE INDEX IF NOT EXISTS idx_products_is_featured     ON products (is_featured) WHERE is_featured = true;
+CREATE INDEX IF NOT EXISTS idx_products_category        ON products (category_id);
+
+-- Categories: "active"
+CREATE INDEX IF NOT EXISTS idx_categories_active        ON categories (active) WHERE active = true;
+
+-- Cart: lookups by user or session
+CREATE INDEX IF NOT EXISTS idx_cart_user                ON carts (user_id);
+CREATE INDEX IF NOT EXISTS idx_cart_session             ON carts (session_id);
+
+-- Observability events: ensure fingerprint is present and indexed
+ALTER TABLE obs_events
+  ADD COLUMN IF NOT EXISTS fingerprint TEXT;
+CREATE INDEX IF NOT EXISTS idx_obs_events_created_at    ON obs_events (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_obs_events_fingerprint   ON obs_events (fingerprint);
+If you still want an auto id, add ALTER TABLE obs_events ADD COLUMN IF NOT EXISTS id BIGSERIAL PRIMARY KEY; and make sure your INSERT doesn’t reference a non-existent column.
+
+5) Track-activity: make it impossible to be “slow”
+Right now you sometimes log POST /api/track-activity > 1s. Make it fire-and-forget:
+
+ts
+Copy
+Edit
+// server/routes/activity.ts
+router.post("/track-activity", (req, res) => {
+  res.status(202).json({ ok: true });   // respond immediately
+  setImmediate(async () => {
+    try {
+      await activityStore.save(req.body);   // async persist (db/queue)
+    } catch (e) {
+      logger.error("track-activity persist failed", e);
+    }
+  });
+});
+6) Dev-only “slow request” threshold (reduce false alarms in Vite dev)
+If you have a slow-request monitor middleware, raise the bar in dev:
+
+ts
+Copy
+Edit
+const DEV = process.env.NODE_ENV !== "production";
+const SLOW_MS = DEV ? 2000 : 700;
+
+app.use((req, res, next) => {
+  const t0 = performance.now();
+  res.on("finish", () => {
+    const dt = performance.now() - t0;
+    if (dt > SLOW_MS) logger.warn("Slow request detected: %s %s took %dms", req.method, req.originalUrl, Math.round(dt));
+  });
+  next();
+});
+7) Client hygiene for observability (final sync)
+Ensure Issues query includes days and it’s in the queryKey (you already did).
+
+After any resolve/reopen/ignore, update caches optimistically using the response (so list + drawer match immediately), then invalidate lists.
+You can reuse the updateCachesAfterStatus(...) helper I provided earlier.
+
+8) Optional perf wins (easy toggles)
+Enable compression for dev too:
+
+ts
+Copy
+Edit
+import compression from "compression";
+app.use(compression());
+Static caching (for /src/index.css slowness): serve built assets with cache headers in prod; in dev it’s Vite’s job—ignore warnings or raise the slow threshold.
+
+TL;DR for Replit (apply in this order)
+Update ingest route to accept stack arrays + default message, and store fingerprint (code in §1).
+
+Bulk-merge issue statuses and filter after merging (code in §2).
+
+Demote sanitizer logs to debug with sampling; stop warning on headless 401s (§3).
+
+Run the SQL indexes + schema in §4 (especially fingerprint on obs_events).
+
+Make /track-activity respond 202 immediately (§5).
+
+Raise slow-request threshold in dev (§6).
+
+Keep client cache updates after status actions (§7).
+
+(Optional) enable compression (§8).
+
+Once these are in, your logs should be clean: no ingest 400s, fewer “slow” warnings, quiet sanitizer chatter, and perfectly synced issue flags.

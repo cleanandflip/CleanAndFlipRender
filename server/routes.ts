@@ -2364,25 +2364,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(userWithoutPassword);
   });
 
-  // Activity tracking endpoint for real analytics
-  app.post("/api/track-activity", async (req, res) => {
-    try {
-      const { eventType, pageUrl, userId } = req.body;
-      const sessionId = req.sessionID || req.headers['x-session-id'] || 'anonymous';
-      
-      const activity = {
-        eventType,
-        pageUrl,
-        userId: userId || null,
-        sessionId: String(sessionId)
-      };
-      
-      await storage.trackActivity(activity);
-      res.json({ success: true });
-    } catch (error: any) {
-      Logger.error('Error tracking activity:', error.message);
-      res.status(500).json({ error: "Failed to track activity" });
-    }
+  // Activity tracking endpoint - fire and forget for performance
+  app.post("/api/track-activity", (req, res) => {
+    res.status(202).json({ ok: true }); // respond immediately
+    
+    setImmediate(async () => {
+      try {
+        const { eventType, pageUrl, userId } = req.body;
+        const sessionId = req.sessionID || req.headers['x-session-id'] || 'anonymous';
+        
+        const activity = {
+          eventType,
+          pageUrl,
+          userId: userId || null,
+          sessionId: String(sessionId)
+        };
+        
+        await storage.trackActivity(activity);
+      } catch (error: any) {
+        Logger.error('Error tracking activity:', error.message);
+      }
+    });
   });
 
   // System health endpoint

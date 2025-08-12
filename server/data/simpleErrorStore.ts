@@ -191,21 +191,18 @@ export const SimpleErrorStore = {
   async getStatusesBulk(fingerprints: string[]) {
     if (!fingerprints.length) return new Map<string, { resolved: boolean; ignored: boolean }>();
     
-    // Query each fingerprint individually - simple and reliable
+    const result = await db.execute(sql`
+      SELECT fingerprint, resolved, ignored 
+      FROM obs_issue_status 
+      WHERE fingerprint = ANY(${fingerprints})
+    `);
+    
     const map = new Map<string, { resolved: boolean; ignored: boolean }>();
-    for (const fp of fingerprints) {
-      const result = await db.execute(sql`
-        SELECT fingerprint, resolved, ignored 
-        FROM obs_issue_status 
-        WHERE fingerprint = ${fp}
-      `);
-      if (result.rows.length > 0) {
-        const r = result.rows[0];
-        map.set(r.fingerprint as string, { 
-          resolved: !!r.resolved, 
-          ignored: !!r.ignored 
-        });
-      }
+    for (const r of result.rows) {
+      map.set(r.fingerprint as string, { 
+        resolved: !!r.resolved, 
+        ignored: !!r.ignored 
+      });
     }
     return map;
   },

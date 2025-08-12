@@ -21,14 +21,16 @@ function fingerprintFromEvent(evt: any) {
 const router = Router();
 
 /** scrub stack frames for grouping */
-function normalizeStack(raw?: string): string[] {
-  if (!raw) return [];
-  return raw
-    .split("\n")
+function normalizeStack(raw?: string | string[]): string[] {
+  const lines = Array.isArray(raw) ? raw : (raw ? raw.split("\n") : []);
+  return lines
     .map((l) => l.trim())
-    .filter((l) => l && !l.includes("node_modules") && !l.includes("(internal"))
+    .filter(Boolean)
+    .filter((l) => !l.includes("node_modules") && !l.includes("(internal"))
     .map((l) => l.replace(/\(\w+:\/\/.*?\)/g, "()").replace(/:\d+:\d+/g, ":__:__"));
 }
+
+
 
 const IngestSchema = z.object({
   service: z.enum(["client", "server"]).default("client"),
@@ -40,9 +42,9 @@ const IngestSchema = z.object({
   url: z.string().optional(),
   method: z.string().optional(),
   statusCode: z.coerce.number().optional(),
-  message: z.string().min(1),
+  message: z.string().optional(),
   type: z.string().optional(),
-  stack: z.string().optional(),
+  stack: z.union([z.string(), z.array(z.string())]).optional(),
   extra: z.record(z.any()).optional(),
 });
 
@@ -50,21 +52,27 @@ const IngestSchema = z.object({
 router.post("/errors", async (req, res) => {
   try {
     const parsed = IngestSchema.parse(req.body ?? {});
+    const stack = normalizeStack(parsed.stack);
+    const message = (parsed.message && parsed.message.trim()) || "Unknown error";
+    const fp = fingerprintFromEvent(message, stack[0] ?? "", parsed.service, parsed.type ?? "");
+
     const event = {
       eventId: randomUUID(),
       createdAt: new Date().toISOString(),
+      fingerprint: fp,
       ...parsed,
-      stack: normalizeStack(parsed.stack).join('\n'),
+      message,
+      stack: stack.join('\n'), // Join array back to string for storage
     };
+
     await SimpleErrorStore.addError(event);
-    res.status(202).json({ ok: true, eventId: event.eventId });
+    return res.status(202).json({ ok: true, eventId: event.eventId, fingerprint: fp });
   } catch (e) {
-    console.error("observability.ingest failed:", e);
+    console.error("Error validation failed:", e);
     if (e instanceof z.ZodError) {
-      console.error("Validation errors:", e.errors);
-      return res.status(400).json({ error: "Validation failed", details: e.errors });
+      console.error("Validation details:", e.errors);
     }
-    res.status(400).json({ error: "Invalid payload" });
+    return res.status(400).json({ error: "Invalid error payload" });
   }
 });
 
@@ -161,13 +169,14 @@ router.get("/issues", async (req, res) => {
     // Normalize filter
     const statusFilter = resolvedRaw === undefined ? "all" : (String(resolvedRaw) === "true" ? "resolved" : "unresolved");
 
-    // Merge statuses individually (temporary - will optimize to bulk later)
+    // Merge statuses in bulk for better performance
     if (result && Array.isArray(result.items)) {
-      await Promise.all(result.items.map(async (it: any) => {
-        const s = await SimpleErrorStore.getIssueStatus(it.fingerprint);
-        it.resolved = s ? !!s.resolved : false;
-        it.ignored = s ? !!s.ignored : false;
-      }));
+      const statuses = await SimpleErrorStore.getStatusesBulk(result.items.map((i: any) => i.fingerprint));
+      result.items.forEach((it: any) => {
+        const s = statuses.get(it.fingerprint);
+        it.resolved = s ? s.resolved : false;
+        it.ignored = s ? s.ignored : false;
+      });
 
       // Apply status filter AFTER merge (so it respects real flags)
       if (statusFilter === "resolved") {

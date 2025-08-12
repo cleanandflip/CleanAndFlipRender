@@ -134,11 +134,17 @@ export function sanitizeInput(options: SanitizationOptions = {}) {
       ];
       
       // Debug logging
-      console.log('Sanitization check - path:', req.path, 'url:', req.url, 'method:', req.method, 'originalUrl:', req.originalUrl);
+      // Reduced noise: only log sanitization in debug mode
+      if (process.env.SANITIZER_LOG === "debug") {
+        console.debug('Sanitization check - path:', req.path, 'url:', req.url, 'method:', req.method, 'originalUrl:', req.originalUrl);
+      }
       
       // Use regex matching for more precise control
       if (ALLOW.some(rx => rx.test(req.path) || rx.test(req.originalUrl))) {
-        console.log('Skipping sanitization for:', req.path, 'originalUrl:', req.originalUrl);
+        // Only log if debug mode is enabled
+        if (process.env.SANITIZER_LOG === "debug") {
+          console.debug('Skipping sanitization for:', req.path, 'originalUrl:', req.originalUrl);
+        }
         return next();
       }
 
