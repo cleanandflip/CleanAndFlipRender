@@ -1,0 +1,365 @@
+three concrete problems we can fix decisively:
+
+Time-range filters: /issues returns 200 but empty even when /series has counts. Your store is returning {items: [], total: 0} (so my previous fallback didn’t run).
+
+Issue details: GET /api/observability/issues/:fp is 404, while /:fp/events is 200 → details path isn’t deriving from events when the issue isn’t materialized.
+
+Ingest/seed errors: DB insert fails — column "id" does not exist in SimpleErrorStore.addError.
+
+Below are precise fixes Replit should apply now.
+
+✅ Server fixes (make filters + details work for good)
+A) Robust /issues with guaranteed fallback aggregation
+Goal: if the store returns empty OR doesn’t support time windows, we still build issues from recent events so the list matches the chart.
+
+Replace your /issues handler with this version:
+
+ts
+Copy
+Edit
+// server/routes/observability.ts
+router.get("/issues", async (req, res) => {
+  try {
+    const q = String(req.query.q ?? "");
+    const level = String(req.query.level ?? "");
+    const env = String(req.query.env ?? "");
+    const resolvedRaw = req.query.resolved;
+    const resolved =
+      resolvedRaw === undefined ? undefined : String(resolvedRaw) === "true";
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? "20"), 10)));
+    const days = Math.min(30, Math.max(1, parseInt(String(req.query.days ?? "1"), 10)));
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    // 1) Try store-native list (may ignore time window)
+    let result = await SimpleErrorStore.listIssues?.({ q, level, env, resolved, page, limit, since });
+
+    // 2) Fallback if no items OR store says total=0
+    if (!result || !Array.isArray(result.items) || result.items.length === 0) {
+      // Pull recent events (prefer since-based API if available)
+      const recent =
+        (await SimpleErrorStore.findEventsSince?.(since)) ??
+        (await SimpleErrorStore.findEvents?.({ since })) ??
+        [];
+
+      // Group events -> issues
+      const groups = new Map<string, any>();
+      for (const evt of recent) {
+        if (level && evt.level !== level) continue;
+        if (env && evt.env !== env) continue;
+
+        const fp =
+          evt.fingerprint ??
+          require("crypto").createHash("sha1")
+            .update(
+              [
+                evt.message || "",
+                Array.isArray(evt.stack) ? evt.stack[0] ?? "" : (evt.stack ?? ""),
+                evt.service || "",
+                evt.type || "",
+              ].join("|")
+            )
+            .digest("hex");
+
+        const g =
+          groups.get(fp) ||
+          {
+            fingerprint: fp,
+            title: evt.message || "(no message)",
+            level: evt.level || "error",
+            firstSeen: evt.createdAt || evt.timestamp || new Date().toISOString(),
+            lastSeen: evt.createdAt || evt.timestamp || new Date().toISOString(),
+            count: 0,
+            resolved: false,
+            ignored: false,
+            service: evt.service,
+            envs: {},
+          };
+
+        g.count += 1;
+        g.lastSeen = evt.createdAt || evt.timestamp || g.lastSeen;
+        const ev = evt.env || "unknown";
+        g.envs[ev] = (g.envs[ev] ?? 0) + 1;
+
+        groups.set(fp, g);
+      }
+
+      let items = [...groups.values()];
+
+      // text filter
+      if (q) {
+        const qq = q.toLowerCase();
+        items = items.filter(
+          (it) =>
+            it.title?.toLowerCase().includes(qq) ||
+            it.fingerprint?.toLowerCase().includes(qq)
+        );
+      }
+
+      // status filter
+      if (resolvedRaw !== undefined) {
+        items = items.filter((it) =>
+          resolved ? it.resolved === true : it.resolved !== true
+        );
+      }
+
+      // sort & paginate
+      items.sort(
+        (a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()
+      );
+      const total = items.length;
+      const start = (page - 1) * limit;
+      result = { items: items.slice(start, start + limit), total };
+    }
+
+    res.json(result);
+  } catch (e) {
+    console.error("observability.listIssues failed:", e);
+    res.status(500).json({ error: "Failed to fetch issues" });
+  }
+});
+B) /issues/:fp must also fall back to events
+When an issue isn’t materialized, build it from events so the details drawer never 404s:
+
+ts
+Copy
+Edit
+router.get("/issues/:fp", async (req, res) => {
+  try {
+    const fp = req.params.fp;
+
+    // Try store
+    let issue = await SimpleErrorStore.getIssue?.(fp);
+
+    // Fallback: derive from recent events for that fingerprint (last 30 days)
+    if (!issue) {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const evs =
+        (await SimpleErrorStore.getIssueEvents?.(fp, 200)) ??
+        ((await SimpleErrorStore.findEventsSince?.(since)) ?? [])
+          .filter((e: any) => (e.fingerprint ?? "") === fp);
+
+      if (Array.isArray(evs) && evs.length) {
+        evs.sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt || b.timestamp).getTime() -
+            new Date(a.createdAt || a.timestamp).getTime()
+        );
+        issue = {
+          fingerprint: fp,
+          title: evs[0].message || "(no message)",
+          level: evs[0].level || "error",
+          firstSeen: evs[evs.length - 1].createdAt || evs[evs.length - 1].timestamp,
+          lastSeen: evs[0].createdAt || evs[0].timestamp,
+          count: evs.length,
+          resolved: false,
+          ignored: false,
+          service: evs[0].service,
+        };
+      }
+    }
+
+    if (!issue) return res.status(404).json({ error: "Issue not found" });
+    res.json({ issue });
+  } catch (e) {
+    console.error("observability.issue failed:", e);
+    res.status(500).json({ error: "Failed to fetch issue" });
+  }
+});
+(Keep your existing /:fp/events route; it already returns 200.)
+
+C) Normalize /series points for better 24h/7d/30d labels
+If not already done, return { ts, count }:
+
+ts
+Copy
+Edit
+router.get("/series", async (req, res) => {
+  try {
+    const days = Math.min(30, Math.max(1, parseInt(String(req.query.days ?? "1"), 10)));
+    const rows = await SimpleErrorStore.getChartData?.(days);
+    const normalized = Array.isArray(rows)
+      ? rows.map((r: any) => ({ ts: r.ts || r.hour || r.time, count: r.count ?? r.value ?? 0 }))
+      : [];
+    res.json(normalized);
+  } catch (e) {
+    console.error("observability.series failed:", e);
+    res.status(500).json({ error: "Failed to fetch chart data" });
+  }
+});
+🗃️ Database fix (ingest)
+Your insert fails with column "id" does not exist. Either:
+
+your table doesn’t have an id column (common when using event_id as PK), or
+
+the INSERT statement names id explicitly.
+
+1) If you want an auto id (recommended for joins)
+Create table (Neon/Postgres):
+
+sql
+Copy
+Edit
+CREATE TABLE IF NOT EXISTS obs_events (
+  id           BIGSERIAL PRIMARY KEY,
+  event_id     UUID NOT NULL UNIQUE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  service      TEXT NOT NULL,
+  level        TEXT NOT NULL,
+  env          TEXT NOT NULL,
+  message      TEXT NOT NULL,
+  type         TEXT,
+  url          TEXT,
+  method       TEXT,
+  status_code  INTEGER,
+  stack        TEXT[],              -- store normalized frames
+  fingerprint  TEXT,                -- optional precomputed / for faster lookup
+  extra        JSONB
+);
+
+CREATE INDEX IF NOT EXISTS idx_obs_events_created_at ON obs_events (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_obs_events_fingerprint ON obs_events (fingerprint);
+CREATE INDEX IF NOT EXISTS idx_obs_events_level_env ON obs_events (level, env);
+Then ensure SimpleErrorStore.addError inserts without naming a non-existent column. Example:
+
+ts
+Copy
+Edit
+// server/data/simpleErrorStore.ts (example)
+export const SimpleErrorStore = {
+  async addError(evt: any) {
+    const sql = `
+      INSERT INTO obs_events (
+        event_id, created_at, service, level, env, message, type, url, method, status_code, stack, fingerprint, extra
+      ) VALUES (
+        $1,        $2,         $3,      $4,    $5,  $6,      $7,   $8,   $9,     $10,        $11,   $12,         $13
+      )
+      ON CONFLICT (event_id) DO NOTHING
+      RETURNING id
+    `;
+    const params = [
+      evt.eventId,
+      evt.createdAt,
+      evt.service,
+      evt.level,
+      evt.env,
+      evt.message,
+      evt.type ?? null,
+      evt.url ?? null,
+      evt.method ?? null,
+      evt.statusCode ?? null,
+      Array.isArray(evt.stack) ? evt.stack : [],
+      evt.fingerprint ?? null,
+      evt.extra ?? null,
+    ];
+    return db.query(sql, params);
+  },
+
+  // Add at least one of these so routes can fall back:
+  async findEventsSince(since: Date) {
+    return db.query(
+      `SELECT event_id, created_at, service, level, env, message, type, url, method, status_code, stack, fingerprint, extra
+       FROM obs_events
+       WHERE created_at >= $1
+       ORDER BY created_at DESC`,
+      [since]
+    ).then(r => r.rows);
+  },
+
+  async getIssueEvents(fp: string, limit = 50) {
+    return db.query(
+      `SELECT event_id, created_at, service, level, env, message, type, url, method, status_code, stack, fingerprint, extra
+       FROM obs_events
+       WHERE fingerprint = $1
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [fp, limit]
+    ).then(r => r.rows);
+  },
+};
+2) If you do NOT want an id column
+Remove id from your INSERT and RETURNING clauses in addError. The error you see comes from trying to use it.
+
+🖥️ Client polish (days filter + details)
+Ensure issues query includes days in both the queryFn and the queryKey:
+
+tsx
+Copy
+Edit
+queryKey: ["obs:issues", q, level, env, status, page, limit, timeRange],
+queryFn: () => obsApi.issues({ q, level, env, resolved: status === "all" ? undefined : status === "resolved", days: parseInt(timeRange, 10), page, limit }),
+Normalize series points for labels:
+
+tsx
+Copy
+Edit
+const days = parseInt(timeRange, 10);
+const byDay = days > 1;
+
+const chartData = (Array.isArray(seriesData) ? seriesData : []).map((r: any) => {
+  const t = new Date(r.ts);
+  return {
+    label: byDay
+      ? t.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      : t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    count: Number(r.count) || 0,
+  };
+});
+Issue details drawer: if GET /issues/:fp returns 404, build the header from the first event so the drawer never looks “broken”:
+
+tsx
+Copy
+Edit
+const { data: issueDetails } = useQuery({
+  queryKey: ["obs:issue", selectedIssue],
+  queryFn: async () => {
+    if (!selectedIssue) return null;
+    try { return await obsApi.issue(selectedIssue); }
+    catch {
+      const evs = await obsApi.events(selectedIssue, 50);
+      if (!Array.isArray(evs) || evs.length === 0) throw new Error("Not found");
+      const latest = evs[0];
+      return {
+        issue: {
+          fingerprint: selectedIssue,
+          title: latest.message ?? "(no message)",
+          level: latest.level ?? "error",
+          firstSeen: evs[evs.length - 1].createdAt,
+          lastSeen: latest.createdAt,
+          count: evs.length,
+          resolved: false,
+          ignored: false,
+          service: latest.service,
+        },
+      };
+    }
+  },
+  enabled: !!selectedIssue,
+});
+🧪 What Replit should do right now
+Apply the server route patches for /issues, /issues/:fp, and /series.
+
+Fix the DB schema or addError so we’re not inserting into a non-existent id column (choose option 1 or 2 above; 1 recommended).
+
+Expose findEventsSince and getIssueEvents in SimpleErrorStore as shown.
+
+Update the client (query includes days, fallback details, normalized labels).
+
+Rebuild & test:
+
+bash
+Copy
+Edit
+pnpm tsc --noEmit
+pnpm dev
+curl -I 'http://localhost:3000/api/observability/series?days=1'
+curl -I 'http://localhost:3000/api/observability/issues?days=1'
+In the dashboard, switch 24h / 7d / 30d and confirm that:
+
+The chart labels change (time-of-day vs dates).
+
+Errors in Range changes.
+
+Issues list is non-empty when the chart has counts.
+
+Clicking an issue always opens a details drawer (either from store or event-derived).

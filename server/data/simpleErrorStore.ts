@@ -15,7 +15,7 @@ export const SimpleErrorStore = {
     const fingerprint = this.createFingerprint(data.message, data.stack);
     
     try {
-      // Insert raw error
+      // Insert raw error (don't specify id column - let it auto-increment)
       await db.execute(sql`
         INSERT INTO errors_raw (event_id, created_at, level, env, service, url, message, stack, fingerprint)
         VALUES (${eventId}, NOW(), ${data.level}, ${data.env || 'development'}, ${data.service}, 
@@ -24,7 +24,7 @@ export const SimpleErrorStore = {
 
       // Update or create issue
       const existingIssue = await db.execute(sql`
-        SELECT id FROM issues WHERE fingerprint = ${fingerprint} LIMIT 1
+        SELECT fingerprint FROM issues WHERE fingerprint = ${fingerprint} LIMIT 1
       `);
 
       if (existingIssue.rows.length > 0) {
@@ -38,8 +38,8 @@ export const SimpleErrorStore = {
         // Create new issue
         const title = data.message.split('\n')[0].slice(0, 160) || 'Error';
         await db.execute(sql`
-          INSERT INTO issues (fingerprint, title, level, service, first_seen, last_seen, count)
-          VALUES (${fingerprint}, ${title}, ${data.level}, ${data.service}, NOW(), NOW(), 1)
+          INSERT INTO issues (fingerprint, title, level, service, first_seen, last_seen, count, resolved, ignored, affected_users, envs, sample_event_id)
+          VALUES (${fingerprint}, ${title}, ${data.level}, ${data.service}, NOW(), NOW(), 1, false, false, 1, '{"' + ${data.env || 'development'} + '": 1}', ${eventId})
         `);
       }
 
@@ -214,6 +214,28 @@ export const SimpleErrorStore = {
 
   async markIgnored(fingerprint: string, ignored: boolean) {
     return this.setIgnored(fingerprint, ignored);
+  },
+
+  async getIssueEvents(fp: string, limit = 50) {
+    try {
+      const result = await db.execute(sql`
+        SELECT event_id, created_at, service, level, env, message, type, url, method, stack, fingerprint, extra
+        FROM errors_raw
+        WHERE fingerprint = ${fp}
+        ORDER BY created_at DESC
+        LIMIT ${limit}
+      `);
+      return result.rows.map((row: any) => ({
+        ...row,
+        createdAt: new Date(row.created_at).toISOString(),
+        stack: row.stack && row.stack !== '' ? 
+          (row.stack.startsWith('[') || row.stack.startsWith('{') ? 
+            JSON.parse(row.stack) : [row.stack]) : [],
+      }));
+    } catch (error) {
+      console.error('Failed to get issue events:', error);
+      return [];
+    }
   },
 
   createFingerprint(message: string, stack?: string): string {

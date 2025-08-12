@@ -68,7 +68,29 @@ export default function ObservabilityPage() {
 
   const { data: issueDetails } = useQuery({
     queryKey: ["obs:issue", selectedIssue],
-    queryFn: () => (selectedIssue ? obsApi.issue(selectedIssue) : null),
+    queryFn: async () => {
+      if (!selectedIssue) return null;
+      try { 
+        return await obsApi.issue(selectedIssue); 
+      } catch {
+        const evs = await obsApi.events(selectedIssue, 50);
+        if (!Array.isArray(evs) || evs.length === 0) throw new Error("Not found");
+        const latest = evs[0];
+        return {
+          issue: {
+            fingerprint: selectedIssue,
+            title: latest.message ?? "(no message)",
+            level: latest.level ?? "error",
+            firstSeen: evs[evs.length - 1].createdAt,
+            lastSeen: latest.createdAt,
+            count: evs.length,
+            resolved: false,
+            ignored: false,
+            service: latest.service,
+          },
+        };
+      }
+    },
     enabled: !!selectedIssue,
   });
 
@@ -112,13 +134,11 @@ export default function ObservabilityPage() {
   const series = Array.isArray(seriesData) ? seriesData : [];
   const chartData = series
     .map((r: any) => {
-      const t = toDateSafe(r.ts || r.hour);
+      const t = new Date(r.ts);
       return {
-        label: t
-          ? (byDay
-              ? t.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-              : t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))
-          : "",
+        label: byDay
+          ? t.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+          : t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         count: Number(r.count) || 0,
       };
     })

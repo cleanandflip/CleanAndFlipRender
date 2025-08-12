@@ -76,64 +76,87 @@ router.get("/issues", async (req, res) => {
     const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
     const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? "20"), 10)));
     const days = Math.min(30, Math.max(1, parseInt(String(req.query.days ?? "1"), 10)));
-    const since = sinceDays(days);
-    const until = now();
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    // Use the standard listIssues API with fallback aggregation
-    let result = await SimpleErrorStore.listIssues({ page, limit });
+    // 1) Try store-native list (may ignore time window)
+    let result = await SimpleErrorStore.listIssues?.({ q, level, env, resolved, page, limit, since });
 
-    // If we have no issues but need time-scoped data, create from events
-    if (!result.items || result.items.length === 0) {
-      const recent = await SimpleErrorStore.findEventsSince(since);
-      const events: any[] = Array.isArray(recent) ? recent : [];
+    // 2) Fallback if no items OR store says total=0
+    if (!result || !Array.isArray(result.items) || result.items.length === 0) {
+      // Pull recent events (prefer since-based API if available)
+      const recent =
+        (await SimpleErrorStore.findEventsSince?.(since)) ??
+        (await SimpleErrorStore.findEvents?.({ since })) ??
+        [];
+
+      // Group events -> issues
       const groups = new Map<string, any>();
-
-      for (const evt of events) {
-        // basic filters first
+      for (const evt of recent) {
         if (level && evt.level !== level) continue;
         if (env && evt.env !== env) continue;
-        // resolved filter can't be known from raw events; we keep everything for 'all' and 'unresolved' modes
-        const fp = evt.fingerprint || fingerprintFromEvent(evt);
-        const g = groups.get(fp) || {
-          fingerprint: fp,
-          title: evt.message || "(no message)",
-          level: evt.level || "error",
-          firstSeen: evt.createdAt || evt.timestamp || new Date().toISOString(),
-          lastSeen: evt.createdAt || evt.timestamp || new Date().toISOString(),
-          count: 0,
-          resolved: false,
-          ignored: false,
-          service: evt.service,
-          envs: {},
-        };
+
+        const fp =
+          evt.fingerprint ??
+          crypto.createHash("sha1")
+            .update(
+              [
+                evt.message || "",
+                Array.isArray(evt.stack) ? evt.stack[0] ?? "" : (evt.stack ?? ""),
+                evt.service || "",
+                evt.type || "",
+              ].join("|")
+            )
+            .digest("hex");
+
+        const g =
+          groups.get(fp) ||
+          {
+            fingerprint: fp,
+            title: evt.message || "(no message)",
+            level: evt.level || "error",
+            firstSeen: evt.createdAt || evt.timestamp || new Date().toISOString(),
+            lastSeen: evt.createdAt || evt.timestamp || new Date().toISOString(),
+            count: 0,
+            resolved: false,
+            ignored: false,
+            service: evt.service,
+            envs: {},
+          };
+
         g.count += 1;
         g.lastSeen = evt.createdAt || evt.timestamp || g.lastSeen;
-        g.envs[evt.env || "unknown"] = (g.envs[evt.env || "unknown"] ?? 0) + 1;
+        const ev = evt.env || "unknown";
+        g.envs[ev] = (g.envs[ev] ?? 0) + 1;
+
         groups.set(fp, g);
       }
 
       let items = [...groups.values()];
 
-      // text search
+      // text filter
       if (q) {
-        const QQ = q.toLowerCase();
-        items = items.filter((it) =>
-          it.title?.toLowerCase().includes(QQ) ||
-          it.fingerprint.includes(QQ)
+        const qq = q.toLowerCase();
+        items = items.filter(
+          (it) =>
+            it.title?.toLowerCase().includes(qq) ||
+            it.fingerprint?.toLowerCase().includes(qq)
         );
       }
 
-      // status filter (only apply "resolved" true if explicitly requested)
-      const statusParam = resolvedRaw === undefined ? "all" : resolved ? "resolved" : "unresolved";
-      if (statusParam === "resolved") items = items.filter((it) => it.resolved);
-      if (statusParam === "unresolved") items = items.filter((it) => !it.resolved);
+      // status filter
+      if (resolvedRaw !== undefined) {
+        items = items.filter((it) =>
+          resolved ? it.resolved === true : it.resolved !== true
+        );
+      }
 
-      // sort by lastSeen desc
-      items.sort((a, b) => (new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()));
-
+      // sort & paginate
+      items.sort(
+        (a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()
+      );
       const total = items.length;
       const start = (page - 1) * limit;
-      result = { items: items.slice(start, start + limit), total, page, limit };
+      result = { items: items.slice(start, start + limit), total };
     }
 
     res.json(result);
@@ -146,7 +169,39 @@ router.get("/issues", async (req, res) => {
 // 3) issue details
 router.get("/issues/:fp", async (req, res) => {
   try {
-    const issue = await SimpleErrorStore.getIssue(req.params.fp);
+    const fp = req.params.fp;
+
+    // Try store
+    let issue = await SimpleErrorStore.getIssue?.(fp);
+
+    // Fallback: derive from recent events for that fingerprint (last 30 days)
+    if (!issue) {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const evs =
+        (await SimpleErrorStore.getIssueEvents?.(fp, 200)) ??
+        ((await SimpleErrorStore.findEventsSince?.(since)) ?? [])
+          .filter((e: any) => (e.fingerprint ?? "") === fp);
+
+      if (Array.isArray(evs) && evs.length) {
+        evs.sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt || b.timestamp).getTime() -
+            new Date(a.createdAt || a.timestamp).getTime()
+        );
+        issue = {
+          fingerprint: fp,
+          title: evs[0].message || "(no message)",
+          level: evs[0].level || "error",
+          firstSeen: evs[evs.length - 1].createdAt || evs[evs.length - 1].timestamp,
+          lastSeen: evs[0].createdAt || evs[0].timestamp,
+          count: evs.length,
+          resolved: false,
+          ignored: false,
+          service: evs[0].service,
+        };
+      }
+    }
+
     if (!issue) return res.status(404).json({ error: "Issue not found" });
     res.json({ issue });
   } catch (e) {
@@ -189,14 +244,10 @@ router.put("/issues/:fp/unignore", async (req, res) => {
 router.get("/series", async (req, res) => {
   try {
     const days = Math.min(30, Math.max(1, parseInt(String(req.query.days ?? "1"), 10)));
-    const rows = await SimpleErrorStore.getChartData(days);
-
-    // Normalize shape to { ts, count }
-    const normalized = Array.isArray(rows) ? rows.map((r: any) => ({
-      ts: r.ts || r.hour || r.time || r.bucket,
-      count: r.count ?? r.value ?? r.total ?? 0,
-    })) : [];
-
+    const rows = await SimpleErrorStore.getChartData?.(days);
+    const normalized = Array.isArray(rows)
+      ? rows.map((r: any) => ({ ts: r.ts || r.hour || r.time, count: r.count ?? r.value ?? 0 }))
+      : [];
     res.json(normalized);
   } catch (e) {
     console.error("observability.series failed:", e);
