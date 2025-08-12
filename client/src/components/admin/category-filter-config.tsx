@@ -38,7 +38,7 @@ export default function CategoryFilterConfig({ category, onUpdate }: CategoryFil
         }
         return await response.json();
       } catch (error) {
-        console.error('Failed to fetch filter options:', error);
+        // Failed to fetch filter options
         throw error;
       }
     }

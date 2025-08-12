@@ -42,7 +42,7 @@ export const CodebaseScanner = () => {
       const results = await response.json();
       setScanResults(results);
     } catch (error) {
-      console.error('Scan failed:', error);
+      // Scan failed
     } finally {
       setScanning(false);
     }

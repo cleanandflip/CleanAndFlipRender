@@ -266,7 +266,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         throw new Error(error.message || 'Failed to save product');
       }
     } catch (error: any) {
-      console.error('Save failed:', error);
+      // Save failed
       toast({
         title: "Save Failed",
         description: error.message || 'Failed to save product',

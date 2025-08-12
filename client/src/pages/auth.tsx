@@ -283,10 +283,8 @@ export default function AuthPage() {
                   <div className="space-y-2">
                     <Label htmlFor="address" className="text-text-secondary text-sm">Address</Label>
                     <AddressAutocomplete
-                      id="address"
-                      name="address"
                       value={addressData.fullAddress}
-                      onChange={(parsed) => {
+                      onAddressSelect={(parsed: any) => {
                         setAddressData({
                           street: parsed.street,
                           city: parsed.city,
@@ -299,7 +297,6 @@ export default function AuthPage() {
                       }}
                       placeholder="Start typing your address..."
                       className="h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 placeholder:text-white text-white"
-                      required
                     />
                   </div>
                   

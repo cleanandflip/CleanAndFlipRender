@@ -24,7 +24,7 @@ export default function CategoryGrid() {
         const data = await response.json();
         return data;
       } catch (error) {
-        console.error('Failed to fetch categories:', error);
+        // Failed to fetch categories
         throw error; // Re-throw for TanStack Query to handle
       }
     },

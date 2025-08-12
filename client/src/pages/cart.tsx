@@ -36,7 +36,7 @@ function Cart() {
       });
       // Cart will auto-refresh due to real-time sync
     } catch (error) {
-      console.error('Cart validation error:', error);
+      // Cart validation error
     }
   };
   

@@ -179,9 +179,9 @@ function AddressesSection() {
           </DialogHeader>
           <div className="space-y-4">
             <AddressAutocomplete
-              onAddressSubmit={handleAddressSubmit}
-              isLoading={saveAddressMutation.isPending}
-              initialAddress={editingAddress}
+              onAddressSelect={handleAddressSubmit}
+              value={editingAddress?.fullAddress || ''}
+              placeholder="Enter your address..."
             />
           </div>
         </DialogContent>

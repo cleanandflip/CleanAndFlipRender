@@ -69,7 +69,7 @@ export const ImageUploadZone: React.FC<ImageUploadZoneProps> = ({
         onUploadComplete(newImages);
       }
     } catch (error) {
-      console.error('Failed to upload images:', error);
+      // Failed to upload images
       // The uploadImages hook should handle user-facing errors
     }
   };

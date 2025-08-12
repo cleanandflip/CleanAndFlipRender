@@ -515,7 +515,7 @@ export function UnifiedSearch({
                         handleTrendingClick(item);
                       }}
                       onClick={(e) => {
-                        console.log('⭐ TRENDING BUTTON CLICKED:', item);
+                        // Trending button clicked
                         e.preventDefault();
                         e.stopPropagation();
                       }}

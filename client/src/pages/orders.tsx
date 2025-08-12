@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { StandardDropdown } from "@/components/ui";
+import { UnifiedDropdown } from "@/components/ui/UnifiedDropdown";
 import { Card } from "@/components/ui/card";
 import { Package, Search, Calendar, Truck, ArrowLeft } from "lucide-react";
 import { useState } from "react";
