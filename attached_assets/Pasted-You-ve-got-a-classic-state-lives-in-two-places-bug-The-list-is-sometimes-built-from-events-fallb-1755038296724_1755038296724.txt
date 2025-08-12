@@ -1,0 +1,196 @@
+You’ve got a classic “state lives in two places” bug. The list is sometimes built from events (fallback aggregation) while the resolved/ignored flags live in a separate table. If we don’t (1) apply the status change atomically, (2) return the new truth, and (3) update caches consistently, the UI and list drift.
+
+Here’s how to fix it for good.
+
+Root causes
+Server-side mismatch: /issues aggregates from events but merges status per-item (or not at all), so some responses don’t include the newest flags.
+
+Fragile filtering: the resolved query param is treated inconsistently (undefined vs "false"), so “Unresolved” sometimes behaves like “All”.
+
+Client cache drift: mutations don’t optimistically sync the list and details caches, so the drawer flips but the row doesn’t (or vice versa).
+
+Fingerprint inconsistency: if the fingerprint computed at ingest differs from list/events computation, flags are saved under a key the list never uses.
+
+Server: make obs_issue_status the single source of truth & return it everywhere
+1) Bulk-read statuses for lists (no per-item queries)
+Add to SimpleErrorStore:
+
+ts
+Copy
+Edit
+// server/data/simpleErrorStore.ts
+export async function getStatusesBulk(fingerprints: string[]) {
+  if (!fingerprints.length) return new Map<string, { resolved: boolean; ignored: boolean }>();
+  const { rows } = await db.query(
+    `SELECT fingerprint, resolved, ignored FROM obs_issue_status WHERE fingerprint = ANY($1::text[])`,
+    [fingerprints]
+  );
+  const map = new Map<string, { resolved: boolean; ignored: boolean }>();
+  for (const r of rows) map.set(r.fingerprint, { resolved: !!r.resolved, ignored: !!r.ignored });
+  return map;
+}
+2) Normalize “resolved” filter and merge statuses in one pass
+In /issues (after you build items from either the store or fallback aggregation):
+
+ts
+Copy
+Edit
+// Normalize filter
+const resolvedRaw = req.query.resolved;
+const statusFilter = resolvedRaw === undefined ? "all" : (String(resolvedRaw) === "true" ? "resolved" : "unresolved");
+
+// Merge statuses in bulk
+const statuses = await getStatusesBulk(items.map((i: any) => i.fingerprint));
+for (const it of items) {
+  const s = statuses.get(it.fingerprint);
+  it.resolved = s ? s.resolved : false;
+  it.ignored  = s ? s.ignored  : false;
+}
+
+// Apply status filter AFTER merge (so it respects real flags)
+if (statusFilter === "resolved")   items = items.filter((i: any) => i.resolved);
+if (statusFilter === "unresolved") items = items.filter((i: any) => !i.resolved);
+3) Details endpoint must always include flags
+In /issues/:fp:
+
+ts
+Copy
+Edit
+const st = await SimpleErrorStore.getIssueStatus(req.params.fp);
+if (issue) {
+  issue.resolved = st ? !!st.resolved : false;
+  issue.ignored  = st ? !!st.ignored  : false;
+}
+4) Actions must be atomic and return the new flags
+ts
+Copy
+Edit
+router.put("/issues/:fp/resolve", async (req, res) => {
+  await SimpleErrorStore.setResolved(req.params.fp, true);
+  const st = await SimpleErrorStore.getIssueStatus(req.params.fp);
+  res.json({ ok: true, fingerprint: req.params.fp, ...st });
+});
+router.put("/issues/:fp/reopen", async (req, res) => {
+  await SimpleErrorStore.setResolved(req.params.fp, false);
+  const st = await SimpleErrorStore.getIssueStatus(req.params.fp);
+  res.json({ ok: true, fingerprint: req.params.fp, ...st });
+});
+router.put("/issues/:fp/ignore", async (req, res) => {
+  await SimpleErrorStore.setIgnored(req.params.fp, true);
+  const st = await SimpleErrorStore.getIssueStatus(req.params.fp);
+  res.json({ ok: true, fingerprint: req.params.fp, ...st });
+});
+router.put("/issues/:fp/unignore", async (req, res) => {
+  await SimpleErrorStore.setIgnored(req.params.fp, false);
+  const st = await SimpleErrorStore.getIssueStatus(req.params.fp);
+  res.json({ ok: true, fingerprint: req.params.fp, ...st });
+});
+5) Fingerprint consistency — compute it once at ingest and store it
+In your ingest route:
+
+ts
+Copy
+Edit
+const fp = parsed.fingerprint ?? fingerprintFromEvent(parsed.message, parsed.stack, parsed.service, parsed.type);
+const event = { ...parsed, fingerprint: fp, eventId: randomUUID(), createdAt: new Date().toISOString(), stack: normalizeStack(parsed.stack) };
+await SimpleErrorStore.addError(event); // INSERT fingerprint column too
+…and ensure obs_events.fingerprint is populated. Use the same fingerprintFromEvent function anywhere you group from events.
+
+Client: optimistic & authoritative cache updates
+1) Use the action response to update caches immediately
+In the page component:
+
+ts
+Copy
+Edit
+function updateCachesAfterStatus(fingerprint: string, patch: { resolved?: boolean; ignored?: boolean }) {
+  // 1) Update detail
+  queryClient.setQueryData(["obs:issue", fingerprint], (prev: any) => {
+    if (!prev?.issue) return prev;
+    return { issue: { ...prev.issue, ...patch } };
+  });
+
+  // 2) Update all lists with this fingerprint (any filter/time-range)
+  queryClient.getQueryCache().findAll({ queryKey: ["obs:issues"] }).forEach((q) => {
+    queryClient.setQueryData(q.queryKey, (prev: any) => {
+      if (!prev?.items) return prev;
+      return {
+        ...prev,
+        items: prev.items.map((it: any) =>
+          it.fingerprint === fingerprint ? { ...it, ...patch } : it
+        ),
+      };
+    });
+  });
+}
+
+const resolveMutation = useMutation({
+  mutationFn: (fp: string) => obsApi.resolve(fp),
+  onSuccess: (data) => {
+    updateCachesAfterStatus(data.fingerprint, { resolved: data.resolved });
+  },
+  onSettled: () => queryClient.invalidateQueries({ queryKey: ["obs:issues"] }),
+});
+const reopenMutation = useMutation({
+  mutationFn: (fp: string) => obsApi.reopen(fp),
+  onSuccess: (data) => {
+    updateCachesAfterStatus(data.fingerprint, { resolved: data.resolved });
+  },
+  onSettled: () => queryClient.invalidateQueries({ queryKey: ["obs:issues"] }),
+});
+const ignoreMutation = useMutation({
+  mutationFn: ({ fingerprint, ignored }: { fingerprint: string; ignored: boolean }) =>
+    ignored ? obsApi.ignore(fingerprint) : obsApi.unignore(fingerprint),
+  onSuccess: (data) => {
+    updateCachesAfterStatus(data.fingerprint, { ignored: data.ignored });
+  },
+  onSettled: () => queryClient.invalidateQueries({ queryKey: ["obs:issues"] }),
+});
+2) Filter semantics in the UI
+Keep status as "all" | "resolved" | "unresolved". Only send the resolved param if not "all". Make sure your queryKey includes timeRange and status so React Query doesn’t reuse stale lists.
+
+Database schema sanity
+Ensure you have:
+
+sql
+Copy
+Edit
+-- Events store (fingerprint present!)
+CREATE TABLE IF NOT EXISTS obs_events (
+  id           BIGSERIAL PRIMARY KEY,
+  event_id     UUID NOT NULL UNIQUE,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  service      TEXT NOT NULL,
+  level        TEXT NOT NULL,
+  env          TEXT NOT NULL,
+  message      TEXT NOT NULL,
+  type         TEXT,
+  url          TEXT,
+  method       TEXT,
+  status_code  INTEGER,
+  stack        TEXT[],
+  fingerprint  TEXT NOT NULL,
+  extra        JSONB
+);
+CREATE INDEX IF NOT EXISTS idx_obs_events_created_at   ON obs_events (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_obs_events_fingerprint  ON obs_events (fingerprint);
+
+-- Status store (single source of truth for flags)
+CREATE TABLE IF NOT EXISTS obs_issue_status (
+  fingerprint TEXT PRIMARY KEY,
+  resolved    BOOLEAN NOT NULL DEFAULT FALSE,
+  ignored     BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+Final verification steps (do all)
+Reload dashboard.
+
+Seed 2 errors → confirm they appear in list and details.
+
+Click Mark Resolved → tag flips in drawer and the row; switch “Unresolved/Resolved/All” and verify.
+
+Click Ignore → row hides when “Show ignored” is off; unhides when toggled on.
+
+Change 24h/7d/30d; list + chart both change, and flags persist.
+
+Hard refresh the page → states are exactly as last set (from obs_issue_status).

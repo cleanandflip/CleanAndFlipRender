@@ -143,12 +143,7 @@ router.get("/issues", async (req, res) => {
         );
       }
 
-      // status filter
-      if (resolvedRaw !== undefined) {
-        items = items.filter((it) =>
-          resolved ? it.resolved === true : it.resolved !== true
-        );
-      }
+      // Note: status filter moved to after bulk status merge
 
       // sort & paginate
       items.sort(
@@ -159,15 +154,26 @@ router.get("/issues", async (req, res) => {
       result = { items: items.slice(start, start + limit), total, page, limit };
     }
 
-    // Merge status flags for all items
+    // Normalize filter
+    const statusFilter = resolvedRaw === undefined ? "all" : (String(resolvedRaw) === "true" ? "resolved" : "unresolved");
+
+    // Merge statuses individually (temporary - will optimize to bulk later)
     if (result && Array.isArray(result.items)) {
       await Promise.all(result.items.map(async (it: any) => {
-        const st = await SimpleErrorStore.getIssueStatus(it.fingerprint);
-        if (st) { 
-          it.resolved = !!st.resolved; 
-          it.ignored = !!st.ignored; 
-        }
+        const s = await SimpleErrorStore.getIssueStatus(it.fingerprint);
+        it.resolved = s ? !!s.resolved : false;
+        it.ignored = s ? !!s.ignored : false;
       }));
+
+      // Apply status filter AFTER merge (so it respects real flags)
+      if (statusFilter === "resolved") {
+        result.items = result.items.filter((i: any) => i.resolved);
+      } else if (statusFilter === "unresolved") {
+        result.items = result.items.filter((i: any) => !i.resolved);
+      }
+      
+      // Update total after filtering
+      result.total = result.items.length;
     }
 
     res.json(result);
@@ -215,11 +221,11 @@ router.get("/issues/:fp", async (req, res) => {
 
     if (!issue) return res.status(404).json({ error: "Issue not found" });
 
-    // Merge status flags
+    // Details endpoint must always include flags
     const st = await SimpleErrorStore.getIssueStatus(fp);
-    if (st && issue) { 
-      issue.resolved = !!st.resolved; 
-      issue.ignored = !!st.ignored; 
+    if (issue) {
+      issue.resolved = st ? !!st.resolved : false;
+      issue.ignored = st ? !!st.ignored : false;
     }
 
     res.json({ issue });
@@ -243,42 +249,46 @@ router.get("/issues/:fp/events", async (req, res) => {
 
 // 5) actions
 router.put("/issues/:fp/resolve", async (req, res) => {
-  try { 
-    await SimpleErrorStore.setResolved(req.params.fp, true); 
-    res.json({ ok: true }); 
-  } catch (e) { 
-    console.error(e); 
-    res.status(500).json({ error: "Failed to resolve" }); 
+  try {
+    await SimpleErrorStore.setResolved(req.params.fp, true);
+    const st = await SimpleErrorStore.getIssueStatus(req.params.fp);
+    res.json({ ok: true, fingerprint: req.params.fp, resolved: !!st?.resolved, ignored: !!st?.ignored });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to resolve" });
   }
 });
 
 router.put("/issues/:fp/reopen", async (req, res) => {
-  try { 
-    await SimpleErrorStore.setResolved(req.params.fp, false); 
-    res.json({ ok: true }); 
-  } catch (e) { 
-    console.error(e); 
-    res.status(500).json({ error: "Failed to reopen" }); 
+  try {
+    await SimpleErrorStore.setResolved(req.params.fp, false);
+    const st = await SimpleErrorStore.getIssueStatus(req.params.fp);
+    res.json({ ok: true, fingerprint: req.params.fp, resolved: !!st?.resolved, ignored: !!st?.ignored });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to reopen" });
   }
 });
 
 router.put("/issues/:fp/ignore", async (req, res) => {
-  try { 
-    await SimpleErrorStore.setIgnored(req.params.fp, true); 
-    res.json({ ok: true }); 
-  } catch (e) { 
-    console.error(e); 
-    res.status(500).json({ error: "Failed to ignore" }); 
+  try {
+    await SimpleErrorStore.setIgnored(req.params.fp, true);
+    const st = await SimpleErrorStore.getIssueStatus(req.params.fp);
+    res.json({ ok: true, fingerprint: req.params.fp, resolved: !!st?.resolved, ignored: !!st?.ignored });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to ignore" });
   }
 });
 
 router.put("/issues/:fp/unignore", async (req, res) => {
-  try { 
-    await SimpleErrorStore.setIgnored(req.params.fp, false); 
-    res.json({ ok: true }); 
-  } catch (e) { 
-    console.error(e); 
-    res.status(500).json({ error: "Failed to unignore" }); 
+  try {
+    await SimpleErrorStore.setIgnored(req.params.fp, false);
+    const st = await SimpleErrorStore.getIssueStatus(req.params.fp);
+    res.json({ ok: true, fingerprint: req.params.fp, resolved: !!st?.resolved, ignored: !!st?.ignored });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to unignore" });
   }
 });
 

@@ -105,27 +105,50 @@ export default function ObservabilityPage() {
     queryFn: () => obsApi.series(parseInt(timeRange)),
   });
 
+  function updateCachesAfterStatus(fingerprint: string, patch: { resolved?: boolean; ignored?: boolean }) {
+    // 1) Update detail
+    queryClient.setQueryData(["obs:issue", fingerprint], (prev: any) => {
+      if (!prev?.issue) return prev;
+      return { issue: { ...prev.issue, ...patch } };
+    });
+
+    // 2) Update all lists with this fingerprint (any filter/time-range)
+    queryClient.getQueryCache().findAll({ queryKey: ["obs:issues"] }).forEach((q) => {
+      queryClient.setQueryData(q.queryKey, (prev: any) => {
+        if (!prev?.items) return prev;
+        return {
+          ...prev,
+          items: prev.items.map((it: any) =>
+            it.fingerprint === fingerprint ? { ...it, ...patch } : it
+          ),
+        };
+      });
+    });
+  }
+
   const resolveMutation = useMutation({
     mutationFn: (fp: string) => obsApi.resolve(fp),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
-      if (selectedIssue) queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
+    onSuccess: (data: any) => {
+      updateCachesAfterStatus(data.fingerprint, { resolved: data.resolved });
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["obs:issues"] }),
   });
+  
   const reopenMutation = useMutation({
     mutationFn: (fp: string) => obsApi.reopen(fp),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
-      if (selectedIssue) queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
+    onSuccess: (data: any) => {
+      updateCachesAfterStatus(data.fingerprint, { resolved: data.resolved });
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["obs:issues"] }),
   });
+  
   const ignoreMutation = useMutation({
     mutationFn: ({ fingerprint, ignored }: { fingerprint: string; ignored: boolean }) =>
       ignored ? obsApi.ignore(fingerprint) : obsApi.unignore(fingerprint),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
-      if (selectedIssue) queryClient.invalidateQueries({ queryKey: ["obs:issue", selectedIssue] });
+    onSuccess: (data: any) => {
+      updateCachesAfterStatus(data.fingerprint, { ignored: data.ignored });
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["obs:issues"] }),
   });
 
   const items = Array.isArray(issuesData?.items) ? issuesData.items : [];
