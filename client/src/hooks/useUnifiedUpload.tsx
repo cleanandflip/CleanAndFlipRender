@@ -134,7 +134,7 @@ export function useUnifiedUpload() {
       return response.urls || [];
       
     } catch (error) {
-      console.error('Upload error:', error);
+      // Upload error occurred
       toast({
         title: "Upload failed",
         description: error instanceof Error ? error.message : 'Failed to upload images',

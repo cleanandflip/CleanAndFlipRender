@@ -189,7 +189,7 @@ export function UnifiedSearch({
   // Remove body scroll prevention - allow page scroll while dropdown is open
 
   const handleSearch = useCallback((searchQuery: string) => {
-    console.log('handleSearch:', searchQuery, 'variant:', variant);
+    // handleSearch called
     
     // Handle empty/clear case
     if (!searchQuery?.trim()) {
@@ -245,13 +245,12 @@ export function UnifiedSearch({
   };
 
   const handleTrendingClick = (item: string) => {
-    console.log('🔥 TRENDING CLICK TRIGGERED:', item);
-    console.log('Current variant:', variant);
-    console.log('Current query state:', query);
+    // Trending item clicked
+    // Current query state logged
     
     setQuery(item);
     setTimeout(() => {
-      console.log('🚀 EXECUTING SEARCH FOR:', item);
+      // Executing search for trending item
       handleSearch(item);
     }, 50); // Increased timeout for better state sync
   };
@@ -299,7 +298,7 @@ export function UnifiedSearch({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
-            console.log('🎯 SEARCH INPUT FOCUSED - Opening dropdown');
+            // Search input focused - opening dropdown
             setIsOpen(true);
           }}
           onKeyDown={(e) => {
@@ -323,7 +322,7 @@ export function UnifiedSearch({
         {query && (
           <button
             onClick={() => {
-              console.log('Clear button clicked, variant:', variant);
+              // Clear button clicked
               
               // Clear local state
               setQuery('');
@@ -470,13 +469,13 @@ export function UnifiedSearch({
                       key={idx}
                       type="button"
                       onMouseDown={(e) => {
-                        console.log('🔍 RECENT SEARCH BUTTON MOUSEDOWN:', search);
+                        // Recent search button mousedown
                         e.preventDefault();
                         e.stopPropagation();
                         handleTrendingClick(search);
                       }}
                       onClick={(e) => {
-                        console.log('🔍 RECENT SEARCH BUTTON CLICKED:', search);
+                        // Recent search button clicked
                         e.preventDefault();
                         e.stopPropagation();
                       }}
@@ -510,7 +509,7 @@ export function UnifiedSearch({
                       key={idx}
                       type="button"
                       onMouseDown={(e) => {
-                        console.log('⭐ TRENDING BUTTON MOUSEDOWN:', item);
+                        // Trending button mousedown
                         e.preventDefault();
                         e.stopPropagation();
                         handleTrendingClick(item);

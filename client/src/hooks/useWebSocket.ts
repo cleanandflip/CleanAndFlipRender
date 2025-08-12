@@ -49,7 +49,7 @@ export function useWebSocket() {
               }));
             }
           } catch (e) {
-            console.error('Failed to parse user data:', e);
+            // Failed to parse user data
           }
         }
         
@@ -70,7 +70,7 @@ export function useWebSocket() {
           setLastMessage(data);
           handleMessage(data);
         } catch (error) {
-          console.error('WebSocket message parse error:', error);
+          // WebSocket message parse error
         }
       };
 
@@ -96,12 +96,12 @@ export function useWebSocket() {
 
       ws.current.onerror = (error) => {
         setStatus('error');
-        console.error('WebSocket error:', error);
+        // WebSocket error occurred
       };
       
     } catch (error) {
       setStatus('error');
-      console.error('WebSocket connection failed:', error);
+      // WebSocket connection failed
     }
   }, []); // Stable connect function - no dependencies to prevent cycling
 
@@ -147,7 +147,7 @@ export function useWebSocket() {
         break;
         
       default:
-        console.log('Unknown message type:', data.type);
+        // Unknown message type
     }
   }, []);
 
@@ -174,7 +174,7 @@ export function useWebSocket() {
     connect();
 
     return () => {
-      console.log('🧹 Cleaning up WebSocket');
+      // Cleaning up WebSocket
       if (reconnectTimeout.current) {
         clearTimeout(reconnectTimeout.current);
       }
