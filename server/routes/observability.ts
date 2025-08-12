@@ -152,6 +152,19 @@ router.put("/issues/:fp/ignore", async (req, res) => {
   }
 });
 
+// Admin API - Unignore issue
+router.put("/issues/:fp/unignore", async (req, res) => {
+  try {
+    await SimpleErrorStore.setIgnored(req.params.fp, false);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Failed to unignore issue:", error);
+    res.status(500).json({ error: "Failed to unignore issue" });
+  }
+});
+
+
+
 // Admin API - Chart data
 router.get("/series", async (req, res) => {
   try {

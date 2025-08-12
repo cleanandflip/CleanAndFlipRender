@@ -38,9 +38,11 @@ const TIME_RANGES: DropdownOption[] = [
 
 export default function ObservabilityPage() {
   const [q, setQ] = useState("");
-  const [level, setLevel] = useState<string>("");
+  const [level, setLevel] = useState<string>("error"); // Default to error only
   const [env, setEnv] = useState<string>("");
   const [resolved, setResolved] = useState(false);
+  const [showTestEvents, setShowTestEvents] = useState(false);
+  const [showIgnored, setShowIgnored] = useState(false);
   const [page, setPage] = useState(1);
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState("1");
@@ -86,7 +88,19 @@ export default function ObservabilityPage() {
   const resolveMutation = useMutation({
     mutationFn: (fingerprint: string) => 
       fetch(`/api/observability/issues/${fingerprint}/resolve`, { 
-        method: 'POST',
+        method: 'PUT',
+        credentials: 'include'
+      }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
+      setSelectedIssue(null);
+    },
+  });
+
+  const ignoreMutation = useMutation({
+    mutationFn: ({ fingerprint, ignored }: { fingerprint: string; ignored: boolean }) =>
+      fetch(`/api/observability/issues/${fingerprint}/${ignored ? 'ignore' : 'unignore'}`, { 
+        method: 'PUT',
         credentials: 'include'
       }).then(res => res.json()),
     onSuccess: () => {
@@ -284,7 +298,7 @@ export default function ObservabilityPage() {
                       <div>
                         <div className="font-medium">{issue.title}</div>
                         <div className="text-sm text-muted-foreground">
-                          {issue.fingerprint} • {issue.service || 'unknown'}
+                          {issue.fingerprint}
                         </div>
                       </div>
                     </div>
@@ -319,7 +333,7 @@ export default function ObservabilityPage() {
                 <h3 className="font-semibold mb-2">Overview</h3>
                 <div className="space-y-2 text-sm">
                   <div>Title: {issueDetails.issue.title}</div>
-                  <div>Service: {issueDetails.issue.service || 'unknown'}</div>
+                  <div>Service: {(issueDetails.issue as any).service || 'client'}</div>
                   <div>Level: <Badge variant={getLevelBadgeColor(issueDetails.issue.level)}>{issueDetails.issue.level}</Badge></div>
                   <div>Count: {issueDetails.issue.count}</div>
                   <div>First seen: {fmtDateTime(toDateSafe(issueDetails.issue.firstSeen))}</div>
@@ -334,6 +348,18 @@ export default function ObservabilityPage() {
                   variant={issueDetails.issue.resolved ? "outline" : "default"}
                 >
                   {issueDetails.issue.resolved ? "Resolved" : "Mark Resolved"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => ignoreMutation.mutate({ 
+                    fingerprint: selectedIssue!, 
+                    ignored: !issueDetails.issue.ignored 
+                  })}
+                  disabled={ignoreMutation.isPending}
+                >
+                  {ignoreMutation.isPending 
+                    ? (issueDetails.issue.ignored ? "Unignoring..." : "Ignoring...") 
+                    : (issueDetails.issue.ignored ? "Unignore" : "Ignore")}
                 </Button>
               </div>
 

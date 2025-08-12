@@ -7,11 +7,15 @@ declare global {
 }
 
 const IGNORE_URL_PATTERNS = [
-  /\/public\/js\/beacon\.js$/,                         // optional beacon
+  /:\/\/replit\.com\/public\/js\/beacon\.js$/,
 ];
+
 const DOWNGRADE_TO_INFO = [
-  /res\.cloudinary\.com\/clean-flip\/image\/upload\/.*\/categories\/.*\.jpg$/,
+  // Cloudinary category images
+  /res\.cloudinary\.com\/clean-flip\/image\/upload\/.+\/categories\/.+\.(jpg|png|webp)$/i,
 ];
+
+const seenThisSession = new Set<string>();
 
 export function reportClientError(payload: {
   level?: "error" | "warn" | "info";
@@ -22,14 +26,25 @@ export function reportClientError(payload: {
 }) {
   try {
     const msg = payload.message || "";
-    const matchUrl = /https?:\/\/[^\s]+/i.exec(msg)?.[0]; // extract URL if present
+    const url = /https?:\/\/[^\s]+/i.exec(msg)?.[0] ?? "";
 
-    if (matchUrl && IGNORE_URL_PATTERNS.some(rx => rx.test(matchUrl))) {
-      return; // drop completely
+    // Session de-dupe for resource messages
+    if (url) {
+      const key = payload.type + "|" + url;
+      if (seenThisSession.has(key)) return;
+      seenThisSession.add(key);
     }
-    let level = payload.level ?? "error";
-    if (matchUrl && DOWNGRADE_TO_INFO.some(rx => rx.test(matchUrl))) {
-      level = "info";
+
+    // Boundary errors bypass noise rules
+    const isBoundary = payload.extra?.source === "boundary";
+
+    if (!isBoundary && url) {
+      if (IGNORE_URL_PATTERNS.some(rx => rx.test(url))) {
+        return; // drop completely
+      }
+      if (DOWNGRADE_TO_INFO.some(rx => rx.test(url))) {
+        payload.level = "info";
+      }
     }
 
     fetch("/api/observability/errors", {
@@ -40,7 +55,7 @@ export function reportClientError(payload: {
       },
       body: JSON.stringify({
         service: "client",
-        level,
+        level: payload.level ?? "error",
         env: import.meta.env.MODE === "production" ? "production" : "development",
         url: window.location.pathname + window.location.search,
         message: payload.message,
