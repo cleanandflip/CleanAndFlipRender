@@ -191,7 +191,7 @@ export default function Checkout() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="font-bebas text-4xl md:text-6xl">CHECKOUT</h1>
-          <Link href="/cart">
+          <Link href="/products">
             <Button variant="outline" className="glass border-border">
               <ArrowLeft className="mr-2" size={18} />
               Back to Cart

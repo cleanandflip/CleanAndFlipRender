@@ -1,0 +1,351 @@
+The client is mostly fine, but there’s duplication, mixed APIs, and your server/sanitizer are likely rejecting the JSON. Below is a clean, drop-in plan for Replit to implement so “Add to Cart” works everywhere and the cart stack is consistent.
+
+What’s wrong (from your code)
+Mixed network layers in use-cart.tsx: fetch in two places, apiRequest in another. Easy to break/forget headers.
+
+Multiple query keys patterns possible elsewhere; stick to one.
+
+Legacy /cart calls still exist somewhere outside the three files (logs show POST /cart alongside POST /api/cart).
+
+Sanitizer returns 400 “potentially unsafe content” on /api/cart (too broad).
+
+Inconsistency risk: sometimes you use item.product.id, sometimes item.productId. (Probably OK, but easy to trip later.)
+
+The fix (standardized, end-to-end)
+1) Create a single cart API client (front end)
+File: src/api/cart.ts
+
+ts
+Copy
+Edit
+// Centralized, typed API for cart operations
+export type AddCartPayload = {
+  productId: string;
+  variantId?: string;
+  quantity?: number;
+};
+
+export type UpdateCartPayload = {
+  itemId: string;
+  quantity: number; // 0 will delete
+};
+
+async function json<T>(res: Response): Promise<T> {
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : ({} as any);
+}
+
+export const cartApi = {
+  async get() {
+    const res = await fetch("/api/cart", {
+      credentials: "include",
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    });
+    if (!res.ok) throw new Error(`Get cart failed ${res.status}: ${await res.text()}`);
+    return json(res);
+  },
+
+  async add({ productId, variantId, quantity = 1 }: AddCartPayload) {
+    const res = await fetch("/api/cart", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId, variantId, quantity }),
+    });
+    if (!res.ok) throw new Error(`Add to cart failed ${res.status}: ${await res.text()}`);
+    return json(res);
+  },
+
+  async update({ itemId, quantity }: UpdateCartPayload) {
+    const method = quantity === 0 ? "DELETE" : "PUT";
+    const res = await fetch(`/api/cart/${itemId}`, {
+      method,
+      credentials: "include",
+      headers: quantity === 0 ? {} : { "Content-Type": "application/json" },
+      body: quantity === 0 ? undefined : JSON.stringify({ quantity }),
+    });
+    if (!res.ok) throw new Error(`Update cart failed ${res.status}: ${await res.text()}`);
+    return json(res);
+  },
+
+  async remove(itemId: string) {
+    const res = await fetch(`/api/cart/${itemId}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error(`Remove cart item failed ${res.status}: ${await res.text()}`);
+    return json(res);
+  },
+};
+2) Refactor use-cart.tsx to use that client only
+File: src/hooks/use-cart.tsx (replace network calls; keep your UI intact)
+
+Use a single query key: ["cart"].
+
+Use cartApi in all mutations.
+
+ts
+Copy
+Edit
+import { useState, useEffect, createContext, useContext } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { cartApi } from "@/api/cart";
+import type { CartItem, Product } from "@shared/schema";
+
+type CartCtx = {
+  cartItems: (CartItem & { product: Product })[];
+  cartCount: number;
+  cartTotal: number;
+  isLoading: boolean;
+  addToCart: (p: { productId: string; quantity?: number }) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  removeFromCart: (itemId: string) => void;
+  clearCart: () => void;
+  isInCart: (productId: string) => boolean;
+  removeProductFromCart: (productId: string) => void;
+};
+
+const CartContext = createContext<CartCtx | undefined>(undefined);
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const { data = [], isLoading, refetch } = useQuery<(CartItem & { product: Product })[]>({
+    queryKey: ["cart"],
+    queryFn: () => cartApi.get(),
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
+  });
+
+  useEffect(() => {
+    const handleProductUpdate = () => {
+      qc.invalidateQueries({ queryKey: ["cart"] });
+      refetch();
+    };
+    window.addEventListener("productUpdated", handleProductUpdate);
+    window.addEventListener("productDeleted", handleProductUpdate);
+    window.addEventListener("storageChanged", handleProductUpdate);
+    return () => {
+      window.removeEventListener("productUpdated", handleProductUpdate);
+      window.removeEventListener("productDeleted", handleProductUpdate);
+      window.removeEventListener("storageChanged", handleProductUpdate);
+    };
+  }, [qc, refetch]);
+
+  const addToCartMutation = useMutation({
+    mutationFn: cartApi.add,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cart"] }),
+    onError: (e: any) => toast({ title: "Failed to add to cart", description: e.message, variant: "destructive" }),
+  });
+
+  const updateQuantityMutation = useMutation({
+    mutationFn: cartApi.update,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cart"] }),
+    onError: (e: any) => toast({ title: "Failed to update cart", description: e.message, variant: "destructive" }),
+  });
+
+  const removeFromCartMutation = useMutation({
+    mutationFn: cartApi.remove,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["cart"] });
+      toast({ title: "Item removed" });
+    },
+    onError: () => toast({ title: "Failed to remove item", description: "Please try again.", variant: "destructive" }),
+  });
+
+  const cartItems = data || [];
+  const cartCount = cartItems.reduce((n, i) => n + i.quantity, 0);
+  const cartTotal = cartItems.reduce((t, i) => t + Number(i.product.price) * i.quantity, 0);
+
+  const addToCart = ({ productId, quantity = 1 }: { productId: string; quantity?: number }) =>
+    addToCartMutation.mutate({ productId, quantity });
+
+  const updateQuantity = (itemId: string, quantity: number) =>
+    updateQuantityMutation.mutate({ itemId, quantity });
+
+  const removeFromCart = (itemId: string) => removeFromCartMutation.mutate(itemId);
+
+  const clearCart = () => {
+    Promise.allSettled(cartItems.map(i => cartApi.remove(i.id)))
+      .finally(() => qc.invalidateQueries({ queryKey: ["cart"] }));
+  };
+
+  const isInCart = (productId: string) => cartItems.some(i => (i as any).productId === productId || i.product?.id === productId);
+  const removeProductFromCart = (productId: string) => {
+    const item = cartItems.find(i => (i as any).productId === productId || i.product?.id === productId);
+    if (item) removeFromCart(item.id);
+  };
+
+  return (
+    <CartContext.Provider value={{ cartItems, cartCount, cartTotal, isLoading, addToCart, updateQuantity, removeFromCart, clearCart, isInCart, removeProductFromCart }}>
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+export function useCart() {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart must be used within a CartProvider");
+  return ctx;
+}
+This removes duplicates, unifies query keys, and ensures every call goes through /api/cart with the right headers.
+
+3) Make sure Product cards use the hook (no stray calls)
+In your product card / PDP button handlers, do only:
+
+ts
+Copy
+Edit
+const { addToCart } = useCart();
+<button onClick={() => addToCart({ productId: product.id, quantity: 1 })}>Add to Cart</button>
+No direct fetch or Axios there.
+
+Search & destroy legacy calls:
+
+bash
+Copy
+Edit
+rg -n "\"/cart\"" src
+This must return 0 results.
+
+4) Server: correct sanitizer + routes (most likely the 400)
+Sanitizer (narrow scan + allow /api/cart):
+
+ts
+Copy
+Edit
+// server/middleware/sanitize.ts
+const FORBIDDEN = /(<|>|script:|javascript:|data:|on\w+=)/i;
+const ALLOW = [/^\/api\/cart$/, /^\/api\/user$/, /^\/api\/products$/, /^\/api\/track-activity$/];
+
+export function sanitizeRequest(req, res, next) {
+  if (ALLOW.some(rx => rx.test(req.path))) return next();
+  const scan = (v:any): boolean => {
+    if (typeof v === "string") return FORBIDDEN.test(v);
+    if (v && typeof v === "object") return Object.values(v).some(scan);
+    return false;
+  };
+  if (scan(req.body) || scan(req.query) || scan(req.params)) {
+    return res.status(400).json({ error: "Invalid input data", message: "Request contains potentially unsafe content" });
+  }
+  next();
+}
+Middleware order (critical):
+
+ts
+Copy
+Edit
+app.use(express.json());
+app.use(cookieParser());
+app.use(sanitizeRequest);
+app.use("/api", apiRouter);
+/api/cart routes (strict but friendly):
+
+ts
+Copy
+Edit
+// server/routes/cart.ts
+import { z } from "zod";
+import crypto from "crypto";
+
+const AddSchema = z.object({
+  productId: z.string().min(1),
+  variantId: z.string().optional(),
+  quantity: z.number().int().positive().default(1),
+});
+
+app.get("/api/cart", async (req, res) => {
+  const cartId = await getOrCreateCartId(req, res);
+  const items = await carts.list(cartId); // implement in your data layer
+  return res.json(items);
+});
+
+app.post("/api/cart", async (req, res) => {
+  const parsed = AddSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+
+  const { productId, variantId, quantity } = parsed.data;
+  const cartId = await getOrCreateCartId(req, res);
+
+  const product = await db.products.findById(productId); // map to your DB
+  if (!product) return res.status(404).json({ error: "Product not found" });
+  if (product.stock <= 0) return res.status(409).json({ error: "Out of stock" });
+
+  const updated = await carts.addItem({ cartId, productId, variantId, quantity });
+  return res.json(updated);
+});
+
+app.put("/api/cart/:itemId", async (req, res) => {
+  const { itemId } = req.params;
+  const { quantity } = z.object({ quantity: z.number().int().nonnegative() }).parse(req.body);
+  const cartId = await getOrCreateCartId(req, res);
+  if (quantity === 0) {
+    await carts.removeItem({ cartId, itemId });
+  } else {
+    await carts.updateItem({ cartId, itemId, quantity });
+  }
+  const items = await carts.list(cartId);
+  return res.json(items);
+});
+
+app.delete("/api/cart/:itemId", async (req, res) => {
+  const cartId = await getOrCreateCartId(req, res);
+  await carts.removeItem({ cartId, itemId: req.params.itemId });
+  const items = await carts.list(cartId);
+  return res.json(items);
+});
+
+async function getOrCreateCartId(req, res) {
+  let { cartId } = req.cookies || {};
+  if (!cartId) {
+    cartId = crypto.randomUUID();
+    res.cookie("cartId", cartId, {
+      httpOnly: true, sameSite: "Lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/", maxAge: 1000 * 60 * 60 * 24 * 30,
+    });
+    await carts.create(cartId);
+  }
+  return cartId;
+}
+Delete legacy:
+
+ts
+Copy
+Edit
+// REMOVE any legacy route:
+app.post("/cart", ...)
+
+// If you must keep it temporarily, hard-redirect:
+app.post("/cart", (_req, res) => res.redirect(308, "/api/cart"));
+5) Verify (must be green)
+In DevTools Network, clicking Add to Cart shows exactly one request: POST /api/cart (no /cart).
+
+Server logs:
+
+POST /api/cart body: { productId: "...", quantity: 1 } (optional log)
+
+POST /api/cart 200
+
+GET /api/cart shows item added.
+
+Mini-cart and cart page update (query invalidates ["cart"]).
+
+Repo checks
+
+bash
+Copy
+Edit
+rg -n "\"/cart\"" src server  # must be 0
+rg -n "app\\.(post|get|put|delete)\\(\"/cart" server  # must be 0 (or just the 308 redirect during transition)
+6) Small UX polish while we’re here
+Disable the “Add to Cart” button during the mutation (isPending) to avoid double posts.
+
+On 409 “Out of stock”, show a special toast (“Only X left—refresh?”), not a generic error.
+
+When an item is already in the cart, change button label to “In Cart” with a check.

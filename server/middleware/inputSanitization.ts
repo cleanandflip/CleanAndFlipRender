@@ -113,35 +113,37 @@ class InputSanitizer {
 export function sanitizeInput(options: SanitizationOptions = {}) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Skip sanitization for specific routes
-      const skipPaths = [
-        '/api/stripe/webhook',
-        '/api/health', 
-        '/health',
-        '/api/admin/logs',
-        '/api/user/profile/image',
-        '/api/cart',
-        '/api/user',
-        '/api/products',
-        '/api/track-activity',
-        '/login',
-        '/register',
-        '/auth/',
-        '/track-activity',
-        '/errors/'
+      // More precise allowlist - exact path matching
+      const ALLOW = [
+        /^\/api\/cart$/,
+        /^\/api\/cart\/[\w-]+$/,
+        /^\/api\/user$/,
+        /^\/api\/products$/,
+        /^\/api\/track-activity$/,
+        /^\/api\/stripe\/webhook$/,
+        /^\/api\/health$/,
+        /^\/health$/,
+        /^\/api\/admin\/logs$/,
+        /^\/api\/user\/profile\/image$/,
+        /^\/login$/,
+        /^\/register$/,
+        /^\/auth\//,
+        /^\/track-activity$/,
+        /^\/errors\//
       ];
       
       // Debug logging
       console.log('Sanitization check - path:', req.path, 'url:', req.url, 'method:', req.method, 'originalUrl:', req.originalUrl);
       
-      if (skipPaths.some(path => req.path.includes(path) || req.url.includes(path))) {
-        console.log('Skipping sanitization for:', req.path);
+      // Use regex matching for more precise control
+      if (ALLOW.some(rx => rx.test(req.path) || rx.test(req.originalUrl))) {
+        console.log('Skipping sanitization for:', req.path, 'originalUrl:', req.originalUrl);
         return next();
       }
 
-      // Special case: if this is a cart request, log more details
-      if (req.path.includes('cart') || req.url.includes('cart')) {
-        console.log('CART REQUEST DETAILS:', {
+      // Special case: if this is a cart request that wasn't allowed, log details
+      if (req.path.includes('cart') || req.url.includes('cart') || req.originalUrl.includes('cart')) {
+        console.log('CART REQUEST BLOCKED:', {
           path: req.path,
           url: req.url,
           originalUrl: req.originalUrl,
@@ -151,24 +153,19 @@ export function sanitizeInput(options: SanitizationOptions = {}) {
         });
       }
 
-      // Sanitize request body
-      if (req.body) {
-        req.body = InputSanitizer.validateAndSanitize(req.body, options);
-      }
+      // Use simpler pattern-based scanning instead of complex validation
+      const FORBIDDEN = /(<|>|script:|javascript:|data:|on\w+=)/i;
+      const scan = (v: any): boolean => {
+        if (typeof v === "string") return FORBIDDEN.test(v);
+        if (v && typeof v === "object") return Object.values(v).some(scan);
+        return false;
+      };
 
-      // Sanitize query parameters
-      if (req.query) {
-        req.query = InputSanitizer.sanitizeObject(req.query, {
-          stripTags: true,
-          maxLength: 500
-        });
-      }
-
-      // Sanitize route parameters
-      if (req.params) {
-        req.params = InputSanitizer.sanitizeObject(req.params, {
-          stripTags: true,
-          maxLength: 100
+      if (scan(req.body) || scan(req.query) || scan(req.params)) {
+        console.log('Request blocked by sanitizer - suspicious content detected');
+        return res.status(400).json({
+          error: "Invalid input data",
+          message: "Request contains potentially unsafe content",
         });
       }
 

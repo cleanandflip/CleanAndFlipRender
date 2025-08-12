@@ -1,7 +1,7 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { cartApi } from "@/api/cart";
 import type { CartItem, Product, InsertCartItem } from "@shared/schema";
 
 interface CartContextType {
@@ -9,7 +9,7 @@ interface CartContextType {
   cartCount: number;
   cartTotal: number;
   isLoading: boolean;
-  addToCart: (item: { productId: string; quantity: number }) => void;
+  addToCart: (item: { productId: string; quantity?: number }) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
@@ -25,33 +25,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch cart items - Always fresh data, no caching
   const { data: cartItems = [], isLoading, refetch } = useQuery<(CartItem & { product: Product })[]>({
-    queryKey: ["/api/cart"],
-    queryFn: async () => {
-      const response = await fetch("/api/cart", {
-        credentials: "include",
-        // Force fresh data with cache-busting headers
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch cart: ${response.status} ${response.statusText}`);
-      }
-      return response.json();
-    },
-    staleTime: 0, // Always fetch fresh
-    gcTime: 0, // No client-side caching
+    queryKey: ["cart"],
+    queryFn: () => cartApi.get(),
+    staleTime: 0,
+    gcTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    refetchInterval: 30000,
   });
   
   // Listen for product update events to refresh cart
   useEffect(() => {
     const handleProductUpdate = () => {
       // Invalidate and refetch cart when products change
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
       refetch();
     };
     
@@ -74,63 +61,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Add to cart mutation
   const addToCartMutation = useMutation({
-    mutationFn: async (item: { productId: string; quantity: number }) => {
-      const res = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ 
-          productId: item.productId, 
-          quantity: item.quantity 
-        }),
-      });
-      
-      const text = await res.text();
-      if (!res.ok) {
-        throw new Error(`Add to cart failed ${res.status}: ${text || "unknown error"}`);
-      }
-      
-      return text ? JSON.parse(text) : {};
-    },
+    mutationFn: cartApi.add,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      toast({ 
+        title: "Added to cart",
+        description: "Item has been added to your cart." 
+      });
     },
     onError: (error: any) => {
       toast({
         title: "Failed to add to cart",
-        description: error.message || "Please try again.",
+        description: error.message,
         variant: "destructive",
       });
-    },
+    }
   });
 
   // Update quantity mutation
   const updateQuantityMutation = useMutation({
-    mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
-      const method = quantity === 0 ? "DELETE" : "PUT";
-      const body = quantity === 0 ? undefined : JSON.stringify({ quantity });
-      
-      const res = await fetch(`/api/cart/${itemId}`, {
-        method,
-        headers: quantity === 0 ? {} : { "Content-Type": "application/json" },
-        credentials: "include",
-        body,
-      });
-      
-      const text = await res.text();
-      if (!res.ok) {
-        throw new Error(`Update cart failed ${res.status}: ${text || "unknown error"}`);
-      }
-      
-      return text ? JSON.parse(text) : {};
-    },
+    mutationFn: cartApi.update,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
     },
     onError: (error: any) => {
       toast({
         title: "Failed to update cart",
-        description: error.message || "Please try again.",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -138,21 +95,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Remove from cart mutation
   const removeFromCartMutation = useMutation({
-    mutationFn: async (itemId: string) => {
-      const response = await apiRequest("DELETE", `/api/cart/${itemId}`);
-      return response.json();
-    },
+    mutationFn: cartApi.remove,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast({
         title: "Item removed",
         description: "Item has been removed from your cart.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Failed to remove item",
-        description: "Please try again.",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -164,14 +118,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // Delete all cart items for user
       await Promise.allSettled(
         (cartItems || []).map((item: { id: string }) => 
-          apiRequest("DELETE", `/api/cart/${item.id}`).catch(() => {
+          cartApi.remove(item.id).catch(() => {
             // Failed to delete cart item, continuing with other items
           })
         )
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast({
         title: "Cart cleared",
         description: "All items have been removed from your cart.",
@@ -193,8 +147,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, 0) || 0;
 
   // Helper functions
-  const addToCart = (item: { productId: string; quantity: number }) => {
-    addToCartMutation.mutate(item);
+  const addToCart = ({ productId, quantity = 1 }: { productId: string; quantity?: number }) => {
+    addToCartMutation.mutate({ productId, quantity });
   };
 
   const updateQuantity = (itemId: string, quantity: number) => {
