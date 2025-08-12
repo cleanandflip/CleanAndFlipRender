@@ -325,28 +325,30 @@ export default function SellToUs() {
                   {/* Clean grid layout with consistent spacing */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                     {/* Row 1: Equipment Name & Brand */}
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <label htmlFor="name" className="block text-sm font-medium mb-2">
-                            Equipment Name <span aria-hidden className="text-destructive">*</span>
-                          </label>
-                          <FormControl>
-                            <Input 
-                              {...field}
-                              id="name"
-                              placeholder="e.g. Olympic Barbell 45lb"
-                              className="h-10"
-                              aria-invalid={!!form.formState.errors.name}
-                              aria-describedby={form.formState.errors.name ? "name-error" : undefined}
-                            />
-                          </FormControl>
-                          <FormMessage id="name-error" />
-                        </FormItem>
-                      )}
-                    />
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium mb-2">
+                        Equipment Name <span aria-hidden className="text-destructive">*</span>
+                      </label>
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input 
+                                {...field}
+                                id="name"
+                                placeholder="e.g. Olympic Barbell 45lb"
+                                className="h-10"
+                                aria-invalid={!!form.formState.errors.name}
+                                aria-describedby={form.formState.errors.name ? "name-error" : undefined}
+                              />
+                            </FormControl>
+                            <FormMessage id="name-error" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     
                     <DropdownField
                       control={form.control}
@@ -376,31 +378,33 @@ export default function SellToUs() {
                       placeholder="Select category"
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="weight"
-                      render={({ field }) => (
-                        <FormItem>
-                          <label htmlFor="weight" className="block text-sm font-medium mb-2">
-                            Weight (lbs)
-                          </label>
-                          <FormControl>
-                            <Input 
-                              {...field}
-                              id="weight"
-                              value={field.value || ""}
-                              type="number"
-                              placeholder="Total weight in pounds"
-                              className="h-10"
-                              onChange={(e) => field.onChange(e.target.value)}
-                              aria-invalid={!!form.formState.errors.weight}
-                              aria-describedby={form.formState.errors.weight ? "weight-error" : undefined}
-                            />
-                          </FormControl>
-                          <FormMessage id="weight-error" />
-                        </FormItem>
-                      )}
-                    />
+                    <div>
+                      <label htmlFor="weight" className="block text-sm font-medium mb-2">
+                        Weight (lbs)
+                      </label>
+                      <FormField
+                        control={form.control}
+                        name="weight"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input 
+                                {...field}
+                                id="weight"
+                                value={field.value || ""}
+                                type="number"
+                                placeholder="Total weight in pounds"
+                                className="h-10"
+                                onChange={(e) => field.onChange(e.target.value)}
+                                aria-invalid={!!form.formState.errors.weight}
+                                aria-describedby={form.formState.errors.weight ? "weight-error" : undefined}
+                              />
+                            </FormControl>
+                            <FormMessage id="weight-error" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     {/* Row 3: Condition & Empty slot */}
                     <DropdownField
@@ -423,14 +427,14 @@ export default function SellToUs() {
 
                   {/* Row 4: Full-width asking price */}
                   <div className="mt-5">
+                    <label htmlFor="askingPrice" className="block text-sm font-medium mb-2">
+                      Your Asking Price (Optional)
+                    </label>
                     <FormField
                       control={form.control}
                       name="askingPrice"
                       render={({ field }) => (
                         <FormItem>
-                          <label htmlFor="askingPrice" className="block text-sm font-medium mb-2">
-                            Your Asking Price (Optional)
-                          </label>
                           <FormControl>
                             <PriceInput 
                               {...field}
@@ -454,14 +458,14 @@ export default function SellToUs() {
 
                   {/* Row 5: Full-width description */}
                   <div className="mt-5">
+                    <label htmlFor="description" className="block text-sm font-medium mb-2">
+                      Description
+                    </label>
                     <FormField
                       control={form.control}
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <label htmlFor="description" className="block text-sm font-medium mb-2">
-                            Description
-                          </label>
                           <FormControl>
                             <Textarea
                               {...field}

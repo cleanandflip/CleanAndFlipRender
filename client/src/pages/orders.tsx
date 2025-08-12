@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { UnifiedDropdown } from "@/components/ui/UnifiedDropdown";
+
 import { Card } from "@/components/ui/card";
 import { Package, Search, Calendar, Truck, ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -130,33 +130,35 @@ export default function Orders() {
             </div>
 
             {/* Status Filter */}
-            <StandardDropdown
-              value={statusFilter}
-              onChange={setStatusFilter}
-              placeholder="Filter by status"
-              options={[
-                { value: "all", label: "All Orders" },
-                { value: "pending", label: "Pending" },
-                { value: "confirmed", label: "Confirmed" },
-                { value: "processing", label: "Processing" },
-                { value: "shipped", label: "Shipped" },
-                { value: "delivered", label: "Delivered" },
-                { value: "cancelled", label: "Cancelled" }
-              ]}
-            />
+            <div className="w-48">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
+              >
+                <option value="all">All Orders</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
 
             {/* Sort */}
-            <StandardDropdown
-              value={sortBy}
-              onChange={setSortBy}
-              placeholder="Sort by"
-              options={[
-                { value: "newest", label: "Newest First" },
-                { value: "oldest", label: "Oldest First" },
-                { value: "amount-high", label: "Amount: High to Low" },
-                { value: "amount-low", label: "Amount: Low to High" }
-              ]}
-            />
+            <div className="w-48">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-input bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="amount-high">Amount: High to Low</option>
+                <option value="amount-low">Amount: Low to High</option>
+              </select>
+            </div>
 
             {/* Results Count */}
             <div className="flex items-center text-sm text-text-secondary">
