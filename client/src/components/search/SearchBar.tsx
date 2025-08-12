@@ -39,11 +39,14 @@ export default function SearchBar({
     return unsubscribe;
   }, []);
 
-  // Update URL when debounced query changes
+  // Update URL when debounced query changes - null-safe version
   useEffect(() => {
     const { q: currentQ } = getQuery();
-    if (debouncedQuery !== currentQ) {
-      setQuery({ q: debouncedQuery || undefined, page: 1 });
+    const safeCurrentQ = typeof currentQ === 'string' ? currentQ : '';
+    const safeDebouncedQuery = typeof debouncedQuery === 'string' ? debouncedQuery : '';
+    
+    if (safeDebouncedQuery !== safeCurrentQ) {
+      setQuery({ q: safeDebouncedQuery || undefined, page: 1 });
     }
   }, [debouncedQuery]);
 
@@ -58,9 +61,12 @@ export default function SearchBar({
       handleClear();
       inputRef.current?.blur();
     } else if (e.key === 'Enter') {
-      // Force immediate update
-      if (localQuery !== debouncedQuery) {
-        setQuery({ q: localQuery || undefined, page: 1 });
+      // Force immediate update - null-safe version
+      const safeLocalQuery = typeof localQuery === 'string' ? localQuery : '';
+      const safeDebouncedQuery = typeof debouncedQuery === 'string' ? debouncedQuery : '';
+      
+      if (safeLocalQuery !== safeDebouncedQuery) {
+        setQuery({ q: safeLocalQuery || undefined, page: 1 });
       }
     }
   };

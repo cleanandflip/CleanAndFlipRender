@@ -62,16 +62,17 @@ export function useProducts() {
       });
     }
 
-    // Filter by search query if specified
-    if (q.trim()) {
-      const searchTerm = q.trim().toLowerCase();
+    // Filter by search query if specified - null-safe version
+    const safeQ = typeof q === 'string' ? q.trim() : '';
+    if (safeQ) {
+      const searchTerm = safeQ.toLowerCase();
       list = list.filter((product) => {
         const searchableText = [
-          product.name,
-          product.description,
-          product.brand,
-          product.subcategory
-        ].filter(Boolean).join(" ").toLowerCase();
+          product.name || '',
+          product.description || '',
+          product.brand || '',
+          product.subcategory || ''
+        ].join(" ").toLowerCase();
         
         return searchableText.includes(searchTerm);
       });

@@ -9,16 +9,19 @@ interface SearchParams {
 // Subscribers for search changes
 const subscribers: Array<(params: SearchParams) => void> = [];
 
-// Get current search parameters from URL
+// Get current search parameters from URL - null-safe version
 export function getQuery(): SearchParams {
   if (typeof window === 'undefined') return {};
   
   const params = new URLSearchParams(window.location.search);
+  const pageParam = params.get('page');
+  const pageNum = pageParam ? parseInt(pageParam, 10) : undefined;
+  
   return {
     q: params.get('q') || undefined,
     category: params.get('category') || undefined,
     sort: params.get('sort') || undefined,
-    page: params.get('page') ? parseInt(params.get('page')!) : undefined,
+    page: pageNum && pageNum > 0 ? pageNum : undefined,
   };
 }
 
