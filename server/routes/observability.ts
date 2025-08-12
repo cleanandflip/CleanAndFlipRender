@@ -169,9 +169,15 @@ router.get("/issues", async (req, res) => {
     // Normalize filter
     const statusFilter = resolvedRaw === undefined ? "all" : (String(resolvedRaw) === "true" ? "resolved" : "unresolved");
 
-    // Merge statuses in bulk for better performance
+    // Merge statuses in bulk for better performance - with error handling
     if (result && Array.isArray(result.items)) {
-      const statuses = await SimpleErrorStore.getStatusesBulk(result.items.map((i: any) => i.fingerprint));
+      let statuses = new Map<string, { resolved: boolean; ignored: boolean }>();
+      try {
+        statuses = await SimpleErrorStore.getStatusesBulk(result.items.map((i: any) => i.fingerprint));
+      } catch (e) {
+        console.error("getStatusesBulk failed (continuing without flags)", e);
+      }
+      
       result.items.forEach((it: any) => {
         const s = statuses.get(it.fingerprint);
         it.resolved = s ? s.resolved : false;

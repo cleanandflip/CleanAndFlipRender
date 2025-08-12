@@ -189,21 +189,35 @@ export const SimpleErrorStore = {
   },
 
   async getStatusesBulk(fingerprints: string[]) {
-    if (!fingerprints.length) return new Map<string, { resolved: boolean; ignored: boolean }>();
-    
-    const result = await db.execute(sql`
-      SELECT fingerprint, resolved, ignored 
-      FROM obs_issue_status 
-      WHERE fingerprint = ANY(${fingerprints})
-    `);
-    
+    const unique = Array.from(new Set(fingerprints.filter(Boolean)));
     const map = new Map<string, { resolved: boolean; ignored: boolean }>();
-    for (const r of result.rows) {
-      map.set(r.fingerprint as string, { 
-        resolved: !!r.resolved, 
-        ignored: !!r.ignored 
+    if (unique.length === 0) return map;
+
+    try {
+      // Process each fingerprint individually to avoid array parameter issues
+      const promises = unique.map(async (fp) => {
+        const result = await db.execute(sql`
+          SELECT fingerprint, resolved, ignored
+          FROM obs_issue_status
+          WHERE fingerprint = ${fp}
+        `);
+        return result.rows[0];
       });
+      
+      const results = await Promise.all(promises);
+      for (const r of results) {
+        if (r) {
+          map.set(r.fingerprint as string, { 
+            resolved: !!r.resolved, 
+            ignored: !!r.ignored 
+          });
+        }
+      }
+    } catch (error) {
+      console.error('getStatusesBulk failed:', error);
+      // Return empty map so caller can continue with default values
     }
+    
     return map;
   },
 

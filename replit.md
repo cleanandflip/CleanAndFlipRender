@@ -28,6 +28,7 @@ The server-side uses a layered REST API architecture built with Node.js:
 - **File Processing**: Multer for image uploads with Cloudinary integration.
 - **Performance**: Request consolidation, caching, and database connection pooling.
 - **Monitoring**: Structured logging for debugging and a comprehensive Local Error Tracking System (LETS) providing production-ready Sentry-style error monitoring with smart noise reduction, session-based deduplication, and intelligent error filtering.
+- **Performance**: Optimized database queries with strategic indexing, bulk operations, fire-and-forget activity tracking, intelligent slow request detection thresholds, and gzip compression middleware for reduced bandwidth usage.
 
 ### Data Storage Solutions
 PostgreSQL is the primary database, utilizing:

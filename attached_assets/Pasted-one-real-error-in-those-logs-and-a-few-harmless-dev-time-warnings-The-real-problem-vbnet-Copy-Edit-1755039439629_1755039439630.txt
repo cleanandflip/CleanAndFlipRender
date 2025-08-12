@@ -1,0 +1,122 @@
+one real error in those logs and a few harmless dev-time warnings.
+
+The real problem
+vbnet
+Copy
+Edit
+observability.listIssues failed: error: malformed array literal: "fp_1102023112"
+code: 22P02   where: $1 = 'fp_1102023112'
+This is coming from getStatusesBulk in server/data/simpleErrorStore.ts where we query:
+
+sql
+Copy
+Edit
+SELECT fingerprint, resolved, ignored
+FROM obs_issue_status
+WHERE fingerprint = ANY($1::text[])
+On Neon’s serverless driver your $1 is arriving as a string, not a Postgres text[], so Postgres throws “Array value must start with {…”. That bubbles up as a 500 from /api/observability/issues, which explains the list flicker/mismatch you saw.
+
+Fix (do this exactly)
+1) Replace getStatusesBulk with a placeholder-expanded query (no arrays)
+ts
+Copy
+Edit
+// server/data/simpleErrorStore.ts
+export async function getStatusesBulk(fingerprints: string[]) {
+  const unique = Array.from(new Set(fingerprints.filter(Boolean)));
+  const map = new Map<string, { resolved: boolean; ignored: boolean }>();
+  if (unique.length === 0) return map;
+
+  // Build parameter placeholders: $1, $2, ...
+  const placeholders = unique.map((_, i) => `$${i + 1}`).join(",");
+  const sql = `
+    SELECT fingerprint, resolved, ignored
+    FROM obs_issue_status
+    WHERE fingerprint IN (${placeholders})
+  `;
+  const { rows } = await db.query(sql, unique);
+  for (const r of rows) {
+    map.set(r.fingerprint, { resolved: !!r.resolved, ignored: !!r.ignored });
+  }
+  return map;
+}
+This avoids Postgres array casting entirely and works for 1 or many fingerprints.
+
+Belt-and-suspenders: in the /issues route, if getStatusesBulk ever throws, catch it and continue with empty flags so the API never returns 500:
+
+ts
+Copy
+Edit
+let statuses = new Map<string, {resolved:boolean; ignored:boolean}>();
+try {
+  statuses = await SimpleErrorStore.getStatusesBulk(items.map((i:any) => i.fingerprint));
+} catch (e) {
+  logger.error("getStatusesBulk failed (continuing without flags)", e);
+}
+2) Keep merging flags before filtering by status
+(You already added this, just confirming the order.)
+
+ts
+Copy
+Edit
+// merge flags first
+items.forEach((it:any) => {
+  const s = statuses.get(it.fingerprint);
+  it.resolved = s ? s.resolved : false;
+  it.ignored  = s ? s.ignored  : false;
+});
+// THEN apply resolved/unresolved filter
+3) Schema sanity (one-time)
+Be sure the status table exists:
+
+sql
+Copy
+Edit
+CREATE TABLE IF NOT EXISTS obs_issue_status (
+  fingerprint TEXT PRIMARY KEY,
+  resolved    BOOLEAN NOT NULL DEFAULT FALSE,
+  ignored     BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+…and your events table has fingerprint:
+
+sql
+Copy
+Edit
+ALTER TABLE obs_events
+  ADD COLUMN IF NOT EXISTS fingerprint TEXT;
+CREATE INDEX IF NOT EXISTS idx_obs_events_fingerprint ON obs_events (fingerprint);
+What else in the logs?
+The earlier ingest 400s are gone; you now have 202 Accepted for /api/track-activity and for seed /api/observability/errors → ✅
+
+A handful of “Slow request detected” lines during Vite dev (e.g., @react-refresh, main.tsx). Normal for hot-reloading; we already raised the threshold and that’s fine for dev.
+
+Sanitizer spam is gone (“Redis spam eliminated”) → ✅
+
+One headless 401 /api/user earlier; we demoted those to debug per previous instructions → ✅
+
+Quick validation steps for Replit
+Patch getStatusesBulk exactly as above; restart server.
+
+Hit:
+
+GET /api/observability/series?days=1 → 200
+
+GET /api/observability/issues?days=1 → 200 (no 500)
+
+In the dashboard:
+
+Switch 24h/7d/30d → chart + list update together.
+
+Open an issue → Mark Resolved / Reopen / Ignore / Unignore.
+
+List badges and the drawer flags should update immediately (and persist on refresh).
+
+If you still see anything odd after this change, paste the JSON from:
+
+GET /api/observability/issues?days=1
+
+GET /api/observability/issues?resolved=true&days=1
+
+GET /api/observability/issues/<fp>
+and I’ll align the response shape— but the 22P02 error is the blocker, and the patch above removes it for good.
