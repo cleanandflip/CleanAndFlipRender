@@ -4,7 +4,7 @@ import { useLocation } from 'wouter';
 interface NavigationState {
   scrollPosition: number;
   activeTab?: string;
-  filters?: any;
+  filters?: Record<string, unknown>;
   expandedItems?: string[];
 }
 

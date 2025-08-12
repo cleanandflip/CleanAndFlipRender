@@ -25,7 +25,7 @@ interface FilterSidebarProps {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   };
-  onFiltersChange: (filters: any) => void;
+  onFiltersChange: (filters: Record<string, unknown>) => void;
 }
 
 export default function FilterSidebar({ filters, onFiltersChange }: FilterSidebarProps) {
@@ -42,7 +42,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
         }
         return await response.json();
       } catch (error) {
-        console.error('Failed to fetch categories:', error);
+        // Failed to fetch categories
         throw error;
       }
     }
@@ -59,7 +59,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
         }
         return await response.json();
       } catch (error) {
-        console.error('Failed to fetch brands:', error);
+        // Failed to fetch brands
         throw error;
       }
     }

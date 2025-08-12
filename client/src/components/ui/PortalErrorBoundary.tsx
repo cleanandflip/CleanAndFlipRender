@@ -28,7 +28,7 @@ export class PortalErrorBoundary extends Component<PortalErrorBoundaryProps, Por
                          error.message.includes('Node');
     
     if (isPortalError) {
-      console.warn('Portal DOM manipulation error caught:', error.message);
+      // Portal DOM manipulation error caught
       return { hasError: true, error };
     }
     
@@ -40,7 +40,7 @@ export class PortalErrorBoundary extends Component<PortalErrorBoundaryProps, Por
     if (error.message.includes('removeChild') || 
         error.message.includes('portal') ||
         error.message.includes('DOM')) {
-      console.warn('Portal cleanup error caught and handled:', error, errorInfo);
+      // Portal cleanup error caught and handled
       
       // Auto-recover after a brief delay
       setTimeout(() => {
@@ -71,7 +71,7 @@ export function usePortalErrorHandler() {
         error.message?.includes('appendChild') ||
         error.message?.includes('portal')
       )) {
-        console.warn('Portal error caught by global handler:', error.message);
+        // Portal error caught by global handler
         event.preventDefault();
         return false;
       }

@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Don't redirect if already on onboarding or if user just logged in with Google
       if (currentPath !== '/onboarding' && !isGoogleCallback) {
-        console.log('[AUTH] Auto-redirecting to onboarding for incomplete profile');
+        // Auto-redirecting to onboarding for incomplete profile
         window.location.href = `/onboarding?step=${user.onboardingStep || 1}&auto=true`;
       }
     }
@@ -86,8 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         const error = new Error(result.details || result.error || "Login failed");
-        (error as any).code = result.code;
-        (error as any).suggestion = result.suggestion;
+        Object.assign(error, { code: result.code, suggestion: result.suggestion });
         throw error;
       }
 
@@ -108,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Logged in as ${user.email}`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error & { suggestion?: string }) => {
       let description = error.message;
       if (error.suggestion) {
         description += ` ${error.suggestion}`;
@@ -140,8 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!response.ok) {
         const error = new Error(result.details || result.error || "Registration failed");
-        (error as any).code = result.code;
-        (error as any).suggestion = result.suggestion;
+        Object.assign(error, { code: result.code, suggestion: result.suggestion });
         throw error;
       }
 
@@ -162,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Welcome to Clean & Flip, ${user.firstName || user.email}!`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error & { suggestion?: string; code?: string }) => {
       let description = error.message;
       if (error.suggestion) {
         description += ` ${error.suggestion}`;

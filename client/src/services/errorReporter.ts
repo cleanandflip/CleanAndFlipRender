@@ -5,7 +5,7 @@ interface ErrorContext {
   url?: string;
   userAgent?: string;
   timestamp?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 interface PerformanceMetric {
@@ -16,8 +16,8 @@ interface PerformanceMetric {
 }
 
 class ErrorReporter {
-  private breadcrumbs: Array<{ action: string; data: any; timestamp: string }> = [];
-  private userContext: any = null;
+  private breadcrumbs: Array<{ action: string; data: Record<string, unknown>; timestamp: string }> = [];
+  private userContext: Record<string, unknown> | null = null;
   private maxBreadcrumbs = 50;
 
   // Capture JavaScript errors
@@ -40,7 +40,7 @@ class ErrorReporter {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(errorData)
-      }).catch(console.error);
+      }).catch(err => console.error('Failed to send error report:', err));
 
       // Log to console in development
       if (import.meta.env.DEV) {
@@ -69,16 +69,16 @@ class ErrorReporter {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(logData)
-      }).catch(console.error);
+      }).catch(err => console.error('Failed to send log report:', err));
     } catch (captureError) {
       console.error('Failed to capture message:', captureError);
     }
   }
 
   // React Error Boundary integration
-  captureComponentError(error: Error, errorInfo: any): void {
+  captureComponentError(error: Error, errorInfo: Record<string, unknown>): void {
     this.captureException(error, {
-      component: errorInfo.componentStack?.split('\n')[1]?.trim(),
+      component: (errorInfo.componentStack as string)?.split('\n')[1]?.trim(),
       action: 'component_error',
       metadata: {
         componentStack: errorInfo.componentStack,
@@ -88,7 +88,7 @@ class ErrorReporter {
   }
 
   // Network error capture
-  captureNetworkError(url: string, status: number, error: any): void {
+  captureNetworkError(url: string, status: number, error: unknown): void {
     this.captureMessage(`Network error: ${status} ${error}`, 'error', {
       action: 'network_error',
       url,
@@ -103,14 +103,14 @@ class ErrorReporter {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(metric)
-      }).catch(console.error);
+      }).catch(err => console.error('Failed to send performance metric:', err));
     } catch (error) {
       console.error('Failed to capture performance metric:', error);
     }
   }
 
   // User context management
-  setUserContext(user: any): void {
+  setUserContext(user: Record<string, unknown>): void {
     this.userContext = {
       id: user?.id,
       email: user?.email,
@@ -119,7 +119,7 @@ class ErrorReporter {
   }
 
   // Breadcrumb tracking
-  addBreadcrumb(action: string, data: any = {}): void {
+  addBreadcrumb(action: string, data: Record<string, unknown> = {}): void {
     this.breadcrumbs.push({
       action,
       data,
@@ -187,7 +187,7 @@ class ErrorReporter {
         if (navigation) {
           this.capturePerformance({
             name: 'page_load',
-            value: navigation.loadEventEnd - navigation.navigationStart,
+            value: navigation.loadEventEnd - (navigation.fetchStart || 0),
             url: window.location.href,
             timestamp: new Date().toISOString()
           });

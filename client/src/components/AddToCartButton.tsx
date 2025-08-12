@@ -80,11 +80,11 @@ export function AddToCartButton({
       try {
         // Remove item from cart - the mutation will handle success toast
         removeProductFromCart(productId);
-      } catch (error: any) {
+      } catch (error) {
         // Only show error toast if removal fails
         toast({
           title: "Remove failed",
-          description: error?.message || 'Failed to remove from cart',
+          description: error instanceof Error ? error.message : 'Failed to remove from cart',
           variant: "destructive",
         });
       } finally {
@@ -129,8 +129,8 @@ export function AddToCartButton({
           title: "Added to cart",
           description: `${quantity > 1 ? `${quantity} items` : 'Item'} added successfully`,
         });
-      } catch (error: any) {
-        const errorMessage = error?.message || 'Failed to add to cart';
+      } catch (error: unknown) {
+        const errorMessage = (error as Error)?.message || 'Failed to add to cart';
         setError(errorMessage);
         toast({
           title: "Add to cart failed",

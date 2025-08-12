@@ -59,7 +59,7 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
     });
   };
 
-  const uploadToCloudinary = async (file: File, signature: any): Promise<string> => {
+  const uploadToCloudinary = async (file: File, signature: { apiKey: string; timestamp: string; signature: string; folder: string; cloudName: string }): Promise<string> => {
     // Try signed upload first
     try {
       const formData = new FormData();
@@ -69,13 +69,6 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
       formData.append('signature', signature.signature);
       formData.append('folder', signature.folder);
 
-      console.log('Trying signed upload to Cloudinary:', {
-        fileName: file.name,
-        fileSize: file.size,
-        cloudName: signature.cloudName,
-        folder: signature.folder
-      });
-
       const response = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloudName}/image/upload`, {
         method: 'POST',
         body: formData,
@@ -83,18 +76,16 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Signed upload successful:', result.secure_url);
         return result.secure_url;
       }
 
-      const errorText = await response.text();
-      console.log('Signed upload failed, trying unsigned upload:', errorText);
+      // Signed upload failed, falling back to unsigned upload
       
       // Fall back to unsigned upload if signed fails
       return await uploadUnsigned(file, signature.cloudName, signature.folder);
       
-    } catch (error) {
-      console.log('Signed upload error, trying unsigned upload:', error);
+    } catch {
+      // Signed upload error, falling back to unsigned upload
       return await uploadUnsigned(file, signature.cloudName, signature.folder);
     }
   };
@@ -105,12 +96,7 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
     formData.append('upload_preset', 'ml_default'); // Default unsigned preset
     formData.append('folder', folder);
 
-    console.log('Trying unsigned upload:', {
-      fileName: file.name,
-      fileSize: file.size,
-      cloudName,
-      folder
-    });
+    // Attempting unsigned upload
 
     const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
       method: 'POST',
@@ -119,12 +105,12 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Unsigned upload failed:', errorText);
+      // Unsigned upload failed
       throw new Error(`Upload failed: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
-    console.log('Unsigned upload successful:', result.secure_url);
+    // Unsigned upload successful
     return result.secure_url;
   };
 
@@ -207,7 +193,7 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
         }
 
         // Upload with XMLHttpRequest for progress tracking
-        const response = await new Promise<any>((resolve, reject) => {
+        const response = await new Promise<{ success?: boolean; uploaded?: number; errors?: unknown[]; urls?: string[] }>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           
           xhr.upload.addEventListener('progress', (e) => {
@@ -237,7 +223,7 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
           xhr.send(formData);
         });
 
-        console.log('Server-side upload successful:', response);
+        // Server-side upload completed
         
         // Show success/warning messages
         if (response.errors?.length > 0) {
@@ -257,7 +243,7 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
         return response.urls || [];
         
       } catch (error) {
-        console.log('Server-side upload error, trying direct upload:', error);
+        // Server-side upload error, trying direct upload
       }
 
       // Fallback to direct Cloudinary upload
@@ -273,7 +259,7 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
           setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
           return url;
         } catch (error) {
-          console.error(`Upload failed for ${file.name}:`, error);
+          // Upload failed for file
           toast({
             title: "Upload failed",
             description: `Failed to upload ${file.name}`,
@@ -296,7 +282,7 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
       return successfulUploads;
 
     } catch (error) {
-      console.error('Upload error:', error);
+      // Upload error occurred
       const errorMessage = error instanceof Error ? error.message : 'Upload failed';
       setError(errorMessage);
       

@@ -8,7 +8,7 @@ interface WebSocketMessage {
   type: string;
   action?: string;
   timestamp?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export function useWebSocket() {

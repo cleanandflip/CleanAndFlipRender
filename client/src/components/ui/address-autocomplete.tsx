@@ -83,13 +83,10 @@ export function AddressAutocomplete({
       
       try {
         // API key handled server-side in proxy now
-        console.log('🔑 Using server-side proxy for GEOApify API');
-        
-        console.log('🔍 Searching for:', debouncedInput);
+        // Using server-side proxy for GEOApify API
         
         // Use backend proxy to avoid CORS issues
         const url = `/api/geocode/autocomplete?text=${encodeURIComponent(debouncedInput)}`;
-        console.log('🌐 Proxy API URL:', url);
         
         const response = await fetch(url, {
           method: 'GET',
@@ -98,21 +95,11 @@ export function AddressAutocomplete({
           }
         });
         
-        console.log('📡 Response status:', response.status);
-        
-        console.log('📡 Response received:', {
-          status: response.status,
-          statusText: response.statusText,
-          ok: response.ok,
-          type: response.type
-        });
-
         if (response.ok) {
           const data = await response.json();
-          console.log('📦 Raw API data:', data);
           
           if (data.results && Array.isArray(data.results)) {
-            const parsed = data.results.map((result: any) => ({
+            const parsed = data.results.map((result: Record<string, string>) => ({
               formatted: result.formatted,
               street: result.housenumber ? `${result.housenumber} ${result.street}` : result.street || result.name || result.address_line1,
               city: result.city || result.county,
@@ -120,29 +107,20 @@ export function AddressAutocomplete({
               zipCode: result.postcode
             }));
             
-            console.log('✅ Parsed suggestions:', parsed);
             setSuggestions(parsed);
             setShowDropdown(parsed.length > 0);
           } else {
-            console.warn('⚠️ No results in API response:', data);
+            // No results found
             setSuggestions([]);
             setShowDropdown(false);
           }
         } else {
-          const errorText = await response.text();
-          console.error('❌ API Error:', response.status, response.statusText, errorText);
+          // API request failed
+          setSuggestions([]);
+          setShowDropdown(false);
         }
       } catch (error) {
-        console.error('🚫 Address search failed:', error);
-        console.error('🔍 Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-          name: error instanceof Error ? error.name : 'Unknown',
-          toString: error?.toString(),
-
-          searchTerm: debouncedInput,
-          errorType: typeof error
-        });
+        // Address search failed
         setSuggestions([]);
         setShowDropdown(false);
       } finally {
@@ -154,8 +132,8 @@ export function AddressAutocomplete({
   }, [debouncedInput, justSelected]);
   
   // Handle address selection
-  const handleSelect = (suggestion: any) => {
-    console.log('🎯 Selected suggestion:', suggestion);
+  const handleSelect = (suggestion: { street?: string; city?: string; state?: string; zipCode?: string }) => {
+    // Selected suggestion
     
     const addressData: AddressData = {
       street: suggestion.street || '',
@@ -182,7 +160,7 @@ export function AddressAutocomplete({
     // Send data to parent
     onAddressSelect(addressData);
     
-    console.log('🎉 Address selection complete!');
+    // Address selection complete
   };
   
   // Close dropdown when clicking outside
@@ -249,7 +227,7 @@ export function AddressAutocomplete({
             border: '1px solid hsl(220, 13%, 18%)'
           }}
         >
-          {suggestions.map((suggestion: any, index) => (
+          {suggestions.map((suggestion: { street?: string; city?: string; state?: string; zipCode?: string }, index) => (
             <button
               key={index}
               type="button"

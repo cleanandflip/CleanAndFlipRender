@@ -294,11 +294,12 @@ export class ErrorLogger {
       }
 
       // Apply conditions
+      let finalQuery = query;
       if (conditions.length > 0) {
-        query = query.where(and(...conditions));
+        finalQuery = query.where(and(...conditions));
       }
 
-      const results = await query
+      const results = await finalQuery
         .orderBy(desc(errorLogs.created_at))
         .limit(limit)
         .offset(offset);

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 
-export function useLiveData(endpoint: string, interval: number = 30000) {
-  const [data, setData] = useState(null);
+export function useLiveData<T = unknown>(endpoint: string, interval: number = 30000) {
+  const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -16,8 +16,8 @@ export function useLiveData(endpoint: string, interval: number = 30000) {
         setData(result);
         setError(null);
       } catch (error) {
-        console.error('Failed to fetch live data:', error);
-        setError(error as any);
+        // Failed to fetch live data
+        setError(error instanceof Error ? error : new Error('Failed to fetch live data'));
       } finally {
         setIsLoading(false);
       }

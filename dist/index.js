@@ -2714,10 +2714,11 @@ var init_errorLogger = __esm({
           if (search) {
             conditions.push(sql6`${errorLogs.message} ILIKE ${`%${search}%`}`);
           }
+          let finalQuery = query;
           if (conditions.length > 0) {
-            query = query.where(and4(...conditions));
+            finalQuery = query.where(and4(...conditions));
           }
-          const results = await query.orderBy(desc3(errorLogs.created_at)).limit(limit).offset(offset);
+          const results = await finalQuery.orderBy(desc3(errorLogs.created_at)).limit(limit).offset(offset);
           return results;
         } catch (err) {
           Logger.error("Failed to get errors with filters:", err);
@@ -9457,43 +9458,50 @@ var GlobalErrorCatcher = class _GlobalErrorCatcher {
   }
   setupHandlers(app2) {
     process.on("uncaughtException", async (error) => {
-      await ErrorLogger.logError({
-        severity: "critical",
-        error_type: "uncaught_exception",
-        message: error.message,
-        stack_trace: error.stack,
-        environment: process.env.NODE_ENV || "development"
+      await ErrorLogger.logError(error, {
+        metadata: {
+          type: "uncaught_exception",
+          environment: process.env.NODE_ENV || "development"
+        }
       });
-      console.error("Uncaught Exception:", error);
     });
     process.on("unhandledRejection", async (reason, promise) => {
-      await ErrorLogger.logError({
-        severity: "critical",
-        error_type: "unhandled_rejection",
-        message: reason?.message || String(reason),
-        stack_trace: reason?.stack,
-        environment: process.env.NODE_ENV || "development"
+      const error = reason instanceof Error ? reason : new Error(String(reason));
+      await ErrorLogger.logError(error, {
+        metadata: {
+          type: "unhandled_rejection",
+          environment: process.env.NODE_ENV || "development"
+        }
       });
-      console.error("Unhandled Rejection:", reason);
     });
     app2.use((err, req, res, next) => {
-      ErrorLogger.logError({
-        severity: err.status >= 500 ? "critical" : "error",
-        error_type: "express_error",
-        message: err.message,
-        stack_trace: err.stack,
-        url: req.url,
-        method: req.method,
-        user_id: req.user?.id,
-        user_ip: req.ip,
-        user_agent: req.headers["user-agent"]
-      }).catch(console.error);
+      ErrorLogger.logError(err, {
+        req: {
+          url: req.url,
+          method: req.method,
+          ip: req.ip,
+          userAgent: req.headers["user-agent"]
+        },
+        user: req.user,
+        metadata: {
+          type: "express_error",
+          status: err.status
+        }
+      }).catch((logErr) => console.error("Failed to log error:", logErr));
       next(err);
     });
   }
   // Method to manually log errors from anywhere in the application
-  static async logError(errorData) {
-    return ErrorLogger.logError(errorData);
+  static async logError(error, context = {}) {
+    return await ErrorLogger.logError(error, context);
+  }
+  // Method to log error data objects (legacy compatibility)
+  static async logErrorData(errorData) {
+    const error = new Error(errorData.message);
+    error.stack = errorData.stack_trace;
+    return ErrorLogger.logError(error, {
+      metadata: errorData
+    });
   }
 };
 

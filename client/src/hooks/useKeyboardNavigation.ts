@@ -2,10 +2,10 @@ import { useEffect } from 'react';
 
 interface UseKeyboardNavigationProps {
   isOpen: boolean;
-  items: any[];
+  items: unknown[];
   selectedIndex: number;
   onSelect: (index: number) => void;
-  onEnter: (item: any) => void;
+  onEnter: (item: unknown) => void;
   onEscape: () => void;
 }
 
@@ -13,7 +13,7 @@ export function useKeyboardNavigation({
   isOpen,
   items,
   selectedIndex,
-  on
+  onSelect,
   onEnter,
   onEscape
 }: UseKeyboardNavigationProps) {
@@ -45,5 +45,5 @@ export function useKeyboardNavigation({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, items, selectedIndex, on onEnter, onEscape]);
+  }, [isOpen, items, selectedIndex, onSelect, onEnter, onEscape]);
 }

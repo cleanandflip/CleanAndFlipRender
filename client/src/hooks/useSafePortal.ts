@@ -31,7 +31,7 @@ export function useSafePortal() {
                 document.body.removeChild(root);
               } catch (error) {
                 // Silently handle cases where element was already removed
-                console.debug('Portal cleanup: element already removed');
+                // Portal cleanup: element already removed
               }
             }
           }, 500); // Delay to allow animations to complete

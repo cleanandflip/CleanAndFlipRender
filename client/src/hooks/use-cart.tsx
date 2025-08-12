@@ -36,7 +36,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
       });
       if (!response.ok) {
-        throw new Error('Failed to fetch cart');
+        throw new Error(`Failed to fetch cart: ${response.status} ${response.statusText}`);
       }
       return response.json();
     },
@@ -142,9 +142,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCartMutation = useMutation({
     mutationFn: async () => {
       // Delete all cart items for user
-      await Promise.all(
-        (cartItems || []).map((item: any) => 
-          apiRequest("DELETE", `/api/cart/${item.id}`)
+      await Promise.allSettled(
+        (cartItems || []).map((item: { id: string }) => 
+          apiRequest("DELETE", `/api/cart/${item.id}`).catch(() => {
+            // Failed to delete cart item, continuing with other items
+          })
         )
       );
     },
@@ -165,8 +167,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Calculate totals
-  const cartCount = cartItems?.reduce((total: number, item: any) => total + item.quantity, 0) || 0;
-  const cartTotal = cartItems?.reduce((total: number, item: any) => {
+  const cartCount = cartItems?.reduce((total: number, item: { quantity: number }) => total + item.quantity, 0) || 0;
+  const cartTotal = cartItems?.reduce((total: number, item: { quantity: number; product: { price: string | number } }) => {
     return total + (Number(item.product.price) * item.quantity);
   }, 0) || 0;
 
