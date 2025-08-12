@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Controller, Control, FieldPath, FieldValues } from "react-hook-form";
-import UnifiedDropdown, { Option as DropdownOption } from "@/components/ui/UnifiedDropdown";
+import Dropdown, { DropdownOption } from "@/components/ui/Dropdown";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 
 type DropdownFieldProps<
@@ -50,13 +50,10 @@ export default function DropdownField<
               options={options}
               value={field.value || null}
               onChange={field.onChange}
-              error={fieldState.error?.message || null}
               id={name}
               name={name}
               placeholder={placeholder}
               disabled={disabled}
-              fullWidth={fullWidth}
-              size={size}
               className={className}
             />
           </FormControl>

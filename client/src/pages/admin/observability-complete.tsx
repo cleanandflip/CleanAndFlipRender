@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
-import UnifiedDropdown from "@/components/ui/UnifiedDropdown";
+import Dropdown from "@/components/ui/Dropdown";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertTriangle, CheckCircle, XCircle, Search, TrendingUp } from "lucide-react";
 
@@ -263,31 +263,31 @@ export default function ObservabilityPage() {
 
             <div className="flex gap-2 items-center">
               <Label>Level:</Label>
-              <UnifiedDropdown
+              <Dropdown
                 options={LEVELS}
                 value={level}
                 onChange={setLevel}
-                width={128}
+                className="w-32"
               />
             </div>
 
             <div className="flex gap-2 items-center">
               <Label>Environment:</Label>
-              <UnifiedDropdown
+              <Dropdown
                 options={ENVS}
                 value={env}
                 onChange={setEnv}
-                width={160}
+                className="w-40"
               />
             </div>
 
             <div className="flex gap-2 items-center">
               <Label>Status:</Label>
-              <UnifiedDropdown
+              <Dropdown
                 options={STATUSES}
                 value={resolved.toString()}
                 onChange={(value) => setResolved(value === "true")}
-                width={128}
+                className="w-32"
               />
             </div>
 

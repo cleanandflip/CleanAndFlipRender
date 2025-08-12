@@ -1,92 +1,153 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 
-interface DropdownOption {
+export interface DropdownOption {
   label: string;
   value: string;
 }
 
 interface DropdownProps {
   options: DropdownOption[];
-  value: string;
+  value: string | null;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  menuClassName?: string;
+  id?: string;
+  name?: string;
+  disabled?: boolean;
 }
 
-export function Dropdown({ options, value, onChange, placeholder = "Select...", className = "" }: DropdownProps) {
+export default function Dropdown({
+  options,
+  value,
+  onChange,
+  placeholder = "Select...",
+  className = "",
+  menuClassName = "",
+  id,
+  name,
+  disabled = false,
+}: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<{ left: number; top: number; width: number }>({ left: 0, top: 0, width: 0 });
+  const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = options.find((opt) => opt.value === value) ?? null;
 
+  // Open/close outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
+    const handleOutside = (e: MouseEvent) => {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(e.target as Node)) setIsOpen(false);
+    };
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener("mousedown", handleOutside);
+      return () => document.removeEventListener("mousedown", handleOutside);
     }
   }, [isOpen]);
 
+  // Position menu (prevents clipping)
+  const updateMenuPos = useCallback(() => {
+    const el = buttonRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setMenuPos({ left: r.left + window.scrollX, top: r.bottom + window.scrollY + 6, width: r.width });
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    updateMenuPos();
+    const onScroll = () => updateMenuPos();
+    const onResize = () => updateMenuPos();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize, true);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize, true);
+    };
+  }, [isOpen, updateMenuPos]);
+
+  // Simple keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>("[data-option]") ?? []);
+      const idx = Math.max(
+        0,
+        items.findIndex((n) => n === document.activeElement)
+      );
+      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        (items[idx + 1] ?? items[0])?.focus();
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        (items[idx - 1] ?? items[items.length - 1])?.focus();
+      }
+      if (e.key === "Enter") {
+        (document.activeElement as HTMLButtonElement)?.click();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isOpen]);
+
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div ref={rootRef} className={`relative ${className}`}>
       <button
+        ref={buttonRef}
+        id={id}
+        name={name}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        disabled={disabled}
+        onClick={() => setIsOpen((o) => !o)}
+        className={`flex items-center justify-between w-full px-3 py-2 text-sm rounded-md border border-white/10 
+          bg-slate-800/70 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 
+          ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
       >
-        <span className={selectedOption ? "text-gray-900" : "text-gray-500"}>
-          {selectedOption?.label || placeholder}
+        <span className={selectedOption ? "text-slate-100" : "text-slate-400"}>
+          {selectedOption?.label ?? placeholder}
         </span>
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-4 h-4 text-slate-300 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => {
-                onChange(option.value);
-                setIsOpen(false);
-              }}
-              className={`w-full px-3 py-2 text-sm text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100 ${
-                option.value === value ? "bg-blue-50 text-blue-700" : "text-gray-900"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {isOpen &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="listbox"
+            style={{ position: "absolute", left: menuPos.left, top: menuPos.top, width: menuPos.width, zIndex: 60 }}
+            className={`rounded-md border border-white/10 bg-[#121822]/95 backdrop-blur shadow-xl max-h-60 overflow-auto 
+              animate-[fadeIn_120ms_ease-out] ${menuClassName}`}
+          >
+            {options.map((option) => {
+              const isSelected = option.value === value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  data-option
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full px-3 py-2 text-sm text-left transition-colors 
+                    ${isSelected ? "bg-blue-500/10 text-blue-300" : "text-slate-100 hover:bg-white/5"}`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>,
+          document.body
+        )}
     </div>
-  );
-}
-
-// Checkbox component for boolean filters
-interface CheckboxProps {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  label: string;
-  className?: string;
-}
-
-export function Checkbox({ checked, onChange, label, className = "" }: CheckboxProps) {
-  return (
-    <label className={`flex items-center cursor-pointer ${className}`}>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-      />
-      <span className="ml-2 text-sm text-gray-700">{label}</span>
-    </label>
   );
 }

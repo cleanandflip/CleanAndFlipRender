@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriceInput } from "@/components/ui/price-input";
-import UnifiedDropdown from "@/components/ui/UnifiedDropdown";
+import Dropdown from "@/components/ui/Dropdown";
 import DropdownField from "@/components/form/DropdownField";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -362,14 +362,11 @@ export default function SellToUs() {
                           <FormItem>
                             <FormControl>
                               <Dropdown
-                                fullWidth
                                 value={field.value || ""}
                                 onChange={(v) => field.onChange(v)}
                                 options={EQUIPMENT_BRANDS.map(brand => ({ value: brand, label: brand }))}
                                 placeholder="Search or select a brand…"
                                 className="h-11"
-                                aria-invalid={!!form.formState.errors.brand}
-                                aria-describedby={form.formState.errors.brand ? "brand-error" : undefined}
                               />
                             </FormControl>
                             <FormMessage id="brand-error" className="mt-1 text-xs" />
@@ -390,7 +387,6 @@ export default function SellToUs() {
                           <FormItem>
                             <FormControl>
                               <Dropdown
-                                fullWidth
                                 value={field.value || ""}
                                 onChange={(v) => field.onChange(v)}
                                 options={[
@@ -406,8 +402,6 @@ export default function SellToUs() {
                                 ]}
                                 placeholder="Select category"
                                 className="h-11"
-                                aria-invalid={!!form.formState.errors.category}
-                                aria-describedby={form.formState.errors.category ? "category-error" : undefined}
                               />
                             </FormControl>
                             <FormMessage id="category-error" className="mt-1 text-xs" />
@@ -427,7 +421,6 @@ export default function SellToUs() {
                           <FormItem>
                             <FormControl>
                               <Dropdown
-                                fullWidth
                                 value={field.value || ""}
                                 onChange={(v) => field.onChange(v)}
                                 options={[
@@ -439,8 +432,6 @@ export default function SellToUs() {
                                 ]}
                                 placeholder="Select condition"
                                 className="h-11"
-                                aria-invalid={!!form.formState.errors.condition}
-                                aria-describedby={form.formState.errors.condition ? "condition-error" : undefined}
                               />
                             </FormControl>
                             <FormMessage id="condition-error" className="mt-1 text-xs" />
