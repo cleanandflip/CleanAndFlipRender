@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { UnifiedDropdown } from "@/components/ui";
+
 import SearchBar from "@/components/search/SearchBar";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code, LayoutGrid, Code2 } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code, LayoutGrid, Code2, Shield } from "lucide-react";
 
 import { ROUTES } from "@/config/routes";
 
@@ -216,108 +216,93 @@ export default function Navigation() {
                 </button>
 
                 {isUserDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 
-                                  rounded-xl shadow-2xl 
-                                  overflow-hidden z-50"
-                       style={{ 
-                         background: 'rgba(35, 41, 55, 0.4)', 
-                         backdropFilter: 'blur(12px)',
-                         border: '1px solid rgba(255, 255, 255, 0.08)',
-                         zIndex: 9999
-                       }}>
-                    
-                    {/* User Info Section - Display first name initial and role */}
-                    <div className="p-4" 
-                         style={{ background: 'rgba(15, 23, 42, 0.3)' }}>
+                  <div 
+                    className="absolute right-0 mt-2 w-80 rounded-xl shadow-2xl overflow-hidden z-[60] border"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.98)',
+                      backdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(148, 163, 184, 0.2)',
+                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 4px 20px rgba(59, 130, 246, 0.1)'
+                    }}
+                  >
+                    {/* Profile Section */}
+                    <div className="p-4 border-b border-white/10">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-600 
-                                        rounded-lg flex items-center justify-center">
-                          <span className="text-white font-bold">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center ring-2 ring-white/20">
+                          <span className="text-white font-semibold text-base">
                             {user?.firstName?.[0]?.toUpperCase() || 
                              user?.email?.[0]?.toUpperCase() || 
                              'U'}
                           </span>
                         </div>
-                        <div>
-                          <div className="text-white font-medium">
-                            {user?.firstName || 'User'}
-                          </div>
-                          <div className="text-gray-400 text-xs capitalize">
-                            {user?.role || 'user'}
-                          </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-medium text-white truncate">
+                            {user?.firstName && user?.lastName 
+                              ? `${user?.firstName} ${user?.lastName}` 
+                              : user?.email?.split('@')[0] || 'User'
+                            }
+                          </p>
+                          <p className="text-sm text-gray-300 truncate">
+                            {user?.email}
+                          </p>
+                          {user?.role?.includes('developer') && (
+                            <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-300 rounded-full">
+                              Developer
+                            </span>
+                          )}
                         </div>
                       </div>
-                      {user?.role === 'developer' && (
-                        <div className="mt-3">
-                          <span className="inline-block px-2 py-1 
-                                         bg-purple-500/20 text-purple-400 
-                                         text-xs font-medium rounded">
-                            Developer Access
-                          </span>
-                        </div>
-                      )}
                     </div>
 
-                    {/* Menu Items Container */}
-                    <div className="py-1">
-                      {/* Dashboard */}
+                    {/* Navigation Links */}
+                    <div className="p-3">
                       <button
                         onClick={() => {
                           handleNavigation(ROUTES.DASHBOARD);
                           setIsUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 
-                                  text-gray-300 hover:bg-white/15 hover:text-white
-                                  transition-all duration-200 group text-left"
+                        className="w-full flex items-center px-3 py-3 text-sm font-medium text-gray-100 hover:bg-white/8 rounded-lg transition-all duration-200 text-left"
                       >
-                        <LayoutGrid className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
-                        <span className="text-sm">Dashboard</span>
+                        <User className="w-4 h-4 mr-3 text-gray-300" />
+                        My Profile
                       </button>
-
-                      {/* Order History */}
+                      
                       <button
                         onClick={() => {
                           handleNavigation(ROUTES.ORDERS);
                           setIsUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 
-                                  text-gray-300 hover:bg-white/15 hover:text-white
-                                  transition-all duration-200 group text-left"
+                        className="w-full flex items-center px-3 py-3 text-sm font-medium text-gray-100 hover:bg-white/8 rounded-lg transition-all duration-200 text-left"
                       >
-                        <History className="w-4 h-4 text-gray-500 group-hover:text-gray-300" />
-                        <span className="text-sm">Order History</span>
+                        <Package className="w-4 h-4 mr-3 text-gray-300" />
+                        My Orders
                       </button>
 
-                      {/* Developer Dashboard - Conditional */}
-                      {user?.role === 'developer' && (
-                        <>
-                          <button
-                            onClick={() => {
-                              handleNavigation(ROUTES.ADMIN);
-                              setIsUserDropdownOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 
-                                      text-purple-400 hover:bg-purple-500/20 hover:text-purple-300
-                                      transition-all duration-200 group text-left"
-                          >
-                            <Code2 className="w-4 h-4 text-purple-500 group-hover:text-purple-400" />
-                            <span className="text-sm font-medium">Developer Dashboard</span>
-                          </button>
-                        </>
+                      {user?.role?.includes('developer') && (
+                        <button
+                          onClick={() => {
+                            handleNavigation(ROUTES.ADMIN);
+                            setIsUserDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center px-3 py-3 text-sm font-medium text-gray-100 hover:bg-blue-500/10 rounded-lg transition-all duration-200 text-left"
+                        >
+                          <Shield className="w-4 h-4 mr-3 text-blue-400" />
+                          Developer Dashboard
+                        </button>
                       )}
+                    </div>
 
-                      {/* Sign Out */}
+                    {/* Sign Out Section */}
+                    <div className="border-t border-white/10 p-3">
                       <button
                         onClick={() => {
                           logoutMutation.mutate();
                           setIsUserDropdownOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 
-                                  text-red-400 hover:bg-red-500/20 hover:text-red-300
-                                  transition-all duration-200 group text-left"
+                        className="w-full flex items-center px-3 py-3 text-sm font-medium text-red-300 hover:bg-red-500/10 rounded-lg transition-all duration-200 text-left"
                       >
-                        <LogOut className="w-4 h-4 text-red-500 group-hover:text-red-400" />
-                        <span className="text-sm">Sign Out</span>
+                        <LogOut className="w-4 h-4 mr-3" />
+                        Sign Out
                       </button>
                     </div>
                   </div>

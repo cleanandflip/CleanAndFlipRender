@@ -193,19 +193,22 @@ export default function Dropdown({
         </span>
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Menu - Portal to body to prevent clipping */}
       {isOpen && (
         <div
           ref={menuRef}
           role="listbox"
           aria-labelledby={id}
           style={{
-            width: 'var(--radix-select-trigger-width, 100%)',
+            position: 'fixed',
+            top: triggerRef.current ? triggerRef.current.getBoundingClientRect().bottom + 8 : 'auto',
+            left: triggerRef.current ? triggerRef.current.getBoundingClientRect().left : 'auto',
+            width: triggerRef.current ? triggerRef.current.getBoundingClientRect().width : 'auto',
             minWidth: fullWidth ? '100%' : '14rem'
           }}
           className={cn(
-            // Proper positioning and z-index
-            "absolute z-[60] top-full mt-2 max-h-[56vh] overflow-y-auto rounded-xl border shadow-xl",
+            // Proper positioning and z-index for portal rendering
+            "z-[60] max-h-[56vh] overflow-y-auto rounded-xl border shadow-xl",
             "bg-popover text-popover-foreground border-border",
             // Animation classes
             "dropdown-menu",
