@@ -30,9 +30,9 @@ __export(schema_exports, {
   equipmentSubmissionStatusEnum: () => equipmentSubmissionStatusEnum,
   equipmentSubmissions: () => equipmentSubmissions,
   equipmentSubmissionsRelations: () => equipmentSubmissionsRelations,
-  errorBreadcrumbs: () => errorBreadcrumbs,
   errorLogInstances: () => errorLogInstances,
   errorLogs: () => errorLogs,
+  errorsRaw: () => errorsRaw,
   insertActivityLogSchema: () => insertActivityLogSchema,
   insertAddressSchema: () => insertAddressSchema,
   insertCartItemSchema: () => insertCartItemSchema,
@@ -51,6 +51,8 @@ __export(schema_exports, {
   insertUserEmailPreferencesSchema: () => insertUserEmailPreferencesSchema,
   insertUserSchema: () => insertUserSchema,
   insertWishlistSchema: () => insertWishlistSchema,
+  issueEvents: () => issueEvents,
+  issues: () => issues,
   newsletterSubscribers: () => newsletterSubscribers,
   orderItems: () => orderItems,
   orderItemsRelations: () => orderItemsRelations,
@@ -93,7 +95,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var tsvector, sessions, errorBreadcrumbs, userRoleEnum, users, userOnboarding, categories, productConditionEnum, productStatusEnum, products, addresses, orderStatusEnum, orders, orderItems, cartItems, wishlists, activityLogs, emailQueue, equipmentSubmissionStatusEnum, equipmentSubmissions, usersRelations, categoriesRelations, productsRelations, ordersRelations, orderItemsRelations, cartItemsRelations, addressesRelations, equipmentSubmissionsRelations, wishlistsRelations, insertUserSchema, insertCategorySchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCartItemSchema, insertAddressSchema, insertEquipmentSubmissionSchema, insertActivityLogSchema, insertWishlistSchema, errorLogs, errorLogInstances, registerDataSchema, reviews, insertReviewSchema, coupons, insertCouponSchema, orderTracking, insertOrderTrackingSchema, returnRequests, insertReturnRequestSchema, emailLogs, newsletterSubscribers, userEmailPreferences, passwordResetTokens, insertEmailLogSchema, insertNewsletterSubscriberSchema, insertUserEmailPreferencesSchema, insertPasswordResetTokenSchema;
+var tsvector, sessions, errorsRaw, issues, issueEvents, userRoleEnum, users, userOnboarding, categories, productConditionEnum, productStatusEnum, products, addresses, orderStatusEnum, orders, orderItems, cartItems, wishlists, activityLogs, emailQueue, equipmentSubmissionStatusEnum, equipmentSubmissions, usersRelations, categoriesRelations, productsRelations, ordersRelations, orderItemsRelations, cartItemsRelations, addressesRelations, equipmentSubmissionsRelations, wishlistsRelations, insertUserSchema, insertCategorySchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCartItemSchema, insertAddressSchema, insertEquipmentSubmissionSchema, insertActivityLogSchema, insertWishlistSchema, errorLogs, errorLogInstances, registerDataSchema, reviews, insertReviewSchema, coupons, insertCouponSchema, orderTracking, insertOrderTrackingSchema, returnRequests, insertReturnRequestSchema, emailLogs, newsletterSubscribers, userEmailPreferences, passwordResetTokens, insertEmailLogSchema, insertNewsletterSubscriberSchema, insertUserEmailPreferencesSchema, insertPasswordResetTokenSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -111,18 +113,65 @@ var init_schema = __esm({
       },
       (table) => [index("IDX_session_expire").on(table.expire)]
     );
-    errorBreadcrumbs = pgTable("error_breadcrumbs", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      errorLogId: varchar("error_log_id").references(() => errorLogs.id, { onDelete: "cascade" }),
-      timestamp: timestamp("timestamp").defaultNow(),
+    errorsRaw = pgTable("errors_raw", {
+      id: serial("id").primaryKey(),
+      eventId: varchar("event_id").notNull().unique(),
+      createdAt: timestamp("created_at").defaultNow().notNull(),
+      level: varchar("level").notNull(),
+      // error, warn, info
+      env: varchar("env").notNull(),
+      // development, production
+      release: varchar("release"),
+      service: varchar("service").notNull(),
+      // client, server
+      url: text("url"),
+      method: varchar("method"),
+      statusCode: integer("status_code"),
+      message: text("message").notNull(),
       type: varchar("type"),
-      // 'navigation', 'click', 'api', 'console'
-      category: varchar("category"),
-      message: text("message"),
-      data: jsonb("data"),
-      level: varchar("level"),
-      createdAt: timestamp("created_at").defaultNow()
-    });
+      stack: jsonb("stack"),
+      // string[]
+      fingerprint: varchar("fingerprint").notNull(),
+      userId: varchar("user_id"),
+      tags: jsonb("tags"),
+      // Record<string, string | number | boolean>
+      extra: jsonb("extra")
+      // Record<string, any>
+    }, (table) => [
+      index("idx_errors_raw_created_at").on(table.createdAt),
+      index("idx_errors_raw_fingerprint").on(table.fingerprint),
+      index("idx_errors_raw_level").on(table.level)
+    ]);
+    issues = pgTable("issues", {
+      id: serial("id").primaryKey(),
+      fingerprint: varchar("fingerprint").notNull().unique(),
+      title: text("title").notNull(),
+      firstSeen: timestamp("first_seen").defaultNow().notNull(),
+      lastSeen: timestamp("last_seen").defaultNow().notNull(),
+      level: varchar("level").notNull(),
+      count: integer("count").default(0).notNull(),
+      affectedUsers: integer("affected_users").default(0).notNull(),
+      resolved: boolean("resolved").default(false).notNull(),
+      ignored: boolean("ignored").default(false).notNull(),
+      sampleEventId: varchar("sample_event_id"),
+      envs: jsonb("envs").notNull()
+      // Record<string, number>
+    }, (table) => [
+      index("idx_issues_last_seen").on(table.lastSeen),
+      index("idx_issues_resolved").on(table.resolved),
+      index("idx_issues_level").on(table.level)
+    ]);
+    issueEvents = pgTable("issue_events", {
+      id: serial("id").primaryKey(),
+      fingerprint: varchar("fingerprint").notNull(),
+      hour: timestamp("hour").notNull(),
+      count: integer("count").default(0).notNull()
+    }, (table) => [
+      index("idx_issue_events_hour").on(table.hour),
+      index("idx_issue_events_fingerprint").on(table.fingerprint),
+      // Unique constraint for fingerprint + hour combination
+      index("idx_issue_events_unique").on(table.fingerprint, table.hour)
+    ]);
     userRoleEnum = pgEnum("user_role", [
       "user",
       "developer"
@@ -2511,7 +2560,7 @@ var init_stripe_sync = __esm({
 });
 
 // server/services/errorLogger.ts
-import { eq as eq6, desc as desc3, sql as sql6, and as and4, gte as gte3 } from "drizzle-orm";
+import { eq as eq7, desc as desc4, sql as sql7, and as and4, gte as gte3 } from "drizzle-orm";
 var ErrorLogger;
 var init_errorLogger = __esm({
   "server/services/errorLogger.ts"() {
@@ -2579,8 +2628,8 @@ var init_errorLogger = __esm({
         try {
           const [existing] = await db.select().from(errorLogs).where(
             and4(
-              eq6(errorLogs.message, error.message),
-              eq6(errorLogs.resolved, false)
+              eq7(errorLogs.message, error.message),
+              eq7(errorLogs.resolved, false)
             )
           ).limit(1);
           return existing || null;
@@ -2592,9 +2641,9 @@ var init_errorLogger = __esm({
       static async incrementOccurrence(errorId) {
         try {
           await db.update(errorLogs).set({
-            occurrence_count: sql6`${errorLogs.occurrence_count} + 1`,
+            occurrence_count: sql7`${errorLogs.occurrence_count} + 1`,
             last_seen: /* @__PURE__ */ new Date()
-          }).where(eq6(errorLogs.id, errorId));
+          }).where(eq7(errorLogs.id, errorId));
         } catch (err) {
           Logger.error("Failed to increment occurrence:", err);
         }
@@ -2612,16 +2661,16 @@ var init_errorLogger = __esm({
       static async getErrorTrends(timeRange = "24h") {
         try {
           const timeRanges = {
-            "24h": sql6`NOW() - INTERVAL '24 hours'`,
-            "7d": sql6`NOW() - INTERVAL '7 days'`,
-            "30d": sql6`NOW() - INTERVAL '30 days'`
+            "24h": sql7`NOW() - INTERVAL '24 hours'`,
+            "7d": sql7`NOW() - INTERVAL '7 days'`,
+            "30d": sql7`NOW() - INTERVAL '30 days'`
           };
           const timeFilter = timeRanges[timeRange] || timeRanges["24h"];
           const trends = await db.select({
-            hour: sql6`DATE_TRUNC('hour', created_at)`,
-            count: sql6`COUNT(*)`,
+            hour: sql7`DATE_TRUNC('hour', created_at)`,
+            count: sql7`COUNT(*)`,
             severity: errorLogs.severity
-          }).from(errorLogs).where(gte3(errorLogs.created_at, timeFilter)).groupBy(sql6`DATE_TRUNC('hour', created_at)`, errorLogs.severity).orderBy(desc3(sql6`DATE_TRUNC('hour', created_at)`));
+          }).from(errorLogs).where(gte3(errorLogs.created_at, timeFilter)).groupBy(sql7`DATE_TRUNC('hour', created_at)`, errorLogs.severity).orderBy(desc4(sql7`DATE_TRUNC('hour', created_at)`));
           return trends;
         } catch (err) {
           Logger.error("Failed to get error trends:", err);
@@ -2630,7 +2679,7 @@ var init_errorLogger = __esm({
       }
       static async getTopErrors(limit = 10) {
         try {
-          const topErrors = await db.select().from(errorLogs).where(eq6(errorLogs.resolved, false)).orderBy(desc3(errorLogs.occurrence_count)).limit(limit);
+          const topErrors = await db.select().from(errorLogs).where(eq7(errorLogs.resolved, false)).orderBy(desc4(errorLogs.occurrence_count)).limit(limit);
           return topErrors;
         } catch (err) {
           Logger.error("Failed to get top errors:", err);
@@ -2639,7 +2688,7 @@ var init_errorLogger = __esm({
       }
       static async getErrorsByUser(userId) {
         try {
-          const userErrors = await db.select().from(errorLogs).where(eq6(errorLogs.user_id, userId)).orderBy(desc3(errorLogs.created_at));
+          const userErrors = await db.select().from(errorLogs).where(eq7(errorLogs.user_id, userId)).orderBy(desc4(errorLogs.created_at));
           return userErrors;
         } catch (err) {
           Logger.error("Failed to get errors by user:", err);
@@ -2650,10 +2699,10 @@ var init_errorLogger = __esm({
         try {
           const criticalErrors = await db.select().from(errorLogs).where(
             and4(
-              eq6(errorLogs.severity, "critical"),
-              eq6(errorLogs.resolved, false)
+              eq7(errorLogs.severity, "critical"),
+              eq7(errorLogs.resolved, false)
             )
-          ).orderBy(desc3(errorLogs.created_at));
+          ).orderBy(desc4(errorLogs.created_at));
           return criticalErrors;
         } catch (err) {
           Logger.error("Failed to get unresolved critical errors:", err);
@@ -2667,7 +2716,7 @@ var init_errorLogger = __esm({
             resolved_by: resolvedBy,
             resolved_at: /* @__PURE__ */ new Date(),
             notes
-          }).where(eq6(errorLogs.id, errorId));
+          }).where(eq7(errorLogs.id, errorId));
           Logger.info(`Error ${errorId} resolved by ${resolvedBy}: ${notes}`);
         } catch (err) {
           Logger.error("Failed to resolve error:", err);
@@ -2682,9 +2731,9 @@ var init_errorLogger = __esm({
             resolved_at: /* @__PURE__ */ new Date(),
             notes
           }).where(and4(
-            eq6(errorLogs.message, message),
-            eq6(errorLogs.error_type, errorType),
-            eq6(errorLogs.resolved, false)
+            eq7(errorLogs.message, message),
+            eq7(errorLogs.error_type, errorType),
+            eq7(errorLogs.resolved, false)
           ));
           Logger.info(`All errors matching fingerprint ${message}-${errorType} resolved by ${resolvedBy}`);
         } catch (err) {
@@ -2698,27 +2747,27 @@ var init_errorLogger = __esm({
           let query = db.select().from(errorLogs);
           const conditions = [];
           if (filters.severity) {
-            conditions.push(eq6(errorLogs.severity, filters.severity));
+            conditions.push(eq7(errorLogs.severity, filters.severity));
           }
           if (typeof filters.resolved === "boolean") {
-            conditions.push(eq6(errorLogs.resolved, filters.resolved));
+            conditions.push(eq7(errorLogs.resolved, filters.resolved));
           }
           const timeRanges = {
-            "24h": sql6`NOW() - INTERVAL '24 hours'`,
-            "7d": sql6`NOW() - INTERVAL '7 days'`,
-            "30d": sql6`NOW() - INTERVAL '30 days'`
+            "24h": sql7`NOW() - INTERVAL '24 hours'`,
+            "7d": sql7`NOW() - INTERVAL '7 days'`,
+            "30d": sql7`NOW() - INTERVAL '30 days'`
           };
           if (timeRanges[timeRange]) {
             conditions.push(gte3(errorLogs.created_at, timeRanges[timeRange]));
           }
           if (search) {
-            conditions.push(sql6`${errorLogs.message} ILIKE ${`%${search}%`}`);
+            conditions.push(sql7`${errorLogs.message} ILIKE ${`%${search}%`}`);
           }
           let finalQuery = query;
           if (conditions.length > 0) {
             finalQuery = query.where(and4(...conditions));
           }
-          const results = await finalQuery.orderBy(desc3(errorLogs.created_at)).limit(limit).offset(offset);
+          const results = await finalQuery.orderBy(desc4(errorLogs.created_at)).limit(limit).offset(offset);
           return results;
         } catch (err) {
           Logger.error("Failed to get errors with filters:", err);
@@ -2727,9 +2776,9 @@ var init_errorLogger = __esm({
       }
       static async getErrorById(errorId) {
         try {
-          const [error] = await db.select().from(errorLogs).where(eq6(errorLogs.id, errorId));
+          const [error] = await db.select().from(errorLogs).where(eq7(errorLogs.id, errorId));
           if (!error) return null;
-          const instances = await db.select().from(errorLogInstances).where(eq6(errorLogInstances.error_log_id, errorId)).orderBy(desc3(errorLogInstances.occurred_at)).limit(10);
+          const instances = await db.select().from(errorLogInstances).where(eq7(errorLogInstances.error_log_id, errorId)).orderBy(desc4(errorLogInstances.occurred_at)).limit(10);
           return { ...error, instances };
         } catch (err) {
           Logger.error("Failed to get error by ID:", err);
@@ -2738,10 +2787,10 @@ var init_errorLogger = __esm({
       }
       static async getErrorStats() {
         try {
-          const [totalCount] = await db.select({ count: sql6`COUNT(*)` }).from(errorLogs);
-          const [resolvedCount] = await db.select({ count: sql6`COUNT(*)` }).from(errorLogs).where(eq6(errorLogs.resolved, true));
-          const [criticalCount] = await db.select({ count: sql6`COUNT(*)` }).from(errorLogs).where(and4(eq6(errorLogs.severity, "critical"), eq6(errorLogs.resolved, false)));
-          const [affectedUsersCount] = await db.select({ count: sql6`COUNT(DISTINCT ${errorLogs.user_id})` }).from(errorLogs).where(sql6`${errorLogs.user_id} IS NOT NULL`);
+          const [totalCount] = await db.select({ count: sql7`COUNT(*)` }).from(errorLogs);
+          const [resolvedCount] = await db.select({ count: sql7`COUNT(*)` }).from(errorLogs).where(eq7(errorLogs.resolved, true));
+          const [criticalCount] = await db.select({ count: sql7`COUNT(*)` }).from(errorLogs).where(and4(eq7(errorLogs.severity, "critical"), eq7(errorLogs.resolved, false)));
+          const [affectedUsersCount] = await db.select({ count: sql7`COUNT(DISTINCT ${errorLogs.user_id})` }).from(errorLogs).where(sql7`${errorLogs.user_id} IS NOT NULL`);
           const errorRate = totalCount.count > 0 ? Math.round(criticalCount.count / totalCount.count * 100) : 0;
           return {
             total: totalCount.count || 0,
@@ -2851,484 +2900,21 @@ var init_errorLogger = __esm({
   }
 });
 
-// server/routes/admin/codebaseScanner.ts
-import { Router as Router4 } from "express";
-import { promises as fs } from "fs";
-import path from "path";
-var router4, codebaseScanner_default;
-var init_codebaseScanner = __esm({
-  "server/routes/admin/codebaseScanner.ts"() {
-    "use strict";
-    init_auth();
-    init_errorLogger();
-    router4 = Router4();
-    router4.use(requireAuth);
-    router4.use(requireRole("developer"));
-    router4.post("/scan-codebase", async (req, res) => {
-      try {
-        const startTime = Date.now();
-        const results = [];
-        let scannedFiles = 0;
-        console.log("\u{1F50D} Starting codebase scan...");
-        const scanDirectory = async (dir, relativePath = "") => {
-          const entries = await fs.readdir(dir, { withFileTypes: true });
-          for (const entry of entries) {
-            const fullPath = path.join(dir, entry.name);
-            const relativeFilePath = path.join(relativePath, entry.name);
-            if (entry.isDirectory()) {
-              if (!["node_modules", ".git", "dist", "build", ".replit"].includes(entry.name)) {
-                await scanDirectory(fullPath, relativeFilePath);
-              }
-            } else if (entry.name.match(/\.(ts|tsx|js|jsx|vue|py|php|rb|java|c|cpp|cs)$/)) {
-              scannedFiles++;
-              await scanFile(fullPath, relativeFilePath);
-            }
-          }
-        };
-        const scanFile = async (filePath, relativeFilePath) => {
-          if (relativeFilePath.includes("codebaseScanner.ts")) {
-            return;
-          }
-          try {
-            const content = await fs.readFile(filePath, "utf-8");
-            const lines = content.split("\n");
-            lines.forEach((line, index2) => {
-              const lineNumber = index2 + 1;
-              const trimmedLine = line.trim();
-              if (trimmedLine.includes("console.log") && !trimmedLine.startsWith("//")) {
-                results.push({
-                  severity: "info",
-                  error_type: "console_log",
-                  message: "Console.log statement found - should be removed in production",
-                  file_path: relativeFilePath,
-                  line_number: lineNumber,
-                  line_content: trimmedLine
-                });
-              }
-              const taskKeywords = ["TODO", "FIXME"];
-              const hasTaskKeyword = taskKeywords.some((keyword) => trimmedLine.includes(keyword));
-              if (hasTaskKeyword) {
-                results.push({
-                  severity: "warning",
-                  error_type: "task_comment",
-                  message: "Task-related comment found",
-                  file_path: relativeFilePath,
-                  line_number: lineNumber,
-                  line_content: trimmedLine
-                });
-              }
-              const secretPatterns = [
-                /password\s*=\s*['""][^'""]+['""](?!.*process\.env)/i,
-                /api[_-]?key\s*=\s*['""][^'""]+['""](?!.*process\.env)/i,
-                /secret\s*=\s*['""][^'""]+['""](?!.*process\.env)/i,
-                /token\s*=\s*['""][^'""]+['""](?!.*process\.env)/i
-              ];
-              secretPatterns.forEach((pattern) => {
-                if (pattern.test(trimmedLine) && !trimmedLine.startsWith("//")) {
-                  results.push({
-                    severity: "critical",
-                    error_type: "hardcoded_secret",
-                    message: "Potential hardcoded secret detected",
-                    file_path: relativeFilePath,
-                    line_number: lineNumber,
-                    line_content: "[REDACTED FOR SECURITY]"
-                  });
-                }
-              });
-              if (trimmedLine.includes("eval(") && !trimmedLine.startsWith("//")) {
-                results.push({
-                  severity: "critical",
-                  error_type: "unsafe_eval",
-                  message: "Unsafe eval() usage detected",
-                  file_path: relativeFilePath,
-                  line_number: lineNumber,
-                  line_content: trimmedLine
-                });
-              }
-              const sqlPatterns = [
-                /query\s*\(\s*[`'"][^`'"]*\$\{[^}]+\}/i,
-                /execute\s*\(\s*[`'"][^`'"]*\+/i
-              ];
-              sqlPatterns.forEach((pattern) => {
-                if (pattern.test(trimmedLine) && !trimmedLine.startsWith("//")) {
-                  results.push({
-                    severity: "critical",
-                    error_type: "sql_injection_risk",
-                    message: "Potential SQL injection vulnerability",
-                    file_path: relativeFilePath,
-                    line_number: lineNumber,
-                    line_content: trimmedLine
-                  });
-                }
-              });
-              if (trimmedLine.includes("await ") && !content.includes("try") && !content.includes("catch")) {
-                results.push({
-                  severity: "warning",
-                  error_type: "missing_error_handling",
-                  message: "Async operation without error handling",
-                  file_path: relativeFilePath,
-                  line_number: lineNumber,
-                  line_content: trimmedLine
-                });
-              }
-              if (filePath.includes(".tsx") || filePath.includes(".jsx")) {
-                if (trimmedLine.includes("componentWillMount") || trimmedLine.includes("componentWillReceiveProps")) {
-                  results.push({
-                    severity: "warning",
-                    error_type: "deprecated_react",
-                    message: "Deprecated React lifecycle method",
-                    file_path: relativeFilePath,
-                    line_number: lineNumber,
-                    line_content: trimmedLine
-                  });
-                }
-              }
-              if (trimmedLine.includes("document.getElementById") && trimmedLine.includes("loop")) {
-                results.push({
-                  severity: "warning",
-                  error_type: "performance_issue",
-                  message: "DOM query in loop - potential performance issue",
-                  file_path: relativeFilePath,
-                  line_number: lineNumber,
-                  line_content: trimmedLine
-                });
-              }
-            });
-          } catch (error) {
-            console.error(`Error scanning file ${filePath}:`, error);
-          }
-        };
-        await scanDirectory(process.cwd());
-        const summary = {
-          totalErrors: results.length,
-          critical: results.filter((r) => r.severity === "critical").length,
-          errors: results.filter((r) => r.severity === "error").length,
-          warnings: results.filter((r) => r.severity === "warning").length,
-          info: results.filter((r) => r.severity === "info").length,
-          results: results.sort((a, b) => {
-            const severityOrder = { critical: 0, error: 1, warning: 2, info: 3 };
-            return severityOrder[a.severity] - severityOrder[b.severity];
-          }),
-          scanDuration: Date.now() - startTime,
-          scannedFiles
-        };
-        console.log(`\u2705 Codebase scan completed: ${results.length} issues found in ${scannedFiles} files`);
-        results.filter((r) => r.severity === "critical").forEach((result) => {
-          ErrorLogger.logError({
-            error_type: "codebase_scan_critical",
-            message: `Critical issue found: ${result.message}`,
-            file_path: result.file_path,
-            line_number: result.line_number,
-            environment: process.env.NODE_ENV || "development"
-          });
-        });
-        res.json(summary);
-      } catch (error) {
-        console.error("Codebase scan error:", error);
-        res.status(500).json({
-          error: "Failed to scan codebase",
-          message: error instanceof Error ? error.message : "Unknown error"
-        });
-      }
-    });
-    router4.get("/scan-history", async (req, res) => {
-      try {
-        const scanResults = await ErrorLogger.getErrorsWithFilters({
-          error_type: "codebase_scan_critical"
-        }, {
-          page: 1,
-          limit: 50,
-          timeRange: "7d",
-          search: ""
-        });
-        res.json(scanResults);
-      } catch (error) {
-        console.error("Failed to get scan history:", error);
-        res.status(500).json({ error: "Failed to get scan history" });
-      }
-    });
-    codebaseScanner_default = router4;
-  }
-});
-
-// server/services/codebase-doctor-service.ts
-import { exec } from "child_process";
-import { promisify } from "util";
-import path2 from "path";
-var execAsync, CodebaseDoctorService;
-var init_codebase_doctor_service = __esm({
-  "server/services/codebase-doctor-service.ts"() {
-    "use strict";
-    execAsync = promisify(exec);
-    CodebaseDoctorService = class _CodebaseDoctorService {
-      static instance;
-      lastScanResults = null;
-      scanHistory = [];
-      constructor() {
-      }
-      static getInstance() {
-        if (!_CodebaseDoctorService.instance) {
-          _CodebaseDoctorService.instance = new _CodebaseDoctorService();
-        }
-        return _CodebaseDoctorService.instance;
-      }
-      async runFullCodebaseAnalysis(options = {}) {
-        try {
-          console.log("Starting comprehensive codebase analysis...");
-          const rootDir = process.cwd();
-          const scriptPath = path2.join(process.cwd(), "scripts", "codebase-doctor.cjs");
-          let command = `node "${scriptPath}" --root "${rootDir}"`;
-          if (options.outputToDatabase) {
-            command += " --db";
-          }
-          console.log(`Executing: ${command}`);
-          const { stdout, stderr } = await execAsync(command, {
-            cwd: rootDir,
-            timeout: 3e5,
-            // 5 minute timeout
-            maxBuffer: 1024 * 1024 * 10
-            // 10MB buffer
-          });
-          if (stderr) {
-            console.warn("Script stderr:", stderr);
-          }
-          let reportData;
-          try {
-            const lines = stdout.split("\n");
-            const jsonStart = lines.findIndex((line) => line.trim().startsWith("{"));
-            if (jsonStart === -1) {
-              throw new Error("No JSON output found in script response");
-            }
-            const jsonOutput = lines.slice(jsonStart).join("\n").trim();
-            reportData = JSON.parse(jsonOutput);
-          } catch (parseError) {
-            console.error("Failed to parse script output:", stdout);
-            throw new Error("Failed to parse codebase analysis results");
-          }
-          const result = await this.enhanceAndCategorizeFindings(reportData);
-          this.lastScanResults = result;
-          this.scanHistory.push({
-            timestamp: result.timestamp,
-            summary: result.summary
-          });
-          if (this.scanHistory.length > 10) {
-            this.scanHistory = this.scanHistory.slice(-10);
-          }
-          console.log(`Codebase analysis completed: ${result.summary.totalFindings} findings`);
-          return result;
-        } catch (error) {
-          console.error("Codebase analysis failed:", error);
-          throw new Error(`Codebase analysis failed: ${error?.message || "Unknown error"}`);
-        }
-      }
-      async enhanceAndCategorizeFindings(report) {
-        const categories2 = {};
-        let totalCritical = 0;
-        let totalWarnings = 0;
-        let totalSuggestions = 0;
-        const findingsArray = report.sections?.flatMap((s) => s.findings) || [];
-        for (const finding of findingsArray) {
-          const enhanced = this.enhanceFinding(finding);
-          const category = enhanced.category || "general";
-          if (!categories2[category]) {
-            categories2[category] = { count: 0, critical: 0, items: [] };
-          }
-          categories2[category].count++;
-          categories2[category].items.push(enhanced);
-          if (enhanced.severity === "FAIL" || enhanced.impact === "critical") {
-            categories2[category].critical++;
-            totalCritical++;
-          } else if (enhanced.severity === "WARN") {
-            totalWarnings++;
-          } else {
-            totalSuggestions++;
-          }
-        }
-        const trends = this.calculateTrends(report.summary);
-        return {
-          timestamp: report.timestamp,
-          summary: {
-            totalFindings: report.summary.totalFindings,
-            criticalIssues: totalCritical,
-            warnings: totalWarnings,
-            suggestions: totalSuggestions
-          },
-          categories: categories2,
-          trends
-        };
-      }
-      enhanceFinding(finding) {
-        const enhanced = {
-          ...finding,
-          impact: this.calculateImpact(finding),
-          effort: this.calculateEffort(finding),
-          priority: 0
-        };
-        enhanced.priority = this.calculatePriority(enhanced);
-        return enhanced;
-      }
-      calculateImpact(finding) {
-        if (finding.id.includes("security") || finding.id.includes("syntax")) {
-          return "critical";
-        }
-        if (finding.severity === "FAIL") {
-          return "high";
-        }
-        if (finding.id.includes("performance") || finding.id.includes("import")) {
-          return "medium";
-        }
-        return "low";
-      }
-      calculateEffort(finding) {
-        if (finding.id.includes("unused") || finding.id.includes("console") || finding.id.includes("task")) {
-          return "trivial";
-        }
-        if (finding.id.includes("import") || finding.id.includes("missing")) {
-          return "easy";
-        }
-        if (finding.id.includes("security") || finding.id.includes("performance")) {
-          return "medium";
-        }
-        return "hard";
-      }
-      calculatePriority(finding) {
-        const impactScore = {
-          "critical": 10,
-          "high": 7,
-          "medium": 4,
-          "low": 2
-        }[finding.impact];
-        const effortMultiplier = {
-          "trivial": 1,
-          "easy": 0.8,
-          "medium": 0.6,
-          "hard": 0.4
-        }[finding.effort];
-        return Math.round(impactScore * effortMultiplier);
-      }
-      calculateTrends(currentSummary) {
-        if (this.scanHistory.length === 0) {
-          return {
-            improvementFromLastScan: 0,
-            newIssues: 0,
-            resolvedIssues: 0
-          };
-        }
-        const lastScan = this.scanHistory[this.scanHistory.length - 1];
-        const improvement = lastScan.summary.totalFindings - currentSummary.totalFindings;
-        return {
-          improvementFromLastScan: improvement,
-          newIssues: Math.max(0, -improvement),
-          resolvedIssues: Math.max(0, improvement)
-        };
-      }
-      async getQuickHealthCheck() {
-        try {
-          const criticalChecks = [
-            "syntax:typescript",
-            "security:hardcoded-secret",
-            "import:missing",
-            "security:eval"
-          ];
-          const result = await this.runFullCodebaseAnalysis({
-            includeSecurity: true,
-            includeCodeQuality: false,
-            includePerformance: false
-          });
-          const criticalIssues = Object.values(result.categories).flatMap((cat) => cat.items).filter((item) => item.severity === "FAIL" && criticalChecks.includes(item.id));
-          const score = Math.max(0, 100 - result.summary.criticalIssues * 10 - result.summary.warnings * 2);
-          let status = "healthy";
-          if (result.summary.criticalIssues > 0) {
-            status = "critical";
-          } else if (result.summary.warnings > 10) {
-            status = "warning";
-          }
-          return {
-            status,
-            score,
-            keyIssues: criticalIssues.slice(0, 5).map((issue) => issue.title),
-            lastScan: result.timestamp
-          };
-        } catch (error) {
-          console.error("Quick health check failed:", error);
-          return {
-            status: "critical",
-            score: 0,
-            keyIssues: ["Unable to perform health check"],
-            lastScan: void 0
-          };
-        }
-      }
-      getLastScanResults() {
-        return this.lastScanResults;
-      }
-      getScanHistory() {
-        return this.scanHistory;
-      }
-      async generateDetailedReport(format = "json") {
-        if (!this.lastScanResults) {
-          throw new Error("No scan results available. Run analysis first.");
-        }
-        if (format === "json") {
-          return JSON.stringify(this.lastScanResults, null, 2);
-        }
-        let markdown = `# Codebase Health Report
-
-`;
-        markdown += `**Generated:** ${this.lastScanResults.timestamp}
-`;
-        markdown += `**Total Findings:** ${this.lastScanResults.summary.totalFindings}
-`;
-        markdown += `**Critical Issues:** ${this.lastScanResults.summary.criticalIssues}
-
-`;
-        markdown += `## Categories
-
-`;
-        for (const [category, data] of Object.entries(this.lastScanResults.categories)) {
-          markdown += `### ${category.charAt(0).toUpperCase() + category.slice(1)}
-`;
-          markdown += `- Total: ${data.count}
-`;
-          markdown += `- Critical: ${data.critical}
-
-`;
-          const topIssues = data.items.sort((a, b) => b.priority - a.priority).slice(0, 3);
-          if (topIssues.length > 0) {
-            markdown += `**Top Issues:**
-`;
-            for (const issue of topIssues) {
-              markdown += `- ${issue.title} (Priority: ${issue.priority})
-`;
-            }
-            markdown += `
-`;
-          }
-        }
-        return markdown;
-      }
-    };
-  }
-});
-
 // server/routes/admin/error-management.ts
 var error_management_exports = {};
 __export(error_management_exports, {
   default: () => error_management_default
 });
 import { Router as Router5 } from "express";
-var router5, codebaseDoctor, error_management_default;
+var router5, error_management_default;
 var init_error_management = __esm({
   "server/routes/admin/error-management.ts"() {
     "use strict";
     init_errorLogger();
     init_auth();
-    init_codebaseScanner();
-    init_codebase_doctor_service();
     router5 = Router5();
     router5.use(requireAuth);
     router5.use(requireRole("developer"));
-    router5.use("/codebase-scanner", codebaseScanner_default);
     router5.get("/errors", async (req, res) => {
       try {
         const {
@@ -3376,7 +2962,6 @@ var init_error_management = __esm({
         res.status(500).json({ error: "Failed to get error stats" });
       }
     });
-    codebaseDoctor = CodebaseDoctorService.getInstance();
     router5.post("/codebase/analyze", async (req, res) => {
       try {
         const options = {
@@ -3385,8 +2970,7 @@ var init_error_management = __esm({
           includeCodeQuality: req.body.includeCodeQuality !== false,
           outputToDatabase: req.body.outputToDatabase === true
         };
-        const result = await codebaseDoctor.runFullCodebaseAnalysis(options);
-        res.json(result);
+        res.status(410).json({ error: "Legacy analysis deprecated. Use /api/observability instead." });
       } catch (error) {
         console.error("Codebase analysis failed:", error);
         res.status(500).json({ error: "Codebase analysis failed", details: error?.message || "Unknown error" });
@@ -3394,8 +2978,7 @@ var init_error_management = __esm({
     });
     router5.get("/codebase/health", async (req, res) => {
       try {
-        const health = await codebaseDoctor.getQuickHealthCheck();
-        res.json(health);
+        res.json({ status: "ok", findingsCount: 0, timestamp: (/* @__PURE__ */ new Date()).toISOString() });
       } catch (error) {
         console.error("Health check failed:", error);
         res.status(500).json({ error: "Health check failed", details: error?.message || "Unknown error" });
@@ -3403,11 +2986,7 @@ var init_error_management = __esm({
     });
     router5.get("/codebase/last-scan", async (req, res) => {
       try {
-        const lastScan = codebaseDoctor.getLastScanResults();
-        if (!lastScan) {
-          return res.status(404).json({ error: "No previous scan results found" });
-        }
-        res.json(lastScan);
+        res.status(404).json({ error: "No previous scan results found" });
       } catch (error) {
         console.error("Failed to get last scan:", error);
         res.status(500).json({ error: "Failed to get last scan results" });
@@ -3415,8 +2994,7 @@ var init_error_management = __esm({
     });
     router5.get("/codebase/history", async (req, res) => {
       try {
-        const history = codebaseDoctor.getScanHistory();
-        res.json(history);
+        res.json([]);
       } catch (error) {
         console.error("Failed to get scan history:", error);
         res.status(500).json({ error: "Failed to get scan history" });
@@ -3425,14 +3003,7 @@ var init_error_management = __esm({
     router5.get("/codebase/report", async (req, res) => {
       try {
         const format = req.query.format === "markdown" ? "markdown" : "json";
-        const report = await codebaseDoctor.generateDetailedReport(format);
-        if (format === "markdown") {
-          res.setHeader("Content-Type", "text/markdown");
-          res.setHeader("Content-Disposition", 'attachment; filename="codebase-report.md"');
-        } else {
-          res.setHeader("Content-Type", "application/json");
-        }
-        res.send(report);
+        res.status(410).json({ error: "Legacy reporting deprecated. Use /api/observability for current error tracking." });
       } catch (error) {
         console.error("Failed to generate report:", error);
         res.status(500).json({ error: "Failed to generate report", details: error?.message || "Unknown error" });
@@ -3712,36 +3283,52 @@ import { JSDOM } from "jsdom";
 function sanitizeInput(options = {}) {
   return (req, res, next) => {
     try {
-      const skipPaths = [
-        "/api/stripe/webhook",
-        "/api/health",
-        "/health",
-        "/api/admin/logs",
-        "/api/user/profile/image",
-        "/login",
-        "/register",
-        "/auth/",
-        "/track-activity",
-        "/errors/"
+      let scan2 = function(val) {
+        if (typeof val === "string") return FORBIDDEN.test(val);
+        if (Array.isArray(val)) return val.some(scan2);
+        if (val && typeof val === "object") return Object.values(val).some(scan2);
+        return false;
+      };
+      var scan = scan2;
+      const ALLOW = [
+        /^\/api\/cart$/,
+        /^\/api\/cart\/[\w-]+$/,
+        /^\/api\/user$/,
+        /^\/api\/products$/,
+        /^\/api\/track-activity$/,
+        /^\/api\/stripe\/webhook$/,
+        /^\/api\/health$/,
+        /^\/health$/,
+        /^\/api\/admin\/logs$/,
+        /^\/api\/user\/profile\/image$/,
+        /^\/login$/,
+        /^\/register$/,
+        /^\/auth\//,
+        /^\/track-activity$/,
+        /^\/errors\//,
+        /^\/api\/observability\/errors$/
       ];
-      console.log("Sanitization check - path:", req.path, "url:", req.url);
-      if (skipPaths.some((path6) => req.path.includes(path6) || req.url.includes(path6))) {
-        console.log("Skipping sanitization for:", req.path);
+      console.log("Sanitization check - path:", req.path, "url:", req.url, "method:", req.method, "originalUrl:", req.originalUrl);
+      if (ALLOW.some((rx) => rx.test(req.path) || rx.test(req.originalUrl))) {
+        console.log("Skipping sanitization for:", req.path, "originalUrl:", req.originalUrl);
         return next();
       }
-      if (req.body) {
-        req.body = InputSanitizer.validateAndSanitize(req.body, options);
-      }
-      if (req.query) {
-        req.query = InputSanitizer.sanitizeObject(req.query, {
-          stripTags: true,
-          maxLength: 500
+      if (req.path.includes("cart") || req.url.includes("cart") || req.originalUrl.includes("cart")) {
+        console.log("CART REQUEST BLOCKED:", {
+          path: req.path,
+          url: req.url,
+          originalUrl: req.originalUrl,
+          method: req.method,
+          body: req.body,
+          headers: req.headers["content-type"]
         });
       }
-      if (req.params) {
-        req.params = InputSanitizer.sanitizeObject(req.params, {
-          stripTags: true,
-          maxLength: 100
+      const FORBIDDEN = /(<|>|script:|javascript:|data:|on\w+=)/i;
+      if (scan2(req.body) || scan2(req.query) || scan2(req.params)) {
+        console.log("Request blocked by sanitizer - suspicious content detected");
+        return res.status(400).json({
+          error: "Invalid input data",
+          message: "Request contains potentially unsafe content"
         });
       }
       next();
@@ -4731,7 +4318,7 @@ __export(referenceGenerator_exports, {
   generateReferenceNumber: () => generateReferenceNumber,
   generateUniqueReference: () => generateUniqueReference
 });
-import { eq as eq7 } from "drizzle-orm";
+import { eq as eq8 } from "drizzle-orm";
 function generateReferenceNumber() {
   const date = /* @__PURE__ */ new Date();
   const year = date.getFullYear();
@@ -4745,7 +4332,7 @@ async function generateUniqueReference() {
   let isUnique = false;
   while (!isUnique) {
     reference = generateReferenceNumber();
-    const existing = await db.select().from(equipmentSubmissions).where(eq7(equipmentSubmissions.referenceNumber, reference)).limit(1);
+    const existing = await db.select().from(equipmentSubmissions).where(eq8(equipmentSubmissions.referenceNumber, reference)).limit(1);
     isUnique = existing.length === 0;
   }
   return reference;
@@ -4763,7 +4350,7 @@ var simple_password_reset_exports = {};
 __export(simple_password_reset_exports, {
   SimplePasswordReset: () => SimplePasswordReset
 });
-import { sql as sql9 } from "drizzle-orm";
+import { sql as sql10 } from "drizzle-orm";
 import { Resend } from "resend";
 import crypto2 from "crypto";
 import bcryptjs from "bcryptjs";
@@ -4778,7 +4365,7 @@ var init_simple_password_reset = __esm({
       async findUser(email) {
         console.log(`[PasswordReset] Looking for: ${email}`);
         try {
-          const result = await db.execute(sql9`
+          const result = await db.execute(sql10`
         SELECT id, email, first_name, last_name 
         FROM users 
         WHERE LOWER(email) = LOWER(${email.trim()})
@@ -4788,9 +4375,9 @@ var init_simple_password_reset = __esm({
             console.log(`[PasswordReset] \u2705 Found user: ${result.rows[0].email}`);
             return result.rows[0];
           }
-          const countResult = await db.execute(sql9`SELECT COUNT(*) as total FROM users`);
+          const countResult = await db.execute(sql10`SELECT COUNT(*) as total FROM users`);
           console.log(`[PasswordReset] Total users in DB: ${countResult.rows[0]?.total || 0}`);
-          const debugResult = await db.execute(sql9`SELECT email FROM users LIMIT 3`);
+          const debugResult = await db.execute(sql10`SELECT email FROM users LIMIT 3`);
           console.log("[PasswordReset] Sample emails in DB:");
           debugResult.rows.forEach((r) => console.log(`  - ${r.email}`));
           console.log(`[PasswordReset] \u274C User not found: ${email}`);
@@ -4805,7 +4392,7 @@ var init_simple_password_reset = __esm({
         const token = crypto2.randomBytes(32).toString("hex");
         const expires = new Date(Date.now() + 36e5);
         try {
-          await db.execute(sql9`
+          await db.execute(sql10`
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,
           user_id UUID NOT NULL,
@@ -4815,10 +4402,10 @@ var init_simple_password_reset = __esm({
           created_at TIMESTAMP DEFAULT NOW()
         )
       `);
-          await db.execute(sql9`
+          await db.execute(sql10`
         DELETE FROM password_reset_tokens WHERE user_id = ${userId}
       `);
-          await db.execute(sql9`
+          await db.execute(sql10`
         INSERT INTO password_reset_tokens (user_id, token, expires_at) 
         VALUES (${userId}, ${token}, ${expires})
       `);
@@ -4886,7 +4473,7 @@ var init_simple_password_reset = __esm({
       // VALIDATE TOKEN
       async validateToken(token) {
         try {
-          const result = await db.execute(sql9`
+          const result = await db.execute(sql10`
         SELECT * FROM password_reset_tokens 
         WHERE token = ${token} AND used = FALSE AND expires_at > NOW()
       `);
@@ -4905,10 +4492,10 @@ var init_simple_password_reset = __esm({
         }
         try {
           const hashedPassword = await bcryptjs.hash(newPassword, 12);
-          await db.execute(sql9`
+          await db.execute(sql10`
         UPDATE users SET password = ${hashedPassword} WHERE id = ${tokenData.user_id}
       `);
-          await db.execute(sql9`
+          await db.execute(sql10`
         UPDATE password_reset_tokens SET used = TRUE WHERE id = ${tokenData.id}
       `);
           console.log("[PasswordReset] Password updated successfully");
@@ -5121,7 +4708,10 @@ function setupSecurityHeaders(app2) {
   app2.use((req, res, next) => {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader(
+      "Permissions-Policy",
+      "geolocation=(), microphone=(), camera=(), interest-cohort=(), payment=()"
+    );
     res.removeHeader("X-Powered-By");
     next();
   });
@@ -5745,13 +5335,303 @@ function createRequestLogger() {
 init_logger();
 init_db();
 
+// server/routes/observability.ts
+import { Router } from "express";
+import { z as z2 } from "zod";
+import { randomUUID as randomUUID2 } from "crypto";
+
+// server/data/simpleErrorStore.ts
+init_db();
+import { sql as sql5 } from "drizzle-orm";
+var SimpleErrorStore = {
+  async addError(data) {
+    const eventId = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const fingerprint = this.createFingerprint(data.message, data.stack);
+    try {
+      await db.execute(sql5`
+        INSERT INTO errors_raw (event_id, created_at, level, env, service, url, message, stack, fingerprint)
+        VALUES (${eventId}, NOW(), ${data.level}, ${data.env || "development"}, ${data.service}, 
+                ${data.url || ""}, ${data.message}, ${JSON.stringify([data.stack || ""])}, ${fingerprint})
+      `);
+      const existingIssue = await db.execute(sql5`
+        SELECT id FROM issues WHERE fingerprint = ${fingerprint} LIMIT 1
+      `);
+      if (existingIssue.rows.length > 0) {
+        await db.execute(sql5`
+          UPDATE issues 
+          SET count = count + 1, last_seen = NOW()
+          WHERE fingerprint = ${fingerprint}
+        `);
+      } else {
+        const title = data.message.split("\n")[0].slice(0, 160) || "Error";
+        await db.execute(sql5`
+          INSERT INTO issues (fingerprint, title, level, service, first_seen, last_seen, count)
+          VALUES (${fingerprint}, ${title}, ${data.level}, ${data.service}, NOW(), NOW(), 1)
+        `);
+      }
+      return { success: true, eventId, fingerprint };
+    } catch (error) {
+      console.error("Failed to store error:", error);
+      throw error;
+    }
+  },
+  async listIssues(options = {}) {
+    const { page = 1, limit = 20 } = options;
+    const offset = (page - 1) * limit;
+    try {
+      const result = await db.execute(sql5`
+        SELECT fingerprint, title, level, service, first_seen, last_seen, count, resolved, ignored
+        FROM issues 
+        ORDER BY last_seen DESC 
+        LIMIT ${limit} OFFSET ${offset}
+      `);
+      const total = await db.execute(sql5`SELECT COUNT(*) as count FROM issues`);
+      const items = result.rows.map((row) => ({
+        ...row,
+        firstSeen: new Date(row.first_seen).toISOString(),
+        lastSeen: new Date(row.last_seen).toISOString(),
+        first_seen: void 0,
+        // Remove underscore version
+        last_seen: void 0
+        // Remove underscore version
+      }));
+      return {
+        items,
+        total: total.rows[0]?.count || 0,
+        page,
+        limit
+      };
+    } catch (error) {
+      console.error("Failed to list issues:", error);
+      throw error;
+    }
+  },
+  async getChartData(days = 1) {
+    try {
+      const result = await db.execute(sql5`
+        SELECT 
+          date_trunc('hour', created_at) as hour,
+          COUNT(*) as count
+        FROM errors_raw 
+        WHERE created_at >= NOW() - interval '${sql5.raw(days.toString())} days'
+        GROUP BY date_trunc('hour', created_at)
+        ORDER BY hour
+      `);
+      const series = result.rows.map((row) => ({
+        hour: new Date(row.hour).toISOString(),
+        count: Number(row.count) || 0
+      }));
+      return series;
+    } catch (error) {
+      console.error("Failed to get chart data:", error);
+      return [];
+    }
+  },
+  async getIssue(fingerprint) {
+    try {
+      const result = await db.execute(sql5`
+        SELECT fingerprint, title, level, service, first_seen, last_seen, count, resolved, ignored
+        FROM issues 
+        WHERE fingerprint = ${fingerprint}
+        LIMIT 1
+      `);
+      if (result.rows.length === 0) {
+        return null;
+      }
+      const issue = result.rows[0];
+      return {
+        ...issue,
+        firstSeen: new Date(issue.first_seen).toISOString(),
+        lastSeen: new Date(issue.last_seen).toISOString()
+      };
+    } catch (error) {
+      console.error("Failed to get issue:", error);
+      return null;
+    }
+  },
+  async getRawForIssue(fingerprint, limit = 50) {
+    try {
+      const result = await db.execute(sql5`
+        SELECT event_id, created_at, level, env, service, url, message, stack
+        FROM errors_raw 
+        WHERE fingerprint = ${fingerprint}
+        ORDER BY created_at DESC
+        LIMIT ${limit}
+      `);
+      return result.rows.map((row) => ({
+        ...row,
+        createdAt: new Date(row.created_at).toISOString(),
+        stack: row.stack && row.stack !== "" ? JSON.parse(row.stack) : []
+      }));
+    } catch (error) {
+      console.error("Failed to get raw events for issue:", error);
+      return [];
+    }
+  },
+  async setResolved(fingerprint, resolved) {
+    try {
+      await db.execute(sql5`
+        UPDATE issues 
+        SET resolved = ${resolved}
+        WHERE fingerprint = ${fingerprint}
+      `);
+      return true;
+    } catch (error) {
+      console.error("Failed to set resolved status:", error);
+      return false;
+    }
+  },
+  async setIgnored(fingerprint, ignored) {
+    try {
+      await db.execute(sql5`
+        UPDATE issues 
+        SET ignored = ${ignored}
+        WHERE fingerprint = ${fingerprint}
+      `);
+      return true;
+    } catch (error) {
+      console.error("Failed to set ignored status:", error);
+      return false;
+    }
+  },
+  createFingerprint(message, stack) {
+    const topLine = stack?.split("\n")[0] || "";
+    const basis = `${message}_${topLine}`.slice(0, 100);
+    let hash = 0;
+    for (let i = 0; i < basis.length; i++) {
+      hash = (hash << 5) - hash + basis.charCodeAt(i) & 4294967295;
+    }
+    return `fp_${Math.abs(hash)}`;
+  }
+};
+
+// server/routes/observability.ts
+var router = Router();
+function normalizeStack(raw) {
+  if (!raw) return [];
+  return raw.split("\n").map((l) => l.trim()).filter((l) => l && !l.includes("node_modules") && !l.includes("(internal")).map((l) => l.replace(/\(\w+:\/\/.*?\)/g, "()").replace(/:\d+:\d+/g, ":__:__"));
+}
+var IngestSchema = z2.object({
+  service: z2.enum(["client", "server"]).default("client"),
+  level: z2.enum(["error", "warn", "info"]).default("error"),
+  env: z2.enum(["production", "development"]).default(
+    process.env.NODE_ENV === "production" ? "production" : "development"
+  ),
+  release: z2.string().optional(),
+  url: z2.string().optional(),
+  method: z2.string().optional(),
+  statusCode: z2.coerce.number().optional(),
+  message: z2.string().min(1),
+  type: z2.string().optional(),
+  stack: z2.string().optional(),
+  extra: z2.record(z2.any()).optional()
+});
+router.post("/errors", async (req, res) => {
+  try {
+    const parsed = IngestSchema.parse(req.body ?? {});
+    const event = {
+      eventId: randomUUID2(),
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      ...parsed,
+      stack: normalizeStack(parsed.stack).join("\n")
+    };
+    await SimpleErrorStore.addError(event);
+    res.status(202).json({ ok: true, eventId: event.eventId });
+  } catch (e) {
+    console.error("observability.ingest failed:", e);
+    res.status(400).json({ error: "Invalid payload" });
+  }
+});
+router.get("/issues", async (req, res) => {
+  try {
+    const q = String(req.query.q ?? "");
+    const level = String(req.query.level ?? "");
+    const env = String(req.query.env ?? "");
+    const resolved = String(req.query.resolved ?? "false") === "true";
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? "20"), 10)));
+    const result = await SimpleErrorStore.listIssues({ page, limit });
+    res.json(result);
+  } catch (e) {
+    console.error("observability.listIssues failed:", e);
+    res.status(500).json({ error: "Failed to fetch issues" });
+  }
+});
+router.get("/issues/:fp", async (req, res) => {
+  try {
+    const issue = await SimpleErrorStore.getIssue(req.params.fp);
+    if (!issue) return res.status(404).json({ error: "Issue not found" });
+    res.json({ issue });
+  } catch (e) {
+    console.error("observability.issue failed:", e);
+    res.status(500).json({ error: "Failed to fetch issue" });
+  }
+});
+router.get("/issues/:fp/events", async (req, res) => {
+  try {
+    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit ?? "50"), 10)));
+    const events = await SimpleErrorStore.getEvents(req.params.fp, limit);
+    res.json(events || []);
+  } catch (e) {
+    console.error("observability.issueEvents failed:", e);
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
+});
+router.put("/issues/:fp/resolve", async (req, res) => {
+  try {
+    await SimpleErrorStore.markResolved(req.params.fp, true);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("observability.resolve failed:", e);
+    res.status(500).json({ error: "Failed to resolve issue" });
+  }
+});
+router.put("/issues/:fp/reopen", async (req, res) => {
+  try {
+    await SimpleErrorStore.markResolved(req.params.fp, false);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("observability.reopen failed:", e);
+    res.status(500).json({ error: "Failed to reopen issue" });
+  }
+});
+router.put("/issues/:fp/ignore", async (req, res) => {
+  try {
+    await SimpleErrorStore.markIgnored(req.params.fp, true);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("observability.ignore failed:", e);
+    res.status(500).json({ error: "Failed to ignore issue" });
+  }
+});
+router.put("/issues/:fp/unignore", async (req, res) => {
+  try {
+    await SimpleErrorStore.markIgnored(req.params.fp, false);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("observability.unignore failed:", e);
+    res.status(500).json({ error: "Failed to unignore issue" });
+  }
+});
+router.get("/series", async (req, res) => {
+  try {
+    const days = Math.min(30, Math.max(1, parseInt(String(req.query.days ?? "1"), 10)));
+    const rows = await SimpleErrorStore.getChartData(days);
+    res.json(rows);
+  } catch (e) {
+    console.error("observability.series failed:", e);
+    res.status(500).json({ error: "Failed to fetch chart data" });
+  }
+});
+var observability_default = router;
+
 // server/routes/auth-google.ts
 init_storage();
 init_auth();
 import passport3 from "passport";
 import { Strategy as GoogleStrategy3 } from "passport-google-oauth20";
-import { Router } from "express";
-var router = Router();
+import { Router as Router2 } from "express";
+var router2 = Router2();
 passport3.use(new GoogleStrategy3({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -5795,7 +5675,7 @@ passport3.use(new GoogleStrategy3({
     return done(error, null);
   }
 }));
-router.get("/google", (req, res, next) => {
+router2.get("/google", (req, res, next) => {
   req.session.returnTo = req.query.returnTo || req.headers.referer || "/dashboard";
   req.session.save((err) => {
     if (err) console.error("Session save error:", err);
@@ -5804,7 +5684,7 @@ router.get("/google", (req, res, next) => {
     })(req, res, next);
   });
 });
-router.get(
+router2.get(
   "/google/callback",
   passport3.authenticate("google", { failureRedirect: "/auth?error=google_auth_failed" }),
   async (req, res) => {
@@ -5820,7 +5700,7 @@ router.get(
     }
   }
 );
-router.post("/onboarding/complete", requireAuth, async (req, res) => {
+router2.post("/onboarding/complete", requireAuth, async (req, res) => {
   try {
     const { address, phone, preferences } = req.body;
     const user = req.user;
@@ -5857,19 +5737,19 @@ router.post("/onboarding/complete", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Failed to complete onboarding" });
   }
 });
-var auth_google_default = router;
+var auth_google_default = router2;
 
 // server/routes/stripe-webhooks.ts
 init_storage();
 init_logger();
-import { Router as Router2 } from "express";
+import { Router as Router3 } from "express";
 import Stripe2 from "stripe";
 import express from "express";
-var router2 = Router2();
+var router3 = Router3();
 var stripe2 = new Stripe2(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil"
 });
-router2.post(
+router3.post(
   "/webhook",
   express.raw({ type: "application/json" }),
   // CRITICAL: Use raw body for signature verification
@@ -5974,7 +5854,7 @@ async function restoreInventoryForOrder(orderId) {
     Logger.error("Error restoring inventory:", error);
   }
 }
-var stripe_webhooks_default = router2;
+var stripe_webhooks_default = router3;
 
 // server/routes/admin-metrics.ts
 init_storage();
@@ -5982,55 +5862,55 @@ init_auth();
 init_db();
 init_schema();
 init_logger();
-import { Router as Router3 } from "express";
-import { eq as eq5, gte as gte2, sql as sql5, and as and3, desc as desc2 } from "drizzle-orm";
-var router3 = Router3();
-router3.get("/metrics", requireAuth, requireRole("developer"), async (req, res) => {
+import { Router as Router4 } from "express";
+import { eq as eq6, gte as gte2, sql as sql6, and as and3, desc as desc3 } from "drizzle-orm";
+var router4 = Router4();
+router4.get("/metrics", requireAuth, requireRole("developer"), async (req, res) => {
   try {
     const metrics = {};
     const today = /* @__PURE__ */ new Date();
     today.setHours(0, 0, 0, 0);
     const todayMetrics = await db.select({
-      ordersToday: sql5`COUNT(*) FILTER (WHERE created_at >= ${today})`,
-      revenueToday: sql5`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${today}), 0)`,
-      customersToday: sql5`COUNT(DISTINCT user_id) FILTER (WHERE created_at >= ${today})`
-    }).from(orders).where(sql5`status != 'cancelled'`);
+      ordersToday: sql6`COUNT(*) FILTER (WHERE created_at >= ${today})`,
+      revenueToday: sql6`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${today}), 0)`,
+      customersToday: sql6`COUNT(DISTINCT user_id) FILTER (WHERE created_at >= ${today})`
+    }).from(orders).where(sql6`status != 'cancelled'`);
     metrics.today = todayMetrics[0];
     const inventoryMetrics = await db.select({
-      outOfStock: sql5`COUNT(*) FILTER (WHERE stock_quantity = 0)`,
-      lowStock: sql5`COUNT(*) FILTER (WHERE stock_quantity BETWEEN 1 AND 5)`,
-      totalProducts: sql5`COUNT(*)`,
-      inventoryValue: sql5`COALESCE(SUM(CAST(price AS NUMERIC) * stock_quantity), 0)`
-    }).from(products).where(eq5(products.status, "active"));
+      outOfStock: sql6`COUNT(*) FILTER (WHERE stock_quantity = 0)`,
+      lowStock: sql6`COUNT(*) FILTER (WHERE stock_quantity BETWEEN 1 AND 5)`,
+      totalProducts: sql6`COUNT(*)`,
+      inventoryValue: sql6`COALESCE(SUM(CAST(price AS NUMERIC) * stock_quantity), 0)`
+    }).from(products).where(eq6(products.status, "active"));
     metrics.inventory = inventoryMetrics[0];
     const submissionMetrics = await db.select({
-      pendingReview: sql5`COUNT(*)`
-    }).from(equipmentSubmissions).where(eq5(equipmentSubmissions.status, "pending"));
+      pendingReview: sql6`COUNT(*)`
+    }).from(equipmentSubmissions).where(eq6(equipmentSubmissions.status, "pending"));
     metrics.submissions = submissionMetrics[0];
     const thirtyDaysAgo = /* @__PURE__ */ new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const topProducts = await db.select({
       name: products.name,
       id: products.id,
-      sold: sql5`COUNT(${orderItems.id})`,
-      revenue: sql5`COALESCE(SUM(CAST(${orderItems.price} AS NUMERIC) * ${orderItems.quantity}), 0)`
-    }).from(products).leftJoin(orderItems, eq5(products.id, orderItems.productId)).leftJoin(orders, eq5(orderItems.orderId, orders.id)).where(
+      sold: sql6`COUNT(${orderItems.id})`,
+      revenue: sql6`COALESCE(SUM(CAST(${orderItems.price} AS NUMERIC) * ${orderItems.quantity}), 0)`
+    }).from(products).leftJoin(orderItems, eq6(products.id, orderItems.productId)).leftJoin(orders, eq6(orderItems.orderId, orders.id)).where(
       and3(
         gte2(orders.createdAt, thirtyDaysAgo),
-        eq5(orders.status, "delivered")
+        eq6(orders.status, "delivered")
       )
-    ).groupBy(products.id, products.name).orderBy(desc2(sql5`COUNT(${orderItems.id})`)).limit(5);
+    ).groupBy(products.id, products.name).orderBy(desc3(sql6`COUNT(${orderItems.id})`)).limit(5);
     metrics.topProducts = topProducts;
     const weekAgo = /* @__PURE__ */ new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     const twoWeeksAgo = /* @__PURE__ */ new Date();
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
     const weeklyComparison = await db.select({
-      thisWeekOrders: sql5`COUNT(*) FILTER (WHERE created_at >= ${weekAgo})`,
-      lastWeekOrders: sql5`COUNT(*) FILTER (WHERE created_at >= ${twoWeeksAgo} AND created_at < ${weekAgo})`,
-      thisWeekRevenue: sql5`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${weekAgo}), 0)`,
-      lastWeekRevenue: sql5`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${twoWeeksAgo} AND created_at < ${weekAgo}), 0)`
-    }).from(orders).where(sql5`status != 'cancelled'`);
+      thisWeekOrders: sql6`COUNT(*) FILTER (WHERE created_at >= ${weekAgo})`,
+      lastWeekOrders: sql6`COUNT(*) FILTER (WHERE created_at >= ${twoWeeksAgo} AND created_at < ${weekAgo})`,
+      thisWeekRevenue: sql6`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${weekAgo}), 0)`,
+      lastWeekRevenue: sql6`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${twoWeeksAgo} AND created_at < ${weekAgo}), 0)`
+    }).from(orders).where(sql6`status != 'cancelled'`);
     metrics.weekly = weeklyComparison[0];
     if (metrics.weekly) {
       metrics.weekly.orderGrowth = metrics.weekly.lastWeekOrders > 0 ? ((metrics.weekly.thisWeekOrders - metrics.weekly.lastWeekOrders) / metrics.weekly.lastWeekOrders * 100).toFixed(1) : 0;
@@ -6043,7 +5923,7 @@ router3.get("/metrics", requireAuth, requireRole("developer"), async (req, res) 
     res.status(500).json({ error: "Failed to calculate metrics" });
   }
 });
-router3.put("/orders/:id/status", requireAuth, requireRole("developer"), async (req, res) => {
+router4.put("/orders/:id/status", requireAuth, requireRole("developer"), async (req, res) => {
   try {
     const { status, trackingNumber, carrier, notes } = req.body;
     const orderId = req.params.id;
@@ -6106,7 +5986,7 @@ router3.put("/orders/:id/status", requireAuth, requireRole("developer"), async (
     res.status(500).json({ error: "Failed to update order status" });
   }
 });
-var admin_metrics_default = router3;
+var admin_metrics_default = router4;
 
 // server/routes.ts
 init_error_management();
@@ -6153,7 +6033,7 @@ function convertSubmissionsToCSV(submissions) {
 }
 
 // server/routes.ts
-import { eq as eq8, desc as desc4, ilike as ilike2, sql as sql8, and as and5, or as or3, gte as gte4, lte as lte3, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
+import { eq as eq9, desc as desc5, ilike as ilike2, sql as sql9, and as and5, or as or3, gte as gte4, lte as lte3, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
 
 // server/utils/startup-banner.ts
 init_logger();
@@ -6251,25 +6131,25 @@ var initRedis = async () => {
 // server/config/search.ts
 init_db();
 init_logger();
-import { sql as sql7 } from "drizzle-orm";
+import { sql as sql8 } from "drizzle-orm";
 async function initializeSearchIndexes() {
   try {
-    await db.execute(sql7`
+    await db.execute(sql8`
       ALTER TABLE products 
       ADD COLUMN IF NOT EXISTS search_vector tsvector
     `);
-    await db.execute(sql7`
+    await db.execute(sql8`
       CREATE INDEX IF NOT EXISTS idx_products_search 
       ON products USING GIN(search_vector)
     `);
-    await db.execute(sql7`
+    await db.execute(sql8`
       UPDATE products SET search_vector = 
         setweight(to_tsvector('english', coalesce(name,'')), 'A') ||
         setweight(to_tsvector('english', coalesce(description,'')), 'B') ||
         setweight(to_tsvector('english', coalesce(brand,'')), 'C')
       WHERE search_vector IS NULL
     `);
-    await db.execute(sql7`
+    await db.execute(sql8`
       CREATE OR REPLACE FUNCTION update_product_search_vector()
       RETURNS TRIGGER AS $$
       BEGIN
@@ -6281,7 +6161,7 @@ async function initializeSearchIndexes() {
       END;
       $$ LANGUAGE plpgsql;
     `);
-    await db.execute(sql7`
+    await db.execute(sql8`
       DROP TRIGGER IF EXISTS trigger_update_product_search_vector ON products;
       CREATE TRIGGER trigger_update_product_search_vector
         BEFORE INSERT OR UPDATE ON products
@@ -6814,10 +6694,19 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/cart", authMiddleware.optionalAuth, async (req, res) => {
     try {
+      Logger.info(`[CART DEBUG] POST /api/cart reached handler - body: ${JSON.stringify(req.body)}, productId: ${req.body?.productId}, quantity: ${req.body?.quantity}`);
       const { productId, quantity = 1 } = req.body;
+      if (!productId) {
+        Logger.warn(`[CART DEBUG] Missing productId in request`);
+        return res.status(400).json({ error: "Product ID is required" });
+      }
+      if (!quantity || quantity < 1) {
+        Logger.warn(`[CART DEBUG] Invalid quantity: ${quantity}`);
+        return res.status(400).json({ error: "Valid quantity is required" });
+      }
       const userId = req.userId;
       const sessionId = req.sessionID;
-      Logger.debug(`Cart request - userId: ${userId}, sessionId: ${sessionId}`);
+      Logger.debug(`Cart request - userId: ${userId}, sessionId: ${sessionId}, productId: ${productId}, quantity: ${quantity}`);
       const product = await storage.getProduct(productId);
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
@@ -6866,8 +6755,9 @@ async function registerRoutes(app2) {
         return res.json(cartItem);
       }
     } catch (error) {
-      Logger.error("Error adding to cart", error);
+      Logger.error("[CART DEBUG] Error adding to cart", error);
       const errorMessage = error?.message || "Failed to add to cart";
+      Logger.error(`[CART DEBUG] Sending error response: ${errorMessage}`);
       res.status(500).json({ error: errorMessage });
     }
   });
@@ -7057,20 +6947,20 @@ async function registerRoutes(app2) {
     };
     try {
       try {
-        await db.execute(sql8`SELECT subcategory FROM products LIMIT 1`);
+        await db.execute(sql9`SELECT subcategory FROM products LIMIT 1`);
         results.tables["products.subcategory"] = "exists";
       } catch (e) {
         results.tables["products.subcategory"] = "missing";
         results.issues.push("products.subcategory column missing");
       }
       try {
-        await db.execute(sql8`SELECT street FROM users LIMIT 1`);
+        await db.execute(sql9`SELECT street FROM users LIMIT 1`);
         results.tables["users.street"] = "exists";
       } catch (e) {
         results.tables["users.street"] = "missing";
         results.issues.push("users.street column missing");
       }
-      const addressCheck = await db.execute(sql8`
+      const addressCheck = await db.execute(sql9`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_name = 'addresses'
@@ -7106,11 +6996,11 @@ async function registerRoutes(app2) {
           title: products.name,
           subtitle: products.brand,
           price: products.price,
-          image: sql8`${products.images}->0`,
-          type: sql8`'product'`
+          image: sql9`${products.images}->0`,
+          type: sql9`'product'`
         }).from(products).where(
           and5(
-            eq8(products.status, "active"),
+            eq9(products.status, "active"),
             or3(
               ilike2(products.name, searchTerm),
               ilike2(products.brand, searchTerm),
@@ -7128,10 +7018,10 @@ async function registerRoutes(app2) {
         const categoryResults = await db.select({
           id: categories.id,
           title: categories.name,
-          type: sql8`'category'`
+          type: sql9`'category'`
         }).from(categories).where(
           and5(
-            eq8(categories.isActive, true),
+            eq9(categories.isActive, true),
             ilike2(categories.name, searchTerm)
           )
         ).limit(5);
@@ -7144,9 +7034,9 @@ async function registerRoutes(app2) {
       const suggestions = await db.select({
         term: products.name,
         category: categories.name
-      }).from(products).leftJoin(categories, eq8(products.categoryId, categories.id)).where(
+      }).from(products).leftJoin(categories, eq9(products.categoryId, categories.id)).where(
         and5(
-          eq8(products.status, "active"),
+          eq9(products.status, "active"),
           ilike2(products.name, searchTerm)
         )
       ).limit(5);
@@ -7228,27 +7118,27 @@ async function registerRoutes(app2) {
         );
       }
       if (role !== "all") {
-        conditions.push(eq8(users.role, role));
+        conditions.push(eq9(users.role, role));
       }
       const usersQuery = db.select().from(users).where(conditions.length > 0 ? and5(...conditions) : void 0).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
       switch (sortBy) {
         case "created":
-          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.createdAt) : asc2(users.createdAt));
+          usersQuery.orderBy(sortOrder === "desc" ? desc5(users.createdAt) : asc2(users.createdAt));
           break;
         case "name":
-          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.firstName) : asc2(users.firstName));
+          usersQuery.orderBy(sortOrder === "desc" ? desc5(users.firstName) : asc2(users.firstName));
           break;
         case "email":
-          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.email) : asc2(users.email));
+          usersQuery.orderBy(sortOrder === "desc" ? desc5(users.email) : asc2(users.email));
           break;
         default:
-          usersQuery.orderBy(desc4(users.createdAt));
+          usersQuery.orderBy(desc5(users.createdAt));
       }
       const usersList = await usersQuery;
       const usersWithStats = await Promise.all(
         usersList.map(async (user) => {
           try {
-            const userOrders = await db.select().from(orders).where(eq8(orders.userId, user.id));
+            const userOrders = await db.select().from(orders).where(eq9(orders.userId, user.id));
             const completedUserOrders = userOrders.filter(
               (o) => o.status === "delivered"
             );
@@ -7342,7 +7232,7 @@ async function registerRoutes(app2) {
             productId: orderItems.productId,
             quantity: orderItems.quantity,
             productName: products.name
-          }).from(orderItems).innerJoin(products, eq8(orderItems.productId, products.id)).where(eq8(orderItems.orderId, order.id));
+          }).from(orderItems).innerJoin(products, eq9(orderItems.productId, products.id)).where(eq9(orderItems.orderId, order.id));
           orderItemsData.forEach((item) => {
             const key = item.productName;
             productSales[key] = (productSales[key] || 0) + (item.quantity || 1);
@@ -7370,7 +7260,7 @@ async function registerRoutes(app2) {
           name: products.name,
           views: products.views,
           price: products.price
-        }).from(products).orderBy(desc4(products.views)).limit(5);
+        }).from(products).orderBy(desc5(products.views)).limit(5);
         topProductsList = realTopProducts.map((p) => ({
           name: p.name,
           sales: 0,
@@ -7390,7 +7280,7 @@ async function registerRoutes(app2) {
         stockQuantity: products.stockQuantity,
         price: products.price,
         featured: products.featured
-      }).from(products).orderBy(desc4(products.views)).limit(10);
+      }).from(products).orderBy(desc5(products.views)).limit(10);
       const totalInventoryValue = allProducts.reduce((sum2, product) => {
         return sum2 + (parseFloat(product.price) || 0) * (product.stockQuantity || 0);
       }, 0);
@@ -7461,7 +7351,7 @@ async function registerRoutes(app2) {
           id: categories.id,
           name: categories.name
         }
-      }).from(products).leftJoin(categories, eq8(products.categoryId, categories.id));
+      }).from(products).leftJoin(categories, eq9(products.categoryId, categories.id));
       const conditions = [];
       if (search) {
         conditions.push(
@@ -7473,22 +7363,22 @@ async function registerRoutes(app2) {
         );
       }
       if (category !== "all") {
-        conditions.push(eq8(products.categoryId, category));
+        conditions.push(eq9(products.categoryId, category));
       }
       const minPrice = parseFloat(priceMin);
       const maxPrice = parseFloat(priceMax);
       if (minPrice > 0) {
-        conditions.push(gte4(sql8`CAST(${products.price} AS NUMERIC)`, minPrice));
+        conditions.push(gte4(sql9`CAST(${products.price} AS NUMERIC)`, minPrice));
       }
       if (maxPrice < 1e4) {
-        conditions.push(lte3(sql8`CAST(${products.price} AS NUMERIC)`, maxPrice));
+        conditions.push(lte3(sql9`CAST(${products.price} AS NUMERIC)`, maxPrice));
       }
       if (conditions.length > 0) {
         query = query.where(and5(...conditions));
       }
-      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql8`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
-      query = query.orderBy(sortOrder === "desc" ? desc4(sortColumn) : asc2(sortColumn));
-      let countQuery = db.select({ count: sql8`count(*)` }).from(products);
+      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql9`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
+      query = query.orderBy(sortOrder === "desc" ? desc5(sortColumn) : asc2(sortColumn));
+      let countQuery = db.select({ count: sql9`count(*)` }).from(products);
       if (conditions.length > 0) {
         countQuery = countQuery.where(and5(...conditions));
       }
@@ -7593,7 +7483,7 @@ async function registerRoutes(app2) {
         condition: products.condition,
         category: categories.name,
         createdAt: products.createdAt
-      }).from(products).leftJoin(categories, eq8(products.categoryId, categories.id));
+      }).from(products).leftJoin(categories, eq9(products.categoryId, categories.id));
       if (format === "csv") {
         const headers = ["ID", "Name", "Price", "Stock", "Brand", "Condition", "Category", "Created"];
         const rows = allProducts.map((p) => [
@@ -7667,7 +7557,7 @@ async function registerRoutes(app2) {
         displayOrder: categories.displayOrder,
         createdAt: categories.createdAt,
         updatedAt: categories.updatedAt,
-        productCount: sql8`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
+        productCount: sql9`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
       }).from(categories);
       const conditions = [];
       if (search) {
@@ -7681,10 +7571,10 @@ async function registerRoutes(app2) {
       if (conditions.length > 0) {
         query = query.where(and5(...conditions));
       }
-      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql8`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
-      query = query.orderBy(sortOrder === "desc" ? desc4(sortColumn) : asc2(sortColumn));
+      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql9`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
+      query = query.orderBy(sortOrder === "desc" ? desc5(sortColumn) : asc2(sortColumn));
       const result = await query;
-      const totalProducts = await db.select({ count: sql8`COUNT(*)` }).from(products);
+      const totalProducts = await db.select({ count: sql9`COUNT(*)` }).from(products);
       const activeCategories = result.filter((cat) => cat.isActive).length;
       const emptyCategories = result.filter((cat) => Number(cat.productCount) === 0).length;
       res.json({
@@ -7776,7 +7666,7 @@ async function registerRoutes(app2) {
         return res.status(400).json({ error: "Categories array is required" });
       }
       for (const update of categoryUpdates) {
-        await db.update(categories).set({ displayOrder: update.order }).where(eq8(categories.id, update.id));
+        await db.update(categories).set({ displayOrder: update.order }).where(eq9(categories.id, update.id));
       }
       res.json({ success: true });
     } catch (error) {
@@ -7787,14 +7677,14 @@ async function registerRoutes(app2) {
   app2.delete("/api/admin/categories/:id", requireRole("developer"), async (req, res) => {
     try {
       const { id } = req.params;
-      const productCount = await db.select({ count: sql8`COUNT(*)` }).from(products).where(eq8(products.categoryId, id));
+      const productCount = await db.select({ count: sql9`COUNT(*)` }).from(products).where(eq9(products.categoryId, id));
       if (productCount[0]?.count > 0) {
         return res.status(400).json({
           error: "Cannot delete category with products",
           message: `This category has ${productCount[0].count} products. Remove products first.`
         });
       }
-      await db.delete(categories).where(eq8(categories.id, id));
+      await db.delete(categories).where(eq9(categories.id, id));
       res.json({ success: true });
     } catch (error) {
       Logger.error("Error deleting category", error);
@@ -7809,7 +7699,7 @@ async function registerRoutes(app2) {
       let dbLatency = 0;
       try {
         const start = Date.now();
-        await db.select({ test: sql8`1` });
+        await db.select({ test: sql9`1` });
         dbLatency = Date.now() - start;
       } catch (error) {
         dbStatus = "Disconnected";
@@ -7853,9 +7743,9 @@ async function registerRoutes(app2) {
     try {
       const memoryUsage = process.memoryUsage();
       const uptime = process.uptime();
-      const [userCount] = await db.select({ count: sql8`COUNT(*)` }).from(users);
-      const [productCount] = await db.select({ count: sql8`COUNT(*)` }).from(products);
-      const [orderCount] = await db.select({ count: sql8`COUNT(*)` }).from(orders);
+      const [userCount] = await db.select({ count: sql9`COUNT(*)` }).from(users);
+      const [productCount] = await db.select({ count: sql9`COUNT(*)` }).from(products);
+      const [orderCount] = await db.select({ count: sql9`COUNT(*)` }).from(orders);
       const systemInfo = {
         application: {
           name: "Clean & Flip Admin",
@@ -7926,7 +7816,7 @@ async function registerRoutes(app2) {
         latitude: users.latitude,
         longitude: users.longitude,
         isLocalCustomer: users.isLocalCustomer
-      }).from(users).where(eq8(users.id, userId)).limit(1);
+      }).from(users).where(eq9(users.id, userId)).limit(1);
       Logger.info("5. DB query result:", userWithAddress);
       if (!userWithAddress.length) {
         return res.status(404).json({ error: "User not found" });
@@ -7971,7 +7861,7 @@ async function registerRoutes(app2) {
         longitude: longitude ? parseFloat(longitude) : null,
         isLocalCustomer: isLocal,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq8(users.id, userId)).returning();
+      }).where(eq9(users.id, userId)).returning();
       res.json({
         success: true,
         address: {
@@ -8186,7 +8076,7 @@ async function registerRoutes(app2) {
         cleanData.password = updateData.password;
       }
       Logger.info(`Updating user ${id} with data:`, { ...cleanData, password: cleanData.password ? "[HIDDEN]" : void 0 });
-      const [updatedUser] = await db.update(users).set(cleanData).where(eq8(users.id, id)).returning();
+      const [updatedUser] = await db.update(users).set(cleanData).where(eq9(users.id, id)).returning();
       if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -8228,7 +8118,7 @@ async function registerRoutes(app2) {
       if (!["user", "developer"].includes(role)) {
         return res.status(400).json({ error: 'Invalid role. Must be "user" or "developer"' });
       }
-      const [existingUser] = await db.select().from(users).where(eq8(users.email, email)).limit(1);
+      const [existingUser] = await db.select().from(users).where(eq9(users.email, email)).limit(1);
       if (existingUser) {
         return res.status(400).json({ error: "User with this email already exists" });
       }
@@ -8355,7 +8245,7 @@ async function registerRoutes(app2) {
       const totalCount = totalResult[0]?.total || 0;
       const conditions = [];
       if (status && status !== "all") {
-        conditions.push(eq8(equipmentSubmissions.status, status));
+        conditions.push(eq9(equipmentSubmissions.status, status));
       }
       if (search) {
         conditions.push(
@@ -8366,15 +8256,15 @@ async function registerRoutes(app2) {
         );
       }
       if (isLocal !== void 0 && isLocal !== null) {
-        conditions.push(eq8(equipmentSubmissions.isLocal, isLocal === "true"));
+        conditions.push(eq9(equipmentSubmissions.isLocal, isLocal === "true"));
       }
       const query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql9`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
-      }).from(equipmentSubmissions).leftJoin(users, eq8(equipmentSubmissions.userId, users.id)).orderBy(desc4(equipmentSubmissions.createdAt)).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
+      }).from(equipmentSubmissions).leftJoin(users, eq9(equipmentSubmissions.userId, users.id)).orderBy(desc5(equipmentSubmissions.createdAt)).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
       const submissions = conditions.length > 0 ? await query.where(and5(...conditions)) : await query;
       const statusCounts = await db.select({
         status: equipmentSubmissions.status,
@@ -8427,7 +8317,7 @@ async function registerRoutes(app2) {
         Logger.error("No userId found in authentication sources");
         return res.json([]);
       }
-      const submissions = await db.select().from(equipmentSubmissions).where(eq8(equipmentSubmissions.userId, userId)).orderBy(desc4(equipmentSubmissions.createdAt));
+      const submissions = await db.select().from(equipmentSubmissions).where(eq9(equipmentSubmissions.userId, userId)).orderBy(desc5(equipmentSubmissions.createdAt));
       res.json(submissions || []);
     } catch (error) {
       Logger.error("Error fetching user submissions:", error);
@@ -8445,8 +8335,8 @@ async function registerRoutes(app2) {
       }
       const submission = await db.select().from(equipmentSubmissions).where(
         and5(
-          eq8(equipmentSubmissions.id, id),
-          eq8(equipmentSubmissions.userId, userId)
+          eq9(equipmentSubmissions.id, id),
+          eq9(equipmentSubmissions.userId, userId)
         )
       ).limit(1);
       if (!submission || submission.length === 0) {
@@ -8473,7 +8363,7 @@ async function registerRoutes(app2) {
         statusHistory: newHistory,
         updatedAt: /* @__PURE__ */ new Date(),
         adminNotes: `User cancelled: ${reason || "No reason provided"}`
-      }).where(eq8(equipmentSubmissions.id, id));
+      }).where(eq9(equipmentSubmissions.id, id));
       Logger.info(`Equipment submission cancelled by user: ${id}`);
       res.json({ success: true, message: "Submission cancelled successfully" });
     } catch (error) {
@@ -8517,7 +8407,7 @@ async function registerRoutes(app2) {
       }
       const results = await Promise.allSettled(
         submissionIds.map(
-          (id) => db.update(equipmentSubmissions).set(updateData).where(eq8(equipmentSubmissions.id, id))
+          (id) => db.update(equipmentSubmissions).set(updateData).where(eq9(equipmentSubmissions.id, id))
         )
       );
       const successCount = results.filter((r) => r.status === "fulfilled").length;
@@ -8538,7 +8428,7 @@ async function registerRoutes(app2) {
       } = req.query;
       const conditions = [];
       if (status && status !== "all") {
-        conditions.push(eq8(equipmentSubmissions.status, status));
+        conditions.push(eq9(equipmentSubmissions.status, status));
       }
       if (search) {
         conditions.push(
@@ -8549,15 +8439,15 @@ async function registerRoutes(app2) {
         );
       }
       if (isLocal !== void 0 && isLocal !== null) {
-        conditions.push(eq8(equipmentSubmissions.isLocal, isLocal === "true"));
+        conditions.push(eq9(equipmentSubmissions.isLocal, isLocal === "true"));
       }
       let query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql9`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
-      }).from(equipmentSubmissions).leftJoin(users, eq8(equipmentSubmissions.userId, users.id)).orderBy(desc4(equipmentSubmissions.createdAt));
+      }).from(equipmentSubmissions).leftJoin(users, eq9(equipmentSubmissions.userId, users.id)).orderBy(desc5(equipmentSubmissions.createdAt));
       if (conditions.length > 0) {
         query = query.where(and5(...conditions));
       }
@@ -8836,13 +8726,13 @@ async function registerRoutes(app2) {
   });
   const checkUserPurchaseHistory = async (userId, productId) => {
     try {
-      const [purchase] = await db.select().from(orderItems).innerJoin(orders, eq8(orders.id, orderItems.orderId)).where(
+      const [purchase] = await db.select().from(orderItems).innerJoin(orders, eq9(orders.id, orderItems.orderId)).where(
         and5(
-          eq8(orders.userId, userId),
-          eq8(orderItems.productId, productId),
+          eq9(orders.userId, userId),
+          eq9(orderItems.productId, productId),
           or3(
-            eq8(orders.status, "delivered"),
-            eq8(orders.status, "confirmed")
+            eq9(orders.status, "delivered"),
+            eq9(orders.status, "confirmed")
           )
         )
       ).limit(1);
@@ -8876,7 +8766,7 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/reviews/:productId", async (req, res) => {
     try {
-      const productReviews = await db.select().from(reviews).where(eq8(reviews.productId, req.params.productId)).orderBy(desc4(reviews.createdAt));
+      const productReviews = await db.select().from(reviews).where(eq9(reviews.productId, req.params.productId)).orderBy(desc5(reviews.createdAt));
       res.json(productReviews);
     } catch (error) {
       Logger.error("Error fetching reviews", error);
@@ -8890,8 +8780,8 @@ async function registerRoutes(app2) {
         return res.status(400).json({ error: "Coupon code required" });
       }
       const coupon = await db.select().from(coupons).where(and5(
-        eq8(coupons.code, code.toUpperCase()),
-        eq8(coupons.active, true)
+        eq9(coupons.code, code.toUpperCase()),
+        eq9(coupons.active, true)
       )).limit(1);
       if (!coupon.length) {
         return res.status(404).json({ error: "Invalid coupon code" });
@@ -8928,7 +8818,7 @@ async function registerRoutes(app2) {
   app2.post("/api/inventory/check", async (req, res) => {
     try {
       const { productId, quantity = 1 } = req.body;
-      const product = await db.select().from(products).where(eq8(products.id, productId)).limit(1);
+      const product = await db.select().from(products).where(eq9(products.id, productId)).limit(1);
       if (!product.length) {
         return res.status(404).json({ error: "Product not found" });
       }
@@ -8962,6 +8852,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "Failed to subscribe" });
     }
   });
+  app2.use("/api/observability", observability_default);
   server2.on("listening", () => {
     Logger.info(`[STARTUP] Server is now accepting connections on ${host}:${port}`);
   });
@@ -8970,14 +8861,14 @@ async function registerRoutes(app2) {
 
 // server/vite.ts
 import express2 from "express";
-import fs2 from "fs";
-import path4 from "path";
+import fs from "fs";
+import path2 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path3 from "path";
+import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var vite_config_default = defineConfig({
   plugins: [
@@ -8991,14 +8882,14 @@ var vite_config_default = defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path3.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path3.resolve(import.meta.dirname, "shared"),
-      "@assets": path3.resolve(import.meta.dirname, "attached_assets")
+      "@": path.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@assets": path.resolve(import.meta.dirname, "attached_assets")
     }
   },
-  root: path3.resolve(import.meta.dirname, "client"),
+  root: path.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path3.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     target: "es2020",
     minify: "terser",
@@ -9075,13 +8966,13 @@ async function setupVite(app2, server2) {
   app2.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = path4.resolve(
+      const clientTemplate = path2.resolve(
         import.meta.dirname,
         "..",
         "client",
         "index.html"
       );
-      let template = await fs2.promises.readFile(clientTemplate, "utf-8");
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
@@ -9095,15 +8986,15 @@ async function setupVite(app2, server2) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path4.resolve(import.meta.dirname, "public");
-  if (!fs2.existsSync(distPath)) {
+  const distPath = path2.resolve(import.meta.dirname, "public");
+  if (!fs.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
   app2.use(express2.static(distPath));
   app2.use("*", (_req, res) => {
-    res.sendFile(path4.resolve(distPath, "index.html"));
+    res.sendFile(path2.resolve(distPath, "index.html"));
   });
 }
 
@@ -9444,9 +9335,9 @@ var sanitizeRequest = (req, res, next) => {
 
 // server/index.ts
 init_db();
-import { sql as sql10 } from "drizzle-orm";
-import fs3 from "fs";
-import path5 from "path";
+import { sql as sql11 } from "drizzle-orm";
+import fs2 from "fs";
+import path3 from "path";
 
 // server/services/globalErrorCatcher.ts
 init_errorLogger();
@@ -9535,7 +9426,7 @@ app.use((error, req, res, next) => {
 });
 app.use((req, res, next) => {
   const start = Date.now();
-  const path6 = req.path;
+  const path4 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -9544,8 +9435,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path6.startsWith("/api")) {
-      let logLine = `${req.method} ${path6} ${res.statusCode} in ${duration}ms`;
+    if (path4.startsWith("/api")) {
+      let logLine = `${req.method} ${path4} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -9602,7 +9493,7 @@ app.use((req, res, next) => {
   setInterval(async () => {
     try {
       const deleted = await db.execute(
-        sql10`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
+        sql11`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
       );
       if (deleted.rowCount && deleted.rowCount > 0) {
         Logger.info(`[CLEANUP] Removed ${deleted.rowCount} expired password reset tokens`);
@@ -9676,7 +9567,7 @@ app.use((req, res, next) => {
       });
     }
   });
-  const isProductionBuild = fs3.existsSync(path5.resolve(import.meta.dirname, "public"));
+  const isProductionBuild = fs2.existsSync(path3.resolve(import.meta.dirname, "public"));
   if (isProductionBuild) {
     serveStatic(app);
   } else {

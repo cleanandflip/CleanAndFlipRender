@@ -1,0 +1,87 @@
+the failing bit is a bad import path that still points at a file we deleted during cleanup.
+
+What’s breaking
+pgsql
+Copy
+Edit
+[vite] Failed to resolve import "./admin/observability-complete" from client/src/pages/admin.tsx
+observability-complete.tsx no longer exists. Our canonical page is now client/src/pages/observability.tsx (or whatever path you placed it in from my last message).
+
+Fast fix (do this now)
+1) Update the import in client/src/pages/admin.tsx
+Replace:
+
+ts
+Copy
+Edit
+import ObservabilityPage from "./admin/observability-complete";
+with:
+
+ts
+Copy
+Edit
+// If the merged page sits beside admin.tsx:
+import ObservabilityPage from "./observability";
+
+// If you placed it under an admin folder:
+import ObservabilityPage from "./admin/observability";
+
+// If you put it under a feature dir, use the correct relative path, e.g.:
+// import ObservabilityPage from "../observability/ObservabilityPage";
+2) (Optional safety shim) Add a re-export to avoid future breakage
+If other files still import the old path, add a tiny shim so nothing breaks while you refactor imports:
+
+Create client/src/pages/admin/observability-complete.tsx:
+
+tsx
+Copy
+Edit
+// Temporary shim: re-export canonical page
+export { default } from "../observability"; // adjust if your canonical file lives elsewhere
+Then remove this shim once rg shows no references to observability-complete.
+
+3) One-liner to fix any remaining stale imports
+From repo root:
+
+bash
+Copy
+Edit
+# Replace old path with canonical import (adjust target on the right if needed)
+rg -l '["\']\.\/admin\/observability-complete["\']' client/src \
+ | xargs -I{} sed -i 's#\./admin/observability-complete#\./observability#g' {}
+About those “Sanitization check / Skipping sanitization” lines
+Those are info logs from your request-sanitizer middleware. They indicate endpoints that are whitelisted (e.g., /user, /cart, /track-activity) and therefore bypass sanitization. They are not errors. If you want quieter logs, lower the log level or gate those messages behind NODE_ENV !== "production".
+
+Quick health checks after the change
+Type-check / dev
+
+bash
+Copy
+Edit
+pnpm tsc --noEmit
+pnpm dev
+Route smoke
+
+bash
+Copy
+Edit
+curl -I http://localhost:3000/api/categories?active=true
+curl -I http://localhost:3000/api/products/featured
+curl -I http://localhost:3000/api/cart
+Admin page loads
+Open your Admin dashboard and switch to the Observability tab. The Vite error should be gone.
+
+Replit cleanup instruction (continue the de-dupe plan)
+Keep only:
+
+client/src/pages/observability.tsx
+
+client/src/api/observability.ts
+
+server/src/routes/observability.ts (or your server path)
+
+client/src/components/ui/Dropdown.tsx
+
+Remove all other observability* and observability-* files.
+
+Run the duplicate finder + cleanup scripts I provided previously to catch any other “one feature, many files” conflicts, then re-run typecheck.
