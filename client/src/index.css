@@ -325,38 +325,7 @@ body {
     @apply border-border;
   }
 
-  /* NUCLEAR OPTION - Force ALL placeholders to be white with maximum specificity */
-  input::placeholder,
-  textarea::placeholder,
-  select::placeholder,
-  [type="text"]::placeholder,
-  [type="email"]::placeholder,
-  [type="password"]::placeholder,
-  [type="tel"]::placeholder,
-  [type="number"]::placeholder,
-  [type="search"]::placeholder,
-  *::placeholder {
-    color: #ffffff !important;
-    opacity: 1 !important;
-  }
-
-  /* Absolute override for all browser prefixes */
-  ::-webkit-input-placeholder { 
-    color: white !important; 
-    opacity: 1 !important; 
-  }
-  ::-moz-placeholder { 
-    color: white !important; 
-    opacity: 1 !important; 
-  }
-  :-ms-input-placeholder { 
-    color: white !important; 
-    opacity: 1 !important; 
-  }
-  :-moz-placeholder { 
-    color: white !important; 
-    opacity: 1 !important; 
-  }
+  /* Removed conflicting placeholder overrides to allow unified system */
 
   /* Force input text to be white */
   input, 
@@ -411,13 +380,7 @@ body {
   }
 
   /* Override component library styles */
-  .form-input::placeholder,
-  .input::placeholder,
-  [class*="input"]::placeholder,
-  [class*="form"]::placeholder {
-    color: white !important;
-    opacity: 0.8 !important;
-  }
+  /* Removed conflicting placeholder overrides to allow unified system */
 
   /* Enhanced label and helper text visibility */
   label,
@@ -590,16 +553,7 @@ body {
   /* Clean up - removed old search dropdown CSS as new SearchBar handles positioning natively */
 
   /* Remove all possible gray placeholder classes */
-  .placeholder-gray-400::placeholder,
-  .placeholder-gray-500::placeholder,
-  .placeholder-gray-600::placeholder,
-  .placeholder-slate-400::placeholder,
-  .placeholder-muted::placeholder,
-  [class*="placeholder-gray"]::placeholder,
-  [class*="placeholder:text-gray"]::placeholder {
-    color: white !important;
-    opacity: 1 !important;
-  }
+  /* Removed conflicting placeholder overrides to allow unified system */
 
   body {
     @apply font-sans antialiased text-foreground;
@@ -997,11 +951,7 @@ form .help {
 }
 
 /* 7. FORM INPUT PLACEHOLDERS - Global placeholder visibility */
-input::placeholder,
-textarea::placeholder,
-select::placeholder {
-  color: #9ca3af !important; /* gray-400 */
-}
+/* Unified placeholder system handles all placeholder styling */
 
 /* 8. DESCRIPTIVE TEXT - All descriptive paragraphs */
 .description,
