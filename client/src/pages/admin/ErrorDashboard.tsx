@@ -9,6 +9,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { CodebaseScanner } from '@/components/admin/CodebaseScanner';
+import { CodebaseDoctor } from '@/components/admin/CodebaseDoctor';
 interface ErrorLog {
   id: string;
   error_type: string;
@@ -480,6 +481,14 @@ export default function ErrorDashboard() {
         )}
       </div>
 
+      {/* Enhanced Codebase Doctor Tab */}
+      <div className="mt-8">
+        <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+          <Bug className="w-5 h-5" />
+          Advanced Codebase Analysis
+        </h3>
+        <CodebaseDoctor />
+      </div>
 
       </div>
   );

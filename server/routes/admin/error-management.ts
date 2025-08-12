@@ -3,6 +3,7 @@ import { ErrorLogger } from '../../services/errorLogger';
 import { requireAuth, requireRole } from '../../auth';
 import { UnifiedErrorHandler } from '../../middleware/unifiedErrorHandler';
 import codebaseScannerRoutes from './codebaseScanner';
+import { CodebaseDoctorService } from '../../services/codebase-doctor-service';
 
 const router = Router();
 
@@ -70,6 +71,83 @@ router.get('/errors/stats', async (req, res) => {
   } catch (error) {
     console.error('Failed to get error stats:', error);
     res.status(500).json({ error: 'Failed to get error stats' });
+  }
+});
+
+// Advanced Codebase Doctor Integration
+const codebaseDoctor = CodebaseDoctorService.getInstance();
+
+// Run comprehensive codebase analysis
+router.post('/codebase/analyze', async (req, res) => {
+  try {
+    const options = {
+      includePerformance: req.body.includePerformance !== false,
+      includeSecurity: req.body.includeSecurity !== false,
+      includeCodeQuality: req.body.includeCodeQuality !== false,
+      outputToDatabase: req.body.outputToDatabase === true
+    };
+
+    const result = await codebaseDoctor.runFullCodebaseAnalysis(options);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Codebase analysis failed:', error);
+    res.status(500).json({ error: 'Codebase analysis failed', details: error?.message || 'Unknown error' });
+  }
+});
+
+// Get quick health check
+router.get('/codebase/health', async (req, res) => {
+  try {
+    const health = await codebaseDoctor.getQuickHealthCheck();
+    res.json(health);
+  } catch (error: any) {
+    console.error('Health check failed:', error);
+    res.status(500).json({ error: 'Health check failed', details: error?.message || 'Unknown error' });
+  }
+});
+
+// Get last scan results
+router.get('/codebase/last-scan', async (req, res) => {
+  try {
+    const lastScan = codebaseDoctor.getLastScanResults();
+    if (!lastScan) {
+      return res.status(404).json({ error: 'No previous scan results found' });
+    }
+    res.json(lastScan);
+  } catch (error) {
+    console.error('Failed to get last scan:', error);
+    res.status(500).json({ error: 'Failed to get last scan results' });
+  }
+});
+
+// Get scan history
+router.get('/codebase/history', async (req, res) => {
+  try {
+    const history = codebaseDoctor.getScanHistory();
+    res.json(history);
+  } catch (error) {
+    console.error('Failed to get scan history:', error);
+    res.status(500).json({ error: 'Failed to get scan history' });
+  }
+});
+
+// Generate detailed report
+router.get('/codebase/report', async (req, res) => {
+  try {
+    const format = req.query.format === 'markdown' ? 'markdown' : 'json';
+    const report = await codebaseDoctor.generateDetailedReport(format as 'json' | 'markdown');
+    
+    if (format === 'markdown') {
+      res.setHeader('Content-Type', 'text/markdown');
+      res.setHeader('Content-Disposition', 'attachment; filename="codebase-report.md"');
+    } else {
+      res.setHeader('Content-Type', 'application/json');
+    }
+    
+    res.send(report);
+  } catch (error: any) {
+    console.error('Failed to generate report:', error);
+    res.status(500).json({ error: 'Failed to generate report', details: error?.message || 'Unknown error' });
   }
 });
 
