@@ -1,4 +1,7 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env node
+/**
+ * @fileoverview Codebase Doctor - Advanced TypeScript Codebase Analysis Tool
+ */
 /**
  * Codebase Doctor — Advanced codebase checker & reporter for Clean & Flip
  * ---------------------------------------------------------------------------------

@@ -66,18 +66,43 @@ export class CodebaseDoctorService {
     try {
       console.log('Starting comprehensive codebase analysis...');
       
-      const scriptPath = path.join(process.cwd(), 'scripts', 'codebase-doctor.ts');
       const rootDir = process.cwd();
       
-      // Build command with options using tsx instead of ts-node
-      let command = `npx tsx "${scriptPath}" --root "${rootDir}"`;
+      // Use the CommonJS version of the script to avoid ES module issues
+      const scriptPath = path.join(process.cwd(), 'scripts', 'codebase-doctor.cjs');
+      let command = `node "${scriptPath}" --root "${rootDir}"`;
       
       if (options.outputToDatabase) {
         command += ' --db';
       }
 
-      // Execute inline analysis instead of external script
-      const reportData = await this.runInlineCodebaseAnalysis(rootDir, options);
+      // Execute the codebase doctor script
+      console.log(`Executing: ${command}`);
+      const { stdout, stderr } = await execAsync(command, {
+        cwd: rootDir,
+        timeout: 300000, // 5 minute timeout
+        maxBuffer: 1024 * 1024 * 10 // 10MB buffer
+      });
+
+      if (stderr) {
+        console.warn('Script stderr:', stderr);
+      }
+
+      // Parse the JSON output from stdout
+      let reportData: CodebaseDoctorReport;
+      try {
+        // Extract JSON from the script output (it's at the end after console logs)
+        const lines = stdout.split('\n');
+        const jsonStart = lines.findIndex(line => line.trim().startsWith('{'));
+        if (jsonStart === -1) {
+          throw new Error('No JSON output found in script response');
+        }
+        const jsonOutput = lines.slice(jsonStart).join('\n').trim();
+        reportData = JSON.parse(jsonOutput);
+      } catch (parseError) {
+        console.error('Failed to parse script output:', stdout);
+        throw new Error('Failed to parse codebase analysis results');
+      }
       
       // Enhanced analysis and categorization
       const result = await this.enhanceAndCategorizeFindings(reportData);
