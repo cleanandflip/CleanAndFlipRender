@@ -214,7 +214,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/admin', errorManagementRoutes);
   
   // Observability routes (local Sentry-style error tracking)
-  app.use('/api/observability', observabilityRoutes);
+  // Legacy observability routes (keep for compatibility)
+  app.use('/api/observability/legacy', observabilityRoutes);
+  
+  // New enhanced observability system with proper filtering and actions
+  const newObservabilityRouter = (await import('./routes/observability-new')).default;
+  app.use('/api/observability', newObservabilityRouter);
   
   // Client error logging is now handled at middleware level
   // No additional route needed since middleware handles it

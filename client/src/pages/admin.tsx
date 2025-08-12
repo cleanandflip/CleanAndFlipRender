@@ -10,7 +10,7 @@ import { UsersTab } from './admin/UsersTab';
 import { SystemTab } from './admin/SystemTab';
 import { StripeTab } from './admin/StripeTab';
 import { SubmissionsTab } from './admin/SubmissionsTab';
-import ObservabilityPage from './admin/observability-fixed';
+import ObservabilityPage from './admin/observability-complete';
 
 export function AdminDashboard() {
   const [, params] = useRoute('/admin/:tab?');
