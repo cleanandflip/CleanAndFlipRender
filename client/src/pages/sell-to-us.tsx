@@ -322,7 +322,7 @@ export default function SellToUs() {
                 <Card className="p-6">
                   <h3 className="font-bebas text-2xl mb-6">EQUIPMENT DETAILS</h3>
                   
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid md:grid-cols-2 gap-4" style={{ overflow: 'visible' }}>
                     <FormField
                       control={form.control}
                       name="name"
@@ -341,52 +341,58 @@ export default function SellToUs() {
                       )}
                     />
                     
-                    <DropdownField
-                      control={form.control}
-                      name="brand"
-                      label="Brand"
-                      options={EQUIPMENT_BRANDS.map(brand => ({ value: brand, label: brand }))}
-                      placeholder="Search or select a brand..."
-                    />
+                    <div style={{ overflow: 'visible' }}>
+                      <DropdownField
+                        control={form.control}
+                        name="brand"
+                        label="Brand"
+                        options={EQUIPMENT_BRANDS.map(brand => ({ value: brand, label: brand }))}
+                        placeholder="Search or select a brand..."
+                      />
+                    </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4 mt-4">
-                    <DropdownField
-                      control={form.control}
-                      name="category"
-                      label="Category"
-                      required={true}
-                      options={[
-                        { value: "barbells", label: "Barbells" },
-                        { value: "dumbbells", label: "Dumbbells" },
-                        { value: "plates", label: "Weight Plates" },
-                        { value: "racks", label: "Racks & Stands" },
-                        { value: "benches", label: "Benches" },
-                        { value: "cardio", label: "Cardio Equipment" },
-                        { value: "machines", label: "Weight Machines" },
-                        { value: "accessories", label: "Accessories" },
-                        { value: "other", label: "Other" }
-                      ]}
-                      placeholder="Select category"
-                    />
+                  <div className="grid md:grid-cols-2 gap-4 mt-4" style={{ overflow: 'visible' }}>
+                    <div style={{ overflow: 'visible' }}>
+                      <DropdownField
+                        control={form.control}
+                        name="category"
+                        label="Category"
+                        required={true}
+                        options={[
+                          { value: "barbells", label: "Barbells" },
+                          { value: "dumbbells", label: "Dumbbells" },
+                          { value: "plates", label: "Weight Plates" },
+                          { value: "racks", label: "Racks & Stands" },
+                          { value: "benches", label: "Benches" },
+                          { value: "cardio", label: "Cardio Equipment" },
+                          { value: "machines", label: "Weight Machines" },
+                          { value: "accessories", label: "Accessories" },
+                          { value: "other", label: "Other" }
+                        ]}
+                        placeholder="Select category"
+                      />
+                    </div>
                     <div></div> {/* Empty div for grid spacing */}
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4 mt-4">
-                    <DropdownField
-                      control={form.control}
-                      name="condition"
-                      label="Condition"
-                      required={true}
-                      options={[
-                        { value: "new", label: "New" },
-                        { value: "like_new", label: "Like New" },
-                        { value: "good", label: "Good" },
-                        { value: "fair", label: "Fair" },
-                        { value: "needs_repair", label: "Needs Repair" }
-                      ]}
-                      placeholder="Select condition"
-                    />
+                  <div className="grid md:grid-cols-2 gap-4 mt-4" style={{ overflow: 'visible' }}>
+                    <div style={{ overflow: 'visible' }}>
+                      <DropdownField
+                        control={form.control}
+                        name="condition"
+                        label="Condition"
+                        required={true}
+                        options={[
+                          { value: "new", label: "New" },
+                          { value: "like_new", label: "Like New" },
+                          { value: "good", label: "Good" },
+                          { value: "fair", label: "Fair" },
+                          { value: "needs_repair", label: "Needs Repair" }
+                        ]}
+                        placeholder="Select condition"
+                      />
+                    </div>
                     
                     <FormField
                       control={form.control}

@@ -178,12 +178,13 @@ export default function Navigation() {
           </div>
 
           {/* Right Side - Actions with Enhanced Spacing */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            {/* Search Bar - Full width on mobile, constrained on desktop */}
-            <div className="flex-1 sm:flex-none">
+          <div className="flex items-center gap-3 w-full sm:w-auto min-w-0">
+            {/* Search Bar - Enhanced responsive layout */}
+            <div className="flex-1 sm:flex-none min-w-0">
               <SearchBar 
                 size="md"
                 placeholder="Search equipment..."
+                className="w-full sm:w-[min(90vw,360px)]"
               />
             </div>
             

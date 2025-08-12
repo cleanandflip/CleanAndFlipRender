@@ -160,31 +160,32 @@ export default function Dropdown({
         onClick={() => setIsOpen(!isOpen)}
         onKeyDown={handleKeyDown}
         className={cn(
-          "relative flex items-center justify-between rounded-lg border transition-colors",
-          "bg-white dark:bg-gray-800",
-          "border-gray-300 dark:border-gray-600",
-          "text-gray-900 dark:text-white",
-          "focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+          // Improved trigger sizing and spacing
+          "inline-flex w-full items-center justify-between rounded-lg border transition-colors duration-200",
+          "bg-background text-foreground",
+          "border-input",
+          // Focus states with proper ring
+          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:border-transparent",
           "disabled:opacity-50 disabled:cursor-not-allowed",
-          error && "border-red-500 focus:ring-red-500 focus:border-red-500",
+          error && "border-destructive focus:ring-destructive/60 focus:border-transparent",
           sizeClasses[size],
           fullWidth ? "w-full" : "min-w-[200px]"
         )}
       >
         <span className={cn(
           "block truncate text-left",
-          !selectedOption && "text-gray-500 dark:text-gray-400"
+          !selectedOption && "text-muted-foreground"
         )}>
           {selectedOption?.label || placeholder}
         </span>
         
         <span className="pointer-events-none flex items-center">
           {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           ) : (
             <ChevronDown 
               className={cn(
-                "h-4 w-4 text-gray-400 transition-transform",
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
                 isOpen && "rotate-180"
               )} 
             />
@@ -198,12 +199,19 @@ export default function Dropdown({
           ref={menuRef}
           role="listbox"
           aria-labelledby={id}
+          style={{
+            width: 'var(--radix-select-trigger-width, 100%)',
+            minWidth: fullWidth ? '100%' : '14rem'
+          }}
           className={cn(
-            "absolute z-50 mt-1 max-h-60 overflow-auto rounded-lg border border-gray-200 dark:border-gray-600",
-            "bg-white dark:bg-gray-800 shadow-lg",
-            "animate-in fade-in-0 zoom-in-95 duration-200",
-            fullWidth ? "w-full" : "min-w-[200px]"
+            // Proper positioning and z-index
+            "absolute z-[60] top-full mt-2 max-h-[56vh] overflow-y-auto rounded-xl border shadow-xl",
+            "bg-popover text-popover-foreground border-border",
+            // Animation classes
+            "dropdown-menu",
+            "scroll-smooth"
           )}
+          data-state="open"
         >
           {options.length === 0 ? (
             <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
@@ -216,11 +224,15 @@ export default function Dropdown({
                 role="option"
                 aria-selected={value === option.value}
                 className={cn(
-                  "relative cursor-pointer select-none px-4 py-2 text-sm",
+                  // Improved item padding and hit area
+                  "dropdown-item relative cursor-pointer select-none py-2.5 px-3 text-sm transition-colors",
                   option.disabled && "opacity-50 cursor-not-allowed",
-                  !option.disabled && "hover:bg-gray-100 dark:hover:bg-gray-700",
-                  focusedIndex === index && "bg-gray-100 dark:bg-gray-700",
-                  value === option.value && "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                  !option.disabled && "hover:bg-accent hover:text-accent-foreground",
+                  focusedIndex === index && "bg-accent text-accent-foreground",
+                  value === option.value && "bg-primary/10 text-primary font-medium",
+                  // First/last item rounded corners
+                  index === 0 && "rounded-t-xl",
+                  index === options.length - 1 && "rounded-b-xl"
                 )}
                 onClick={() => handleOptionClick(option)}
               >

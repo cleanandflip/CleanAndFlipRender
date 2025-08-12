@@ -1,6 +1,8 @@
 import * as React from "react";
-import { Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon, X } from "lucide-react";
 import { searchService } from "@/lib/searchService";
+import { useLocation } from "wouter";
+import { beginSearchFrom, getSearchOrigin, clearSearchOrigin } from "@/lib/searchNavCoordinator";
 
 interface SearchBarProps {
   id?: string;
@@ -17,6 +19,7 @@ export default function SearchBar({
   className = "",
   autoFocus = false
 }: SearchBarProps) {
+  const [location] = useLocation();
   const [value, setValue] = React.useState(() => searchService.getQuery().q);
   const flushRef = React.useRef<number>();
 
@@ -31,9 +34,8 @@ export default function SearchBar({
   // Trigger re-render when busy changes for spinner
   const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
   React.useEffect(() => {
-    const unsubscribe = searchService.subscribeBusy(forceUpdate);
-    return unsubscribe;
-  }, [forceUpdate]);
+    return searchService.subscribeBusy(() => forceUpdate({}));
+  }, []);
 
   const commit = React.useCallback((searchValue: string) => {
     const current = searchService.getQuery();
@@ -56,6 +58,19 @@ export default function SearchBar({
 
     // Set busy during debounce
     searchService.setBusy(true);
+
+    // Record search origin when search begins
+    if (!getSearchOrigin() && next.length > 0) {
+      beginSearchFrom(location);
+    }
+
+    // Navigate to products if not on home or products page
+    const isHome = location === "/";
+    const isProducts = location.startsWith("/products");
+    if (!isHome && !isProducts && next.length > 0) {
+      window.location.href = `/products?q=${encodeURIComponent(next)}`;
+      return;
+    }
 
     // Debounced commit
     flushRef.current = window.setTimeout(() => {
@@ -85,9 +100,23 @@ export default function SearchBar({
     if (flushRef.current) {
       clearTimeout(flushRef.current);
     }
+    
+    const origin = getSearchOrigin();
     setValue("");
     commit("");
-  }, [commit]);
+
+    // Handle navigation logic for clear
+    const isHome = location === "/";
+    const isProducts = location.startsWith("/products");
+
+    if (isProducts && origin && origin !== "/products") {
+      clearSearchOrigin();
+      window.location.href = origin;
+    } else {
+      // Home or products without origin: stay put
+      clearSearchOrigin();
+    }
+  }, [commit, location]);
 
   return (
     // Container shrinks nicely in header rows, but is full-width on mobile
