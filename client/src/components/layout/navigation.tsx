@@ -178,18 +178,17 @@ export default function Navigation() {
           </div>
 
           {/* Right Side - Actions with Enhanced Spacing */}
-          <div className="flex items-center space-x-4 flex-shrink-0 min-w-0 overflow-visible">
-            {/* Visual separator before user section */}
-            <div className="hidden lg:block h-8 w-px bg-white/10" />
-            
-            {/* Header Search Bar */}
-            <div className="hidden lg:block flex-1 max-w-md mx-4">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* Search Bar - Full width on mobile, constrained on desktop */}
+            <div className="flex-1 sm:flex-none">
               <SearchBar 
                 size="md"
                 placeholder="Search equipment..."
-                className="w-full"
               />
             </div>
+            
+            {/* Visual separator before user section - desktop only */}
+            <div className="hidden lg:block h-8 w-px bg-white/10" />
 
             {/* Account - Professional Dropdown */}
             {user ? (

@@ -36,10 +36,33 @@ const subscribe = (fn: () => void): Unsub => {
   return () => { subs.delete(fn); window.removeEventListener("popstate", handler); };
 };
 
+// Busy state for search loading
+let busy = false;
+const busySubs = new Set<() => void>();
+
+export function setSearchBusy(next: boolean) {
+  if (busy === next) return;
+  busy = next;
+  busySubs.forEach(fn => fn());
+}
+
+export function isSearchBusy() {
+  return busy;
+}
+
+export function subscribeSearchBusy(fn: () => void) {
+  busySubs.add(fn);
+  return () => busySubs.delete(fn);
+}
+
 export const searchService = {
   getQuery: parse,
   setQuery: write,
   subscribe,
+  // Busy state
+  isBusy: isSearchBusy,
+  setBusy: setSearchBusy,
+  subscribeBusy: subscribeSearchBusy,
 };
 
 // Global keyboard shortcuts - only active on products page

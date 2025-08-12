@@ -31,6 +31,12 @@ export default function ProductsResults({ fetchProducts, header, emptyState }: P
   const { q, category, sort, page } = queryState;
   const { data, loading, error, total } = fetchProducts({ q, category, sort, page });
 
+  // Report loading state to search service for spinner
+  React.useEffect(() => {
+    searchService.setBusy(!!loading);
+    return () => searchService.setBusy(false);
+  }, [loading]);
+
   if (error) return <div role="alert" className="text-red-600 dark:text-red-400">Something went wrong.</div>;
 
   return (

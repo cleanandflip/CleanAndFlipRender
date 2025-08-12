@@ -96,7 +96,7 @@ export class FrontendErrorCatcher {
         this.addBreadcrumb({
           type: eventType,
           target: target?.tagName,
-          message: `User ${eventType} on ${target?.tagName}${target?.id ? '#' + target.id : ''}${target?.className ? '.' + target.className.split(' ')[0] : ''}`,
+          message: `User ${eventType} on ${target?.tagName}${target?.id ? '#' + target.id : ''}${target?.className && typeof target.className === 'string' ? '.' + target.className.split(' ')[0] : ''}`,
           timestamp: new Date()
         });
       }, true);
