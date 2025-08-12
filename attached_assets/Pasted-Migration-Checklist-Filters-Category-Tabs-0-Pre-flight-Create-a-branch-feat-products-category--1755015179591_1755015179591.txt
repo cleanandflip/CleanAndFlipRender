@@ -1,0 +1,182 @@
+Migration Checklist: Filters → Category Tabs
+0) Pre-flight
+ Create a branch: feat/products-category-tabs
+
+ Grep current codebase to inventory old filter usage:
+
+Filter, Filters, SidebarFilters, FilterPanel, Facet, Facets
+
+query params like: brand, priceMin, priceMax, condition, availability, color, size
+
+Common libs: react-hook-form filter schemas, custom hooks like useFilters, contexts like FiltersProvider
+
+Commands:
+
+rg -n "Filter|Filters|Facet|useFilters|FiltersProvider"
+
+rg -n "priceMin|priceMax|brand|condition|availability|color|size"
+
+rg -n "filter|facet|refine|range|min|max"
+
+ Confirm search param for the search bar is q (adjust below if different).
+
+1) Add category helpers & component (logic-only)
+ Add src/lib/categories.ts (labels + toSlug/fromSlug).
+
+ Add src/components/products/CategoryTabs.tsx (logic only—no style code).
+
+ Ensure CategoryTabs preserves existing query params and adds/removes only category.
+
+Acceptance:
+
+Deep link /products?category=barbells highlights “Barbells”.
+
+Switching tabs keeps ?q= and other params intact.
+
+“All Categories” removes category from the URL entirely.
+
+2) Wire /products page
+ Open the route/component for /products (e.g., src/pages/ProductsPage.tsx).
+
+ Remove imports/usages of old filter components (don’t delete files yet).
+
+ Insert <CategoryTabs /> in the left column/aside.
+
+ Ensure products grid reads data filtered by q and category:
+
+Client-side path: use/adapt useProducts(allProducts) to filter in-memory.
+
+API path: pass current window.location.search to your fetcher or query hook.
+
+ Keep existing search bar untouched (it should continue writing ?q=).
+
+Acceptance:
+
+Switching category updates grid immediately (client) or refetches with category (API).
+
+Empty categories show “No results” (no counts in nav).
+
+3) Backend (only if API filtering)
+ Ensure GET /api/products (or equivalent) supports category=<slug> and q=<string>.
+
+ Unknown/absent category treated as “All Categories”.
+
+ Update any caching layers to include category in cache key.
+
+Acceptance:
+
+/api/products?category=barbells&q=rogue returns only matching barbells.
+
+4) Remove legacy filter logic safely
+Phase 1: Disable in UI
+
+ Comment/remove old filter panel usage from /products page.
+
+ Keep code files intact for now (easy rollback).
+
+Phase 2: De-reference
+
+ Remove imports/usages:
+
+FiltersPanel, SidebarFilters, useFilters, FiltersProvider, Facet* components.
+
+Query param mappers for price/brand/condition/etc.
+
+ Remove state slices in page/component that fed the old filters.
+
+ Remove URL-sync code that wrote old params (except q and category).
+
+Phase 3: Delete dead code
+
+ Delete filter files only after tests pass:
+
+Components: Filters*.tsx, Facet*.tsx
+
+Hooks: useFilters*.ts, useFacet*.ts
+
+Context: FiltersContext.tsx
+
+Utils: filterSchemas.ts, priceRange.ts, etc.
+
+ Update index barrels to stop exporting deleted modules.
+
+Acceptance:
+
+rg -n "Filters|Facet|useFilters|FiltersProvider" returns no matches in src.
+
+rg -n "priceMin|priceMax|brand|condition" returns no active usage.
+
+App compiles and route works.
+
+5) Querystring & Routing guarantees
+ Preserve unrelated params on category change (e.g., sort, page if you keep them).
+
+ Normalize “All Categories” to no category param in URL.
+
+ Fallback: unknown category → treat as “All Categories”.
+
+Acceptance:
+
+/products?category=unknown behaves like /products.
+
+History back/forward restores both q and category.
+
+6) Analytics & SEO (optional)
+ Fire category_selected event on tab click with { category: slug, q }.
+
+ Update document title on category change (e.g., Shop — Dumbbells).
+
+Acceptance:
+
+Events visible in your analytics dashboard with correct properties.
+
+7) Accessibility
+ nav has aria-label="Product Categories".
+
+ Active tab includes aria-current="page".
+
+ Products section uses aria-live="polite" to announce list updates.
+
+Acceptance:
+
+Keyboard navigation reaches each tab; Enter/Space activates.
+
+Screen reader announces active category on change.
+
+8) Tests (add/update)
+ Unit: categories.ts round-trips each label: fromSlug(toSlug(label)) === label.
+
+ Unit: unknown slug → “All Categories”.
+
+ Component: clicking a category updates location to expected query while preserving q.
+
+ Hook/Data: with ?category=barbells&q=rogue, only rogue barbells are returned/rendered.
+
+9) Regression checklist
+ Search still filters products when a category is selected.
+
+ Sorting (if present) remains functional and compatible with new query model.
+
+ Pagination (if present) resets/retains correctly on category change (choose behavior).
+
+ No visual remnants of old filters (CSS/DOM).
+
+ Mobile layout: categories appear in a usable way (stack/collapse handled by theme).
+
+10) Rollback plan
+ Keep old filter components in git history only; do not keep dead code in main.
+
+ If a rollback is needed, revert the PR and restore the previous filter panel.
+
+ Because new logic only adds category and preserves q, rollback won’t impact other pages.
+
+11) PR checklist
+ PR title: “Replace /products filters with left Category Tabs (URL-driven)”
+
+ Includes: categories.ts, CategoryTabs.tsx, /products page changes, tests.
+
+ Screenshots/GIFs: switching categories, deep link load, search+category combined.
+
+ QA notes: list out acceptance items checked above.
+
+ Get approval from product/design (styling handled by theme post-merge).

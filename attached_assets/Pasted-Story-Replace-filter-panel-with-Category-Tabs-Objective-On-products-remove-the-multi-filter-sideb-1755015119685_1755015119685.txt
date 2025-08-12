@@ -1,0 +1,238 @@
+Story: Replace filter panel with Category Tabs
+Objective
+On /products, remove the multi-filter sidebar.
+
+Add a left Category Tabs navigation (names only; no counts).
+
+Tabs update URL (?category=<slug>, omit for “All Categories”).
+
+Products list reacts to category and existing q (search) params.
+
+Deep links work; back/forward works; accessible.
+
+Tasks (Replit)
+1) Add canonical categories + slug helpers
+Create: src/lib/categories.ts
+
+ts
+Copy
+Edit
+export const CATEGORY_LABELS = [
+  "All Categories",
+  "Dumbbells",
+  "Kettlebells",
+  "Weight Plates",
+  "Barbells",
+  "Adjustable Dumbbells",
+  "Resistance & Bands",
+  "Medicine Balls",
+  "Mats & Accessories",
+] as const;
+
+export type CategoryLabel = (typeof CATEGORY_LABELS)[number];
+
+export function toSlug(label: string): string {
+  if (/^all categories$/i.test(label)) return "";
+  return label
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+export function fromSlug(slug: string | null): CategoryLabel {
+  if (!slug) return "All Categories";
+  const match = CATEGORY_LABELS.find((l) => toSlug(l) === slug.toLowerCase());
+  return match ?? "All Categories";
+}
+2) Build Category Tabs component (logic only)
+Create: src/components/products/CategoryTabs.tsx
+
+tsx
+Copy
+Edit
+import React from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { CATEGORY_LABELS, CategoryLabel, fromSlug, toSlug } from "@/lib/categories";
+
+export default function CategoryTabs() {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+
+  const current: CategoryLabel = fromSlug(params.get("category"));
+
+  const select = (label: CategoryLabel) => {
+    const next = new URLSearchParams(params);
+    const slug = toSlug(label);
+    if (slug) next.set("category", slug);
+    else next.delete("category"); // All = no param
+
+    const qs = next.toString();
+    navigate(`/products${qs ? `?${qs}` : ""}`);
+  };
+
+  return (
+    <nav aria-label="Product Categories">
+      <ul>
+        {CATEGORY_LABELS.map((label) => {
+          const active = label === current;
+          return (
+            <li key={label}>
+              <button
+                type="button"
+                onClick={() => select(label)}
+                aria-current={active ? "page" : undefined}
+              >
+                {label}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+Replit: apply theme styles; keep structure and aria exactly as-is.
+
+3) Make products react to category + q
+Option A — Client-side filtering (if grid already has all products in memory)
+Create/Update: src/hooks/useProducts.ts
+
+ts
+Copy
+Edit
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { fromSlug, toSlug } from "@/lib/categories";
+
+export type Product = {
+  id: string;
+  name: string;
+  category?: string; // store slug, e.g. "dumbbells"
+  // ...other fields
+};
+
+export function useProducts(allProducts: Product[]) {
+  const [params] = useSearchParams();
+  const q = (params.get("q") || "").trim().toLowerCase();
+  const categoryLabel = fromSlug(params.get("category"));
+  const categorySlug = toSlug(categoryLabel); // "" if All
+
+  const products = useMemo(() => {
+    let list = allProducts;
+
+    if (categorySlug) {
+      list = list.filter((p) => (p.category || "") === categorySlug);
+    }
+
+    if (q) {
+      list = list.filter((p) =>
+        [p.name, p.category].filter(Boolean).join(" ").toLowerCase().includes(q)
+      );
+    }
+
+    return list;
+  }, [allProducts, q, categorySlug]);
+
+  return { products, q, categoryLabel, categorySlug };
+}
+Option B — API filtering (if grid loads via API)
+Ensure backend route supports: GET /api/products?q=<string>&category=<slug>
+
+If category missing → return all categories.
+
+If category present but invalid/unknown → treat as “all” (or return empty—choose one behavior and keep it consistent).
+
+Frontend query should pass through existing q and optional category.
+
+Example frontend fetch (logic only):
+
+ts
+Copy
+Edit
+// wherever data is fetched for /products
+const params = new URLSearchParams(window.location.search);
+const res = await fetch(`/api/products?${params.toString()}`);
+const products = await res.json();
+4) Wire up /products page
+Update: src/pages/ProductsPage.tsx (or your route component for /products)
+
+Remove the old filters panel import/use.
+
+Insert the new CategoryTabs as the left column.
+
+Keep existing search input (it should already write ?q=).
+
+Ensure products grid uses either useProducts(allProducts) (client)
+or the API result with the querystring (server).
+
+Skeleton (structure only):
+
+tsx
+Copy
+Edit
+import React from "react";
+import CategoryTabs from "@/components/products/CategoryTabs";
+// import { useProducts } from "@/hooks/useProducts"; // if client-side filtering
+
+export default function ProductsPage() {
+  // const { products } = useProducts(allProducts); // client-side path
+  // OR: const { data: products } = useProductsQuery(params); // server path
+
+  return (
+    <div role="main">
+      {/* keep existing search input (writes ?q=) */}
+
+      <div>
+        <aside>
+          <CategoryTabs />
+        </aside>
+
+        <section aria-live="polite">
+          {/* render your existing <ProductCard/> using the products array */}
+        </section>
+      </div>
+    </div>
+  );
+}
+5) Remove legacy filters
+Delete the old Filters component(s) and any context/state they used (sort, brand, price, condition, etc.).
+
+Keep Sort only if needed; if you keep it, store it in the query string (?sort=).
+CategoryTabs should preserve any existing params automatically.
+
+6) Routing/URL behavior
+Active category = ?category=<slug>.
+“All Categories” = no category param (clean URLs).
+
+Preserve q and any other params when switching categories.
+
+Unknown category slug → treat as “All Categories”.
+
+7) Accessibility requirements
+nav[aria-label="Product Categories"] with a ul > li > button.
+
+Apply aria-current="page" to the active category item.
+
+Products region should have aria-live="polite" so SRs announce updates.
+
+8) QA / Acceptance
+Tabs show only the labels from CATEGORY_LABELS (no counts).
+
+Clicking a tab updates URL and list; search term stays intact.
+
+Reloading with ?category=barbells shows only Barbells.
+
+/products?category=barbells&q=rogue returns rogue barbells only.
+
+Back/forward navigation restores prior selections.
+
+Unknown slug falls back to “All Categories”.
+
+No visual remnants of old filters.
+
+9) (Optional) Analytics + Title
+Fire event on tab change: category_selected with { category, q }.
+
+Update document title to include category (e.g., “Shop — Dumbbells”).
+

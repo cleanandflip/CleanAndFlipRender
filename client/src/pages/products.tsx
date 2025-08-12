@@ -1,22 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
 import ProductGrid from '@/components/products/product-grid';
 import SearchBar from '@/components/search/SearchBar';
-import FilterSidebar from '@/components/products/filter-sidebar';
+import CategoryTabs from '@/components/products/CategoryTabs';
 import { WelcomeBanner } from '@/components/ui/welcome-banner';
-import type { Product } from '@shared/schema';
-
-interface ProductsResponse {
-  products: Product[];
-  total: number;
-}
+import { useProducts } from '@/hooks/useProducts';
+import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 
 export default function ProductsPage() {
-  const { data: productsResponse, isLoading } = useQuery<ProductsResponse>({
-    queryKey: ['/api/products'],
-  });
-  
-  // Extract products array from response - API returns { products: Product[], total: number }
-  const products = Array.isArray(productsResponse?.products) ? productsResponse.products : [];
+  const { products, isLoading, categoryLabel, total } = useProducts();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -24,18 +14,27 @@ export default function ProductsPage() {
         <WelcomeBanner />
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Premium Fitness Equipment
+          <h1 
+            className="text-3xl font-bold mb-2"
+            style={{ color: theme.colors.text.primary }}
+          >
+            {categoryLabel === "All Categories" ? "Fitness Equipment" : categoryLabel}
           </h1>
+          <p 
+            className="text-lg mb-4"
+            style={{ color: theme.colors.text.secondary }}
+          >
+            {total} item{total !== 1 ? 's' : ''} available
+          </p>
           <SearchBar />
         </div>
         
         <div className="flex flex-col lg:flex-row gap-8">
-          <div className="lg:w-64 flex-shrink-0">
-            <FilterSidebar filters={{}} onFiltersChange={() => {}} />
-          </div>
+          <aside className="lg:w-64 flex-shrink-0">
+            <CategoryTabs />
+          </aside>
           
-          <div className="flex-1">
+          <section className="flex-1" aria-live="polite">
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[...Array(8)].map((_, i) => (
@@ -50,7 +49,7 @@ export default function ProductsPage() {
             ) : (
               <ProductGrid products={products} />
             )}
-          </div>
+          </section>
         </div>
       </div>
     </div>
