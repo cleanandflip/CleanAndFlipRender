@@ -1,203 +1,109 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'wouter';
+import { useState, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
-import { getQueryFromURL, setQueryInURL, subscribeToQuery } from '@/lib/searchService';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useDebounce } from '@/hooks/useDebounce';
+import { getQuery, setQuery, subscribe } from '@/lib/searchService';
+import { cn } from '@/lib/utils';
 
 interface SearchBarProps {
-  className?: string;
   placeholder?: string;
-  autoFocus?: boolean;
+  className?: string;
   size?: 'sm' | 'md' | 'lg';
   id?: string;
-  onSearch?: (query: string) => void;
 }
 
-export default function SearchBar({
-  className = '',
-  placeholder = "Search equipment...",
-  autoFocus = false,
+export default function SearchBar({ 
+  placeholder = "Search equipment...", 
+  className = "",
   size = 'md',
-  id,
-  onSearch
+  id = 'search-input'
 }: SearchBarProps) {
-  const [location, setLocation] = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [localQuery, setLocalQuery] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
-  
-  // Size variants
-  const sizeClasses = {
-    sm: 'pl-8 pr-16 py-2 text-sm',
-    md: 'pl-10 pr-20 py-3 text-base',
-    lg: 'pl-12 pr-24 py-4 text-lg'
-  };
-  
-  const iconSizes = {
-    sm: 16,
-    md: 20,
-    lg: 24
-  };
+  const debouncedQuery = useDebounce(localQuery, 300);
 
-  // Initialize and sync with URL
+  // Sync with URL on mount and when URL changes
   useEffect(() => {
-    const query = getQueryFromURL();
-    setSearchQuery(query.q);
+    const { q } = getQuery();
+    setLocalQuery(q || '');
   }, []);
 
-  // Subscribe to URL changes (back/forward navigation)
+  // Subscribe to URL changes
   useEffect(() => {
-    const unsubscribe = subscribeToQuery((query) => {
-      setSearchQuery(query.q);
+    const unsubscribe = subscribe((params) => {
+      setLocalQuery(params.q || '');
     });
+    
     return unsubscribe;
   }, []);
 
-  // Debounced URL update
-  const debouncedUpdateURL = useCallback((value: string) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
+  // Update URL when debounced query changes
+  useEffect(() => {
+    const { q: currentQ } = getQuery();
+    if (debouncedQuery !== currentQ) {
+      setQuery({ q: debouncedQuery || undefined, page: 1 });
     }
-    
-    setIsLoading(true);
-    
-    debounceRef.current = setTimeout(() => {
-      const currentQuery = getQueryFromURL();
-      
-      // Only update if on products page or navigate there
-      if (!location.startsWith('/products')) {
-        setLocation('/products' + (value.trim() ? `?q=${encodeURIComponent(value.trim())}` : ''));
-      } else {
-        setQueryInURL({ q: value.trim() });
-      }
-      
-      setIsLoading(false);
-      
-      if (onSearch) {
-        onSearch(value.trim());
-      }
-    }, 300);
-  }, [location, setLocation, onSearch]);
+  }, [debouncedQuery]);
 
-  // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    debouncedUpdateURL(value);
-  };
-
-  // Handle form submission (immediate)
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    
-    const currentQuery = getQueryFromURL();
-    if (!location.startsWith('/products')) {
-      setLocation('/products' + (searchQuery.trim() ? `?q=${encodeURIComponent(searchQuery.trim())}` : ''));
-    } else {
-      setQueryInURL({ q: searchQuery.trim() }, { replace: false });
-    }
-    
-    if (onSearch) {
-      onSearch(searchQuery.trim());
-    }
-  };
-
-  // Handle clear
   const handleClear = () => {
-    setSearchQuery('');
-    setQueryInURL({ q: '' });
-    
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    setLocalQuery('');
+    setQuery({ q: undefined, page: 1 });
+    inputRef.current?.focus();
   };
 
-  // Handle keyboard shortcuts
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
-      if (searchQuery) {
-        handleClear();
-      } else {
-        inputRef.current?.blur();
+      handleClear();
+      inputRef.current?.blur();
+    } else if (e.key === 'Enter') {
+      // Force immediate update
+      if (localQuery !== debouncedQuery) {
+        setQuery({ q: localQuery || undefined, page: 1 });
       }
     }
+  };
+
+  const sizeClasses = {
+    sm: 'h-8 text-sm',
+    md: 'h-10 text-base', 
+    lg: 'h-12 text-lg'
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`relative ${className}`}>
+    <div className={cn("relative", className)}>
       <div className="relative">
-        <Search 
-          className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 ${
-            isLoading ? 'animate-pulse' : ''
-          }`}
-          size={iconSizes[size]}
-        />
-        <input
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <Input
           ref={inputRef}
           id={id}
+          data-search-input
           type="text"
           placeholder={placeholder}
-          value={searchQuery}
-          onChange={handleInputChange}
+          value={localQuery}
+          onChange={(e) => setLocalQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          autoFocus={autoFocus}
-          data-search-input
-          disabled={isLoading}
-          className={`
-            w-full rounded-lg border border-gray-300 dark:border-gray-600 
-            bg-white dark:bg-gray-800 text-gray-900 dark:text-white 
-            transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ${sizeClasses[size]} ${className}
-          `}
-          aria-label="Search products"
-          aria-describedby={searchQuery ? `${id}-clear` : undefined}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className={cn(
+            "pl-10 pr-10 transition-all duration-200",
+            sizeClasses[size],
+            isFocused && "ring-2 ring-blue-500 ring-opacity-50"
+          )}
         />
-        
-        {searchQuery && (
-          <button
+        {localQuery && (
+          <Button
             type="button"
-            id={`${id}-clear`}
+            variant="ghost"
+            size="sm"
             onClick={handleClear}
-            disabled={isLoading}
-            className={`
-              absolute top-1/2 transform -translate-y-1/2 p-1 rounded-full
-              text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700
-              transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500
-              disabled:opacity-50 disabled:cursor-not-allowed
-              ${size === 'sm' ? 'right-12' : size === 'lg' ? 'right-16' : 'right-14'}
-            `}
-            aria-label="Clear search"
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            <X size={size === 'sm' ? 12 : size === 'lg' ? 16 : 14} />
-          </button>
+            <X className="h-3 w-3" />
+          </Button>
         )}
-        
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={`
-            absolute top-1/2 transform -translate-y-1/2 
-            px-2 py-1 rounded bg-blue-500 text-white text-sm 
-            hover:bg-blue-600 disabled:bg-blue-400
-            transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300
-            disabled:cursor-not-allowed right-2
-            ${size === 'sm' ? 'text-xs px-1.5' : size === 'lg' ? 'text-base px-3 py-2' : ''}
-          `}
-          aria-label="Submit search"
-        >
-          {isLoading ? '...' : 'Search'}
-        </button>
-        
-        {/* Global shortcut hint */}
-        <div className="sr-only">
-          Press / to focus search
-        </div>
       </div>
-    </form>
+    </div>
   );
 }

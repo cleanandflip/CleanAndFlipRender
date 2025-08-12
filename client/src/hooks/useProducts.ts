@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { fromSlug, toSlug } from "@/lib/categories";
-import { getQueryFromURL, subscribeToQuery, type SearchQuery } from '@/lib/searchService';
+import { getQuery, subscribe } from '@/lib/searchService';
 import type { Product } from "@shared/schema";
 
 interface ProductsResponse {
@@ -9,12 +9,19 @@ interface ProductsResponse {
   total: number;
 }
 
+interface SearchParams {
+  q?: string;
+  category?: string;
+  sort?: string;
+  page?: number;
+}
+
 export function useProducts() {
-  const [searchQuery, setSearchQuery] = useState<SearchQuery>(() => getQueryFromURL());
+  const [searchQuery, setSearchQuery] = useState<SearchParams>(() => getQuery());
   
   // Subscribe to URL changes
   useEffect(() => {
-    const unsubscribe = subscribeToQuery(setSearchQuery);
+    const unsubscribe = subscribe(setSearchQuery);
     return unsubscribe;
   }, []);
   
