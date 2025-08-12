@@ -12,8 +12,8 @@ import { format, parseISO } from "date-fns";
 
 export default function ObservabilityPage() {
   const [q, setQ] = useState("");
-  const [level, setLevel] = useState<string | undefined>();
-  const [env, setEnv] = useState<string | undefined>();
+  const [level, setLevel] = useState<string | undefined>("all");
+  const [env, setEnv] = useState<string | undefined>("all");
   const [resolved, setResolved] = useState(false);
   const [page, setPage] = useState(1);
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
@@ -25,7 +25,14 @@ export default function ObservabilityPage() {
   // Issues query
   const { data: issuesData, isLoading } = useQuery({
     queryKey: ["issues", q, level, env, resolved, page, limit],
-    queryFn: () => obsApi.issues({ q, level, env, resolved, page, limit }),
+    queryFn: () => obsApi.issues({ 
+      q, 
+      level: level === "all" ? undefined : level, 
+      env: env === "all" ? undefined : env, 
+      resolved, 
+      page, 
+      limit 
+    }),
   });
 
   // Issue details query
@@ -138,7 +145,7 @@ export default function ObservabilityPage() {
                 <SelectValue placeholder="Level" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Levels</SelectItem>
+                <SelectItem value="all">All Levels</SelectItem>
                 <SelectItem value="error">Error</SelectItem>
                 <SelectItem value="warn">Warning</SelectItem>
                 <SelectItem value="info">Info</SelectItem>
@@ -149,7 +156,7 @@ export default function ObservabilityPage() {
                 <SelectValue placeholder="Environment" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Envs</SelectItem>
+                <SelectItem value="all">All Envs</SelectItem>
                 <SelectItem value="production">Production</SelectItem>
                 <SelectItem value="development">Development</SelectItem>
               </SelectContent>

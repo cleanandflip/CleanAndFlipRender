@@ -1,0 +1,17 @@
+Something went wrong
+We apologize for the inconvenience. The error has been automatically reported.
+
+Error ID: boundary-1755028941885-n6t5w3dk3
+
+Error Details (Development)
+Error: A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+    at https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=e83202da:866:13
+    at renderWithHooks (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=e83202da:11596:26)
+    at updateForwardRef (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=e83202da:14373:28)
+    at beginWork (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=e83202da:15994:22)
+    at beginWork$1 (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=e83202da:19806:22)
+    at performUnitOfWork (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=e83202da:19251:20)
+    at workLoopSync (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=e83202da:19190:13)
+    at renderRootSync (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=e83202da:19169:15)
+    at recoverFromConcurrentError (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=e83202da:18786:28)
+    at performSyncWorkOnRoot (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=e83202da:18932:28)

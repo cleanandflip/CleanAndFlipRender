@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { randomUUID } from "crypto";
-import { ErrorStore } from "../data/errorStore";
+import { SimpleErrorStore } from "../data/simpleErrorStore";
 
 const router = Router();
 
@@ -66,13 +66,16 @@ router.post("/errors", async (req, res) => {
       userId: parsed.data.user?.id,
     };
 
-    await Promise.all([
-      ErrorStore.insertRaw(raw),
-      ErrorStore.upsertIssue(raw),
-      ErrorStore.bumpRollup(raw),
-    ]);
+    const result = await SimpleErrorStore.addError({
+      service: parsed.data.service,
+      level: parsed.data.level,
+      message: parsed.data.message,
+      stack: parsed.data.stack,
+      url: parsed.data.url,
+      env: parsed.data.env,
+    });
 
-    res.status(201).json({ ok: true, eventId: raw.eventId, fingerprint });
+    res.status(201).json({ ok: true, eventId: result.eventId, fingerprint: result.fingerprint });
   } catch (error) {
     console.error("Error ingestion failed:", error);
     res.status(500).json({ error: "Failed to process error" });
@@ -89,7 +92,7 @@ router.get("/issues", async (req, res) => {
     const page = Number(req.query.page ?? 1);
     const limit = Math.min(Number(req.query.limit ?? 20), 100);
 
-    const result = await ErrorStore.listIssues({ q, level, env, resolved, page, limit });
+    const result = await SimpleErrorStore.listIssues({ page, limit });
     res.json(result);
   } catch (error) {
     console.error("Failed to list issues:", error);
@@ -157,7 +160,7 @@ router.get("/series", async (req, res) => {
     const from = new Date(now.getTime() - days * 24 * 3600 * 1000);
     const env = req.query.env as string;
     
-    const rows = await ErrorStore.chartByHour({ from, to: now, env });
+    const rows = await SimpleErrorStore.getChartData(days);
     res.json(rows);
   } catch (error) {
     console.error("Failed to fetch chart data:", error);
