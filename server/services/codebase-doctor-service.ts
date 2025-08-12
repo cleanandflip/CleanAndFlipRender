@@ -134,28 +134,27 @@ export class CodebaseDoctorService {
     let totalWarnings = 0;
     let totalSuggestions = 0;
 
-    // Process each section's findings
-    for (const section of report.sections) {
-      for (const finding of section.findings) {
-        const enhanced = this.enhanceFinding(finding);
-        
-        // Categorize by type
-        const category = enhanced.category || 'general';
-        if (!categories[category]) {
-          categories[category] = { count: 0, critical: 0, items: [] };
-        }
-        
-        categories[category].count++;
-        categories[category].items.push(enhanced);
-        
-        if (enhanced.severity === 'FAIL' || enhanced.impact === 'critical') {
-          categories[category].critical++;
-          totalCritical++;
-        } else if (enhanced.severity === 'WARN') {
-          totalWarnings++;
-        } else {
-          totalSuggestions++;
-        }
+    // Process findings from new report format
+    const findingsArray = report.findings || [];
+    for (const finding of findingsArray) {
+      const enhanced = this.enhanceFinding(finding);
+      
+      // Categorize by type
+      const category = enhanced.category || 'general';
+      if (!categories[category]) {
+        categories[category] = { count: 0, critical: 0, items: [] };
+      }
+      
+      categories[category].count++;
+      categories[category].items.push(enhanced);
+      
+      if (enhanced.severity === 'FAIL' || enhanced.impact === 'critical') {
+        categories[category].critical++;
+        totalCritical++;
+      } else if (enhanced.severity === 'WARN') {
+        totalWarnings++;
+      } else {
+        totalSuggestions++;
       }
     }
 
