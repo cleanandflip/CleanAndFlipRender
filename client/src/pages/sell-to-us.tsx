@@ -318,16 +318,17 @@ export default function SellToUs() {
           <div className="lg:col-span-2">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Equipment Details - Clean Two-Column Layout */}
-                <Card className="p-6">
+                {/* Equipment Details - 12-Column Grid Layout */}
+                <Card className="max-w-3xl mx-auto p-8">
                   <h3 className="font-bebas text-2xl mb-6">EQUIPMENT DETAILS</h3>
+                  <div className="border-t border-border my-4"></div>
                   
-                  {/* Clean grid layout with consistent spacing */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                  {/* 12-column grid with responsive mobile stacking */}
+                  <div className="grid grid-cols-12 gap-x-6 gap-y-5">
                     {/* Row 1: Equipment Name & Brand */}
-                    <div>
+                    <div className="col-span-12 md:col-span-6">
                       <label htmlFor="name" className="block text-sm font-medium mb-2">
-                        Equipment Name <span aria-hidden className="text-destructive">*</span>
+                        Equipment Name <span className="text-destructive">*</span>
                       </label>
                       <FormField
                         control={form.control}
@@ -339,46 +340,117 @@ export default function SellToUs() {
                                 {...field}
                                 id="name"
                                 placeholder="e.g. Olympic Barbell 45lb"
-                                className="h-10"
+                                className="h-11"
                                 aria-invalid={!!form.formState.errors.name}
                                 aria-describedby={form.formState.errors.name ? "name-error" : undefined}
                               />
                             </FormControl>
-                            <FormMessage id="name-error" />
+                            <FormMessage id="name-error" className="mt-1 text-xs" />
                           </FormItem>
                         )}
                       />
                     </div>
                     
-                    <DropdownField
-                      control={form.control}
-                      name="brand"
-                      label="Brand"
-                      options={EQUIPMENT_BRANDS.map(brand => ({ value: brand, label: brand }))}
-                      placeholder="Search or select a brand..."
-                    />
+                    <div className="col-span-12 md:col-span-6">
+                      <label htmlFor="brand" className="block text-sm font-medium mb-2">
+                        Brand
+                      </label>
+                      <FormField
+                        control={form.control}
+                        name="brand"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Dropdown
+                                fullWidth
+                                value={field.value || ""}
+                                onChange={(v) => field.onChange(v)}
+                                options={EQUIPMENT_BRANDS.map(brand => ({ value: brand, label: brand }))}
+                                placeholder="Search or select a brand…"
+                                className="h-11"
+                                aria-invalid={!!form.formState.errors.brand}
+                                aria-describedby={form.formState.errors.brand ? "brand-error" : undefined}
+                              />
+                            </FormControl>
+                            <FormMessage id="brand-error" className="mt-1 text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                    {/* Row 2: Category & Weight */}
-                    <DropdownField
-                      control={form.control}
-                      name="category"
-                      label="Category"
-                      required={true}
-                      options={[
-                        { value: "barbells", label: "Barbells" },
-                        { value: "dumbbells", label: "Dumbbells" },
-                        { value: "plates", label: "Weight Plates" },
-                        { value: "racks", label: "Racks & Stands" },
-                        { value: "benches", label: "Benches" },
-                        { value: "cardio", label: "Cardio Equipment" },
-                        { value: "machines", label: "Weight Machines" },
-                        { value: "accessories", label: "Accessories" },
-                        { value: "other", label: "Other" }
-                      ]}
-                      placeholder="Select category"
-                    />
+                    {/* Row 2: Category & Condition */}
+                    <div className="col-span-12 md:col-span-6">
+                      <label htmlFor="category" className="block text-sm font-medium mb-2">
+                        Category <span className="text-destructive">*</span>
+                      </label>
+                      <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Dropdown
+                                fullWidth
+                                value={field.value || ""}
+                                onChange={(v) => field.onChange(v)}
+                                options={[
+                                  { value: "barbells", label: "Barbells" },
+                                  { value: "dumbbells", label: "Dumbbells" },
+                                  { value: "plates", label: "Weight Plates" },
+                                  { value: "racks", label: "Racks & Stands" },
+                                  { value: "benches", label: "Benches" },
+                                  { value: "cardio", label: "Cardio Equipment" },
+                                  { value: "machines", label: "Weight Machines" },
+                                  { value: "accessories", label: "Accessories" },
+                                  { value: "other", label: "Other" }
+                                ]}
+                                placeholder="Select category"
+                                className="h-11"
+                                aria-invalid={!!form.formState.errors.category}
+                                aria-describedby={form.formState.errors.category ? "category-error" : undefined}
+                              />
+                            </FormControl>
+                            <FormMessage id="category-error" className="mt-1 text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                    <div>
+                    <div className="col-span-12 md:col-span-6">
+                      <label htmlFor="condition" className="block text-sm font-medium mb-2">
+                        Condition <span className="text-destructive">*</span>
+                      </label>
+                      <FormField
+                        control={form.control}
+                        name="condition"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Dropdown
+                                fullWidth
+                                value={field.value || ""}
+                                onChange={(v) => field.onChange(v)}
+                                options={[
+                                  { value: "new", label: "New" },
+                                  { value: "like_new", label: "Like New" },
+                                  { value: "good", label: "Good" },
+                                  { value: "fair", label: "Fair" },
+                                  { value: "needs_repair", label: "Needs Repair" }
+                                ]}
+                                placeholder="Select condition"
+                                className="h-11"
+                                aria-invalid={!!form.formState.errors.condition}
+                                aria-describedby={form.formState.errors.condition ? "condition-error" : undefined}
+                              />
+                            </FormControl>
+                            <FormMessage id="condition-error" className="mt-1 text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Row 3: Weight & Price */}
+                    <div className="col-span-12 md:col-span-6">
                       <label htmlFor="weight" className="block text-sm font-medium mb-2">
                         Weight (lbs)
                       </label>
@@ -388,103 +460,95 @@ export default function SellToUs() {
                         render={({ field }) => (
                           <FormItem>
                             <FormControl>
-                              <Input 
-                                {...field}
-                                id="weight"
-                                value={field.value || ""}
-                                type="number"
-                                placeholder="Total weight in pounds"
-                                className="h-10"
-                                onChange={(e) => field.onChange(e.target.value)}
-                                aria-invalid={!!form.formState.errors.weight}
-                                aria-describedby={form.formState.errors.weight ? "weight-error" : undefined}
-                              />
+                              <div className="relative">
+                                <Input 
+                                  {...field}
+                                  id="weight"
+                                  value={field.value || ""}
+                                  inputMode="numeric"
+                                  placeholder="Total weight in pounds"
+                                  className="h-11 pr-12"
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  aria-invalid={!!form.formState.errors.weight}
+                                  aria-describedby={form.formState.errors.weight ? "weight-error" : undefined}
+                                />
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                  <span className="text-sm text-muted-foreground">lbs</span>
+                                </div>
+                              </div>
                             </FormControl>
-                            <FormMessage id="weight-error" />
+                            <FormMessage id="weight-error" className="mt-1 text-xs" />
                           </FormItem>
                         )}
                       />
                     </div>
 
-                    {/* Row 3: Condition & Empty slot */}
-                    <DropdownField
-                      control={form.control}
-                      name="condition"
-                      label="Condition"
-                      required={true}
-                      options={[
-                        { value: "new", label: "New" },
-                        { value: "like_new", label: "Like New" },
-                        { value: "good", label: "Good" },
-                        { value: "fair", label: "Fair" },
-                        { value: "needs_repair", label: "Needs Repair" }
-                      ]}
-                      placeholder="Select condition"
-                    />
-                    
-                    <div></div> {/* Empty slot for future field */}
-                  </div>
+                    <div className="col-span-12 md:col-span-6">
+                      <label htmlFor="askingPrice" className="block text-sm font-medium mb-2">
+                        Your Asking Price
+                      </label>
+                      <FormField
+                        control={form.control}
+                        name="askingPrice"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                  <span className="text-sm text-muted-foreground">$</span>
+                                </div>
+                                <Input 
+                                  {...field}
+                                  id="askingPrice"
+                                  value={field.value || ""}
+                                  inputMode="decimal"
+                                  placeholder="0.00"
+                                  className="h-11 pl-8"
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  aria-invalid={!!form.formState.errors.askingPrice}
+                                  aria-describedby="askingPrice-help"
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage className="mt-1 text-xs" />
+                            <p id="askingPrice-help" className="mt-1 text-xs text-muted-foreground">
+                              We'll review market pricing and may adjust based on condition and demand.
+                            </p>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                  {/* Row 4: Full-width asking price */}
-                  <div className="mt-5">
-                    <label htmlFor="askingPrice" className="block text-sm font-medium mb-2">
-                      Your Asking Price (Optional)
-                    </label>
-                    <FormField
-                      control={form.control}
-                      name="askingPrice"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <PriceInput 
-                              {...field}
-                              id="askingPrice"
-                              value={field.value || ""}
-                              placeholder="50"
-                              className="h-10"
-                              onChange={(e) => field.onChange(e.target.value)}
-                              aria-invalid={!!form.formState.errors.askingPrice}
-                              aria-describedby="askingPrice-help"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                          <p id="askingPrice-help" className="mt-1 text-xs text-muted-foreground">
-                            We'll review market pricing and may adjust based on condition and demand.
-                          </p>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Row 5: Full-width description */}
-                  <div className="mt-5">
-                    <label htmlFor="description" className="block text-sm font-medium mb-2">
-                      Description
-                    </label>
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              id="description"
-                              value={field.value || ""}
-                              rows={5}
-                              placeholder="Describe the equipment's condition, any modifications, included accessories, etc..."
-                              className="resize-vertical rounded-lg border-input focus:ring-2 focus:ring-ring focus:border-transparent"
-                              aria-invalid={!!form.formState.errors.description}
-                              aria-describedby="description-help"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                          <p id="description-help" className="mt-1 text-xs text-muted-foreground">
-                            Be detailed about condition, modifications, and what's included to help us provide an accurate quote.
-                          </p>
-                        </FormItem>
-                      )}
-                    />
+                    {/* Row 4: Description (full width) */}
+                    <div className="col-span-12">
+                      <label htmlFor="description" className="block text-sm font-medium mb-2">
+                        Description
+                      </label>
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                id="description"
+                                value={field.value || ""}
+                                rows={5}
+                                placeholder="Condition, modifications, included accessories…"
+                                className="resize-vertical"
+                                aria-invalid={!!form.formState.errors.description}
+                                aria-describedby="description-help"
+                              />
+                            </FormControl>
+                            <FormMessage className="mt-1 text-xs" />
+                            <p id="description-help" className="mt-1 text-xs text-muted-foreground">
+                              Be detailed about condition, modifications, and what's included to help us provide an accurate quote.
+                            </p>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 </Card>
 

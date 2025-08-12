@@ -1,0 +1,114 @@
+concise remodel plan for the Equipment Details form. Keep the theme; just fix structure, spacing, and flow.
+
+Layout & Flow (desktop → mobile stacks)
+Grid container
+
+max-w-3xl mx-auto p-8
+
+grid grid-cols-12 gap-x-6 gap-y-5 (mobile: grid-cols-1 gap-y-5)
+
+Field order & column spans
+
+Row 1:
+
+Equipment Name → col-span-6
+
+Brand → col-span-6
+
+Row 2:
+
+Category → col-span-6
+
+Condition → col-span-6
+
+Row 3:
+
+Weight (lbs) (with unit suffix) → col-span-6
+
+Your Asking Price (with $ prefix) → col-span-6
+
+Row 4:
+
+Description → col-span-12 (rows 5–6)
+
+Helper copy:
+
+Short price note under Price (text-xs).
+
+Long guidance under Description (text-xs).
+
+Remove any duplicated/global helper lines.
+
+Mobile
+
+Use the same field order, each col-span-12.
+
+Keep gap-y-5 so fields don’t crowd.
+
+Field Components (unify look)
+Use shared Input / Dropdown / Textarea only.
+
+Height: h-11 for Inputs & Dropdown triggers (match).
+
+Radius/border: same across all.
+
+Labels: text-sm font-medium mb-2 (no extra margins elsewhere).
+
+Placeholders: rely on global --placeholder-opacity (already added).
+
+Adornments:
+
+Price → left $ prefix.
+
+Weight → right lbs suffix.
+(Use input adornment slot; no inline text nodes.)
+
+Visual Noise Reduction
+Remove extra borders/boxes between fields—let gap do the work.
+
+Keep section title “Equipment Details” then a single subtle divider (my-4) if needed—no nested frames.
+
+Dropdown trigger uses same rest/hover/focus as inputs (no darker rectangle).
+
+Spacing & Copy
+Label → control (mt-2).
+
+Helper/Error (mt-1 text-xs).
+
+Trim placeholder text:
+
+Name: “e.g. Olympic Barbell 45lb”
+
+Brand: “Search or select a brand…”
+
+Weight: “Total weight in pounds”
+
+Price: “0.00” (currency formatting handled on blur)
+
+Description: “Condition, modifications, included accessories…”
+
+Behavior & A11y
+Numeric inputs: inputMode="decimal" (Price), inputMode="numeric" (Weight); validate on blur.
+
+Error state: red ring + message directly under control; aria-invalid + aria-describedby.
+
+Dropdown menus: render via portal to document.body, z-[60], sideOffset=8, width = trigger width.
+
+Reduced motion respected (keep subtle hover only).
+
+Implementation Checklist (do now)
+ Replace current wrapper with grid grid-cols-12 gap-x-6 gap-y-5 and apply spans above.
+
+ Convert Price/Weight to inputs with adornments (prefix $, suffix lbs).
+
+ Ensure all controls use h-11, same radius/border/focus.
+
+ Move price note under Price; keep long guidance only under Description.
+
+ Remove any extra card-within-card boxes; keep one section card only.
+
+ Verify dropdown panel sits above card and matches trigger width.
+
+ Mobile: confirm clean stacking and consistent gaps.
+
+If you want, I can provide a tiny JSX snippet showing just the grid + column spans so the dev can paste it and slot your components in.
