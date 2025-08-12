@@ -1,0 +1,164 @@
+This one’s coming from the dropdown refactor. You (or Replit) switched the dropdown to the Radix Select path, and Radix is crashing because its react import is resolving to null (Cannot read properties of null (reading 'useMemo')). That typically happens when:
+
+there are two Reacts in the bundle (version mismatch / duplicate installs), or
+
+the dropdown is importing Radix directly without the project’s shadcn wrapper, or
+
+the component was half-wired and the plain <select> fallback was removed.
+
+Here’s the fastest way to get you green again.
+
+Fix now (safe rollback): use the plain <select> shim
+Put this file back exactly (no Radix/shadcn imports inside it):
+
+src/components/form/StandardDropdown.tsx
+
+tsx
+Copy
+Edit
+import * as React from "react";
+
+export type Option = { value: string; label: string };
+
+type Props = {
+  value?: string;
+  onChange: (val: string) => void;
+  options: Option[];
+  placeholder?: string;
+  disabled?: boolean;
+  id?: string;
+  name?: string;
+  "aria-label"?: string;
+};
+
+export default function StandardDropdown({
+  value = "",
+  onChange,
+  options,
+  placeholder = "Select…",
+  disabled,
+  id,
+  name,
+  ...a11y
+}: Props) {
+  return (
+    <select
+      id={id}
+      name={name}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      {...a11y}
+    >
+      {!value && <option value="">{placeholder}</option>}
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+  );
+}
+In src/pages/sell-to-us.tsx, make sure you import and use it:
+
+tsx
+Copy
+Edit
+import StandardDropdown from "@/components/form/StandardDropdown";
+
+<Controller
+  name="condition"
+  control={control}
+  render={({ field }) => (
+    <StandardDropdown
+      value={field.value ?? ""}
+      onChange={field.onChange}
+      options={CONDITION_OPTIONS}
+      placeholder="Select condition"
+    />
+  )}
+/>
+This will remove Radix from the render path and stop the crash immediately.
+
+Then, if you do want the fancy (shadcn/Radix) dropdown later
+Only do this after it’s stable above:
+
+Use your shadcn wrapper, not Radix directly:
+
+tsx
+Copy
+Edit
+// correct: import the shadcn/ui Select wrapper you generated
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem
+} from "@/components/ui/select";
+Do not import from @radix-ui/react-select in app code.
+
+Ensure one React:
+
+bash
+Copy
+Edit
+npm ls react react-dom
+# Expect exactly one version each (React and ReactDOM must match)
+npm dedupe
+# if messy: rm -rf node_modules pnpm-lock.yaml package-lock.json && fresh install
+Vite alias (avoid duplicate React):
+
+ts
+Copy
+Edit
+// vite.config.ts
+import path from "path";
+export default {
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      react: path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+    },
+  },
+};
+Types/peer deps aligned:
+
+react and react-dom same major/minor (e.g., 18.3.x)
+
+@radix-ui/react-select version that matches your shadcn template
+
+No stray preact/compat aliases
+
+Re-implement StandardDropdown with shadcn only after the above:
+
+tsx
+Copy
+Edit
+// inside StandardDropdown.tsx
+export default function StandardDropdown({ value="", onChange, options, placeholder="Select…" }: Props) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger aria-label="Select">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+}
+Quick QA after the fix
+/sell-to-us loads without crashing.
+
+Dropdowns render and update React Hook Form values.
+
+No imports from @radix-ui/react-select exist in app code.
+
+npm ls react react-dom shows one version each.
+
+If you paste the current sell-to-us.tsx dropdown snippet, I’ll tweak the exact props/imports so it compiles first try with your setup.
+
+
+
+
+
+
+
+
+Ask ChatGPT

@@ -1,8 +1,4 @@
 import * as React from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ChevronDown } from "lucide-react";
 
 export type Option = { value: string; label: string };
 
@@ -20,7 +16,7 @@ type Props = {
   "aria-label"?: string;
 };
 
-function StandardDropdown({
+export default function StandardDropdown({
   value = "",
   onChange,
   options,
@@ -37,13 +33,13 @@ function StandardDropdown({
   const [customValue, setCustomValue] = React.useState("");
 
   // Normalize options to ensure consistent format
-  const normalizedOptions: Option[] = options.map(opt => 
+  const normalizedOptions: Option[] = (options || []).map(opt => 
     typeof opt === 'string' ? { value: opt, label: opt } : opt
   );
 
   // Check if current value exists in options
   const valueExistsInOptions = normalizedOptions.some(opt => opt.value === value);
-  const shouldShowCustomInput = allowCustom && (!valueExistsInOptions || isCustomInput);
+  const shouldShowCustomInput = allowCustom && value && !valueExistsInOptions && isCustomInput;
 
   React.useEffect(() => {
     if (allowCustom && value && !valueExistsInOptions) {
@@ -52,7 +48,8 @@ function StandardDropdown({
     }
   }, [value, valueExistsInOptions, allowCustom]);
 
-  const handleSelectChange = (newValue: string) => {
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newValue = e.target.value;
     if (newValue === "__custom__") {
       setIsCustomInput(true);
       setCustomValue("");
@@ -73,59 +70,57 @@ function StandardDropdown({
   return (
     <div className="space-y-2">
       {label && (
-        <Label htmlFor={id} className="text-sm font-medium">
+        <label htmlFor={id} className="text-sm font-medium text-gray-700 dark:text-gray-300">
           {label}{required && " *"}
-        </Label>
+        </label>
       )}
       
       {shouldShowCustomInput ? (
         <div className="space-y-2">
-          <Input
+          <input
             id={id}
             name={name}
+            type="text"
             value={customValue}
             onChange={handleCustomInputChange}
-            placeholder={allowCustom ? "Enter custom value..." : placeholder}
+            placeholder="Enter custom value..."
             disabled={disabled}
             aria-label={a11y["aria-label"]}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
-          {allowCustom && (
-            <button
-              type="button"
-              onClick={() => {
-                setIsCustomInput(false);
-                setCustomValue("");
-                onChange("");
-              }}
-              className="text-sm text-blue-600 hover:text-blue-800"
-            >
-              Choose from list instead
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              setIsCustomInput(false);
+              setCustomValue("");
+              onChange("");
+            }}
+            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            Choose from list instead
+          </button>
         </div>
       ) : (
-        <Select value={value} onValueChange={handleSelectChange} disabled={disabled}>
-          <SelectTrigger id={id} aria-label={a11y["aria-label"]}>
-            <SelectValue placeholder={displayPlaceholder} />
-          </SelectTrigger>
-          <SelectContent>
-            {normalizedOptions.map(opt => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-            {allowCustom && (
-              <SelectItem value="__custom__">
-                <div className="flex items-center gap-2">
-                  <span>Enter custom value...</span>
-                </div>
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
+        <select
+          id={id}
+          name={name}
+          value={value}
+          onChange={handleSelectChange}
+          disabled={disabled}
+          {...a11y}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          {!value && <option value="">{displayPlaceholder}</option>}
+          {normalizedOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+          {allowCustom && (
+            <option value="__custom__">Enter custom value...</option>
+          )}
+        </select>
       )}
     </div>
   );
 }
-
-export default StandardDropdown;
