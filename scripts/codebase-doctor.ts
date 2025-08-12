@@ -18,7 +18,7 @@
  * 8) Conflicting CSS selectors and duplicate Tailwind utility collisions
  * 9) Large/unused assets, unoptimized images
  * 10) ENV variables: used vs. .env.example
- * 11) TODO/FIXME/console logs inventory
+ * 11) Task comments and console logs inventory
  * 12) Simple flaky patterns: setInterval without clear, unhandled promises, empty catch, etc.
  * 13) Missing pages/routes (simple 404 risk heuristics)
  * 14) JSON/TS/JS syntax validity (fast scan)
@@ -523,18 +523,18 @@ async function checkCodeQuality(files: string[]): Promise<SectionReport> {
 
     const lines = content.split('\n');
     
-    // Check for TODO/FIXME comments
+    // Check for task-related comments
     lines.forEach((line, index) => {
-      const todoMatch = line.match(/(TODO|FIXME|HACK|XXX|BUG)[\s:]+(.*)/i);
-      if (todoMatch) {
+      const taskMatch = line.match(/(TODO|FIXME|HACK|XXX|BUG)[\s:]+(.*)/i);
+      if (taskMatch) {
         findings.push({
           id: 'quality:todo',
-          title: `${todoMatch[1].toUpperCase()} comment found`,
+          title: `${taskMatch[1].toUpperCase()} comment found`,
           severity: 'WARN',
           file: rel(file),
           line: index + 1,
-          details: todoMatch[2].trim(),
-          suggestion: 'Address the TODO/FIXME or create a proper ticket',
+          details: taskMatch[2].trim(),
+          suggestion: 'Address the task comment or create a proper ticket',
           timestamp: new Date().toISOString(),
           category: 'code-quality'
         });

@@ -85,12 +85,14 @@ router.post('/scan-codebase', async (req, res) => {
             });
           }
           
-          // 2. Check for TODO/FIXME comments
-          if (trimmedLine.includes('TODO') || trimmedLine.includes('FIXME')) {
+          // 2. Check for task-related comments 
+          const taskKeywords = ['TODO', 'FIXME'];
+          const hasTaskKeyword = taskKeywords.some(keyword => trimmedLine.includes(keyword));
+          if (hasTaskKeyword) {
             results.push({
               severity: 'warning',
-              error_type: 'todo_comment',
-              message: 'TODO/FIXME comment found',
+              error_type: 'task_comment',
+              message: 'Task-related comment found',
               file_path: relativeFilePath,
               line_number: lineNumber,
               line_content: trimmedLine

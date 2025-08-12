@@ -208,7 +208,7 @@ export class CodebaseDoctorService {
 
   private calculateEffort(finding: Finding): 'trivial' | 'easy' | 'medium' | 'hard' {
     // Easy fixes
-    if (finding.id.includes('unused') || finding.id.includes('console') || finding.id.includes('todo')) {
+    if (finding.id.includes('unused') || finding.id.includes('console') || finding.id.includes('task')) {
       return 'trivial';
     }
     
