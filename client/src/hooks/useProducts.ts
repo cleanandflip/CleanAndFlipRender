@@ -26,7 +26,7 @@ export function useProducts() {
   }, []);
   
   const { q, category: categorySlug } = searchQuery;
-  const categoryLabel = fromSlug(categorySlug);
+  const categoryLabel = fromSlug(categorySlug || null);
 
   // Fetch all products from API
   const { data: productsResponse, isLoading, error } = useQuery<ProductsResponse>({
