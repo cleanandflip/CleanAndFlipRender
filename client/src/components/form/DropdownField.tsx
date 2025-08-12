@@ -42,7 +42,8 @@ export default function DropdownField<
               error={fieldState.error?.message || null}
               id={name}
               name={name}
-              ariaLabel={label}
+              fullWidth={true}
+              size="md"
             />
           </FormControl>
           <FormMessage />

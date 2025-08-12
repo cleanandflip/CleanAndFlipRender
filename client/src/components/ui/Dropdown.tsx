@@ -88,7 +88,7 @@ export default function Dropdown({
       style={{ position:"absolute", top:coords.top, left:coords.left, width:coords.width, zIndex:60 }}
       className="transition duration-200"
     >
-      <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl max-h-[56vh] overflow-auto">
+      <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl max-h-64 overflow-y-auto">
         <ul ref={listRef} tabIndex={-1} role="listbox" aria-labelledby={id} onKeyDown={onListKey} className="py-1 outline-none">
           {options.length === 0 && <li className="px-3 py-2 text-sm opacity-80">No options</li>}
           {options.map(opt => {
