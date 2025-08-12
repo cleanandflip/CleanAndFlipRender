@@ -1,264 +1,138 @@
-import * as React from "react";
-import { ChevronDown, Check, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React from "react";
+import { createPortal } from "react-dom";
 
-export type DropdownOption = { 
-  value: string; 
-  label: string; 
-  disabled?: boolean 
-};
+export type DropdownOption = { value: string; label: string; disabled?: boolean };
+type Coords = { top:number; left:number; width:number };
 
-export type DropdownProps = {
+export default function Dropdown({
+  value = "",
+  onChange,
+  options,
+  placeholder = "Select…",
+  disabled,
+  id,
+  name,
+  fullWidth,
+  size = "md",
+  error,
+  className = "",
+}: {
   value?: string | null;
-  onChange: (value: string) => void;
+  onChange: (v: string) => void;
   options: DropdownOption[];
   placeholder?: string;
   disabled?: boolean;
   id?: string;
   name?: string;
-  ariaLabel?: string;
-  // Optional niceties
   fullWidth?: boolean;
   size?: "sm" | "md" | "lg";
   error?: string | null;
-  // Async mode (for fetch-on-open lists)
-  loading?: boolean;
-};
+  className?: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [coords, setCoords] = React.useState<Coords | null>(null);
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const listRef = React.useRef<HTMLUListElement | null>(null);
+  const current = options.find(o => o.value === value) || null;
 
-export default function Dropdown({
-  value = null,
-  onChange,
-  options = [],
-  placeholder = "Select...",
-  disabled = false,
-  id,
-  name,
-  ariaLabel,
-  fullWidth = false,
-  size = "md",
-  error = null,
-  loading = false
-}: DropdownProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [focusedIndex, setFocusedIndex] = React.useState(-1);
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
-  const triggerRef = React.useRef<HTMLButtonElement>(null);
-  const menuRef = React.useRef<HTMLDivElement>(null);
+  const sizeCls = size === "sm" ? "h-9 text-sm px-3"
+                 : size === "lg" ? "h-12 text-base px-4"
+                 : "h-10 text-sm px-3.5";
 
-  // Find selected option
-  const selectedOption = options.find(opt => opt.value === value);
+  const triggerCls = [
+    "inline-flex items-center justify-between rounded-lg border",
+    "bg-background border-border text-foreground",
+    "focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-transparent",
+    "transition-colors disabled:opacity-60 disabled:cursor-not-allowed",
+    sizeCls, fullWidth ? "w-full" : "w-[min(90vw,320px)]", className
+  ].join(" ");
 
-  // Size variants
-  const sizeClasses = {
-    sm: "h-8 px-3 text-sm",
-    md: "h-10 px-4 text-base",
-    lg: "h-12 px-5 text-lg"
+  const calc = () => {
+    const el = triggerRef.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    setCoords({ top: r.bottom + 8 + window.scrollY, left: r.left + window.scrollX, width: r.width });
   };
 
-  // Handle keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (disabled) return;
+  const openMenu = () => { if (disabled) return; setOpen(true); calc(); setTimeout(() => listRef.current?.focus(), 0); };
+  const closeMenu = () => { setOpen(false); triggerRef.current?.focus(); };
 
-    switch (e.key) {
-      case "Enter":
-      case " ":
-        e.preventDefault();
-        if (!isOpen) {
-          setIsOpen(true);
-          setFocusedIndex(selectedOption ? options.indexOf(selectedOption) : 0);
-        } else if (focusedIndex >= 0) {
-          const option = options[focusedIndex];
-          if (option && !option.disabled) {
-            onChange(option.value);
-            setIsOpen(false);
-          }
-        }
-        break;
-      case "ArrowDown":
-        e.preventDefault();
-        if (!isOpen) {
-          setIsOpen(true);
-          setFocusedIndex(selectedOption ? options.indexOf(selectedOption) : 0);
-        } else {
-          setFocusedIndex(prev => {
-            let next = prev + 1;
-            while (next < options.length && options[next]?.disabled) next++;
-            return next < options.length ? next : prev;
-          });
-        }
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        if (isOpen) {
-          setFocusedIndex(prev => {
-            let next = prev - 1;
-            while (next >= 0 && options[next]?.disabled) next--;
-            return next >= 0 ? next : prev;
-          });
-        }
-        break;
-      case "Home":
-        e.preventDefault();
-        if (isOpen) {
-          let next = 0;
-          while (next < options.length && options[next]?.disabled) next++;
-          if (next < options.length) setFocusedIndex(next);
-        }
-        break;
-      case "End":
-        e.preventDefault();
-        if (isOpen) {
-          let next = options.length - 1;
-          while (next >= 0 && options[next]?.disabled) next--;
-          if (next >= 0) setFocusedIndex(next);
-        }
-        break;
-      case "Escape":
-        e.preventDefault();
-        setIsOpen(false);
-        triggerRef.current?.focus();
-        break;
-    }
-  };
-
-  // Handle click outside
   React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+    if (!open) return;
+    const onAway = (e: MouseEvent) => {
+      if (!triggerRef.current || !listRef.current) return;
+      if (!triggerRef.current.contains(e.target as Node) && !listRef.current.contains(e.target as Node)) closeMenu();
     };
+    const onScroll = () => calc();
+    const onResize = () => calc();
+    document.addEventListener("mousedown", onAway);
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.removeEventListener("mousedown", onAway);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [open]);
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [isOpen]);
-
-  // Handle option click
-  const handleOptionClick = (option: DropdownOption) => {
-    if (option.disabled) return;
-    onChange(option.value);
-    setIsOpen(false);
-    triggerRef.current?.focus();
+  const onTriggerKey = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+    if (["Enter"," ","ArrowDown"].includes(e.key)) { e.preventDefault(); openMenu(); }
   };
+
+  const onListKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") { e.preventDefault(); closeMenu(); }
+  };
+
+  const menu = open && coords ? createPortal(
+    <div
+      style={{ position:"absolute", top:coords.top, left:coords.left, width:coords.width, zIndex:60 }}
+      className="transition duration-200"
+    >
+      <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl max-h-[56vh] overflow-auto">
+        <ul ref={listRef} tabIndex={-1} role="listbox" aria-labelledby={id} onKeyDown={onListKey} className="py-1 outline-none">
+          {options.length === 0 && <li className="px-3 py-2 text-sm opacity-80">No options</li>}
+          {options.map(opt => {
+            const selected = opt.value === value;
+            return (
+              <li key={opt.value}>
+                <button
+                  type="button"
+                  onClick={() => { if (!opt.disabled) { onChange(opt.value); closeMenu(); } }}
+                  disabled={opt.disabled}
+                  className={[
+                    "w-full text-left px-3 py-2.5 flex items-center gap-2",
+                    "hover:bg-muted/60 rounded-md transition-colors",
+                    opt.disabled ? "opacity-50 cursor-not-allowed" : "",
+                  ].join(" ")}
+                >
+                  <span className="truncate">{opt.label}</span>
+                  {selected && <span className="ml-auto opacity-80">✓</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>,
+    document.body
+  ) : null;
 
   return (
-    <div ref={dropdownRef} className={cn("relative", fullWidth ? "w-full" : "w-auto")}>
-      {/* Trigger */}
+    <div className={fullWidth ? "w-full" : "inline-block"}>
       <button
         ref={triggerRef}
-        type="button"
-        id={id}
-        name={name}
-        aria-label={ariaLabel}
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        aria-invalid={error ? "true" : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
-        disabled={disabled}
-        onClick={() => setIsOpen(!isOpen)}
-        onKeyDown={handleKeyDown}
-        className={cn(
-          // Improved trigger sizing and spacing
-          "inline-flex w-full items-center justify-between rounded-lg border transition-colors duration-200",
-          "bg-background text-foreground",
-          "border-input",
-          // Focus states with proper ring
-          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:border-transparent",
-          "disabled:opacity-50 disabled:cursor-not-allowed",
-          error && "border-destructive focus:ring-destructive/60 focus:border-transparent",
-          sizeClasses[size],
-          fullWidth ? "w-full" : "min-w-[200px]"
-        )}
+        id={id} name={name}
+        type="button" disabled={disabled}
+        aria-haspopup="listbox" aria-expanded={open}
+        className={triggerCls + (error ? " ring-2 ring-destructive/60 border-transparent" : "")}
+        onClick={() => (open ? closeMenu() : openMenu())}
+        onKeyDown={onTriggerKey}
       >
-        <span className={cn(
-          "block truncate text-left",
-          !selectedOption && "text-muted-foreground"
-        )}>
-          {selectedOption?.label || placeholder}
-        </span>
-        
-        <span className="pointer-events-none flex items-center">
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : (
-            <ChevronDown 
-              className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                isOpen && "rotate-180"
-              )} 
-            />
-          )}
-        </span>
+        <span className="truncate">{current?.label ?? placeholder}</span>
+        <span className="ml-3 opacity-70" aria-hidden>▾</span>
       </button>
-
-      {/* Dropdown Menu - Portal to body to prevent clipping */}
-      {isOpen && (
-        <div
-          ref={menuRef}
-          role="listbox"
-          aria-labelledby={id}
-          style={{
-            position: 'fixed',
-            top: triggerRef.current ? triggerRef.current.getBoundingClientRect().bottom + 8 : 'auto',
-            left: triggerRef.current ? triggerRef.current.getBoundingClientRect().left : 'auto',
-            width: triggerRef.current ? triggerRef.current.getBoundingClientRect().width : 'auto',
-            minWidth: fullWidth ? '100%' : '14rem'
-          }}
-          className={cn(
-            // Proper positioning and z-index for portal rendering
-            "z-[60] max-h-[56vh] overflow-y-auto rounded-xl border shadow-xl",
-            "bg-popover text-popover-foreground border-border",
-            // Animation classes
-            "dropdown-menu",
-            "scroll-smooth"
-          )}
-          data-state="open"
-        >
-          {options.length === 0 ? (
-            <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
-              {loading ? "Loading..." : "No options available"}
-            </div>
-          ) : (
-            options.map((option, index) => (
-              <div
-                key={option.value}
-                role="option"
-                aria-selected={value === option.value}
-                className={cn(
-                  // Improved item padding and hit area
-                  "dropdown-item relative cursor-pointer select-none py-2.5 px-3 text-sm transition-colors",
-                  option.disabled && "opacity-50 cursor-not-allowed",
-                  !option.disabled && "hover:bg-accent hover:text-accent-foreground",
-                  focusedIndex === index && "bg-accent text-accent-foreground",
-                  value === option.value && "bg-primary/10 text-primary font-medium",
-                  // First/last item rounded corners
-                  index === 0 && "rounded-t-xl",
-                  index === options.length - 1 && "rounded-b-xl"
-                )}
-                onClick={() => handleOptionClick(option)}
-              >
-                <div className="flex items-center">
-                  <span className="block truncate">{option.label}</span>
-                  {value === option.value && (
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-4">
-                      <Check className="h-4 w-4" />
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Error message */}
-      {error && (
-        <p id={`${id}-error`} className="mt-1 text-sm text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
+      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+      {menu}
     </div>
   );
 }
