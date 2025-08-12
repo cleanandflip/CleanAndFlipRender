@@ -1,203 +1,110 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'wouter';
-import { Search, X } from 'lucide-react';
-import { getQueryFromURL, setQueryInURL, subscribeToQuery } from '@/lib/searchService';
+import * as React from "react";
+import { searchService } from "@/lib/searchService";
+import { Search, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-interface SearchBarProps {
-  className?: string;
+type Props = {
   placeholder?: string;
   autoFocus?: boolean;
-  size?: 'sm' | 'md' | 'lg';
   id?: string;
-  onSearch?: (query: string) => void;
-}
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+};
 
-export default function SearchBar({
-  className = '',
-  placeholder = "Search equipment...",
-  autoFocus = false,
+export default function SearchBar({ 
+  placeholder = "Search equipment...", 
+  autoFocus, 
+  id = "search-input",
   size = 'md',
-  id,
-  onSearch
-}: SearchBarProps) {
-  const [location, setLocation] = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
-  
-  // Size variants
+  className 
+}: Props) {
+  const [value, setValue] = React.useState<string>(searchService.getQuery().q);
+  const flushRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    // keep input in sync with URL (back/forward, programmatic changes)
+    return searchService.subscribe(() => setValue(searchService.getQuery().q));
+  }, []);
+
+  const commit = React.useCallback((next: string) => {
+    // When clearing, also reset page to 1
+    searchService.setQuery({ q: next, page: 1 });
+  }, []);
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.currentTarget.value ?? "";
+    setValue(next);
+    // debounce 300ms
+    if (flushRef.current) window.clearTimeout(flushRef.current);
+    flushRef.current = window.setTimeout(() => commit(next), 300);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      if (flushRef.current) { window.clearTimeout(flushRef.current); flushRef.current = null; }
+      commit(value);
+    }
+    if (e.key === "Escape") {
+      setValue("");
+      commit("");
+      (e.currentTarget as HTMLInputElement).blur();
+    }
+  };
+
+  const clear = () => { setValue(""); commit(""); };
+
   const sizeClasses = {
-    sm: 'pl-8 pr-16 py-2 text-sm',
-    md: 'pl-10 pr-20 py-3 text-base',
-    lg: 'pl-12 pr-24 py-4 text-lg'
-  };
-  
-  const iconSizes = {
-    sm: 16,
-    md: 20,
-    lg: 24
-  };
-
-  // Initialize and sync with URL
-  useEffect(() => {
-    const query = getQueryFromURL();
-    setSearchQuery(query.q);
-  }, []);
-
-  // Subscribe to URL changes (back/forward navigation)
-  useEffect(() => {
-    const unsubscribe = subscribeToQuery((query) => {
-      setSearchQuery(query.q);
-    });
-    return unsubscribe;
-  }, []);
-
-  // Debounced URL update
-  const debouncedUpdateURL = useCallback((value: string) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    
-    setIsLoading(true);
-    
-    debounceRef.current = setTimeout(() => {
-      const currentQuery = getQueryFromURL();
-      
-      // Only update if on products page or navigate there
-      if (!location.startsWith('/products')) {
-        setLocation('/products' + (value.trim() ? `?q=${encodeURIComponent(value.trim())}` : ''));
-      } else {
-        setQueryInURL({ q: value.trim() });
-      }
-      
-      setIsLoading(false);
-      
-      if (onSearch) {
-        onSearch(value.trim());
-      }
-    }, 300);
-  }, [location, setLocation, onSearch]);
-
-  // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    debouncedUpdateURL(value);
-  };
-
-  // Handle form submission (immediate)
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    
-    const currentQuery = getQueryFromURL();
-    if (!location.startsWith('/products')) {
-      setLocation('/products' + (searchQuery.trim() ? `?q=${encodeURIComponent(searchQuery.trim())}` : ''));
-    } else {
-      setQueryInURL({ q: searchQuery.trim() }, { replace: false });
-    }
-    
-    if (onSearch) {
-      onSearch(searchQuery.trim());
-    }
-  };
-
-  // Handle clear
-  const handleClear = () => {
-    setSearchQuery('');
-    setQueryInURL({ q: '' });
-    
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
-
-  // Handle keyboard shortcuts
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      if (searchQuery) {
-        handleClear();
-      } else {
-        inputRef.current?.blur();
-      }
-    }
+    sm: 'h-9 px-3 text-sm',
+    md: 'h-10 px-4 text-base',
+    lg: 'h-12 px-5 text-lg'
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`relative ${className}`}>
-      <div className="relative">
-        <Search 
-          className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 ${
-            isLoading ? 'animate-pulse' : ''
-          }`}
-          size={iconSizes[size]}
-        />
+    <div role="search" className={cn("relative flex items-center", className)}>
+      <div className="relative flex-1">
+        <Search className={cn(
+          "absolute left-3 top-1/2 -translate-y-1/2 text-gray-400",
+          size === 'sm' && "w-4 h-4",
+          size === 'md' && "w-5 h-5", 
+          size === 'lg' && "w-6 h-6"
+        )} />
         <input
-          ref={inputRef}
           id={id}
-          type="text"
-          placeholder={placeholder}
-          value={searchQuery}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          autoFocus={autoFocus}
           data-search-input
-          disabled={isLoading}
-          className={`
-            w-full rounded-lg border border-gray-300 dark:border-gray-600 
-            bg-white dark:bg-gray-800 text-gray-900 dark:text-white 
-            transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 
-            disabled:opacity-50 disabled:cursor-not-allowed
-            ${sizeClasses[size]} ${className}
-          `}
+          type="search"
+          value={value}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          placeholder={placeholder}
+          autoFocus={autoFocus}
           aria-label="Search products"
-          aria-describedby={searchQuery ? `${id}-clear` : undefined}
+          className={cn(
+            "w-full rounded-lg border border-gray-300 dark:border-gray-600",
+            "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+            "pl-10 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+            "placeholder:text-gray-500 dark:placeholder:text-gray-400",
+            "transition-colors duration-200",
+            sizeClasses[size]
+          )}
         />
-        
-        {searchQuery && (
-          <button
-            type="button"
-            id={`${id}-clear`}
-            onClick={handleClear}
-            disabled={isLoading}
-            className={`
-              absolute top-1/2 transform -translate-y-1/2 p-1 rounded-full
-              text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700
-              transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500
-              disabled:opacity-50 disabled:cursor-not-allowed
-              ${size === 'sm' ? 'right-12' : size === 'lg' ? 'right-16' : 'right-14'}
-            `}
+        {value && (
+          <button 
+            type="button" 
+            onClick={clear} 
             aria-label="Clear search"
+            className={cn(
+              "absolute right-3 top-1/2 -translate-y-1/2",
+              "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
+              "transition-colors duration-200",
+              size === 'sm' && "w-4 h-4",
+              size === 'md' && "w-5 h-5",
+              size === 'lg' && "w-6 h-6"
+            )}
           >
-            <X size={size === 'sm' ? 12 : size === 'lg' ? 16 : 14} />
+            <X className="w-full h-full" />
           </button>
         )}
-        
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={`
-            absolute top-1/2 transform -translate-y-1/2 
-            px-2 py-1 rounded bg-blue-500 text-white text-sm 
-            hover:bg-blue-600 disabled:bg-blue-400
-            transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300
-            disabled:cursor-not-allowed right-2
-            ${size === 'sm' ? 'text-xs px-1.5' : size === 'lg' ? 'text-base px-3 py-2' : ''}
-          `}
-          aria-label="Submit search"
-        >
-          {isLoading ? '...' : 'Search'}
-        </button>
-        
-        {/* Global shortcut hint */}
-        <div className="sr-only">
-          Press / to focus search
-        </div>
       </div>
-    </form>
+    </div>
   );
 }

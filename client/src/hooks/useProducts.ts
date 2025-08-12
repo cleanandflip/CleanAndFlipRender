@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { fromSlug, toSlug } from "@/lib/categories";
-import { getQueryFromURL, subscribeToQuery, type SearchQuery } from '@/lib/searchService';
+import { searchService } from '@/lib/searchService';
 import type { Product } from "@shared/schema";
 
 interface ProductsResponse {
@@ -9,16 +9,19 @@ interface ProductsResponse {
   total: number;
 }
 
-export function useProducts() {
-  const [searchQuery, setSearchQuery] = useState<SearchQuery>(() => getQueryFromURL());
+// Updated function signature to match ProductsResults component requirements
+export function useProducts(args?: { q: string; category: string; sort: string; page: number }) {
+  const [query, setQuery] = useState(() => searchService.getQuery());
   
   // Subscribe to URL changes
   useEffect(() => {
-    const unsubscribe = subscribeToQuery(setSearchQuery);
-    return unsubscribe;
+    return searchService.subscribe(() => {
+      setQuery(searchService.getQuery());
+    });
   }, []);
   
-  const { q, category: categorySlug } = searchQuery;
+  // Use args if provided, otherwise use URL state
+  const { q, category: categorySlug } = args || query;
   const categoryLabel = fromSlug(categorySlug);
 
   // Fetch all products from API
@@ -73,13 +76,16 @@ export function useProducts() {
     return list;
   }, [allProducts, q, categorySlug]);
 
-  return { 
-    products: filteredProducts, 
-    isLoading, 
+  return {
+    data: filteredProducts,
+    total: filteredProducts.length,
+    loading: isLoading,
     error,
-    q, 
-    categoryLabel, 
-    categorySlug,
-    total: filteredProducts.length
+    // Legacy compatibility
+    products: filteredProducts,
+    categoryLabel,
+    hasSearchQuery: Boolean(q?.trim()),
+    query: q || '',
+    categorySlug: categorySlug || '',
   };
 }

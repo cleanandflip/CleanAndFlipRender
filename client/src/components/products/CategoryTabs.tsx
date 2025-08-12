@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { CATEGORY_LABELS, CategoryLabel, fromSlug, toSlug } from "@/lib/categories";
-import { getQueryFromURL, setQueryInURL, subscribeToQuery } from '@/lib/searchService';
+import { searchService } from '@/lib/searchService';
 
 export default function CategoryTabs() {
   const [current, setCurrent] = useState<CategoryLabel>('All Categories');
@@ -11,14 +11,15 @@ export default function CategoryTabs() {
   
   // Initialize from URL
   useEffect(() => {
-    const query = getQueryFromURL();
+    const query = searchService.getQuery();
     setCurrent(fromSlug(query.category));
     setMounted(true);
   }, []);
   
   // Subscribe to URL changes
   useEffect(() => {
-    const unsubscribe = subscribeToQuery((query) => {
+    const unsubscribe = searchService.subscribe(() => {
+      const query = searchService.getQuery();
       setCurrent(fromSlug(query.category));
     });
     return unsubscribe;
@@ -26,7 +27,8 @@ export default function CategoryTabs() {
 
   const select = useCallback((label: CategoryLabel) => {
     const slug = toSlug(label);
-    setQueryInURL({ category: slug });
+    const current = searchService.getQuery();
+    searchService.setQuery({ ...current, category: slug, page: 1 });
     
     // Analytics
     if (typeof window !== 'undefined' && (window as any).gtag) {

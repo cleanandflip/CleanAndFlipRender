@@ -1,107 +1,46 @@
-// Unified Search Service - Single source of truth for URL-driven search state
-// Handles query parameters, URL syncing, and provides reactive subscriptions
+// Tiny URL state helper for q/category/sort/page
+type Query = { q: string; category: string; sort: string; page: number };
 
-export interface SearchQuery {
-  q: string;
-  category: string;
-  sort?: string;
-  page?: number;
-}
-
-type SearchSubscriber = (query: SearchQuery) => void;
-const subscribers: SearchSubscriber[] = [];
-
-// Get current query state from URL
-export function getQueryFromURL(): SearchQuery {
-  const params = new URLSearchParams(window.location.search);
-  
-  return {
-    q: params.get('q') || '',
-    category: params.get('category') || '',
-    sort: params.get('sort') || undefined,
-    page: params.get('page') ? parseInt(params.get('page')!, 10) : undefined
-  };
-}
-
-// Update URL with new query parameters (preserves unspecified params)
-export function setQueryInURL(
-  patch: Partial<SearchQuery>, 
-  options: { replace?: boolean; navigate?: boolean } = {}
-): void {
-  const currentParams = new URLSearchParams(window.location.search);
-  const { replace = false, navigate = true } = options;
-  
-  // Apply patches
-  Object.entries(patch).forEach(([key, value]) => {
-    if (value === undefined || value === '' || value === null) {
-      currentParams.delete(key);
-    } else {
-      currentParams.set(key, String(value));
-    }
-  });
-  
-  // Build new URL
-  const query = currentParams.toString();
-  const newPath = `/products${query ? `?${query}` : ''}`;
-  
-  // Update browser history
-  if (navigate) {
-    const method = replace ? 'replaceState' : 'pushState';
-    window.history[method]({}, '', newPath);
-    
-    // Notify subscribers
-    notifySubscribers();
+const parse = (): Query => {
+  if (typeof window === 'undefined') {
+    return { q: '', category: '', sort: '', page: 1 };
   }
-  
-  // Analytics event
-  if (patch.q !== undefined) {
-    emitSearchAnalytics(patch.q, patch.category || getQueryFromURL().category);
+  const sp = new URLSearchParams(window.location.search);
+  const q         = (sp.get("q") ?? "");
+  const category  = (sp.get("category") ?? "");
+  const sort      = (sp.get("sort") ?? "");
+  const pageRaw   = Number(sp.get("page") ?? "1");
+  const page      = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
+  return { q, category, sort, page };
+};
+
+const write = (next: Partial<Query>, opts: { replace?: boolean } = {}) => {
+  if (typeof window === 'undefined') return;
+  const sp = new URLSearchParams(window.location.search);
+  for (const [k, v] of Object.entries(next)) {
+    if (v === undefined || v === null || v === "") sp.delete(k);
+    else sp.set(k, String(v));
   }
-}
+  const url = `${window.location.pathname}${sp.toString() ? "?" + sp.toString() : ""}`;
+  (opts.replace ? history.replaceState : history.pushState).call(history, null, "", url);
+  // notify listeners
+  window.dispatchEvent(new PopStateEvent("popstate"));
+};
 
-// Subscribe to query changes (for back/forward navigation)
-export function subscribeToQuery(fn: SearchSubscriber): () => void {
-  subscribers.push(fn);
-  
-  // Return unsubscribe function
-  return () => {
-    const index = subscribers.indexOf(fn);
-    if (index > -1) {
-      subscribers.splice(index, 1);
-    }
-  };
-}
+type Unsub = () => void;
+const subs = new Set<() => void>();
+const subscribe = (fn: () => void): Unsub => {
+  subs.add(fn);
+  const handler = () => fn();
+  window.addEventListener("popstate", handler);
+  return () => { subs.delete(fn); window.removeEventListener("popstate", handler); };
+};
 
-// Notify all subscribers of query changes
-function notifySubscribers(): void {
-  const currentQuery = getQueryFromURL();
-  subscribers.forEach(fn => fn(currentQuery));
-}
-
-// Handle browser back/forward navigation
-function handlePopState(): void {
-  notifySubscribers();
-}
-
-// Initialize popstate listener
-if (typeof window !== 'undefined') {
-  window.addEventListener('popstate', handlePopState);
-}
-
-// Analytics helper
-function emitSearchAnalytics(q: string, category: string): void {
-  // Emit analytics event if analytics service is available
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('event', 'search_changed', {
-      search_term: q,
-      category: category || 'all',
-      page_location: window.location.href
-    });
-  }
-  
-  // Console log for development
-  console.log('🔍 Search Analytics:', { q, category, url: window.location.href });
-}
+export const searchService = {
+  getQuery: parse,
+  setQuery: write,
+  subscribe,
+};
 
 // Global keyboard shortcuts - only active on products page
 if (typeof window !== 'undefined') {

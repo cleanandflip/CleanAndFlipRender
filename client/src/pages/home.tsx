@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+import * as React from "react";
+import { Search, X } from "lucide-react";
 import Logo from "@/components/common/logo";
 import { Button, Card } from "@/components/shared/AnimatedComponents";
 import ProductCard from "@/components/products/product-card";
@@ -10,9 +12,13 @@ import CategoryGrid from "@/components/categories/category-grid";
 import { productEvents } from "@/lib/queryClient";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { globalDesignSystem as theme } from "@/styles/design-system/theme";
+import { searchService } from "@/lib/searchService";
+import ProductsResults from "@/components/products/ProductsResults";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { useProducts } from "@/hooks/useProducts";
 import type { Product } from "@shared/schema";
 
-export default function Home() {
+function HomeSections() {
   const queryClient = useQueryClient();
   const { lastMessage, isConnected } = useWebSocket();
   
@@ -526,5 +532,46 @@ export default function Home() {
         </div>
       </section>
     </motion.div>
+  );
+}
+
+export default function Home() {
+  const [q, setQ] = React.useState(searchService.getQuery().q);
+
+  React.useEffect(() => searchService.subscribe(() => setQ(searchService.getQuery().q)), []);
+
+  // If no query -> render original home. Query present -> render inline results.
+  if (!q) return <HomeSections />;
+
+  const clear = () => searchService.setQuery({ q: "", page: 1 });
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-bg-primary to-bg-secondary">
+      <div className="container mx-auto px-4 py-8">
+        {/* Inline "search mode" header: show current query and an X to exit */}
+        <div className="flex items-center justify-between mb-8 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+          <div className="flex items-center gap-3">
+            <Search className="w-6 h-6 text-blue-500" />
+            <span className="text-lg font-medium text-gray-900 dark:text-white">
+              Results for "{q}"
+            </span>
+          </div>
+          <button 
+            type="button" 
+            onClick={clear} 
+            aria-label="Clear search"
+            className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <X className="w-4 h-4" />
+            Clear
+          </button>
+        </div>
+
+        <ProductsResults
+          fetchProducts={useProducts}
+          emptyState={<EmptyState type="no-results" title={`No matches for "${q}"`} description="Clear or try another term." showActions={true} />}
+        />
+      </div>
+    </div>
   );
 }
