@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { UnifiedDropdown } from "@/components/ui";
-import SearchBar from "@/components/search/SearchBar";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { useCart } from "@/hooks/use-cart";
@@ -182,15 +181,20 @@ export default function Navigation() {
             {/* Visual separator before user section */}
             <div className="hidden lg:block h-8 w-px bg-white/10" />
             
-            {/* Header Search - unified across all pages */}
-            <div className="hidden lg:block flex-1 max-w-md">
-              <SearchBar
-                placeholder="Search equipment..."
-                className="w-full"
-                size="md"
-                id="header-search"
-              />
-            </div>
+            {/* Shop Link - replaces header search */}
+            <Button
+              variant="ghost"
+              className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-white/10 text-white font-medium"
+              onClick={() => handleNavigation(`${ROUTES.PRODUCTS}?focus=search`)}
+              style={{
+                background: 'rgba(75, 85, 99, 0.4)',
+                border: '1px solid rgba(156, 163, 175, 0.4)',
+                backdropFilter: 'blur(8px)'
+              }}
+            >
+              <Search size={18} />
+              Shop
+            </Button>
 
             {/* Account - Professional Dropdown */}
             {user ? (
@@ -405,14 +409,17 @@ export default function Navigation() {
                     </Button>
                   ))}
                   
-                  <div className="w-full mb-4">
-                    <SearchBar
-                      placeholder="Search equipment..."
-                      className="w-full"
-                      size="md"
-                      id="mobile-search"
-                    />
-                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      handleNavigation(ROUTES.PRODUCTS);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full justify-start"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    Shop
+                  </Button>
                 </nav>
               </SheetContent>
             </Sheet>

@@ -1,6 +1,6 @@
 import { Search, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getQuery, setQuery } from '@/lib/searchService';
+import { getQueryFromURL, setQueryInURL } from '@/lib/searchService';
 
 interface EmptyStateProps {
   type: 'no-results' | 'no-products' | 'category-empty';
@@ -15,18 +15,18 @@ export function EmptyState({
   description,
   showActions = true
 }: EmptyStateProps) {
-  const query = getQuery();
+  const query = getQueryFromURL();
   
   const handleClearSearch = () => {
-    setQuery({ q: undefined });
+    setQueryInURL({ q: '' });
   };
   
   const handleClearCategory = () => {
-    setQuery({ category: undefined });
+    setQueryInURL({ category: '' });
   };
   
   const handleClearAll = () => {
-    setQuery({ q: undefined, category: undefined });
+    setQueryInURL({ q: '', category: '' });
   };
 
   const getDefaultContent = () => {

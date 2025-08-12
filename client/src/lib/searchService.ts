@@ -1,119 +1,118 @@
-// URL parameter management for unified search system
-interface SearchParams {
-  q?: string;
-  category?: string;
+// Unified Search Service - Single source of truth for URL-driven search state
+// Handles query parameters, URL syncing, and provides reactive subscriptions
+
+export interface SearchQuery {
+  q: string;
+  category: string;
   sort?: string;
   page?: number;
 }
 
-// Subscribers for search changes
-const subscribers: Array<(params: SearchParams) => void> = [];
+type SearchSubscriber = (query: SearchQuery) => void;
+const subscribers: SearchSubscriber[] = [];
 
-// Get current search parameters from URL - null-safe version
-export function getQuery(): SearchParams {
-  if (typeof window === 'undefined') return {};
-  
+// Get current query state from URL
+export function getQueryFromURL(): SearchQuery {
   const params = new URLSearchParams(window.location.search);
-  const pageParam = params.get('page');
-  const pageNum = pageParam ? parseInt(pageParam, 10) : undefined;
   
   return {
-    q: params.get('q') || undefined,
-    category: params.get('category') || undefined,
+    q: params.get('q') || '',
+    category: params.get('category') || '',
     sort: params.get('sort') || undefined,
-    page: pageNum && pageNum > 0 ? pageNum : undefined,
+    page: params.get('page') ? parseInt(params.get('page')!, 10) : undefined
   };
 }
 
-// Set search parameters in URL
-export function setQuery(updates: Partial<SearchParams>, options: { replace?: boolean } = {}) {
-  if (typeof window === 'undefined') return;
+// Update URL with new query parameters (preserves unspecified params)
+export function setQueryInURL(
+  patch: Partial<SearchQuery>, 
+  options: { replace?: boolean; navigate?: boolean } = {}
+): void {
+  const currentParams = new URLSearchParams(window.location.search);
+  const { replace = false, navigate = true } = options;
   
-  const current = getQuery();
-  const merged = { ...current, ...updates };
-  
-  // Remove undefined/empty values
-  Object.keys(merged).forEach(key => {
-    const value = merged[key as keyof SearchParams];
+  // Apply patches
+  Object.entries(patch).forEach(([key, value]) => {
     if (value === undefined || value === '' || value === null) {
-      delete merged[key as keyof SearchParams];
+      currentParams.delete(key);
+    } else {
+      currentParams.set(key, String(value));
     }
   });
   
-  const params = new URLSearchParams();
-  if (merged.q) params.set('q', merged.q);
-  if (merged.category) params.set('category', merged.category);
-  if (merged.sort) params.set('sort', merged.sort);
-  if (merged.page && merged.page > 1) params.set('page', merged.page.toString());
+  // Build new URL
+  const query = currentParams.toString();
+  const newPath = `/products${query ? `?${query}` : ''}`;
   
-  const url = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
-  
-  if (options.replace) {
-    window.history.replaceState({}, '', url);
-  } else {
-    window.history.pushState({}, '', url);
+  // Update browser history
+  if (navigate) {
+    const method = replace ? 'replaceState' : 'pushState';
+    window.history[method]({}, '', newPath);
+    
+    // Notify subscribers
+    notifySubscribers();
   }
   
-  // Notify subscribers
-  const newParams = getQuery();
-  subscribers.forEach(fn => fn(newParams));
-  
-  // Track analytics
-  trackSearchAnalytics(merged.q || '', merged.category || '');
+  // Analytics event
+  if (patch.q !== undefined) {
+    emitSearchAnalytics(patch.q, patch.category || getQueryFromURL().category);
+  }
 }
 
-// Subscribe to search changes
-export function subscribe(fn: (params: SearchParams) => void): () => void {
+// Subscribe to query changes (for back/forward navigation)
+export function subscribeToQuery(fn: SearchSubscriber): () => void {
   subscribers.push(fn);
   
-  // Listen for browser back/forward
-  const handlePopState = () => {
-    const params = getQuery();
-    subscribers.forEach(callback => callback(params));
-  };
-  
-  if (subscribers.length === 1) {
-    // Only add listener once
-    window.addEventListener('popstate', handlePopState);
-  }
-  
+  // Return unsubscribe function
   return () => {
     const index = subscribers.indexOf(fn);
     if (index > -1) {
       subscribers.splice(index, 1);
     }
-    
-    // Remove listener when no subscribers
-    if (subscribers.length === 0) {
-      window.removeEventListener('popstate', handlePopState);
-    }
   };
 }
 
-// Helper to clear search
-export function clearSearch(options: { replace?: boolean } = {}) {
-  setQuery({ 
-    q: undefined, 
-    page: 1  // Reset to page 1
-  }, options);
+// Notify all subscribers of query changes
+function notifySubscribers(): void {
+  const currentQuery = getQueryFromURL();
+  subscribers.forEach(fn => fn(currentQuery));
 }
 
-// Analytics tracking
-function trackSearchAnalytics(q: string, category: string) {
-  if (typeof window !== 'undefined' && q) {
-    console.log('🔍 Search Analytics:', { q, category, url: window.location.href });
+// Handle browser back/forward navigation
+function handlePopState(): void {
+  notifySubscribers();
+}
+
+// Initialize popstate listener
+if (typeof window !== 'undefined') {
+  window.addEventListener('popstate', handlePopState);
+}
+
+// Analytics helper
+function emitSearchAnalytics(q: string, category: string): void {
+  // Emit analytics event if analytics service is available
+  if (typeof window !== 'undefined' && (window as any).gtag) {
+    (window as any).gtag('event', 'search_changed', {
+      search_term: q,
+      category: category || 'all',
+      page_location: window.location.href
+    });
   }
+  
+  // Console log for development
+  console.log('🔍 Search Analytics:', { q, category, url: window.location.href });
 }
 
-// Global keyboard shortcuts
+// Global keyboard shortcuts - only active on products page
 if (typeof window !== 'undefined') {
   document.addEventListener('keydown', (e) => {
-    // Global '/' key to focus search bar
+    // Global '/' key to focus search bar - only on products page
     if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
       const activeElement = document.activeElement;
       const isInInput = activeElement && ['INPUT', 'TEXTAREA'].includes(activeElement.tagName);
+      const isOnProductsPage = window.location.pathname.startsWith('/products');
       
-      if (!isInInput) {
+      if (!isInInput && isOnProductsPage) {
         e.preventDefault();
         const searchInput = document.querySelector('[data-search-input]') as HTMLInputElement;
         if (searchInput) {

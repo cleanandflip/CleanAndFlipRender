@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { fromSlug, toSlug } from "@/lib/categories";
-import { getQuery, subscribe } from '@/lib/searchService';
+import { getQueryFromURL, subscribeToQuery, type SearchQuery } from '@/lib/searchService';
 import type { Product } from "@shared/schema";
 
 interface ProductsResponse {
@@ -9,24 +9,17 @@ interface ProductsResponse {
   total: number;
 }
 
-interface SearchParams {
-  q?: string;
-  category?: string;
-  sort?: string;
-  page?: number;
-}
-
 export function useProducts() {
-  const [searchQuery, setSearchQuery] = useState<SearchParams>(() => getQuery());
+  const [searchQuery, setSearchQuery] = useState<SearchQuery>(() => getQueryFromURL());
   
   // Subscribe to URL changes
   useEffect(() => {
-    const unsubscribe = subscribe(setSearchQuery);
+    const unsubscribe = subscribeToQuery(setSearchQuery);
     return unsubscribe;
   }, []);
   
   const { q, category: categorySlug } = searchQuery;
-  const categoryLabel = fromSlug(categorySlug || null);
+  const categoryLabel = fromSlug(categorySlug);
 
   // Fetch all products from API
   const { data: productsResponse, isLoading, error } = useQuery<ProductsResponse>({
@@ -62,17 +55,16 @@ export function useProducts() {
       });
     }
 
-    // Filter by search query if specified - null-safe version
-    const safeQ = typeof q === 'string' ? q.trim() : '';
-    if (safeQ) {
-      const searchTerm = safeQ.toLowerCase();
+    // Filter by search query if specified
+    if (q.trim()) {
+      const searchTerm = q.trim().toLowerCase();
       list = list.filter((product) => {
         const searchableText = [
-          product.name || '',
-          product.description || '',
-          product.brand || '',
-          product.subcategory || ''
-        ].join(" ").toLowerCase();
+          product.name,
+          product.description,
+          product.brand,
+          product.subcategory
+        ].filter(Boolean).join(" ").toLowerCase();
         
         return searchableText.includes(searchTerm);
       });
