@@ -11,6 +11,10 @@ clientErrorLogger.setup();
 // Initialize additional global error catching
 FrontendErrorCatcher.init();
 
+// Initialize new local Sentry-style error tracking
+import { installGlobalErrorHandlers } from "./lib/errorTracking";
+installGlobalErrorHandlers();
+
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
     <App />

@@ -69,6 +69,7 @@ import googleAuthRoutes from "./routes/auth-google";
 import stripeWebhookRoutes from './routes/stripe-webhooks';
 import adminMetricsRoutes from './routes/admin-metrics';
 import errorManagementRoutes from './routes/admin/error-management';
+import observabilityRoutes from './routes/observability';
 import crypto from 'crypto';
 import { 
   users, 
@@ -211,6 +212,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Error management routes  
   app.use('/api/admin', errorManagementRoutes);
+  
+  // Observability routes (local Sentry-style error tracking)
+  app.use('/api/observability', observabilityRoutes);
   
   // Client error logging is now handled at middleware level
   // No additional route needed since middleware handles it

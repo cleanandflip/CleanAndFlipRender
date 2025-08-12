@@ -35,21 +35,68 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)]
 );
 
-// Breadcrumbs table for error context
-export const errorBreadcrumbs = pgTable("error_breadcrumbs", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  errorLogId: varchar("error_log_id").references(() => errorLogs.id, { onDelete: 'cascade' }),
-  timestamp: timestamp("timestamp").defaultNow(),
-  type: varchar("type"), // 'navigation', 'click', 'api', 'console'
-  category: varchar("category"),
-  message: text("message"),
-  data: jsonb("data"),
-  level: varchar("level"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Local Sentry-style error tracking tables
+export const errorsRaw = pgTable("errors_raw", {
+  id: serial("id").primaryKey(),
+  eventId: varchar("event_id").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  level: varchar("level").notNull(), // error, warn, info
+  env: varchar("env").notNull(), // development, production
+  release: varchar("release"),
+  service: varchar("service").notNull(), // client, server
+  url: text("url"),
+  method: varchar("method"),
+  statusCode: integer("status_code"),
+  message: text("message").notNull(),
+  type: varchar("type"),
+  stack: jsonb("stack"), // string[]
+  fingerprint: varchar("fingerprint").notNull(),
+  userId: varchar("user_id"),
+  tags: jsonb("tags"), // Record<string, string | number | boolean>
+  extra: jsonb("extra"), // Record<string, any>
+}, (table) => [
+  index("idx_errors_raw_created_at").on(table.createdAt),
+  index("idx_errors_raw_fingerprint").on(table.fingerprint),
+  index("idx_errors_raw_level").on(table.level),
+]);
 
-export type ErrorBreadcrumb = typeof errorBreadcrumbs.$inferSelect;
-export type InsertErrorBreadcrumb = typeof errorBreadcrumbs.$inferInsert;
+export const issues = pgTable("issues", {
+  id: serial("id").primaryKey(),
+  fingerprint: varchar("fingerprint").notNull().unique(),
+  title: text("title").notNull(),
+  firstSeen: timestamp("first_seen").defaultNow().notNull(),
+  lastSeen: timestamp("last_seen").defaultNow().notNull(),
+  level: varchar("level").notNull(),
+  count: integer("count").default(0).notNull(),
+  affectedUsers: integer("affected_users").default(0).notNull(),
+  resolved: boolean("resolved").default(false).notNull(),
+  ignored: boolean("ignored").default(false).notNull(),
+  sampleEventId: varchar("sample_event_id"),
+  envs: jsonb("envs").notNull(), // Record<string, number>
+}, (table) => [
+  index("idx_issues_last_seen").on(table.lastSeen),
+  index("idx_issues_resolved").on(table.resolved),
+  index("idx_issues_level").on(table.level),
+]);
+
+export const issueEvents = pgTable("issue_events", {
+  id: serial("id").primaryKey(),
+  fingerprint: varchar("fingerprint").notNull(),
+  hour: timestamp("hour").notNull(),
+  count: integer("count").default(0).notNull(),
+}, (table) => [
+  index("idx_issue_events_hour").on(table.hour),
+  index("idx_issue_events_fingerprint").on(table.fingerprint),
+  // Unique constraint for fingerprint + hour combination
+  index("idx_issue_events_unique").on(table.fingerprint, table.hour),
+]);
+
+export type ErrorRaw = typeof errorsRaw.$inferSelect;
+export type InsertErrorRaw = typeof errorsRaw.$inferInsert;
+export type Issue = typeof issues.$inferSelect;
+export type InsertIssue = typeof issues.$inferInsert;
+export type IssueEvent = typeof issueEvents.$inferSelect;
+export type InsertIssueEvent = typeof issueEvents.$inferInsert;
 
 // User roles enum - Simplified system (user/developer only)
 export const userRoleEnum = pgEnum("user_role", [
