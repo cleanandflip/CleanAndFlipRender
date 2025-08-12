@@ -1,0 +1,176 @@
+You’ve still got two problems happening at once:
+
+The client is firing both POST /cart (legacy) and POST /api/cart (new).
+
+The /api/cart request is returning 400 (bad body or missing headers).
+
+Here’s a tight fix plan Replit can apply right now.
+
+A) Kill all legacy calls and centralize one client function
+Search & remove every legacy call:
+
+bash
+Copy
+Edit
+rg -n "fetch\\(.*/cart\"|axios\\.(post|get)\\(.*/cart\"|/cart\\)" src
+You should end with zero occurrences of "/cart" anywhere in client code.
+
+Create one API helper and use it everywhere:
+src/api/cart.ts
+
+ts
+Copy
+Edit
+export async function addToCart({
+  productId,
+  variantId,
+  quantity = 1,
+}: { productId: string; variantId?: string; quantity?: number }) {
+  const res = await fetch("/api/cart", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",             // needed for guest cart cookie
+    body: JSON.stringify({ productId, variantId, quantity }),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`Add to cart failed ${res.status}: ${text || "unknown error"}`);
+  }
+  return text ? JSON.parse(text) : {};
+}
+Use it in the button (and block duplicates):
+
+ts
+Copy
+Edit
+const [adding, setAdding] = useState(false);
+
+async function onAdd() {
+  if (adding) return;
+  try {
+    setAdding(true);
+    await addToCart({ productId: p.id, quantity: 1 });
+    toast.success("Added to cart");
+    queryClient.invalidateQueries({ queryKey: ["cart"] });
+  } catch (e:any) {
+    toast.error(e.message ?? "Failed to add to cart");
+  } finally {
+    setAdding(false);
+  }
+}
+Verify in Network tab you now see only one request: POST /api/cart.
+
+B) Make sure the server accepts the request shape
+Body parser must be before routes:
+
+ts
+Copy
+Edit
+app.use(express.json());
+Route handler should accept our payload and create/attach a guest cart cookie if no user is logged in:
+
+ts
+Copy
+Edit
+import { z } from "zod";
+
+const AddSchema = z.object({
+  productId: z.string().min(1),
+  variantId: z.string().optional(),
+  quantity: z.number().int().positive().default(1),
+});
+
+app.post("/api/cart", async (req, res) => {
+  try {
+    const parsed = AddSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });
+    }
+    const { productId, variantId, quantity } = parsed.data;
+
+    const cartId = await getOrCreateCartId(req, res); // sets cartId cookie for guests
+    const product = await db.products.findById(productId);
+    if (!product) return res.status(404).json({ error: "Product not found" });
+    if (product.stock <= 0) return res.status(409).json({ error: "Out of stock" });
+
+    const updated = await carts.addItem({ cartId, productId, variantId, quantity });
+    return res.status(200).json(updated);
+  } catch (err:any) {
+    console.error("POST /api/cart error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+async function getOrCreateCartId(req, res) {
+  let { cartId } = req.cookies || {};
+  if (!cartId) {
+    cartId = crypto.randomUUID();
+    res.cookie("cartId", cartId, {
+      httpOnly: true,
+      sameSite: "Lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 24 * 30,
+    });
+    await carts.create(cartId);
+  }
+  return cartId;
+}
+Log the incoming body and return body on errors so we can see why it’s 400:
+
+ts
+Copy
+Edit
+app.post("/api/cart", (req, _res, next) => {
+  console.info("POST /api/cart body:", req.body);
+  next();
+});
+C) Remove/re-route any legacy server path
+If you still have a legacy route mounted (e.g., app.post("/cart", ...) or a sanitizer/proxy that logs Sanitization check - path: /cart), remove or redirect it:
+
+ts
+Copy
+Edit
+app.post("/cart", (_req, res) => {
+  res.redirect(308, "/api/cart"); // TEMP if you must keep it mounted
+});
+Prefer to delete the legacy route to avoid double hits.
+
+D) Common reasons you’d still get 400 (quick checks)
+Missing header: Content-Type: application/json – we added it.
+
+No body: confirm POST /api/cart body: logs an object with productId and quantity.
+
+Wrong key: your DB expects _id or sku — map productId accordingly in the handler.
+
+Quantity type: make sure the client sends a number (not a string).
+
+CSRF/CORS: If API is a different origin, enable cors({ origin: UI_ORIGIN, credentials: true }) and keep credentials: "include" client-side.
+
+E) What the logs should look like after the fix
+Only these on add:
+
+bash
+Copy
+Edit
+GET  /api/cart           200
+POST /api/cart           200   (with POST /api/cart body: { productId: "...", quantity: 1 })
+No POST /cart lines anymore.
+
+If it’s still 400, the response body will now tell us exactly which field failed (from Zod).
+
+F) Quick validation script (optional)
+In dev console:
+
+js
+Copy
+Edit
+fetch("/api/cart", {
+  method:"POST",
+  headers:{ "Content-Type":"application/json" },
+  credentials:"include",
+  body: JSON.stringify({ productId: "PUT_A_REAL_ID_HERE", quantity: 1 })
+}).then(r => r.text()).then(console.log)
+If this succeeds, the issue is client wiring; if it 400s, the server schema/IDs are mismatched—copy the exact text back to me and I’ll pinpoint it.
+
+Once you apply A–D, try Add to Cart again

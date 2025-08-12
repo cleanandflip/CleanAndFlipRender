@@ -75,19 +75,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Add to cart mutation
   const addToCartMutation = useMutation({
     mutationFn: async (item: { productId: string; quantity: number }) => {
-      const response = await apiRequest("POST", "/api/cart", {
-        productId: item.productId,
-        quantity: item.quantity,
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ 
+          productId: item.productId, 
+          quantity: item.quantity 
+        }),
       });
-      return response.json();
+      
+      const text = await res.text();
+      if (!res.ok) {
+        throw new Error(`Add to cart failed ${res.status}: ${text || "unknown error"}`);
+      }
+      
+      return text ? JSON.parse(text) : {};
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Failed to add to cart",
-        description: "Please try again.",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
@@ -96,21 +107,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Update quantity mutation
   const updateQuantityMutation = useMutation({
     mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
-      if (quantity === 0) {
-        const response = await apiRequest("DELETE", `/api/cart/${itemId}`);
-        return response.json();
-      } else {
-        const response = await apiRequest("PUT", `/api/cart/${itemId}`, { quantity });
-        return response.json();
+      const method = quantity === 0 ? "DELETE" : "PUT";
+      const body = quantity === 0 ? undefined : JSON.stringify({ quantity });
+      
+      const res = await fetch(`/api/cart/${itemId}`, {
+        method,
+        headers: quantity === 0 ? {} : { "Content-Type": "application/json" },
+        credentials: "include",
+        body,
+      });
+      
+      const text = await res.text();
+      if (!res.ok) {
+        throw new Error(`Update cart failed ${res.status}: ${text || "unknown error"}`);
       }
+      
+      return text ? JSON.parse(text) : {};
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Failed to update cart",
-        description: "Please try again.",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
