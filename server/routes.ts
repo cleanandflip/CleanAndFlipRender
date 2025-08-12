@@ -44,6 +44,7 @@ import { healthLive, healthReady } from "./config/health";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
 import { db } from "./db";
+import observabilityRouter from "./routes/observability";
 
 // WebSocket Manager for broadcasting updates
 let wsManager: any = null;
@@ -69,7 +70,7 @@ import googleAuthRoutes from "./routes/auth-google";
 import stripeWebhookRoutes from './routes/stripe-webhooks';
 import adminMetricsRoutes from './routes/admin-metrics';
 import errorManagementRoutes from './routes/admin/error-management';
-import observabilityNewRoutes from './routes/observability-new';
+
 import crypto from 'crypto';
 import { 
   users, 
@@ -217,8 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Legacy observability routes (keep for compatibility) - disabled for now
   
   // New enhanced observability system with proper filtering and actions
-  const newObservabilityRouter = (await import('./routes/observability-new')).default;
-  app.use('/api/observability', newObservabilityRouter);
+  // Mounted later in the file after other route definitions
   
   // Client error logging is now handled at middleware level
   // No additional route needed since middleware handles it
@@ -3590,6 +3590,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to subscribe" });
     }
   });
+
+  // Mount observability router
+  app.use("/api/observability", observabilityRouter);
 
   server.on('listening', () => {
     Logger.info(`[STARTUP] Server is now accepting connections on ${host}:${port}`);

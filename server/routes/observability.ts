@@ -1,3 +1,4 @@
+// src/server/routes/observability.ts
 import { Router } from "express";
 import { z } from "zod";
 import { randomUUID } from "crypto";
@@ -5,178 +6,118 @@ import { SimpleErrorStore } from "../data/simpleErrorStore";
 
 const router = Router();
 
-// Normalize/strip noise from stacks for grouping
+/** scrub stack frames for grouping */
 function normalizeStack(raw?: string): string[] {
   if (!raw) return [];
   return raw
     .split("\n")
-    .map(l => l.trim())
-    .filter(l => l && !l.includes("node_modules") && !l.includes("(internal"))
-    .map(l => l.replace(/\(\w+:\/\/.*?\)/g, "()").replace(/:\d+:\d+/g, ":__:__"));
-}
-
-// Fingerprint = hash(message + top frame + url + type)
-function fingerprintOf(p: { message?: string; stack?: string[]; url?: string; type?: string; service: string }) {
-  const top = p.stack?.[0] ?? "";
-  const basis = [p.service, p.type ?? "", p.message ?? "", top, p.url ?? ""].join("|").slice(0, 2048);
-  // Trivial deterministic hash
-  let h = 0; 
-  for (let i = 0; i < basis.length; i++) {
-    h = (h * 31 + basis.charCodeAt(i)) | 0;
-  }
-  return `${p.service}:${Math.abs(h)}`;
+    .map((l) => l.trim())
+    .filter((l) => l && !l.includes("node_modules") && !l.includes("(internal"))
+    .map((l) => l.replace(/\(\w+:\/\/.*?\)/g, "()").replace(/:\d+:\d+/g, ":__:__"));
 }
 
 const IngestSchema = z.object({
-  service: z.enum(["client", "server"]),
+  service: z.enum(["client", "server"]).default("client"),
   level: z.enum(["error", "warn", "info"]).default("error"),
-  env: z.enum(["development", "production"]).default(
+  env: z.enum(["production", "development"]).default(
     process.env.NODE_ENV === "production" ? "production" : "development"
   ),
   release: z.string().optional(),
   url: z.string().optional(),
   method: z.string().optional(),
-  statusCode: z.number().optional(),
+  statusCode: z.coerce.number().optional(),
   message: z.string().min(1),
   type: z.string().optional(),
   stack: z.string().optional(),
-  user: z.object({ id: z.string().optional() }).optional(),
-  tags: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-  extra: z.record(z.string(), z.any()).optional(),
-}).strict();
+  extra: z.record(z.any()).optional(),
+});
 
-// Error ingestion endpoint
+// 1) ingest events
 router.post("/errors", async (req, res) => {
   try {
-    const parsed = IngestSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.flatten() });
-    }
-
-    const now = new Date();
-    const stack = normalizeStack(parsed.data.stack);
-    const fingerprint = fingerprintOf({ ...parsed.data, stack });
-
-    const raw = {
+    const parsed = IngestSchema.parse(req.body ?? {});
+    const event = {
       eventId: randomUUID(),
-      createdAt: now,
-      ...parsed.data,
-      stack,
-      fingerprint,
-      userId: parsed.data.user?.id,
+      createdAt: new Date().toISOString(),
+      ...parsed,
+      stack: normalizeStack(parsed.stack).join('\n'),
     };
-
-    const result = await SimpleErrorStore.addError({
-      service: parsed.data.service,
-      level: parsed.data.level,
-      message: parsed.data.message,
-      stack: parsed.data.stack,
-      url: parsed.data.url,
-      env: parsed.data.env,
-    });
-
-    res.status(201).json({ ok: true, eventId: result.eventId, fingerprint: result.fingerprint });
-  } catch (error) {
-    console.error("Error ingestion failed:", error);
-    res.status(500).json({ error: "Failed to process error" });
+    await SimpleErrorStore.addError(event);
+    res.status(202).json({ ok: true, eventId: event.eventId });
+  } catch (e) {
+    console.error("observability.ingest failed:", e);
+    res.status(400).json({ error: "Invalid payload" });
   }
 });
 
-// Admin API - List issues
+// 2) list issues (filters + paging)
 router.get("/issues", async (req, res) => {
   try {
     const q = String(req.query.q ?? "");
-    const level = req.query.level as any;
-    const env = req.query.env as any;
-    const resolved = req.query.resolved !== undefined ? req.query.resolved === "true" : undefined;
-    const page = Number(req.query.page ?? 1);
-    const limit = Math.min(Number(req.query.limit ?? 20), 100);
+    const level = String(req.query.level ?? "");
+    const env = String(req.query.env ?? "");
+    const resolved = String(req.query.resolved ?? "false") === "true";
+    const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
+    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? "20"), 10)));
 
     const result = await SimpleErrorStore.listIssues({ page, limit });
     res.json(result);
-  } catch (error) {
-    console.error("Failed to list issues:", error);
+  } catch (e) {
+    console.error("observability.listIssues failed:", e);
     res.status(500).json({ error: "Failed to fetch issues" });
   }
 });
 
-// Admin API - Get specific issue
+// 3) issue details
 router.get("/issues/:fp", async (req, res) => {
   try {
-    const [issue, events] = await Promise.all([
-      SimpleErrorStore.getIssue(req.params.fp),
-      SimpleErrorStore.getRawForIssue(req.params.fp, 50),
-    ]);
-    
-    if (!issue) {
-      return res.status(404).json({ error: "Issue not found" });
-    }
-
-    res.json({ issue, events });
-  } catch (error) {
-    console.error("Failed to fetch issue:", error);
-    res.status(500).json({ error: "Failed to fetch issue details" });
+    const issue = await SimpleErrorStore.getIssue(req.params.fp);
+    if (!issue) return res.status(404).json({ error: "Issue not found" });
+    res.json({ issue });
+  } catch (e) {
+    console.error("observability.issue failed:", e);
+    res.status(500).json({ error: "Failed to fetch issue" });
   }
 });
 
-// Admin API - Resolve issue
+// 4) events for an issue
+router.get("/issues/:fp/events", async (req, res) => {
+  try {
+    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit ?? "50"), 10)));
+    const events = await SimpleErrorStore.getEvents(req.params.fp, limit);
+    res.json(events || []);
+  } catch (e) {
+    console.error("observability.issueEvents failed:", e);
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
+});
+
+// 5) actions
 router.put("/issues/:fp/resolve", async (req, res) => {
-  try {
-    await SimpleErrorStore.setResolved(req.params.fp, true);
-    res.json({ ok: true });
-  } catch (error) {
-    console.error("Failed to resolve issue:", error);
-    res.status(500).json({ error: "Failed to resolve issue" });
-  }
+  try { await SimpleErrorStore.markResolved(req.params.fp, true); res.json({ ok: true }); }
+  catch (e) { console.error("observability.resolve failed:", e); res.status(500).json({ error: "Failed to resolve issue" }); }
 });
-
-// Admin API - Reopen issue
 router.put("/issues/:fp/reopen", async (req, res) => {
-  try {
-    await SimpleErrorStore.setResolved(req.params.fp, false);
-    res.json({ ok: true });
-  } catch (error) {
-    console.error("Failed to reopen issue:", error);
-    res.status(500).json({ error: "Failed to reopen issue" });
-  }
+  try { await SimpleErrorStore.markResolved(req.params.fp, false); res.json({ ok: true }); }
+  catch (e) { console.error("observability.reopen failed:", e); res.status(500).json({ error: "Failed to reopen issue" }); }
 });
-
-// Admin API - Ignore issue
 router.put("/issues/:fp/ignore", async (req, res) => {
-  try {
-    await SimpleErrorStore.setIgnored(req.params.fp, true);
-    res.json({ ok: true });
-  } catch (error) {
-    console.error("Failed to ignore issue:", error);
-    res.status(500).json({ error: "Failed to ignore issue" });
-  }
+  try { await SimpleErrorStore.markIgnored(req.params.fp, true); res.json({ ok: true }); }
+  catch (e) { console.error("observability.ignore failed:", e); res.status(500).json({ error: "Failed to ignore issue" }); }
 });
-
-// Admin API - Unignore issue
 router.put("/issues/:fp/unignore", async (req, res) => {
-  try {
-    await SimpleErrorStore.setIgnored(req.params.fp, false);
-    res.json({ ok: true });
-  } catch (error) {
-    console.error("Failed to unignore issue:", error);
-    res.status(500).json({ error: "Failed to unignore issue" });
-  }
+  try { await SimpleErrorStore.markIgnored(req.params.fp, false); res.json({ ok: true }); }
+  catch (e) { console.error("observability.unignore failed:", e); res.status(500).json({ error: "Failed to unignore issue" }); }
 });
 
-
-
-// Admin API - Chart data
+// 6) series for chart
 router.get("/series", async (req, res) => {
   try {
-    const now = new Date();
-    const days = Number(req.query.days ?? 1);
-    const from = new Date(now.getTime() - days * 24 * 3600 * 1000);
-    const env = req.query.env as string;
-    
+    const days = Math.min(30, Math.max(1, parseInt(String(req.query.days ?? "1"), 10)));
     const rows = await SimpleErrorStore.getChartData(days);
     res.json(rows);
-  } catch (error) {
-    console.error("Failed to fetch chart data:", error);
+  } catch (e) {
+    console.error("observability.series failed:", e);
     res.status(500).json({ error: "Failed to fetch chart data" });
   }
 });
