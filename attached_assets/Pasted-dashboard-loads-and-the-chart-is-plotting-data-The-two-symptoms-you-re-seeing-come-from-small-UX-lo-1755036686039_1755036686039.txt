@@ -1,0 +1,167 @@
+dashboard loads and the chart is plotting data. The two symptoms you’re seeing come from small UX/logic gaps:
+
+We always query Unresolved-only, so if your store marked issues as resolved/ignored, the list is empty even though the series shows counts.
+
+The “filters” seem dead because there are no results to reflect changes.
+
+Below are drop-in patches that (a) add an All statuses mode, (b) ensure filters actually change the query, (c) add a quick seed error action so you can see items immediately, and (d) make the empty state self-diagnose what’s filtering things out.
+
+1) API client: add an ingest helper
+Replace your src/api/observability.ts with this small addition (everything else stays the same):
+
+ts
+Copy
+Edit
+// ADD THIS in obsApi:
+  ingest: async (payload: {
+    service?: "client" | "server";
+    level?: "error" | "warn" | "info";
+    env?: "production" | "development";
+    message: string;
+    stack?: string;
+    extra?: any;
+  }) =>
+    fetch(`/api/observability/errors`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(ok),
+2) Page: real query filters + “All statuses” + seed button
+Open src/pages/observability.tsx and make these changes.
+
+a) Add a third status option, and track status as a string
+tsx
+Copy
+Edit
+// replace STATUSES with:
+const STATUSES: DropdownOption[] = [
+  { label: "All", value: "all" },
+  { label: "Unresolved", value: "unresolved" },
+  { label: "Resolved", value: "resolved" },
+];
+
+// state
+// replace: const [resolved, setResolved] = useState<boolean>(false);
+const [status, setStatus] = useState<string>("all"); // all | unresolved | resolved
+b) Use the status to build the query
+tsx
+Copy
+Edit
+// in the useQuery for issues, replace the queryFn call:
+queryFn: () =>
+  obsApi.issues({
+    q,
+    level: level || undefined,
+    env: env || undefined,
+    // only send "resolved" when not "all"
+    resolved: status === "all" ? undefined : status === "resolved",
+    page,
+    limit,
+  }),
+// and update the queryKey so cache reflects status
+queryKey: ["obs:issues", q, level, env, status, page, limit],
+c) Wire the Status dropdown to the new state
+tsx
+Copy
+Edit
+// replace the Status dropdown usage:
+<Dropdown
+  value={status}
+  onChange={setStatus}
+  options={STATUSES}
+  placeholder="Status"
+/>
+d) Make “Show test events” default to ON (so you see everything at first)
+tsx
+Copy
+Edit
+// replace: const [showTestEvents, setShowTestEvents] = useState<boolean>(false);
+const [showTestEvents, setShowTestEvents] = useState<boolean>(true);
+e) Add a visible “Seed Test Error” action (dev-only)
+Put this next to your page title (where the time-range dropdown is):
+
+tsx
+Copy
+Edit
+<div className="flex justify-between items-center">
+  <h1 className="text-3xl font-bold">Error Tracking</h1>
+  <div className="flex items-center gap-3">
+    <Dropdown value={timeRange} onChange={setTimeRange} options={TIME_RANGES} />
+    <Button variant="outline" onClick={() => {
+      obsApi.ingest({
+        service: "client",
+        level: "error",
+        env: "development",
+        message: "Seeded test error – dashboard verification",
+        stack: "at ObservabilityPage(seed)",
+      }).then(() => {
+        // nudge queries
+        queryClient.invalidateQueries({ queryKey: ["obs:series"] });
+        queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
+      });
+    }}>Seed Test Error</Button>
+  </div>
+</div>
+f) Empty state that helps you recover
+Replace the empty-state block in the Issues card with this:
+
+tsx
+Copy
+Edit
+{filteredItems.length === 0 ? (
+  <div className="text-center py-10 text-muted-foreground space-y-3">
+    <div>No issues found for current filters.</div>
+    <div className="text-xs">
+      Tips: switch Status to <span className="font-medium">All</span>,
+      enable <span className="font-medium">Show ignored</span>, or
+      toggle <span className="font-medium">Show test events</span>.
+    </div>
+  </div>
+) : ( /* ...existing list... */ )}
+g) Ensure the client-side filter doesn’t over-filter
+If your errors use “Test” in the title, the previous filter could hide them. Keep the filter but loosen it:
+
+tsx
+Copy
+Edit
+const filteredItems = useMemo(() => {
+  return items.filter((it: Issue) => {
+    if (!showIgnored && it.ignored) return false;
+    if (!showTestEvents && /\btest(ed)?\b/i.test(it.title ?? "")) return false;
+    return true;
+  });
+}, [items, showIgnored, showTestEvents]);
+3) (Optional) Server tweak for “All statuses”
+If your GET /api/observability/issues handler forces a boolean, allow “all” by treating an absent resolved query param as “don’t filter.” You can keep your current code if it already does this; otherwise change:
+
+ts
+Copy
+Edit
+// BEFORE
+const resolved = String(req.query.resolved ?? "false") === "true";
+
+// AFTER – resolvedRaw can be undefined
+const resolvedRaw = req.query.resolved;
+const resolved =
+  resolvedRaw === undefined ? undefined :
+  String(resolvedRaw) === "true";
+…and pass that resolved (possibly undefined) into your store so it doesn’t filter by status when undefined.
+
+4) Why this fixes the symptoms
+List is empty but chart shows counts: previously the UI always requested resolved=false. If your ingest pipeline or janitor job resolved issues automatically, the list was filtered out. “All” removes that restriction.
+
+Filters feel non-functional: with zero items, nothing appears to change. After the fixes you can (a) switch to All, (b) seed a test error, and (c) see the list react immediately to Level/Env/Status/Test/Ignored toggles.
+
+Quick validation: the Seed Test Error button posts to /api/observability/errors so you can confirm end-to-end in seconds.
+
+5) Quick test flow
+Open Developer Dashboard → Errors
+
+Click Seed Test Error
+
+Set Status: All, ensure Show test events is enabled
+
+You should see at least one issue; click into it to view events
+
+Try filters: Level=Error, Env=Development, toggle Show ignored/test

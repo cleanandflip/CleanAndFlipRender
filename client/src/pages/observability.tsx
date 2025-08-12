@@ -27,8 +27,9 @@ const ENVS: DropdownOption[] = [
   { label: "Development", value: "development" },
 ];
 const STATUSES: DropdownOption[] = [
-  { label: "Unresolved", value: "false" },
-  { label: "Resolved", value: "true" },
+  { label: "All", value: "all" },
+  { label: "Unresolved", value: "unresolved" },
+  { label: "Resolved", value: "resolved" },
 ];
 const TIME_RANGES: DropdownOption[] = [
   { label: "Last 24h", value: "1" },
@@ -40,9 +41,9 @@ export default function ObservabilityPage() {
   const [q, setQ] = useState("");
   const [level, setLevel] = useState<string>("error");
   const [env, setEnv] = useState<string>("");
-  const [resolved, setResolved] = useState<boolean>(false);
+  const [status, setStatus] = useState<string>("all");
   const [showIgnored, setShowIgnored] = useState<boolean>(false);
-  const [showTestEvents, setShowTestEvents] = useState<boolean>(false);
+  const [showTestEvents, setShowTestEvents] = useState<boolean>(true);
   const [page, setPage] = useState(1);
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<string>("1");
@@ -51,13 +52,13 @@ export default function ObservabilityPage() {
   const queryClient = useQueryClient();
 
   const { data: issuesData, isLoading } = useQuery({
-    queryKey: ["obs:issues", q, level, env, resolved, page, limit],
+    queryKey: ["obs:issues", q, level, env, status, page, limit],
     queryFn: () =>
       obsApi.issues({
         q,
         level: level || undefined,
         env: env || undefined,
-        resolved,
+        resolved: status === "all" ? undefined : status === "resolved",
         page,
         limit,
       }),
@@ -99,7 +100,7 @@ export default function ObservabilityPage() {
   const filteredItems = useMemo(() => {
     return items.filter((it: Issue) => {
       if (!showIgnored && it.ignored) return false;
-      if (!showTestEvents && it.title?.toLowerCase().includes("test")) return false;
+      if (!showTestEvents && /\btest(ed)?\b/i.test(it.title ?? "")) return false;
       return true;
     });
   }, [items, showIgnored, showTestEvents]);
@@ -124,7 +125,21 @@ export default function ObservabilityPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Error Tracking</h1>
-        <Dropdown value={timeRange} onChange={setTimeRange} options={TIME_RANGES} />
+        <div className="flex items-center gap-3">
+          <Dropdown value={timeRange} onChange={setTimeRange} options={TIME_RANGES} />
+          <Button variant="outline" onClick={() => {
+            obsApi.ingest({
+              service: "client",
+              level: "error",
+              env: "development",
+              message: "Seeded test error – dashboard verification",
+              stack: "at ObservabilityPage(seed)",
+            }).then(() => {
+              queryClient.invalidateQueries({ queryKey: ["obs:series"] });
+              queryClient.invalidateQueries({ queryKey: ["obs:issues"] });
+            });
+          }}>Seed Test Error</Button>
+        </div>
       </div>
 
       {chartData.length > 0 && (
@@ -149,8 +164,8 @@ export default function ObservabilityPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Total Issues</p><p className="text-2xl font-bold">{issuesData?.total || 0}</p></div><AlertCircle className="h-8 w-8 text-red-500" /></div></CardContent></Card>
         <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Errors in Range</p><p className="text-2xl font-bold">{chartData.reduce((s, d) => s + d.count, 0)}</p></div><TrendingUp className="h-8 w-8 text-orange-500" /></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Resolved</p><p className="text-2xl font-bold">{items.filter(i => i.resolved).length}</p></div><CheckCircle className="h-8 w-8 text-green-500" /></div></CardContent></Card>
-        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Active</p><p className="text-2xl font-bold">{items.filter(i => !i.resolved && !i.ignored).length}</p></div><AlertTriangle className="h-8 w-8 text-red-500" /></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Resolved</p><p className="text-2xl font-bold">{items.filter((i: Issue) => i.resolved).length}</p></div><CheckCircle className="h-8 w-8 text-green-500" /></div></CardContent></Card>
+        <Card><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Active</p><p className="text-2xl font-bold">{items.filter((i: Issue) => !i.resolved && !i.ignored).length}</p></div><AlertTriangle className="h-8 w-8 text-red-500" /></div></CardContent></Card>
       </div>
 
       <Card>
@@ -159,7 +174,7 @@ export default function ObservabilityPage() {
             <Input placeholder="Search errors..." value={q} onChange={(e) => setQ(e.target.value)} className="flex-1 min-w-64" />
             <Dropdown value={level} onChange={setLevel} options={LEVELS} placeholder="Level" />
             <Dropdown value={env} onChange={setEnv} options={ENVS} placeholder="Environment" />
-            <Dropdown value={resolved ? "true" : "false"} onChange={(v) => setResolved(v === "true")} options={STATUSES} placeholder="Status" />
+            <Dropdown value={status} onChange={setStatus} options={STATUSES} placeholder="Status" />
             <div className="flex items-center gap-2">
               <Checkbox id="toggle-ignored" checked={showIgnored} onCheckedChange={(c) => setShowIgnored(c === true)} />
               <label htmlFor="toggle-ignored" className="text-sm">Show ignored</label>
@@ -178,7 +193,14 @@ export default function ObservabilityPage() {
           {isLoading ? (
             <div className="text-center py-8">Loading...</div>
           ) : filteredItems.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No issues found</div>
+            <div className="text-center py-10 text-muted-foreground space-y-3">
+              <div>No issues found for current filters.</div>
+              <div className="text-xs">
+                Tips: switch Status to <span className="font-medium">All</span>,
+                enable <span className="font-medium">Show ignored</span>, or
+                toggle <span className="font-medium">Show test events</span>.
+              </div>
+            </div>
           ) : (
             <div className="space-y-2">
               {filteredItems.map((issue: Issue) => {

@@ -56,7 +56,10 @@ router.get("/issues", async (req, res) => {
     const q = String(req.query.q ?? "");
     const level = String(req.query.level ?? "");
     const env = String(req.query.env ?? "");
-    const resolved = String(req.query.resolved ?? "false") === "true";
+    const resolvedRaw = req.query.resolved;
+    const resolved =
+      resolvedRaw === undefined ? undefined :
+      String(resolvedRaw) === "true";
     const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
     const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? "20"), 10)));
 

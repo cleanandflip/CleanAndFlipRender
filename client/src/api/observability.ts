@@ -61,4 +61,19 @@ export const obsApi = {
 
   series: async (days = 1) =>
     fetch(`/api/observability/series?days=${days}`, { credentials: "include" }).then(ok),
+
+  ingest: async (payload: {
+    service?: "client" | "server";
+    level?: "error" | "warn" | "info";
+    env?: "production" | "development";
+    message: string;
+    stack?: string;
+    extra?: any;
+  }) =>
+    fetch(`/api/observability/errors`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).then(ok),
 };
