@@ -1,7 +1,7 @@
 # replit.md
 
 ## Overview
-Clean & Flip is a full-stack web application designed as a weightlifting equipment exchange platform. It enables users to buy and sell gym equipment, featuring product catalog management, user authentication, a shopping cart, order processing, and administrative tools. The platform operates on a single-seller model, with the admin managing inventory and processing user equipment submissions. The project aims to provide a streamlined, user-friendly experience for fitness enthusiasts to exchange gear.
+Clean & Flip is a full-stack web application for exchanging weightlifting equipment. It offers features for buying and selling gym gear, including product catalog management, user authentication, a shopping cart, order processing, and administrative tools. The platform operates on a single-seller model, with admin managing inventory and processing user submissions. The project aims to provide a streamlined, user-friendly experience for fitness enthusiasts to exchange gear, with a business vision to become a leading marketplace in this niche.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -16,8 +16,8 @@ The client-side is built with React 18, TypeScript, and leverages modern React p
 - **UI Components**: Radix UI primitives with shadcn/ui design system, emphasizing a comprehensive and unified admin dashboard theming (AdminLayout, UnifiedMetricCard, UnifiedDataTable, UnifiedButton).
 - **Styling**: Tailwind CSS with CSS variables for theming.
 - **Build System**: Vite for fast development.
-- **Animations**: Framer Motion for enhanced transitions, including portal-based rendering.
-- **UX**: Implements lazy loading, error boundaries, and responsive design for desktop and mobile.
+- **Animations**: Framer Motion for enhanced transitions.
+- **UX**: Implements lazy loading, error boundaries, and responsive design.
 
 ### Backend Architecture
 The server-side uses a layered REST API architecture built with Node.js:
@@ -27,7 +27,7 @@ The server-side uses a layered REST API architecture built with Node.js:
 - **Security**: Comprehensive middleware including rate limiting, input validation (Zod schemas), and CORS protection.
 - **File Processing**: Multer for image uploads with Cloudinary integration.
 - **Performance**: Request consolidation, caching, and database connection pooling.
-- **Monitoring**: Structured logging for debugging.
+- **Monitoring**: Structured logging for debugging and a unified Local Error Tracking System (LETS) providing Sentry-style error monitoring without external dependencies.
 
 ### Data Storage Solutions
 PostgreSQL is the primary database, utilizing:
@@ -40,53 +40,29 @@ PostgreSQL is the primary database, utilizing:
 ### Authentication and Authorization
 A comprehensive multi-layered security approach with Google OAuth integration and simplified role-based access control:
 - **User Authentication**: Session-based auth via Passport.js with both local strategy and Google OAuth2.
-- **Google Sign-In**: Fully integrated Google OAuth using passport-google-oauth20 with automatic user creation/linking.
+- **Google Sign-In**: Fully integrated Google OAuth with automatic user creation/linking and mandatory profile completion.
 - **Password Security**: bcrypt with 12 salt rounds for local accounts.
-- **OAuth Security**: Google profile verification with email-based account linking for existing users.
 - **Role Management**: Simplified two-role system (user/developer) with middleware-enforced permissions.
-- **Multi-Provider Support**: Users can sign in with email/password or Google account seamlessly.
-- **Local User Detection**: Automatic Asheville, NC zip code detection for local service determination.
-- **Rate Limiting**: Tiered rate limiting for general API, auth, and developer operations.
-- **Password Reset**: Secure token-based recovery for local accounts.
-- **Session Management**: Secure session configuration with consolidated database connections.
-- **Security Practices**: Implements security headers, input sanitization, and SQL injection prevention.
-- **Production Database**: Complete dual-database system with environment-aware connections and full data migration capabilities.
-- **OAuth Integration Completed**: August 2025 - Google Sign-In fully functional with database schema supporting both authentication methods.
-- **Database Synchronization**: August 10, 2025 - Development and production databases synchronized with Google OAuth schema changes, immediate onboarding redirection implemented.
-- **Production Deployment Tools**: August 10, 2025 - Created comprehensive database sync scripts (`sync-prod-db.sh`, `quick-deploy.sh`) with automated backup, schema comparison, and verification capabilities for seamless production deployments.
-- **Codebase Cleanup**: August 10, 2025 - Removed all unnecessary scripts, documentation, and migration files. Kept only essential deployment tools and current documentation for a clean, maintainable codebase.
-- **Google Auth Flow Verification**: August 10, 2025 - Complete Google authentication to verified user flow tested and confirmed working: OAuth redirect → callback → new user creation → onboarding redirect → address collection → profile completion → dashboard access.
-- **Critical Google OAuth Implementation**: August 10, 2025 - Implemented mandatory profile completion for Google users: onboarding flow forces immediate profile completion after Google sign-up (required for shopping), TypeScript null safety fixes, ProtectedRoute component enforces profile completion for cart/checkout, ProfilePrompt for checkout guidance, WelcomeBanner for onboarding experience, enhanced products page with proper data fetching. User feedback: "google users should be forced to onboarding, info is NEEDED for shopping" - implemented mandatory onboarding flow.
-- **Production Database Sync**: August 10, 2025 - Successfully synchronized development database schema to production using sync-prod-db.sh script. Created backup (backup_prod_20250810_183658.sql), applied schema changes, verified critical columns including Google OAuth fields (google_id, profile_complete, onboarding_step, auth_provider). Production database ready for deployment with mandatory Google user onboarding flow.
-- **Critical Production Implementation**: August 10, 2025 - Completed comprehensive production readiness deployment with enterprise-level security, performance optimizations, and monitoring. Implemented Stripe webhook signature verification, production database indexes, admin metrics API, email integration with Resend, advanced security middleware (input sanitization, SQL injection prevention, enhanced rate limiting), compression, memory monitoring, and graceful shutdown handling. All systems tested and fully operational with zero critical warnings. Ready for immediate production deployment.
-- **Enterprise Security & Compliance Completion**: August 10, 2025 - Addressed all critical production audit findings: implemented comprehensive .gitignore protection, strict CSP headers for XSS prevention, DOMPurify input sanitization system, React ErrorBoundary components, complete SEO meta tags with Open Graph/Twitter cards, PWA manifest for mobile, Privacy Policy and Terms of Service pages for legal compliance. All OWASP security standards implemented with production-ready error handling and graceful failure recovery. Platform now meets enterprise-grade security and compliance requirements.
-- **Sentry-Style Error Management Integration**: August 10, 2025 - Successfully integrated comprehensive error logging dashboard into admin interface. Added "Error Logs" tab with AlertTriangle icon, implemented real-time error tracking with severity classification (Critical, High, Medium, Low), stack traces, user session tracking, filtering/search capabilities, and error resolution management. Fixed UI layout issues by removing duplicate AdminLayout wrapper. Complete error monitoring system captures both client-side and server-side errors automatically, providing enterprise-grade error management similar to Sentry.
-- **Unified UI Component Standardization**: August 10, 2025 - Completed comprehensive UI component standardization across Error Dashboard. Eliminated all legacy dropdown components and replaced with modern shadcn DropdownMenu system using consistent dark theme styling. All TypeScript errors resolved, creating unified visual experience matching admin dashboard theme. Error management interface now fully integrated with enterprise-grade component architecture.
-- **Advanced Codebase Doctor Integration Completion**: August 12, 2025 - Successfully resolved all technical integration issues with the comprehensive codebase doctor script. Fixed TypeScript execution by converting from ES modules to CommonJS format (.cjs), aligned frontend API endpoints with backend services, resolved all TypeScript compilation errors with proper null safety handling, and confirmed full functionality with 938 findings analysis. The complete original codebase doctor functionality is preserved and fully operational within the admin dashboard Error Logs tab, providing enterprise-grade code health monitoring, security vulnerability detection, performance analysis, and comprehensive code quality reporting.
-- **Final Codebase Quality Optimization**: August 12, 2025 - Completed comprehensive console statement cleanup across all production code, eliminated all LSP diagnostic errors, fixed AddressAutocomplete component prop mismatches, standardized all dropdown components to unified system, and resolved remaining codebase scanner findings. The platform now maintains zero build warnings, zero LSP errors, and enterprise-grade code quality with only 2 remaining task-related comments in scanner files (by design for metadata). All 39 pages verified functional with optimal build performance at 25-45 seconds. Production-ready status confirmed with complete code quality standards.
-- **Navigation System Simplification**: August 12, 2025 - Removed complex header search functionality and replaced with clean "Shop" button that navigates to products page with optional focus parameter. Eliminated UnifiedSearch from navigation, cleaned up mobile search toggles, and implemented focus-on-arrival hook for seamless search experience. The / keyboard shortcut now only works on products page, creating clear separation between navigation and search functionality. Navigation is now cleaner with dedicated search functionality isolated to products page where users expect it.
-- **Form & Dropdown Enhancement**: August 12, 2025 - Completed comprehensive Equipment Details form reorganization with clean two-column layout structure, consistent spacing (gap-x-6 gap-y-5), enhanced accessibility with proper labels and ARIA attributes, and streamlined field groupings. Enhanced dropdown components with fixed positioning system using getBoundingClientRect() to prevent clipping issues, reduced transparency for better readability (rgba(15, 23, 42, 0.98)), improved user profile dropdown with larger width (w-80), better visual hierarchy, and upgraded animations with cubic-bezier easing. All dropdowns now feature proper z-index layering (z-[60]) and enhanced visual feedback with smooth transitions.
-- **Critical Cart System Fix & Security Hardening**: August 12, 2025 - Resolved complete application breakdown caused by cart provider errors. Implemented centralized cartApi client with unified TypeScript interfaces, fixed all undefined variable references (cartItems destructuring), eliminated mixed API approaches, and removed all legacy "/cart" route references. Enhanced server-side input sanitizer with precise regex patterns that properly handle JSON payloads while maintaining XSS protection. Applied enterprise security improvements: removed deprecated X-XSS-Protection header, added modern Permissions-Policy restrictions, improved content scanning to handle arrays/objects correctly without flagging legitimate data. Cart functionality now works seamlessly with proper error handling, consistent query invalidation, and robust authentication flow. All LSP diagnostics resolved with zero build warnings.
+- **Security Practices**: Implements security headers, input sanitization (DOMPurify), SQL injection prevention, tiered rate limiting, and secure session management.
+- **Enterprise-Grade Features**: Comprehensive .gitignore protection, strict CSP headers, React ErrorBoundary components, SEO meta tags, PWA manifest, and legal compliance pages (Privacy Policy, Terms of Service).
 
 ### Unified UI and Live Sync
-The admin dashboard features a unified component architecture (AdminLayout, UnifiedMetricCard, UnifiedDataTable, UnifiedButton) with 7 consistent tabs. A comprehensive real-time synchronization system is implemented across all admin components and the user-facing home page using WebSockets, providing live updates for data changes. This includes advanced animations for a professional user experience.
+The admin dashboard features a unified component architecture (AdminLayout, UnifiedMetricCard, UnifiedDataTable, UnifiedButton) with consistent tabs. A comprehensive real-time synchronization system is implemented across all admin components and the user-facing home page using WebSockets, providing live updates for data changes and professional user experience with advanced animations.
 
 ## External Dependencies
 
 ### Payment Processing
-- **Stripe**: Integrated for complete payment processing, including Products API, Prices API, and checkout sessions, with automated webhook handling.
+- **Stripe**: Integrated for complete payment processing (Products API, Prices API, checkout sessions) with automated webhook handling.
 
 ### Cloud Services
-- **Cloudinary**: Used for image storage and transformation, including upload optimization.
-- **Google Cloud Storage**: An alternative file storage option.
+- **Cloudinary**: Used for image storage and transformation.
 
 ### Database and Infrastructure
+- **Neon**: Serverless PostgreSQL for the primary database.
 - **Replit Database**: Managed PostgreSQL for provisioning and environment variable integration.
-- **Redis** (Optional): Considered for caching.
 
 ### Email Services
 - **Resend**: Used for transactional email delivery (password resets, order confirmations).
-- **SendGrid**: An alternative email provider.
 
 ### Development and Build Tools
 - **ESBuild**: Production build system for server-side code.

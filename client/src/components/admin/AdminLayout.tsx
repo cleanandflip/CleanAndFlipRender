@@ -19,7 +19,7 @@ const ADMIN_TABS = [
   { id: 'submissions', label: 'Submissions', icon: FolderOpen },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'users', label: 'Users', icon: Users },
-  { id: 'errors', label: 'Error Logs', icon: AlertTriangle },
+  { id: 'errors', label: 'Errors', icon: AlertTriangle },
   { id: 'system', label: 'System', icon: Settings },
   { id: 'stripe', label: 'Stripe', icon: CreditCard },
 ];

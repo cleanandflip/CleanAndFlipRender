@@ -38,7 +38,7 @@ const About = lazy(() => import("@/pages/about"));
 const Contact = lazy(() => import("@/pages/contact"));
 const LegalPrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
 const LegalTermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
-const ErrorDashboard = lazy(() => import("@/pages/admin/ErrorDashboard"));
+const ObservabilityPage = lazy(() => import("@/pages/admin/observability"));
 const AuthPage = lazy(() => import("@/pages/auth"));
 const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
@@ -143,7 +143,7 @@ function Router() {
               <Route path={ROUTES.ADMIN} component={AdminDashboard} />
               <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
               <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
-              <Route path="/admin/errors" component={ErrorDashboard} />
+              <Route path="/admin/observability" component={ObservabilityPage} />
               
               {/* Legal Routes */}
               <Route path="/terms-of-service" component={LegalTermsOfService} />

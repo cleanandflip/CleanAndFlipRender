@@ -129,7 +129,8 @@ export function sanitizeInput(options: SanitizationOptions = {}) {
         /^\/register$/,
         /^\/auth\//,
         /^\/track-activity$/,
-        /^\/errors\//
+        /^\/errors\//,
+        /^\/api\/observability\/errors$/
       ];
       
       // Debug logging
