@@ -103,15 +103,16 @@ function emitSearchAnalytics(q: string, category: string): void {
   console.log('🔍 Search Analytics:', { q, category, url: window.location.href });
 }
 
-// Global keyboard shortcuts
+// Global keyboard shortcuts - only active on products page
 if (typeof window !== 'undefined') {
   document.addEventListener('keydown', (e) => {
-    // Global '/' key to focus search bar
+    // Global '/' key to focus search bar - only on products page
     if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
       const activeElement = document.activeElement;
       const isInInput = activeElement && ['INPUT', 'TEXTAREA'].includes(activeElement.tagName);
+      const isOnProductsPage = window.location.pathname.startsWith('/products');
       
-      if (!isInInput) {
+      if (!isInInput && isOnProductsPage) {
         e.preventDefault();
         const searchInput = document.querySelector('[data-search-input]') as HTMLInputElement;
         if (searchInput) {

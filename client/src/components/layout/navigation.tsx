@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { UnifiedDropdown, UnifiedSearch } from "@/components/ui";
+import { UnifiedDropdown } from "@/components/ui";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { useCart } from "@/hooks/use-cart";
@@ -14,7 +14,7 @@ import { ROUTES } from "@/config/routes";
 
 export default function Navigation() {
   const [location, setLocation] = useLocation();
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [previousPath, setPreviousPath] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -180,37 +180,20 @@ export default function Navigation() {
           <div className="flex items-center space-x-4 flex-shrink-0 min-w-0 overflow-visible">
             {/* Visual separator before user section */}
             <div className="hidden lg:block h-8 w-px bg-white/10" />
-            {/* Desktop Search with Enhanced Width */}
-            <div className="hidden lg:block flex-1 max-w-md mx-4">
-              <UnifiedSearch
-                placeholder="Search equipment..."
-                onSearch={(query) => {
-                  const searchUrl = `${ROUTES.PRODUCTS}?search=${encodeURIComponent(query)}`;
-                  handleNavigation(searchUrl);
-                }}
-                onSelect={(result) => {
-                  handleNavigation(result.url);
-                }}
-                className="w-full"
-                variant="navbar"
-              />
-            </div>
-
-            {/* Mobile Search Toggle with Enhanced Touch Target */}
+            
+            {/* Shop Link - replaces header search */}
             <Button
               variant="ghost"
-              size="icon"
-              className="lg:hidden w-11 h-11 flex-shrink-0 transition-all duration-200 hover:bg-white/10"
+              className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-white/10 text-white font-medium"
+              onClick={() => handleNavigation(`${ROUTES.PRODUCTS}?focus=search`)}
               style={{
                 background: 'rgba(75, 85, 99, 0.4)',
                 border: '1px solid rgba(156, 163, 175, 0.4)',
-                backdropFilter: 'blur(8px)',
-                color: 'white',
-                fontWeight: '500'
+                backdropFilter: 'blur(8px)'
               }}
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
-              <Search size={20} />
+              <Search size={18} />
+              Shop
             </Button>
 
             {/* Account - Professional Dropdown */}
@@ -427,15 +410,15 @@ export default function Navigation() {
                   ))}
                   
                   <Button
-                    variant={isActive("/dashboard") ? "primary" : "outline"}
+                    variant="outline"
                     onClick={() => {
-                      handleNavigation("/dashboard");
+                      handleNavigation(ROUTES.PRODUCTS);
                       setIsMobileMenuOpen(false);
                     }}
                     className="w-full justify-start"
-                    disabled={isActive("/dashboard")}
                   >
-                    Dashboard
+                    <Search className="w-4 h-4 mr-2" />
+                    Shop
                   </Button>
                 </nav>
               </SheetContent>
@@ -443,25 +426,7 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        {isSearchOpen && (
-          <div className="lg:hidden mt-4 pt-4 border-t border-bg-secondary-border">
-            <UnifiedSearch
-              placeholder="Search equipment..."
-              onSearch={(query: string) => {
-                const searchUrl = `/products?search=${encodeURIComponent(query)}`;
-                handleNavigation(searchUrl);
-                setIsSearchOpen(false);
-              }}
-              onSelect={(result) => {
-                handleNavigation(result.url);
-                setIsSearchOpen(false);
-              }}
-              className="w-full"
-              variant="page"
-            />
-          </div>
-        )}
+
       </nav>
 
       {/* Spacer to prevent content from hiding behind fixed nav - Enhanced */}

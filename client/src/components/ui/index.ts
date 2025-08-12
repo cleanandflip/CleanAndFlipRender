@@ -20,7 +20,6 @@ export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, Dr
 
 // UNIFIED DROPDOWN SYSTEM - Complete replacement of all legacy dropdowns
 export { UnifiedDropdown, StandardDropdown, NavDropdown, GhostDropdown } from './UnifiedDropdown';
-export { UnifiedSearch } from './UnifiedSearch';
 export type { DropdownOption } from './UnifiedDropdown';
 
 // Backward compatibility exports

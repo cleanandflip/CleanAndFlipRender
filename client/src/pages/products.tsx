@@ -4,9 +4,13 @@ import CategoryTabs from '@/components/products/CategoryTabs';
 import { WelcomeBanner } from '@/components/ui/welcome-banner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useProducts } from '@/hooks/useProducts';
+import { useFocusOnArrival } from '@/hooks/useFocusOnArrival';
 
 export default function ProductsPage() {
   const { products, isLoading, categoryLabel, total } = useProducts();
+  
+  // Focus search input if arriving with ?focus=search parameter
+  useFocusOnArrival();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

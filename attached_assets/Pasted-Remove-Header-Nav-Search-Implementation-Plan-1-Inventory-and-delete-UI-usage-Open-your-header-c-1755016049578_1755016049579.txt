@@ -1,0 +1,114 @@
+Remove Header (Nav) Search — Implementation Plan
+1) Inventory and delete UI usage
+Open your header component (e.g., src/components/layout/Header.tsx or similar).
+
+Remove any <SearchBar />, <HeaderSearch />, or custom search input JSX in the header.
+
+Remove icons/buttons that only existed to submit/clear header search.
+
+Adjust flex/grid spacing so the header layout remains balanced.
+
+Grep to find all header-search usage
+
+nginx
+Copy
+Edit
+rg -n "HeaderSearch|SearchBar|nav search|header search|onHeaderSearch|searchHotkey"
+2) Remove header-specific logic/state
+Delete any local state, refs, or effects related to header search:
+
+const [headerQuery, setHeaderQuery] = useState(...)
+
+useEffect syncing q to URL from the header
+
+Debounce timers specific to header search
+
+Remove header-only handlers:
+
+onHeaderSearchChange
+
+onHeaderSearchSubmit
+
+focusHeaderSearch()
+
+3) Kill global hotkeys that targeted header search
+Remove global / hotkey that focused the header input.
+
+If you still want / to focus search on the /products page, bind it inside the products page only.
+
+nginx
+Copy
+Edit
+rg -n "keydown|hotkey|keyCode|event\.key.*\/"
+4) Remove header search wiring in routing/services
+If you added a shared searchService earlier, keep it for the page search; just remove any header subscriber/focus logic.
+
+Delete header-specific analytics events such as header_search_used.
+
+Ensure no code tries to navigate to /products on Enter from the header (it no longer exists).
+
+5) Delete dead files (only if header-exclusive)
+If you had a header-only component, delete it:
+
+src/components/search/HeaderSearch.tsx
+
+src/components/layout/HeaderSearchInput.tsx
+
+Remove any header-only CSS/modules.
+
+Update barrel exports that referenced these files.
+
+Confirm no more references
+
+nginx
+Copy
+Edit
+rg -n "HeaderSearch|headerSearch|SearchInHeader"
+Expect no matches in /src.
+
+6) Update layout spacing and a11y
+Replace the removed search with either:
+
+Nothing (tighten spacing), or
+
+A simple “Shop” link emphasis (since search moved to /products).
+
+Re-check tab order (no dead tab stops where the input used to be).
+
+Ensure header landmarks still make sense (<nav>, site logo link, etc.).
+
+7) Tests & analytics
+Delete/update tests that mounted header search.
+
+Remove any dashboards/metrics relying on header search events.
+
+Grep for tests
+
+bash
+Copy
+Edit
+rg -n "header search|HeaderSearch|search in header" test src
+8) QA checklist
+Header loads with no console errors/warnings.
+
+No focusable ghost element where the search was.
+
+Pressing / does nothing globally (unless on /products where you decide to focus that page’s search).
+
+On /products, the page search still works perfectly (type → URL ?q= updates; results filter).
+
+Old header search code is gone from the bundle (check build size or grep).
+
+9) Rollback (if needed)
+Keep the removal in a feature branch (chore/remove-header-search).
+
+If you regret it, revert that PR and reinsert the header search component; no other systems depend on it now.
+
+Optional (recommended)
+Add a small “Search” CTA in the header that navigates to /products and focuses the page search (no input in the header):
+
+Make the header button/link route to /products.
+
+On /products mount, if a ?focus=search flag exists, focus the page search input once, then remove the param. (No styling provided here—theme handles the look.)
+
+If you want, I’ll write the tiny “focus on arrival” hook for the products page and the minimal link behavior to replace the old header input.
