@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Controller, Control, FieldPath, FieldValues } from "react-hook-form";
-import Dropdown, { DropdownOption, DropdownProps } from "@/components/ui/Dropdown";
+import Dropdown, { DropdownOption } from "@/components/ui/Dropdown";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 
 type DropdownFieldProps<
@@ -11,7 +11,13 @@ type DropdownFieldProps<
   name: TName;
   label?: string;
   required?: boolean;
-} & Omit<DropdownProps, "value" | "onChange">;
+  options: DropdownOption[];
+  placeholder?: string;
+  disabled?: boolean;
+  fullWidth?: boolean;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+};
 
 export default function DropdownField<
   TFieldValues extends FieldValues = FieldValues,
@@ -21,7 +27,12 @@ export default function DropdownField<
   name,
   label,
   required = false,
-  ...dropdownProps
+  options,
+  placeholder,
+  disabled,
+  fullWidth = true,
+  size = "md",
+  className
 }: DropdownFieldProps<TFieldValues, TName>) {
   return (
     <FormField
@@ -36,14 +47,17 @@ export default function DropdownField<
           )}
           <FormControl>
             <Dropdown
-              {...dropdownProps}
+              options={options}
               value={field.value || null}
               onChange={field.onChange}
               error={fieldState.error?.message || null}
               id={name}
               name={name}
-              fullWidth={true}
-              size="md"
+              placeholder={placeholder}
+              disabled={disabled}
+              fullWidth={fullWidth}
+              size={size}
+              className={className}
             />
           </FormControl>
           <FormMessage />

@@ -42,6 +42,7 @@ export default function Dropdown({
   const triggerCls = [
     "inline-flex items-center justify-between rounded-lg border",
     "bg-background border-border text-foreground",
+    "hover:bg-muted/20",
     "focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-transparent",
     "transition-colors disabled:opacity-60 disabled:cursor-not-allowed",
     sizeCls, fullWidth ? "w-full" : "w-[min(90vw,320px)]", className
@@ -100,9 +101,11 @@ export default function Dropdown({
                   onClick={() => { if (!opt.disabled) { onChange(opt.value); closeMenu(); } }}
                   disabled={opt.disabled}
                   className={[
-                    "w-full text-left px-3 py-2.5 flex items-center gap-2",
-                    "hover:bg-muted/60 rounded-md transition-colors",
-                    opt.disabled ? "opacity-50 cursor-not-allowed" : "",
+                    "w-full text-left px-3 py-2.5 flex items-center gap-2 rounded-md select-none",
+                    "transition-[background,transform,opacity] duration-150 ease-out",
+                    "hover:bg-muted/60 hover:translate-x-[1px]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                    opt.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
                   ].join(" ")}
                 >
                   <span className="truncate">{opt.label}</span>

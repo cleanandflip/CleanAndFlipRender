@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -20,10 +21,12 @@ export default function Navigation() {
   const [previousPath, setPreviousPath] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [dropdownCoords, setDropdownCoords] = useState<{ top: number; left: number; width: number } | null>(null);
   const { cartCount } = useCart();
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
 
   // Track cart open state based on current location
@@ -31,27 +34,48 @@ export default function Navigation() {
     setIsCartOpen(location === ROUTES.CART);
   }, [location]);
 
-  // Close dropdown when clicking outside
+  // Position calculations and outside click handling for portal
   useEffect(() => {
+    if (!isUserDropdownOpen || !triggerRef.current) return;
+    
+    const calculatePosition = () => {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+      
+      const rect = trigger.getBoundingClientRect();
+      setDropdownCoords({
+        top: rect.bottom + 8 + window.scrollY,
+        left: rect.right - 320 + window.scrollX, // Align right edge
+        width: 320
+      });
+    };
+    
+    calculatePosition();
+    
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      // Don't close if clicking the button itself
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(target) && 
+          triggerRef.current && !triggerRef.current.contains(target)) {
         setIsUserDropdownOpen(false);
       }
     };
 
-    if (isUserDropdownOpen) {
-      // Delay to prevent immediate close
-      const timer = setTimeout(() => {
-        document.addEventListener('click', handleClickOutside);
-      }, 10);
-      
-      return () => {
-        clearTimeout(timer);
-        document.removeEventListener('click', handleClickOutside);
-      };
-    }
+    const handleScroll = () => calculatePosition();
+    const handleResize = () => calculatePosition();
+    
+    // Delay to prevent immediate close
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleResize);
+    }, 10);
+    
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [isUserDropdownOpen]);
 
   const navigation = [
@@ -193,20 +217,20 @@ export default function Navigation() {
 
             {/* Account - Professional Dropdown */}
             {user ? (
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative">
                 <button 
+                  ref={triggerRef}
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsUserDropdownOpen(!isUserDropdownOpen);
                   }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 focus:outline-none hover:bg-white/20 h-11 min-w-[44px] cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary/60 hover:bg-white/20 h-11 min-w-[44px] cursor-pointer"
                   style={{
                     background: 'rgba(75, 85, 99, 0.4)',
                     border: '1px solid rgba(156, 163, 175, 0.4)',
                     backdropFilter: 'blur(8px)',
                     color: 'white',
                     fontWeight: '500',
-                    zIndex: 10
                   }}
                 >
                   <User className="w-5 h-5 text-gray-300" />
@@ -215,97 +239,103 @@ export default function Navigation() {
                   }`} />
                 </button>
 
-                {isUserDropdownOpen && (
-                  <div 
-                    className="absolute right-0 mt-2 w-80 rounded-xl shadow-2xl overflow-hidden z-[60] border"
-                    style={{
-                      background: 'rgba(15, 23, 42, 0.98)',
-                      backdropFilter: 'blur(16px)',
-                      border: '1px solid rgba(148, 163, 184, 0.2)',
-                      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 4px 20px rgba(59, 130, 246, 0.1)'
+                {/* Portal-rendered dropdown menu */}
+                {isUserDropdownOpen && dropdownCoords && createPortal(
+                  <div
+                    ref={dropdownRef}
+                    style={{ 
+                      position: 'absolute', 
+                      top: dropdownCoords.top, 
+                      left: dropdownCoords.left, 
+                      width: dropdownCoords.width, 
+                      zIndex: 60 
                     }}
+                    className="transition duration-200"
                   >
-                    {/* Profile Section */}
-                    <div className="p-4 border-b border-white/10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center ring-2 ring-white/20">
-                          <span className="text-white font-semibold text-base">
-                            {user?.firstName?.[0]?.toUpperCase() || 
-                             user?.email?.[0]?.toUpperCase() || 
-                             'U'}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-base font-medium text-white truncate">
-                            {user?.firstName && user?.lastName 
-                              ? `${user?.firstName} ${user?.lastName}` 
-                              : user?.email?.split('@')[0] || 'User'
-                            }
-                          </p>
-                          <p className="text-sm text-gray-300 truncate">
-                            {user?.email}
-                          </p>
-                          {user?.role?.includes('developer') && (
-                            <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-300 rounded-full">
-                              Developer
+                    <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden">
+                      {/* Profile Section - Enhanced visibility */}
+                      <div className="px-3 py-2.5 rounded-lg bg-muted/60 mb-2 mx-2 mt-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center ring-2 ring-white/20 flex-shrink-0">
+                            <span className="text-white font-semibold text-sm">
+                              {user?.firstName?.[0]?.toUpperCase() || 
+                               user?.email?.[0]?.toUpperCase() || 
+                               'U'}
                             </span>
-                          )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {user?.firstName && user?.lastName 
+                                ? `${user?.firstName} ${user?.lastName}` 
+                                : user?.email?.split('@')[0] || 'User'
+                              }
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {user?.email}
+                            </p>
+                            {user?.role?.includes('developer') && (
+                              <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-400 rounded-full">
+                                Developer
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Navigation Links */}
-                    <div className="p-3">
-                      <button
-                        onClick={() => {
-                          handleNavigation(ROUTES.DASHBOARD);
-                          setIsUserDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center px-3 py-3 text-sm font-medium text-gray-100 hover:bg-white/8 rounded-lg transition-all duration-200 text-left"
-                      >
-                        <User className="w-4 h-4 mr-3 text-gray-300" />
-                        My Profile
-                      </button>
-                      
-                      <button
-                        onClick={() => {
-                          handleNavigation(ROUTES.ORDERS);
-                          setIsUserDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center px-3 py-3 text-sm font-medium text-gray-100 hover:bg-white/8 rounded-lg transition-all duration-200 text-left"
-                      >
-                        <Package className="w-4 h-4 mr-3 text-gray-300" />
-                        My Orders
-                      </button>
-
-                      {user?.role?.includes('developer') && (
+                      {/* Navigation Links */}
+                      <div className="py-1 px-1">
                         <button
                           onClick={() => {
-                            handleNavigation(ROUTES.ADMIN);
+                            handleNavigation(ROUTES.DASHBOARD);
                             setIsUserDropdownOpen(false);
                           }}
-                          className="w-full flex items-center px-3 py-3 text-sm font-medium text-gray-100 hover:bg-blue-500/10 rounded-lg transition-all duration-200 text-left"
+                          className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
                         >
-                          <Shield className="w-4 h-4 mr-3 text-blue-400" />
-                          Developer Dashboard
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm">My Profile</span>
                         </button>
-                      )}
-                    </div>
+                        
+                        <button
+                          onClick={() => {
+                            handleNavigation(ROUTES.ORDERS);
+                            setIsUserDropdownOpen(false);
+                          }}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
+                        >
+                          <Package className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm">My Orders</span>
+                        </button>
 
-                    {/* Sign Out Section */}
-                    <div className="border-t border-white/10 p-3">
-                      <button
-                        onClick={() => {
-                          logoutMutation.mutate();
-                          setIsUserDropdownOpen(false);
-                        }}
-                        className="w-full flex items-center px-3 py-3 text-sm font-medium text-red-300 hover:bg-red-500/10 rounded-lg transition-all duration-200 text-left"
-                      >
-                        <LogOut className="w-4 h-4 mr-3" />
-                        Sign Out
-                      </button>
+                        {user?.role?.includes('developer') && (
+                          <button
+                            onClick={() => {
+                              handleNavigation(ROUTES.ADMIN);
+                              setIsUserDropdownOpen(false);
+                            }}
+                            className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
+                          >
+                            <Shield className="w-4 h-4 text-blue-400" />
+                            <span className="text-sm">Developer Dashboard</span>
+                          </button>
+                        )}
+                        
+                        {/* Divider */}
+                        <div className="my-2 h-px bg-border/60" />
+
+                        <button
+                          onClick={() => {
+                            logoutMutation.mutate();
+                            setIsUserDropdownOpen(false);
+                          }}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4 text-red-400" />
+                          <span className="text-sm text-red-400">Sign Out</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  </div>,
+                  document.body
                 )}
                 
               </div>
