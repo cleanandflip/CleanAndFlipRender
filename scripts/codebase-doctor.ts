@@ -1,4 +1,4 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env tsx
 /**
  * Codebase Doctor — Advanced codebase checker & reporter for Clean & Flip
  * ---------------------------------------------------------------------------------
@@ -145,27 +145,36 @@ function isTextFile(file: string) {
  * ------------------------------------------------------------------------------------------------ */
 
 async function collectFiles(): Promise<string[]> {
-  const patterns = [
-    'client/**/*.{ts,tsx,js,jsx,json,css,scss,sass,html}',
-    'server/**/*.{ts,tsx,js,jsx,json}',
-    'shared/**/*.{ts,tsx,js,jsx,json}',
-    '*.{ts,tsx,js,jsx,json,css,md}',
-    'public/**/*.{png,jpg,jpeg,webp,svg,gif}'
-  ];
-  
   const files: string[] = [];
-  for (const pattern of patterns) {
-    try {
-      const globPath = path.join(cfg.root, pattern);
-      const result = await execAsync(`find ${cfg.root} -name "${pattern.split('/').pop()}" -type f`);
-      const foundFiles = result.stdout.split('\n').filter(f => f.trim() && !cfg.ignore.some(ignore => f.includes(ignore.replace('**/', ''))));
-      files.push(...foundFiles);
-    } catch (e) {
-      // Ignore glob errors for missing directories
-    }
-  }
   
-  return [...new Set(files)]; // Remove duplicates
+  // Use simple fs.readdirSync approach for better reliability
+  const walkDir = (dir: string): void => {
+    try {
+      const items = fs.readdirSync(dir);
+      for (const item of items) {
+        const fullPath = path.join(dir, item);
+        const stat = fs.statSync(fullPath);
+        
+        if (stat.isDirectory()) {
+          // Skip ignored directories
+          if (cfg.ignore.some(ignore => fullPath.includes(ignore.replace('**/', '').replace('/**', '')))) {
+            continue;
+          }
+          walkDir(fullPath);
+        } else if (stat.isFile()) {
+          // Check if file matches our patterns
+          if (/\.(t|j)sx?$|\.(json|md|css|scss|sass|html|vue)$/i.test(fullPath)) {
+            files.push(fullPath);
+          }
+        }
+      }
+    } catch (error) {
+      // Skip directories we can't read
+    }
+  };
+  
+  walkDir(cfg.root);
+  return files;
 }
 
 /* ------------------------------------------------------------------------------------------------

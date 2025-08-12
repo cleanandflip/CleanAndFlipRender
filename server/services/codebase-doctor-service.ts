@@ -69,28 +69,15 @@ export class CodebaseDoctorService {
       const scriptPath = path.join(process.cwd(), 'scripts', 'codebase-doctor.ts');
       const rootDir = process.cwd();
       
-      // Build command with options
-      let command = `npx ts-node "${scriptPath}" --root "${rootDir}"`;
+      // Build command with options using tsx instead of ts-node
+      let command = `npx tsx "${scriptPath}" --root "${rootDir}"`;
       
       if (options.outputToDatabase) {
         command += ' --db';
       }
 
-      // Execute the codebase doctor script
-      const { stdout, stderr } = await execAsync(command, {
-        cwd: rootDir,
-        timeout: 300000, // 5 minute timeout
-        maxBuffer: 1024 * 1024 * 10 // 10MB buffer
-      });
-
-      // Read the generated report
-      const reportPath = path.join(rootDir, 'codebase-doctor-report', 'report.json');
-      
-      if (!fs.existsSync(reportPath)) {
-        throw new Error('Codebase doctor report not generated');
-      }
-
-      const reportData: CodebaseDoctorReport = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+      // Execute inline analysis instead of external script
+      const reportData = await this.runInlineCodebaseAnalysis(rootDir, options);
       
       // Enhanced analysis and categorization
       const result = await this.enhanceAndCategorizeFindings(reportData);
