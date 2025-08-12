@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { fromSlug, toSlug } from "@/lib/categories";
+import { getQueryFromURL, subscribeToQuery, type SearchQuery } from '@/lib/searchService';
 import type { Product } from "@shared/schema";
 
 interface ProductsResponse {
@@ -9,11 +10,16 @@ interface ProductsResponse {
 }
 
 export function useProducts() {
-  // Parse current URL parameters
-  const urlParams = new URLSearchParams(window.location.search);
-  const q = (urlParams.get("q") || "").trim().toLowerCase();
-  const categoryLabel = fromSlug(urlParams.get("category"));
-  const categorySlug = toSlug(categoryLabel); // "" if All Categories
+  const [searchQuery, setSearchQuery] = useState<SearchQuery>(() => getQueryFromURL());
+  
+  // Subscribe to URL changes
+  useEffect(() => {
+    const unsubscribe = subscribeToQuery(setSearchQuery);
+    return unsubscribe;
+  }, []);
+  
+  const { q, category: categorySlug } = searchQuery;
+  const categoryLabel = fromSlug(categorySlug);
 
   // Fetch all products from API
   const { data: productsResponse, isLoading, error } = useQuery<ProductsResponse>({
@@ -31,8 +37,7 @@ export function useProducts() {
       list = list.filter((product) => {
         // Match against the database category slug from categoryId
         if (product.categoryId) {
-          // For now, we'll need to fetch category names or map them
-          // This is a simplified approach - in production you'd join with categories
+          // Category mapping for the 8 storage-friendly categories
           const categoryMap: Record<string, string> = {
             'cat-dumbbells-new': 'dumbbells',
             'cat-kettlebells-new': 'kettlebells', 
@@ -51,15 +56,17 @@ export function useProducts() {
     }
 
     // Filter by search query if specified
-    if (q) {
+    if (q.trim()) {
+      const searchTerm = q.trim().toLowerCase();
       list = list.filter((product) => {
         const searchableText = [
           product.name,
           product.description,
-          product.brand
+          product.brand,
+          product.subcategory
         ].filter(Boolean).join(" ").toLowerCase();
         
-        return searchableText.includes(q);
+        return searchableText.includes(searchTerm);
       });
     }
 

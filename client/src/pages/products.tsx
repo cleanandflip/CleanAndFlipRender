@@ -2,8 +2,8 @@ import ProductGrid from '@/components/products/product-grid';
 import SearchBar from '@/components/search/SearchBar';
 import CategoryTabs from '@/components/products/CategoryTabs';
 import { WelcomeBanner } from '@/components/ui/welcome-banner';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useProducts } from '@/hooks/useProducts';
-import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 
 export default function ProductsPage() {
   const { products, isLoading, categoryLabel, total } = useProducts();
@@ -20,7 +20,12 @@ export default function ProductsPage() {
           <p className="text-lg mb-4 text-gray-600 dark:text-gray-400">
             {total} item{total !== 1 ? 's' : ''} available
           </p>
-          <SearchBar />
+          <SearchBar 
+            id="main-search" 
+            placeholder="Search by name, brand, or description..."
+            size="lg"
+            className="max-w-2xl"
+          />
         </div>
         
         <div className="flex flex-col lg:flex-row gap-8">
@@ -40,6 +45,11 @@ export default function ProductsPage() {
                   </div>
                 ))}
               </div>
+            ) : products.length === 0 ? (
+              <EmptyState 
+                type={categoryLabel === 'All Categories' ? 'no-results' : 'category-empty'}
+                showActions={true}
+              />
             ) : (
               <ProductGrid products={products} />
             )}
