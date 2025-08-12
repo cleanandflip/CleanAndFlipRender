@@ -1,0 +1,4 @@
+/* src/styles/dropdown-fixes.css */
+button[data-empty="true"] .cf-placeholder {
+  color: rgba(255,255,255,0.45) !important; /* beats legacy !important */
+}

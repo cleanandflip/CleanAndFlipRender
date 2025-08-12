@@ -10,17 +10,15 @@ type Props<T extends FieldValues> = {
   className?: string;
 };
 
-export function RHFDropdown<T extends FieldValues>({
-  control, name, options, placeholder, className,
-}: Props<T>) {
+export function RHFDropdown<T extends FieldValues>({ control, name, options, placeholder, className }: Props<T>) {
   return (
     <Controller
       control={control}
       name={name}
       render={({ field }) => (
         <Dropdown
-          value={(field.value ?? null) as string | null}
-          onChange={(v) => field.onChange(v)}
+          value={field.value == null ? null : String(field.value)}
+          onChange={(v) => field.onChange(v)}  // <-- not an event, just the string
           options={options}
           placeholder={placeholder}
           className={className}

@@ -5,19 +5,24 @@ import { ChevronDown } from "lucide-react";
 
 export interface DropdownOption {
   label: string;
-  value: string; // IMPORTANT: we standardize on string values across the app
+  value: string; // we standardize on strings
 }
 
 interface DropdownProps {
   options: DropdownOption[];
-  value: string | null;                 // controlled value (string or null)
-  onChange: (value: string) => void;    // will be called with a string
+  value: string | null;                 // controlled value only
+  onChange: (value: string) => void;    // MUST accept a string
   placeholder?: string;
   className?: string;
   menuClassName?: string;
   id?: string;
   name?: string;
   disabled?: boolean;
+}
+
+function normalize(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  return String(v).trim();
 }
 
 export default function Dropdown({
@@ -37,9 +42,10 @@ export default function Dropdown({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // normalize: value must be string or null
-  const current = typeof value === "string" ? value : null;
-  const selectedOption = options.find((opt) => opt.value === current) ?? null;
+  // Normalize both current value and options
+  const current = normalize(value);
+  const normalizedOptions = options.map(o => ({ label: o.label, value: normalize(o.value)! }));
+  const selectedOption = normalizedOptions.find(opt => opt.value === current) ?? null;
 
   // Close on outside click
   useEffect(() => {
@@ -80,21 +86,15 @@ export default function Dropdown({
       const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>("[data-option]") ?? []);
       const idx = Math.max(0, items.findIndex((n) => n === document.activeElement));
       if (e.key === "Escape") setIsOpen(false);
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        (items[idx + 1] ?? items[0])?.focus();
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        (items[idx - 1] ?? items[items.length - 1])?.focus();
-      }
-      if (e.key === "Enter") {
-        (document.activeElement as HTMLButtonElement | null)?.click();
-      }
+      if (e.key === "ArrowDown") { e.preventDefault(); (items[idx + 1] ?? items[0])?.focus(); }
+      if (e.key === "ArrowUp")   { e.preventDefault(); (items[idx - 1] ?? items[items.length - 1])?.focus(); }
+      if (e.key === "Enter")     { (document.activeElement as HTMLButtonElement | null)?.click(); }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [isOpen]);
+
+  const empty = !selectedOption;
 
   return (
     <div ref={rootRef} className={`relative ${className}`}>
@@ -105,6 +105,7 @@ export default function Dropdown({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((o) => !o)}
+        data-empty={empty ? "true" : "false"}
         className={[
           "flex items-center justify-between w-full",
           "px-3 py-2 text-sm rounded-md",
@@ -112,14 +113,19 @@ export default function Dropdown({
           "bg-slate-800/70 hover:bg-slate-800",
           "focus:outline-none focus:ring-2 focus:ring-blue-500/60",
           disabled ? "opacity-60 cursor-not-allowed" : "",
+          // fallback: if global CSS forces text-white, we ensure placeholder opacity with higher specificity below
         ].join(" ")}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <span className={selectedOption ? "text-slate-100" : "text-white/45"}>
+        <span
+          className={empty ? "cf-placeholder" : "text-slate-100"}
+          // hard override in case global CSS uses !important:
+          style={empty ? { color: "rgba(255,255,255,0.45)" } : undefined}
+        >
           {selectedOption?.label ?? placeholder}
         </span>
-        <ChevronDown className={`w-4 h-4 text-slate-300 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-4 h-4 ${empty ? "text-white/60" : "text-slate-300"} transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen &&
@@ -136,8 +142,12 @@ export default function Dropdown({
               "animate-[fadeIn_120ms_ease-out]",
               menuClassName || "",
             ].join(" ")}
+            onMouseDown={(e) => {
+              // Prevent parent focus/blur races in some forms:
+              e.preventDefault();
+            }}
           >
-            {options.map((option) => {
+            {normalizedOptions.map((option) => {
               const isSelected = option.value === current;
               return (
                 <button
@@ -147,7 +157,8 @@ export default function Dropdown({
                   aria-selected={isSelected}
                   data-option
                   onClick={() => {
-                    onChange(option.value); // ← ensures selection works everywhere
+                    // robust: always send a clean string
+                    onChange(option.value);
                     setIsOpen(false);
                   }}
                   className={[
