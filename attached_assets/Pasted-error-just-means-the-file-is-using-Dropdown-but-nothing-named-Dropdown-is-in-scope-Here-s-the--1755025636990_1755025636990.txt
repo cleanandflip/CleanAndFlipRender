@@ -1,0 +1,118 @@
+error just means the file is using <Dropdown …/> but nothing named Dropdown is in scope. Here’s the fast, surgical fix Replit should do so it compiles right away, plus checks to make sure it never happens again.
+
+Fix it now (sell-to-us.tsx at the line in the error)
+Import the component at the top of src/pages/sell-to-us.tsx:
+
+ts
+Copy
+Edit
+// ADD one of these (pick the path that matches your tree)
+import Dropdown from "@/components/ui/Dropdown";
+// or, if you placed it differently:
+// import Dropdown from "../components/ui/Dropdown";
+// import Dropdown from "../../components/ui/Dropdown";
+If you’re wiring with react-hook-form and prefer the adapter, import that instead:
+
+ts
+Copy
+Edit
+import DropdownField from "@/components/form/DropdownField";
+…and replace <Dropdown …/> inside the <Controller> render with:
+
+tsx
+Copy
+Edit
+<DropdownField
+  control={control}
+  name="category"                // or the correct field name
+  options={CATEGORY_OPTIONS}
+  placeholder="Select category"
+/>
+Confirm the component actually exports a default:
+
+Open src/components/ui/Dropdown.tsx and ensure the last line is:
+
+ts
+Copy
+Edit
+export default function Dropdown(/* … */) { … }
+If it’s a named export (export function Dropdown), either change it to default, or import with braces:
+
+ts
+Copy
+Edit
+import { Dropdown } from "@/components/ui/Dropdown";
+(Keep it consistent everywhere—default import is simplest.)
+
+Repo-wide clean up (so this doesn’t recur)
+Run these and fix any remaining offenders:
+
+bash
+Copy
+Edit
+# Files using <Dropdown …/> without an import (or wrong path)
+rg -n "<Dropdown\\b" src | rg -v "import\\s+\\{?\\s*Dropdown\\s*\\}?\\s+from"
+
+# Any lingering legacy names
+rg -n "StandardDropdown|@radix-ui/react-select|SelectTrigger|SelectItem|<select\\b" src
+For each match:
+
+Replace imports with:
+
+ts
+Copy
+Edit
+import Dropdown from "@/components/ui/Dropdown";
+// or
+import DropdownField from "@/components/form/DropdownField";
+Replace the JSX accordingly.
+
+Path/alias sanity (common reason imports fail)
+tsconfig.json should have:
+
+json
+Copy
+Edit
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": { "@/*": ["*"] }
+  }
+}
+vite.config.ts should mirror the alias:
+
+ts
+Copy
+Edit
+import path from "path";
+export default {
+  resolve: {
+    alias: { "@": path.resolve(__dirname, "src") }
+  }
+}
+Respect case sensitivity (Linux/CI is strict). The file must be named exactly Dropdown.tsx (capital D), and imports must match that case.
+
+Safety shim (optional but helpful during migration)
+Create once, then delete after all pages are converted:
+
+src/components/form/StandardDropdown.tsx
+
+ts
+Copy
+Edit
+export { default } from "@/components/ui/Dropdown";
+This makes any leftover StandardDropdown usage render the new Dropdown instead of crashing.
+
+Final checks
+Restart dev server after alias/tsconfig changes.
+
+Verify these return no results:
+
+bash
+Copy
+Edit
+rg -n "StandardDropdown|@radix-ui/react-select|SelectTrigger|SelectItem|<select\\b" src
+rg -n "<Dropdown\\b" src | rg -v "import\\s+\\{?\\s*Dropdown\\s*\\}?\\s+from"
+Load /sell-to-us and open every dropdown—no errors, menus above cards, correct width.
+
+If you paste the first ~20 lines of src/components/ui/Dropdown.tsx and the imports block from sell-to-us.tsx, I’ll point to the exact import you should have.
