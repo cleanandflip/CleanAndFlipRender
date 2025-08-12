@@ -1,22 +1,22 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useElements, useStripe, Elements, PaymentElement } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { fetchDefaultAddress, saveAddress, Address } from "@/api/addresses";
+import { getQuote, Quote } from "@/api/checkout";
 import { ShoppingCart, CreditCard, Truck, Lock, ArrowLeft } from "lucide-react";
-import { ProfilePrompt } from "@/components/checkout/ProfilePrompt";
 
 // Load Stripe
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
@@ -24,19 +24,23 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
 }
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
-const shippingSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Valid email is required"),
-  phone: z.string().min(10, "Valid phone number is required"),
-  street: z.string().min(1, "Street address is required"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(2, "State is required"),
-  zipCode: z.string().min(5, "Valid ZIP code is required"),
-  instructions: z.string().optional(),
+const AddressSchema = z.object({
+  firstName: z.string().min(1, "Required"),
+  lastName: z.string().min(1, "Required"),
+  email: z.string().email("Invalid email"),
+  phone: z.string().optional(),
+  street1: z.string().min(1, "Required"),
+  street2: z.string().optional(),
+  city: z.string().min(1, "Required"),
+  state: z.string().length(2, "Use 2-letter code"),
+  postalCode: z.string().regex(/^\d{5}(-\d{4})?$/, "ZIP code invalid"),
+  country: z.string().default("US"),
+  deliveryInstructions: z.string().optional(),
+  saveToProfile: z.boolean().default(false),
+  billingSameAsShipping: z.boolean().default(true),
 });
 
-type ShippingForm = z.infer<typeof shippingSchema>;
+type AddressForm = z.infer<typeof AddressSchema>;
 
 const CheckoutForm = () => {
   const stripe = useStripe();
@@ -95,6 +99,7 @@ const CheckoutForm = () => {
         className="w-full py-3"
         loading={isProcessing}
         disabled={!stripe || isProcessing}
+        data-testid="button-completeOrder"
       >
         {isProcessing ? "Processing..." : "Complete Order"}
       </Button>
@@ -103,15 +108,77 @@ const CheckoutForm = () => {
 };
 
 export default function Checkout() {
-  const { cartItems, cartTotal, cartCount, clearCart } = useCart();
+  const { cartItems, cartTotal, cartCount } = useCart();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [clientSecret, setClientSecret] = useState("");
+  const [quote, setQuote] = useState<Quote | null>(null);
   const [step, setStep] = useState(1);
-  const [shippingInfo, setShippingInfo] = useState<ShippingForm | null>(null);
+  const [clientSecret, setClientSecret] = useState("");
+  const isAuthenticated = !!user;
 
-  const form = useForm<ShippingForm>({
-    resolver: zodResolver(shippingSchema),
-  });
+  const { register, handleSubmit, setValue, watch, trigger,
+    formState: { errors, isValid, isSubmitting } } =
+    useForm<AddressForm>({ 
+      resolver: zodResolver(AddressSchema), 
+      mode: "onChange", 
+      defaultValues: { 
+        country: "US", 
+        billingSameAsShipping: true 
+      } 
+    });
+
+  // Autofill address for authenticated users
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    (async () => {
+      const addr = await fetchDefaultAddress();
+      if (!addr) return;
+      const map: Partial<AddressForm> = {
+        firstName: addr.firstName, 
+        lastName: addr.lastName, 
+        email: addr.email, 
+        phone: addr.phone,
+        street1: addr.street1, 
+        street2: addr.street2, 
+        city: addr.city, 
+        state: addr.state,
+        postalCode: addr.postalCode, 
+        country: addr.country ?? "US",
+      };
+      for (const [k, v] of Object.entries(map)) {
+        setValue(k as keyof AddressForm, v ?? "");
+      }
+      await trigger();
+    })();
+  }, [isAuthenticated, setValue, trigger]);
+
+  // Auto-quote when address is valid
+  const postalCode = watch("postalCode");
+  const state = watch("state");
+  useEffect(() => {
+    const reQuote = async () => {
+      const ok = await trigger(["street1", "city", "state", "postalCode"]);
+      if (!ok) return;
+      const addr: Address = {
+        firstName: watch("firstName"), 
+        lastName: watch("lastName"), 
+        email: watch("email"),
+        street1: watch("street1"), 
+        street2: watch("street2"), 
+        city: watch("city"),
+        state: watch("state"), 
+        postalCode: watch("postalCode"), 
+        country: watch("country") || "US",
+      };
+      try { 
+        setQuote(await getQuote(addr)); 
+      } catch (error) {
+        // Silently handle quote errors
+        console.warn("Quote error:", error);
+      }
+    };
+    if (postalCode && state) reQuote();
+  }, [postalCode, state, watch, trigger]);
 
   const createPaymentIntentMutation = useMutation({
     mutationFn: async (orderData: any) => {
@@ -130,6 +197,7 @@ export default function Checkout() {
     },
     onSuccess: (data) => {
       setClientSecret(data.clientSecret);
+      setStep(2);
     },
     onError: (error) => {
       toast({
@@ -140,13 +208,26 @@ export default function Checkout() {
     },
   });
 
-  const onShippingSubmit = (data: ShippingForm) => {
-    setShippingInfo(data);
-    setStep(2);
+  const onSubmit = async (data: AddressForm) => {
+    if (isAuthenticated && data.saveToProfile) {
+      await saveAddress({
+        firstName: data.firstName, 
+        lastName: data.lastName, 
+        email: data.email, 
+        phone: data.phone,
+        street1: data.street1, 
+        street2: data.street2, 
+        city: data.city, 
+        state: data.state,
+        postalCode: data.postalCode, 
+        country: data.country, 
+        isDefault: true
+      });
+    }
     
     const subtotal = cartTotal;
-    const shipping = subtotal > 100 ? 0 : 25;
-    const tax = subtotal * 0.08;
+    const shipping = quote?.shippingMethods?.[0]?.price ?? (subtotal > 100 ? 0 : 25);
+    const tax = quote?.tax ?? (subtotal * 0.08);
     const total = subtotal + shipping + tax;
 
     createPaymentIntentMutation.mutate({
@@ -180,276 +261,293 @@ export default function Checkout() {
     );
   }
 
-  const subtotal = cartTotal;
-  const shipping = subtotal > 100 ? 0 : 25;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
+  if (step === 2) {
+    return (
+      <Elements stripe={stripePromise} options={{ clientSecret }}>
+        <div className="min-h-screen pt-32 px-6 pb-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8">
+              <Button 
+                variant="ghost" 
+                className="mb-4"
+                onClick={() => setStep(1)}
+                data-testid="button-backToShipping"
+              >
+                <ArrowLeft className="mr-2" size={16} />
+                Back to Shipping
+              </Button>
+              <h1 className="text-3xl font-bold mb-2">Complete Your Order</h1>
+              <p className="text-text-secondary">Review and confirm your purchase</p>
+            </div>
+            <CheckoutForm />
+          </div>
+        </div>
+      </Elements>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-32 px-6 pb-12">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="font-bebas text-4xl md:text-6xl">CHECKOUT</h1>
-          <Link href="/products">
-            <Button variant="outline" className="glass border-border">
-              <ArrowLeft className="mr-2" size={18} />
-              Back to Cart
-            </Button>
-          </Link>
-        </div>
-
-        {/* Profile completion prompt for Google OAuth users */}
-        <ProfilePrompt />
-
-        {/* Progress Steps */}
         <div className="mb-8">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center space-x-4">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                step >= 1 ? 'bg-accent-blue text-white' : 'glass text-text-muted'
-              }`}>
-                1
-              </div>
-              <span className={step >= 1 ? 'text-white' : 'text-text-muted'}>Shipping</span>
-              <div className={`w-12 h-px ${step >= 2 ? 'bg-accent-blue' : 'bg-glass-border'}`}></div>
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                step >= 2 ? 'bg-accent-blue text-white' : 'glass text-text-muted'
-              }`}>
-                2
-              </div>
-              <span className={step >= 2 ? 'text-white' : 'text-text-muted'}>Payment</span>
-            </div>
-          </div>
+          <h1 className="text-3xl font-bold mb-2">Checkout</h1>
+          <p className="text-text-secondary">Complete your purchase securely</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {step === 1 && (
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onShippingSubmit)} className="space-y-6">
-                  <Card className="p-6">
-                    <h3 className="font-bebas text-xl mb-4 flex items-center">
-                      <Truck className="mr-2" size={20} />
-                      SHIPPING INFORMATION
-                    </h3>
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>First Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} className="glass border-border" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Last Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} className="glass border-border" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4 mt-4">
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="email" className="glass border-border" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone</FormLabel>
-                            <FormControl>
-                              <Input {...field} className="glass border-border" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="street"
-                      render={({ field }) => (
-                        <FormItem className="mt-4">
-                          <FormLabel>Street Address</FormLabel>
-                          <FormControl>
-                            <Input {...field} className="glass border-border" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid md:grid-cols-3 gap-4 mt-4">
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>City</FormLabel>
-                            <FormControl>
-                              <Input {...field} className="glass border-border" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>State</FormLabel>
-                            <FormControl>
-                              <Input {...field} className="glass border-border" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="zipCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>ZIP Code</FormLabel>
-                            <FormControl>
-                              <Input {...field} className="glass border-border" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="instructions"
-                      render={({ field }) => (
-                        <FormItem className="mt-4">
-                          <FormLabel>Delivery Instructions (Optional)</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Gate code, special instructions, etc." className="glass border-border" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </Card>
-
-                  <Button type="submit" className="w-full bg-accent-blue hover:bg-blue-500 text-white py-3">
-                    Continue to Payment
-                  </Button>
-                </form>
-              </Form>
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="p-6 rounded-2xl border-2 border-white/15 hover:border-white/25 transition-colors">
+            <h2 className="text-xl mb-4">Shipping Information</h2>
+            
+            {!isAuthenticated && (
+              <div className="mb-4 text-sm text-white/70">
+                Have an account? <Link href="/auth" className="underline text-blue-400 hover:text-blue-300">Sign in</Link> to auto-fill your saved address.
+              </div>
             )}
 
-            {step === 2 && clientSecret && (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <CheckoutForm />
-              </Elements>
-            )}
+            {/* Name Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1 text-sm font-medium" htmlFor="firstName">First Name</label>
+                <Input 
+                  id="firstName" 
+                  autoComplete="given-name" 
+                  aria-invalid={!!errors.firstName} 
+                  data-testid="input-firstName"
+                  {...register("firstName")} 
+                />
+                {errors.firstName && (
+                  <p role="alert" className="mt-1 text-sm text-red-400">
+                    {errors.firstName.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium" htmlFor="lastName">Last Name</label>
+                <Input 
+                  id="lastName" 
+                  autoComplete="family-name" 
+                  aria-invalid={!!errors.lastName} 
+                  data-testid="input-lastName"
+                  {...register("lastName")} 
+                />
+                {errors.lastName && (
+                  <p role="alert" className="mt-1 text-sm text-red-400">
+                    {errors.lastName.message}
+                  </p>
+                )}
+              </div>
+            </div>
 
-            {step === 2 && !clientSecret && (
-              <Card className="p-6">
-                <div className="text-center">
-                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-                  <p>Setting up payment...</p>
-                </div>
-              </Card>
-            )}
-          </div>
+            {/* Contact Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block mb-1 text-sm font-medium" htmlFor="email">Email</label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  autoComplete="email" 
+                  aria-invalid={!!errors.email} 
+                  data-testid="input-email"
+                  {...register("email")} 
+                />
+                {errors.email && (
+                  <p role="alert" className="mt-1 text-sm text-red-400">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium" htmlFor="phone">Phone (optional)</label>
+                <Input 
+                  id="phone" 
+                  type="tel" 
+                  autoComplete="tel" 
+                  placeholder="###-###-####"
+                  data-testid="input-phone"
+                  {...register("phone")} 
+                />
+              </div>
+            </div>
+
+            {/* Address Fields */}
+            <div className="mt-4">
+              <label className="block mb-1 text-sm font-medium" htmlFor="street1">Street Address</label>
+              <Input 
+                id="street1" 
+                autoComplete="address-line1" 
+                aria-invalid={!!errors.street1} 
+                placeholder="123 Main Street"
+                data-testid="input-street1"
+                {...register("street1")} 
+              />
+              {errors.street1 && (
+                <p role="alert" className="mt-1 text-sm text-red-400">
+                  {errors.street1.message}
+                </p>
+              )}
+            </div>
+            
+            <div className="mt-4">
+              <label className="block mb-1 text-sm font-medium" htmlFor="street2">Apartment, suite, etc. (optional)</label>
+              <Input 
+                id="street2" 
+                autoComplete="address-line2" 
+                data-testid="input-street2"
+                {...register("street2")} 
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div>
+                <label className="block mb-1 text-sm font-medium" htmlFor="city">City</label>
+                <Input 
+                  id="city" 
+                  autoComplete="address-level2" 
+                  aria-invalid={!!errors.city} 
+                  data-testid="input-city"
+                  {...register("city")} 
+                />
+                {errors.city && (
+                  <p role="alert" className="mt-1 text-sm text-red-400">
+                    {errors.city.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium" htmlFor="state">State</label>
+                <Input 
+                  id="state" 
+                  autoComplete="address-level1" 
+                  aria-invalid={!!errors.state} 
+                  maxLength={2} 
+                  placeholder="NC"
+                  data-testid="input-state" 
+                  {...register("state")} 
+                />
+                {errors.state && (
+                  <p role="alert" className="mt-1 text-sm text-red-400">
+                    {errors.state.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium" htmlFor="postalCode">ZIP</label>
+                <Input 
+                  id="postalCode" 
+                  autoComplete="postal-code" 
+                  aria-invalid={!!errors.postalCode} 
+                  inputMode="numeric"
+                  data-testid="input-postalCode" 
+                  {...register("postalCode")} 
+                />
+                {errors.postalCode && (
+                  <p role="alert" className="mt-1 text-sm text-red-400">
+                    {errors.postalCode.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block mb-1 text-sm font-medium" htmlFor="deliveryInstructions">Delivery Instructions (optional)</label>
+              <Textarea 
+                id="deliveryInstructions" 
+                rows={3} 
+                data-testid="textarea-deliveryInstructions"
+                {...register("deliveryInstructions")} 
+              />
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {isAuthenticated && (
+                <label className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    data-testid="checkbox-saveToProfile"
+                    {...register("saveToProfile")} 
+                  /> 
+                  Save this address to my profile
+                </label>
+              )}
+              <label className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  defaultChecked 
+                  data-testid="checkbox-billingSameAsShipping"
+                  {...register("billingSameAsShipping")} 
+                /> 
+                Billing same as shipping
+              </label>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={!isValid || isSubmitting}
+              className="mt-6 w-full rounded-xl h-12 font-medium bg-sky-500 disabled:bg-white/10 hover:bg-sky-400 transition-colors"
+              data-testid="button-continueToPayment"
+            >
+              {isSubmitting ? "Processing..." : "Continue to Payment"}
+            </Button>
+          </form>
 
           {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="p-6 sticky top-32">
-              <h3 className="font-bebas text-xl mb-4">ORDER SUMMARY</h3>
-              
-              {/* Items */}
-              <div className="space-y-3 mb-6">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start text-sm">
-                    <div className="flex-1">
-                      <div className="font-medium">{item.product.name}</div>
-                      <div className="text-text-muted">Qty: {item.quantity}</div>
-                    </div>
-                    <div className="font-medium">
-                      ${(Number(item.product.price) * item.quantity).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <Separator className="bg-glass-border mb-4" />
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Shipping</span>
-                  <span>
-                    {shipping === 0 ? (
-                      <span className="text-green-400">Free</span>
-                    ) : (
-                      `$${shipping.toFixed(2)}`
+          <aside className="p-6 rounded-2xl border-2 border-white/15 hover:border-white/25 transition-colors">
+            <h3 className="text-lg mb-4">Order Summary</h3>
+            
+            {/* Cart Items */}
+            <div className="space-y-3 mb-4">
+              {cartItems.map((item) => (
+                <div key={item.productId} className="flex gap-3">
+                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0">
+                    {item.product.images?.[0] && (
+                      <img 
+                        src={item.product.images[0]} 
+                        alt={item.product.name}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
                     )}
-                  </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium truncate">{item.product.name}</h4>
+                    <p className="text-xs text-white/60">Qty: {item.quantity}</p>
+                    <p className="text-sm font-medium">${(parseFloat(item.product.price) * item.quantity).toFixed(2)}</p>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
-                </div>
-                
-                <Separator className="bg-glass-border" />
-                
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-              </div>
+              ))}
+            </div>
 
-              {/* Security Badge */}
-              <div className="mt-6 text-center text-sm text-text-muted">
-                <Lock className="inline mr-1" size={14} />
-                Secure 256-bit SSL encryption
+            {/* Pricing Summary */}
+            <div className="mt-4 text-sm text-white/80" aria-live="polite">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span data-testid="text-subtotal">
+                  {quote ? `$${quote.subtotal.toFixed(2)}` : `$${cartTotal.toFixed(2)}`}
+                </span>
               </div>
-            </Card>
-          </div>
+              <div className="flex justify-between">
+                <span>Shipping</span>
+                <span data-testid="text-shipping">
+                  {quote?.shippingMethods?.[0] 
+                    ? `$${quote.shippingMethods[0].price.toFixed(2)}` 
+                    : "Calculated at next step"
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Tax</span>
+                <span data-testid="text-tax">
+                  {quote ? `$${quote.tax.toFixed(2)}` : "—"}
+                </span>
+              </div>
+              <div className="mt-2 border-t border-white/15 pt-2 flex justify-between font-semibold">
+                <span>Total</span>
+                <span data-testid="text-total">
+                  {quote ? `$${quote.total.toFixed(2)}` : "—"}
+                </span>
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

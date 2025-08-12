@@ -71,6 +71,8 @@ import googleAuthRoutes from "./routes/auth-google";
 import stripeWebhookRoutes from './routes/stripe-webhooks';
 import adminMetricsRoutes from './routes/admin-metrics';
 import errorManagementRoutes from './routes/admin/error-management';
+import addressRoutes from './routes/addresses';
+import checkoutRoutes from './routes/checkout';
 
 import crypto from 'crypto';
 import { 
@@ -211,6 +213,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Critical: Stripe webhook routes (must use raw body parser)
   app.use('/api/stripe', stripeWebhookRoutes);
+  app.use('/api/addresses', addressRoutes);
+  app.use('/api/checkout', checkoutRoutes);
   
   // Admin metrics routes  
   app.use('/api/admin', adminMetricsRoutes);

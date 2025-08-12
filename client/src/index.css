@@ -10,10 +10,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --- Unify placeholder appearance site-wide --- */
+/* --- Enhanced form border tokens --- */
 :root {
   /* tune once here; all fields inherit */
   --placeholder-opacity: 0.55;  /* lighter than value text, still readable */
+  
+  /* Enhanced border tokens for better a11y and dark theme */
+  --border-subtle: rgba(255,255,255,0.14);
+  --border-hover:  rgba(255,255,255,0.22);
+  --border-focus:  #60a5fa;   /* sky-400 */
+  --border-error:  #f87171;   /* red-400 */
 }
 
 input::placeholder,
