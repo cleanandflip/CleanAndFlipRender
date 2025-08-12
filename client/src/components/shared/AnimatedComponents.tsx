@@ -81,13 +81,13 @@ interface InputProps extends HTMLMotionProps<"input"> {
   error?: string;
 }
 
-export const Input: React.FC<InputProps> = ({
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
   variant = 'default',
   label,
   error,
   className,
   ...props
-}) => {
+}, ref) => {
   const inputStyles = cn(
     componentClasses.input.base,
     componentClasses.input.variants[variant],
@@ -106,6 +106,7 @@ export const Input: React.FC<InputProps> = ({
         </label>
       )}
       <motion.input
+        ref={ref}
         className={inputStyles}
         whileFocus={{ scale: 1.01 }}
         transition={{ duration: 0.1 }}
@@ -123,7 +124,9 @@ export const Input: React.FC<InputProps> = ({
       )}
     </div>
   );
-};
+});
+
+Input.displayName = 'Input';
 
 // Toggle Component
 interface ToggleProps {

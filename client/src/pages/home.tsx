@@ -79,14 +79,20 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <h1 className="font-bebas text-6xl md:text-8xl mb-6 tracking-wider leading-tight">
-              <span style={{ color: theme.colors.text.primary }}>THE WEIGHTLIFTING</span><br />
-              <span style={{ color: theme.colors.brand.blue }}>EQUIPMENT EXCHANGE</span>
+              <span style={{ color: theme.colors.text.primary }}>FITNESS EQUIPMENT</span><br />
+              <span style={{ color: theme.colors.brand.blue }}>THAT FITS YOUR HOME</span>
             </h1>
             <p 
-              className="text-xl md:text-2xl max-w-3xl mx-auto mb-12"
+              className="text-lg md:text-xl max-w-3xl mx-auto mb-4"
               style={{ color: theme.colors.text.secondary }}
             >
-              Turn your unused gear into cash. Buy quality equipment you can trust.
+              We specialize in space-saving strength training equipment
+            </p>
+            <p 
+              className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 font-semibold"
+              style={{ color: theme.colors.brand.blue }}
+            >
+              Dumbbells • Kettlebells • Plates • Barbells • More
             </p>
           </motion.div>
 
@@ -215,7 +221,7 @@ export default function Home() {
                 className="text-sm"
                 style={{ color: theme.colors.text.muted }}
               >
-                Cash
+                Free Local Delivery
               </span>
             </Card>
             <Card className="flex flex-col items-center p-4">
@@ -228,13 +234,13 @@ export default function Home() {
                 className="font-bold text-lg"
                 style={{ color: theme.colors.text.primary }}
               >
-                Inspected
+                Space-Efficient
               </span>
               <span 
                 className="text-sm"
                 style={{ color: theme.colors.text.muted }}
               >
-                Every Item
+                Home Gym Ready
               </span>
             </Card>
           </motion.div>
