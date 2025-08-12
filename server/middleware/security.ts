@@ -123,7 +123,9 @@ export function setupSecurityHeaders(app: Express) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     
     // Enable XSS protection
-    res.setHeader('X-XSS-Protection', '1; mode=block');
+    // X-XSS-Protection removed - deprecated and ineffective in modern browsers
+    res.setHeader('Permissions-Policy', 
+      'geolocation=(), microphone=(), camera=(), interest-cohort=(), payment=()');
     
     // Remove server header for security
     res.removeHeader('X-Powered-By');

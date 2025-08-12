@@ -153,13 +153,15 @@ export function sanitizeInput(options: SanitizationOptions = {}) {
         });
       }
 
-      // Use simpler pattern-based scanning instead of complex validation
+      // Improved scanning that handles arrays and only scans strings
       const FORBIDDEN = /(<|>|script:|javascript:|data:|on\w+=)/i;
-      const scan = (v: any): boolean => {
-        if (typeof v === "string") return FORBIDDEN.test(v);
-        if (v && typeof v === "object") return Object.values(v).some(scan);
-        return false;
-      };
+      
+      function scan(val: unknown): boolean {
+        if (typeof val === "string") return FORBIDDEN.test(val);
+        if (Array.isArray(val)) return val.some(scan);
+        if (val && typeof val === "object") return Object.values(val as Record<string, unknown>).some(scan);
+        return false; // numbers/booleans/null are fine
+      }
 
       if (scan(req.body) || scan(req.query) || scan(req.params)) {
         console.log('Request blocked by sanitizer - suspicious content detected');
