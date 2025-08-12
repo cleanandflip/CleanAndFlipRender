@@ -121,6 +121,9 @@ export function sanitizeInput(options: SanitizationOptions = {}) {
         '/api/admin/logs',
         '/api/user/profile/image',
         '/api/cart',
+        '/api/user',
+        '/api/products',
+        '/api/track-activity',
         '/login',
         '/register',
         '/auth/',
@@ -129,11 +132,23 @@ export function sanitizeInput(options: SanitizationOptions = {}) {
       ];
       
       // Debug logging
-      console.log('Sanitization check - path:', req.path, 'url:', req.url);
+      console.log('Sanitization check - path:', req.path, 'url:', req.url, 'method:', req.method, 'originalUrl:', req.originalUrl);
       
       if (skipPaths.some(path => req.path.includes(path) || req.url.includes(path))) {
         console.log('Skipping sanitization for:', req.path);
         return next();
+      }
+
+      // Special case: if this is a cart request, log more details
+      if (req.path.includes('cart') || req.url.includes('cart')) {
+        console.log('CART REQUEST DETAILS:', {
+          path: req.path,
+          url: req.url,
+          originalUrl: req.originalUrl,
+          method: req.method,
+          body: req.body,
+          headers: req.headers['content-type']
+        });
       }
 
       // Sanitize request body
