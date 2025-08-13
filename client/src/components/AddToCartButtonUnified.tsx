@@ -6,7 +6,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/useCart";
 import { useLocality } from "@/hooks/useLocality";
-import { LocalityGate } from "@/components/locality/LocalityGate";
 
 interface AddToCartButtonUnifiedProps {
   productId: string;
@@ -40,21 +39,6 @@ export default function AddToCartButtonUnified({
   // Check if product is restricted for non-local users
   const localOnly = product?.is_local_delivery_available && !product?.is_shipping_available;
   const isBlocked = !locality?.isLocal && localOnly;
-  
-  // Local-only product guard for non-local users
-  if (isBlocked) {
-    return (
-      <LocalityGate
-        isBlocked={true}
-        onUpdateAddress={() => {
-          // Navigate to address management
-          window.location.href = "/dashboard/addresses";
-        }}
-      >
-        <div>This will never render</div>
-      </LocalityGate>
-    );
-  }
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {

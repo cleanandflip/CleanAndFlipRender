@@ -17,15 +17,10 @@ import ProductsResults from "@/components/products/ProductsResults";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useProducts } from "@/hooks/useProducts";
 import type { Product } from "@shared/schema";
-import { useLocality } from "@/hooks/useLocality";
-import { LocalBanner } from "@/components/locality/LocalBanner";
-import { useAuth } from "@/hooks/use-auth";
 
 function HomeSections() {
   const queryClient = useQueryClient();
   const { lastMessage, isConnected } = useWebSocket();
-  const { data: locality } = useLocality();
-  const { user } = useAuth();
   
   const { data: featuredProducts, refetch } = useQuery<Product[]>({
     queryKey: ["/api/products/featured"],
@@ -79,28 +74,6 @@ function HomeSections() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Personalized Local Delivery Banner */}
-      {user && (
-        <div className="container mx-auto px-6 pt-4">
-          {locality?.isLocal ? (
-            <LocalBanner isLocal={true} className="mb-6" />
-          ) : !locality?.hasAddress ? (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center gap-3">
-                <div className="text-blue-600 text-2xl">🎉</div>
-                <div>
-                  <p className="text-blue-800 font-medium">
-                    Add your address to see if you qualify for FREE Local Delivery
-                  </p>
-                  <Link href="/dashboard/addresses" className="text-blue-600 hover:text-blue-700 text-sm underline">
-                    Add address now
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      )}
       {/* Hero Section - Full Screen */}
       <section className="min-h-screen flex items-center justify-center pt-20 pb-12 px-6">
         <div className="max-w-6xl mx-auto text-center">
