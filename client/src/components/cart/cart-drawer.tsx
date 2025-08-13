@@ -103,13 +103,13 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 <div className="flex-1 overflow-y-auto px-6">
                   <div className="space-y-4">
                     {cartItems.map((item) => (
-                      <div key={item.id} className="bg-card rounded-lg p-4">
+                      <div key={item?.id || Math.random()} className="bg-card rounded-lg p-4">
                         <div className="flex gap-3">
                           {/* Product Image */}
-                          <Link href={routes.productDetail(item.product.id)}>
+                          <Link href={routes.productDetail(item?.product?.id || '#')}>
                             <img
-                              src={item.product.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100"}
-                              alt={item.product.name}
+                              src={item?.product?.images?.[0] || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100"}
+                              alt={item?.product?.name || 'Product'}
                               className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
                               onClick={() => handleOpenChange(false)}
                             />
@@ -119,20 +119,20 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start mb-2">
                               <div className="flex-1 min-w-0">
-                                <Link href={routes.productDetail(item.product.id)}>
+                                <Link href={routes.productDetail(item?.product?.id || '#')}>
                                   <h4 
                                     className="font-medium text-sm hover:text-accent-blue transition-colors cursor-pointer line-clamp-2"
                                     onClick={() => handleOpenChange(false)}
                                   >
-                                    {item.product.name}
+                                    {item?.product?.name || 'Product'}
                                   </h4>
                                 </Link>
-                                {item.product.brand && (
+                                {item?.product?.brand && (
                                   <p className="text-text-muted text-xs">{item.product.brand}</p>
                                 )}
                               </div>
                               <button
-                                onClick={() => removeFromCart(item.id)}
+                                onClick={() => removeFromCart(item?.id)}
                                 className="text-gray-400 hover:text-red-400 transition-colors p-1 ml-2"
                               >
                                 <Trash2 size={14} />
@@ -143,19 +143,19 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                               {/* Quantity Controls */}
                               <div className="flex items-center bg-card rounded">
                                 <button
-                                  onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                                  onClick={() => updateQuantity(item?.id, Math.max(0, (item?.quantity || 1) - 1))}
                                   className="p-1 hover:bg-white/10 transition-colors"
-                                  disabled={item.quantity <= 1}
+                                  disabled={(item?.quantity || 0) <= 1}
                                 >
                                   <Minus size={12} />
                                 </button>
                                 <span className="px-2 py-1 text-sm min-w-[2rem] text-center">
-                                  {item.quantity}
+                                  {item?.quantity || 0}
                                 </span>
                                 <button
-                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                  onClick={() => updateQuantity(item?.id, (item?.quantity || 0) + 1)}
                                   className="p-1 hover:bg-white/10 transition-colors"
-                                  disabled={!item.product.stockQuantity || item.quantity >= item.product.stockQuantity}
+                                  disabled={item?.product?.stockQuantity && (item?.quantity || 0) >= item.product.stockQuantity}
                                 >
                                   <Plus size={12} />
                                 </button>
@@ -164,16 +164,16 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                               {/* Price */}
                               <div className="text-right">
                                 <div className="font-semibold text-sm">
-                                  ${(Number(item.product.price) * item.quantity).toFixed(2)}
+                                  ${(Number(item?.product?.price || 0) * (item?.quantity || 0)).toFixed(2)}
                                 </div>
                                 <div className="text-text-muted text-xs">
-                                  ${item.product.price} each
+                                  ${item?.product?.price || '0.00'} each
                                 </div>
                               </div>
                             </div>
 
                             {/* Stock Warning */}
-                            {item.product.stockQuantity && item.product.stockQuantity <= 3 && (
+                            {item?.product?.stockQuantity && item.product.stockQuantity <= 3 && (
                               <div className="mt-2 text-red-400 text-xs">
                                 Only {item.product.stockQuantity} left
                               </div>
