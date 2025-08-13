@@ -102,24 +102,39 @@ export function useAddToCart() {
   });
 }
 
-// Update cart item quantity
+// Update cart item quantity - FIXED API CALL
 export function useUpdateCartItem() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (vars: { productId: string; quantity: number }) => {
-      return await apiRequest('PUT', `/api/cart/items/${vars.productId}`, {
-        quantity: vars.quantity,
+    mutationFn: async ({ productId, quantity }: { productId: string; quantity: number }) => {
+      console.log(`[CART UPDATE CLIENT] Updating product ${productId} to quantity ${quantity}`);
+      const response = await fetch(`/api/cart/items/${productId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quantity })
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update cart item');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
+      // Force immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: CART_KEY });
+      queryClient.refetchQueries({ queryKey: CART_KEY });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update cart",
+        description: error.message || "Failed to update cart item",
         variant: "destructive"
       });
     },

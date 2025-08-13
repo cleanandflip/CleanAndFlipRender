@@ -946,12 +946,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TanStack Query v5 compatible endpoints
-  app.patch("/api/cart/items/:itemId", requireAuth, async (req, res) => {
+  // FIXED: Update cart item quantity by product ID 
+  app.patch("/api/cart/items/:productId", requireAuth, async (req, res) => {
     try {
+      const userId = req.userId;
+      const sessionId = req.sessionID;
+      const { productId } = req.params;
       const { quantity } = req.body;
-      const cartItem = await storage.updateCartItem(req.params.itemId, quantity);
-      res.json(cartItem);
+
+      console.log(`[CART UPDATE] User ${userId} updating product ${productId} to quantity ${quantity}`);
+
+      // Find cart item by product ID
+      const cartItems = await storage.getCartItems(userId || undefined, sessionId);
+      const itemToUpdate = cartItems.find(item => item.productId === productId);
+      
+      if (!itemToUpdate) {
+        console.log(`[CART UPDATE ERROR] Product ${productId} not found in user's cart`);
+        return res.status(404).json({ error: "Cart item not found" });
+      }
+
+      console.log(`[CART UPDATE] Updating cart item ${itemToUpdate.id} to quantity ${quantity}`);
+      const updatedItem = await storage.updateCartItem(itemToUpdate.id, quantity);
+      
+      // Broadcast cart update
+      if (userId) broadcastCartUpdate(userId);
+      
+      res.json(updatedItem);
     } catch (error) {
       Logger.error("Error updating cart item", error);
       res.status(500).json({ message: "Failed to update cart item" });
@@ -975,6 +995,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[CART REMOVAL DEBUG] Looking for productId: ${productId}`);
       console.log(`[CART REMOVAL DEBUG] Cart items:`, cartItems.map(i => ({ id: i.id, productId: i.productId })));
       console.log(`[CART REMOVAL DEBUG] Item to remove:`, itemToRemove);
+      
+      // Check if we're trying to delete by product ID instead of cart item ID
+      if (!itemToRemove) {
+        console.log(`[CART REMOVAL ERROR] Product ${productId} not found in user's cart`);
+        console.log(`[CART REMOVAL ERROR] Available products:`, cartItems.map(i => i.productId));
+      }
       
       if (!itemToRemove) {
         Logger.warn(`[CART REMOVAL] Cart item not found for product ${productId}`);
