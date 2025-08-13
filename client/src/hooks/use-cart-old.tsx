@@ -138,12 +138,6 @@ export function useRemoveFromCart() {
   });
 }
 
-// Get cart items count for badge display
-export function useCartCount() {
-  const { data: cart } = useCart();
-  return cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-}
-
 // Legacy compatibility hooks for components that haven't been updated yet
 export function useCartLegacy() {
   const { data, isLoading, isError } = useCart();
@@ -164,3 +158,5 @@ export function useCartLegacy() {
     isError
   };
 }
+
+

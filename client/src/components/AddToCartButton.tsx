@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useCart, useAddToCart, useRemoveFromCart } from "@/hooks/use-cart";
 
 interface AddToCartButtonProps {
   productId: string;
@@ -24,103 +23,12 @@ export function AddToCartButton({
   const { toast } = useToast();
   const [isHovering, setIsHovering] = useState(false);
 
-  // Query cart to check if item is already in cart
-  const { data: cartData } = useQuery({
-    queryKey: ['/api/cart'],
-    enabled: isAuthenticated,
-    staleTime: 30000 // 30 seconds
-  });
+  // Use the unified cart hooks
+  const { data: cart } = useCart();
+  const addToCartMutation = useAddToCart();
+  const removeFromCartMutation = useRemoveFromCart();
 
-  const isInCart = (cartData as any)?.items?.some((item: any) => item.productId === productId) || false;
-
-  // Optimistic add to cart mutation
-  const addToCartMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest('POST', '/api/cart', { 
-        productId, 
-        quantity: 1 
-      });
-    },
-    onMutate: async () => {
-      // Cancel any outgoing queries
-      await queryClient.cancelQueries({ queryKey: ['/api/cart'] });
-      
-      // Snapshot the previous value
-      const previousCart = queryClient.getQueryData(['/api/cart']);
-      
-      // Optimistically update the cache
-      queryClient.setQueryData(['/api/cart'], (old: any) => {
-        if (!old) return { items: [], subtotal: 0 };
-        return {
-          ...old,
-          items: [...(old.items || []), { productId, quantity: 1 }]
-        };
-      });
-      
-      return { previousCart };
-    },
-    onError: (error, variables, context) => {
-      // Rollback on error
-      queryClient.setQueryData(['/api/cart'], context?.previousCart);
-      toast({
-        title: "Error",
-        description: "Failed to add item to cart",
-        variant: "destructive"
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Added to cart",
-        description: "Item has been added to your cart"
-      });
-    },
-    onSettled: () => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
-    }
-  });
-
-  // Optimistic remove from cart mutation
-  const removeFromCartMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest(`/api/cart/remove/${productId}`, {
-        method: 'DELETE'
-      });
-    },
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['/api/cart'] });
-      
-      const previousCart = queryClient.getQueryData(['/api/cart']);
-      
-      // Optimistically remove from cache
-      queryClient.setQueryData(['/api/cart'], (old: any) => {
-        if (!old) return { items: [], subtotal: 0 };
-        return {
-          ...old,
-          items: (old.items || []).filter((item: any) => item.productId !== productId)
-        };
-      });
-      
-      return { previousCart };
-    },
-    onError: (error, variables, context) => {
-      queryClient.setQueryData(['/api/cart'], context?.previousCart);
-      toast({
-        title: "Error", 
-        description: "Failed to remove item from cart",
-        variant: "destructive"
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Removed from cart",
-        description: "Item has been removed from your cart"
-      });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
-    }
-  });
+  const isInCart = cart?.items?.some(item => item.productId === productId) || false;
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -131,12 +39,12 @@ export function AddToCartButton({
       });
       return;
     }
-    addToCartMutation.mutate();
+    addToCartMutation.mutate({ productId, quantity: 1 });
   };
 
   const handleRemoveFromCart = () => {
     if (!isAuthenticated) return;
-    removeFromCartMutation.mutate();
+    removeFromCartMutation.mutate(productId);
   };
 
   // Not signed in - show blue Add to Cart button

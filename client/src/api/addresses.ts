@@ -70,13 +70,15 @@ export const addressApi = {
   // Get all user addresses
   async getAddresses(): Promise<Address[]> {
     const response = await apiRequest('GET', '/api/addresses');
-    return response.json();
+    const result = await response.json();
+    return result.ok ? result.data : result; // Handle both new and legacy formats
   },
 
   // Create new address
   async createAddress(addressData: CreateAddressRequest): Promise<Address> {
     const response = await apiRequest('POST', '/api/addresses', addressData);
-    return response.json();
+    const result = await response.json();
+    return result.ok ? result.data : result; // Handle both new and legacy formats
   },
 
   // Set address as default

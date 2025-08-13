@@ -32,10 +32,10 @@ router.get('/', isAuthenticated, async (req, res) => {
     const sorted = addresses.sort((a, b) => {
       if (a.isDefault && !b.isDefault) return -1;
       if (!a.isDefault && b.isDefault) return 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0);
     });
     
-    res.json(sorted);
+    res.json({ ok: true, data: sorted });
   } catch (error) {
     console.error('GET /api/addresses error:', error);
     res.status(500).json({ message: 'Failed to fetch addresses' });
@@ -50,25 +50,33 @@ router.post('/', isAuthenticated, async (req, res) => {
     
     // Check if user has zero addresses - if so, force this as default
     const existingAddresses = await storage.getUserAddresses(userId);
-    if (existingAddresses.length === 0) {
-      data.isDefault = true;
-    }
+    const isDefault = data.setDefault || existingAddresses.length === 0;
     
     // Compute isLocal from coordinates
     const isLocal = isLocalMiles(data.latitude || null, data.longitude || null);
     
     const address = await storage.createAddress(userId, {
       ...data,
-      isDefault: data.setDefault,
+      isDefault,
       isLocal
     });
     
-    res.json(address);
+    res.json({ ok: true, data: address });
   } catch (error) {
     console.error('POST /api/addresses error:', error);
-    res.status(400).json({ 
-      message: error instanceof z.ZodError ? 'Invalid address data' : 'Failed to create address'
-    });
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ 
+        ok: false,
+        error: 'VALIDATION_ERROR',
+        fieldErrors: error.flatten().fieldErrors
+      });
+    } else {
+      res.status(500).json({ 
+        ok: false,
+        error: 'CREATION_FAILED',
+        message: 'Failed to create address'
+      });
+    }
   }
 });
 
@@ -80,13 +88,17 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
     const data = addressSchema.partial().parse(req.body);
     
     // Recompute isLocal if coordinates changed
+    let updateData = { ...data };
     if (data.latitude !== undefined || data.longitude !== undefined) {
-      data.isLocal = isLocalMiles(data.latitude || null, data.longitude || null);
+      updateData = {
+        ...updateData,
+        isLocal: isLocalMiles(data.latitude || null, data.longitude || null)
+      };
     }
     
-    const address = await storage.updateAddress(userId, id, data);
+    const address = await storage.updateAddress(userId, id, updateData);
     
-    res.json(address);
+    res.json({ ok: true, data: address });
   } catch (error) {
     console.error('PATCH /api/addresses/:id error:', error);
     res.status(400).json({ message: 'Failed to update address' });
@@ -99,9 +111,9 @@ router.post('/:id/default', isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const { id } = req.params;
     
-    const address = await storage.setDefaultAddress(userId, id);
+    await storage.setDefaultAddress(userId, id);
     
-    res.json(address);
+    res.json({ ok: true });
   } catch (error) {
     console.error('POST /api/addresses/:id/default error:', error);
     res.status(400).json({ message: 'Failed to set default address' });
@@ -117,21 +129,23 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
     // Check if this is the default address
     const address = await storage.getAddress(userId, id);
     if (!address) {
-      return res.status(404).json({ message: 'Address not found' });
+      return res.status(404).json({ ok: false, error: 'Address not found' });
     }
     
     if (address.isDefault) {
-      return res.status(400).json({ 
+      return res.status(409).json({ 
+        ok: false, 
+        error: 'DEFAULT_ADDRESS_CANNOT_BE_DELETED',
         message: 'Cannot delete default address. Set another address as default first.' 
       });
     }
     
     await storage.deleteAddress(userId, id);
     
-    res.json({ message: 'Address deleted successfully' });
+    res.json({ ok: true, message: 'Address deleted successfully' });
   } catch (error) {
     console.error('DELETE /api/addresses/:id error:', error);
-    res.status(400).json({ message: 'Failed to delete address' });
+    res.status(500).json({ ok: false, error: 'Failed to delete address' });
   }
 });
 

@@ -32,11 +32,11 @@ export default function Checkout() {
   const [newAddress, setNewAddress] = useState({
     firstName: "",
     lastName: "",
-    streetAddress: "",
-    apartment: "",
+    street1: "",
+    street2: "",
     city: "",
     state: "",
-    zipCode: "",
+    postalCode: "",
     isDefault: false
   });
 
@@ -56,10 +56,7 @@ export default function Checkout() {
   // Mutation to create new address
   const createAddressMutation = useMutation({
     mutationFn: async (addressData: any) => {
-      return await apiRequest('/api/addresses', {
-        method: 'POST',
-        body: JSON.stringify(addressData)
-      });
+      return await apiRequest('POST', '/api/addresses', addressData);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/addresses'] });

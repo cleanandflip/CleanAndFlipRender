@@ -1,0 +1,373 @@
+fixes and clean-up steps for Replit so the addresses, cart, checkout, and “local vs ship” indicators all work exactly as intended (and the old code stops creeping back in).
+
+0) PURGE ALL LEGACY/CONFLICTING FILES
+Delete these files (they’re causing route/component drift):
+
+swift
+Copy
+Edit
+src/pages/checkout-old.tsx
+src/pages/checkout-new.tsx
+src/pages/checkout-simple.tsx
+src/pages/checkout.tsx         // old page if not the new one below
+src/pages/cart.tsx             // legacy page version if drawer is source of truth
+src/components/cart/Cart.tsx   // legacy cart page component
+src/components/checkout/**/Deprecated*.tsx
+src/lib/legacy/**               // any leftovers
+Keep exactly one checkout entry point:
+
+cpp
+Copy
+Edit
+src/pages/checkout/index.tsx    // The only checkout page
+Clean caches so Vite can’t resurrect stale bundles:
+
+bash
+Copy
+Edit
+rm -rf node_modules/.vite .vite dist
+Routes must point to the single page (src/config/routes.ts):
+
+ts
+Copy
+Edit
+{ path: '/checkout', element: <CheckoutPage /> },   // the only checkout route
+1) SERVER: ADDRESS MODEL & API (ONE DEFAULT, CANNOT DELETE DEFAULT)
+DB guards (Postgres):
+
+sql
+Copy
+Edit
+-- exactly one default per user
+CREATE UNIQUE INDEX IF NOT EXISTS addresses_one_default_per_user
+ON addresses (user_id) WHERE is_default = true;
+
+-- optional: geocoded columns to compute local radius
+ALTER TABLE addresses
+  ADD COLUMN IF NOT EXISTS lat double precision,
+  ADD COLUMN IF NOT EXISTS lng double precision;
+REST contract (normalize responses across cart/addresses):
+
+h
+Copy
+Edit
+GET    /api/addresses                 -> { ok: true, data: Address[] }
+POST   /api/addresses                 -> { ok: true, data: Address }         // create
+PATCH  /api/addresses/:id             -> { ok: true, data: Address }         // update
+POST   /api/addresses/:id/default     -> { ok: true }                        // sets default, clears others
+DELETE /api/addresses/:id             -> { ok: true }                        // 409 if address.is_default
+Delete protection (server middleware or controller):
+
+ts
+Copy
+Edit
+if (address.is_default) {
+  return res.status(409).json({ ok: false, error: 'DEFAULT_ADDRESS_CANNOT_BE_DELETED' });
+}
+Your latest screenshots show default labeling and delete on non-default — keep that, but enforce it server-side too.
+
+2) SERVER: CART API (FIX “REQUEST BLOCKED”, STANDARDIZE SHAPES)
+The logs show mixed paths and a guard rewriting:
+
+bash
+Copy
+Edit
+CART REQUEST BLOCKED ... originalUrl: /api/cart/remove/:id
+... server handled /remove/:id
+Unify to one RESTful shape and always return the same JSON envelope:
+
+http
+Copy
+Edit
+GET    /api/cart                    -> { ok: true, data: Cart }
+POST   /api/cart                    -> { ok: true, data: Cart }               // { productId, qty }
+PATCH  /api/cart/:itemId            -> { ok: true, data: Cart }               // { qty }
+DELETE /api/cart/:itemId            -> { ok: true, data: Cart }
+POST   /api/cart/validate           -> { ok: true, data: { valid: boolean, issues: [...] } }
+Server router mount must be consistent:
+
+ts
+Copy
+Edit
+app.use('/api/cart', cartRouter);  // do not remap inside handlers
+Remove any guard that rewrites to /remove/*, and update CORS/CSRF to allow DELETE from the SPA.
+
+3) CLIENT: CART HOOK + BUTTON (FAST, OPTIMISTIC, GREEN/RED UX)
+Only one hook for cart state src/hooks/use-cart.tsx (react-query):
+
+ts
+Copy
+Edit
+const CART_KEY = ['cart'];
+
+export function useCart() {
+  const query = useQuery(CART_KEY, () => api.get('/api/cart').then(r=>r.data.data));
+
+  const add = useMutation(
+    (input: { productId: string; qty?: number }) => api.post('/api/cart', input),
+    { onMutate: optimisticAdd, onSuccess: refetchCart }
+  );
+
+  const remove = useMutation(
+    (itemId: string) => api.delete(`/api/cart/${itemId}`),
+    { onMutate: optimisticRemove, onSuccess: refetchCart }
+  );
+
+  return { ...query, add: add.mutateAsync, removing: remove.isLoading, remove: remove.mutateAsync };
+}
+Product card button src/components/AddToCartButton.tsx:
+
+Blue “Add to Cart” → on add success becomes Green “In Cart”.
+
+Hovering the green button shows a red circular “✕” to remove.
+
+Use optimistic updates so it feels instant.
+
+tsx
+Copy
+Edit
+// pseudo-simplified
+const InCartButton = ({ itemId, onRemove }) => (
+  <div className="relative group">
+    <button className="w-full bg-green-600">✓ In Cart</button>
+    <button
+      aria-label="Remove from cart"
+      onClick={onRemove}
+      className="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:block
+                 w-6 h-6 rounded-full bg-red-600 text-white"
+    >✕</button>
+  </div>
+);
+Cart Drawer opening
+
+Source of truth: src/components/cart/cart-drawer.tsx
+
+Open/close via a small zustand/context store:
+
+ts
+Copy
+Edit
+// src/lib/cartDrawerStore.ts
+export const useCartDrawer = create<{open:boolean; openIt:()=>void; close:()=>void}>((set)=>({
+  open:false, openIt:()=>set({open:true}), close:()=>set({open:false})
+}));
+Wire navbar cart icon to openIt() and the drawer open={open}. Remove any legacy context so there’s only this one.
+
+4) CLIENT: CHECKOUT (PREFILL DEFAULT, CHOOSE SAVED, “NEW ADDRESS” LOCKS/UNLOCKS)
+Single page src/pages/checkout/index.tsx with this state machine:
+
+csharp
+Copy
+Edit
+addressMode: 'default' | 'saved' | 'new'
+selectedAddressId?: string  // when 'saved'
+On mount:
+
+fetch /api/addresses
+
+pick addresses.find(a => a.is_default) || addresses[0] (first address is auto-default if none marked).
+
+set addressMode='default', prefill read-only.
+
+UI:
+
+Use default (read-only fields, “Change” button switches to Choose Saved)
+
+Choose saved… dropdown modal shows all non-default addresses; selecting one fills fields read-only
+
+Use new address → fields become editable, “Save this address to profile” checkbox appears (and “Set as default” if checked).
+
+tsx
+Copy
+Edit
+const readOnly = addressMode !== 'new';
+<input readOnly={readOnly} className={readOnly ? 'pointer-events-none opacity-90' : ''} ... />
+On submit:
+
+If addressMode==='new' and “save to profile” checked → POST /api/addresses (+ optional /default if toggled).
+
+Always send shippingAddress payload to the server.
+
+Fix for the null hook crash:
+Replace const { defaultAddress } = useDefaultAddress() with safe optional:
+
+ts
+Copy
+Edit
+const { data: addresses } = useAddresses();
+const defaultAddress = useMemo(
+  () => addresses?.find(a => a.is_default) ?? addresses?.[0] ?? null,
+  [addresses]
+);
+if (!addresses) return <CheckoutSkeleton/>;
+5) “LOCAL vs SHIP” — SHOW IT EVERYWHERE
+Server helper (distance in miles):
+
+ts
+Copy
+Edit
+export function milesBetween(a:{lat:number,lng:number}, b:{lat:number,lng:number}) {
+  const toRad = (d:number)=>d*Math.PI/180;
+  const R = 3958.8; // miles
+  const dLat = toRad(b.lat-a.lat), dLng = toRad(b.lng-a.lng);
+  const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+Expose a lightweight computed field in /api/user:
+
+json
+Copy
+Edit
+{ 
+  "ok": true,
+  "data": {
+    "user": { ... },
+    "defaultAddress": { id, city, state, lat, lng },
+    "isLocal": true,                       // distance <= 50
+    "localRadiusMiles": 50
+  }
+}
+Product model should have shippable: boolean.
+Client hook useLocalStatus():
+
+ts
+Copy
+Edit
+export function useLocalStatus() {
+  const { data } = useUser(); // from /api/user
+  return { isLocal: data?.isLocal, radius: data?.localRadiusMiles ?? 50 };
+}
+Badges (use once, everywhere):
+
+Product card:
+
+If !shippable and !isLocal → “Local Pickup Only (Not in your area)” (red).
+
+If !shippable and isLocal → “Local Pickup Eligible” (green).
+
+If shippable → “Ship Eligible” (blue) and, if also local, show both as stacked pills.
+
+Cart item rows & Checkout summary: repeat the badge(s).
+
+Profile header: tiny line “You are in our local delivery area” or “Outside local area”.
+
+6) ONBOARDING GUARD — STOP HARASSING USERS WHO ALREADY HAVE ADDRESSES
+Your logs show Blocking incomplete profile access … /api/orders while you already have two addresses.
+
+Fix the guard src/lib/protected-route.tsx (and server middleware, if any):
+
+Consider profile complete if addresses.length > 0 OR user.defaultAddress exists.
+
+After any POST /api/addresses or /default, invalidate /api/user and /api/addresses so the guard sees the update:
+
+ts
+Copy
+Edit
+await queryClient.invalidateQueries({ queryKey: ['user'] });
+await queryClient.invalidateQueries({ queryKey: ['addresses'] });
+Also remove any stale localStorage.isOnboarded flag that might override the server truth.
+
+7) SHIPPING OPTIONS ARE EMPTY
+Shipping methods should be conditional:
+
+If product(s) all shippable → show carrier shipping options.
+
+If mixed → show Split fulfillment notice (ship what can ship; mark others pickup).
+
+If none shippable and !isLocal → show “No shipping available to your address” and disable Continue.
+
+Server endpoint:
+
+http
+Copy
+Edit
+POST /api/shipping/quote
+Payload: { items:[{productId, qty}], address:{...} }
+Returns: { ok: true, data: { options:[{id, label, eta, cost}] } }
+Call this once after address selection stabilizes (debounce 300ms).
+
+8) PERFORMANCE: MAKE ADD/REMOVE FEEL INSTANT
+Use optimistic updates in useCart (above).
+
+Debounce /api/track-activity (logs are very chatty). In dev, disable it:
+
+ts
+Copy
+Edit
+if (import.meta.env.DEV) return; // don’t post observability in dev
+The recurring /api/observability/errors 400 spam: only POST when payload has message && stack, else skip.
+
+9) LOG NOISE CLEANUP
+You’re getting tons of:
+
+bash
+Copy
+Edit
+POST /api/observability/errors 400
+Before sending, validate:
+
+ts
+Copy
+Edit
+if (!error || typeof error.message !== 'string') return; // don’t call API
+Server should respond 204 for empty payload instead of 400 to avoid red noise during local dev.
+
+10) FRONTEND: ADDRESS PANEL IN PROFILE
+Auto-default the first address on signup (server already enforces one default; on first insert, set is_default=true).
+
+Show “DEFAULT ⭐” badge (you’ve got it).
+
+Hide delete on default row (you’ve got it).
+
+“Make Default” on others triggers /default then invalidates queries.
+
+11) ACCEPTANCE CHECKLIST (WHAT TO VERIFY)
+Products page
+
+Blue Add to Cart → turns Green In Cart; hover shows red ✕ that removes instantly.
+
+Badges show Local/Ship status correctly.
+
+Cart Drawer
+
+Opens from navbar; reflects optimistic add/remove; totals update; badges present.
+
+Profile → Addresses
+
+First address is default if none existed.
+
+Default clearly labeled; no delete icon; other addresses have Make Default and Delete.
+
+Checkout
+
+Loads with default address read-only.
+
+Choose saved… shows all other addresses; selecting one fills read-only.
+
+Use new address unlocks fields and offers Save to profile (+ Set as default).
+
+Shipping options populate based on address & product shippable flags.
+
+Changing default anywhere updates isLocal badge across app.
+
+Onboarding
+
+With ≥1 address, guard does not block orders/cart.
+
+Logs
+
+No more CART REQUEST BLOCKED.
+
+No more observability 400 spam in dev.
+
+No 401 on /api/user once authenticated.
+
+Quick grep to ensure no legacy references remain
+Run inside the workspace:
+
+nginx
+Copy
+Edit
+rg -n "checkout-(old|new|simple)|CartDrawerContext|/cart/remove|observability/errors" src
+Delete or replace anything flagged to the new APIs/components above.

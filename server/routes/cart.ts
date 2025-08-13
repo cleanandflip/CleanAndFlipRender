@@ -18,10 +18,13 @@ router.get('/', isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const cart = await storage.getCart(userId);
     
-    // Return consistent cart structure
+    // Return consistent cart structure with ok wrapper
     res.json({
-      items: cart?.items || [],
-      subtotal: cart?.subtotal || 0
+      ok: true,
+      data: {
+        items: cart?.items || [],
+        subtotal: cart?.subtotal || 0
+      }
     });
   } catch (error) {
     console.error('GET /api/cart error:', error);
@@ -42,8 +45,11 @@ router.post('/', isAuthenticated, async (req, res) => {
     const cart = await storage.addToCart(userId, data.productId, data.quantity, data.variantId);
     
     res.json({
-      items: cart.items,
-      subtotal: cart.subtotal
+      ok: true,
+      data: {
+        items: cart.items,
+        subtotal: cart.subtotal
+      }
     });
   } catch (error) {
     console.error('POST /api/cart error:', error);
@@ -63,8 +69,11 @@ router.patch('/:itemId', isAuthenticated, async (req, res) => {
     const cart = await storage.updateCartItem(userId, itemId, quantity);
     
     res.json({
-      items: cart.items,
-      subtotal: cart.subtotal
+      ok: true,
+      data: {
+        items: cart.items,
+        subtotal: cart.subtotal
+      }
     });
   } catch (error) {
     console.error('PATCH /api/cart/:itemId error:', error);
@@ -72,7 +81,7 @@ router.patch('/:itemId', isAuthenticated, async (req, res) => {
   }
 });
 
-// Remove item from cart
+// Remove item from cart - standardized RESTful endpoint
 router.delete('/:itemId', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
@@ -81,43 +90,78 @@ router.delete('/:itemId', isAuthenticated, async (req, res) => {
     const cart = await storage.removeFromCart(userId, itemId);
     
     res.json({
-      items: cart.items,
-      subtotal: cart.subtotal
+      ok: true,
+      data: {
+        items: cart.items,
+        subtotal: cart.subtotal
+      }
     });
   } catch (error) {
     console.error('DELETE /api/cart/:itemId error:', error);
-    res.status(400).json({ message: 'Failed to remove from cart' });
+    res.status(400).json({ 
+      ok: false,
+      error: 'REMOVAL_FAILED',
+      message: 'Failed to remove item from cart'
+    });
   }
 });
 
-// Remove by product ID (for Add to Cart button remove functionality)
-router.delete('/remove/:productId', isAuthenticated, async (req, res) => {
+// Alternative route for legacy compatibility
+router.delete('/items/:productId', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
     const { productId } = req.params;
     
-    const cart = await storage.removeFromCartByProductId(userId, productId);
+    const cart = await storage.removeFromCart(userId, productId);
     
     res.json({
-      items: cart.items,
-      subtotal: cart.subtotal
+      ok: true,
+      data: {
+        items: cart.items,
+        subtotal: cart.subtotal
+      }
     });
   } catch (error) {
-    console.error('DELETE /api/cart/remove/:productId error:', error);
-    res.status(400).json({ message: 'Failed to remove from cart' });
+    console.error('DELETE /api/cart/items/:productId error:', error);
+    res.status(400).json({ 
+      ok: false,
+      error: 'REMOVAL_FAILED',
+      message: 'Failed to remove item from cart'
+    });
   }
 });
 
-// Validate cart (check availability, pricing)
+// Cart validation endpoint
 router.post('/validate', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const validation = await storage.validateCart(userId);
+    const cart = await storage.getCart(userId);
     
-    res.json(validation);
+    // Check for availability issues
+    const issues: string[] = [];
+    for (const item of cart?.items || []) {
+      const product = await storage.getProduct(item.productId);
+      if (!product) {
+        issues.push(`Product ${item.productId} no longer available`);
+      } else if ((product.stockQuantity || 0) < item.quantity) {
+        issues.push(`${product.name}: Only ${product.stockQuantity || 0} available (requested ${item.quantity})`);
+      }
+    }
+    
+    res.json({
+      ok: true,
+      data: {
+        valid: issues.length === 0,
+        issues
+      }
+    });
   } catch (error) {
     console.error('POST /api/cart/validate error:', error);
-    res.status(400).json({ message: 'Failed to validate cart' });
+    res.status(500).json({
+      ok: false,
+      error: 'VALIDATION_FAILED',
+      message: 'Failed to validate cart'
+    });
   }
 });
 
