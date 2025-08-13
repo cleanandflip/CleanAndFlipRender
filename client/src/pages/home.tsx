@@ -87,14 +87,33 @@ function HomeSections() {
           transition={{ duration: 0.4 }}
         >
           {locality.isLocal ? (
-            <div className="text-center bg-green-50 border border-green-200 rounded-lg p-3 text-green-800 text-sm">
-              🎉 You're in our Local Delivery area — delivery is FREE.
+            <div className="text-center bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-xl p-4 shadow-lg">
+              <div className="flex items-center justify-center gap-3">
+                <LocalBadge isLocal={true} />
+                <span className="text-green-800 font-medium">
+                  🎉 You qualify for FREE Local Delivery on eligible items!
+                </span>
+              </div>
             </div>
           ) : !locality.hasAddress ? (
-            <div className="text-center bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-800 text-sm">
-              Add your address to see if you qualify for FREE Local Delivery.
+            <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-300 rounded-xl p-4 shadow-lg">
+              <div className="flex items-center justify-center gap-3">
+                <LocalBadge isLocal={false} />
+                <span className="text-blue-800 font-medium">
+                  Add your address to check if you qualify for FREE Local Delivery
+                </span>
+              </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="text-center bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl p-4 shadow-lg">
+              <div className="flex items-center justify-center gap-3">
+                <LocalBadge isLocal={false} />
+                <span className="text-gray-800 font-medium">
+                  You're outside our Local Delivery area — shipping available
+                </span>
+              </div>
+            </div>
+          )}
         </motion.div>
       )}
 

@@ -9,10 +9,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { MapPin, Plus, Check } from "lucide-react";
+import { LocalBadge } from "@/components/locality/LocalBadge";
+import { useLocality } from "@/hooks/useLocality";
+import { motion } from "framer-motion";
 
 export default function Checkout() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const { data: locality } = useLocality();
   
   // FIXED: Fetch addresses with correct API structure
   const { data: addressesResponse, isLoading: addressLoading } = useQuery({
@@ -162,6 +166,37 @@ export default function Checkout() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-4xl font-bebas">CHECKOUT</h1>
+        <LocalBadge isLocal={locality?.isLocal ?? false} />
+      </div>
+
+      {/* Locality Banner for Checkout */}
+      {locality && (
+        <motion.div 
+          className="mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="w-4 h-4 text-blue-400" />
+              <span className="text-sm font-medium">Delivery Information</span>
+            </div>
+            <p className="text-sm text-gray-300">
+              {locality.isLocal ? (
+                "🎉 You qualify for FREE Local Delivery on eligible items in your cart!"
+              ) : locality.hasAddress ? (
+                "You're outside our Local Delivery area. Shipping costs will be calculated for your items."
+              ) : (
+                "Please add your address to determine delivery options and costs."
+              )}
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">

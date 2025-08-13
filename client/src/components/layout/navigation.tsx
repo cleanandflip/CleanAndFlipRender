@@ -301,7 +301,7 @@ export default function Navigation() {
                           className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
                         >
                           <User className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">Manage addresses</span>
+                          <span className="text-sm">Dashboard</span>
                         </button>
                         
                         <button
