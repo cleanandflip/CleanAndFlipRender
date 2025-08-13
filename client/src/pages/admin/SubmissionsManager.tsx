@@ -21,7 +21,7 @@ import { SubmissionsGrid } from '@/components/admin/SubmissionsGrid';
 import { SubmissionAnalytics } from '@/components/admin/SubmissionAnalytics';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { formatStatus, getStatusVariant } from '@/utils/submissionHelpers';
+// Helper functions moved inline
 
 interface SubmissionFilters {
   status: string;
@@ -334,7 +334,7 @@ export function SubmissionsManager() {
       case 'offer_made': return <DollarSign className="w-4 h-4" />;
       case 'accepted': return <CheckCircle className="w-4 h-4" />;
       case 'rejected': return <XCircle className="w-4 h-4" />;
-      case 'scheduled': return <Calendar className="w-4 h-4" />;
+      case 'scheduled': return <CalendarIcon className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };

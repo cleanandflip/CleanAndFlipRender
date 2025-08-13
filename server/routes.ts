@@ -59,13 +59,12 @@ export function setWebSocketManager(manager: any) {
 
 // Helper function to broadcast cart updates
 function broadcastCartUpdate(userId: string, action: string = 'update', data?: any) {
-  if (wsManager && wsManager.broadcast) {
-    wsManager.broadcast({
-      type: 'cart_update',
-      userId,
-      action,
-      data,
-      timestamp: new Date().toISOString()
+  if (wsManager && wsManager.publishToUser) {
+    // Use new typed publish method
+    wsManager.publishToUser(userId, { 
+      topic: "cart:update", 
+      userId, 
+      count: data?.count || 0 
     });
     Logger.debug(`[WS] Cart update broadcasted: ${action} for user ${userId}`);
   }
@@ -2084,6 +2083,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       await storage.deleteProduct(id);
+      
+      // Broadcast update via WebSocket using new typed system
+      try {
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "product:update",
+            productId: id
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
+      }
+      
       res.json({ success: true });
     } catch (error) {
       Logger.error("Error deleting product", error);
@@ -2210,6 +2222,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const newCategory = await storage.createCategory(categoryData);
+      
+      // Broadcast update via WebSocket using new typed system
+      try {
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "category:update",
+            categoryId: newCategory.id
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
+      }
+      
       res.json(newCategory);
     } catch (error) {
       Logger.error("Error creating category", error);
@@ -2233,6 +2258,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const updatedCategory = await storage.updateCategory(req.params.id, updates);
+      
+      // Broadcast update via WebSocket using new typed system
+      try {
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "category:update",
+            categoryId: req.params.id
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
+      }
+      
       res.json(updatedCategory);
     } catch (error) {
       Logger.error("Error updating category", error);
@@ -2244,6 +2282,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { is_active } = req.body;
       await storage.updateCategory(req.params.id, { isActive: is_active });
+      
+      // Broadcast update via WebSocket using new typed system
+      try {
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "category:update",
+            categoryId: req.params.id
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
+      }
+      
       res.json({ success: true });
     } catch (error) {
       Logger.error("Error toggling category status", error);
@@ -2293,6 +2344,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await db.delete(categories).where(eq(categories.id, id));
+      
+      // Broadcast update via WebSocket using new typed system
+      try {
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "category:update",
+            categoryId: id
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
+      }
+      
       res.json({ success: true });
     } catch (error) {
       Logger.error("Error deleting category", error);
@@ -2647,6 +2711,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       Logger.debug(`Creating product with data: ${JSON.stringify(productData)}`);
       const newProduct = await storage.createProduct(productData);
+      
+      // Broadcast update via WebSocket using new typed system
+      try {
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "product:update",
+            productId: newProduct.id
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
+      }
+      
       res.json(newProduct);
     } catch (error) {
       Logger.error('Create product error:', error);
@@ -2692,6 +2769,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       Logger.debug(`Updating product with data: ${JSON.stringify(updateData)}`);
       const updatedProduct = await storage.updateProduct(id, updateData);
+      
+      // Broadcast update via WebSocket using new typed system
+      try {
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "product:update",
+            productId: id
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
+      }
+      
       res.json(updatedProduct);
     } catch (error) {
       Logger.error('Update product error:', error);
@@ -2705,6 +2795,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { status } = req.body;
       await storage.updateProductStock(req.params.id, status);
+      
+      // Broadcast update via WebSocket using new typed system
+      try {
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "stock:update",
+            productId: req.params.id,
+            qty: status
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
+      }
+      
       res.json({ message: "Stock status updated" });
     } catch (error) {
       Logger.error("Error updating stock", error);
@@ -2759,16 +2863,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'User not found' });
       }
       
-      // Broadcast update via WebSocket
+      // Broadcast update via WebSocket using new typed system
       try {
         const { wsManager } = await import('./websocket');
-        if (wsManager) {
-          wsManager.broadcast({
-            type: 'user_update',
-            action: 'update',
-            userId: id,
-            data: updatedUser,
-            timestamp: new Date().toISOString()
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "user:update",
+            userId: id
           });
         }
       } catch (error) {
@@ -2847,16 +2948,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: 'Failed to create user' });
       }
       
-      // Broadcast update via WebSocket
+      // Broadcast update via WebSocket using new typed system
       try {
         const { wsManager } = await import('./websocket');
-        if (wsManager) {
-          wsManager.broadcast({
-            type: 'user_update',
-            action: 'create',
-            userId: newUser.id,
-            data: newUser,
-            timestamp: new Date().toISOString()
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "user:update",
+            userId: newUser.id
           });
         }
       } catch (error) {

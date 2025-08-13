@@ -57,55 +57,6 @@ export function initializeWebSocket(server: HTTPServer) {
   return io;
 }
 
-// Real-time cart updates
-export function broadcastCartUpdate(userId: string) {
-  if (io) {
-    io.to(`user:${userId}`).emit('cart-updated');
-    logger.info({
-      type: 'websocket_broadcast',
-      event: 'cart-updated',
-      userId
-    });
-  }
-}
-
-// Real-time wishlist updates
-export function broadcastWishlistUpdate(userId: string) {
-  if (io) {
-    io.to(`user:${userId}`).emit('wishlist-updated');
-    logger.info({
-      type: 'websocket_broadcast',
-      event: 'wishlist-updated',
-      userId
-    });
-  }
-}
-
-// Real-time product updates for admin
-export function broadcastProductUpdate(productId: string, action: string) {
-  if (io) {
-    io.to('admin').emit('product-updated', { productId, action });
-    io.emit('inventory-updated'); // Notify all clients about inventory changes
-    logger.info({
-      type: 'websocket_broadcast',
-      event: 'product-updated',
-      productId,
-      action
-    });
-  }
-}
-
-// Real-time stock updates
-export function broadcastStockUpdate(productId: string, newStock: number) {
-  if (io) {
-    io.emit('stock-updated', { productId, stock: newStock });
-    logger.info({
-      type: 'websocket_broadcast',
-      event: 'stock-updated',
-      productId,
-      stock: newStock
-    });
-  }
-}
+// Legacy WebSocket functions have been replaced by the new typed WebSocket system
 
 export { io };

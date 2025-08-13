@@ -5,7 +5,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { EnhancedCategoryModal } from '@/components/admin/modals/EnhancedCategoryModal';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useSocket } from '@/hooks/useSingletonSocket.tsx';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 
@@ -26,7 +26,7 @@ export function CategoriesTab() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { send, isConnected } = useWebSocket();
+  const { subscribe, ready } = useSocket();
   const queryClient = useQueryClient();
 
   // Fetch categories with React Query
@@ -59,10 +59,10 @@ export function CategoriesTab() {
   const categories = categoriesData?.categories || [];
   const stats = categoriesData?.stats || { active: 0, empty: 0, total: 0 };
 
-  // Setup live sync
+  // Setup live sync with new typed WebSocket system
   useEffect(() => {
-    const handleRefresh = (event: CustomEvent) => {
-      console.log('🔄 Live sync: Refreshing categories', event.detail);
+    return subscribe("category:update", (msg) => {
+      console.log('🔄 Live sync: Refreshing categories', msg);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/categories'] });
       
       // Trigger animation for data table
@@ -71,7 +71,8 @@ export function CategoriesTab() {
         tableElement.classList.add('animate-slideUp');
         setTimeout(() => tableElement.classList.remove('animate-slideUp'), 500);
       }
-    };
+    });
+  }, [subscribe, queryClient]);
 
     window.addEventListener('refresh_categories', handleRefresh as any);
     return () => window.removeEventListener('refresh_categories', handleRefresh as any);

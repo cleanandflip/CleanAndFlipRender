@@ -6,7 +6,7 @@ import {
   Users, Settings, CreditCard, ChevronRight, Wifi, WifiOff, AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useSocket } from '@/hooks/useSingletonSocket.tsx';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -27,7 +27,7 @@ const ADMIN_TABS = [
 export function AdminLayout({ children, currentTab }: AdminLayoutProps) {
   const [location, navigate] = useLocation();
   const activeTab = currentTab || location.split('/').pop() || 'products';
-  const { isConnected, status } = useWebSocket();
+  const { ready } = useSocket();
 
   return (
     <div className="min-h-screen bg-[#0f172a]">
@@ -42,16 +42,16 @@ export function AdminLayout({ children, currentTab }: AdminLayoutProps) {
             
             {/* Live Sync Status */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/50">
-              {isConnected ? (
+              {ready ? (
                 <Wifi className="w-4 h-4 text-green-500" />
               ) : (
                 <WifiOff className="w-4 h-4 text-red-500" />
               )}
               <span className={cn(
                 "text-xs font-medium",
-                isConnected ? "text-green-400" : "text-red-400"
+                ready ? "text-green-400" : "text-red-400"
               )}>
-                {isConnected ? "Live Sync Active" : "Offline"}
+                {ready ? "Live Sync Active" : "Offline"}
               </span>
             </div>
           </div>

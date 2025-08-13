@@ -3,6 +3,7 @@ import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { clientErrorLogger } from "./lib/errorLogger";
 import { FrontendErrorCatcher } from "./services/globalErrorCatcher";
+import { SocketProvider } from "./hooks/useSingletonSocket.tsx";
 import "./index.css";
 
 // Initialize client-side error logging
@@ -16,7 +17,9 @@ import { installGlobalErrorHandlers } from "./lib/errorTracking";
 installGlobalErrorHandlers();
 
 createRoot(document.getElementById("root")!).render(
-  <ErrorBoundary>
-    <App />
-  </ErrorBoundary>
+  <SocketProvider>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </SocketProvider>
 );

@@ -5,7 +5,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { EnhancedProductModal } from '@/components/admin/modals/EnhancedProductModal';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useSocket } from '@/hooks/useSingletonSocket.tsx';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 
@@ -29,7 +29,7 @@ export function ProductsTab() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { send, isConnected } = useWebSocket();
+  const { subscribe, ready } = useSocket();
   const queryClient = useQueryClient();
 
   // Fetch products with React Query
@@ -69,10 +69,10 @@ export function ProductsTab() {
 
   const products = productsData?.data || [];
 
-  // Setup live sync
+  // Setup live sync with new typed WebSocket system
   useEffect(() => {
-    const handleRefresh = (event: CustomEvent) => {
-      console.log('🔄 Live sync: Refreshing products', event.detail);
+    return subscribe("product:update", (msg) => {
+      console.log('🔄 Live sync: Refreshing products', msg);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/products'] });
       
       // Trigger animation for data table
@@ -81,11 +81,8 @@ export function ProductsTab() {
         tableElement.classList.add('animate-fadeIn');
         setTimeout(() => tableElement.classList.remove('animate-fadeIn'), 500);
       }
-    };
-
-    window.addEventListener('refresh_products', handleRefresh as any);
-    return () => window.removeEventListener('refresh_products', handleRefresh as any);
-  }, [queryClient]);
+    });
+  }, [subscribe, queryClient]);
 
   // Handle product actions
   const handleAddProduct = () => {
@@ -111,13 +108,6 @@ export function ProductsTab() {
         toast({
           title: "Product Deleted",
           description: `${product.name} has been removed`,
-        });
-
-        // Broadcast live update
-        send({
-          type: 'product_update',
-          action: 'delete',
-          productId: product.id
         });
 
         refetch();

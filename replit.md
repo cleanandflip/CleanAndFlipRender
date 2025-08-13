@@ -7,6 +7,16 @@ Clean & Flip is a full-stack web application for exchanging weightlifting equipm
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **2025-08-13**: WEBSOCKET INFRASTRUCTURE MODERNIZATION - COMPLETE END-TO-END REPLACEMENT
+  - **LEGACY WEBSOCKET PURGE**: Systematically eliminated all legacy WebSocket broadcast calls and replaced with new typed system
+  - **TYPED MESSAGE CONTRACTS**: Implemented single source of truth for ServerToClient and ClientToServer message types
+  - **SINGLETON SOCKET PATTERN**: Converted useSingletonSocket to .tsx format with proper error handling and reconnection logic
+  - **ADMIN REAL-TIME UPDATES**: Migrated AdminLayout, CategoriesTab, ProductsTab, and EnhancedCategoryModal to new WebSocket API
+  - **SERVER-SIDE PUBLISHING**: Added comprehensive WebSocket publishing to all admin CRUD operations (categories, products, users)
+  - **TOPIC-BASED MESSAGING**: Standardized on "topic:event" naming convention (category:update, product:update, user:update, stock:update)
+  - **RESILIENT CONNECTION**: Automatic reconnection, proper error states, and connection status management
+  - **ZERO LSP ERRORS**: All TypeScript errors resolved, complete type safety throughout WebSocket layer
+  - **PRODUCTION READY**: Cleaned up legacy broadcast functions, optimized performance, bulletproof error handling
 - **2025-08-13**: BULLETPROOF UNIFIED LOCAL DELIVERY SYSTEM - COMPLETE AND OPTIMIZED
   - **SINGLE SOURCE OF TRUTH**: Created unified locality detection engine (`server/lib/locality.ts`) with 50-mile radius from Asheville warehouse
   - **CRITICAL BUG FIXES**: Resolved missing latitude/longitude coordinates in user addresses - all addresses now properly geocoded
@@ -74,8 +84,23 @@ A comprehensive multi-layered security approach with Google OAuth integration an
 - **Security Practices**: Implements security headers, input sanitization (DOMPurify), SQL injection prevention, tiered rate limiting, and secure session management.
 - **Enterprise-Grade Features**: Comprehensive .gitignore protection, strict CSP headers, React ErrorBoundary components, SEO meta tags, PWA manifest, and legal compliance pages (Privacy Policy, Terms of Service).
 
-### Unified UI and Live Sync
-The admin dashboard features a unified component architecture (AdminLayout, UnifiedMetricCard, UnifiedDataTable, UnifiedButton) with consistent tabs. A comprehensive real-time synchronization system is implemented across all admin components and the user-facing home page using WebSockets, providing live updates for data changes and professional user experience with advanced animations.
+### Real-Time Communication Architecture
+The application implements a modern, typed WebSocket infrastructure for real-time updates:
+
+#### WebSocket System Features
+- **Single Connection Pattern**: One WebSocket connection per browser tab shared across all components via singleton pattern
+- **Typed Message Contracts**: Comprehensive TypeScript interfaces for ServerToClient and ClientToServer messages
+- **Topic-Based Messaging**: Standardized "topic:event" naming convention (e.g., `category:update`, `product:update`, `user:update`)
+- **Role-Based Broadcasting**: Server publishes updates to specific user rooms or global channels based on permissions
+- **Automatic Reconnection**: Resilient connection management with exponential backoff and subscription restoration
+- **Admin Real-Time Sync**: Live updates for all CRUD operations across admin dashboard components
+- **Error Handling**: Comprehensive error states, connection status indicators, and graceful degradation
+
+#### WebSocket Implementation
+- **Client-Side**: `useSingletonSocket` hook provides global WebSocket access with TypeScript safety
+- **Server-Side**: Enhanced WebSocket manager with `publish()` and `publishToUser()` methods for typed message broadcasting
+- **Integration**: All admin routes (categories, products, users) automatically publish updates on data changes
+- **Performance**: Optimized connection pooling, efficient message routing, and minimal overhead
 
 ## External Dependencies
 
