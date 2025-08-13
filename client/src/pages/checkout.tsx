@@ -13,8 +13,11 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { PageLoader } from "@/components/ui/page-loader";
 import { useAuth } from "@/hooks/use-auth";
+import AddressPicker from "@/components/addresses/AddressPicker";
 
 const asArray = <T,>(x: T[] | null | undefined): T[] => Array.isArray(x) ? x : [];
+const cents = (n: number | undefined | null) => Math.max(0, Number(n || 0));
+const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 
 const addressSchema = z.object({
   firstName: z.string().min(1, "Required"),
@@ -64,11 +67,14 @@ export default function Checkout() {
     enabled: !!user?.id,
   });
 
-  const addresses = asArray(addressesResp?.addresses ?? addressesResp);
+  const addresses = Array.isArray(addressesResp?.addresses) ? addressesResp.addresses : [];
   const cartItems = asArray(cartResp?.items);
+  const profileAddressId: string | null = user?.profile_address_id ?? user?.profileAddress?.id ?? null;
 
   const defaultAddr =
-    addresses.find((a: any) => a.is_default) ??
+    (profileAddressId && addresses.find(a => a.id === profileAddressId)) ||
+    addresses.find(a => a.is_default) ||
+    user?.profileAddress ||
     null;
 
   const form = useForm<AddressFormData>({
@@ -141,6 +147,35 @@ export default function Checkout() {
     staleTime: 0,
   });
   const quotes = asArray((quotesResp as any)?.quotes ?? []);
+
+  // Auto-prefill form from default address
+  useEffect(() => {
+    if (!userLoading && !addrLoading && defaultAddr) {
+      form.reset({
+        firstName: user?.firstName ?? "",
+        lastName: user?.lastName ?? "",
+        email: user?.email ?? "",
+        phone: user?.phone ?? "",
+        street: defaultAddr.street ?? "",
+        address2: defaultAddr.address2 ?? "",
+        city: defaultAddr.city ?? "",
+        state: defaultAddr.state ?? "",
+        zipCode: defaultAddr.zipCode ?? "",
+        country: defaultAddr.country ?? "US",
+        geoapify_place_id: defaultAddr.geoapify_place_id ?? "",
+        latitude: defaultAddr.latitude ?? null,
+        longitude: defaultAddr.longitude ?? null,
+        saveToProfile: false,
+        deliveryInstructions: "",
+      });
+      setUsingSavedAddressId(defaultAddr.id);
+    }
+  }, [userLoading, addrLoading, defaultAddr, user, form]);
+
+  // Invalidate cart on mount to get fresh data
+  useEffect(() => {
+    qc.invalidateQueries({ queryKey: ["cart"] });
+  }, [qc]);
 
   // Change saved address → make it default on server → repopulate
   const mutateDefault = useMutation({
@@ -325,28 +360,23 @@ export default function Checkout() {
                 <div className="md:col-span-2 flex items-center gap-3">
                   <input id="saveToProfile" type="checkbox" {...form.register("saveToProfile")} data-testid="checkbox-saveToProfile" />
                   <Label htmlFor="saveToProfile">Save this address to my profile</Label>
-
-                  <div className="ml-auto flex items-center gap-2">
-                    <span className="text-sm opacity-80">
-                      Using: {usingSavedAddressId ? "Saved address" : "Unsaved address"}
+                  
+                  <div className="ml-auto flex items-center gap-3 text-sm">
+                    <span className="opacity-80">
+                      Using: {usingSavedAddressId ? (addresses.find(a => a.id === usingSavedAddressId)?.is_default ? "Default address" : "Saved address") : "Unsaved address"}
                     </span>
-                    {addresses.length > 0 && (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          const other = addresses.find((a: any) => a.id !== usingSavedAddressId) ?? addresses[0];
-                          if (other?.id) {
-                            setUsingSavedAddressId(other.id);
-                            mutateDefault.mutate(other.id);
-                          }
-                        }}
-                        data-testid="button-changeSavedAddress"
-                      >
-                        Change saved address
-                      </Button>
-                    )}
+
+                    <AddressPicker
+                      addresses={addresses}
+                      currentId={usingSavedAddressId ?? defaultAddr?.id}
+                      onPick={(id) => {
+                        setUsingSavedAddressId(id);
+                        setSelectedQuoteId(null);
+                        qc.invalidateQueries({ queryKey: ["shipping:quotes"] });
+                        // Make it default on the server so SSOT stays true
+                        mutateDefault.mutate(id);
+                      }}
+                    />
                   </div>
                 </div>
               </div>
@@ -387,20 +417,25 @@ export default function Checkout() {
           <aside className="md:col-span-1 p-6 rounded-2xl border-2 border-white/15 h-fit">
             <h2 className="text-xl font-semibold mb-6">Order Summary</h2>
             <ul className="space-y-2 mb-4">
-              {cartItems.map((line: any) => (
-                <li key={line.id} className="flex justify-between text-sm">
-                  <span>{line.name ?? line.title} × {line.quantity ?? line.qty}</span>
-                  <span>${((line.price * line.quantity) || (line.total / 100) || 0).toFixed(2)}</span>
-                </li>
-              ))}
+              {cartItems.map((line: any) => {
+                const lineTotal = cents(line.total ?? (line.unit && line.qty ? line.unit * line.qty : 0));
+                const title = line.title ?? line.name ?? line.product?.title ?? "Item";
+                return (
+                  <li key={line.id} className="flex justify-between text-sm">
+                    <span>{title} × {line.qty ?? 1}</span>
+                    <span>{money(lineTotal)}</span>
+                  </li>
+                );
+              })}
             </ul>
-            <div className="flex justify-between text-sm py-2 border-t border-white/15">
+
+            <div className="flex justify-between text-sm py-2 border-t border-white/10">
               <span>Subtotal</span>
-              <span>${((cartResp?.subtotal ?? cartResp?.total ?? 0) / 100).toFixed(2)}</span>
+              <span>{money(cents(cartResp?.subtotal))}</span>
             </div>
             <div className="flex justify-between text-sm py-2">
               <span>Shipping</span>
-              <span>{selectedQuoteId ? "Calculated" : "—"}</span>
+              <span>{selectedQuoteId ? "Calculated at next step" : "—"}</span>
             </div>
             <Button
               className="w-full mt-6 bg-accent-blue hover:bg-blue-500 text-white"
