@@ -1,4 +1,8 @@
 export function reportClientError(err: unknown) {
+  // Skip error reporting in dev mode and headless browsers to reduce spam
+  if (import.meta.env.DEV) return;
+  if (navigator.userAgent.includes('HeadlessChrome')) return;
+  
   const message = err instanceof Error ? err.message : String(err);
   const stack = err instanceof Error ? err.stack : undefined;
 

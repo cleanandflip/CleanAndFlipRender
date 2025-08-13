@@ -113,10 +113,13 @@ class InputSanitizer {
 export function sanitizeInput(options: SanitizationOptions = {}) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      // More precise allowlist - exact path matching
+      // More precise allowlist - exact path matching including cart remove paths
       const ALLOW = [
         /^\/api\/cart$/,
         /^\/api\/cart\/[\w-]+$/,
+        /^\/api\/cart\/remove\/[\w-]+$/,
+        /^\/cart\/remove\/[\w-]+$/,
+        /^\/remove\/[\w-]+$/,
         /^\/api\/user$/,
         /^\/api\/products$/,
         /^\/api\/track-activity$/,
@@ -148,16 +151,19 @@ export function sanitizeInput(options: SanitizationOptions = {}) {
         return next();
       }
 
-      // Special case: if this is a cart request that wasn't allowed, log details
+      // Special case: if this is a cart request that wasn't allowed, provide better debugging
       if (req.path.includes('cart') || req.url.includes('cart') || req.originalUrl.includes('cart')) {
-        console.log('CART REQUEST BLOCKED:', {
-          path: req.path,
-          url: req.url,
-          originalUrl: req.originalUrl,
-          method: req.method,
-          body: req.body,
-          headers: req.headers['content-type']
-        });
+        // Only log in debug mode to reduce noise
+        if (process.env.SANITIZER_LOG === "debug") {
+          console.log('CART REQUEST DETAILS:', {
+            path: req.path,
+            url: req.url,
+            originalUrl: req.originalUrl,
+            method: req.method,
+            body: req.body,
+            headers: req.headers['content-type']
+          });
+        }
       }
 
       // Improved scanning that handles arrays and only scans strings

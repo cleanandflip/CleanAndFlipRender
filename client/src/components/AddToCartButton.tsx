@@ -83,7 +83,9 @@ export function AddToCartButton({
   // Optimistic remove from cart mutation
   const removeFromCartMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('DELETE', `/api/cart/remove/${productId}`);
+      return await apiRequest(`/api/cart/remove/${productId}`, {
+        method: 'DELETE'
+      });
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ['/api/cart'] });
