@@ -82,7 +82,7 @@ export class AddressRepository {
           await this.setDefaultAddress(params.userId, existing.id);
         }
         
-        return existing;
+        return existing as Address;
       }
     }
 
