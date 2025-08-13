@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart, Cart, CartItem } from "@/hooks/use-cart";
+import { useLocality } from "@/hooks/useLocality";
+import { LocalBanner } from "@/components/locality/LocalBanner";
+import { ProductAvailabilityChips } from "@/components/locality/ProductAvailabilityChips";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, X } from "lucide-react";
 import { ROUTES, routes } from "@/config/routes";
 
@@ -15,6 +18,7 @@ interface CartDrawerProps {
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const { data: cart, isLoading } = useCart();
+  const { data: locality } = useLocality();
   
   // Safe access to cart data with proper typing
   const cartData = cart as Cart;
@@ -32,7 +36,8 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   };
 
   const subtotal = cartTotal;
-  const shipping = subtotal > 100 ? 0 : 25;
+  // Local users get free delivery, non-local users pay shipping
+  const shipping = locality?.isLocal ? 0 : (subtotal > 100 ? 0 : 25);
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
 
@@ -61,6 +66,16 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               </p>
             )}
           </SheetHeader>
+          
+          {/* Local Delivery Status Banner */}
+          {cartCount > 0 && (
+            <div className="px-6 pb-4">
+              <LocalBanner 
+                isLocal={!!locality?.isLocal}
+                className="text-sm py-2"
+              />
+            </div>
+          )}
 
           {/* Content */}
           <div className="flex-1 flex flex-col">

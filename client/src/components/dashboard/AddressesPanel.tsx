@@ -8,12 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/shared/AnimatedComponents";
 import { AlertCircle, MapPin, Edit, CheckCircle, Truck, Trash2, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLocality } from "@/hooks/useLocality";
+import { LocalBadge } from "@/components/locality/LocalBadge";
 
 export default function AddressesPanel() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<null | any>(null);
   const { toast } = useToast();
+  const { data: locality } = useLocality();
 
   const { data: addresses = [], isLoading, isError, error } = useQuery({
     queryKey: ["/api/addresses"],
@@ -68,11 +71,19 @@ export default function AddressesPanel() {
       await apiRequest("POST", `/api/addresses/${id}/default`);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["/api/addresses"] }),
-        qc.invalidateQueries({ queryKey: ["/api/user"] })
+        qc.invalidateQueries({ queryKey: ["/api/user"] }),
+        qc.invalidateQueries({ queryKey: ["locality"] })
       ]);
+      
+      // Get updated locality to show appropriate toast message
+      const updatedAddress = addresses.find(addr => addr.id === id);
+      const isNewLocal = updatedAddress?.isLocal;
+      
       toast({
         title: "Success",
-        description: "Default address updated successfully",
+        description: isNewLocal 
+          ? "Default address updated - qualifies for FREE Local Delivery!"
+          : "Default address updated - shipping area only",
       });
     } catch (error: any) {
       toast({

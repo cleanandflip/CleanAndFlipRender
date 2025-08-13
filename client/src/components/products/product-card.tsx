@@ -21,6 +21,9 @@ import { routes } from "@/config/routes";
 import { StockIndicator } from "@/components/ui/StockIndicator";
 import { ProductPrice } from "@/components/ui/ProductPrice";
 import AddToCartButton from "@/components/AddToCartButton";
+import { ProductAvailabilityChips } from "@/components/locality/ProductAvailabilityChips";
+import { FreeDeliveryPill } from "@/components/locality/FreeDeliveryPill";
+import { useLocality } from "@/hooks/useLocality";
 
 interface ProductCardProps {
   product: Product;
@@ -34,6 +37,14 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
   const imageData = product.images?.[0];
   const mainImage = typeof imageData === 'string' ? imageData : (imageData as any)?.url;
   const hasImage = mainImage && mainImage.length > 0;
+  
+  // Get locality status for local delivery features
+  const { data: locality } = useLocality();
+  const isLocalUser = !!locality?.isLocal;
+  
+  // Product availability - use isLocalDeliveryAvailable and isShippingAvailable from schema
+  const supportsLocalDelivery = product.isLocalDeliveryAvailable ?? true;
+  const supportsShipping = product.isShippingAvailable ?? true;
 
   if (compact) {
     return (
@@ -109,6 +120,13 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                     stock={product.stockQuantity}
                     size="small"
                   />
+                  <ProductAvailabilityChips 
+                    local={supportsLocalDelivery} 
+                    ship={supportsShipping} 
+                  />
+                  {isLocalUser && supportsLocalDelivery && (
+                    <FreeDeliveryPill />
+                  )}
                 </div>
 
                 {product.description && (
@@ -202,10 +220,21 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             
             {/* Brand */}
             {product.brand && (
-              <p className="text-gray-400 text-sm mb-3 group-hover:text-gray-300 transition-colors">
+              <p className="text-gray-400 text-sm mb-2 group-hover:text-gray-300 transition-colors">
                 {product.brand}
               </p>
             )}
+            
+            {/* Local Delivery Availability Chips */}
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              <ProductAvailabilityChips 
+                local={supportsLocalDelivery} 
+                ship={supportsShipping} 
+              />
+              {isLocalUser && supportsLocalDelivery && (
+                <FreeDeliveryPill />
+              )}
+            </div>
             
             {/* Price */}
             <p className="text-2xl font-bold text-white mb-4 group-hover:text-slate-100 transition-colors">

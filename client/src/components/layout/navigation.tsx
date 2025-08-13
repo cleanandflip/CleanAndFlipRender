@@ -10,6 +10,8 @@ import Logo from "@/components/common/logo";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useLocality } from "@/hooks/useLocality";
+import { LocalBadge } from "@/components/locality/LocalBadge";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code, LayoutGrid, Code2, Shield } from "lucide-react";
 
 import { ROUTES } from "@/config/routes";
@@ -26,6 +28,7 @@ export default function Navigation() {
   const { data: cart } = useCart();  
   const cartCount = cart?.items?.length || 0;
   const { user, logoutMutation } = useAuth();
+  const { data: locality } = useLocality();
   const { toast } = useToast();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -245,8 +248,13 @@ export default function Navigation() {
                     className="transition duration-200"
                   >
                     <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden">
-                      {/* Profile Section - Enhanced visibility */}
+                      {/* Profile Section with Local Delivery Status */}
                       <div className="px-3 py-2.5 rounded-lg bg-muted/60 mb-2 mx-2 mt-2">
+                        {/* Local Delivery Badge - Top Row */}
+                        <div className="mb-3">
+                          <LocalBadge isLocal={!!locality?.isLocal} />
+                        </div>
+                        
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center ring-2 ring-white/20 flex-shrink-0">
                             <span className="text-white font-semibold text-sm">
@@ -272,6 +280,18 @@ export default function Navigation() {
                             )}
                           </div>
                         </div>
+                        
+                        {/* Local Delivery Status Message */}
+                        <div className="mt-3 pt-2 border-t border-border/30">
+                          <p className="text-xs text-muted-foreground">
+                            {locality?.isLocal 
+                              ? "FREE Local Delivery to your default address"
+                              : locality?.hasAddress
+                                ? "Shipping area only"
+                                : "Set a default address to check Local Delivery"
+                            }
+                          </p>
+                        </div>
                       </div>
 
                       {/* Navigation Links */}
@@ -285,6 +305,19 @@ export default function Navigation() {
                         >
                           <User className="w-4 h-4 text-muted-foreground" />
                           <span className="text-sm">My Profile</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            handleNavigation('/dashboard/addresses');
+                            setIsUserDropdownOpen(false);
+                          }}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
+                        >
+                          <Settings className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {locality?.isLocal ? "Manage Addresses" : "Add/Set Default Address"}
+                          </span>
                         </button>
                         
                         <button
