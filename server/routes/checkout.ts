@@ -1,5 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
+import { storage } from '../storage';
+import { isAuthenticated } from '../auth';
+import { isLocalMiles } from '../lib/locality';
 
 const router = Router();
 
@@ -50,9 +53,14 @@ router.post("/quote", async (req, res) => {
       eta: "5-7 business days"
     });
     
-    // Local delivery within 50 miles (simulate distance calculation)
-    const isLocal = Math.random() > 0.5; // Replace with real distance calc
-    if (isLocal) {
+    // Check if user is in local delivery area
+    const addresses = await storage.getUserAddresses(userId);
+    const defaultAddress = addresses.find(addr => addr.isDefault);
+    const localityResult = defaultAddress ? 
+      isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : 
+      { isLocal: false, distanceMiles: null, reason: "NO_COORDS" };
+      
+    if (localityResult.isLocal) {
       shippingOptions.push({
         id: "local",
         service: "local",

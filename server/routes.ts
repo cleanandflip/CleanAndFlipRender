@@ -76,6 +76,7 @@ import adminMetricsRoutes from './routes/admin-metrics';
 import errorManagementRoutes from './routes/admin/error-management';
 // addressRoutes dynamically imported below
 import checkoutRoutes from './routes/checkout';
+import localityRoutes from './routes/locality';
 
 import crypto from 'crypto';
 import { 
@@ -235,6 +236,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ONBOARDING REMOVED - Users browse freely, address required only at checkout
   
   app.use('/api/checkout', checkoutRoutes);
+  
+  // Locality routes for unified local delivery detection
+  app.use('/api/locality', localityRoutes);
+  
+  // Cart validation route
+  const cartValidationRoutes = await import('./routes/cart-validation');
+  app.use('/api/cart', cartValidationRoutes.default);
 
   // ONBOARDING REMOVED - Profile completion handled via address creation
   

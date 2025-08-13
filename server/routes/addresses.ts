@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
 import { isAuthenticated } from '../middleware/auth';
-import { isLocalMiles } from '../lib/distance';
+import { isLocalMiles } from '../lib/locality';
 
 const router = Router();
 
@@ -52,13 +52,23 @@ router.post('/', isAuthenticated, async (req, res) => {
     const existingAddresses = await storage.getUserAddresses(userId);
     const isDefault = data.setDefault || existingAddresses.length === 0;
     
-    // Compute isLocal from coordinates
-    const isLocal = isLocalMiles(data.latitude || null, data.longitude || null);
+    // Compute isLocal from coordinates using unified locality system
+    const localityResult = isLocalMiles(data.latitude || null, data.longitude || null);
     
     const address = await storage.createAddress(userId, {
-      ...data,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      street1: data.street1,
+      street2: data.street2,
+      city: data.city,
+      state: data.state,
+      postalCode: data.postalCode,
+      country: data.country || 'US',
+      latitude: data.latitude,
+      longitude: data.longitude,
+      geoapifyPlaceId: data.geoapifyPlaceId,
       isDefault,
-      isLocal
+      isLocal: localityResult.isLocal
     });
     
     res.json(address); // Return plain object for consistency
@@ -87,12 +97,13 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
     const { id } = req.params;
     const data = addressSchema.partial().parse(req.body);
     
-    // Recompute isLocal if coordinates changed
+    // Recompute isLocal if coordinates changed using unified locality system
     let updateData = { ...data };
     if (data.latitude !== undefined || data.longitude !== undefined) {
+      const localityResult = isLocalMiles(data.latitude || null, data.longitude || null);
       updateData = {
         ...updateData,
-        isLocal: isLocalMiles(data.latitude || null, data.longitude || null)
+        isLocal: localityResult.isLocal
       };
     }
     

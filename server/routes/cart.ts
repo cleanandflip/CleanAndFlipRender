@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
 import { isAuthenticated } from '../middleware/auth';
+import { isLocalMiles } from '../lib/locality';
+import { guardCartItemAgainstLocality } from '../services/cartGuard';
 
 const router = Router();
 
@@ -36,11 +38,43 @@ router.get('/', isAuthenticated, async (req, res) => {
   }
 });
 
-// Upsert cart item (idempotent add/update)
+// Upsert cart item (idempotent add/update) with locality validation
 router.post('/', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.id;
     const data = addToCartSchema.parse(req.body);
+    
+    // Get user's locality status
+    const addresses = await storage.getUserAddresses(userId);
+    const defaultAddress = addresses.find(addr => addr.isDefault);
+    const localityResult = defaultAddress ? 
+      isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : 
+      { isLocal: false };
+    
+    // Get product to check availability
+    const product = await storage.getProduct(data.productId);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Guard against locality restrictions
+    try {
+      guardCartItemAgainstLocality({
+        userIsLocal: localityResult.isLocal,
+        product: {
+          is_local_delivery_available: product.isLocalDeliveryAvailable,
+          is_shipping_available: product.isShippingAvailable
+        }
+      });
+    } catch (error: any) {
+      if (error.code === 'LOCALITY_RESTRICTED') {
+        return res.status(409).json({ 
+          error: error.message,
+          code: 'LOCALITY_RESTRICTED'
+        });
+      }
+      throw error;
+    }
     
     const cart = await storage.addToCartLegacy(userId, data.productId, data.quantity);
     
