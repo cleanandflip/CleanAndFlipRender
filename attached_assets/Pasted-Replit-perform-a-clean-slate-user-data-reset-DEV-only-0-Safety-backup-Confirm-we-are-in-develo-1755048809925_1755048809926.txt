@@ -1,0 +1,234 @@
+Replit, perform a clean-slate user data reset (DEV only)
+0) Safety & backup
+Confirm we are in development:
+
+NODE_ENV must equal development.
+
+Create a quick backup of the current DB just in case:
+
+bash
+Copy
+Edit
+# Uses DATABASE_URL from env
+pg_dump "$DATABASE_URL" -Fc -f /tmp/dev-backup-$(date +%Y%m%d-%H%M%S).dump
+1) Create a wipe script (TypeScript) that only runs in DEV
+Create scripts/wipe-user-data.ts:
+
+ts
+Copy
+Edit
+// scripts/wipe-user-data.ts
+import { neon } from '@neondatabase/serverless';
+
+async function main() {
+  const env = process.env.NODE_ENV;
+  if (env !== 'development') {
+    console.error('Refusing to wipe: NODE_ENV is not development');
+    process.exit(1);
+  }
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    console.error('DATABASE_URL is missing');
+    process.exit(1);
+  }
+
+  const sql = neon(dbUrl);
+
+  // Keep product/catalog & migration tables; wipe user-related data.
+  // This dynamically truncates tables whose names match user data patterns.
+  const doBlock = `
+  DO $$
+  DECLARE
+    stm text;
+  BEGIN
+    SELECT 'TRUNCATE TABLE ' ||
+           string_agg(quote_ident(schemaname) || '.' || quote_ident(tablename), ', ')
+           || ' RESTART IDENTITY CASCADE;'
+      INTO stm
+      FROM pg_tables
+     WHERE schemaname = 'public'
+       AND tablename NOT IN (
+         -- keep catalog/config/migrations
+         'products','categories','product_categories','inventory',
+         'knex_migrations','knex_migrations_lock','_prisma_migrations','migrations','drizzle__migrations','drizzle__schema'
+       )
+       AND (
+         -- user-related tables (adjust if your schema differs)
+         tablename ~* '(user|profile|address|session|cart|order|submission|activity|event|issue|error|notification|preference|wishlist|review|audit)'
+       );
+
+    IF stm IS NOT NULL THEN
+      EXECUTE stm;
+    END IF;
+  END $$;
+  `;
+
+  // Extra explicit clears for common table names (no-op if they don't exist)
+  const explicit = [
+    "session",
+    "users",
+    "user_profiles",
+    "addresses",
+    "carts",
+    "cart_items",
+    "orders",
+    "order_items",
+    "submissions",
+    "activity_log",
+    "error_events",
+    "error_issues",
+    "observability_events",
+    "observability_issues",
+  ];
+
+  try {
+    console.log('Wiping user-related tables (dynamic)…');
+    await sql(doBlock);
+
+    // Try explicit deletes to catch any missed by regex (ignore errors if table absent)
+    for (const t of explicit) {
+      try {
+        await sql(`TRUNCATE TABLE IF EXISTS ${t} RESTART IDENTITY CASCADE;`);
+        console.log(`✔ TRUNCATED ${t}`);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    // If you store sessions in Postgres via connect-pg-simple, table is usually named "session"
+    // Already covered above, but do one more pass:
+    try {
+      await sql(`DELETE FROM "session";`);
+      console.log('✔ Cleared session table');
+    } catch {
+      /* ignore */
+    }
+
+    console.log('✅ User data wipe completed.');
+  } catch (e) {
+    console.error('❌ Wipe failed:', e);
+    process.exit(1);
+  }
+}
+
+main();
+Add an npm script:
+
+json
+Copy
+Edit
+// package.json
+{
+  "scripts": {
+    "db:wipe": "tsx scripts/wipe-user-data.ts"
+  }
+}
+2) (Optional) Clear ancillary dev artifacts
+2a) Redis (if enabled later)
+bash
+Copy
+Edit
+# Only if REDIS is enabled in dev
+redis-cli FLUSHALL
+2b) Cloudinary — remove dev user uploads (leave product images)
+Only if you keep user avatars/uploads in a separate folder (e.g., dev/users/*):
+
+ts
+Copy
+Edit
+// scripts/clear-cloudinary-dev.ts
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
+
+(async () => {
+  if (process.env.NODE_ENV !== 'development') {
+    console.error('Refusing to clear Cloudinary: not in development');
+    process.exit(1);
+  }
+
+  // Adjust folder(s) to your dev user uploads location
+  const folders = ['dev/users', 'dev/avatars'];
+
+  for (const folder of folders) {
+    try {
+      // Delete all assets under folder
+      await cloudinary.api.delete_resources_by_prefix(folder);
+      // Optionally delete the folder itself
+      // await cloudinary.api.delete_folder(folder);
+      console.log(`✔ Cleared Cloudinary folder: ${folder}`);
+    } catch (e) {
+      console.warn(`(skip) Could not clear ${folder}:`, (e as any)?.message || e);
+    }
+  }
+  console.log('✅ Cloudinary dev cleanup completed.');
+})();
+Add:
+
+json
+Copy
+Edit
+{
+  "scripts": {
+    "cloudinary:clear:dev": "tsx scripts/clear-cloudinary-dev.ts"
+  }
+}
+⚠️ Only run this if you’re sure your product images are not stored under those folders.
+
+3) Run the wipe
+In the Replit shell:
+
+bash
+Copy
+Edit
+# safety echo
+echo "NODE_ENV=$NODE_ENV" && echo "About to wipe user data in DEV…"
+
+npm run db:wipe
+# Optional, only if you set up Cloudinary dev cleanup:
+# npm run cloudinary:clear:dev
+4) Verify the clean slate
+Run quick counts (adjust table names that exist in your schema):
+
+bash
+Copy
+Edit
+psql "$DATABASE_URL" -c "SELECT count(*) AS users FROM users;"
+psql "$DATABASE_URL" -c "SELECT count(*) AS addresses FROM addresses;"
+psql "$DATABASE_URL" -c "SELECT count(*) AS carts FROM carts;"
+psql "$DATABASE_URL" -c "SELECT count(*) AS orders FROM orders;"
+psql "$DATABASE_URL" -c "SELECT count(*) AS sessions FROM session;"
+psql "$DATABASE_URL" -c "SELECT count(*) AS submissions FROM submissions;"
+psql "$DATABASE_URL" -c "SELECT count(*) AS activity FROM activity_log;"
+psql "$DATABASE_URL" -c "SELECT count(*) AS err_events FROM error_events;"
+psql "$DATABASE_URL" -c "SELECT count(*) AS err_issues FROM error_issues;"
+All should be 0. Also confirm catalog remains:
+
+bash
+Copy
+Edit
+psql "$DATABASE_URL" -c "SELECT count(*) AS products FROM products;"
+psql "$DATABASE_URL" -c "SELECT count(*) AS categories FROM categories;"
+5) App sanity checks after wipe
+Restart the dev server.
+
+Visit / and /dashboard?tab=addresses — you should see no saved addresses.
+
+Sign up a fresh test user; confirm new records insert cleanly.
+
+Checkout flow should prompt for address again and save against the new profile.
+
+Orders page should be empty until you place a new test order.
+
+Notes
+This procedure does not touch product/catalog data or migration tables.
+
+If your schema uses different names, the regex + explicit list in the script will still catch most user-owned tables. Add/remove names in the explicit array as needed.
+
+The script exits if not in development to prevent accidents.
+
+That’s it — run the wipe and you’ll have a pristine dev environment for testing.

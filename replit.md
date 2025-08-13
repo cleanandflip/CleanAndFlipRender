@@ -6,6 +6,13 @@ Clean & Flip is a full-stack web application for exchanging weightlifting equipm
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+- **2025-08-13**: Clean-slate user data reset performed for development
+  - Wiped all user-related tables (users, addresses, sessions, cart_items, orders)
+  - Preserved product catalog and categories (13 products, 8 categories intact)
+  - Created scripts/wipe-user-data.ts for future development resets
+  - Address validation system fully operational with proper field mapping
+
 ## System Architecture
 
 ### Frontend Architecture
