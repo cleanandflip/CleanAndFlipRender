@@ -111,23 +111,23 @@ export default function Navigation() {
     setLocation(href);
   };
 
-  // Cart button toggle behavior with profile completion check
+  // Cart button toggle with SSOT profile completion check
   const handleCartClick = (e: React.MouseEvent) => {
     e.preventDefault();
     
-    // Check if user needs to complete profile before accessing cart
-    if (user && !user.profileComplete) {
-      // Determine what step they need to start from
+    // SSOT check: user needs profileAddressId (not legacy fields) and profileComplete
+    if (user && (!user.profileAddressId || !user.profileComplete)) {
+      // Determine what step they need to start from based on SSOT system
       let step = 1;
-      if (!user.street || !user.city || !user.state || !user.zipCode) {
-        step = 1; // Address step
+      if (!user.profileAddressId) {
+        step = 1; // Address step - SSOT requirement
       } else if (!user.phone) {
         step = 2; // Phone step  
       } else if (!user.profileComplete) {
-        step = 3; // Preferences step
+        step = 3; // Summary step
       }
       
-      const stepText = step === 1 ? "shipping address" : step === 2 ? "phone number" : "preferences";
+      const stepText = step === 1 ? "shipping address" : step === 2 ? "phone number" : "profile";
       
       toast({
         title: "Complete Your Profile",
@@ -138,7 +138,7 @@ export default function Navigation() {
             onClick={() => setLocation(`/onboarding?step=${step}&from=cart`)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
           >
-            Add ${stepText === "preferences" ? "Info" : stepText}
+            Add ${stepText === "profile" ? "Info" : stepText}
           </button>
         )
       });
