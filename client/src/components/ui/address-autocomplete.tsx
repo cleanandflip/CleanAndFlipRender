@@ -50,6 +50,7 @@ export function AddressAutocomplete({
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [justSelected, setJustSelected] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -80,6 +81,7 @@ export function AddressAutocomplete({
     
     const fetchSuggestions = async () => {
       setIsLoading(true);
+      setApiError(null);
       
       try {
         // API key handled server-side in proxy now
@@ -115,12 +117,18 @@ export function AddressAutocomplete({
             setShowDropdown(false);
           }
         } else {
-          // API request failed
+          // Handle specific API errors
+          if (response.status === 429) {
+            setApiError('Address suggestions temporarily unavailable. Please enter your address manually.');
+          } else {
+            setApiError('Address lookup unavailable. Please enter manually.');
+          }
           setSuggestions([]);
           setShowDropdown(false);
         }
       } catch (error) {
-        // Address search failed
+        console.error('Address autocomplete error:', error);
+        setApiError('Address lookup unavailable. Please enter manually.');
         setSuggestions([]);
         setShowDropdown(false);
       } finally {
@@ -217,6 +225,13 @@ export function AddressAutocomplete({
           </div>
         )}
       </div>
+      
+      {/* API Error Message */}
+      {apiError && (
+        <div className="mt-1 text-xs text-orange-400 bg-orange-400/10 border border-orange-400/20 rounded px-2 py-1">
+          {apiError}
+        </div>
+      )}
       
       {/* Suggestions dropdown */}
       {showDropdown && suggestions.length > 0 && (
