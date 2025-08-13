@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useProducts } from "@/hooks/useProducts";
 import { useLocality } from "@/hooks/useLocality";
 import { useAuth } from "@/hooks/use-auth";
+import { LocalBadge } from "@/components/locality/LocalBadge";
 import type { Product } from "@shared/schema";
 
 function HomeSections() {

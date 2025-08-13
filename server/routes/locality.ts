@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../auth';
 import { storage } from '../storage';
-import { isLocalMiles, milesBetween } from '../lib/distance';
+import { isLocalMiles } from '../lib/locality';
 
 const router = Router();
 
@@ -23,6 +23,7 @@ router.get('/status', requireAuth, async (req, res) => {
       });
     }
     
+    // Use the unified locality detection system
     const localityResult = isLocalMiles(defaultAddress.latitude, defaultAddress.longitude);
     
     res.json({
