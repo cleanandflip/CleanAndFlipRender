@@ -47,7 +47,7 @@ import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
 import { db } from "./db";
 import { cartItems } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import observability from "./routes/observability";
 
 // WebSocket Manager for broadcasting updates
@@ -980,55 +980,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // FIXED: Remove item from cart by product ID (not cart item ID)
+  // COMPLETELY REBUILT: Remove item from cart by product ID
   app.delete("/api/cart/items/:productId", requireAuth, async (req, res) => {
     try {
       const userId = req.userId;
       const sessionId = req.sessionID;
       const { productId } = req.params;
 
-      Logger.info(`[CART REMOVAL] User ${userId} removing product ${productId}`);
-
-      // CRITICAL FIX: Find cart item by product ID - this was the bug!
-      const cartItems = await storage.getCartItems(userId || undefined, sessionId);
-      const itemToRemove = cartItems.find(item => item.productId === productId);
+      console.log(`[CART DELETE ROUTE] === STARTING CART REMOVAL ===`);
+      console.log(`[CART DELETE ROUTE] User: ${userId}, Product: ${productId}`);
       
-      console.log(`[CART REMOVAL DEBUG] Found ${cartItems.length} items in cart`);
-      console.log(`[CART REMOVAL DEBUG] Looking for productId: ${productId}`);
-      console.log(`[CART REMOVAL DEBUG] Cart items:`, cartItems.map(i => ({ id: i.id, productId: i.productId })));
-      console.log(`[CART REMOVAL DEBUG] Item to remove:`, itemToRemove);
+      // Direct database query to find the cart item
+      const cartItem = await db
+        .select()
+        .from(cartItems)
+        .where(and(
+          eq(cartItems.userId, userId),
+          eq(cartItems.productId, productId)
+        ))
+        .limit(1);
       
-      // Check if we're trying to delete by product ID instead of cart item ID
-      if (!itemToRemove) {
-        console.log(`[CART REMOVAL ERROR] Product ${productId} not found in user's cart`);
-        console.log(`[CART REMOVAL ERROR] Available products:`, cartItems.map(i => i.productId));
-      }
+      console.log(`[CART DELETE ROUTE] Found cart items:`, cartItem);
       
-      if (!itemToRemove) {
-        Logger.warn(`[CART REMOVAL] Cart item not found for product ${productId}`);
+      if (cartItem.length === 0) {
+        console.log(`[CART DELETE ROUTE] No cart item found for product ${productId}`);
         return res.status(404).json({ error: "Cart item not found" });
       }
-
-      // CRITICAL FIX: Pass the CART ITEM ID, not product ID to removeFromCart
-      console.log(`[CART REMOVAL DEBUG] Removing cart item with ID: ${itemToRemove.id}`);
       
-      // EMERGENCY FIX: Direct database deletion to bypass any ORM issues
-      const directResult = await db.delete(cartItems).where(eq(cartItems.id, itemToRemove.id));
-      console.log(`[CART REMOVAL DEBUG] Direct delete result - rowCount:`, directResult.rowCount);
+      const itemToDelete = cartItem[0];
+      console.log(`[CART DELETE ROUTE] Deleting cart item:`, itemToDelete.id);
       
-      const removed = directResult.rowCount > 0;
-      console.log(`[CART REMOVAL DEBUG] Direct delete result - removed:`, removed);
+      // Direct database deletion
+      const deleteResult = await db
+        .delete(cartItems)
+        .where(eq(cartItems.id, itemToDelete.id));
       
-      // Verify removal worked by checking cart again
-      const cartAfterRemoval = await storage.getCartItems(userId || undefined, sessionId);
-      console.log(`[CART REMOVAL DEBUG] Cart after removal has ${cartAfterRemoval.length} items`);
+      console.log(`[CART DELETE ROUTE] Delete result:`, deleteResult.rowCount);
       
-      Logger.info(`[CART REMOVAL] Successfully removed cart item ${itemToRemove.id}`);
+      if (deleteResult.rowCount === 0) {
+        console.log(`[CART DELETE ROUTE] ERROR - No rows deleted`);
+        return res.status(500).json({ error: "Failed to delete cart item" });
+      }
+      
+      console.log(`[CART DELETE ROUTE] SUCCESS - Item deleted successfully`);
       
       // Broadcast cart update
       if (userId) broadcastCartUpdate(userId);
       
-      res.json({ message: "Item removed from cart" });
+      res.json({ 
+        message: "Item removed from cart",
+        deletedItemId: itemToDelete.id,
+        rowsAffected: deleteResult.rowCount
+      });
     } catch (error) {
       Logger.error("Error removing from cart", error);
       res.status(500).json({ message: "Failed to remove from cart" });
