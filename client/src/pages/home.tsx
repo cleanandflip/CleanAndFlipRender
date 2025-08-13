@@ -82,37 +82,31 @@ function HomeSections() {
       {/* Locality Banner - Minimal */}
       {user && locality && (
         <motion.div 
-          className="max-w-4xl mx-auto mb-6 px-6 pt-24"
+          className="max-w-4xl mx-auto mb-8 px-6 pt-24 flex justify-center"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
           {locality.isLocal ? (
-            <div className="inline-block bg-gradient-to-r from-green-50/80 to-blue-50/80 border border-green-300/50 rounded-2xl px-3 py-1.5 backdrop-blur-sm shadow-sm">
-              <div className="flex items-center gap-2">
-                <LocalBadge isLocal={true} />
-                <span className="text-green-700 font-semibold text-sm tracking-wide whitespace-nowrap">
-                  You are in our FREE DELIVERY zone!
-                </span>
-              </div>
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-50/90 to-emerald-50/90 border border-green-300/60 rounded-2xl px-4 py-2 backdrop-blur-sm shadow-md">
+              <LocalBadge isLocal={true} />
+              <span className="text-green-800 font-medium text-sm">
+                You are in our FREE DELIVERY zone!
+              </span>
             </div>
           ) : !locality.hasAddress ? (
-            <div className="inline-block bg-gradient-to-r from-blue-50/80 to-purple-50/80 border border-blue-300/50 rounded-2xl px-3 py-1.5 backdrop-blur-sm shadow-sm">
-              <div className="flex items-center gap-2">
-                <LocalBadge isLocal={false} />
-                <span className="text-blue-700 font-semibold text-sm tracking-wide whitespace-nowrap">
-                  Add your address to check if you qualify for FREE Local Delivery
-                </span>
-              </div>
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-50/90 to-indigo-50/90 border border-blue-300/60 rounded-2xl px-4 py-2 backdrop-blur-sm shadow-md">
+              <LocalBadge isLocal={false} />
+              <span className="text-blue-800 font-medium text-sm">
+                Add your address to check if you qualify for FREE Local Delivery
+              </span>
             </div>
           ) : (
-            <div className="inline-block bg-gradient-to-r from-gray-50/80 to-gray-100/80 border border-gray-300/50 rounded-2xl px-3 py-1.5 backdrop-blur-sm shadow-sm">
-              <div className="flex items-center gap-2">
-                <LocalBadge isLocal={false} />
-                <span className="text-gray-700 font-semibold text-sm tracking-wide whitespace-nowrap">
-                  You're outside our Local Delivery area — shipping available
-                </span>
-              </div>
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-gray-50/90 to-slate-50/90 border border-gray-300/60 rounded-2xl px-4 py-2 backdrop-blur-sm shadow-md">
+              <LocalBadge isLocal={false} />
+              <span className="text-gray-800 font-medium text-sm">
+                You're outside our Local Delivery area — shipping available
+              </span>
             </div>
           )}
         </motion.div>

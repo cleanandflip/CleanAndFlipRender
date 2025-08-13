@@ -68,8 +68,15 @@ export function AddressForm({
 
   const createAddressMutation = useMutation({
     mutationFn: (data: CreateAddressRequest) => addressApi.createAddress(data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: addressQueryKeys.lists() });
+      
+      // Dispatch events to trigger locality updates immediately
+      window.dispatchEvent(new CustomEvent('addressUpdated', { detail: data }));
+      if (form.getValues('setDefault')) {
+        window.dispatchEvent(new CustomEvent('defaultAddressChanged', { detail: data }));
+      }
+      
       toast({
         title: "Address saved",
         description: "Your address has been saved successfully."

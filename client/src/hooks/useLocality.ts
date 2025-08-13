@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import React from "react";
 
 export function useLocality() {
-  return useQuery({
+  const { data: locality, refetch } = useQuery({
     queryKey: ["locality"],
     queryFn: async () => {
       const r = await fetch("/api/locality/status");
@@ -19,9 +20,28 @@ export function useLocality() {
         defaultAddressId?: string;
       }>;
     },
-    staleTime: 5_000, // 5 seconds for live updates
+    staleTime: 0, // Always fresh for immediate locality updates
     refetchOnWindowFocus: true,
-    refetchInterval: 10_000, // Refetch every 10 seconds for live sync
+    refetchInterval: 5_000, // Check every 5 seconds for address changes
+    refetchOnMount: true, // Always refetch on component mount
     retry: false // Don't retry on auth failures
   });
+
+  // Listen for address updates and refetch immediately
+  React.useEffect(() => {
+    const handleAddressUpdate = () => {
+      refetch();
+    };
+
+    // Listen for address changes
+    window.addEventListener('addressUpdated', handleAddressUpdate);
+    window.addEventListener('defaultAddressChanged', handleAddressUpdate);
+    
+    return () => {
+      window.removeEventListener('addressUpdated', handleAddressUpdate);
+      window.removeEventListener('defaultAddressChanged', handleAddressUpdate);
+    };
+  }, [refetch]);
+
+  return { data: locality };
 }

@@ -105,10 +105,15 @@ export default function CartPage() {
           <LocalBadge isLocal={locality?.isLocal ?? false} />
         </div>
 
-        {/* Local delivery banner */}
+        {/* Enhanced Local delivery banner */}
         {locality?.isLocal && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 text-green-800 text-sm">
-            FREE Local Delivery applies to eligible items.
+          <div className="mb-6 flex justify-center">
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-50/90 to-emerald-50/90 border border-green-300/60 rounded-2xl px-4 py-2 backdrop-blur-sm shadow-md">
+              <LocalBadge isLocal={true} />
+              <span className="text-green-800 font-medium text-sm">
+                FREE Local Delivery applies to eligible items
+              </span>
+            </div>
           </div>
         )}
         

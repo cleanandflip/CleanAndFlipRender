@@ -279,12 +279,15 @@ export default function Navigation() {
 
                       {/* Navigation Links */}
                       <div className="py-1 px-1">
-                        {/* First item: LocalBadge */}
-                        <div className="px-3 py-2.5 mb-2">
-                          <LocalBadge isLocal={locality?.isLocal ?? false} />
+                        {/* LocalBadge under user info */}
+                        <div className="px-3 py-2 mb-3 flex justify-center">
+                          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-slate-700/20 to-slate-600/20 border border-slate-500/30 rounded-lg px-3 py-1.5 backdrop-blur-sm">
+                            <LocalBadge isLocal={locality?.isLocal ?? false} />
+                            <span className="text-xs font-medium text-slate-300">
+                              {locality?.isLocal ? "Local Delivery Area" : "Shipping Available"}
+                            </span>
+                          </div>
                         </div>
-
-                        {/* Second line: Dynamic locality message */}
 
                         
                         <button
