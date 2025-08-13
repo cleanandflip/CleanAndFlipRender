@@ -83,6 +83,23 @@ export default function AddressesPanel() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await apiRequest("DELETE", `/api/addresses/${id}`);
+      await qc.invalidateQueries({ queryKey: ["/api/addresses"] });
+      toast({
+        title: "Success",
+        description: "Address deleted successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete address",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isError) {
     return (
       <Alert variant="destructive">
