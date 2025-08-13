@@ -94,10 +94,7 @@ const CheckoutForm = () => {
       
       <Button 
         type="submit" 
-        variant="primary"
-        size="lg"
-        className="w-full py-3"
-        loading={isProcessing}
+        className="w-full py-3 bg-accent-blue hover:bg-blue-500 text-white"
         disabled={!stripe || isProcessing}
         data-testid="button-completeOrder"
       >
@@ -551,3 +548,4 @@ export default function Checkout() {
       </div>
     );
   }
+}
