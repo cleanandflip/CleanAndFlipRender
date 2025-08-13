@@ -73,18 +73,10 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "returnNull" }),
-      refetchInterval: false, // Disable automatic polling to prevent issues
-      refetchOnWindowFocus: false, // Prevent constant refetching
-      refetchOnMount: true, // Refetch on mount but not 'always'
-      staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
-      gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes (v5)
-      retry: (failureCount, error) => {
-        // Don't retry 4xx errors (client errors) but retry 5xx errors (server errors)
-        if (error instanceof Error && error.message.includes('4')) {
-          return false;
-        }
-        return failureCount < 3;
-      },
+      staleTime: 60_000,          // Cache for 60 seconds
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1
     },
     mutations: {
       retry: 1, // Allow one retry for mutations

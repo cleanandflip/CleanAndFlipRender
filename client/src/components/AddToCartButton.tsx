@@ -73,7 +73,7 @@ export default function AddToCartButton({
         id: productId,
         name: product?.name || 'Product',
         price: product?.price || '0',
-        images: product?.images || [],
+        images: product?.images ?? [],
         brand: product?.brand,
         stockQuantity: product?.stockQuantity || 0
       }

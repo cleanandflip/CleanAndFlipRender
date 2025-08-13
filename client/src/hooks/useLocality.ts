@@ -20,11 +20,12 @@ export function useLocality() {
         defaultAddressId?: string;
       }>;
     },
-    staleTime: 0, // Always fresh for immediate locality updates
-    refetchOnWindowFocus: true,
-    refetchInterval: 5_000, // Check every 5 seconds for address changes
-    refetchOnMount: true, // Always refetch on component mount
-    retry: false // Don't retry on auth failures
+    staleTime: 60_000, // Cache for 60 seconds for better performance
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false, // Disable automatic polling for performance
+    refetchOnMount: true,
+    retry: 1
   });
 
   // Listen for address updates and refetch immediately

@@ -5,10 +5,23 @@ import { isLocalMiles } from '../lib/locality';
 
 const router = Router();
 
-// GET /api/locality/status - Get user's locality status based on default address
-router.get('/status', requireAuth, async (req, res) => {
+// GET /api/locality/status - Get locality status (unauthenticated users get default state)
+router.get('/status', async (req, res) => {
   try {
-    const userId = req.user!.id;
+    const user = req.user;
+    
+    // If not authenticated, return safe default state
+    if (!user) {
+      return res.status(200).json({
+        isLocal: false,
+        hasAddress: false,
+        distanceMiles: null,
+        defaultAddressId: null,
+        authenticated: false
+      });
+    }
+    
+    const userId = user.id;
     
     // Get user's default address
     const addresses = await storage.getUserAddresses(userId);
@@ -19,18 +32,20 @@ router.get('/status', requireAuth, async (req, res) => {
         isLocal: false,
         distanceMiles: null,
         hasAddress: false,
-        defaultAddressId: null
+        defaultAddressId: null,
+        authenticated: true
       });
     }
     
     // Use the unified locality detection system
-    const localityResult = isLocalMiles(defaultAddress.latitude, defaultAddress.longitude);
+    const localityResult = isLocalMiles(Number(defaultAddress.latitude), Number(defaultAddress.longitude));
     
     res.json({
       isLocal: localityResult.isLocal,
       distanceMiles: localityResult.distanceMiles,
       hasAddress: true,
-      defaultAddressId: defaultAddress.id
+      defaultAddressId: defaultAddress.id,
+      authenticated: true
     });
   } catch (error) {
     console.error('Error checking locality status:', error);
