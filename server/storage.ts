@@ -576,8 +576,11 @@ export class DatabaseStorage implements IStorage {
     return updatedItem;
   }
 
-  async removeFromCart(id: string): Promise<void> {
-    await db.delete(cartItems).where(eq(cartItems.id, id));
+  async removeFromCart(id: string): Promise<boolean> {
+    console.log(`[STORAGE] Deleting cart item ${id}`);
+    const result = await db.delete(cartItems).where(eq(cartItems.id, id));
+    console.log(`[STORAGE] Delete result:`, result);
+    return true;
   }
 
   async clearCart(userId?: string, sessionId?: string): Promise<void> {

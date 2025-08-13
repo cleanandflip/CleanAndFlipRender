@@ -131,9 +131,15 @@ export default function Checkout() {
   
   const cartItems = (cart as any)?.items || [];
   const hasItems = cartItems.length > 0;
+  // FIXED: Calculate subtotal properly with null/undefined checks
   const subtotal = cartItems.reduce((sum: number, item: any) => {
-    return sum + (Number(item.product?.price || 0) * Number(item.quantity || 0));
+    const price = parseFloat(item.product?.price || '0') || 0;
+    const quantity = parseInt(item.quantity || '0') || 0;
+    console.log(`[CHECKOUT CALC] Item: ${item.product?.name}, Price: ${price}, Quantity: ${quantity}, Subtotal: ${price * quantity}`);
+    return sum + (price * quantity);
   }, 0);
+  
+  console.log(`[CHECKOUT TOTALS] Cart has ${cartItems.length} items, Subtotal: $${subtotal.toFixed(2)}`);
 
   const handleSaveNewAddress = () => {
     if (!newAddress.firstName || !newAddress.lastName || !newAddress.street1 || !newAddress.city || !newAddress.state || !newAddress.postalCode) {

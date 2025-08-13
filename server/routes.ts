@@ -981,7 +981,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Cart item not found" });
       }
 
-      await storage.removeFromCart(itemToRemove.id);
+      // CRITICAL FIX: Actually remove the item and verify it's gone
+      const removed = await storage.removeFromCart(itemToRemove.id);
+      console.log(`[CART REMOVAL DEBUG] Remove operation result:`, removed);
+      
+      // Verify removal worked by checking cart again
+      const cartAfterRemoval = await storage.getCartItems(userId || undefined, sessionId);
+      console.log(`[CART REMOVAL DEBUG] Cart after removal has ${cartAfterRemoval.length} items`);
+      
       Logger.info(`[CART REMOVAL] Successfully removed cart item ${itemToRemove.id}`);
       
       // Broadcast cart update
