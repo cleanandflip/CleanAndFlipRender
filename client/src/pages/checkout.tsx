@@ -1,5 +1,5 @@
 // client/src/pages/checkout.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PageLoader } from "@/components/ui/page-loader";
 import { useAuth } from "@/hooks/use-auth";
 import AddressPicker from "@/components/addresses/AddressPicker";
+import { useDefaultAddress } from "@/hooks/useDefaultAddress";
 
 const asArray = <T,>(x: T[] | null | undefined): T[] => Array.isArray(x) ? x : [];
 const cents = (n: number | undefined | null) => Math.max(0, Number(n || 0));
@@ -68,13 +69,9 @@ export default function Checkout() {
   });
 
   const addresses = Array.isArray(addressesResp?.addresses) ? addressesResp.addresses : [];
-  const cartItems = asArray(cartResp?.items);
-  const profileAddressId: string | null = user?.profileAddressId ?? null;
-
-  const defaultAddr =
-    (profileAddressId && addresses.find((a: any) => a.id === profileAddressId)) ||
-    addresses.find((a: any) => a.is_default) ||
-    null;
+  const cartItems = Array.isArray(cartResp?.items) ? cartResp.items : [];
+  
+  const defaultAddr = useDefaultAddress(user, addresses);
 
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
@@ -147,18 +144,18 @@ export default function Checkout() {
   });
   const quotes = asArray((quotesResp as any)?.quotes ?? []);
 
-  // Auto-prefill form from default address
+  // Auto-prefill form from default address - only once to avoid race conditions
+  const prefilledRef = useRef(false);
   useEffect(() => {
     console.log("Address prefill check:", {
       userLoading,
       addrLoading,
       defaultAddr,
-      isDirty: form.formState.isDirty,
-      addresses: addresses?.length,
-      profileAddressId
+      prefilledBefore: prefilledRef.current,
+      addresses: addresses?.length
     });
     
-    if (!userLoading && !addrLoading && defaultAddr && !form.formState.isDirty) {
+    if (!prefilledRef.current && !userLoading && !addrLoading && defaultAddr) {
       const formData = {
         firstName: user?.firstName ?? "",
         lastName: user?.lastName ?? "",
@@ -179,8 +176,9 @@ export default function Checkout() {
       console.log("Auto-prefilling form with default address:", defaultAddr, "->", formData);
       form.reset(formData);
       setUsingSavedAddressId(defaultAddr.id);
+      prefilledRef.current = true;
     }
-  }, [userLoading, addrLoading, defaultAddr, user, form, addresses, profileAddressId]);
+  }, [defaultAddr, user, userLoading, addrLoading]);
 
   // Invalidate cart on mount to get fresh data
   useEffect(() => {
@@ -380,11 +378,17 @@ export default function Checkout() {
                       addresses={addresses}
                       currentId={usingSavedAddressId ?? defaultAddr?.id}
                       onPick={(id) => {
-                        setUsingSavedAddressId(id);
-                        setSelectedQuoteId(null);
-                        qc.invalidateQueries({ queryKey: ["shipping:quotes"] });
-                        // Make it default on the server so SSOT stays true
-                        mutateDefault.mutate(id);
+                        // Promote selection to default server-side to keep SSOT clean
+                        mutateDefault.mutate(id, {
+                          onSuccess: () => {
+                            setUsingSavedAddressId(id);
+                            prefilledRef.current = false; // Allow one more form reset from new default
+                            setSelectedQuoteId(null);
+                            qc.invalidateQueries({ queryKey: ["user"] });
+                            qc.invalidateQueries({ queryKey: ["addresses"] });
+                            qc.invalidateQueries({ queryKey: ["shipping:quotes"] });
+                          }
+                        });
                       }}
                     />
                   </div>
@@ -434,16 +438,18 @@ export default function Checkout() {
             ) : (
               <ul className="space-y-2 mb-4">
                 {cartItems.map((line: any) => {
-                  // Handle different cart item formats - try multiple fields for pricing
+                  // Handle different cart item formats - get price from product
+                  const product = line.product;
+                  const unitPrice = product?.price ? parseFloat(product.price) * 100 : 0; // Convert to cents
+                  const quantity = line.qty ?? line.quantity ?? 1;
                   const lineTotal = cents(
                     line.total ?? 
                     (line.unit && line.qty ? line.unit * line.qty : 0) ??
-                    (line.price && line.quantity ? line.price * line.quantity : 0) ??
+                    (unitPrice && quantity ? unitPrice * quantity : 0) ??
                     line.subtotal ??
                     0
                   );
-                  const title = line.title ?? line.name ?? line.product?.title ?? "Item";
-                  const quantity = line.qty ?? line.quantity ?? 1;
+                  const title = line.title ?? line.name ?? product?.name ?? "Item";
                   
                   console.log("Cart line item:", line, "calculated total:", lineTotal);
                   
