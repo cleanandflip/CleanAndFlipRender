@@ -1,0 +1,604 @@
+end-to-end replacement plan Replit can follow to purge all legacy WebSocket code and standardize on a single, typed, resilient socket layer across the app. It maps exactly to the files you listed and tells them what to change, where, and how to verify.
+
+0) Goals (non-negotiable)
+One connection per tab shared by the entire SPA.
+
+One message contract (typed, versioned) for every real-time feature.
+
+One publish/subscribe API on both server and client.
+
+Auth handshake on connect; role- and user-targeted broadcasting.
+
+Automatic re-subscribe after reconnect.
+
+No component opens its own socket; everything goes through the singleton.
+
+All legacy message names removed; standardized topic:event naming.
+
+1) Server — create the new WS core (replace legacy)
+File: server/websocket.ts (replace contents)
+
+ts
+Copy
+Edit
+// server/websocket.ts
+import { WebSocketServer, WebSocket } from "ws";
+import http from "http";
+
+// --- Types (single source of truth) ----------------
+export type Role = "guest" | "user" | "admin";
+
+export type Topics =
+  | "connection:ok"
+  | "auth:ok"
+  | "auth:error"
+  | "product:update"
+  | "category:update"
+  | "user:update"
+  | "submission:update"
+  | "stock:update"
+  | "cart:update"        // targeted to a user
+  | "locality:update"
+  | "toast:info"
+  | "toast:warn"
+  | "toast:error"
+  | "sys:pong";
+
+export type ServerToClient =
+  | { topic: "connection:ok"; clientId: string; role: Role | null }
+  | { topic: "auth:ok"; role: Role; userId?: string }
+  | { topic: "auth:error"; reason: string }
+  | { topic: "cart:update"; userId: string; count: number }
+  | { topic: "locality:update"; userId: string; isLocal: boolean }
+  | { topic: "product:update"; productId: string }
+  | { topic: "category:update"; categoryId: string }
+  | { topic: "user:update"; userId: string }
+  | { topic: "submission:update"; submissionId: string }
+  | { topic: "stock:update"; productId: string; qty: number }
+  | { topic: "toast:info" | "toast:warn" | "toast:error"; message: string }
+  | { topic: "sys:pong" };
+
+export type ClientToServer =
+  | { topic: "auth"; token?: string }
+  | { topic: "sys:ping" }
+  | { topic: "subscribe"; topics: Topics[] }       // optional future use
+  | { topic: "unsubscribe"; topics: Topics[] };
+
+// --- Manager --------------------------------------
+type ClientInfo = {
+  id: string;
+  ws: WebSocket;
+  role: Role;
+  userId?: string;
+  alive: boolean;
+};
+
+export class WebSocketManager {
+  private wss!: WebSocketServer;
+  private clients = new Map<string, ClientInfo>();
+
+  attach(server: http.Server) {
+    this.wss = new WebSocketServer({ server, path: "/ws" });
+    this.wss.on("connection", (ws) => this.onConnection(ws));
+    // Heartbeat
+    setInterval(() => this.heartbeat(), 30_000);
+  }
+
+  private onConnection(ws: WebSocket) {
+    const id = crypto.randomUUID();
+    const client: ClientInfo = { id, ws, role: "guest", alive: true };
+    this.clients.set(id, client);
+
+    this.safeSend(client, { topic: "connection:ok", clientId: id, role: null });
+
+    ws.on("message", (raw) => this.onMessage(client, raw));
+    ws.on("pong", () => (client.alive = true));
+    ws.on("close", () => this.clients.delete(id));
+    ws.on("error", () => ws.close());
+  }
+
+  private onMessage(client: ClientInfo, raw: WebSocket.RawData) {
+    let msg: any;
+    try {
+      msg = JSON.parse(String(raw));
+    } catch {
+      return this.safeSend(client, { topic: "toast:error", message: "Invalid WS payload" });
+    }
+
+    switch (msg.topic as ClientToServer["topic"]) {
+      case "auth": {
+        // TODO: verify token (JWT or session) and resolve userId + role
+        const { userId, role } = this.verifyToken(msg.token);
+        client.role = role;
+        client.userId = userId;
+        this.safeSend(client, { topic: "auth:ok", role, userId });
+        break;
+      }
+      case "sys:ping":
+        this.safeSend(client, { topic: "sys:pong" });
+        break;
+      case "subscribe":
+      case "unsubscribe":
+        // Optional: store per-client topic filters if you later want server-side filtering
+        break;
+      default:
+        // Ignore unknown client topics for safety
+        break;
+    }
+  }
+
+  private heartbeat() {
+    for (const c of this.clients.values()) {
+      if (!c.alive) { c.ws.terminate(); this.clients.delete(c.id); continue; }
+      c.alive = false;
+      try { c.ws.ping(); } catch {}
+    }
+  }
+
+  private safeSend<T extends ServerToClient>(c: ClientInfo, data: T) {
+    if (c.ws.readyState === c.ws.OPEN) {
+      c.ws.send(JSON.stringify(data));
+    }
+  }
+
+  // --- Publish APIs (use these from routes/services) --------
+  publish<T extends ServerToClient>(data: T) {
+    for (const c of this.clients.values()) this.safeSend(c, data);
+  }
+
+  publishToRole<T extends ServerToClient>(role: Role, data: T) {
+    for (const c of this.clients.values()) if (c.role === role) this.safeSend(c, data);
+  }
+
+  publishToUser<T extends ServerToClient>(userId: string, data: T) {
+    for (const c of this.clients.values()) if (c.userId === userId) this.safeSend(c, data);
+  }
+
+  // Simple token verifier placeholder; replace with your real auth
+  private verifyToken(token?: string): { userId?: string; role: Role } {
+    // Example: decode JWT or read session store
+    if (!token) return { role: "guest" };
+    // …your logic…
+    return { userId: "decoded-user-id", role: "user" };
+  }
+}
+
+// Singleton instance + helper exports
+export const wsManager = new WebSocketManager();
+Wire it up in the server bootstrap
+
+File: server/index.ts (or wherever HTTP server is created)
+
+ts
+Copy
+Edit
+import { wsManager } from "./websocket";
+// …
+const server = app.listen(PORT, "0.0.0.0", () => { /* … */ });
+wsManager.attach(server);
+Replace all legacy broadcast helpers
+
+File: server/routes.ts
+
+Remove any legacy setWebSocketManager, broadcastCartUpdate, etc., and replace with calls to wsManager:
+
+ts
+Copy
+Edit
+import { wsManager } from "../websocket";
+
+// Product example:
+wsManager.publish({ topic: "product:update", productId });
+
+// Category example:
+wsManager.publish({ topic: "category:update", categoryId });
+
+// Cart: target only the affected user
+wsManager.publishToUser(userId, { topic: "cart:update", userId, count });
+
+// Locality change (address updated):
+wsManager.publishToUser(userId, { topic: "locality:update", userId, isLocal });
+NOTE: This completely replaces any existing broadcast*() wrappers. Delete those.
+
+2) Client — build the singleton + event bus (replace legacy)
+File: client/src/hooks/useSingletonSocket.ts (new file)
+
+tsx
+Copy
+Edit
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+
+// Mirror server Topics for type-safety (keep in sync)
+type Topics =
+  | "connection:ok"
+  | "auth:ok"
+  | "auth:error"
+  | "product:update"
+  | "category:update"
+  | "user:update"
+  | "submission:update"
+  | "stock:update"
+  | "cart:update"
+  | "locality:update"
+  | "toast:info"
+  | "toast:warn"
+  | "toast:error"
+  | "sys:pong";
+
+type ServerToClient =
+  | { topic: "connection:ok"; clientId: string; role: string | null }
+  | { topic: "auth:ok"; role: string; userId?: string }
+  | { topic: "auth:error"; reason: string }
+  | { topic: "cart:update"; userId: string; count: number }
+  | { topic: "locality:update"; userId: string; isLocal: boolean }
+  | { topic: "product:update"; productId: string }
+  | { topic: "category:update"; categoryId: string }
+  | { topic: "user:update"; userId: string }
+  | { topic: "submission:update"; submissionId: string }
+  | { topic: "stock:update"; productId: string; qty: number }
+  | { topic: "toast:info" | "toast:warn" | "toast:error"; message: string }
+  | { topic: "sys:pong" };
+
+type ClientToServer =
+  | { topic: "auth"; token?: string }
+  | { topic: "sys:ping" }
+  | { topic: "subscribe"; topics: Topics[] }
+  | { topic: "unsubscribe"; topics: Topics[] };
+
+type Handler<T = any> = (msg: T) => void;
+
+type Ctx = {
+  ready: boolean;
+  send: (msg: ClientToServer) => void;
+  subscribe: <T extends ServerToClient>(topic: T["topic"], fn: Handler<T>) => () => void;
+};
+
+const SocketCtx = createContext<Ctx>({ ready: false, send: () => {}, subscribe: () => () => {} });
+
+function makeUrl() {
+  return window.location.origin.replace(/^http/, "ws") + "/ws";
+}
+
+export function SocketProvider({ children }: { children: React.ReactNode }) {
+  const sockRef = useRef<WebSocket | null>(null);
+  const handlers = useRef<Map<string, Set<Handler>>>(new Map());
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (sockRef.current) return;
+
+    let retry = 0;
+    const connect = () => {
+      const ws = new WebSocket(makeUrl());
+      sockRef.current = ws;
+
+      const heartbeat = setInterval(() => {
+        if (ws.readyState === ws.OPEN) ws.send(JSON.stringify({ topic: "sys:ping" }));
+      }, 25_000);
+
+      ws.onopen = () => {
+        setReady(true);
+        retry = 0;
+        // optional: send auth token if available (cookie/session)
+        const token = window.localStorage.getItem("accessToken") || undefined;
+        ws.send(JSON.stringify({ topic: "auth", token }));
+      };
+
+      ws.onmessage = (ev) => {
+        let data: ServerToClient | null = null;
+        try { data = JSON.parse(ev.data); } catch { return; }
+        if (!data) return;
+        const set = handlers.current.get(data.topic);
+        if (!set) return;
+        for (const fn of set) fn(data as any);
+      };
+
+      ws.onclose = () => {
+        clearInterval(heartbeat);
+        setReady(false);
+        sockRef.current = null;
+        setTimeout(connect, Math.min(1000 * 2 ** retry++, 15_000));
+      };
+
+      ws.onerror = () => ws.close();
+    };
+
+    connect();
+    return () => { sockRef.current?.close(); sockRef.current = null; setReady(false); };
+  }, []);
+
+  const api: Ctx = useMemo(() => ({
+    ready,
+    send: (msg: ClientToServer) => {
+      const ws = sockRef.current;
+      if (ws && ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
+    },
+    subscribe: (topic, fn) => {
+      const map = handlers.current;
+      if (!map.has(topic)) map.set(topic, new Set());
+      map.get(topic)!.add(fn);
+      return () => map.get(topic)?.delete(fn);
+    },
+  }), [ready]);
+
+  return <SocketCtx.Provider value={api}>{children}</SocketCtx.Provider>;
+}
+
+export function useSocket() { return useContext(SocketCtx); }
+
+// Legacy shim so existing imports keep working during migration:
+export function useSingletonSocket() { return useSocket(); }
+Wrap the app once
+
+File: client/src/main.tsx
+
+tsx
+Copy
+Edit
+import { SocketProvider } from "./hooks/useSingletonSocket";
+// …
+root.render(
+  <SocketProvider>
+    <App />
+  </SocketProvider>
+);
+Replace the old hook (keep a shim for now)
+
+File: client/src/hooks/useWebSocket.ts
+Replace with:
+
+ts
+Copy
+Edit
+// Keep only a shim for compatibility; everything uses useSocket() now.
+export { useSingletonSocket as useWebSocket } from "./useSingletonSocket";
+3) Update every consumer you listed (exact edits)
+You provided a full inventory. Here’s what to change in each:
+
+A) App-level
+File: client/src/App.tsx
+
+Remove any direct socket initialization or state here.
+
+If it calls useSingletonSocket() just to “establish” a connection, delete that call. The provider already does it.
+
+B) Admin shell
+File: client/src/components/admin/AdminLayout.tsx
+
+Replace const { ready } = useWebSocket() with:
+
+ts
+Copy
+Edit
+import { useSocket } from "@/hooks/useSingletonSocket";
+const { ready } = useSocket();
+Use ready for your “Live Sync Active” indicator.
+
+C) Admin tabs (Categories/Products/Users/Submissions)
+Files:
+
+client/src/pages/admin/CategoriesTab.tsx
+
+client/src/pages/admin/ProductsTab.tsx
+
+client/src/pages/admin/UsersTab.tsx
+
+client/src/pages/admin/SubmissionsTab.tsx
+
+Edits in each:
+
+ts
+Copy
+Edit
+import { useSocket } from "@/hooks/useSingletonSocket";
+import { useQueryClient } from "@tanstack/react-query";
+
+const { subscribe, send } = useSocket();
+const qc = useQueryClient();
+
+// Subscribe once:
+useEffect(() => {
+  // Example: categories
+  return subscribe("category:update", () => {
+    qc.invalidateQueries({ queryKey: ["categories"] });
+  });
+}, [subscribe, qc]);
+
+// When admin commits a change (after successful API call), announce:
+send({ topic: "sys:ping" }); // optional heartbeat
+// or publish a change request to other admins if needed
+IMPORTANT: Move all send() payloads to use the new topic names:
+
+product_update → "product:update"
+
+category_update → "category:update"
+
+user_update → "user:update"
+
+submission_update → "submission:update"
+
+stock_update → "stock:update"
+
+D) Admin Modals
+Files:
+
+client/src/components/admin/modals/EnhancedCategoryModal.tsx
+
+client/src/components/admin/modals/EnhancedProductModal.tsx
+
+client/src/components/admin/modals/EnhancedSubmissionModal.tsx
+
+client/src/components/admin/modals/EnhancedUserModal.tsx
+
+After the API call succeeds:
+
+ts
+Copy
+Edit
+const { send } = useSocket();
+send({ topic: "sys:ping" }); // optional
+// Prefer server-origin broadcasts after DB write.
+// If you still echo client-origin notices, standardize:
+send({ topic: "subscribe", topics: ["category:update"] }); // optional future use
+Best practice: Don’t broadcast from the client at all. Let the server publish via wsManager.publish(...) after it writes to the DB. (More trustworthy. Already covered in §1.)
+
+E) Public pages
+File: client/src/pages/home.tsx
+
+Replace any legacy message handlers with:
+
+ts
+Copy
+Edit
+const { subscribe } = useSocket();
+useEffect(() => {
+  return subscribe("product:update", () => {
+    qc.invalidateQueries({ queryKey: ["featuredProducts"] });
+  });
+}, [subscribe, qc]);
+F) Cart & Locality consumers
+Anywhere you react to cart/locality changes (e.g., cart drawer, cart page, checkout):
+
+Subscribe to the targeted topics:
+
+ts
+Copy
+Edit
+const { subscribe } = useSocket();
+const userId = myAuth.user?.id;
+
+useEffect(() => {
+  if (!userId) return;
+  const off1 = subscribe("cart:update", (m) => {
+    if (m.userId !== userId) return;
+    qc.invalidateQueries({ queryKey: ["cart"] });
+  });
+  const off2 = subscribe("locality:update", (m) => {
+    if (m.userId !== userId) return;
+    qc.invalidateQueries({ queryKey: ["localStatus"] });
+  });
+  return () => { off1(); off2(); };
+}, [subscribe, userId, qc]);
+4) Purge all legacy WS usage (hard cleanup)
+1. Ban direct construction
+
+Add ESLint rule:
+
+json
+Copy
+Edit
+"no-restricted-syntax": [
+  "error",
+  { "selector": "NewExpression[callee.name='WebSocket']",
+    "message": "Do not create sockets directly. Use useSocket()/SocketProvider." }
+]
+2. Codemods (run from repo root)
+
+Replace old topic names:
+
+bash
+Copy
+Edit
+# mac/linux
+LC_ALL=C LANG=C
+
+# topics
+rg -l "product_update" | xargs sed -i'' -e "s/product_update/product:update/g"
+rg -l "category_update" | xargs sed -i'' -e "s/category_update/category:update/g"
+rg -l "user_update"     | xargs sed -i'' -e "s/user_update/user:update/g"
+rg -l "submission_update" | xargs sed -i'' -e "s/submission_update/submission:update/g"
+rg -l "stock_update" | xargs sed -i'' -e "s/stock_update/stock:update/g"
+rg -l "cart_update"  | xargs sed -i'' -e "s/cart_update/cart:update/g"
+Replace imports:
+
+bash
+Copy
+Edit
+rg -l "from ['\"]@/hooks/useWebSocket['\"]" | xargs sed -i'' -e "s#@/hooks/useWebSocket#@/hooks/useSingletonSocket#g"
+rg -l "useWebSocket" | xargs sed -i'' -e "s/useWebSocket/useSocket/g"
+3. Delete/flatten old helpers
+
+Remove any broadcastCartUpdate, setWebSocketManager, custom WS utils duplicated in routes.
+
+Ensure only wsManager.publish* calls exist on the server.
+
+5) Security & resilience
+Auth handshake: server validates token in onMessage for {topic:"auth"} and sets client.userId + role. Use your existing session/JWT verification.
+
+Targeted publish: cart/locality changes must use publishToUser(userId, ...).
+
+Backoff + heartbeat: already implemented on both ends.
+
+Message validation (optional upgrade): add zod schemas for ServerToClient and ClientToServer before processing/sending.
+
+6) Logging & noise reduction
+On the server, log only:
+
+connection open/close at debug level
+
+auth successes/failures at info/warn
+
+publish errors at error
+
+Remove per-message console logs; reserve them behind LOG_LEVEL=debug.
+
+7) React Query tie-ins (one pattern everywhere)
+Never mutate cache on WS; always invalidate:
+
+ts
+Copy
+Edit
+qc.invalidateQueries({ queryKey: ["products"] });
+Choose stable keys: ["cart"], ["localStatus"], ["categories"], ["products"], ["users"], ["submissions"], ["stock", productId].
+
+8) Testing & verification
+Unit (server):
+
+Simulate a client: connect, send auth, expect auth:ok.
+
+Trigger a product update via route; assert a connected test client receives {topic:"product:update"}.
+
+Unit (client):
+
+Mock WebSocket; assert subscribe() handlers fire and are cleaned up on unmount.
+
+Verify re-subscribe after reconnect (handlers persist in the provider).
+
+Manual (admin):
+
+Edit a product in one browser; watch another browser home page auto-refresh featured products.
+
+Manual (cart/locality):
+
+Add/remove items; verify only that user’s tab gets cart:update.
+
+Change default address to toggle local status; verify locality:update received and UI reflects it.
+
+9) Exact replacement map (your inventory → new API)
+Location (yours)	Replace with
+server/websocket.ts	Replace entire file with the manager above; expose wsManager and only use publish/publishToUser/publishToRole.
+server/routes.ts	Remove setWebSocketManager & legacy broadcast helpers. Call wsManager.publish* directly after DB writes.
+client/src/hooks/useWebSocket.ts	Replace with shim exporting from useSingletonSocket.
+client/src/hooks/useSingletonSocket.ts	New file (above).
+client/src/App.tsx	Remove any manual “init” calls; rely on <SocketProvider>.
+Admin pages (CategoriesTab.tsx, ProductsTab.tsx, UsersTab.tsx, SubmissionsTab.tsx)	Subscribe to category:update, product:update, etc., and invalidate queries. Remove any direct new WebSocket usage.
+Admin modals (Enhanced*Modal.tsx)	Do not broadcast from client; let server publish after successful API. If you must, use send({topic:'...'}) with new topics.
+client/src/pages/home.tsx	Subscribe to product:update and invalidate featured/products.
+Cart/Checkout components	Subscribe to cart:update & locality:update; target by userId.
+
+10) Acceptance criteria (what “done” means)
+✅ Exactly one WS connection per tab (confirmed in network panel).
+
+✅ No new WebSocket(...) anywhere in the repo except inside useSingletonSocket.ts.
+
+✅ All topic names use the namespace:event format shown above.
+
+✅ Admin edits reflect on other clients in <2s without page reload.
+
+✅ Cart & locality updates are user-targeted only (no cross-user leaks).
+
+✅ No console spam from socket internals at normal log level.
+
+✅ Legacy helpers deleted; ESLint prevents regressions.
+
+If Replit follows the steps above verbatim, you’ll have a clean, typed, unified real-time layer, with all legacy code purged and every page using the same resilient, optimized WebSocket foundation.
