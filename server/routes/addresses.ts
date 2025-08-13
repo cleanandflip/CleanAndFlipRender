@@ -12,7 +12,7 @@ import { authMiddleware } from '../middleware/auth';
 
 const { requireAuth } = authMiddleware;
 import { Logger } from '../utils/logger';
-import { isLocalMiles, getWarehouseCoords } from '../lib/distance';
+import { isLocalMiles, getWarehouseCoords, isLocalAddress } from '../lib/distance';
 
 const router = express.Router();
 
@@ -59,11 +59,10 @@ router.post('/', requireAuth, async (req, res) => {
     const userId = (req.user as any).id;
     const validatedData = CreateAddressSchema.parse(req.body);
     
-    // Calculate if this is a local customer (within 50 miles)
-    const warehouseCoords = getWarehouseCoords();
-    const isLocal = isLocalMiles(
-      { latitude: validatedData.latitude || null, longitude: validatedData.longitude || null }, 
-      warehouseCoords
+    // Calculate if this is a local customer (within 50 miles) using SSOT distance system
+    const { isLocal, distanceMiles } = isLocalAddress(
+      validatedData.latitude || 0,
+      validatedData.longitude || 0
     );
     
     // Begin transaction for atomic operation

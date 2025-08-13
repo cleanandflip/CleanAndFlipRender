@@ -27,13 +27,14 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
-  // Parse step from URL or default to 1
+  // Parse step from URL query parameter, not path segment
   useEffect(() => {
-    const stepFromUrl = parseInt(params?.step || '1');
+    const urlParams = new URLSearchParams(location.split('?')[1] || '');
+    const stepFromUrl = parseInt(urlParams.get('step') || '1');
     if (stepFromUrl >= 1 && stepFromUrl <= 3) {
       setCurrentStep(stepFromUrl);
     }
-  }, [params?.step]);
+  }, [location]);
 
   // Check if user is already onboarded
   useEffect(() => {
@@ -50,8 +51,13 @@ export default function Onboarding() {
     }
     
     if (step < 3) {
-      setCurrentStep(step + 1);
-      navigate(`/onboarding/${step + 1}`);
+      const nextStep = step + 1;
+      setCurrentStep(nextStep);
+      const searchParams = new URLSearchParams();
+      searchParams.set('step', nextStep.toString());
+      const returnTo = new URLSearchParams(location.split('?')[1] || '').get('from');
+      if (returnTo) searchParams.set('from', returnTo);
+      navigate(`/onboarding?${searchParams.toString()}`);
     } else {
       // Final step completed - redirect based on source
       const returnTo = new URLSearchParams(location.split('?')[1] || '').get('from');
@@ -63,7 +69,11 @@ export default function Onboarding() {
   const goToStep = (step: number) => {
     if (step <= Math.max(...completedSteps) + 1) {
       setCurrentStep(step);
-      navigate(`/onboarding/${step}`);
+      const searchParams = new URLSearchParams();
+      searchParams.set('step', step.toString());
+      const returnTo = new URLSearchParams(location.split('?')[1] || '').get('from');
+      if (returnTo) searchParams.set('from', returnTo);
+      navigate(`/onboarding?${searchParams.toString()}`);
     }
   };
 

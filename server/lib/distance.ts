@@ -52,3 +52,18 @@ export function getWarehouseCoords(): Coordinates {
   
   return { lat, lon };
 }
+
+/**
+ * Calculate distance and determine if local for address creation
+ */
+export function isLocalAddress(addrLat: number, addrLon: number) {
+  const warehouse = getWarehouseCoords();
+  const distanceMiles = haversineMiles(
+    { lat: addrLat, lon: addrLon },
+    warehouse
+  );
+  return { 
+    isLocal: distanceMiles <= 50, 
+    distanceMiles: Math.round(distanceMiles * 10) / 10 // Round to 1 decimal 
+  };
+}

@@ -110,18 +110,23 @@ export function AddressForm({
     createAddressMutation.mutate(addressRequest);
   };
 
+  // SSOT Address Selection - Comprehensive Geoapify field mapping
   const handleAddressSelect = (suggestion: any) => {
     setSelectedGeoapify(suggestion);
     
-    // Auto-fill form fields from Geoapify data
-    const props = suggestion.properties;
-    if (props) {
-      form.setValue('street1', props.address_line1 || props.housenumber + ' ' + props.street || '');
-      form.setValue('street2', props.address_line2 || '');
-      form.setValue('city', props.city || '');
-      form.setValue('state', props.state_code || '');
-      form.setValue('postalCode', props.postcode || '');
-      form.setValue('country', props.country_code?.toUpperCase() || 'US');
+    // SSOT comprehensive mapping as per instructions
+    const p = suggestion.properties || suggestion;
+    if (p) {
+      // Map all fields comprehensively
+      form.setValue('street1', [p.housenumber, p.street || p.street_name].filter(Boolean).join(' '), { shouldValidate: true, shouldDirty: true });
+      form.setValue('street2', p.address_line2 || '');
+      form.setValue('city', p.city || p.municipality || p.county || '', { shouldValidate: true });
+      form.setValue('state', p.state_code || p.state || '', { shouldValidate: true });
+      form.setValue('postalCode', p.postcode || p.zip || '', { shouldValidate: true });
+      form.setValue('country', p.country_code?.toUpperCase() || 'US');
+      
+      // Trigger validation on all mapped fields
+      form.trigger(['street1', 'city', 'state', 'postalCode']);
     }
   };
 
