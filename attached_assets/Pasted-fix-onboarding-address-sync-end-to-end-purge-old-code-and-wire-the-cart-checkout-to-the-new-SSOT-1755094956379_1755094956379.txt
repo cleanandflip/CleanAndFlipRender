@@ -1,0 +1,435 @@
+fix onboarding + address sync end-to-end, purge old code, and wire the cart/checkout to the new SSOT system. It’s written so you can paste it right into your task tracker.
+
+🔧 Replit: Rebuild & Wire Up SSOT Address + Onboarding (Miles, Local checks) — Purge Legacy
+0) TL;DR outcomes we need
+ONE source of truth for addresses: addresses table (+ users.profile_address_id pointer).
+No other address fields anywhere.
+
+Onboarding uses the SSOT: Step saves address → marks user as onboarded → redirects correctly.
+
+Miles, not km. Local radius = 50 miles.
+
+Geoapify autocomplete fills the form and saves the canonicalized address.
+
+Cart/Checkout gates by “has default address?” and Local-only product rules.
+
+Profile/Dashboard “Addresses” tab rebuilt to new components (no legacy UI).
+
+All legacy code/queries that reference users.street, users.zip_code, etc. are deleted and not imported.
+
+Observability 400 spam removed.
+
+DB user wipe utility + test accounts flow.
+
+1) Hard purge of legacy address/onboarding code
+1.1 Remove legacy columns from code (not DB migrations here)
+Search and delete/replace any usage of these identifiers in server & client:
+
+pgsql
+Copy
+Edit
+users.street
+users.city
+users.state
+users.zip_code
+users.latitude
+users.longitude
+zipCode
+street (when meant to be address line 1)
+Keep only SSOT keys: street1, street2, city, state, postal_code, country, latitude, longitude, geoapify_place_id, is_default, is_local.
+
+Commands (run from repo root) to find offenders:
+
+perl
+Copy
+Edit
+rg -n --hidden --glob '!node_modules' -e '\busers\.(street|city|state|zip_code|latitude|longitude)\b'
+rg -n --hidden --glob '!node_modules' -e '\bzipCode\b'
+rg -n --hidden --glob '!node_modules' -e '\bstreet\b' server client | rg -v 'street1|street2'
+Delete or refactor any matches.
+
+1.2 Delete legacy files/blocks (examples based on prior notes)
+client/src/pages/checkout_broken.tsx (remove file + imports)
+
+Any legacy onboarding components not in client/src/pages/onboarding/* (delete them)
+
+Legacy address routes still sitting in server/routes.ts (remove entire blocks for /api/addresses and legacy profile endpoints)
+
+Any old dashboard/address widgets not under client/src/components/addresses/* (remove file + references)
+
+1.3 Ensure dashboard addresses tab uses the new components
+In client/src/pages/dashboard.tsx or wherever the Addresses tab renders, replace the panel with:
+
+components/addresses/AddressList
+
+a modal that mounts components/addresses/AddressForm
+
+Remove any older “Add Address” UI and imports.
+
+2) Fix the login error referencing legacy columns
+Logs show:
+
+pgsql
+Copy
+Edit
+Error getting user by email: column "street" does not exist
+Action:
+
+Open server/storage.ts → getUserByEmail (and any similar queries).
+Remove any SELECT users.street, users.zip_code, ....
+
+If we need address in that query, JOIN the SSOT:
+
+sql
+Copy
+Edit
+SELECT u.*, a.id AS profile_address_id, a.street1, a.street2, a.city, a.state, a.postal_code, 
+       a.country, a.latitude, a.longitude, a.is_local
+FROM users u
+LEFT JOIN addresses a ON a.id = u.profile_address_id
+WHERE LOWER(u.email) = LOWER($1)
+Re-run login to confirm no 42703 errors.
+
+3) Server: SSOT & “onboarded” gate
+3.1 “Onboarded” definition
+A user is considered onboarded if:
+
+users.profile_address_id IS NOT NULL and a matching address exists.
+
+Optionally users.profile_complete = TRUE if that flag exists.
+
+Create a helper in server/lib/userOnboarding.ts:
+
+ts
+Copy
+Edit
+export function isUserOnboarded(u: { profile_address_id?: string | null; profile_complete?: boolean | null }) {
+  return Boolean(u?.profile_address_id); // keep simple: pointer present === onboarded
+}
+3.2 Update /api/user response
+Always include profileAddress by joining addresses via profile_address_id.
+
+Add onboarded: boolean using the helper above.
+
+3.3 Cart/Checkout gate middleware (server-side)
+Replace any legacy gate with a new requireOnboarded middleware:
+
+ts
+Copy
+Edit
+export function requireOnboarded(req, res, next) {
+  if (!req.isAuthenticated?.() || !req.user) return res.status(401).json({error:'Unauthenticated'});
+  if (!isUserOnboarded(req.user)) return res.status(428).json({error:'Profile incomplete', redirect:'/onboarding?from=cart'});
+  next();
+}
+Apply to cart/checkout POST routes that require a shipping address.
+
+Note: Don’t gate simple GET reads of cart (that’s why we saw GET /api/cart 200). Gate when doing actions that require address.
+
+4) Miles + Local detection (50 miles)
+4.1 Server util (replace km with miles)
+In server/lib/addressCanonicalizer.ts (or new distance.ts):
+
+ts
+Copy
+Edit
+const EARTH_RADIUS_MILES = 3958.7613;
+
+export function haversineMiles(a: {lat:number, lon:number}, b: {lat:number, lon:number}) {
+  const toRad = (v:number)=> v*Math.PI/180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+  return 2 * EARTH_RADIUS_MILES * Math.asin(Math.sqrt(h));
+}
+
+export function isLocalMiles(user: {latitude:number, longitude:number}, warehouse: {latitude:number, longitude:number}, radiusMiles=50) {
+  if (user.latitude == null || user.longitude == null) return false;
+  return haversineMiles(
+    {lat:user.latitude, lon:user.longitude},
+    {lat:warehouse.latitude, lon:warehouse.longitude}
+  ) <= radiusMiles;
+}
+Use this exclusively wherever is_local is computed/persisted.
+
+4.2 Persist is_local
+When creating/updating an address:
+
+compute is_local in miles against warehouse coords from env:
+
+WAREHOUSE_LAT, WAREHOUSE_LON
+
+Save on the addresses row.
+
+5) Geoapify autocomplete → form fill → save
+5.1 Server proxy still OK, but handle 429
+In /api/geocode/autocomplete:
+
+Add debounce on client (300–400ms).
+
+On 429, return 200 with { results: [], rateLimited: true } so UI can show: “Too many requests, slow down”.
+
+Add simple per-IP rate limit (e.g., 10 req / 10s).
+
+5.2 Client address-autocomplete.tsx
+Ensure selection maps to fields:
+
+street1 ← properties.address_line1 || properties.street
+
+street2 ← empty
+
+city ← properties.city || properties.town || properties.village
+
+state ← properties.state_code || properties.state
+
+postal_code ← properties.postcode
+
+country ← properties.country_code?.toUpperCase() || 'US'
+
+latitude/longitude from geometry.coordinates (GeoJSON lon,lat → swap to lat, lon)
+
+geoapify_place_id ← properties.place_id
+
+Ensure the UI sets these values into react-hook-form so the Save button posts a complete payload.
+
+5.3 Form validation (client)
+All required fields: firstName, lastName, street1, city, state, postal_code.
+
+Phone step: use libphonenumber-js → block letters/single digit. Must be valid E.164 or national (US).
+
+Remove SMS option entirely from UI.
+
+6) Onboarding flow (client + server)
+6.1 Pages (client)
+GET /onboarding: index orchestrates steps.
+
+Step 1: Address
+
+Uses AddressForm. On Save:
+
+POST /api/addresses (body includes is_default:true).
+
+Then call POST /api/onboarding/complete with { addressId }.
+
+On success: if from=cart → /cart; else /dashboard.
+
+Step 2: Phone
+
+Validate via libphonenumber-js.
+
+Save via PUT /api/user (phone only).
+
+Step 3: Summary
+
+Show address + phone. “Complete Setup” triggers nothing else (already saved) — simply route away.
+
+Important: Do not loop back to step 1. The “loop” bug is happening because the cart gate or onboarding check still reads legacy flags. Fix that via §3.
+
+6.2 Server endpoints
+POST /api/addresses (auth required)
+
+Zod validates SSOT fields.
+
+Computes is_local (miles).
+
+If is_default:true, clear other defaults for user.
+
+Returns the new address row.
+
+POST /api/onboarding/complete
+
+Body: { addressId: string }
+
+Sets users.profile_address_id = addressId, profile_complete=true, onboarding_step=3, onboarding_completed_at=NOW().
+
+Refresh session user so /api/user immediately reflects new state:
+
+ts
+Copy
+Edit
+const updated = await storage.getUserById(req.user.id);
+req.login(updated, err => { if (err) return next(err); return res.json({ok:true}); });
+GET /api/onboarding/status
+
+Returns { onboarded, step, profileAddress? } based on SSOT.
+
+7) Cart/Checkout wiring
+7.1 Cart page (client)
+When mounting, fetch /api/user.
+
+If onboarded === false and cart action requires shipping (any shipping or local-only items), redirect to /onboarding?from=cart.
+
+If onboarded === true, fetch GET /api/addresses?default=true.
+
+Pre-fill checkout shipping with it.
+
+Allow “Change” → open address selector (list) or new address modal (which upon save → also updates profile_address_id if “make default” checked).
+
+7.2 Local-only product rules
+Product model: ensure fields local_only:boolean, shipping_available:boolean.
+
+Add to cart (server):
+
+If product.local_only === true → require user.onboarded & is_local on user’s default address.
+If not local → 400 { error:'LOCAL_ONLY_PRODUCT', message:'Only customers within 50 miles can buy this item.' }.
+
+Checkout:
+
+If all items are local-only → shipping method = Free Local Delivery (48 hours), cost $0, ETA banner.
+
+Mixed cart: local-only must be combined with allowed shipping items only if user is local; otherwise block with a clear message.
+
+8) Dashboard: Addresses tab (new UI only)
+Replace the entire tab’s content with:
+
+<AddressList /> rendering all addresses, badges: Default, Local (if is_local true).
+
+Actions: Edit, Make default (PATCH address or PUT /api/user update profile_address_id), Delete (guard if it’s the last one; if deleting default, auto-promote the most recent).
+
+“Add new address” opens <AddressForm />.
+
+Ensure calls all go through client/src/api/addresses.ts (React Query keys: ['addresses'], ['addresses','default']).
+
+9) Observability noise (400 spam)
+Your logs show constant:
+
+bash
+Copy
+Edit
+POST /api/observability/errors 400
+Short-circuit this endpoint to return 204 if no DSN/config:
+
+ts
+Copy
+Edit
+app.post('/api/observability/errors', (req,res)=> res.status(204).end());
+Or guard it behind if (process.env.ERROR_DSN) { ... } else res.status(204).end().
+
+10) Clean user data + test users
+10.1 DB wipe script (development only)
+Create server/scripts/clear-users-dev.ts:
+
+ts
+Copy
+Edit
+import { db } from '../db';
+await db.execute(`DELETE FROM addresses; DELETE FROM users WHERE email LIKE '%@test.local' OR email LIKE 'seed+%';`);
+console.log('Dev users/addresses cleared');
+process.exit(0);
+Run:
+
+arduino
+Copy
+Edit
+tsx server/scripts/clear-users-dev.ts
+10.2 Seed test accounts
+Email/Password users: create 3 with random addresses (some within 50 miles, some > 50).
+
+Google OAuth users: create 2 via normal Google flow; complete onboarding.
+
+For each, verify:
+
+After saving address in onboarding, /api/user shows onboarded:true, profileAddress populated.
+
+Navigating to /cart does not bounce back to onboarding.
+
+Dashboard → Addresses tab shows saved address, Default badge, Local badge where appropriate.
+
+Checkout pre-fills with default address; “Change” works and updates values.
+
+11) Acceptance test matrix (manual)
+Address autocomplete fills all fields after selection (street1, city, state, postal, country).
+
+Miles radius logic: address inside 50mi shows “Local Delivery Available” banner; outside does not.
+
+Onboarding: Save address → immediate redirect (to /cart if from=cart) and no relaunch of onboarding.
+
+Profile → Addresses tab: Add, edit, delete, make default; list reflects changes without refresh (React Query invalidations).
+
+Cart rules:
+
+Local-only item + non-local user → add to cart blocked with clear error.
+
+Local user + local-only item → allowed; checkout shows “Free Local Delivery in 48h”.
+
+Checkout page: default address preloaded; changing default changes checkout form instantly.
+
+Phone step: rejects letters/single digit; requires valid phone.
+
+No SMS option anywhere.
+
+No legacy UI: No old address widgets, no old onboarding components.
+
+Logs clean: no “column street does not exist”; no observability 400 spam.
+
+12) Concrete code touchpoints (quick list)
+Server
+
+server/storage.ts: remove legacy columns from selects; join addresses where needed.
+
+server/routes.ts: delete legacy address/profile endpoints; mount routes/addresses.ts, routes/onboarding.ts.
+
+server/routes/addresses.ts: ensure is_local computed in miles on create/update.
+
+server/routes/onboarding.ts: implement POST /complete to set profile_address_id and refresh session.
+
+server/lib/addressCanonicalizer.ts or lib/distance.ts: use miles helpers (above).
+
+server/auth.ts: after login, ensure user object contains profile_address_id so frontend sees onboarded.
+
+server/index.ts: observability endpoint short-circuit.
+
+Client
+
+client/src/pages/onboarding/index.tsx + StepAddress.tsx, StepPhone.tsx, StepSummary.tsx: no SMS; correct redirects; call /api/onboarding/complete.
+
+client/src/components/ui/address-autocomplete.tsx: correct field mapping; debounced queries; handle 429 gracefully.
+
+client/src/components/addresses/AddressForm.tsx & AddressList.tsx: default toggling, badges, edit/delete; invalidations.
+
+client/src/pages/dashboard.tsx: Addresses tab → new components only.
+
+client/src/pages/cart.tsx / hooks/use-cart.tsx: gate by onboarded; no legacy checks.
+
+client/src/pages/checkout.tsx: preload default address; “Change” to modal; guest flow when not signed in.
+
+13) What to watch in the logs (and how to fix)
+401 GET /api/user when not signed in — OK while anonymous.
+
+“column street does not exist” — must be gone after §2.
+
+429 Geoapify — confirm the UI shows rate-limit info (no 500s).
+
+POST /api/observability/errors 400 — should stop after §9.
+
+14) Copy for UI (consistent messaging)
+Local banner on address form:
+“Local Delivery Available — Addresses within 50 miles of our warehouse qualify for free delivery within 48 hours.”
+
+Cart blocking message for local-only item:
+“Local pickup/delivery only. This item is available within 50 miles of our location.”
+
+Done Criteria (sign-off)
+I can:
+
+Sign up (email or Google), enter address via onboarding, and land in /cart without being bounced back.
+
+See my saved address on Dashboard → Addresses (new UI), marked Default and Local if applicable.
+
+Add a local-only product as a local user and see Free Local Delivery (48h) at checkout.
+
+Be blocked adding a local-only product as a non-local user with a clear error.
+
+Change my default address in the dashboard and see checkout prefill update immediately.
+
+Observe no legacy errors and clean logs.
+
+Please implement exactly as above and push a PR that includes:
+
+the ripgrep screenshots (or logs) showing no remaining legacy references,
+
+a short screencast of onboarding → cart,
+
+and the test matrix results.

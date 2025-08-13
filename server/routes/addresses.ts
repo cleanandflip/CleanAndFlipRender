@@ -12,6 +12,7 @@ import { authMiddleware } from '../middleware/auth';
 
 const { requireAuth } = authMiddleware;
 import { Logger } from '../utils/logger';
+import { isLocalMiles, getWarehouseCoords } from '../lib/distance';
 
 const router = express.Router();
 
@@ -32,27 +33,7 @@ const CreateAddressSchema = z.object({
 });
 
 // Local customer detection service
-function isLocalCustomer(latitude: number | null, longitude: number | null): boolean {
-  // Simplified local detection - within 50km radius of business location
-  // Business coordinates (example: 40.7589, -73.9851 for NYC)
-  const BUSINESS_LAT = 40.7589;
-  const BUSINESS_LNG = -73.9851;
-  const LOCAL_RADIUS_KM = 50;
-  
-  if (!latitude || !longitude) return false;
-  
-  // Haversine formula for distance calculation
-  const R = 6371; // Earth's radius in km
-  const dLat = (latitude - BUSINESS_LAT) * Math.PI / 180;
-  const dLon = (longitude - BUSINESS_LNG) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(BUSINESS_LAT * Math.PI / 180) * Math.cos(latitude * Math.PI / 180) *
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c;
-  
-  return distance <= LOCAL_RADIUS_KM;
-}
+// Using SSOT distance calculation from lib/distance.ts (miles, not km)
 
 // GET /api/addresses - Get user's addresses
 router.get('/', requireAuth, async (req, res) => {
@@ -78,8 +59,12 @@ router.post('/', requireAuth, async (req, res) => {
     const userId = (req.user as any).id;
     const validatedData = CreateAddressSchema.parse(req.body);
     
-    // Calculate if this is a local customer
-    const isLocal = isLocalCustomer(validatedData.latitude || null, validatedData.longitude || null);
+    // Calculate if this is a local customer (within 50 miles)
+    const warehouseCoords = getWarehouseCoords();
+    const isLocal = isLocalMiles(
+      { latitude: validatedData.latitude || null, longitude: validatedData.longitude || null }, 
+      warehouseCoords
+    );
     
     // Begin transaction for atomic operation
     const result = await db.transaction(async (tx) => {

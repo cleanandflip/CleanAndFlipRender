@@ -57,15 +57,7 @@ export interface IStorage {
     authProvider: string;
   }): Promise<User>;
   updateUserStripeInfo(id: string, customerId: string, subscriptionId?: string): Promise<User>;
-  updateUserAddress(id: string, addressData: {
-    street?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-    latitude?: number;
-    longitude?: number;
-
-  }): Promise<User>;
+  updateUserProfileAddress(id: string, profileAddressId: string): Promise<User>;
 
   // Category operations
   getCategories(): Promise<Category[]>;
@@ -95,6 +87,11 @@ export interface IStorage {
   incrementProductViews(id: string): Promise<void>;
   getFeaturedProducts(limit?: number): Promise<Product[]>;
   // Removed equipment submission and wishlist methods for single-seller model
+  // Address operations
+  getAddressById(id: string): Promise<Address | undefined>;
+  // User helper methods
+  getUserById(id: string): Promise<User | undefined>;
+
   healthCheck(): Promise<{ status: string; timestamp: string }>;
 
   // Cart operations
@@ -296,22 +293,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserAddress(id: string, addressData: {
-    street?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-    latitude?: number;
-    longitude?: number;
-  }): Promise<User> {
+  async updateUserProfileAddress(id: string, profileAddressId: string): Promise<User> {
     const [user] = await db
       .update(users)
       .set({
-        // REMOVED: Legacy street field - using SSOT addresses table
-        // REMOVED: Legacy city/state fields - using SSOT addresses table
-        // REMOVED: Legacy zipCode field - using SSOT addresses table
-        latitude: addressData.latitude ? String(addressData.latitude) : undefined,
-        longitude: addressData.longitude ? String(addressData.longitude) : undefined,
+        profileAddressId: profileAddressId,
         updatedAt: new Date(),
       })
       .where(eq(users.id, id))
@@ -1080,7 +1066,16 @@ export class DatabaseStorage implements IStorage {
     await Promise.all(updates);
   }
 
-  // Removed duplicate updateUserRole function
+  // Address operations
+  async getAddressById(id: string): Promise<Address | undefined> {
+    const [address] = await db.select().from(addresses).where(eq(addresses.id, id));
+    return address;
+  }
+
+  // User helper methods  
+  async getUserById(id: string): Promise<User | undefined> {
+    return this.getUser(id);
+  }
 
   // Removed duplicate updateProductStock function
 

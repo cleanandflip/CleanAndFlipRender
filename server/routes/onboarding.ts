@@ -1,152 +1,108 @@
 /**
- * NEW ONBOARDING API ROUTES - Built on SSOT Address System
- * Replaces all legacy onboarding endpoints
+ * Onboarding completion endpoints
+ * Handles setting default addresses and marking users as onboarded
  */
 
 import express from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../auth';
-import { db } from '../db';
-import { sql } from 'drizzle-orm';
+import { authMiddleware } from '../middleware/auth';
+
+const isAuthenticated = authMiddleware.requireAuth;
+import { storage } from '../storage';
+import { getOnboardingStatus } from '../lib/userOnboarding';
 import { Logger } from '../utils/logger';
-// Import will be handled through direct DB operations
 
 const router = express.Router();
 
-// Onboarding completion schema
-const CompleteOnboardingSchema = z.object({
-  address: z.object({
-    firstName: z.string().min(1),
-    lastName: z.string().min(1),
-    street1: z.string().min(1),
-    street2: z.string().optional(),
-    city: z.string().min(1),
-    state: z.string().min(2),
-    postalCode: z.string().min(5),
-    country: z.string().default('US'),
-    latitude: z.number().optional(),
-    longitude: z.number().optional()
-  }),
-  phone: z.string().min(1)
+// Complete onboarding by setting default address
+const completeOnboardingSchema = z.object({
+  addressId: z.string().min(1, "Address ID is required")
 });
 
-/**
- * POST /api/onboarding/complete
- * Complete user onboarding with address and phone
- */
-router.post('/complete', requireAuth, async (req: any, res) => {
+router.post('/complete', isAuthenticated, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const validation = CompleteOnboardingSchema.safeParse(req.body);
-    
-    if (!validation.success) {
-      return res.status(400).json({
-        error: 'VALIDATION_FAILED',
-        issues: validation.error.flatten().fieldErrors
-      });
-    }
+    const { addressId } = completeOnboardingSchema.parse(req.body);
+    const userId = (req.user as any).id;
 
-    const { address, phone } = validation.data;
+    Logger.debug(`[ONBOARDING] Completing onboarding for user ${userId} with address ${addressId}`);
 
-    // Step 1: Create address using SSOT system
-    const addressData = {
-      ...address,
-      setDefault: true
-    };
+    // Update user's default address
+    const updatedUser = await storage.updateUserProfileAddress(userId, addressId);
 
-    // Create address using SSOT schema directly  
-    const addressResult = await db.execute(sql`
-      INSERT INTO addresses (
-        user_id, first_name, last_name, street1, street2, city, state,
-        postal_code, country, latitude, longitude, is_default, is_local, created_at, updated_at
-      ) VALUES (
-        ${userId}, ${address.firstName}, ${address.lastName},
-        ${address.street1}, ${address.street2 || null}, ${address.city},
-        ${address.state}, ${address.postalCode}, ${address.country},
-        ${address.latitude || null}, ${address.longitude || null},
-        true, false, NOW(), NOW()
-      ) RETURNING id, is_local
-    `);
-    
-    const createdAddress = {
-      id: addressResult.rows[0]?.id,
-      isLocal: false // TODO: Calculate based on coordinates
-    };
-    
-    // Step 2: Update user with phone and completion status
-    await db.execute(sql`
-      UPDATE users 
-      SET 
-        phone = ${phone},
-        profile_complete = true,
-        onboarding_step = 4,
-        profile_address_id = ${createdAddress.id},
-        is_local_customer = ${createdAddress.isLocal || false},
-        onboarding_completed_at = NOW(),
-        updated_at = NOW()
-      WHERE id = ${userId}
-    `);
-
-    Logger.info(`[ONBOARDING] User ${userId} completed onboarding`, {
-      userId,
-      isLocal: createdAddress.isLocal,
-      addressId: createdAddress.id
+    // Update additional onboarding fields
+    await storage.updateUser(userId, {
+      profileComplete: true,
+      onboardingStep: 3,
+      onboardingCompletedAt: new Date()
     });
 
-    res.json({
-      success: true,
-      message: 'Onboarding completed successfully',
-      isLocalCustomer: createdAddress.isLocal || false,
-      addressId: createdAddress.id
+    // Refresh session with updated user data
+    const userWithAddress = await storage.getUserById(userId);
+    
+    req.login(userWithAddress, (err) => {
+      if (err) {
+        Logger.error('[ONBOARDING] Session refresh error:', err);
+        return res.status(500).json({ 
+          error: 'Session refresh failed',
+          message: 'Onboarding completed but session could not be updated' 
+        });
+      }
+
+      Logger.info(`[ONBOARDING] Successfully completed onboarding for user ${userId}`);
+      res.json({ 
+        success: true,
+        message: 'Onboarding completed successfully',
+        user: {
+          id: userWithAddress.id,
+          onboarded: true,
+          profileAddressId: addressId
+        }
+      });
     });
 
   } catch (error: any) {
-    Logger.error('[ONBOARDING] Error completing onboarding:', error);
+    Logger.error('[ONBOARDING] Complete onboarding error:', error);
+    
+    if (error.name === 'ZodError') {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: error.errors
+      });
+    }
+
     res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: error.message || 'Failed to complete onboarding'
+      error: 'Failed to complete onboarding',
+      message: 'An error occurred while completing your profile setup'
     });
   }
 });
 
-/**
- * GET /api/onboarding/status
- * Get current onboarding status for user
- */
-router.get('/status', requireAuth, async (req: any, res) => {
+// Get current onboarding status
+router.get('/status', isAuthenticated, async (req, res) => {
   try {
-    const userId = req.user.id;
-    
-    const userStatus = await db.execute(sql`
-      SELECT 
-        profile_complete,
-        onboarding_step,
-        phone,
-        profile_address_id,
-        onboarding_completed_at
-      FROM users 
-      WHERE id = ${userId}
-    `);
+    const user = req.user as any;
+    const status = getOnboardingStatus(user);
 
-    if (!userStatus.rows.length) {
-      return res.status(404).json({ error: 'User not found' });
+    // Include profile address if available
+    let profileAddress = null;
+    if (user.profileAddressId) {
+      try {
+        profileAddress = await storage.getAddressById(user.profileAddressId);
+      } catch (error) {
+        Logger.warn(`[ONBOARDING] Failed to fetch profile address ${user.profileAddressId}:`, error);
+      }
     }
 
-    const user = userStatus.rows[0];
-    
     res.json({
-      profileComplete: Boolean(user.profile_complete),
-      onboardingStep: user.onboarding_step || 1,
-      hasAddress: Boolean(user.profile_address_id),
-      hasPhone: Boolean(user.phone),
-      completedAt: user.onboarding_completed_at
+      ...status,
+      profileAddress
     });
 
   } catch (error: any) {
-    Logger.error('[ONBOARDING] Error getting status:', error);
+    Logger.error('[ONBOARDING] Get status error:', error);
     res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: 'Failed to get onboarding status'
+      error: 'Failed to get onboarding status',
+      message: 'Could not retrieve your profile completion status'
     });
   }
 });

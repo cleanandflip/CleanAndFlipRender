@@ -31,13 +31,13 @@ export function ProtectedRoute({ children, requireCompleteProfile = false }: Pro
     let step = 1;
     const fromPath = window.location.pathname;
     
-    // Check what data is missing to determine the right step
-    if (!user.street || !user.city || !user.state || !user.zipCode) {
+    // Check what data is missing to determine the right step using SSOT system
+    if (!user.profileAddressId) {
       step = 1; // Address step
     } else if (!user.phone) {
       step = 2; // Phone step  
     } else if (!user.profileComplete) {
-      step = 3; // Preferences step
+      step = 3; // Summary step
     }
     
     return <Redirect to={`/onboarding?step=${step}&from=${fromPath.replace('/', '')}&required=true`} />;

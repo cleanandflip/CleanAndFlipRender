@@ -256,12 +256,6 @@ export function setupAuth(app: Express) {
         firstName, 
         lastName, 
         phone,
-        street,
-        city,
-        state,
-        zipCode,
-        latitude,
-        longitude,
         isLocalCustomer 
       } = req.body;
 
@@ -284,12 +278,7 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Validate address fields if provided
-      if (street && (!city || !state || !zipCode)) {
-        return res.status(400).json({ 
-          message: "Please provide complete address information (street, city, state, zip code)"
-        });
-      }
+      // Address validation removed - using SSOT onboarding flow
 
       // Normalize email and check if user already exists (don't reveal if email exists for security)
       const normalizedEmail = normalizeEmail(email);
@@ -322,11 +311,7 @@ export function setupAuth(app: Express) {
         firstName,
         lastName,
         phone: normalizedPhone,
-        // REMOVED: Legacy street field - using SSOT addresses table
-        // REMOVED: Legacy city/state fields - using SSOT addresses table
-        // REMOVED: Legacy zipCode field - using SSOT addresses table
-        latitude: latitude ? String(latitude) : undefined,
-        longitude: longitude ? String(longitude) : undefined,
+        // Address fields removed - using SSOT addresses table with onboarding flow
         role,
       });
 

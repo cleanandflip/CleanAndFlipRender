@@ -1,203 +1,134 @@
 /**
- * NEW ONBOARDING SYSTEM - Complete Rebuild on SSOT Address System
- * 3-step flow: Address -> Phone -> Summary (no SMS)
+ * Main onboarding flow - orchestrates the 3-step process
+ * Uses SSOT address system for clean, unified experience
  */
 
-import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { useAuth } from '../../hooks/use-auth';
-import { toast } from '@/hooks/use-toast';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { ShoppingCart, MapPin, Phone, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useLocation, useRoute } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import StepAddress from "./StepAddress";
+import StepPhone from "./StepPhone";
+import StepSummary from "./StepSummary";
 
-import StepAddress from './StepAddress';
-import StepPhone from './StepPhone';
-import StepSummary from './StepSummary';
+const STEPS = [
+  { number: 1, title: "Address", component: StepAddress },
+  { number: 2, title: "Phone", component: StepPhone },
+  { number: 3, title: "Summary", component: StepSummary }
+];
 
-interface OnboardingData {
-  address?: any;
-  phone?: string;
-}
-
-const OnboardingFlow = () => {
-  const { user, refetch } = useAuth();
+export default function Onboarding() {
+  const { user, isLoading } = useAuth();
   const [location, navigate] = useLocation();
+  const [, params] = useRoute("/onboarding/:step?");
+  
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<OnboardingData>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
-  // Check if user needs onboarding
+  // Parse step from URL or default to 1
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
+    const stepFromUrl = parseInt(params?.step || '1');
+    if (stepFromUrl >= 1 && stepFromUrl <= 3) {
+      setCurrentStep(stepFromUrl);
+    }
+  }, [params?.step]);
+
+  // Check if user is already onboarded
+  useEffect(() => {
+    if (!isLoading && user?.onboarded) {
+      const returnTo = new URLSearchParams(location.split('?')[1] || '').get('from');
+      navigate(returnTo || '/dashboard');
+    }
+  }, [user, isLoading, location, navigate]);
+
+  // Handle step completion
+  const handleStepComplete = (step: number) => {
+    if (!completedSteps.includes(step)) {
+      setCompletedSteps([...completedSteps, step]);
     }
     
-    // If already completed, redirect appropriately
-    if (user.profileComplete) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const fromPath = urlParams.get('from');
-      navigate(fromPath === 'cart' ? '/cart' : '/dashboard');
-      return;
-    }
-  }, [user, navigate]);
-
-  const handleStepComplete = async (stepData: any, step: number) => {
-    const updatedData = { ...formData, ...stepData };
-    setFormData(updatedData);
-
     if (step < 3) {
       setCurrentStep(step + 1);
+      navigate(`/onboarding/${step + 1}`);
     } else {
-      // Complete onboarding
-      await completeOnboarding(updatedData);
+      // Final step completed - redirect based on source
+      const returnTo = new URLSearchParams(location.split('?')[1] || '').get('from');
+      navigate(returnTo || '/dashboard');
     }
   };
 
-  const completeOnboarding = async (data: OnboardingData) => {
-    setIsLoading(true);
-    try {
-      // Step 1: Create address via SSOT API
-      if (data.address) {
-        const addressResponse = await fetch('/api/addresses', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            ...data.address,
-            setDefault: true
-          })
-        });
-
-        if (!addressResponse.ok) {
-          const error = await addressResponse.json();
-          throw new Error(error.message || 'Failed to save address');
-        }
-      }
-
-      // Step 2: Update user with phone and completion status
-      const userResponse = await fetch('/api/user', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          phone: data.phone,
-          profileComplete: true,
-          onboardingStep: 4
-        })
-      });
-
-      if (!userResponse.ok) {
-        const error = await userResponse.json();
-        throw new Error(error.message || 'Failed to complete onboarding');
-      }
-
-      // Refresh user data
-      await refetch();
-      
-      toast({
-        title: "Welcome to Clean & Flip!",
-        description: "Your profile is complete. Start exploring our equipment exchange!",
-      });
-
-      // Redirect appropriately
-      const urlParams = new URLSearchParams(window.location.search);
-      const fromPath = urlParams.get('from');
-      navigate(fromPath === 'cart' ? '/cart' : '/dashboard');
-
-    } catch (error: any) {
-      console.error('Onboarding completion error:', error);
-      toast({
-        title: "Setup Error",
-        description: error.message || "Failed to complete setup. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  // Handle navigation between steps
+  const goToStep = (step: number) => {
+    if (step <= Math.max(...completedSteps) + 1) {
+      setCurrentStep(step);
+      navigate(`/onboarding/${step}`);
     }
   };
 
-  const getStepIcon = (step: number) => {
-    const icons = [MapPin, Phone, CheckCircle];
-    const Icon = icons[step - 1];
-    return <Icon className="w-5 h-5" />;
+  const goBack = () => {
+    if (currentStep > 1) {
+      goToStep(currentStep - 1);
+    }
   };
 
-  const getStepTitle = (step: number) => {
-    const titles = ['Your Address', 'Phone Number', 'Complete Setup'];
-    return titles[step - 1];
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (!user || user.profileComplete) return null;
+  const CurrentStepComponent = STEPS[currentStep - 1].component;
+  const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
-      <div className="max-w-2xl w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <ShoppingCart className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Clean & Flip
-            </h1>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Complete your profile to start exchanging fitness equipment
-          </p>
-        </div>
-
-        {/* Progress */}
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between mb-2">
-              <CardTitle className="flex items-center gap-2">
-                {getStepIcon(currentStep)}
-                {getStepTitle(currentStep)}
-              </CardTitle>
-              <span className="text-sm text-gray-500">
-                Step {currentStep} of 3
-              </span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-4">
+              {currentStep > 1 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={goBack}
+                  data-testid="button-back"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              )}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900" data-testid="text-title">
+                  Complete Your Profile
+                </h1>
+                <p className="text-gray-600" data-testid="text-subtitle">
+                  Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1].title}
+                </p>
+              </div>
             </div>
-            <Progress value={(currentStep / 3) * 100} className="w-full" />
-          </CardHeader>
+          </div>
+          
+          {/* Progress bar */}
+          <Progress value={progress} className="h-2" data-testid="progress-onboarding" />
+        </div>
+      </div>
 
-          <CardContent>
-            {currentStep === 1 && (
-              <StepAddress
-                onNext={(data) => handleStepComplete({ address: data }, 1)}
-                initialData={formData.address}
-                isLoading={isLoading}
-              />
-            )}
-            
-            {currentStep === 2 && (
-              <StepPhone
-                onNext={(data) => handleStepComplete({ phone: data }, 2)}
-                onBack={() => setCurrentStep(1)}
-                initialData={formData.phone}
-                isLoading={isLoading}
-              />
-            )}
-            
-            {currentStep === 3 && (
-              <StepSummary
-                onNext={() => handleStepComplete({}, 3)}
-                onBack={() => setCurrentStep(2)}
-                data={formData}
-                isLoading={isLoading}
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-500">
-          Need help? Contact our support team
-        </p>
+      {/* Step content */}
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <CurrentStepComponent 
+          onComplete={() => handleStepComplete(currentStep)}
+          onStepChange={goToStep}
+          currentStep={currentStep}
+          completedSteps={completedSteps}
+        />
       </div>
     </div>
   );
-};
-
-export default OnboardingFlow;
+}
