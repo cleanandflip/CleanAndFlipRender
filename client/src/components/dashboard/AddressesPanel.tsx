@@ -134,11 +134,14 @@ export default function AddressesPanel() {
       ) : (
         <div className="space-y-4">
           {addresses.map((address: any) => (
-            <div key={address.id} className={`p-4 glass rounded-lg transition-all ${
+            <div key={address.id} className={`p-4 glass rounded-lg transition-all relative ${
               address.isDefault 
-                ? 'border-2 border-[#3B82F6] bg-slate-800/30' 
+                ? 'border-2 border-blue-400 bg-blue-950/40 ring-1 ring-blue-400/30' 
                 : 'border border-border hover:border-gray-600'
             }`}>
+              {address.isDefault && (
+                <div className="absolute -top-1 -left-1 w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+              )}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -146,9 +149,9 @@ export default function AddressesPanel() {
                       {address.firstName} {address.lastName}
                     </h3>
                     {address.isDefault && (
-                      <Badge className="bg-accent-blue text-white text-xs flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-current" />
-                        Default
+                      <Badge className="bg-blue-500 text-white text-xs flex items-center gap-1 font-semibold shadow-md">
+                        <Star className="w-3 h-3 fill-current text-yellow-300" />
+                        DEFAULT
                       </Badge>
                     )}
                     {address.isLocal && (
