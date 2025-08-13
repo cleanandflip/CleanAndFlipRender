@@ -80,13 +80,13 @@ export default function Checkout() {
     }
   });
 
-  if (!isAuthenticated) {
+  // Redirect unauthenticated users to login
+  if (!isAuthenticated && !user) {
+    window.location.href = '/api/auth/login';
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <p>Please sign in to continue with checkout</p>
-        <Button onClick={() => window.location.href = '/api/auth/login'} className="mt-4">
-          Sign In
-        </Button>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4">Redirecting to login...</p>
       </div>
     );
   }
@@ -99,10 +99,12 @@ export default function Checkout() {
     );
   }
 
+  // Cart data loaded successfully
+  
   const cartItems = (cart as any)?.items || [];
   const hasItems = cartItems.length > 0;
   const subtotal = cartItems.reduce((sum: number, item: any) => {
-    return sum + (Number(item.product?.price || 0) * (item.quantity || 0));
+    return sum + (Number(item.product?.price || 0) * Number(item.quantity || 0));
   }, 0);
 
   const handleSaveNewAddress = () => {

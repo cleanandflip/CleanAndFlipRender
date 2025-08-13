@@ -19,12 +19,14 @@ export const authMiddleware = {
   // Check if user is logged in (compatible with Passport authentication)
   requireAuth: (req: any, res: Response, next: NextFunction) => {
     // Check Passport authentication first
-    if (req.isAuthenticated && req.isAuthenticated()) {
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      req.userId = req.user.id; // Set userId for downstream middleware
       return next();
     }
     
     // Fallback to session check for compatibility
     if (req.session?.userId || req.session?.passport?.user) {
+      req.userId = req.session.userId || req.session.passport.user.id;
       return next();
     }
     
@@ -53,6 +55,18 @@ export const authMiddleware = {
   optionalAuth: (req: any, res: Response, next: NextFunction) => {
     // Attach user if exists, continue regardless
     let userId = null;
+    
+    // Check Passport authentication first
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      userId = req.user.id;
+      req.userId = userId;
+    } else if (req.session?.userId) {
+      // Fallback to session-based auth
+      userId = req.session.userId;
+      req.userId = userId;
+    }
+    
+    next(); // Always continue for optional auth
     
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       userId = req.user.id;

@@ -810,7 +810,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cart operations - Allow guest cart with optional auth
-  app.get("/api/cart", authMiddleware.optionalAuth, async (req, res) => {
+  app.get("/api/cart", requireAuth, async (req, res) => {
     try {
       // SECURITY FIX: Only use authenticated userId from middleware
       const userId = req.userId; // Set by requireAuth middleware
