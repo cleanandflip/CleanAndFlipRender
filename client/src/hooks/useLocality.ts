@@ -19,9 +19,9 @@ export function useLocality() {
         defaultAddressId?: string;
       }>;
     },
-    staleTime: 2_000, // Very fresh data - 2 seconds
+    staleTime: 0, // Force immediate refresh after coordinate update
     refetchOnWindowFocus: true,
-    refetchInterval: 5_000, // Refetch every 5 seconds for live sync
+    refetchInterval: 3_000, // Very frequent refetch for testing
     retry: false // Don't retry on auth failures
   });
 }
