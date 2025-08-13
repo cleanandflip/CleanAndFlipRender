@@ -49,7 +49,7 @@ import AddressesPanel from "@/components/dashboard/AddressesPanel";
 
 import type { Order, EquipmentSubmission } from "@shared/schema";
 
-// REMOVED: Legacy AddressesSection - replaced with SSOT AddressesPanel
+// Using SSOT AddressesPanel for unified address management
 
 function DashboardContent() {
   const { user } = useAuth();

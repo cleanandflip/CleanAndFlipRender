@@ -7,6 +7,12 @@ Clean & Flip is a full-stack web application for exchanging weightlifting equipm
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **2025-08-13**: DASHBOARD ADDRESSES COMPLETELY REBUILT + SSOT SYSTEM LOCKED
+  - **LEGACY PURGE COMPLETED**: Dashboard AddressesSection completely removed and replaced with unified AddressesPanel
+  - **COMPONENT STANDARDIZATION**: All address operations (onboarding, checkout, dashboard) now use identical SSOT components
+  - **SYSTEM VERIFICATION**: User testing confirmed addresses tab working with proper validation, autocomplete, and local delivery detection
+  - **LEGACY ENFORCEMENT**: Enhanced automated script prevents any future legacy address references permanently
+  - **UNIFIED API**: Single /api/addresses endpoint powers all address operations across the entire application
 - **2025-08-13**: COMPREHENSIVE SSOT LOCKDOWN + PERFORMANCE OPTIMIZATION COMPLETED
   - **LEGACY SYSTEM ELIMINATION**: Systematically removed all legacy onboarding traces from database, server, and client
   - **CRITICAL LOGIN FIXES**: Fixed "street" column database errors - login now returns proper 401s instead of 500 crashes
