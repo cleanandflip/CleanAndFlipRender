@@ -69,12 +69,11 @@ export default function Checkout() {
 
   const addresses = Array.isArray(addressesResp?.addresses) ? addressesResp.addresses : [];
   const cartItems = asArray(cartResp?.items);
-  const profileAddressId: string | null = user?.profile_address_id ?? user?.profileAddress?.id ?? null;
+  const profileAddressId: string | null = user?.profileAddressId ?? null;
 
   const defaultAddr =
-    (profileAddressId && addresses.find(a => a.id === profileAddressId)) ||
-    addresses.find(a => a.is_default) ||
-    user?.profileAddress ||
+    (profileAddressId && addresses.find((a: any) => a.id === profileAddressId)) ||
+    addresses.find((a: any) => a.is_default) ||
     null;
 
   const form = useForm<AddressFormData>({
@@ -150,27 +149,38 @@ export default function Checkout() {
 
   // Auto-prefill form from default address
   useEffect(() => {
-    if (!userLoading && !addrLoading && defaultAddr) {
-      form.reset({
+    console.log("Address prefill check:", {
+      userLoading,
+      addrLoading,
+      defaultAddr,
+      isDirty: form.formState.isDirty,
+      addresses: addresses?.length,
+      profileAddressId
+    });
+    
+    if (!userLoading && !addrLoading && defaultAddr && !form.formState.isDirty) {
+      const formData = {
         firstName: user?.firstName ?? "",
         lastName: user?.lastName ?? "",
         email: user?.email ?? "",
         phone: user?.phone ?? "",
-        street: defaultAddr.street ?? "",
-        address2: defaultAddr.address2 ?? "",
+        street: defaultAddr.street1 ?? defaultAddr.street ?? "",
+        address2: defaultAddr.street2 ?? defaultAddr.address2 ?? "",
         city: defaultAddr.city ?? "",
         state: defaultAddr.state ?? "",
-        zipCode: defaultAddr.zipCode ?? "",
+        zipCode: defaultAddr.postalCode ?? defaultAddr.zipCode ?? "",
         country: defaultAddr.country ?? "US",
         geoapify_place_id: defaultAddr.geoapify_place_id ?? "",
         latitude: defaultAddr.latitude ?? null,
         longitude: defaultAddr.longitude ?? null,
         saveToProfile: false,
         deliveryInstructions: "",
-      });
+      };
+      console.log("Auto-prefilling form with default address:", defaultAddr, "->", formData);
+      form.reset(formData);
       setUsingSavedAddressId(defaultAddr.id);
     }
-  }, [userLoading, addrLoading, defaultAddr, user, form]);
+  }, [userLoading, addrLoading, defaultAddr, user, form, addresses, profileAddressId]);
 
   // Invalidate cart on mount to get fresh data
   useEffect(() => {
@@ -363,7 +373,7 @@ export default function Checkout() {
                   
                   <div className="ml-auto flex items-center gap-3 text-sm">
                     <span className="opacity-80">
-                      Using: {usingSavedAddressId ? (addresses.find(a => a.id === usingSavedAddressId)?.is_default ? "Default address" : "Saved address") : "Unsaved address"}
+                      Using: {usingSavedAddressId ? (addresses.find((a: any) => a.id === usingSavedAddressId)?.is_default ? "Default address" : "Saved address") : "Unsaved address"}
                     </span>
 
                     <AddressPicker
@@ -416,18 +426,36 @@ export default function Checkout() {
           {/* Order summary */}
           <aside className="md:col-span-1 p-6 rounded-2xl border-2 border-white/15 h-fit">
             <h2 className="text-xl font-semibold mb-6">Order Summary</h2>
-            <ul className="space-y-2 mb-4">
-              {cartItems.map((line: any) => {
-                const lineTotal = cents(line.total ?? (line.unit && line.qty ? line.unit * line.qty : 0));
-                const title = line.title ?? line.name ?? line.product?.title ?? "Item";
-                return (
-                  <li key={line.id} className="flex justify-between text-sm">
-                    <span>{title} × {line.qty ?? 1}</span>
-                    <span>{money(lineTotal)}</span>
-                  </li>
-                );
-              })}
-            </ul>
+            {cartItems.length === 0 ? (
+              <div className="text-center text-sm opacity-80 py-4">
+                <p>Your cart is empty</p>
+                <p>Add some items from our <a href="/shop" className="text-blue-400 hover:underline">shop</a> to continue</p>
+              </div>
+            ) : (
+              <ul className="space-y-2 mb-4">
+                {cartItems.map((line: any) => {
+                  // Handle different cart item formats - try multiple fields for pricing
+                  const lineTotal = cents(
+                    line.total ?? 
+                    (line.unit && line.qty ? line.unit * line.qty : 0) ??
+                    (line.price && line.quantity ? line.price * line.quantity : 0) ??
+                    line.subtotal ??
+                    0
+                  );
+                  const title = line.title ?? line.name ?? line.product?.title ?? "Item";
+                  const quantity = line.qty ?? line.quantity ?? 1;
+                  
+                  console.log("Cart line item:", line, "calculated total:", lineTotal);
+                  
+                  return (
+                    <li key={line.id} className="flex justify-between text-sm">
+                      <span>{title} × {quantity}</span>
+                      <span>{money(lineTotal)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
 
             <div className="flex justify-between text-sm py-2 border-t border-white/10">
               <span>Subtotal</span>
