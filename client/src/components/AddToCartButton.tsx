@@ -155,18 +155,14 @@ export function AddToCartButton({
   // In cart - show green button that turns red on hover with remove functionality
   if (isInCart) {
     return (
-      <Button
-        size={size}
+      <button
         className={cn(
-          "w-full transition-all duration-200 border-0",
+          "w-full px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 border-0 text-white flex items-center justify-center",
           isHovering 
-            ? "bg-red-600 hover:bg-red-600 active:bg-red-700 text-white" 
-            : "bg-green-600 hover:bg-green-600 active:bg-green-700 text-white",
+            ? "!bg-red-600 hover:!bg-red-600" 
+            : "!bg-green-600 hover:!bg-green-600",
           className
         )}
-        style={{
-          backgroundColor: isHovering ? '#dc2626' : '#16a34a',
-        } as React.CSSProperties}
         onClick={handleRemoveFromCart}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
@@ -181,7 +177,7 @@ export function AddToCartButton({
           <Check className="w-4 h-4 mr-2" />
         )}
         {isHovering ? "Remove" : "In Cart"}
-      </Button>
+      </button>
     );
   }
 
