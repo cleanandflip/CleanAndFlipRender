@@ -31,7 +31,7 @@ export function AddToCartButton({
     staleTime: 30000 // 30 seconds
   });
 
-  const isInCart = cartData?.items?.some((item: any) => item.productId === productId) || false;
+  const isInCart = (cartData as any)?.items?.some((item: any) => item.productId === productId) || false;
 
   // Optimistic add to cart mutation
   const addToCartMutation = useMutation({
@@ -160,10 +160,13 @@ export function AddToCartButton({
         className={cn(
           "w-full transition-all duration-200 border-0",
           isHovering 
-            ? "bg-red-600 hover:bg-red-600 text-white" 
-            : "bg-green-600 hover:bg-green-600 text-white",
+            ? "bg-red-600 hover:bg-red-600 active:bg-red-700 text-white" 
+            : "bg-green-600 hover:bg-green-600 active:bg-green-700 text-white",
           className
         )}
+        style={{
+          backgroundColor: isHovering ? '#dc2626' : '#16a34a',
+        } as React.CSSProperties}
         onClick={handleRemoveFromCart}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
