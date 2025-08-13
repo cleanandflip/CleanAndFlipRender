@@ -1,15 +1,36 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { apiRequest } from "@/lib/queryClient";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-export function formatPrice(price: number): string {
+export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(price);
+  }).format(amount);
+}
+
+// Small wrappers around fetch for the checkout v2 system
+export async function fetchJSON(url: string) {
+  const response = await fetch(url, {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function postJSON(url: string, data: any) {
+  return apiRequest("POST", url, data);
+}
+
+export async function patchJSON(url: string, data: any) {
+  return apiRequest("PATCH", url, data);
 }

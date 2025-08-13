@@ -1,0 +1,477 @@
+“Checkout v2” plan + copy-paste code that Replit can implement to replace the current page and wire it perfectly into the SSOT (single source of truth) address system.
+
+Checkout v2 — what “perfect” means
+Acceptance criteria
+
+Prefills name, email, phone from /api/user.
+
+Prefills shipping address from the default/profile address (users.profile_address_id).
+
+Lets user Change to any saved address (and optionally Add new). Selecting a different one sets it default server-side and instantly repopulates the form.
+
+Address autocomplete (Geoapify) fills every field (street, unit, city, state, ZIP, country, lat/lng, place_id).
+
+“Save this address to my profile” persists to SSOT and (if it’s the first address) makes it default.
+
+Quotes + local delivery are computed in miles.
+
+No .map/.length crashes; all lists are array-safe; skeletons while loading.
+
+Guest users are redirected to /auth?redirect=/checkout.
+
+“Continue to Payment” is disabled until cart has items, form is valid, and a shipping method is chosen.
+
+Submitting calls server to create/attach the shipping address to cart, lock shipping method, and proceed to payment.
+
+0) Purge legacy checkout
+Remove/rename any legacy files:
+client/src/pages/checkout_broken.tsx, old Checkout components in components/checkout/**, any cart guards referencing legacy address flags or KM distances.
+
+Route "/checkout" must point to the new page exported below.
+
+1) Server contracts (must exist/confirm)
+Keep responses array-safe (never null) and miles-based local detection.
+
+GET /api/user → { id, firstName, lastName, email, phone, profileAddress: Address | null }
+
+GET /api/addresses → { addresses: Address[] } sorted default-first
+
+PATCH /api/addresses/:id/default → promotes one default, updates users.profile_address_id, returns { addresses: Address[] }
+
+POST /api/addresses → creates; if first for user, force is_default=true and set profile_address_id
+
+GET /api/cart → { items: CartLine[], subtotal: number, total: number, shippingAddressId: string | null }
+
+POST /api/shipping/quote body { addressId?: string, address?: AddressInput } → { quotes: Quote[] }
+
+POST /api/checkout/submit body { addressId, contact, deliveryInstructions, quoteId } → { url } (Stripe or internal payment)
+
+Miles: use EARTH_RADIUS_MI = 3958.7613 in your Haversine util.
+
+2) Client: brand-new Checkout page
+Create/replace client/src/pages/checkout.tsx with this.
+It is self-contained, array-safe, and wired to SSOT. It uses your existing AddressAutocomplete if present (adjust import path if different).
+
+tsx
+Copy
+Edit
+// client/src/pages/checkout.tsx
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchJSON, postJSON, patchJSON } from "@/lib/utils"; // small wrappers around fetch
+import AddressAutocomplete from "@/components/ui/address-autocomplete"; // Geoapify component
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
+import PageLoader from "@/components/ui/page-loader";
+
+const asArray = <T,>(x: T[] | null | undefined): T[] => Array.isArray(x) ? x : [];
+
+const addressSchema = z.object({
+  firstName: z.string().min(1, "Required"),
+  lastName: z.string().min(1, "Required"),
+  email: z.string().email("Invalid email"),
+  phone: z.string().optional(), // server validates with libphonenumber-js
+  street: z.string().min(3, "Required"),
+  address2: z.string().optional(),
+  city: z.string().min(2, "Required"),
+  state: z.string().min(2, "Required"),
+  zipCode: z.string().min(5, "Required"),
+  country: z.string().min(2, "Required").default("US"),
+  geoapify_place_id: z.string().optional(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  saveToProfile: z.boolean().default(false),
+  deliveryInstructions: z.string().max(500).optional(),
+});
+
+type AddressFormData = z.infer<typeof addressSchema>;
+
+export default function Checkout() {
+  const nav = useNavigate();
+  const qc = useQueryClient();
+  const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  const [usingSavedAddressId, setUsingSavedAddressId] = useState<string | null>(null);
+
+  // Auth gate
+  const { data: user, isLoading: userLoading } = useQuery({
+    queryKey: ["user"],
+    queryFn: () => fetchJSON("/api/user"),
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!userLoading && !user?.id) {
+      nav("/auth?redirect=/checkout");
+    }
+  }, [userLoading, user, nav]);
+
+  const { data: addressesResp, isLoading: addrLoading } = useQuery({
+    queryKey: ["addresses"],
+    queryFn: () => fetchJSON("/api/addresses"),
+    enabled: !!user?.id,
+  });
+
+  const { data: cartResp, isLoading: cartLoading } = useQuery({
+    queryKey: ["cart"],
+    queryFn: () => fetchJSON("/api/cart"),
+    enabled: !!user?.id,
+  });
+
+  const addresses = asArray(addressesResp?.addresses ?? addressesResp);
+  const cartItems = asArray(cartResp?.items);
+
+  const defaultAddr =
+    user?.profileAddress ??
+    addresses.find(a => a.is_default) ??
+    null;
+
+  const form = useForm<AddressFormData>({
+    resolver: zodResolver(addressSchema),
+    defaultValues: {
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+      email: user?.email ?? "",
+      phone: user?.phone ?? "",
+      street: "",
+      address2: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      country: "US",
+      saveToProfile: true,
+      deliveryInstructions: "",
+    },
+    mode: "onChange",
+  });
+
+  // Prefill from default/profile address once data is ready
+  useEffect(() => {
+    if (!userLoading && !addrLoading && defaultAddr) {
+      form.reset({
+        firstName: user?.firstName ?? "",
+        lastName: user?.lastName ?? "",
+        email: user?.email ?? "",
+        phone: user?.phone ?? "",
+        street: defaultAddr.street,
+        address2: defaultAddr.address2 ?? "",
+        city: defaultAddr.city,
+        state: defaultAddr.state,
+        zipCode: defaultAddr.zipCode,
+        country: defaultAddr.country ?? "US",
+        geoapify_place_id: defaultAddr.geoapify_place_id ?? "",
+        latitude: defaultAddr.latitude ?? null,
+        longitude: defaultAddr.longitude ?? null,
+        saveToProfile: false,
+        deliveryInstructions: "",
+      });
+      setUsingSavedAddressId(defaultAddr.id);
+    }
+  }, [userLoading, addrLoading, defaultAddr, user, form]);
+
+  // Shipping quotes query (re-run when address changes)
+  const addrWatch = form.watch(["street", "city", "state", "zipCode", "country"]);
+  const { data: quotesResp, isFetching: quotesLoading, refetch: refetchQuotes } = useQuery({
+    queryKey: ["shipping:quotes", addrWatch],
+    queryFn: async () => {
+      const f = form.getValues();
+      return postJSON("/api/shipping/quote", {
+        addressId: usingSavedAddressId ?? undefined,
+        address: usingSavedAddressId ? undefined : {
+          firstName: f.firstName,
+          lastName: f.lastName,
+          street: f.street,
+          address2: f.address2,
+          city: f.city,
+          state: f.state,
+          zipCode: f.zipCode,
+          country: f.country,
+          latitude: f.latitude,
+          longitude: f.longitude,
+          geoapify_place_id: f.geoapify_place_id,
+        }
+      });
+    },
+    enabled: !!user?.id && cartItems.length > 0,
+    staleTime: 0,
+  });
+  const quotes = asArray(quotesResp?.quotes ?? quotesResp);
+
+  // Change saved address → make it default on server → repopulate
+  const mutateDefault = useMutation({
+    mutationFn: (id: string) => patchJSON(`/api/addresses/${id}/default`, {}),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["addresses"] }),
+        qc.invalidateQueries({ queryKey: ["user"] }),
+        qc.invalidateQueries({ queryKey: ["cart"] }),
+      ]);
+      setSelectedQuoteId(null);
+      toast({ title: "Address updated", description: "Using your default address." });
+    },
+    onError: () => toast({ title: "Couldn’t switch address", variant: "destructive" })
+  });
+
+  // Submit checkout
+  const submitCheckout = useMutation({
+    mutationFn: async (payload: any) => postJSON("/api/checkout/submit", payload),
+    onSuccess: ({ url }) => {
+      window.location.href = url;
+    },
+    onError: () => toast({ title: "Checkout failed", variant: "destructive" }),
+  });
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    // Persist address if asked or if none saved
+    let shippingAddressId = usingSavedAddressId;
+
+    if (!shippingAddressId || values.saveToProfile) {
+      const created = await postJSON("/api/addresses", {
+        first_name: values.firstName,
+        last_name: values.lastName,
+        street: values.street,
+        address2: values.address2 || null,
+        city: values.city,
+        state: values.state,
+        zip_code: values.zipCode,
+        country: values.country,
+        geoapify_place_id: values.geoapify_place_id || null,
+        latitude: values.latitude ?? null,
+        longitude: values.longitude ?? null,
+        is_default: !usingSavedAddressId, // first time, make default
+      });
+      shippingAddressId = created?.id ?? created?.address?.id;
+      setUsingSavedAddressId(shippingAddressId ?? null);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["addresses"] }),
+        qc.invalidateQueries({ queryKey: ["user"] }),
+      ]);
+    }
+
+    if (!selectedQuoteId) {
+      toast({ title: "Choose a shipping option", variant: "destructive" });
+      return;
+    }
+
+    await submitCheckout.mutateAsync({
+      addressId: shippingAddressId,
+      quoteId: selectedQuoteId,
+      contact: { email: values.email, phone: values.phone },
+      deliveryInstructions: values.deliveryInstructions || "",
+    });
+  });
+
+  // Loading states
+  if (userLoading || cartLoading) return <PageLoader />;
+  if (cartItems.length === 0) {
+    return (
+      <div className="container mx-auto max-w-5xl py-12">
+        <h1 className="text-2xl font-semibold mb-4">Your cart is empty</h1>
+        <Button onClick={() => nav("/shop")}>Continue shopping</Button>
+      </div>
+    );
+  }
+
+  // Helpers
+  const fillFromGeoapify = (p: any) => {
+    form.setValue("street", [p.housenumber, p.street].filter(Boolean).join(" "));
+    form.setValue("address2", p.unit ?? "");
+    form.setValue("city", p.city || p.town || p.village || "");
+    form.setValue("state", (p.state_code || p.state || "").toString());
+    form.setValue("zipCode", p.postcode || "");
+    form.setValue("country", (p.country_code || "US").toUpperCase());
+    form.setValue("geoapify_place_id", p.place_id || "");
+    form.setValue("latitude", p.lat ?? p.latLng?.lat ?? null);
+    form.setValue("longitude", p.lon ?? p.latLng?.lng ?? null);
+    setUsingSavedAddressId(null); // now using a fresh unsaved address
+    setSelectedQuoteId(null);
+    refetchQuotes();
+  };
+
+  return (
+    <div className="container mx-auto max-w-6xl py-10">
+      <h1 className="text-2xl font-semibold mb-6">Checkout</h1>
+
+      {/* Contact + Shipping form */}
+      <form className="grid grid-cols-1 md:grid-cols-3 gap-8" onSubmit={onSubmit}>
+        <div className="md:col-span-2 space-y-6">
+          <section className="p-6 rounded-2xl bg-neutral-900/40 shadow">
+            <h2 className="text-lg font-medium mb-4">Shipping Information</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>First Name</Label>
+                <Input {...form.register("firstName")} />
+              </div>
+              <div>
+                <Label>Last Name</Label>
+                <Input {...form.register("lastName")} />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input type="email" {...form.register("email")} />
+              </div>
+              <div>
+                <Label>Phone (Optional)</Label>
+                <Input {...form.register("phone")} placeholder="(555) 555-5555" />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label>Street Address</Label>
+                <AddressAutocomplete
+                  placeholder="Start typing your address…"
+                  onPick={(s: any) => fillFromGeoapify(s.properties)}
+                />
+                <Input className="mt-2" {...form.register("street")} />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label>Apartment, suite, etc. (Optional)</Label>
+                <Input {...form.register("address2")} />
+              </div>
+
+              <div>
+                <Label>City</Label>
+                <Input {...form.register("city")} />
+              </div>
+              <div>
+                <Label>State</Label>
+                <Input {...form.register("state")} />
+              </div>
+              <div>
+                <Label>ZIP Code</Label>
+                <Input {...form.register("zipCode")} />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label>Delivery Instructions (Optional)</Label>
+                <Input {...form.register("deliveryInstructions")} />
+              </div>
+
+              <div className="md:col-span-2 flex items-center gap-3">
+                <input id="saveToProfile" type="checkbox" {...form.register("saveToProfile")} />
+                <Label htmlFor="saveToProfile">Save this address to my profile</Label>
+
+                <div className="ml-auto flex items-center gap-2">
+                  <span className="text-sm opacity-80">
+                    Using: {usingSavedAddressId ? "Saved address" : "Unsaved address"}
+                  </span>
+                  {addresses.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        const other = addresses.find(a => a.id !== usingSavedAddressId) ?? addresses[0];
+                        if (other) {
+                          setUsingSavedAddressId(other.id);
+                          mutateDefault.mutate(other.id);
+                        }
+                      }}
+                    >
+                      Change saved address
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Shipping methods */}
+          <section className="p-6 rounded-2xl bg-neutral-900/40 shadow">
+            <h2 className="text-lg font-medium mb-4">Shipping Method</h2>
+            {quotesLoading ? (
+              <div className="text-sm opacity-80">Getting options…</div>
+            ) : quotes.length === 0 ? (
+              <div className="text-sm opacity-80">
+                No options yet. Make sure your address is complete. Local delivery shown if within 50 miles.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {quotes.map((q: any) => (
+                  <label key={q.id ?? `${q.service}-${q.price}`} className="flex items-center gap-3 p-3 rounded-lg bg-black/20">
+                    <input
+                      type="radio"
+                      checked={selectedQuoteId === (q.id ?? q.service)}
+                      onChange={() => setSelectedQuoteId(q.id ?? q.service)}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium">{q.label ?? q.service}</div>
+                      <div className="text-xs opacity-80">{q.eta ?? ""}</div>
+                    </div>
+                    <div className="font-medium">${(q.price / 100).toFixed(2)}</div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Order summary */}
+        <aside className="md:col-span-1 p-6 rounded-2xl bg-neutral-900/40 shadow h-fit">
+          <h2 className="text-lg font-medium mb-4">Order Summary</h2>
+          <ul className="space-y-2 mb-4">
+            {cartItems.map((line: any) => (
+              <li key={line.id} className="flex justify-between text-sm">
+                <span>{line.title} × {line.qty}</span>
+                <span>${(line.total / 100).toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="flex justify-between text-sm py-2 border-t border-white/10">
+            <span>Subtotal</span>
+            <span>${((cartResp?.subtotal ?? 0) / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm py-2">
+            <span>Shipping</span>
+            <span>{selectedQuoteId ? "Calculated" : "—"}</span>
+          </div>
+          <Button
+            className="w-full mt-4"
+            type="submit"
+            disabled={
+              submitCheckout.isPending ||
+              quotesLoading ||
+              cartItems.length === 0 ||
+              !form.formState.isValid ||
+              !selectedQuoteId
+            }
+          >
+            {submitCheckout.isPending ? "Processing…" : "Continue to Payment"}
+          </Button>
+        </aside>
+      </form>
+    </div>
+  );
+}
+Notes for Replit
+
+If your UI kit uses different components, keep the logic identical.
+
+The “Change saved address” button uses the server PATCH /api/addresses/:id/default to preserve SSOT. Prefer a proper modal/drawer with the full list; the snippet just shows the wiring.
+
+3) Address autocomplete → fill EVERYTHING
+Ensure your AddressAutocomplete calls onPick(suggestion) with the Geoapify feature; this page’s fillFromGeoapify maps every field (street, unit, city, state, ZIP, country, place_id, lat/lng). That fixes the “fields not filling” problem.
+
+4) Cart/onboarding gating (one line!)
+Anywhere you previously gated with legacy flags, replace with:
+if (!user?.profileAddress && addresses.length === 0) navigate('/onboarding?from=cart&step=1')
+
+5) QA checklist for this page
+New user with no addresses → checkout opens, autocomplete fills all fields, “Save to profile” on → POST creates address, sets default, quotes appear (miles), continue to payment works.
+
+User with default address → loads prefilled; quotes fetched immediately; can submit.
+
+Change saved address → default flips server-side; form repopulates; quotes refresh; submit works.
+
+Try with empty cart → “Your cart is empty” screen.
+
+Network errors → toasts; no crashes (no .map/.length on undefined).
+
+Local delivery shows when within 50 miles.
+
+If Replit drops this page in, confirms the server contracts, and purges old checkout code, your checkout will be fully synced to the SSOT address system, prefilled for set-up users, and robust against the bugs you’ve been hitting.
