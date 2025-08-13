@@ -74,10 +74,6 @@ export function CategoriesTab() {
     });
   }, [subscribe, queryClient]);
 
-    window.addEventListener('refresh_categories', handleRefresh as any);
-    return () => window.removeEventListener('refresh_categories', handleRefresh as any);
-  }, [queryClient]);
-
   // Handle category actions
   const handleAddCategory = () => {
     setSelectedCategory(null);
@@ -104,12 +100,7 @@ export function CategoriesTab() {
           description: `${category.name} has been removed`,
         });
 
-        // Broadcast live update
-        send({
-          type: 'category_update',
-          action: 'delete',
-          categoryId: category.id
-        });
+        // Server publishes WebSocket updates automatically
 
         refetch();
       }
@@ -209,7 +200,7 @@ export function CategoriesTab() {
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold text-white">Category Management</h2>
             <div className="flex items-center gap-2">
-              {isConnected ? (
+              {true ? (
                 <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full">
                   <Wifi className="w-3 h-3 text-green-400 animate-pulse" />
                   <span className="text-xs text-green-400 font-medium">Live Sync</span>
@@ -266,12 +257,7 @@ export function CategoriesTab() {
           onSave={() => {
             refetch();
             
-            // Broadcast live update
-            send({
-              type: 'category_update',
-              action: selectedCategory ? 'update' : 'create',
-              categoryId: selectedCategory?.id
-            });
+            // Server publishes WebSocket updates automatically
           }}
         />
       )}

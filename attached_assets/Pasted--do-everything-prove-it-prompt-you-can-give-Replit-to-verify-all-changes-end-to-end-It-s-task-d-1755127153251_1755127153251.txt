@@ -1,0 +1,282 @@
+ “do everything + prove it” prompt you can give Replit to verify all changes end-to-end. It’s task-driven, with pass/fail criteria, shell commands, and exactly what artifacts to return.
+
+✅ REPLIT: COMPREHENSIVE VERIFICATION & SIGN-OFF CHECKLIST
+You are verifying the unified Local Delivery system + unified WebSocket layer and that all legacy code/paths are gone. Follow these steps in order and return the requested artifacts.
+
+0) Prep & Environment
+Clean install & build
+
+bash
+Copy
+Edit
+rm -rf node_modules client/node_modules server/node_modules
+pnpm install --frozen-lockfile
+pnpm -w build || pnpm -w typecheck
+DB reset (development)
+
+bash
+Copy
+Edit
+pnpm db:migrate:reset && pnpm db:migrate && pnpm db:seed
+Return: migration output confirming success.
+
+Start app (dev)
+
+bash
+Copy
+Edit
+pnpm dev
+Confirm server boots with minimal logs.
+
+No warnings except optional dev “enable Redis” hint.
+
+1) Legacy Purge Verification (must be zero)
+Run each grep; all must return nothing:
+
+bash
+Copy
+Edit
+# Legacy locality (zip lists / random local flags / multi-method detection)
+rg -n "isLocalCustomer\(|zipCode.*2880|Math\.random\(\).*isLocal|service zones|Advanced Service Zone Detection" client server
+
+# Old onboarding (we removed that flow; only existing pages allowed)
+rg -n "/onboarding|StepAddress|StepPhone|StepSummary" client
+
+# Old broadcast helpers / multiple WS managers
+rg -n "setWebSocketManager|broadcastCartUpdate|broadcast.*update" server
+
+# Raw WebSocket usage outside the singleton
+rg -n "new WebSocket\(" client | grep -v "useSingletonSocket\.ts"
+
+# Old topic names (must be namespaced now)
+rg -n "product_update|category_update|user_update|submission_update|stock_update|cart_update" client server
+Return: the empty outputs or proof they’re zero.
+
+2) WebSocket Layer — Single Source of Truth
+Goal: Exactly one connection per tab; only the new provider/hook in use.
+
+Code assertions
+
+client/src/hooks/useWebSocket.ts is only a shim re-exporting from useSingletonSocket.
+
+Only client/src/hooks/useSingletonSocket.ts contains new WebSocket.
+
+Runtime assertions (DevTools → Network)
+
+Load the app → exactly one WS connection to /ws.
+
+Refresh page → still one connection.
+
+Open a second tab → each tab shows one connection.
+
+Artifacts to return:
+
+Screenshot of Network panel with a single /ws.
+
+Small code snippet showing SocketProvider wraps <App /> in client/src/main.tsx.
+
+3) Local Delivery — Single Source of Truth
+Goal: Everything reads locality from the distance-based function only; no ZIP hacks/placeholders.
+
+Server code checks
+
+bash
+Copy
+Edit
+rg -n "isLocalMiles\(" server
+rg -n "isLocalCustomer\(" client server
+rg -n "Math\.random\(\).*isLocal" server
+Only isLocalMiles() should appear (no ZIP or random logic).
+
+Endpoint behavior
+
+GET /api/locality/status:
+
+Authenticated user: { isLocal: boolean, distanceMiles: number } (200).
+
+Unauthenticated: 200 with { isLocal: null } (no 401 noise).
+
+Return 2 curl outputs:
+
+bash
+Copy
+Edit
+curl -i http://localhost:5000/api/locality/status
+# then with auth cookie or token present
+DB flags on address changes
+
+Change a default address to inside radius (< 50mi) then outside (e.g., set coords).
+
+Verify DB: addresses.is_local flips correctly.
+
+Return: SELECT id, is_local, latitude, longitude FROM addresses WHERE user_id = '<TEST_USER>' ORDER BY updated_at DESC LIMIT 3;
+
+4) Product Availability & Guardrails
+Goal: Products can be configured with localDeliveryOnly and/or shippingAvailable; UI shows clearly; non-locals cannot add local-only items.
+
+Admin product modal
+
+Confirm these booleans exist, persist, and return via API:
+
+localDeliveryOnly: boolean
+
+shippingAvailable: boolean
+
+Return: PATCH/GET request/response bodies for one product toggled through all combinations.
+
+Frontend visibility
+
+Product grid/card shows chips/badge:
+
+“Local Delivery” when localDeliveryOnly.
+
+“Ships” when shippingAvailable.
+
+Return: screenshots of card + product detail with chips visible.
+
+Add-to-cart rules
+
+Local user: can add both local-delivery and shipping items.
+
+Non-local user: can add shipping items, but NOT local-delivery-only items:
+
+Button disabled or guarded; toast explains why.
+
+API returns 403 with clear error { code:"LOCAL_ONLY", ... }.
+
+Return: two console network captures (success + 403) and the visible UI behavior (screenshot).
+
+5) Cart & Checkout Consistency
+Goal: Cart count, cart items, and checkout items are identical; remove-from-cart works from product page, cart, and checkout; no addresses.find is not a function.
+
+API correctness
+
+bash
+Copy
+Edit
+# Add items
+curl -X POST http://localhost:5000/api/cart -d '{"productId":"<id>","quantity":1}' -H 'Content-Type: application/json' -b cookies.txt -c cookies.txt
+
+# Read cart
+curl -s http://localhost:5000/api/cart -b cookies.txt | jq
+
+# Validate for checkout
+curl -s http://localhost:5000/api/cart/validate -b cookies.txt | jq
+Responses must include the same line-items and totals.
+
+UI flows
+
+Add 3 items → open Cart page → matches API.
+
+Go to Checkout → same items & totals.
+
+Remove from product page → immediately reflected in cart and checkout (via WS + React Query invalidation).
+
+Return: 3 screenshots (product page remove → cart → checkout), plus Network capture showing DELETE /api/cart/items/:id → 200 and subsequent GET /api/cart.
+
+Bug regression check
+Fix validated for:
+
+vbnet
+Copy
+Edit
+TypeError: addresses.find is not a function
+Ensure Checkout safely handles addresses when not an array / empty:
+
+Defensive typing (Array.isArray(addresses)), fallback to [].
+
+Return: the offending file line before/after and a screenshot of checkout with no error.
+
+6) UI Surfacing of Local Status (no new pages)
+Goal: Minimal, clean, and everywhere that matters; no new routes.
+
+Nav header user dropdown: small badge “Local Delivery ✓” or “Shipping Only”.
+
+User Dashboard → Addresses tab: default address row shows “Local Delivery eligible” or “Outside local zone”.
+
+Cart page & Checkout page:
+
+Local users see a FREE Local Delivery pill + short explainer.
+
+Non-locals see “Ships to you”.
+
+Home page: minimal “You qualify for free local delivery” banner for local users only.
+
+Artifacts:
+
+4 screenshots (each location).
+
+One code snippet per location showing the useLocality() hook wiring (reads from /api/locality/status + WS locality:update).
+
+7) WebSocket → React Query Invalidation
+Goal: Every realtime update uses invalidate, not manual mutation.
+
+Show the code in:
+
+Home: product:update → invalidate ["featuredProducts"] / ["products"].
+
+Admin tabs: category:update, product:update, etc.
+
+Cart: cart:update for the current user only → invalidate ["cart"].
+
+Locality: locality:update for the current user only → invalidate ["localStatus"].
+
+Artifacts:
+
+Paste the relevant useEffect(... subscribe(...)) blocks from each page/component.
+
+8) Logging & Noise
+Goal: Minimal logs in dev; no 401 spam; slow-request warnings toned down.
+
+Confirm:
+
+GET /api/locality/status for guests returns 200 with {isLocal:null} (no 401).
+
+Slow request warnings threshold is increased or disabled in development (e.g., SLOW_REQ_MS=4000).
+
+Socket logs are at debug level only; publish/send errors at error.
+
+Artifacts:
+
+Snippet of log config and a short tail of server logs during normal browsing (showing minimal noise).
+
+9) Performance & Stability
+One WS per tab verified (again).
+
+TTI: home page initial load is stable; no long blocking tasks in console.
+
+No unhandled promise rejections in browser console.
+
+Lighthouse (dev) quick check ≥ 85 Performance/Best Practices (informational).
+
+Artifacts:
+
+Screenshot of Network WS, and a short console log capture (empty of errors/warnings).
+
+10) Security & Access Control
+Cart/locality broadcasts use publishToUser(userId, ...) (no cross-user leaks).
+
+Server verifies token/session on {topic:"auth"} and sets client.userId and role.
+
+Adding a local-only product as a non-local user → 403 with structured error; UI shows toast.
+
+Artifacts:
+
+Code snippet of wsManager.onMessage auth handling.
+
+A captured 403 response body from attempting to add a local-only item as non-local.
+
+11) Final Acceptance: What to Return
+Command outputs from Sections 0–5 (migrations, curls, grep checks).
+
+Screenshots from Sections 2, 4, 6, 9.
+
+Code snippets from Sections 2, 7, 10 (provider wrap, subscriptions, auth).
+
+A one-line summary per section stating PASS/FAIL and, if fail, the exact fix applied (commit hash).
+
+When all items above are PASS, post:
+
+✅ “Unified Local Delivery + WebSocket refactor verified. Legacy removed. All acceptance criteria met.”
+
+If anything fails, stop, fix, and re-run the specific section before proceeding.

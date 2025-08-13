@@ -33,6 +33,7 @@ __export(schema_exports, {
   errorLogInstances: () => errorLogInstances,
   errorLogs: () => errorLogs,
   errorsRaw: () => errorsRaw,
+  fulfillmentTypeEnum: () => fulfillmentTypeEnum,
   insertActivityLogSchema: () => insertActivityLogSchema,
   insertAddressSchema: () => insertAddressSchema,
   insertCartItemSchema: () => insertCartItemSchema,
@@ -54,6 +55,7 @@ __export(schema_exports, {
   issueEvents: () => issueEvents,
   issues: () => issues,
   newsletterSubscribers: () => newsletterSubscribers,
+  orderAddresses: () => orderAddresses,
   orderItems: () => orderItems,
   orderItemsRelations: () => orderItemsRelations,
   orderStatusEnum: () => orderStatusEnum,
@@ -68,6 +70,7 @@ __export(schema_exports, {
   registerDataSchema: () => registerDataSchema,
   returnRequests: () => returnRequests,
   reviews: () => reviews,
+  serviceZones: () => serviceZones,
   sessions: () => sessions,
   userEmailPreferences: () => userEmailPreferences,
   userOnboarding: () => userOnboarding,
@@ -95,7 +98,7 @@ import {
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-var tsvector, sessions, errorsRaw, issues, issueEvents, userRoleEnum, users, userOnboarding, categories, productConditionEnum, productStatusEnum, products, addresses, orderStatusEnum, orders, orderItems, cartItems, wishlists, activityLogs, emailQueue, equipmentSubmissionStatusEnum, equipmentSubmissions, usersRelations, categoriesRelations, productsRelations, ordersRelations, orderItemsRelations, cartItemsRelations, addressesRelations, equipmentSubmissionsRelations, wishlistsRelations, insertUserSchema, insertCategorySchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCartItemSchema, insertAddressSchema, insertEquipmentSubmissionSchema, insertActivityLogSchema, insertWishlistSchema, errorLogs, errorLogInstances, registerDataSchema, reviews, insertReviewSchema, coupons, insertCouponSchema, orderTracking, insertOrderTrackingSchema, returnRequests, insertReturnRequestSchema, emailLogs, newsletterSubscribers, userEmailPreferences, passwordResetTokens, insertEmailLogSchema, insertNewsletterSubscriberSchema, insertUserEmailPreferencesSchema, insertPasswordResetTokenSchema;
+var tsvector, sessions, errorsRaw, issues, issueEvents, userRoleEnum, fulfillmentTypeEnum, users, userOnboarding, categories, productConditionEnum, productStatusEnum, products, addresses, serviceZones, orderAddresses, orderStatusEnum, orders, orderItems, cartItems, wishlists, activityLogs, emailQueue, equipmentSubmissionStatusEnum, equipmentSubmissions, usersRelations, categoriesRelations, productsRelations, ordersRelations, orderItemsRelations, cartItemsRelations, addressesRelations, equipmentSubmissionsRelations, wishlistsRelations, insertUserSchema, insertCategorySchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCartItemSchema, insertAddressSchema, insertEquipmentSubmissionSchema, insertActivityLogSchema, insertWishlistSchema, errorLogs, errorLogInstances, registerDataSchema, reviews, insertReviewSchema, coupons, insertCouponSchema, orderTracking, insertOrderTrackingSchema, returnRequests, insertReturnRequestSchema, emailLogs, newsletterSubscribers, userEmailPreferences, passwordResetTokens, insertEmailLogSchema, insertNewsletterSubscriberSchema, insertUserEmailPreferencesSchema, insertPasswordResetTokenSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -176,6 +179,11 @@ var init_schema = __esm({
       "user",
       "developer"
     ]);
+    fulfillmentTypeEnum = pgEnum("fulfillment_type", [
+      "LOCAL_ONLY",
+      "SHIP_ONLY",
+      "LOCAL_OR_SHIP"
+    ]);
     users = pgTable("users", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       email: varchar("email").unique().notNull(),
@@ -185,12 +193,7 @@ var init_schema = __esm({
       lastName: varchar("last_name").notNull(),
       phone: varchar("phone"),
       // Optional field
-      street: varchar("street", { length: 255 }),
-      city: varchar("city", { length: 100 }),
-      state: varchar("state", { length: 2 }),
-      zipCode: varchar("zip_code", { length: 10 }),
-      latitude: decimal("latitude", { precision: 10, scale: 8 }),
-      longitude: decimal("longitude", { precision: 11, scale: 8 }),
+      // REMOVED: Legacy address fields - using SSOT addresses table instead
       isLocalCustomer: boolean("is_local_customer").default(false),
       role: userRoleEnum("role").default("user"),
       stripeCustomerId: varchar("stripe_customer_id"),
@@ -205,6 +208,9 @@ var init_schema = __esm({
       isEmailVerified: boolean("is_email_verified").default(false),
       profileComplete: boolean("profile_complete").default(false),
       onboardingStep: integer("onboarding_step").default(0),
+      // SSOT Profile address reference
+      profileAddressId: varchar("profile_address_id").references(() => addresses.id),
+      onboardingCompletedAt: timestamp("onboarding_completed_at"),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -273,6 +279,9 @@ var init_schema = __esm({
       stripeLastSync: timestamp("stripe_last_sync"),
       sku: varchar("sku"),
       dimensions: jsonb("dimensions").$type(),
+      // Fulfillment and local delivery (temporarily commented out until migration)
+      // fulfillment: fulfillmentTypeEnum("fulfillment").default("LOCAL_OR_SHIP"),
+      // localRadiusKm: decimal("local_radius_km", { precision: 8, scale: 3 }), // Per-product override
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     }, (table) => [
@@ -287,17 +296,59 @@ var init_schema = __esm({
     ]);
     addresses = pgTable("addresses", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      userId: varchar("user_id").references(() => users.id),
-      type: varchar("type").notNull(),
-      // 'shipping' or 'billing'
-      firstName: varchar("first_name").notNull(),
-      lastName: varchar("last_name").notNull(),
-      street: varchar("street").notNull(),
-      city: varchar("city").notNull(),
-      state: varchar("state").notNull(),
-      zipCode: varchar("zip_code").notNull(),
-      country: varchar("country").default("US"),
-      isDefault: boolean("is_default").default(false),
+      userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+      firstName: text("first_name").notNull(),
+      // Required for shipping
+      lastName: text("last_name").notNull(),
+      // Required for shipping
+      street1: text("street1").notNull(),
+      // Main street address
+      street2: text("street2"),
+      // Apt, Suite, Unit
+      city: text("city").notNull(),
+      state: text("state").notNull(),
+      postalCode: text("postal_code").notNull(),
+      // Client field name matches
+      country: text("country").default("US").notNull(),
+      latitude: decimal("latitude", { precision: 10, scale: 7 }),
+      longitude: decimal("longitude", { precision: 10, scale: 7 }),
+      geoapifyPlaceId: text("geoapify_place_id"),
+      // From Geoapify API
+      isDefault: boolean("is_default").default(false).notNull(),
+      isLocal: boolean("is_local").default(false).notNull(),
+      // Computed field
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow()
+    }, (table) => [
+      // One default address per user (enforced by database constraint)
+      index("idx_addresses_user").on(table.userId),
+      index("idx_addresses_coordinates").on(table.latitude, table.longitude),
+      index("idx_addresses_local").on(table.isLocal)
+    ]);
+    serviceZones = pgTable("service_zones", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      name: text("name").notNull(),
+      // Option A: center + radius
+      centerLat: decimal("center_lat", { precision: 10, scale: 7 }),
+      centerLng: decimal("center_lng", { precision: 11, scale: 7 }),
+      radiusKm: decimal("radius_km", { precision: 8, scale: 3 }),
+      // Option B: polygon (GeoJSON as JSONB)
+      polygon: jsonb("polygon"),
+      active: boolean("active").default(true),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    orderAddresses = pgTable("order_addresses", {
+      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+      orderId: varchar("order_id").notNull().unique().references(() => orders.id, { onDelete: "cascade" }),
+      sourceAddressId: varchar("source_address_id").references(() => addresses.id),
+      formatted: text("formatted"),
+      // REMOVED: Legacy street field - using SSOT addresses table
+      city: text("city"),
+      state: text("state"),
+      postalCode: text("postal_code"),
+      country: text("country"),
+      latitude: decimal("latitude", { precision: 10, scale: 7 }),
+      longitude: decimal("longitude", { precision: 11, scale: 7 }),
       createdAt: timestamp("created_at").defaultNow()
     });
     orderStatusEnum = pgEnum("order_status", [
@@ -412,7 +463,7 @@ var init_schema = __esm({
       sellerPhone: varchar("seller_phone"),
       sellerLocation: text("seller_location"),
       // Free text location
-      isLocalDelivery: boolean("is_local_delivery").default(false),
+      // Removed isLocalDelivery field - column doesn't exist in database
       notes: text("notes"),
       // Additional seller notes
       status: varchar("status").default("pending"),
@@ -604,8 +655,8 @@ var init_schema = __esm({
       context: jsonb("context")
     });
     registerDataSchema = insertUserSchema.extend({
-      confirmPassword: z.string(),
-      fullAddress: z.string().optional()
+      confirmPassword: z.string()
+      // REMOVED: Legacy fullAddress field - using SSOT formatted address
     }).omit({
       role: true,
       stripeCustomerId: true,
@@ -1059,6 +1110,7 @@ __export(storage_exports, {
   storage: () => storage
 });
 import { eq, desc, asc, and, or, gte, lte, sql as sql3, isNotNull } from "drizzle-orm";
+import { randomUUID } from "crypto";
 var DatabaseStorage, storage;
 var init_storage = __esm({
   "server/storage.ts"() {
@@ -1076,13 +1128,31 @@ var init_storage = __esm({
       async getUserByEmail(email) {
         const normalizedEmail = normalizeEmail(email);
         try {
-          const [user] = await db.select().from(users).where(sql3`LOWER(${users.email}) = ${normalizedEmail}`);
-          return user;
+          const result = await db.execute(sql3`
+        SELECT
+          id, email, password, first_name, last_name, phone,
+          stripe_customer_id, stripe_subscription_id, created_at, updated_at,
+          role, google_id, profile_image_url, auth_provider, is_email_verified,
+          google_email, google_picture
+        FROM users
+        WHERE LOWER(email) = LOWER(${normalizedEmail})
+        LIMIT 1
+      `);
+          return result.rows[0];
         } catch (error) {
           Logger.error("Error getting user by email:", error.message);
           if (error.code === "57P01") {
-            const [user] = await db.select().from(users).where(sql3`LOWER(${users.email}) = ${normalizedEmail}`);
-            return user;
+            const result = await db.execute(sql3`
+          SELECT
+            id, email, password, first_name, last_name, phone,
+            stripe_customer_id, stripe_subscription_id, created_at, updated_at,
+            role, google_id, profile_image_url, auth_provider, is_email_verified,
+            google_email, google_picture
+          FROM users
+          WHERE LOWER(email) = LOWER(${normalizedEmail})
+          LIMIT 1
+        `);
+            return result.rows[0];
           }
           throw error;
         }
@@ -1155,14 +1225,9 @@ var init_storage = __esm({
         }).where(eq(users.id, id)).returning();
         return user;
       }
-      async updateUserAddress(id, addressData) {
+      async updateUserProfileAddress(id, profileAddressId) {
         const [user] = await db.update(users).set({
-          street: addressData.street,
-          city: addressData.city,
-          state: addressData.state,
-          zipCode: addressData.zipCode,
-          latitude: addressData.latitude ? String(addressData.latitude) : void 0,
-          longitude: addressData.longitude ? String(addressData.longitude) : void 0,
+          profileAddressId,
           updatedAt: /* @__PURE__ */ new Date()
         }).where(eq(users.id, id)).returning();
         return user;
@@ -1275,10 +1340,10 @@ var init_storage = __esm({
         return await db.select().from(products).where(eq(products.featured, true)).orderBy(desc(products.createdAt)).limit(limit);
       }
       // Cart operations - Always fetch fresh product data
-      async getCartItems(userId, sessionId) {
+      async getCartItems(userId2, sessionId) {
         let whereCondition;
-        if (userId) {
-          whereCondition = eq(cartItems.userId, userId);
+        if (userId2) {
+          whereCondition = eq(cartItems.userId, userId2);
         } else if (sessionId) {
           whereCondition = eq(cartItems.sessionId, sessionId);
         } else {
@@ -1301,9 +1366,9 @@ var init_storage = __esm({
         return cartWithProducts.filter((item) => item !== null);
       }
       // Get existing cart item for smart cart logic (prevents duplicates)
-      async getCartItem(userId, sessionId, productId) {
-        if (!userId && !sessionId) return void 0;
-        const conditions = userId ? eq(cartItems.userId, userId) : and(eq(cartItems.sessionId, sessionId), isNotNull(cartItems.sessionId));
+      async getCartItem(userId2, sessionId, productId) {
+        if (!userId2 && !sessionId) return void 0;
+        const conditions = userId2 ? eq(cartItems.userId, userId2) : and(eq(cartItems.sessionId, sessionId), isNotNull(cartItems.sessionId));
         const existing = await db.select().from(cartItems).where(and(conditions, eq(cartItems.productId, productId))).limit(1);
         return existing[0];
       }
@@ -1321,19 +1386,26 @@ var init_storage = __esm({
         const [updatedItem] = await db.update(cartItems).set({ quantity }).where(eq(cartItems.id, id)).returning();
         return updatedItem;
       }
-      async removeFromCart(id) {
-        await db.delete(cartItems).where(eq(cartItems.id, id));
+      async removeFromCart(cartItemId) {
+        console.log(`[STORAGE] Deleting cart item with ID: ${cartItemId}`);
+        const result = await db.delete(cartItems).where(eq(cartItems.id, cartItemId));
+        console.log(`[STORAGE] Delete result - rowCount:`, result.rowCount);
+        return result.rowCount > 0;
       }
-      async clearCart(userId, sessionId) {
-        if (userId) {
-          await db.delete(cartItems).where(eq(cartItems.userId, userId));
+      async clearCart(userId2, sessionId) {
+        if (userId2) {
+          await db.delete(cartItems).where(eq(cartItems.userId, userId2));
         } else if (sessionId) {
           await db.delete(cartItems).where(eq(cartItems.sessionId, sessionId));
         }
       }
       // Merge guest cart to user cart on login
-      async mergeGuestCart(sessionId, userId) {
-        await db.update(cartItems).set({ userId, sessionId: null }).where(eq(cartItems.sessionId, sessionId));
+      async mergeGuestCart(sessionId, userId2) {
+        await db.update(cartItems).set({ userId: userId2, sessionId: null }).where(eq(cartItems.sessionId, sessionId));
+      }
+      // Set cart shipping address
+      async setCartShippingAddress(userId2, addressId) {
+        await db.update(cartItems).set({ updatedAt: /* @__PURE__ */ new Date() }).where(eq(cartItems.userId, userId2));
       }
       // Removed duplicate getAdminStats function
       // Removed duplicate getAllUsers function
@@ -1432,8 +1504,8 @@ var init_storage = __esm({
         const stockQuantity = status === "in_stock" ? 10 : 0;
         await db.update(products).set({ stockQuantity }).where(eq(products.id, productId));
       }
-      async updateUserRole(userId, role) {
-        await db.update(users).set({ role }).where(eq(users.id, userId));
+      async updateUserRole(userId2, role) {
+        await db.update(users).set({ role }).where(eq(users.id, userId2));
       }
       async exportProductsToCSV() {
         const productResults = await this.getProducts();
@@ -1483,59 +1555,10 @@ var init_storage = __esm({
         ]);
         return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
       }
-      // Address operations
-      async getUserAddresses(userId) {
-        const addressRecords = await db.select().from(addresses).where(eq(addresses.userId, userId));
-        if (addressRecords.length > 0) {
-          return addressRecords;
-        }
-        const user = await db.select({
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          street: users.street,
-          city: users.city,
-          state: users.state,
-          zipCode: users.zipCode
-        }).from(users).where(eq(users.id, userId));
-        if (user[0]?.street && user[0]?.city) {
-          const cityStateZipRegex = /^(.+),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/i;
-          const match = user[0].city?.match(cityStateZipRegex);
-          if (match) {
-            const [, city, state, zipCode] = match;
-            const virtualAddress = {
-              id: `user-profile-${userId}`,
-              userId,
-              type: "shipping",
-              firstName: user[0].firstName,
-              lastName: user[0].lastName,
-              street: user[0].street,
-              city: city.trim(),
-              state: state.toUpperCase(),
-              zipCode,
-              country: "US",
-              isDefault: true,
-              createdAt: /* @__PURE__ */ new Date()
-            };
-            return [virtualAddress];
-          }
-        }
-        return [];
-      }
-      async createAddress(address) {
-        const [newAddress] = await db.insert(addresses).values(address).returning();
-        return newAddress;
-      }
-      async updateAddress(id, address) {
-        const [updatedAddress] = await db.update(addresses).set(address).where(eq(addresses.id, id)).returning();
-        return updatedAddress;
-      }
-      async deleteAddress(id) {
-        await db.delete(addresses).where(eq(addresses.id, id));
-      }
+      // All legacy address methods removed - using SSOT address system via routes/addresses.ts
       // Order operations
-      async getUserOrders(userId) {
-        return await db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt));
+      async getUserOrders(userId2) {
+        return await db.select().from(orders).where(eq(orders.userId, userId2)).orderBy(desc(orders.createdAt));
       }
       async getOrder(id) {
         const [order] = await db.select().from(orders).where(eq(orders.id, id));
@@ -1667,7 +1690,15 @@ var init_storage = __esm({
         );
         await Promise.all(updates);
       }
-      // Removed duplicate updateUserRole function
+      // Address operations
+      async getAddressById(id) {
+        const [address] = await db.select().from(addresses).where(eq(addresses.id, id));
+        return address;
+      }
+      // User helper methods  
+      async getUserById(id) {
+        return this.getUser(id);
+      }
       // Removed duplicate updateProductStock function
       // Removed duplicate exportProductsToCSV function
       // Removed duplicate exportUsersToCSV function
@@ -1686,10 +1717,10 @@ var init_storage = __esm({
         }).returning();
         return submission;
       }
-      async getSubmissions(userId) {
+      async getSubmissions(userId2) {
         const query = db.select().from(equipmentSubmissions).$dynamic();
-        if (userId) {
-          return await query.where(eq(equipmentSubmissions.userId, userId)).orderBy(desc(equipmentSubmissions.createdAt));
+        if (userId2) {
+          return await query.where(eq(equipmentSubmissions.userId, userId2)).orderBy(desc(equipmentSubmissions.createdAt));
         }
         return await query.orderBy(desc(equipmentSubmissions.createdAt));
       }
@@ -1727,6 +1758,109 @@ var init_storage = __esm({
         await db.update(equipmentSubmissions).set(updates).where(eq(equipmentSubmissions.id, id));
       }
       // Removed all wishlist operations for single-seller model
+      // Removed duplicate healthCheck - keeping the one at line 932
+      // SSOT Address operations
+      async getUserAddresses(userId2) {
+        return await db.select().from(addresses).where(eq(addresses.userId, userId2)).orderBy(desc(addresses.isDefault), desc(addresses.createdAt));
+      }
+      async getAddress(userId2, id) {
+        const [address] = await db.select().from(addresses).where(and(eq(addresses.id, id), eq(addresses.userId, userId2)));
+        return address;
+      }
+      async createAddress(userId2, address) {
+        if (address.isDefault) {
+          await db.update(addresses).set({ isDefault: false }).where(eq(addresses.userId, userId2));
+        }
+        const [newAddress] = await db.insert(addresses).values({
+          ...address,
+          userId: userId2,
+          id: randomUUID()
+        }).returning();
+        return newAddress;
+      }
+      async updateAddress(userId2, id, updates) {
+        if (updates.isDefault) {
+          await db.update(addresses).set({ isDefault: false }).where(eq(addresses.userId, userId2));
+        }
+        const [updatedAddress] = await db.update(addresses).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where(and(eq(addresses.id, id), eq(addresses.userId, userId2))).returning();
+        if (!updatedAddress) {
+          throw new Error("Address not found");
+        }
+        return updatedAddress;
+      }
+      async setDefaultAddress(userId2, id) {
+        await db.update(addresses).set({ isDefault: false }).where(eq(addresses.userId, userId2));
+        const [defaultAddress] = await db.update(addresses).set({ isDefault: true, updatedAt: /* @__PURE__ */ new Date() }).where(and(eq(addresses.id, id), eq(addresses.userId, userId2))).returning();
+        if (!defaultAddress) {
+          throw new Error("Address not found");
+        }
+        return defaultAddress;
+      }
+      async deleteAddress(userId2, id) {
+        await db.delete(addresses).where(and(eq(addresses.id, id), eq(addresses.userId, userId2)));
+      }
+      // SSOT: Unified system
+      async getCart(userId2) {
+        const cartItemsData = await this.getCartItems(userId2);
+        if (!cartItemsData?.length) return { items: [], subtotal: 0 };
+        const items = cartItemsData.map((item) => ({
+          id: item.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          product: item.product,
+          price: parseFloat(item.product.price || "0")
+        }));
+        const subtotal = items.reduce((sum2, item) => sum2 + item.price * item.quantity, 0);
+        return { items, subtotal };
+      }
+      async validateCart(userId2) {
+        const cart = await this.getCart(userId2);
+        if (!cart) return { valid: true, items: [] };
+        const validationResults = await Promise.all(
+          cart.items.map(async (item) => {
+            const product = await this.getProduct(item.productId);
+            return {
+              itemId: item.id,
+              productId: item.productId,
+              available: product && (product.stockQuantity || 0) >= item.quantity,
+              currentPrice: product?.price,
+              requestedQuantity: item.quantity,
+              availableQuantity: product?.stockQuantity || 0
+            };
+          })
+        );
+        return {
+          valid: validationResults.every((r) => r.available),
+          items: validationResults,
+          subtotal: cart.subtotal
+        };
+      }
+      // Legacy cart compatibility methods for routes
+      async addToCartLegacy(userId2, productId, quantity) {
+        const cartItem = {
+          userId: userId2,
+          productId,
+          quantity,
+          sessionId: null
+        };
+        const existing = await this.getCartItem(userId2, null, productId);
+        if (existing) {
+          await this.updateCartItem(existing.id, existing.quantity + quantity);
+        } else {
+          await this.addToCart(cartItem);
+        }
+        return await this.getCart(userId2) || { items: [], subtotal: 0 };
+      }
+      async updateCartItemLegacy(userId2, itemId, quantity) {
+        await this.updateCartItem(itemId, quantity);
+        return await this.getCart(userId2) || { items: [], subtotal: 0 };
+      }
+      // LEGACY COMPATIBILITY: This method should not be used - DELETE routes handle removal directly
+      async removeFromCartLegacy(userId2, itemId) {
+        console.log(`[DEPRECATED] removeFromCartLegacy called - this should be replaced with direct DELETE routes`);
+        await this.removeFromCart(itemId);
+        return await this.getCart(userId2) || { items: [], subtotal: 0 };
+      }
     };
     storage = new DatabaseStorage();
   }
@@ -1736,7 +1870,7 @@ var init_storage = __esm({
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { eq as eq2 } from "drizzle-orm";
-import { randomUUID } from "crypto";
+import { randomUUID as randomUUID2 } from "crypto";
 function initializeGoogleAuth() {
   passport.use(new GoogleStrategy(
     GOOGLE_CONFIG,
@@ -1781,7 +1915,7 @@ function initializeGoogleAuth() {
             role: existingUser.role || "user"
           });
         }
-        const newUserId = randomUUID();
+        const newUserId = randomUUID2();
         const [newUser] = await db.insert(users).values({
           id: newUserId,
           email,
@@ -1797,7 +1931,7 @@ function initializeGoogleAuth() {
           role: "user"
         }).returning();
         await db.insert(userOnboarding).values({
-          id: randomUUID(),
+          id: randomUUID2(),
           userId: newUserId,
           addressCompleted: false,
           phoneCompleted: false,
@@ -1997,9 +2131,9 @@ function setupAuth(app2) {
     Logger.warn("Google OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET");
   }
   passport2.serializeUser((user, done) => {
-    const userId = user.id;
-    Logger.debug(`[PASSPORT] Serializing user ID: ${userId}`);
-    done(null, userId);
+    const userId2 = user.id;
+    Logger.debug(`[PASSPORT] Serializing user ID: ${userId2}`);
+    done(null, userId2);
   });
   passport2.deserializeUser(async (id, done) => {
     try {
@@ -2030,12 +2164,6 @@ function setupAuth(app2) {
         firstName,
         lastName,
         phone,
-        street,
-        city,
-        state,
-        zipCode,
-        latitude,
-        longitude,
         isLocalCustomer
       } = req.body;
       if (!email || !password || !confirmPassword || !firstName || !lastName) {
@@ -2049,11 +2177,6 @@ function setupAuth(app2) {
         return res.status(400).json({
           message: "Password does not meet requirements",
           errors: passwordValidation.errors
-        });
-      }
-      if (street && (!city || !state || !zipCode)) {
-        return res.status(400).json({
-          message: "Please provide complete address information (street, city, state, zip code)"
         });
       }
       const normalizedEmail = normalizeEmail(email);
@@ -2078,12 +2201,7 @@ function setupAuth(app2) {
         firstName,
         lastName,
         phone: normalizedPhone,
-        street: street || void 0,
-        city: city || void 0,
-        state: state || void 0,
-        zipCode: zipCode || void 0,
-        latitude: latitude ? String(latitude) : void 0,
-        longitude: longitude ? String(longitude) : void 0,
+        // Address fields removed - using SSOT addresses table with onboarding flow
         role
       });
       const userForSession = {
@@ -2328,6 +2446,63 @@ var init_auth = __esm({
   }
 });
 
+// server/middleware/auth.ts
+var isAuthenticated, authMiddleware;
+var init_auth2 = __esm({
+  "server/middleware/auth.ts"() {
+    "use strict";
+    isAuthenticated = (req, res, next) => {
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        return next();
+      }
+      if (req.session?.userId || req.session?.passport?.user) {
+        return next();
+      }
+      return res.status(401).json({ error: "Authentication required", message: "Please log in to continue" });
+    };
+    authMiddleware = {
+      // Check if user is logged in (compatible with Passport authentication)
+      requireAuth: (req, res, next) => {
+        if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+          req.userId = req.user.id;
+          return next();
+        }
+        if (req.session?.userId || req.session?.passport?.user) {
+          req.userId = req.session.userId || req.session.passport.user.id;
+          return next();
+        }
+        return res.status(401).json({ error: "Authentication required", message: "Please log in to continue" });
+      },
+      // Check if user is developer (compatible with Passport authentication)
+      requireDeveloper: (req, res, next) => {
+        if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+          const user = req.user;
+          if (user.role === "developer") {
+            return next();
+          }
+        }
+        if (req.session?.userId && req.session?.role === "developer") {
+          return next();
+        }
+        return res.status(403).json({ error: "Developer access required", message: "Developer privileges required for this action" });
+      },
+      // Optional auth - ALWAYS allow through, just set userId if available
+      optionalAuth: (req, res, next) => {
+        let userId2 = null;
+        if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+          userId2 = req.user.id;
+        } else if (req.session?.passport?.user) {
+          userId2 = req.session.passport.user;
+        } else if (req.session?.userId) {
+          userId2 = req.session.userId;
+        }
+        req.userId = userId2;
+        next();
+      }
+    };
+  }
+});
+
 // server/services/stripe-sync.ts
 var stripe_sync_exports = {};
 __export(stripe_sync_exports, {
@@ -2559,8 +2734,26 @@ var init_stripe_sync = __esm({
   }
 });
 
+// server/routes/observability.ts
+var observability_exports = {};
+__export(observability_exports, {
+  default: () => observability_default
+});
+import express from "express";
+var router, observability_default;
+var init_observability = __esm({
+  "server/routes/observability.ts"() {
+    "use strict";
+    router = express.Router();
+    router.post("/errors", (req, res) => {
+      res.sendStatus(204);
+    });
+    observability_default = router;
+  }
+});
+
 // server/services/errorLogger.ts
-import { eq as eq7, desc as desc4, sql as sql7, and as and4, gte as gte3 } from "drizzle-orm";
+import { eq as eq6, desc as desc3, sql as sql6, and as and4, gte as gte3 } from "drizzle-orm";
 var ErrorLogger;
 var init_errorLogger = __esm({
   "server/services/errorLogger.ts"() {
@@ -2628,8 +2821,8 @@ var init_errorLogger = __esm({
         try {
           const [existing] = await db.select().from(errorLogs).where(
             and4(
-              eq7(errorLogs.message, error.message),
-              eq7(errorLogs.resolved, false)
+              eq6(errorLogs.message, error.message),
+              eq6(errorLogs.resolved, false)
             )
           ).limit(1);
           return existing || null;
@@ -2641,9 +2834,9 @@ var init_errorLogger = __esm({
       static async incrementOccurrence(errorId) {
         try {
           await db.update(errorLogs).set({
-            occurrence_count: sql7`${errorLogs.occurrence_count} + 1`,
+            occurrence_count: sql6`${errorLogs.occurrence_count} + 1`,
             last_seen: /* @__PURE__ */ new Date()
-          }).where(eq7(errorLogs.id, errorId));
+          }).where(eq6(errorLogs.id, errorId));
         } catch (err) {
           Logger.error("Failed to increment occurrence:", err);
         }
@@ -2661,16 +2854,16 @@ var init_errorLogger = __esm({
       static async getErrorTrends(timeRange = "24h") {
         try {
           const timeRanges = {
-            "24h": sql7`NOW() - INTERVAL '24 hours'`,
-            "7d": sql7`NOW() - INTERVAL '7 days'`,
-            "30d": sql7`NOW() - INTERVAL '30 days'`
+            "24h": sql6`NOW() - INTERVAL '24 hours'`,
+            "7d": sql6`NOW() - INTERVAL '7 days'`,
+            "30d": sql6`NOW() - INTERVAL '30 days'`
           };
           const timeFilter = timeRanges[timeRange] || timeRanges["24h"];
           const trends = await db.select({
-            hour: sql7`DATE_TRUNC('hour', created_at)`,
-            count: sql7`COUNT(*)`,
+            hour: sql6`DATE_TRUNC('hour', created_at)`,
+            count: sql6`COUNT(*)`,
             severity: errorLogs.severity
-          }).from(errorLogs).where(gte3(errorLogs.created_at, timeFilter)).groupBy(sql7`DATE_TRUNC('hour', created_at)`, errorLogs.severity).orderBy(desc4(sql7`DATE_TRUNC('hour', created_at)`));
+          }).from(errorLogs).where(gte3(errorLogs.created_at, timeFilter)).groupBy(sql6`DATE_TRUNC('hour', created_at)`, errorLogs.severity).orderBy(desc3(sql6`DATE_TRUNC('hour', created_at)`));
           return trends;
         } catch (err) {
           Logger.error("Failed to get error trends:", err);
@@ -2679,16 +2872,16 @@ var init_errorLogger = __esm({
       }
       static async getTopErrors(limit = 10) {
         try {
-          const topErrors = await db.select().from(errorLogs).where(eq7(errorLogs.resolved, false)).orderBy(desc4(errorLogs.occurrence_count)).limit(limit);
+          const topErrors = await db.select().from(errorLogs).where(eq6(errorLogs.resolved, false)).orderBy(desc3(errorLogs.occurrence_count)).limit(limit);
           return topErrors;
         } catch (err) {
           Logger.error("Failed to get top errors:", err);
           return [];
         }
       }
-      static async getErrorsByUser(userId) {
+      static async getErrorsByUser(userId2) {
         try {
-          const userErrors = await db.select().from(errorLogs).where(eq7(errorLogs.user_id, userId)).orderBy(desc4(errorLogs.created_at));
+          const userErrors = await db.select().from(errorLogs).where(eq6(errorLogs.user_id, userId2)).orderBy(desc3(errorLogs.created_at));
           return userErrors;
         } catch (err) {
           Logger.error("Failed to get errors by user:", err);
@@ -2699,10 +2892,10 @@ var init_errorLogger = __esm({
         try {
           const criticalErrors = await db.select().from(errorLogs).where(
             and4(
-              eq7(errorLogs.severity, "critical"),
-              eq7(errorLogs.resolved, false)
+              eq6(errorLogs.severity, "critical"),
+              eq6(errorLogs.resolved, false)
             )
-          ).orderBy(desc4(errorLogs.created_at));
+          ).orderBy(desc3(errorLogs.created_at));
           return criticalErrors;
         } catch (err) {
           Logger.error("Failed to get unresolved critical errors:", err);
@@ -2716,7 +2909,7 @@ var init_errorLogger = __esm({
             resolved_by: resolvedBy,
             resolved_at: /* @__PURE__ */ new Date(),
             notes
-          }).where(eq7(errorLogs.id, errorId));
+          }).where(eq6(errorLogs.id, errorId));
           Logger.info(`Error ${errorId} resolved by ${resolvedBy}: ${notes}`);
         } catch (err) {
           Logger.error("Failed to resolve error:", err);
@@ -2731,9 +2924,9 @@ var init_errorLogger = __esm({
             resolved_at: /* @__PURE__ */ new Date(),
             notes
           }).where(and4(
-            eq7(errorLogs.message, message),
-            eq7(errorLogs.error_type, errorType),
-            eq7(errorLogs.resolved, false)
+            eq6(errorLogs.message, message),
+            eq6(errorLogs.error_type, errorType),
+            eq6(errorLogs.resolved, false)
           ));
           Logger.info(`All errors matching fingerprint ${message}-${errorType} resolved by ${resolvedBy}`);
         } catch (err) {
@@ -2747,27 +2940,27 @@ var init_errorLogger = __esm({
           let query = db.select().from(errorLogs);
           const conditions = [];
           if (filters.severity) {
-            conditions.push(eq7(errorLogs.severity, filters.severity));
+            conditions.push(eq6(errorLogs.severity, filters.severity));
           }
           if (typeof filters.resolved === "boolean") {
-            conditions.push(eq7(errorLogs.resolved, filters.resolved));
+            conditions.push(eq6(errorLogs.resolved, filters.resolved));
           }
           const timeRanges = {
-            "24h": sql7`NOW() - INTERVAL '24 hours'`,
-            "7d": sql7`NOW() - INTERVAL '7 days'`,
-            "30d": sql7`NOW() - INTERVAL '30 days'`
+            "24h": sql6`NOW() - INTERVAL '24 hours'`,
+            "7d": sql6`NOW() - INTERVAL '7 days'`,
+            "30d": sql6`NOW() - INTERVAL '30 days'`
           };
           if (timeRanges[timeRange]) {
             conditions.push(gte3(errorLogs.created_at, timeRanges[timeRange]));
           }
           if (search) {
-            conditions.push(sql7`${errorLogs.message} ILIKE ${`%${search}%`}`);
+            conditions.push(sql6`${errorLogs.message} ILIKE ${`%${search}%`}`);
           }
           let finalQuery = query;
           if (conditions.length > 0) {
             finalQuery = query.where(and4(...conditions));
           }
-          const results = await finalQuery.orderBy(desc4(errorLogs.created_at)).limit(limit).offset(offset);
+          const results = await finalQuery.orderBy(desc3(errorLogs.created_at)).limit(limit).offset(offset);
           return results;
         } catch (err) {
           Logger.error("Failed to get errors with filters:", err);
@@ -2776,9 +2969,9 @@ var init_errorLogger = __esm({
       }
       static async getErrorById(errorId) {
         try {
-          const [error] = await db.select().from(errorLogs).where(eq7(errorLogs.id, errorId));
+          const [error] = await db.select().from(errorLogs).where(eq6(errorLogs.id, errorId));
           if (!error) return null;
-          const instances = await db.select().from(errorLogInstances).where(eq7(errorLogInstances.error_log_id, errorId)).orderBy(desc4(errorLogInstances.occurred_at)).limit(10);
+          const instances = await db.select().from(errorLogInstances).where(eq6(errorLogInstances.error_log_id, errorId)).orderBy(desc3(errorLogInstances.occurred_at)).limit(10);
           return { ...error, instances };
         } catch (err) {
           Logger.error("Failed to get error by ID:", err);
@@ -2787,10 +2980,10 @@ var init_errorLogger = __esm({
       }
       static async getErrorStats() {
         try {
-          const [totalCount] = await db.select({ count: sql7`COUNT(*)` }).from(errorLogs);
-          const [resolvedCount] = await db.select({ count: sql7`COUNT(*)` }).from(errorLogs).where(eq7(errorLogs.resolved, true));
-          const [criticalCount] = await db.select({ count: sql7`COUNT(*)` }).from(errorLogs).where(and4(eq7(errorLogs.severity, "critical"), eq7(errorLogs.resolved, false)));
-          const [affectedUsersCount] = await db.select({ count: sql7`COUNT(DISTINCT ${errorLogs.user_id})` }).from(errorLogs).where(sql7`${errorLogs.user_id} IS NOT NULL`);
+          const [totalCount] = await db.select({ count: sql6`COUNT(*)` }).from(errorLogs);
+          const [resolvedCount] = await db.select({ count: sql6`COUNT(*)` }).from(errorLogs).where(eq6(errorLogs.resolved, true));
+          const [criticalCount] = await db.select({ count: sql6`COUNT(*)` }).from(errorLogs).where(and4(eq6(errorLogs.severity, "critical"), eq6(errorLogs.resolved, false)));
+          const [affectedUsersCount] = await db.select({ count: sql6`COUNT(DISTINCT ${errorLogs.user_id})` }).from(errorLogs).where(sql6`${errorLogs.user_id} IS NOT NULL`);
           const errorRate = totalCount.count > 0 ? Math.round(criticalCount.count / totalCount.count * 100) : 0;
           return {
             total: totalCount.count || 0,
@@ -2905,14 +3098,14 @@ var error_management_exports = {};
 __export(error_management_exports, {
   default: () => error_management_default
 });
-import { Router as Router5 } from "express";
+import { Router as Router4 } from "express";
 var router5, error_management_default;
 var init_error_management = __esm({
   "server/routes/admin/error-management.ts"() {
     "use strict";
     init_errorLogger();
     init_auth();
-    router5 = Router5();
+    router5 = Router4();
     router5.use(requireAuth);
     router5.use(requireRole("developer"));
     router5.get("/errors", async (req, res) => {
@@ -3056,8 +3249,8 @@ var init_error_management = __esm({
       try {
         const { id } = req.params;
         const { notes = "Resolved via admin dashboard" } = req.body;
-        const userId = req.user?.id || "system";
-        await ErrorLogger.resolveError(id, userId, notes);
+        const userId2 = req.user?.id || "system";
+        await ErrorLogger.resolveError(id, userId2, notes);
         res.json({ success: true, message: "Error resolved successfully" });
       } catch (error) {
         console.error("Failed to resolve error:", error);
@@ -3201,6 +3394,54 @@ var init_error_management = __esm({
   }
 });
 
+// server/config/shipping.ts
+function getWarehouseConfig() {
+  return {
+    lat: Number(process.env.WH_LAT ?? 35.5951),
+    lng: Number(process.env.WH_LNG ?? -82.5515),
+    radiusMiles: Number(process.env.LOCAL_RADIUS_MILES ?? 50)
+  };
+}
+var init_shipping = __esm({
+  "server/config/shipping.ts"() {
+    "use strict";
+  }
+});
+
+// server/lib/distance.ts
+function milesBetween(a, b) {
+  const R = 3958.7613;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+  const la1 = a.lat * Math.PI / 180, la2 = b.lat * Math.PI / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+var init_distance = __esm({
+  "server/lib/distance.ts"() {
+    "use strict";
+    init_shipping();
+  }
+});
+
+// server/lib/locality.ts
+function isLocalMiles(lat, lng) {
+  const { lat: whLat, lng: whLng, radiusMiles } = getWarehouseConfig();
+  if (lat == null || lng == null) {
+    return { isLocal: false, distanceMiles: null, reason: "NO_COORDS" };
+  }
+  const miles = milesBetween({ lat, lng }, { lat: whLat, lng: whLng });
+  const isLocal = miles <= radiusMiles;
+  return { isLocal, distanceMiles: miles, reason: "RADIUS" };
+}
+var init_locality = __esm({
+  "server/lib/locality.ts"() {
+    "use strict";
+    init_distance();
+    init_shipping();
+  }
+});
+
 // server/middleware/securityHeaders.ts
 var securityHeaders_exports = {};
 __export(securityHeaders_exports, {
@@ -3293,6 +3534,9 @@ function sanitizeInput(options = {}) {
       const ALLOW = [
         /^\/api\/cart$/,
         /^\/api\/cart\/[\w-]+$/,
+        /^\/api\/cart\/remove\/[\w-]+$/,
+        /^\/cart\/remove\/[\w-]+$/,
+        /^\/remove\/[\w-]+$/,
         /^\/api\/user$/,
         /^\/api\/products$/,
         /^\/api\/track-activity$/,
@@ -3308,20 +3552,26 @@ function sanitizeInput(options = {}) {
         /^\/errors\//,
         /^\/api\/observability\/errors$/
       ];
-      console.log("Sanitization check - path:", req.path, "url:", req.url, "method:", req.method, "originalUrl:", req.originalUrl);
+      if (process.env.SANITIZER_LOG === "debug") {
+        console.debug("Sanitization check - path:", req.path, "url:", req.url, "method:", req.method, "originalUrl:", req.originalUrl);
+      }
       if (ALLOW.some((rx) => rx.test(req.path) || rx.test(req.originalUrl))) {
-        console.log("Skipping sanitization for:", req.path, "originalUrl:", req.originalUrl);
+        if (process.env.SANITIZER_LOG === "debug") {
+          console.debug("Skipping sanitization for:", req.path, "originalUrl:", req.originalUrl);
+        }
         return next();
       }
       if (req.path.includes("cart") || req.url.includes("cart") || req.originalUrl.includes("cart")) {
-        console.log("CART REQUEST BLOCKED:", {
-          path: req.path,
-          url: req.url,
-          originalUrl: req.originalUrl,
-          method: req.method,
-          body: req.body,
-          headers: req.headers["content-type"]
-        });
+        if (process.env.SANITIZER_LOG === "debug") {
+          console.log("CART REQUEST DETAILS:", {
+            path: req.path,
+            url: req.url,
+            originalUrl: req.originalUrl,
+            method: req.method,
+            body: req.body,
+            headers: req.headers["content-type"]
+          });
+        }
       }
       const FORBIDDEN = /(<|>|script:|javascript:|data:|on\w+=)/i;
       if (scan2(req.body) || scan2(req.query) || scan2(req.params)) {
@@ -3470,9 +3720,9 @@ var init_requestLogger = __esm({
         return true;
       }
       static extractUserInfo(req) {
-        const userId = req.user?.id || req.user?.claims?.sub;
+        const userId2 = req.user?.id || req.user?.claims?.sub;
         const ip = req.ip || req.connection.remoteAddress || "unknown";
-        return { userId, ip };
+        return { userId: userId2, ip };
       }
       static requestLogger() {
         return (req, res, next) => {
@@ -3480,13 +3730,13 @@ var init_requestLogger = __esm({
             return next();
           }
           const startTime = Date.now();
-          const { userId, ip } = _RequestLogger.extractUserInfo(req);
+          const { userId: userId2, ip } = _RequestLogger.extractUserInfo(req);
           const requestData = {
             method: req.method,
             url: req.url,
             userAgent: req.get("User-Agent"),
             ip,
-            userId
+            userId: userId2
           };
           const originalEnd = res.end;
           res.end = function(...args) {
@@ -3515,7 +3765,7 @@ var init_requestLogger = __esm({
       static apiRequestLogger() {
         return (req, res, next) => {
           const startTime = Date.now();
-          const { userId, ip } = _RequestLogger.extractUserInfo(req);
+          const { userId: userId2, ip } = _RequestLogger.extractUserInfo(req);
           const originalEnd = res.end;
           res.end = function(...args) {
             const duration = Date.now() - startTime;
@@ -3524,7 +3774,7 @@ var init_requestLogger = __esm({
               url: req.url,
               userAgent: req.get("User-Agent"),
               ip,
-              userId,
+              userId: userId2,
               duration,
               statusCode: res.statusCode,
               contentLength: res.get("Content-Length") ? parseInt(res.get("Content-Length")) : void 0
@@ -3542,9 +3792,9 @@ var init_requestLogger = __esm({
       static adminRequestLogger() {
         return (req, res, next) => {
           const startTime = Date.now();
-          const { userId, ip } = _RequestLogger.extractUserInfo(req);
+          const { userId: userId2, ip } = _RequestLogger.extractUserInfo(req);
           Logger.info(`ADMIN REQUEST: ${req.method} ${req.url}`, {
-            userId,
+            userId: userId2,
             ip,
             userAgent: req.get("User-Agent")
           });
@@ -3552,7 +3802,7 @@ var init_requestLogger = __esm({
           res.end = function(...args) {
             const duration = Date.now() - startTime;
             Logger.info(`ADMIN RESPONSE: ${req.method} ${req.url} ${res.statusCode} ${duration}ms`, {
-              userId,
+              userId: userId2,
               ip,
               duration,
               statusCode: res.statusCode
@@ -3564,11 +3814,11 @@ var init_requestLogger = __esm({
       }
       static errorLogger() {
         return (error, req, res, next) => {
-          const { userId, ip } = _RequestLogger.extractUserInfo(req);
+          const { userId: userId2, ip } = _RequestLogger.extractUserInfo(req);
           Logger.error(`Request Error: ${req.method} ${req.url}`, {
             error: error.message,
             stack: error.stack,
-            userId,
+            userId: userId2,
             ip,
             userAgent: req.get("User-Agent"),
             body: req.method !== "GET" ? req.body : void 0
@@ -3594,12 +3844,12 @@ function performanceMiddleware() {
     res.end = function(...args) {
       const endTime = process.hrtime.bigint();
       const duration = Number(endTime - startTime) / 1e6;
-      const userId = req.user?.id || req.user?.claims?.sub;
+      const userId2 = req.user?.id || req.user?.claims?.sub;
       PerformanceMonitor.recordMetric("request_duration", duration, {
         route: req.route?.path || req.url,
         method: req.method,
         statusCode: res.statusCode,
-        userId,
+        userId: userId2,
         userAgent: req.get("User-Agent")
       });
       if (Math.random() < 0.01) {
@@ -3660,7 +3910,9 @@ var init_performanceMonitor = __esm({
         if (this.metrics.length > this.MAX_METRICS) {
           this.metrics = this.metrics.slice(0, this.MAX_METRICS);
         }
-        if (name === "request_duration" && value > 1e3) {
+        const DEV = process.env.NODE_ENV !== "production";
+        const SLOW_MS = DEV ? 2e3 : 700;
+        if (name === "request_duration" && value > SLOW_MS) {
           Logger.warn(`Slow request detected: ${context?.method} ${context?.route} took ${value}ms`);
         }
       }
@@ -3736,6 +3988,609 @@ var init_performanceMonitor = __esm({
         })).sort((a, b) => b.avgDuration - a.avgDuration).slice(0, limit);
       }
     };
+  }
+});
+
+// server/routes/addresses.ts
+var addresses_exports = {};
+__export(addresses_exports, {
+  default: () => addresses_default
+});
+import { Router as Router7 } from "express";
+import { z as z3 } from "zod";
+var router8, addressSchema, addresses_default;
+var init_addresses = __esm({
+  "server/routes/addresses.ts"() {
+    "use strict";
+    init_storage();
+    init_auth2();
+    init_locality();
+    router8 = Router7();
+    addressSchema = z3.object({
+      firstName: z3.string().min(1, "First name is required"),
+      lastName: z3.string().min(1, "Last name is required"),
+      street1: z3.string().min(1, "Street address is required"),
+      street2: z3.string().optional().nullable(),
+      city: z3.string().min(1, "City is required"),
+      state: z3.string().length(2, "State must be 2 characters"),
+      postalCode: z3.string().regex(/^\d{5}(-\d{4})?$/, "Invalid postal code"),
+      country: z3.string().default("US"),
+      latitude: z3.number().nullable().optional(),
+      longitude: z3.number().nullable().optional(),
+      geoapifyPlaceId: z3.string().optional().nullable(),
+      setDefault: z3.boolean().default(false)
+    });
+    router8.get("/", isAuthenticated, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const addresses3 = await storage.getUserAddresses(userId2);
+        const sorted = addresses3.sort((a, b) => {
+          if (a.isDefault && !b.isDefault) return -1;
+          if (!a.isDefault && b.isDefault) return 1;
+          return (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+        });
+        res.json(sorted);
+      } catch (error) {
+        console.error("GET /api/addresses error:", error);
+        res.status(500).json({ message: "Failed to fetch addresses" });
+      }
+    });
+    router8.post("/", isAuthenticated, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const data = addressSchema.parse(req.body);
+        const existingAddresses = await storage.getUserAddresses(userId2);
+        const isDefault = data.setDefault || existingAddresses.length === 0;
+        const localityResult = isLocalMiles(data.latitude || null, data.longitude || null);
+        const address = await storage.createAddress(userId2, {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          street1: data.street1,
+          street2: data.street2,
+          city: data.city,
+          state: data.state,
+          postalCode: data.postalCode,
+          country: data.country || "US",
+          latitude: data.latitude,
+          longitude: data.longitude,
+          geoapifyPlaceId: data.geoapifyPlaceId,
+          isDefault,
+          isLocal: localityResult.isLocal
+        });
+        res.json(address);
+      } catch (error) {
+        console.error("POST /api/addresses error:", error);
+        if (error instanceof z3.ZodError) {
+          res.status(400).json({
+            ok: false,
+            error: "VALIDATION_ERROR",
+            fieldErrors: error.flatten().fieldErrors
+          });
+        } else {
+          res.status(500).json({
+            ok: false,
+            error: "CREATION_FAILED",
+            message: "Failed to create address"
+          });
+        }
+      }
+    });
+    router8.patch("/:id", isAuthenticated, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const { id } = req.params;
+        const data = addressSchema.partial().parse(req.body);
+        let updateData = { ...data };
+        if (data.latitude !== void 0 || data.longitude !== void 0) {
+          const localityResult = isLocalMiles(data.latitude || null, data.longitude || null);
+          updateData = {
+            ...updateData,
+            isLocal: localityResult.isLocal
+          };
+        }
+        const address = await storage.updateAddress(userId2, id, updateData);
+        res.json(address);
+      } catch (error) {
+        console.error("PATCH /api/addresses/:id error:", error);
+        res.status(400).json({ message: "Failed to update address" });
+      }
+    });
+    router8.post("/:id/default", isAuthenticated, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const { id } = req.params;
+        await storage.setDefaultAddress(userId2, id);
+        res.json({ ok: true });
+      } catch (error) {
+        console.error("POST /api/addresses/:id/default error:", error);
+        res.status(400).json({ message: "Failed to set default address" });
+      }
+    });
+    router8.delete("/:id", isAuthenticated, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const { id } = req.params;
+        const address = await storage.getAddress(userId2, id);
+        if (!address) {
+          return res.status(404).json({ ok: false, error: "Address not found" });
+        }
+        if (address.isDefault) {
+          return res.status(409).json({
+            ok: false,
+            error: "DEFAULT_ADDRESS_CANNOT_BE_DELETED",
+            message: "Cannot delete default address. Set another address as default first."
+          });
+        }
+        await storage.deleteAddress(userId2, id);
+        res.json({ ok: true, message: "Address deleted successfully" });
+      } catch (error) {
+        console.error("DELETE /api/addresses/:id error:", error);
+        res.status(500).json({ ok: false, error: "Failed to delete address" });
+      }
+    });
+    addresses_default = router8;
+  }
+});
+
+// server/services/cartGuard.ts
+function guardCartItemAgainstLocality({
+  userIsLocal,
+  product
+}) {
+  const localOnly = product.is_local_delivery_available && !product.is_shipping_available;
+  if (!userIsLocal && localOnly) {
+    const err = new Error("Local Delivery only. This item isn't available to ship to your address.");
+    err.code = "LOCALITY_RESTRICTED";
+    err.http = 409;
+    throw err;
+  }
+}
+var init_cartGuard = __esm({
+  "server/services/cartGuard.ts"() {
+    "use strict";
+  }
+});
+
+// server/routes/cart.ts
+var cart_exports = {};
+__export(cart_exports, {
+  default: () => cart_default
+});
+import { Router as Router8 } from "express";
+import { z as z4 } from "zod";
+var router9, addToCartSchema, cart_default;
+var init_cart = __esm({
+  "server/routes/cart.ts"() {
+    "use strict";
+    init_storage();
+    init_auth2();
+    init_locality();
+    init_cartGuard();
+    router9 = Router8();
+    addToCartSchema = z4.object({
+      productId: z4.string().min(1),
+      quantity: z4.number().int().min(1).default(1),
+      variantId: z4.string().optional()
+    });
+    router9.get("/", async (req, res) => {
+      try {
+        const userId2 = req.user?.id;
+        const sessionId = req.sessionId;
+        if (!userId2 && !sessionId) {
+          return res.json({
+            ok: true,
+            data: { items: [], subtotal: 0, total: 0, id: null, shippingAddressId: null }
+          });
+        }
+        const cart = await storage.getCart(userId2 || sessionId);
+        res.json({
+          ok: true,
+          data: {
+            items: cart?.items || [],
+            subtotal: cart?.subtotal || 0
+          }
+        });
+      } catch (error) {
+        console.error("GET /api/cart error:", error);
+        res.status(500).json({
+          message: "Failed to fetch cart",
+          items: [],
+          subtotal: 0
+        });
+      }
+    });
+    router9.post("/", isAuthenticated, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const data = addToCartSchema.parse(req.body);
+        const addresses3 = await storage.getUserAddresses(userId2);
+        const defaultAddress = addresses3.find((addr) => addr.isDefault);
+        const localityResult = defaultAddress ? isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : { isLocal: false };
+        const product = await storage.getProduct(data.productId);
+        if (!product) {
+          return res.status(404).json({ error: "Product not found" });
+        }
+        try {
+          guardCartItemAgainstLocality({
+            userIsLocal: localityResult.isLocal,
+            product: {
+              is_local_delivery_available: product.isLocalDeliveryAvailable,
+              is_shipping_available: product.isShippingAvailable
+            }
+          });
+        } catch (error) {
+          if (error.code === "LOCALITY_RESTRICTED") {
+            return res.status(409).json({
+              error: error.message,
+              code: "LOCALITY_RESTRICTED"
+            });
+          }
+          throw error;
+        }
+        const cart = await storage.addToCartLegacy(userId2, data.productId, data.quantity);
+        res.json({
+          ok: true,
+          data: {
+            items: cart.items,
+            subtotal: cart.subtotal
+          }
+        });
+      } catch (error) {
+        console.error("POST /api/cart error:", error);
+        res.status(400).json({
+          message: error instanceof z4.ZodError ? "Invalid request data" : "Failed to add to cart"
+        });
+      }
+    });
+    router9.patch("/:itemId", isAuthenticated, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const { itemId } = req.params;
+        const { quantity } = z4.object({ quantity: z4.number().int().min(0) }).parse(req.body);
+        const cart = await storage.updateCartItemLegacy(userId2, itemId, quantity);
+        res.json({
+          ok: true,
+          data: {
+            items: cart.items,
+            subtotal: cart.subtotal
+          }
+        });
+      } catch (error) {
+        console.error("PATCH /api/cart/:itemId error:", error);
+        res.status(400).json({ message: "Failed to update cart item" });
+      }
+    });
+    router9.delete("/:itemId", isAuthenticated, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const { itemId } = req.params;
+        const cart = await storage.removeFromCartLegacy(userId2, itemId);
+        res.json({
+          ok: true,
+          data: {
+            items: cart.items,
+            subtotal: cart.subtotal
+          }
+        });
+      } catch (error) {
+        console.error("DELETE /api/cart/:itemId error:", error);
+        res.status(400).json({
+          ok: false,
+          error: "REMOVAL_FAILED",
+          message: "Failed to remove item from cart"
+        });
+      }
+    });
+    router9.post("/validate", isAuthenticated, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const cart = await storage.getCart(userId2);
+        const issues2 = [];
+        for (const item of cart?.items || []) {
+          const product = await storage.getProduct(item.productId);
+          if (!product) {
+            issues2.push(`Product ${item.productId} no longer available`);
+          } else if ((product.stockQuantity || 0) < item.quantity) {
+            issues2.push(`${product.name}: Only ${product.stockQuantity || 0} available (requested ${item.quantity})`);
+          }
+        }
+        res.json({
+          ok: true,
+          data: {
+            valid: issues2.length === 0,
+            issues: issues2
+          }
+        });
+      } catch (error) {
+        console.error("POST /api/cart/validate error:", error);
+        res.status(500).json({
+          ok: false,
+          error: "VALIDATION_FAILED",
+          message: "Failed to validate cart"
+        });
+      }
+    });
+    cart_default = router9;
+  }
+});
+
+// server/middleware/ensureSession.ts
+var ensureSession_exports = {};
+__export(ensureSession_exports, {
+  ensureSession: () => ensureSession
+});
+import { v4 as uuid } from "uuid";
+function ensureSession(req, res, next) {
+  if (req.user) {
+    return next();
+  }
+  const sid = req.cookies?.sid;
+  if (!sid) {
+    const newSid = `guest-${Date.now()}-${uuid()}`;
+    res.cookie("sid", newSid, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1e3
+      // 7 days
+    });
+    req.sessionId = newSid;
+  } else {
+    req.sessionId = sid;
+  }
+  next();
+}
+var init_ensureSession = __esm({
+  "server/middleware/ensureSession.ts"() {
+    "use strict";
+  }
+});
+
+// src/utils/distance.ts
+function haversineMiles(a, b) {
+  const R = 3958.7613;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLon = (b.lon - a.lon) * Math.PI / 180;
+  const lat1 = a.lat * Math.PI / 180;
+  const lat2 = b.lat * Math.PI / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+var init_distance2 = __esm({
+  "src/utils/distance.ts"() {
+    "use strict";
+  }
+});
+
+// server/routes/shipping.ts
+var shipping_exports = {};
+__export(shipping_exports, {
+  default: () => shipping_default
+});
+import express3 from "express";
+import { z as z5 } from "zod";
+import { eq as eq7 } from "drizzle-orm";
+var requireAuth2, router10, WAREHOUSE_COORDS, LOCAL_DELIVERY_MAX_MILES, ShippingQuoteSchema, shipping_default;
+var init_shipping2 = __esm({
+  "server/routes/shipping.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    init_auth2();
+    init_distance2();
+    ({ requireAuth: requireAuth2 } = authMiddleware);
+    router10 = express3.Router();
+    WAREHOUSE_COORDS = { lat: 40.7128, lon: -74.006 };
+    LOCAL_DELIVERY_MAX_MILES = 50;
+    ShippingQuoteSchema = z5.object({
+      addressId: z5.string().optional(),
+      // For "new address" flow
+      street1: z5.string().optional(),
+      city: z5.string().optional(),
+      state: z5.string().optional(),
+      postalCode: z5.string().optional(),
+      latitude: z5.number().optional(),
+      longitude: z5.number().optional()
+    });
+    router10.post("/quote", requireAuth2, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const validatedData = ShippingQuoteSchema.parse(req.body);
+        let addressCoords = null;
+        if (validatedData.addressId) {
+          const address = await db.select().from(addresses).where(eq7(addresses.id, validatedData.addressId)).limit(1);
+          if (!address.length) {
+            return res.status(404).json({ error: "Address not found" });
+          }
+          if (address[0].latitude && address[0].longitude) {
+            addressCoords = {
+              lat: parseFloat(address[0].latitude),
+              lon: parseFloat(address[0].longitude)
+            };
+          }
+        } else if (validatedData.latitude && validatedData.longitude) {
+          addressCoords = {
+            lat: validatedData.latitude,
+            lon: validatedData.longitude
+          };
+        }
+        const methods = [];
+        if (addressCoords) {
+          const distanceMiles = haversineMiles(WAREHOUSE_COORDS, addressCoords);
+          if (distanceMiles <= LOCAL_DELIVERY_MAX_MILES) {
+            methods.push({
+              code: "LOCAL",
+              label: `Local delivery (\u226450 miles - ${distanceMiles.toFixed(1)} miles from warehouse)`,
+              cost: 0,
+              eta: "24\u201348h"
+            });
+          }
+          methods.push({
+            code: "PICKUP",
+            label: "Pickup at warehouse",
+            cost: 0,
+            eta: "Ready for pickup"
+          });
+          if (distanceMiles > LOCAL_DELIVERY_MAX_MILES) {
+            methods.push({
+              code: "FREIGHT_TBD",
+              label: "Freight shipping (quoted after order)",
+              cost: null,
+              eta: "5-10 business days"
+            });
+          }
+        } else {
+          methods.push({
+            code: "FREIGHT_TBD",
+            label: "Freight shipping (quoted after order)",
+            cost: null,
+            eta: "5-10 business days"
+          });
+          methods.push({
+            code: "PICKUP",
+            label: "Pickup at warehouse",
+            cost: 0,
+            eta: "Ready for pickup"
+          });
+        }
+        res.json({ methods });
+      } catch (error) {
+        console.error("Error generating shipping quote:", error);
+        res.status(500).json({ error: "Failed to generate shipping quote" });
+      }
+    });
+    router10.get("/user/locality", requireAuth2, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const defaultAddress = await db.select().from(addresses).where(eq7(addresses.userId, userId2)).where(eq7(addresses.isDefault, true)).limit(1);
+        if (!defaultAddress.length || !defaultAddress[0].latitude || !defaultAddress[0].longitude) {
+          return res.json({ isLocal: false, distanceMiles: null });
+        }
+        const addressCoords = {
+          lat: parseFloat(defaultAddress[0].latitude),
+          lon: parseFloat(defaultAddress[0].longitude)
+        };
+        const distanceMiles = haversineMiles(WAREHOUSE_COORDS, addressCoords);
+        const isLocal = distanceMiles <= LOCAL_DELIVERY_MAX_MILES;
+        res.json({ isLocal, distanceMiles });
+      } catch (error) {
+        console.error("Error checking locality:", error);
+        res.status(500).json({ error: "Failed to check locality" });
+      }
+    });
+    shipping_default = router10;
+  }
+});
+
+// server/middleware/performanceOptimization.ts
+var performanceOptimization_exports = {};
+__export(performanceOptimization_exports, {
+  addCacheHeaders: () => addCacheHeaders,
+  optimizedSlowRequestMonitoring: () => optimizedSlowRequestMonitoring
+});
+function optimizedSlowRequestMonitoring(req, res, next) {
+  if (IGNORE_PATTERNS.some((pattern) => pattern.test(req.path))) {
+    return next();
+  }
+  const startTime = process.hrtime.bigint();
+  res.on("finish", () => {
+    const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
+    if (durationMs > 1e3) {
+      console.warn(`[PERF] Slow request: ${req.method} ${req.path} took ${durationMs.toFixed(0)}ms`);
+    }
+  });
+  next();
+}
+function addCacheHeaders(maxAge = 300) {
+  return (req, res, next) => {
+    res.setHeader("Cache-Control", `public, max-age=${maxAge}, stale-while-revalidate=60`);
+    next();
+  };
+}
+var IGNORE_PATTERNS;
+var init_performanceOptimization = __esm({
+  "server/middleware/performanceOptimization.ts"() {
+    "use strict";
+    IGNORE_PATTERNS = [
+      /^\/@/,
+      // Vite internal
+      /^\/src\//,
+      // Source files  
+      /^\/node_modules\//,
+      // Dependencies
+      /^\/assets\//,
+      // Static assets
+      /^\/favicon/,
+      // Favicon requests
+      /\.js$/,
+      // JS files
+      /\.css$/,
+      // CSS files
+      /\.map$/,
+      // Source maps
+      /\.png$/,
+      // Images
+      /\.jpg$/,
+      // Images
+      /\.svg$/
+      // SVG files
+    ];
+  }
+});
+
+// server/routes/cart-validation.ts
+var cart_validation_exports = {};
+__export(cart_validation_exports, {
+  default: () => cart_validation_default
+});
+import { Router as Router9 } from "express";
+var router11, cart_validation_default;
+var init_cart_validation = __esm({
+  "server/routes/cart-validation.ts"() {
+    "use strict";
+    init_auth();
+    init_storage();
+    init_locality();
+    init_cartGuard();
+    router11 = Router9();
+    router11.post("/validate", requireAuth, async (req, res) => {
+      try {
+        const userId2 = req.user.id;
+        const addresses3 = await storage.getUserAddresses(userId2);
+        const defaultAddress = addresses3.find((addr) => addr.isDefault);
+        const localityResult = defaultAddress ? isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : { isLocal: false };
+        const cart = await storage.getCart(userId2);
+        const restrictedItems = [];
+        const validItems = [];
+        for (const item of cart.items) {
+          try {
+            guardCartItemAgainstLocality({
+              userIsLocal: localityResult.isLocal,
+              product: {
+                is_local_delivery_available: item.product.is_local_delivery_available,
+                is_shipping_available: item.product.is_shipping_available
+              }
+            });
+            validItems.push(item);
+          } catch (error) {
+            restrictedItems.push({
+              ...item,
+              restrictionReason: error.message
+            });
+          }
+        }
+        res.json({
+          isLocal: localityResult.isLocal,
+          validItems,
+          restrictedItems,
+          hasRestrictions: restrictedItems.length > 0
+        });
+      } catch (error) {
+        console.error("Cart validation error:", error);
+        res.status(500).json({ error: "Failed to validate cart" });
+      }
+    });
+    cart_validation_default = router11;
   }
 });
 
@@ -3918,10 +4773,10 @@ var init_systemMonitor = __esm({
 // server/routes/admin/system-management.ts
 var system_management_exports = {};
 __export(system_management_exports, {
-  systemManagementRoutes: () => router6
+  systemManagementRoutes: () => router12
 });
-import { Router as Router6 } from "express";
-var router6;
+import { Router as Router10 } from "express";
+var router12;
 var init_system_management = __esm({
   "server/routes/admin/system-management.ts"() {
     "use strict";
@@ -3930,10 +4785,10 @@ var init_system_management = __esm({
     init_performanceMonitor();
     init_errorLogger();
     init_logger();
-    router6 = Router6();
-    router6.use(requireAuth);
-    router6.use(requireRole("developer"));
-    router6.get("/health", async (req, res) => {
+    router12 = Router10();
+    router12.use(requireAuth);
+    router12.use(requireRole("developer"));
+    router12.get("/health", async (req, res) => {
       try {
         const systemHealth = await SystemMonitor.getSystemHealth();
         const performanceStats = PerformanceMonitor.getSystemStats();
@@ -3950,7 +4805,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get system health" });
       }
     });
-    router6.get("/performance", async (req, res) => {
+    router12.get("/performance", async (req, res) => {
       try {
         const { timeWindow = "hour", metricName, limit = 1e3 } = req.query;
         const summary = PerformanceMonitor.getMetricsSummary(timeWindow);
@@ -3967,7 +4822,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get performance metrics" });
       }
     });
-    router6.get("/alerts", async (req, res) => {
+    router12.get("/alerts", async (req, res) => {
       try {
         const { resolved = false } = req.query;
         const alerts = resolved === "true" ? SystemMonitor.getAllAlerts() : SystemMonitor.getActiveAlerts();
@@ -3980,7 +4835,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get system alerts" });
       }
     });
-    router6.post("/alerts/:alertId/resolve", async (req, res) => {
+    router12.post("/alerts/:alertId/resolve", async (req, res) => {
       try {
         const { alertId } = req.params;
         const resolved = SystemMonitor.resolveAlert(alertId);
@@ -3994,7 +4849,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to resolve alert" });
       }
     });
-    router6.post("/alerts/cleanup", async (req, res) => {
+    router12.post("/alerts/cleanup", async (req, res) => {
       try {
         const clearedCount = SystemMonitor.clearResolvedAlerts();
         res.json({
@@ -4006,7 +4861,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to cleanup alerts" });
       }
     });
-    router6.get("/database", async (req, res) => {
+    router12.get("/database", async (req, res) => {
       try {
         const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
         const startTime = Date.now();
@@ -4051,7 +4906,7 @@ var init_system_management = __esm({
         });
       }
     });
-    router6.get("/logs", async (req, res) => {
+    router12.get("/logs", async (req, res) => {
       try {
         const {
           level = "info",
@@ -4073,7 +4928,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get system logs" });
       }
     });
-    router6.post("/diagnostics", async (req, res) => {
+    router12.post("/diagnostics", async (req, res) => {
       try {
         const diagnostics = {
           timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -4140,23 +4995,14 @@ var init_system_management = __esm({
 // server/websocket.ts
 var websocket_exports = {};
 __export(websocket_exports, {
-  broadcastUpdate: () => broadcastUpdate,
+  WebSocketManager: () => WebSocketManager,
   setupWebSocket: () => setupWebSocket,
   wsManager: () => wsManager
 });
-import { WebSocketServer, WebSocket as WebSocket2 } from "ws";
+import { WebSocketServer } from "ws";
 function setupWebSocket(server2) {
-  wsManager = new WebSocketManager(server2);
+  wsManager.attach(server2);
   return wsManager;
-}
-function broadcastUpdate(type, data) {
-  if (wsManager) {
-    wsManager.broadcast({
-      type,
-      data,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
-    });
-  }
 }
 var WebSocketManager, wsManager;
 var init_websocket = __esm({
@@ -4165,122 +5011,81 @@ var init_websocket = __esm({
     WebSocketManager = class {
       wss;
       clients = /* @__PURE__ */ new Map();
-      heartbeatInterval = null;
-      constructor(server2) {
-        this.wss = new WebSocketServer({
-          server: server2,
-          path: "/ws",
-          perMessageDeflate: false,
-          clientTracking: true
-        });
-        this.setupWebSocket();
-        this.startHeartbeat();
+      attach(server2) {
+        this.wss = new WebSocketServer({ server: server2, path: "/ws" });
+        this.wss.on("connection", (ws) => this.onConnection(ws));
+        setInterval(() => this.heartbeat(), 3e4);
       }
-      setupWebSocket() {
-        this.wss.on("connection", (ws, req) => {
-          const clientId = this.generateId();
-          const client = {
-            ws,
-            id: clientId,
-            isAlive: true
-          };
-          this.clients.set(clientId, client);
-          console.log(`[WS] Client connected: ${clientId} (Total: ${this.clients.size})`);
-          ws.send(JSON.stringify({
-            type: "connection",
-            status: "connected",
-            clientId,
-            timestamp: (/* @__PURE__ */ new Date()).toISOString()
-          }));
-          ws.on("pong", () => {
-            client.isAlive = true;
-          });
-          ws.on("message", (message) => {
-            try {
-              const data = JSON.parse(message.toString());
-              this.handleMessage(clientId, data);
-            } catch (error) {
-              console.error("[WS] Message parse error:", error);
-            }
-          });
-          ws.on("close", () => {
-            this.clients.delete(clientId);
-            console.log(`[WS] Client disconnected: ${clientId} (Remaining: ${this.clients.size})`);
-          });
-          ws.on("error", (error) => {
-            console.error(`[WS] Client error ${clientId}:`, error);
-            this.clients.delete(clientId);
-          });
-        });
+      onConnection(ws) {
+        const id = crypto.randomUUID();
+        const client = { id, ws, role: "guest", alive: true };
+        this.clients.set(id, client);
+        this.safeSend(client, { topic: "connection:ok", clientId: id, role: null });
+        ws.on("message", (raw) => this.onMessage(client, raw));
+        ws.on("pong", () => client.alive = true);
+        ws.on("close", () => this.clients.delete(id));
+        ws.on("error", () => ws.close());
       }
-      handleMessage(clientId, data) {
-        const client = this.clients.get(clientId);
-        if (!client) return;
-        if (data.type === "auth") {
-          client.userId = data.userId;
-          client.role = data.role;
-          console.log(`[WS] Client authenticated: ${clientId} (${data.role})`);
-          return;
+      onMessage(client, raw) {
+        let msg;
+        try {
+          msg = JSON.parse(String(raw));
+        } catch {
+          return this.safeSend(client, { topic: "toast:error", message: "Invalid WS payload" });
         }
-        const messageWithTimestamp = {
-          ...data,
-          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-          sourceClient: clientId
-        };
-        this.broadcast(messageWithTimestamp, clientId);
-      }
-      broadcast(data, excludeClientId) {
-        const message = JSON.stringify(data);
-        let successCount = 0;
-        this.clients.forEach((client, id) => {
-          if (id !== excludeClientId && client.ws.readyState === WebSocket2.OPEN) {
-            try {
-              client.ws.send(message);
-              successCount++;
-            } catch (error) {
-              console.error(`[WS] Broadcast error to ${id}:`, error);
-              this.clients.delete(id);
-            }
+        switch (msg.topic) {
+          case "auth": {
+            const { userId: userId2, role } = this.verifyToken(msg.token);
+            client.role = role;
+            client.userId = userId2;
+            this.safeSend(client, { topic: "auth:ok", role, userId: userId2 });
+            break;
           }
-        });
-        if (successCount > 0) {
-          console.log(`[WS] Broadcasted ${data.type} to ${successCount} clients`);
+          case "sys:ping":
+            this.safeSend(client, { topic: "sys:pong" });
+            break;
+          case "subscribe":
+          case "unsubscribe":
+            break;
+          default:
+            break;
         }
       }
-      broadcastToRole(data, role) {
-        const message = JSON.stringify(data);
-        let successCount = 0;
-        this.clients.forEach((client) => {
-          if (client.role === role && client.ws.readyState === WebSocket2.OPEN) {
-            try {
-              client.ws.send(message);
-              successCount++;
-            } catch (error) {
-              console.error(`[WS] Role broadcast error:`, error);
-            }
+      heartbeat() {
+        for (const c of this.clients.values()) {
+          if (!c.alive) {
+            c.ws.terminate();
+            this.clients.delete(c.id);
+            continue;
           }
-        });
-        console.log(`[WS] Broadcasted to ${successCount} ${role} clients`);
+          c.alive = false;
+          try {
+            c.ws.ping();
+          } catch {
+          }
+        }
       }
-      startHeartbeat() {
-        this.heartbeatInterval = setInterval(() => {
-          this.clients.forEach((client, id) => {
-            if (!client.isAlive) {
-              console.log(`[WS] Terminating dead client: ${id}`);
-              client.ws.terminate();
-              this.clients.delete(id);
-              return;
-            }
-            client.isAlive = false;
-            if (client.ws.readyState === WebSocket2.OPEN) {
-              client.ws.ping();
-            }
-          });
-        }, 3e4);
+      safeSend(c, data) {
+        if (c.ws.readyState === c.ws.OPEN) {
+          c.ws.send(JSON.stringify(data));
+        }
       }
-      generateId() {
-        return Math.random().toString(36).substring(2) + Date.now().toString(36);
+      // --- Publish APIs (use these from routes/services) --------
+      publish(data) {
+        for (const c of this.clients.values()) this.safeSend(c, data);
       }
+      publishToRole(role, data) {
+        for (const c of this.clients.values()) if (c.role === role) this.safeSend(c, data);
+      }
+      publishToUser(userId2, data) {
+        for (const c of this.clients.values()) if (c.userId === userId2) this.safeSend(c, data);
+      }
+      // Simple token verifier placeholder; replace with your real auth
+      verifyToken(token) {
+        if (!token) return { role: "guest" };
+        return { userId: "decoded-user-id", role: "user" };
+      }
+      // Legacy compatibility methods for gradual migration
       getConnectionCount() {
         return this.clients.size;
       }
@@ -4298,10 +5103,6 @@ var init_websocket = __esm({
         };
       }
       cleanup() {
-        if (this.heartbeatInterval) {
-          clearInterval(this.heartbeatInterval);
-          this.heartbeatInterval = null;
-        }
         this.clients.forEach((client) => {
           client.ws.terminate();
         });
@@ -4309,6 +5110,7 @@ var init_websocket = __esm({
         this.wss.close();
       }
     };
+    wsManager = new WebSocketManager();
   }
 });
 
@@ -4345,14 +5147,61 @@ var init_referenceGenerator = __esm({
   }
 });
 
+// server/middleware/compression.ts
+var compression_exports = {};
+__export(compression_exports, {
+  setupProductionOptimizations: () => setupProductionOptimizations
+});
+import compression2 from "compression";
+import path from "path";
+import express4 from "express";
+function setupProductionOptimizations(app2) {
+  if (process.env.NODE_ENV === "production") {
+    app2.use(compression2({
+      filter: (req, res) => {
+        if (req.headers["x-no-compression"]) {
+          return false;
+        }
+        return compression2.filter(req, res);
+      },
+      threshold: 0
+      // Compress everything
+    }));
+    app2.use(
+      express4.static(path.join(__dirname, "../../client-dist"), {
+        etag: true,
+        lastModified: true,
+        maxAge: "365d",
+        // 1 year for static assets
+        setHeaders(res, filePath) {
+          if (filePath.endsWith(".html")) {
+            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            res.setHeader("Pragma", "no-cache");
+            res.setHeader("Expires", "0");
+          } else if (filePath.match(/\.(js|css|woff2?|ttf|eot)$/)) {
+            res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          } else if (filePath.match(/\.(png|jpg|jpeg|gif|svg|ico|webp)$/)) {
+            res.setHeader("Cache-Control", "public, max-age=86400");
+          }
+        }
+      })
+    );
+  }
+}
+var init_compression = __esm({
+  "server/middleware/compression.ts"() {
+    "use strict";
+  }
+});
+
 // server/services/simple-password-reset.ts
 var simple_password_reset_exports = {};
 __export(simple_password_reset_exports, {
   SimplePasswordReset: () => SimplePasswordReset
 });
-import { sql as sql10 } from "drizzle-orm";
+import { sql as sql9 } from "drizzle-orm";
 import { Resend } from "resend";
-import crypto2 from "crypto";
+import crypto3 from "crypto";
 import bcryptjs from "bcryptjs";
 var resend, SimplePasswordReset;
 var init_simple_password_reset = __esm({
@@ -4365,7 +5214,7 @@ var init_simple_password_reset = __esm({
       async findUser(email) {
         console.log(`[PasswordReset] Looking for: ${email}`);
         try {
-          const result = await db.execute(sql10`
+          const result = await db.execute(sql9`
         SELECT id, email, first_name, last_name 
         FROM users 
         WHERE LOWER(email) = LOWER(${email.trim()})
@@ -4375,9 +5224,9 @@ var init_simple_password_reset = __esm({
             console.log(`[PasswordReset] \u2705 Found user: ${result.rows[0].email}`);
             return result.rows[0];
           }
-          const countResult = await db.execute(sql10`SELECT COUNT(*) as total FROM users`);
+          const countResult = await db.execute(sql9`SELECT COUNT(*) as total FROM users`);
           console.log(`[PasswordReset] Total users in DB: ${countResult.rows[0]?.total || 0}`);
-          const debugResult = await db.execute(sql10`SELECT email FROM users LIMIT 3`);
+          const debugResult = await db.execute(sql9`SELECT email FROM users LIMIT 3`);
           console.log("[PasswordReset] Sample emails in DB:");
           debugResult.rows.forEach((r) => console.log(`  - ${r.email}`));
           console.log(`[PasswordReset] \u274C User not found: ${email}`);
@@ -4388,11 +5237,11 @@ var init_simple_password_reset = __esm({
         }
       }
       // CREATE RESET TOKEN
-      async createToken(userId) {
-        const token = crypto2.randomBytes(32).toString("hex");
+      async createToken(userId2) {
+        const token = crypto3.randomBytes(32).toString("hex");
         const expires = new Date(Date.now() + 36e5);
         try {
-          await db.execute(sql10`
+          await db.execute(sql9`
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,
           user_id UUID NOT NULL,
@@ -4402,14 +5251,14 @@ var init_simple_password_reset = __esm({
           created_at TIMESTAMP DEFAULT NOW()
         )
       `);
-          await db.execute(sql10`
-        DELETE FROM password_reset_tokens WHERE user_id = ${userId}
+          await db.execute(sql9`
+        DELETE FROM password_reset_tokens WHERE user_id = ${userId2}
       `);
-          await db.execute(sql10`
+          await db.execute(sql9`
         INSERT INTO password_reset_tokens (user_id, token, expires_at) 
-        VALUES (${userId}, ${token}, ${expires})
+        VALUES (${userId2}, ${token}, ${expires})
       `);
-          console.log(`[PasswordReset] Token created for user ${userId}`);
+          console.log(`[PasswordReset] Token created for user ${userId2}`);
           return token;
         } catch (error) {
           console.error("[PasswordReset] Token creation error:", error);
@@ -4473,7 +5322,7 @@ var init_simple_password_reset = __esm({
       // VALIDATE TOKEN
       async validateToken(token) {
         try {
-          const result = await db.execute(sql10`
+          const result = await db.execute(sql9`
         SELECT * FROM password_reset_tokens 
         WHERE token = ${token} AND used = FALSE AND expires_at > NOW()
       `);
@@ -4492,10 +5341,10 @@ var init_simple_password_reset = __esm({
         }
         try {
           const hashedPassword = await bcryptjs.hash(newPassword, 12);
-          await db.execute(sql10`
+          await db.execute(sql9`
         UPDATE users SET password = ${hashedPassword} WHERE id = ${tokenData.user_id}
       `);
-          await db.execute(sql10`
+          await db.execute(sql9`
         UPDATE password_reset_tokens SET used = TRUE WHERE id = ${tokenData.id}
       `);
           console.log("[PasswordReset] Password updated successfully");
@@ -4510,80 +5359,32 @@ var init_simple_password_reset = __esm({
 });
 
 // server/index.ts
-import express3 from "express";
+import express6 from "express";
+import compression3 from "compression";
 
 // server/routes.ts
 init_storage();
 init_auth();
+init_auth2();
 import { createServer } from "http";
 import Stripe3 from "stripe";
-
-// server/middleware/auth.ts
-var authMiddleware = {
-  // Check if user is logged in (compatible with Passport authentication)
-  requireAuth: (req, res, next) => {
-    if (req.isAuthenticated && req.isAuthenticated()) {
-      return next();
-    }
-    if (req.session?.userId || req.session?.passport?.user) {
-      return next();
-    }
-    return res.status(401).json({ error: "Authentication required", message: "Please log in to continue" });
-  },
-  // Check if user is developer (compatible with Passport authentication)
-  requireDeveloper: (req, res, next) => {
-    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-      const user = req.user;
-      if (user.role === "developer") {
-        return next();
-      }
-    }
-    if (req.session?.userId && req.session?.role === "developer") {
-      return next();
-    }
-    return res.status(403).json({ error: "Developer access required", message: "Developer privileges required for this action" });
-  },
-  // Optional auth (guest checkout) - compatible with Passport
-  optionalAuth: (req, res, next) => {
-    let userId = null;
-    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-      userId = req.user.id;
-    } else if (req.session?.passport?.user) {
-      userId = req.session.passport.user;
-    } else if (req.session?.userId) {
-      userId = req.session.userId;
-    } else {
-      userId = `guest-${req.sessionID}`;
-    }
-    req.userId = userId;
-    next();
-  }
-};
+import { LRUCache } from "lru-cache";
+import rateLimit2 from "express-rate-limit";
 
 // server/config/cloudinary.ts
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "demo",
-  api_key: process.env.CLOUDINARY_API_KEY || "demo",
-  api_secret: process.env.CLOUDINARY_API_SECRET || "demo"
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "your-cloud-name",
+  api_key: process.env.CLOUDINARY_API_KEY || "your-api-key",
+  api_secret: process.env.CLOUDINARY_API_SECRET || "your-api-secret"
 });
 var storage2 = multer.memoryStorage();
 var upload = multer({
   storage: storage2,
   limits: {
-    fileSize: 5 * 1024 * 1024,
-    // 5MB max (unified with new system)
-    files: 8
-    // Maximum 8 images per upload
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only JPEG, PNG, and WebP images are allowed."));
-    }
+    fileSize: 5 * 1024 * 1024
+    // 5MB limit
   }
 });
 
@@ -4735,27 +5536,6 @@ var corsOptions = {
   // 24 hours
 };
 
-// server/middleware/requireProfile.ts
-init_logger();
-function requireCompleteProfile(req, res, next) {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-  const user = req.user;
-  if (!user.profileComplete) {
-    Logger.info("[MIDDLEWARE] Blocking incomplete profile access:", {
-      userId: user.id,
-      path: req.path
-    });
-    return res.status(403).json({
-      error: "Profile incomplete",
-      redirect: "/onboarding",
-      message: "You must complete your profile to access this resource"
-    });
-  }
-  next();
-}
-
 // server/middleware/validation.ts
 init_logger();
 import { ZodError } from "zod";
@@ -4855,11 +5635,11 @@ async function atomicStockUpdate(productId, quantityToReduce, tx = db) {
     return { success: false, error: "Database error during stock update" };
   }
 }
-async function atomicCartOperation(userId, productId, quantity, operation) {
+async function atomicCartOperation(userId2, productId, quantity, operation) {
   return await withTransaction(async (tx) => {
     try {
       const existingCartItem = await tx.select().from(cartItems).where(and2(
-        eq3(cartItems.userId, userId),
+        eq3(cartItems.userId, userId2),
         eq3(cartItems.productId, productId)
       )).for("update").limit(1);
       if (operation === "remove") {
@@ -4895,7 +5675,7 @@ async function atomicCartOperation(userId, productId, quantity, operation) {
           return { success: true, cartItem: updatedItem };
         } else {
           const [newItem] = await tx.insert(cartItems).values({
-            userId,
+            userId: userId2,
             productId,
             quantity,
             sessionId: null
@@ -4910,7 +5690,7 @@ async function atomicCartOperation(userId, productId, quantity, operation) {
     }
   });
 }
-async function atomicOrderCreation(userId, cartItemsData) {
+async function atomicOrderCreation(userId2, cartItemsData) {
   return await withTransaction(async (tx) => {
     try {
       for (const item of cartItemsData) {
@@ -4921,13 +5701,13 @@ async function atomicOrderCreation(userId, cartItemsData) {
       }
       const totalAmount = cartItemsData.reduce((sum2, item) => sum2 + item.price * item.quantity, 0);
       const [order] = await tx.insert(orders).values({
-        customerId: userId,
+        customerId: userId2,
         status: "pending",
         total: totalAmount.toString(),
         subtotal: totalAmount.toString(),
         items: cartItemsData
       }).returning();
-      await tx.delete(cartItems).where(eq3(cartItems.userId, userId));
+      await tx.delete(cartItems).where(eq3(cartItems.userId, userId2));
       return { success: true, orderId: order.id };
     } catch (error) {
       Logger.error("Atomic order creation error:", error);
@@ -5334,304 +6114,15 @@ function createRequestLogger() {
 // server/routes.ts
 init_logger();
 init_db();
-
-// server/routes/observability.ts
-import { Router } from "express";
-import { z as z2 } from "zod";
-import { randomUUID as randomUUID2 } from "crypto";
-
-// server/data/simpleErrorStore.ts
-init_db();
-import { sql as sql5 } from "drizzle-orm";
-var SimpleErrorStore = {
-  async addError(data) {
-    const eventId = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const fingerprint = this.createFingerprint(data.message, data.stack);
-    try {
-      await db.execute(sql5`
-        INSERT INTO errors_raw (event_id, created_at, level, env, service, url, message, stack, fingerprint)
-        VALUES (${eventId}, NOW(), ${data.level}, ${data.env || "development"}, ${data.service}, 
-                ${data.url || ""}, ${data.message}, ${JSON.stringify([data.stack || ""])}, ${fingerprint})
-      `);
-      const existingIssue = await db.execute(sql5`
-        SELECT id FROM issues WHERE fingerprint = ${fingerprint} LIMIT 1
-      `);
-      if (existingIssue.rows.length > 0) {
-        await db.execute(sql5`
-          UPDATE issues 
-          SET count = count + 1, last_seen = NOW()
-          WHERE fingerprint = ${fingerprint}
-        `);
-      } else {
-        const title = data.message.split("\n")[0].slice(0, 160) || "Error";
-        await db.execute(sql5`
-          INSERT INTO issues (fingerprint, title, level, service, first_seen, last_seen, count)
-          VALUES (${fingerprint}, ${title}, ${data.level}, ${data.service}, NOW(), NOW(), 1)
-        `);
-      }
-      return { success: true, eventId, fingerprint };
-    } catch (error) {
-      console.error("Failed to store error:", error);
-      throw error;
-    }
-  },
-  async listIssues(options = {}) {
-    const { page = 1, limit = 20 } = options;
-    const offset = (page - 1) * limit;
-    try {
-      const result = await db.execute(sql5`
-        SELECT fingerprint, title, level, service, first_seen, last_seen, count, resolved, ignored
-        FROM issues 
-        ORDER BY last_seen DESC 
-        LIMIT ${limit} OFFSET ${offset}
-      `);
-      const total = await db.execute(sql5`SELECT COUNT(*) as count FROM issues`);
-      const items = result.rows.map((row) => ({
-        ...row,
-        firstSeen: new Date(row.first_seen).toISOString(),
-        lastSeen: new Date(row.last_seen).toISOString(),
-        first_seen: void 0,
-        // Remove underscore version
-        last_seen: void 0
-        // Remove underscore version
-      }));
-      return {
-        items,
-        total: total.rows[0]?.count || 0,
-        page,
-        limit
-      };
-    } catch (error) {
-      console.error("Failed to list issues:", error);
-      throw error;
-    }
-  },
-  async getChartData(days = 1) {
-    try {
-      const result = await db.execute(sql5`
-        SELECT 
-          date_trunc('hour', created_at) as hour,
-          COUNT(*) as count
-        FROM errors_raw 
-        WHERE created_at >= NOW() - interval '${sql5.raw(days.toString())} days'
-        GROUP BY date_trunc('hour', created_at)
-        ORDER BY hour
-      `);
-      const series = result.rows.map((row) => ({
-        hour: new Date(row.hour).toISOString(),
-        count: Number(row.count) || 0
-      }));
-      return series;
-    } catch (error) {
-      console.error("Failed to get chart data:", error);
-      return [];
-    }
-  },
-  async getIssue(fingerprint) {
-    try {
-      const result = await db.execute(sql5`
-        SELECT fingerprint, title, level, service, first_seen, last_seen, count, resolved, ignored
-        FROM issues 
-        WHERE fingerprint = ${fingerprint}
-        LIMIT 1
-      `);
-      if (result.rows.length === 0) {
-        return null;
-      }
-      const issue = result.rows[0];
-      return {
-        ...issue,
-        firstSeen: new Date(issue.first_seen).toISOString(),
-        lastSeen: new Date(issue.last_seen).toISOString()
-      };
-    } catch (error) {
-      console.error("Failed to get issue:", error);
-      return null;
-    }
-  },
-  async getRawForIssue(fingerprint, limit = 50) {
-    try {
-      const result = await db.execute(sql5`
-        SELECT event_id, created_at, level, env, service, url, message, stack
-        FROM errors_raw 
-        WHERE fingerprint = ${fingerprint}
-        ORDER BY created_at DESC
-        LIMIT ${limit}
-      `);
-      return result.rows.map((row) => ({
-        ...row,
-        createdAt: new Date(row.created_at).toISOString(),
-        stack: row.stack && row.stack !== "" ? JSON.parse(row.stack) : []
-      }));
-    } catch (error) {
-      console.error("Failed to get raw events for issue:", error);
-      return [];
-    }
-  },
-  async setResolved(fingerprint, resolved) {
-    try {
-      await db.execute(sql5`
-        UPDATE issues 
-        SET resolved = ${resolved}
-        WHERE fingerprint = ${fingerprint}
-      `);
-      return true;
-    } catch (error) {
-      console.error("Failed to set resolved status:", error);
-      return false;
-    }
-  },
-  async setIgnored(fingerprint, ignored) {
-    try {
-      await db.execute(sql5`
-        UPDATE issues 
-        SET ignored = ${ignored}
-        WHERE fingerprint = ${fingerprint}
-      `);
-      return true;
-    } catch (error) {
-      console.error("Failed to set ignored status:", error);
-      return false;
-    }
-  },
-  createFingerprint(message, stack) {
-    const topLine = stack?.split("\n")[0] || "";
-    const basis = `${message}_${topLine}`.slice(0, 100);
-    let hash = 0;
-    for (let i = 0; i < basis.length; i++) {
-      hash = (hash << 5) - hash + basis.charCodeAt(i) & 4294967295;
-    }
-    return `fp_${Math.abs(hash)}`;
-  }
-};
-
-// server/routes/observability.ts
-var router = Router();
-function normalizeStack(raw) {
-  if (!raw) return [];
-  return raw.split("\n").map((l) => l.trim()).filter((l) => l && !l.includes("node_modules") && !l.includes("(internal")).map((l) => l.replace(/\(\w+:\/\/.*?\)/g, "()").replace(/:\d+:\d+/g, ":__:__"));
-}
-var IngestSchema = z2.object({
-  service: z2.enum(["client", "server"]).default("client"),
-  level: z2.enum(["error", "warn", "info"]).default("error"),
-  env: z2.enum(["production", "development"]).default(
-    process.env.NODE_ENV === "production" ? "production" : "development"
-  ),
-  release: z2.string().optional(),
-  url: z2.string().optional(),
-  method: z2.string().optional(),
-  statusCode: z2.coerce.number().optional(),
-  message: z2.string().min(1),
-  type: z2.string().optional(),
-  stack: z2.string().optional(),
-  extra: z2.record(z2.any()).optional()
-});
-router.post("/errors", async (req, res) => {
-  try {
-    const parsed = IngestSchema.parse(req.body ?? {});
-    const event = {
-      eventId: randomUUID2(),
-      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-      ...parsed,
-      stack: normalizeStack(parsed.stack).join("\n")
-    };
-    await SimpleErrorStore.addError(event);
-    res.status(202).json({ ok: true, eventId: event.eventId });
-  } catch (e) {
-    console.error("observability.ingest failed:", e);
-    res.status(400).json({ error: "Invalid payload" });
-  }
-});
-router.get("/issues", async (req, res) => {
-  try {
-    const q = String(req.query.q ?? "");
-    const level = String(req.query.level ?? "");
-    const env = String(req.query.env ?? "");
-    const resolved = String(req.query.resolved ?? "false") === "true";
-    const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10));
-    const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? "20"), 10)));
-    const result = await SimpleErrorStore.listIssues({ page, limit });
-    res.json(result);
-  } catch (e) {
-    console.error("observability.listIssues failed:", e);
-    res.status(500).json({ error: "Failed to fetch issues" });
-  }
-});
-router.get("/issues/:fp", async (req, res) => {
-  try {
-    const issue = await SimpleErrorStore.getIssue(req.params.fp);
-    if (!issue) return res.status(404).json({ error: "Issue not found" });
-    res.json({ issue });
-  } catch (e) {
-    console.error("observability.issue failed:", e);
-    res.status(500).json({ error: "Failed to fetch issue" });
-  }
-});
-router.get("/issues/:fp/events", async (req, res) => {
-  try {
-    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit ?? "50"), 10)));
-    const events = await SimpleErrorStore.getEvents(req.params.fp, limit);
-    res.json(events || []);
-  } catch (e) {
-    console.error("observability.issueEvents failed:", e);
-    res.status(500).json({ error: "Failed to fetch events" });
-  }
-});
-router.put("/issues/:fp/resolve", async (req, res) => {
-  try {
-    await SimpleErrorStore.markResolved(req.params.fp, true);
-    res.json({ ok: true });
-  } catch (e) {
-    console.error("observability.resolve failed:", e);
-    res.status(500).json({ error: "Failed to resolve issue" });
-  }
-});
-router.put("/issues/:fp/reopen", async (req, res) => {
-  try {
-    await SimpleErrorStore.markResolved(req.params.fp, false);
-    res.json({ ok: true });
-  } catch (e) {
-    console.error("observability.reopen failed:", e);
-    res.status(500).json({ error: "Failed to reopen issue" });
-  }
-});
-router.put("/issues/:fp/ignore", async (req, res) => {
-  try {
-    await SimpleErrorStore.markIgnored(req.params.fp, true);
-    res.json({ ok: true });
-  } catch (e) {
-    console.error("observability.ignore failed:", e);
-    res.status(500).json({ error: "Failed to ignore issue" });
-  }
-});
-router.put("/issues/:fp/unignore", async (req, res) => {
-  try {
-    await SimpleErrorStore.markIgnored(req.params.fp, false);
-    res.json({ ok: true });
-  } catch (e) {
-    console.error("observability.unignore failed:", e);
-    res.status(500).json({ error: "Failed to unignore issue" });
-  }
-});
-router.get("/series", async (req, res) => {
-  try {
-    const days = Math.min(30, Math.max(1, parseInt(String(req.query.days ?? "1"), 10)));
-    const rows = await SimpleErrorStore.getChartData(days);
-    res.json(rows);
-  } catch (e) {
-    console.error("observability.series failed:", e);
-    res.status(500).json({ error: "Failed to fetch chart data" });
-  }
-});
-var observability_default = router;
+init_observability();
 
 // server/routes/auth-google.ts
 init_storage();
 init_auth();
 import passport3 from "passport";
 import { Strategy as GoogleStrategy3 } from "passport-google-oauth20";
-import { Router as Router2 } from "express";
-var router2 = Router2();
+import { Router } from "express";
+var router2 = Router();
 passport3.use(new GoogleStrategy3({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -5742,16 +6233,16 @@ var auth_google_default = router2;
 // server/routes/stripe-webhooks.ts
 init_storage();
 init_logger();
-import { Router as Router3 } from "express";
+import { Router as Router2 } from "express";
 import Stripe2 from "stripe";
-import express from "express";
-var router3 = Router3();
+import express2 from "express";
+var router3 = Router2();
 var stripe2 = new Stripe2(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil"
 });
 router3.post(
   "/webhook",
-  express.raw({ type: "application/json" }),
+  express2.raw({ type: "application/json" }),
   // CRITICAL: Use raw body for signature verification
   async (req, res) => {
     const sig = req.headers["stripe-signature"];
@@ -5862,55 +6353,55 @@ init_auth();
 init_db();
 init_schema();
 init_logger();
-import { Router as Router4 } from "express";
-import { eq as eq6, gte as gte2, sql as sql6, and as and3, desc as desc3 } from "drizzle-orm";
-var router4 = Router4();
+import { Router as Router3 } from "express";
+import { eq as eq5, gte as gte2, sql as sql5, and as and3, desc as desc2 } from "drizzle-orm";
+var router4 = Router3();
 router4.get("/metrics", requireAuth, requireRole("developer"), async (req, res) => {
   try {
     const metrics = {};
     const today = /* @__PURE__ */ new Date();
     today.setHours(0, 0, 0, 0);
     const todayMetrics = await db.select({
-      ordersToday: sql6`COUNT(*) FILTER (WHERE created_at >= ${today})`,
-      revenueToday: sql6`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${today}), 0)`,
-      customersToday: sql6`COUNT(DISTINCT user_id) FILTER (WHERE created_at >= ${today})`
-    }).from(orders).where(sql6`status != 'cancelled'`);
+      ordersToday: sql5`COUNT(*) FILTER (WHERE created_at >= ${today})`,
+      revenueToday: sql5`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${today}), 0)`,
+      customersToday: sql5`COUNT(DISTINCT user_id) FILTER (WHERE created_at >= ${today})`
+    }).from(orders).where(sql5`status != 'cancelled'`);
     metrics.today = todayMetrics[0];
     const inventoryMetrics = await db.select({
-      outOfStock: sql6`COUNT(*) FILTER (WHERE stock_quantity = 0)`,
-      lowStock: sql6`COUNT(*) FILTER (WHERE stock_quantity BETWEEN 1 AND 5)`,
-      totalProducts: sql6`COUNT(*)`,
-      inventoryValue: sql6`COALESCE(SUM(CAST(price AS NUMERIC) * stock_quantity), 0)`
-    }).from(products).where(eq6(products.status, "active"));
+      outOfStock: sql5`COUNT(*) FILTER (WHERE stock_quantity = 0)`,
+      lowStock: sql5`COUNT(*) FILTER (WHERE stock_quantity BETWEEN 1 AND 5)`,
+      totalProducts: sql5`COUNT(*)`,
+      inventoryValue: sql5`COALESCE(SUM(CAST(price AS NUMERIC) * stock_quantity), 0)`
+    }).from(products).where(eq5(products.status, "active"));
     metrics.inventory = inventoryMetrics[0];
     const submissionMetrics = await db.select({
-      pendingReview: sql6`COUNT(*)`
-    }).from(equipmentSubmissions).where(eq6(equipmentSubmissions.status, "pending"));
+      pendingReview: sql5`COUNT(*)`
+    }).from(equipmentSubmissions).where(eq5(equipmentSubmissions.status, "pending"));
     metrics.submissions = submissionMetrics[0];
     const thirtyDaysAgo = /* @__PURE__ */ new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const topProducts = await db.select({
       name: products.name,
       id: products.id,
-      sold: sql6`COUNT(${orderItems.id})`,
-      revenue: sql6`COALESCE(SUM(CAST(${orderItems.price} AS NUMERIC) * ${orderItems.quantity}), 0)`
-    }).from(products).leftJoin(orderItems, eq6(products.id, orderItems.productId)).leftJoin(orders, eq6(orderItems.orderId, orders.id)).where(
+      sold: sql5`COUNT(${orderItems.id})`,
+      revenue: sql5`COALESCE(SUM(CAST(${orderItems.price} AS NUMERIC) * ${orderItems.quantity}), 0)`
+    }).from(products).leftJoin(orderItems, eq5(products.id, orderItems.productId)).leftJoin(orders, eq5(orderItems.orderId, orders.id)).where(
       and3(
         gte2(orders.createdAt, thirtyDaysAgo),
-        eq6(orders.status, "delivered")
+        eq5(orders.status, "delivered")
       )
-    ).groupBy(products.id, products.name).orderBy(desc3(sql6`COUNT(${orderItems.id})`)).limit(5);
+    ).groupBy(products.id, products.name).orderBy(desc2(sql5`COUNT(${orderItems.id})`)).limit(5);
     metrics.topProducts = topProducts;
     const weekAgo = /* @__PURE__ */ new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     const twoWeeksAgo = /* @__PURE__ */ new Date();
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
     const weeklyComparison = await db.select({
-      thisWeekOrders: sql6`COUNT(*) FILTER (WHERE created_at >= ${weekAgo})`,
-      lastWeekOrders: sql6`COUNT(*) FILTER (WHERE created_at >= ${twoWeeksAgo} AND created_at < ${weekAgo})`,
-      thisWeekRevenue: sql6`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${weekAgo}), 0)`,
-      lastWeekRevenue: sql6`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${twoWeeksAgo} AND created_at < ${weekAgo}), 0)`
-    }).from(orders).where(sql6`status != 'cancelled'`);
+      thisWeekOrders: sql5`COUNT(*) FILTER (WHERE created_at >= ${weekAgo})`,
+      lastWeekOrders: sql5`COUNT(*) FILTER (WHERE created_at >= ${twoWeeksAgo} AND created_at < ${weekAgo})`,
+      thisWeekRevenue: sql5`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${weekAgo}), 0)`,
+      lastWeekRevenue: sql5`COALESCE(SUM(total_amount) FILTER (WHERE created_at >= ${twoWeeksAgo} AND created_at < ${weekAgo}), 0)`
+    }).from(orders).where(sql5`status != 'cancelled'`);
     metrics.weekly = weeklyComparison[0];
     if (metrics.weekly) {
       metrics.weekly.orderGrowth = metrics.weekly.lastWeekOrders > 0 ? ((metrics.weekly.thisWeekOrders - metrics.weekly.lastWeekOrders) / metrics.weekly.lastWeekOrders * 100).toFixed(1) : 0;
@@ -5990,8 +6481,141 @@ var admin_metrics_default = router4;
 
 // server/routes.ts
 init_error_management();
+
+// server/routes/checkout.ts
+init_storage();
+init_locality();
+import { Router as Router5 } from "express";
+import { z as z2 } from "zod";
+var router6 = Router5();
+var AddressSchema = z2.object({
+  firstName: z2.string(),
+  lastName: z2.string(),
+  email: z2.string().email(),
+  street1: z2.string(),
+  street2: z2.string().optional(),
+  city: z2.string(),
+  state: z2.string(),
+  postalCode: z2.string(),
+  country: z2.string().default("US")
+});
+router6.post("/quote", async (req, res) => {
+  try {
+    const { addressId, address } = req.body;
+    let addressData = address;
+    if (addressId && !address) {
+      addressData = { city: "Unknown", state: "CA" };
+    }
+    if (!addressData) {
+      return res.status(400).json({ error: "Address information required" });
+    }
+    const subtotal = 50;
+    let shippingOptions = [];
+    shippingOptions.push({
+      id: "standard",
+      service: "standard",
+      label: "Standard Shipping (5-7 business days)",
+      price: 1500,
+      // $15.00 in cents
+      eta: "5-7 business days"
+    });
+    const addresses3 = await storage.getUserAddresses(userId);
+    const defaultAddress = addresses3.find((addr) => addr.isDefault);
+    const localityResult = defaultAddress ? isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : { isLocal: false, distanceMiles: null, reason: "NO_COORDS" };
+    if (localityResult.isLocal) {
+      shippingOptions.push({
+        id: "local",
+        service: "local",
+        label: "Free Local Delivery (1-2 business days)",
+        price: 0,
+        // Free local delivery
+        eta: "1-2 business days"
+      });
+    }
+    shippingOptions.push({
+      id: "express",
+      service: "express",
+      label: "Express Shipping (2-3 business days)",
+      price: 2500,
+      // $25.00 in cents
+      eta: "2-3 business days"
+    });
+    const response = {
+      quotes: shippingOptions,
+      subtotal: subtotal * 100,
+      // Convert to cents
+      tax: Math.round(subtotal * 0.08 * 100),
+      // 8% tax in cents
+      currency: "USD"
+    };
+    res.json(response);
+  } catch (error) {
+    console.error("Error calculating shipping quote:", error);
+    res.status(500).json({ error: "Failed to calculate shipping quote" });
+  }
+});
+router6.post("/submit", async (req, res) => {
+  try {
+    const { addressId, quoteId, contact, deliveryInstructions } = req.body;
+    if (!addressId || !quoteId) {
+      return res.status(400).json({ error: "Address and shipping method required" });
+    }
+    const paymentUrl = `/payment?session=checkout_session_${Date.now()}`;
+    res.json({ url: paymentUrl });
+  } catch (error) {
+    console.error("Error submitting checkout:", error);
+    res.status(500).json({ error: "Failed to submit checkout" });
+  }
+});
+var checkout_default = router6;
+
+// server/routes/locality.ts
+init_storage();
+init_locality();
+import { Router as Router6 } from "express";
+var router7 = Router6();
+router7.get("/status", async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(200).json({
+        isLocal: false,
+        hasAddress: false,
+        distanceMiles: null,
+        defaultAddressId: null,
+        authenticated: false
+      });
+    }
+    const userId2 = user.id;
+    const addresses3 = await storage.getUserAddresses(userId2);
+    const defaultAddress = addresses3.find((addr) => addr.isDefault);
+    if (!defaultAddress) {
+      return res.json({
+        isLocal: false,
+        distanceMiles: null,
+        hasAddress: false,
+        defaultAddressId: null,
+        authenticated: true
+      });
+    }
+    const localityResult = isLocalMiles(Number(defaultAddress.latitude), Number(defaultAddress.longitude));
+    res.json({
+      isLocal: localityResult.isLocal,
+      distanceMiles: localityResult.distanceMiles,
+      hasAddress: true,
+      defaultAddressId: defaultAddress.id,
+      authenticated: true
+    });
+  } catch (error) {
+    console.error("Error checking locality status:", error);
+    res.status(500).json({ error: "Failed to check locality status" });
+  }
+});
+var locality_default = router7;
+
+// server/routes.ts
 init_schema();
-import crypto from "crypto";
+import crypto2 from "crypto";
 
 // server/utils/exportHelpers.ts
 function generateCSV(submissions) {
@@ -6033,7 +6657,7 @@ function convertSubmissionsToCSV(submissions) {
 }
 
 // server/routes.ts
-import { eq as eq9, desc as desc5, ilike as ilike2, sql as sql9, and as and5, or as or3, gte as gte4, lte as lte3, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
+import { eq as eq9, desc as desc4, ilike as ilike2, sql as sql8, and as and5, or as or3, gte as gte4, lte as lte3, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
 
 // server/utils/startup-banner.ts
 init_logger();
@@ -6131,25 +6755,25 @@ var initRedis = async () => {
 // server/config/search.ts
 init_db();
 init_logger();
-import { sql as sql8 } from "drizzle-orm";
+import { sql as sql7 } from "drizzle-orm";
 async function initializeSearchIndexes() {
   try {
-    await db.execute(sql8`
+    await db.execute(sql7`
       ALTER TABLE products 
       ADD COLUMN IF NOT EXISTS search_vector tsvector
     `);
-    await db.execute(sql8`
+    await db.execute(sql7`
       CREATE INDEX IF NOT EXISTS idx_products_search 
       ON products USING GIN(search_vector)
     `);
-    await db.execute(sql8`
+    await db.execute(sql7`
       UPDATE products SET search_vector = 
         setweight(to_tsvector('english', coalesce(name,'')), 'A') ||
         setweight(to_tsvector('english', coalesce(description,'')), 'B') ||
         setweight(to_tsvector('english', coalesce(brand,'')), 'C')
       WHERE search_vector IS NULL
     `);
-    await db.execute(sql8`
+    await db.execute(sql7`
       CREATE OR REPLACE FUNCTION update_product_search_vector()
       RETURNS TRIGGER AS $$
       BEGIN
@@ -6161,7 +6785,7 @@ async function initializeSearchIndexes() {
       END;
       $$ LANGUAGE plpgsql;
     `);
-    await db.execute(sql8`
+    await db.execute(sql7`
       DROP TRIGGER IF EXISTS trigger_update_product_search_vector ON products;
       CREATE TRIGGER trigger_update_product_search_vector
         BEFORE INSERT OR UPDATE ON products
@@ -6216,16 +6840,14 @@ var wsManager2 = null;
 function setWebSocketManager(manager) {
   wsManager2 = manager;
 }
-function broadcastCartUpdate(userId, action = "update", data) {
-  if (wsManager2 && wsManager2.broadcast) {
-    wsManager2.broadcast({
-      type: "cart_update",
-      userId,
-      action,
-      data,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+function broadcastCartUpdate(userId2, action = "update", data) {
+  if (wsManager2 && wsManager2.publishToUser) {
+    wsManager2.publishToUser(userId2, {
+      topic: "cart:update",
+      userId: userId2,
+      count: data?.count || 0
     });
-    Logger.debug(`[WS] Cart update broadcasted: ${action} for user ${userId}`);
+    Logger.debug(`[WS] Cart update broadcasted: ${action} for user ${userId2}`);
   }
 }
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -6234,6 +6856,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 var stripe3 = new Stripe3(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-06-30.basil"
 });
+var apiCache = new LRUCache({ max: 500, ttl: 5 * 60 * 1e3 });
 async function registerRoutes(app2) {
   const startupTime = Date.now();
   const warnings = [];
@@ -6276,17 +6899,46 @@ async function registerRoutes(app2) {
   setupAuth(app2);
   app2.use("/api/auth", auth_google_default);
   app2.use("/api/stripe", stripe_webhooks_default);
+  const addressRoutes = await Promise.resolve().then(() => (init_addresses(), addresses_exports));
+  app2.use("/api/addresses", addressRoutes.default);
+  const cartRoutes = await Promise.resolve().then(() => (init_cart(), cart_exports));
+  const { ensureSession: ensureSession2 } = await Promise.resolve().then(() => (init_ensureSession(), ensureSession_exports));
+  app2.use("/api/cart", ensureSession2, cartRoutes.default);
+  const shippingRoutes = await Promise.resolve().then(() => (init_shipping2(), shipping_exports));
+  app2.use("/api/shipping", shippingRoutes.default);
+  const observabilityRoutes = await Promise.resolve().then(() => (init_observability(), observability_exports));
+  app2.use("/api/observability", observabilityRoutes.default);
+  app2.use("/api/checkout", checkout_default);
+  const { addCacheHeaders: addCacheHeaders2 } = await Promise.resolve().then(() => (init_performanceOptimization(), performanceOptimization_exports));
+  app2.use("/api/locality", addCacheHeaders2(300), locality_default);
+  const cartValidationRoutes = await Promise.resolve().then(() => (init_cart_validation(), cart_validation_exports));
+  app2.use("/api/cart", cartValidationRoutes.default);
   app2.use("/api/admin", admin_metrics_default);
   app2.use("/api/admin", error_management_default);
   await initializeSearchIndexes();
   app2.get("/health", healthLive);
   app2.get("/health/live", healthLive);
   app2.get("/health/ready", healthReady);
+  const geocodeCache = new LRUCache({ max: 500, ttl: 1e3 * 60 * 60 });
+  const geocodeLimiter = rateLimit2({
+    windowMs: 6e4,
+    // 1 minute
+    limit: 30,
+    // 30 requests per minute per IP
+    message: { error: "GEOCODE_RATE_LIMIT", message: "Too many geocoding requests" }
+  });
+  app2.use("/api/geocode/autocomplete", geocodeLimiter);
   app2.get("/api/geocode/autocomplete", async (req, res) => {
     try {
-      const { text: text2 } = req.query;
-      if (!text2 || typeof text2 !== "string" || text2.length < 3) {
+      const text2 = String(req.query.text || "").trim();
+      if (text2.length < 3) {
         return res.json({ results: [] });
+      }
+      const cacheKey = `geo:${text2.toLowerCase()}`;
+      const cached = geocodeCache.get(cacheKey);
+      if (cached) {
+        console.log("\u2705 Geocode cache hit:", text2);
+        return res.json(cached);
       }
       const apiKey = process.env.VITE_GEOAPIFY_API_KEY;
       if (!apiKey) {
@@ -6296,17 +6948,21 @@ async function registerRoutes(app2) {
       const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(text2)}&apiKey=${apiKey}&filter=countrycode:us&limit=5&format=json`;
       console.log("\u{1F50D} Server-side GEOApify request:", { text: text2, maskedUrl: url.replace(apiKey, "***") });
       const response = await fetch(url);
+      if (response.status === 429) {
+        return res.status(429).json({ error: "GEOCODE_RATE_LIMIT", message: "Quota exceeded" });
+      }
       if (!response.ok) {
         const errorText = await response.text();
         console.error("GEOApify API Error:", response.status, errorText);
-        return res.status(500).json({ error: "Geocoding service error" });
+        return res.status(200).json({ results: [] });
       }
       const data = await response.json();
       console.log("\u2705 GEOApify success:", data.results?.length || 0, "results");
+      geocodeCache.set(cacheKey, data);
       res.json(data);
     } catch (error) {
       console.error("Geocoding proxy error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(200).json({ results: [] });
     }
   });
   if (process.env.NODE_ENV === "development") {
@@ -6541,7 +7197,7 @@ async function registerRoutes(app2) {
         timestamp: timestamp2.toString()
       };
       const signatureString = Object.keys(params).sort().map((key) => `${key}=${params[key]}`).join("&") + process.env.CLOUDINARY_API_SECRET;
-      const signature = crypto.createHash("sha1").update(signatureString).digest("hex");
+      const signature = crypto2.createHash("sha1").update(signatureString).digest("hex");
       Logger.debug(`[CLOUDINARY] Generated signature for folder: ${folder}`, {
         timestamp: timestamp2,
         signatureString: signatureString.replace(process.env.CLOUDINARY_API_SECRET, "[REDACTED]")
@@ -6560,21 +7216,28 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/categories", apiLimiter, async (req, res) => {
     try {
-      const activeOnly = req.query.active === "true";
-      if (activeOnly) {
-        const cached = await getCachedCategories();
-        if (cached) {
-          return res.json(cached);
-        }
-        const categories2 = await storage.getActiveCategoriesForHomepage();
-        if (categories2) {
-          await setCachedCategories(categories2);
-        }
-        res.json(categories2);
-      } else {
-        const categories2 = await storage.getCategories();
-        res.json(categories2);
+      const active = String(req.query.active ?? "all");
+      const key = `categories:${active}`;
+      const hit = apiCache.get(key);
+      if (hit) {
+        return res.json(hit);
       }
+      let data;
+      if (req.query.active === "true") {
+        data = await storage.getActiveCategoriesForHomepage();
+        if (!data) {
+          const cached = await getCachedCategories();
+          if (cached) data = cached;
+        }
+        if (data) {
+          apiCache.set(key, data);
+          await setCachedCategories(data);
+        }
+      } else {
+        data = await storage.getCategories();
+        apiCache.set(key, data);
+      }
+      res.json(data || []);
     } catch (error) {
       Logger.error("Error fetching categories", error);
       res.status(500).json({ message: "Failed to fetch categories" });
@@ -6636,15 +7299,14 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/products/featured", apiLimiter, async (req, res) => {
     try {
-      res.set({
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0",
-        "ETag": `W/"featured-${Date.now()}"`
-        // Weak ETag for cache validation
-      });
       const limit = req.query.limit ? Number(req.query.limit) : 8;
+      const key = `products:featured:${limit}`;
+      const hit = apiCache.get(key);
+      if (hit) {
+        return res.json(hit);
+      }
       const products2 = await storage.getFeaturedProducts(limit);
+      apiCache.set(key, products2);
       res.json(products2);
     } catch (error) {
       Logger.error("Error fetching featured products", error);
@@ -6673,28 +7335,39 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/cart", authMiddleware.optionalAuth, async (req, res) => {
     try {
-      const userId = req.userId;
+      const userId2 = req.userId;
       const sessionId = req.sessionID;
-      Logger.debug(`Get cart - userId: ${userId}, sessionId: ${sessionId}`);
+      Logger.info(`[CART] Get cart - userId: ${userId2}, sessionId: ${sessionId}, isAuthenticated: ${req.isAuthenticated?.()}`);
       res.set({
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
         "Expires": "0",
         "ETag": `"cart-${Date.now()}"`
       });
-      const cartItems3 = await storage.getCartItems(
-        userId || void 0,
+      const cartItems2 = await storage.getCartItems(
+        userId2 || void 0,
         sessionId
       );
-      res.json(cartItems3);
+      const items = Array.isArray(cartItems2) ? cartItems2 : [];
+      const subtotal = items.reduce((sum2, item) => sum2 + item.price * item.quantity, 0);
+      const total = subtotal;
+      const cleanCart = {
+        id: `cart-${userId2 || sessionId}`,
+        items,
+        subtotal,
+        total,
+        shippingAddressId: null
+      };
+      Logger.info(`[CART] Returning cart with ${items.length} items, subtotal: ${subtotal}`);
+      res.json(cleanCart);
     } catch (error) {
       Logger.error("Error fetching cart", error);
       res.status(500).json({ message: "Failed to fetch cart" });
     }
   });
-  app2.post("/api/cart", authMiddleware.optionalAuth, async (req, res) => {
+  app2.post("/api/cart/items", authMiddleware.optionalAuth, async (req, res) => {
     try {
-      Logger.info(`[CART DEBUG] POST /api/cart reached handler - body: ${JSON.stringify(req.body)}, productId: ${req.body?.productId}, quantity: ${req.body?.quantity}`);
+      Logger.info(`[CART DEBUG] POST /api/cart/items reached handler - body: ${JSON.stringify(req.body)}, productId: ${req.body?.productId}, quantity: ${req.body?.quantity}`);
       const { productId, quantity = 1 } = req.body;
       if (!productId) {
         Logger.warn(`[CART DEBUG] Missing productId in request`);
@@ -6704,9 +7377,11 @@ async function registerRoutes(app2) {
         Logger.warn(`[CART DEBUG] Invalid quantity: ${quantity}`);
         return res.status(400).json({ error: "Valid quantity is required" });
       }
-      const userId = req.userId;
-      const sessionId = req.sessionID;
-      Logger.debug(`Cart request - userId: ${userId}, sessionId: ${sessionId}, productId: ${productId}, quantity: ${quantity}`);
+      const userId2 = req.user?.id;
+      if (!userId2) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      Logger.debug(`Cart request - userId: ${userId2}, productId: ${productId}, quantity: ${quantity}`);
       const product = await storage.getProduct(productId);
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
@@ -6714,20 +7389,17 @@ async function registerRoutes(app2) {
       if ((product.stockQuantity || 0) < 1) {
         return res.status(400).json({ error: "Product not available" });
       }
-      const effectiveUserId = userId && userId !== "temp-user-id" ? userId : null;
-      const effectiveSessionId = !userId || userId === "temp-user-id" ? sessionId : null;
-      const existingItem = await storage.getCartItem(effectiveUserId, effectiveSessionId, productId);
+      const existingItem = await storage.getCartItem(userId2, null, productId);
       if (existingItem) {
         const newQuantity = existingItem.quantity + quantity;
-        if (newQuantity > (product.stockQuantity || 0)) {
+        const availableStock = product.stockQuantity || 0;
+        if (newQuantity > availableStock) {
           return res.status(400).json({
-            error: `Only ${product.stockQuantity || 0} available. You already have ${existingItem.quantity} in cart.`
+            error: `Only ${availableStock} available. You have ${existingItem.quantity} in cart.`
           });
         }
         const updated = await storage.updateCartItem(existingItem.id, newQuantity);
-        if (effectiveUserId) {
-          broadcastCartUpdate(effectiveUserId);
-        }
+        broadcastCartUpdate(userId2);
         return res.json(updated);
       } else {
         if (quantity > (product.stockQuantity || 0)) {
@@ -6735,23 +7407,15 @@ async function registerRoutes(app2) {
             error: `Only ${product.stockQuantity || 0} available`
           });
         }
-        if (!effectiveUserId) {
-          req.session.save((err) => {
-            if (err) Logger.error("Session save error", err);
-          });
-        }
         const cartItemData = {
           productId,
           quantity,
-          userId: effectiveUserId,
-          sessionId: effectiveSessionId
+          userId: userId2,
+          sessionId: null
         };
-        Logger.debug(`Cart item data: ${JSON.stringify(cartItemData)}`);
         const validatedData = insertCartItemSchema.parse(cartItemData);
         const cartItem = await storage.addToCart(validatedData);
-        if (effectiveUserId) {
-          broadcastCartUpdate(effectiveUserId);
-        }
+        broadcastCartUpdate(userId2);
         return res.json(cartItem);
       }
     } catch (error) {
@@ -6761,20 +7425,59 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: errorMessage });
     }
   });
-  app2.put("/api/cart/:id", requireAuth, async (req, res) => {
+  app2.patch("/api/cart/items/:productId", requireAuth, async (req, res) => {
     try {
+      const userId2 = req.userId;
+      const sessionId = req.sessionID;
+      const { productId } = req.params;
       const { quantity } = req.body;
-      const cartItem = await storage.updateCartItem(req.params.id, quantity);
-      res.json(cartItem);
+      console.log(`[CART UPDATE] User ${userId2} updating product ${productId} to quantity ${quantity}`);
+      const cartItems2 = await storage.getCartItems(userId2 || void 0, sessionId);
+      const itemToUpdate = cartItems2.find((item) => item.productId === productId);
+      if (!itemToUpdate) {
+        console.log(`[CART UPDATE ERROR] Product ${productId} not found in user's cart`);
+        return res.status(404).json({ error: "Cart item not found" });
+      }
+      console.log(`[CART UPDATE] Updating cart item ${itemToUpdate.id} to quantity ${quantity}`);
+      const updatedItem = await storage.updateCartItem(itemToUpdate.id, quantity);
+      if (userId2) broadcastCartUpdate(userId2);
+      res.json(updatedItem);
     } catch (error) {
       Logger.error("Error updating cart item", error);
       res.status(500).json({ message: "Failed to update cart item" });
     }
   });
-  app2.delete("/api/cart/:id", requireAuth, async (req, res) => {
+  app2.delete("/api/cart/items/:productId", requireAuth, async (req, res) => {
     try {
-      await storage.removeFromCart(req.params.id);
-      res.json({ message: "Item removed from cart" });
+      const userId2 = req.userId;
+      const sessionId = req.sessionID;
+      const { productId } = req.params;
+      console.log(`[CART DELETE ROUTE] === STARTING CART REMOVAL ===`);
+      console.log(`[CART DELETE ROUTE] User: ${userId2}, Product: ${productId}`);
+      const cartItem = await db.select().from(cartItems).where(and5(
+        eq9(cartItems.userId, userId2),
+        eq9(cartItems.productId, productId)
+      )).limit(1);
+      console.log(`[CART DELETE ROUTE] Found cart items:`, cartItem);
+      if (cartItem.length === 0) {
+        console.log(`[CART DELETE ROUTE] No cart item found for product ${productId}`);
+        return res.status(404).json({ error: "Cart item not found" });
+      }
+      const itemToDelete = cartItem[0];
+      console.log(`[CART DELETE ROUTE] Deleting cart item:`, itemToDelete.id);
+      const deleteResult = await db.delete(cartItems).where(eq9(cartItems.id, itemToDelete.id));
+      console.log(`[CART DELETE ROUTE] Delete result:`, deleteResult.rowCount);
+      if (deleteResult.rowCount === 0) {
+        console.log(`[CART DELETE ROUTE] ERROR - No rows deleted`);
+        return res.status(500).json({ error: "Failed to delete cart item" });
+      }
+      console.log(`[CART DELETE ROUTE] SUCCESS - Item deleted successfully`);
+      if (userId2) broadcastCartUpdate(userId2);
+      res.json({
+        message: "Item removed from cart",
+        deletedItemId: itemToDelete.id,
+        rowsAffected: deleteResult.rowCount
+      });
     } catch (error) {
       Logger.error("Error removing from cart", error);
       res.status(500).json({ message: "Failed to remove from cart" });
@@ -6782,24 +7485,24 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/cart/validate", requireAuth, async (req, res) => {
     try {
-      const userId = req.userId;
+      const userId2 = req.userId;
       const sessionId = req.sessionID;
-      const cartItems3 = await storage.getCartItems(
-        userId || void 0,
+      const cartItems2 = await storage.getCartItems(
+        userId2 || void 0,
         sessionId
       );
       const updates = [];
-      for (const item of cartItems3) {
+      for (const item of cartItems2) {
         const product = await storage.getProduct(item.productId);
         if (!product || product.status !== "active") {
-          await storage.removeFromCart(item.id);
+          await db.delete(cartItems2).where(eq9(cartItems2.id, item.id));
           updates.push({ action: "removed", itemId: item.id, reason: "Product unavailable" });
           continue;
         }
         if (item.quantity > (product.stockQuantity || 0)) {
           const newQuantity = Math.max(0, product.stockQuantity || 0);
           if (newQuantity === 0) {
-            await storage.removeFromCart(item.id);
+            await db.delete(cartItems2).where(eq9(cartItems2.id, item.id));
             updates.push({ action: "removed", itemId: item.id, reason: "Out of stock" });
           } else {
             await storage.updateCartItem(item.id, newQuantity);
@@ -6818,12 +7521,61 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to validate cart" });
     }
   });
-  app2.get("/api/orders", requireAuth, requireCompleteProfile, async (req, res) => {
+  app2.put("/api/cart/shipping-address", requireAuth, async (req, res) => {
     try {
-      const userId = req.userId;
+      const { addressId } = req.body;
+      const userId2 = req.userId;
+      if (!addressId) {
+        return res.status(400).json({ error: "Address ID is required" });
+      }
+      const address = await storage.getAddress(addressId);
+      if (!address || address.userId !== userId2) {
+        return res.status(404).json({ error: "Address not found" });
+      }
+      await storage.setCartShippingAddress(userId2, addressId);
+      res.json({
+        ok: true,
+        shippingAddress: address
+      });
+    } catch (error) {
+      Logger.error("Error setting cart shipping address", error);
+      res.status(500).json({ error: "Failed to set shipping address" });
+    }
+  });
+  app2.post("/api/cart/shipping-address", requireAuth, async (req, res) => {
+    try {
+      const userId2 = req.userId;
+      const { saveToProfile = false, makeDefault = false, ...addressData } = req.body;
+      const validatedAddress = insertAddressSchema.parse({
+        ...addressData,
+        userId: userId2,
+        isDefault: saveToProfile && makeDefault
+      });
+      let address;
+      if (saveToProfile) {
+        address = await storage.createAddress(validatedAddress);
+        if (makeDefault) {
+          await storage.updateUserProfileAddress(userId2, address.id);
+        }
+      } else {
+        address = await storage.createAddress({
+          ...validatedAddress,
+          isDefault: false
+        });
+      }
+      await storage.setCartShippingAddress(userId2, address.id);
+      res.json(address);
+    } catch (error) {
+      Logger.error("Error creating cart shipping address", error);
+      res.status(500).json({ error: "Failed to create shipping address" });
+    }
+  });
+  app2.get("/api/orders", requireAuth, async (req, res) => {
+    try {
+      const userId2 = req.userId;
       const limit = req.query.limit ? Number(req.query.limit) : 50;
       const offset = req.query.offset ? Number(req.query.offset) : 0;
-      const orders2 = await storage.getUserOrders(userId);
+      const orders2 = await storage.getUserOrders(userId2);
       res.json(orders2);
     } catch (error) {
       Logger.error("Error fetching orders", error);
@@ -6844,8 +7596,8 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/submissions", async (req, res) => {
     try {
-      const userId = req.query.userId;
-      const submissions = await storage.getSubmissions(userId);
+      const userId2 = req.query.userId;
+      const submissions = await storage.getSubmissions(userId2);
       res.json(submissions);
     } catch (error) {
       Logger.error("Error fetching submissions", error);
@@ -6886,7 +7638,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to track submission" });
     }
   });
-  app2.post("/api/create-payment-intent", requireAuth, requireCompleteProfile, async (req, res) => {
+  app2.post("/api/create-payment-intent", requireAuth, async (req, res) => {
     try {
       const { amount, currency = "usd", metadata } = req.body;
       const paymentIntent = await stripe3.paymentIntents.create({
@@ -6907,7 +7659,7 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Error creating payment intent: " + error.message });
     }
   });
-  app2.post("/api/orders", requireAuth, requireCompleteProfile, async (req, res) => {
+  app2.post("/api/orders", requireAuth, async (req, res) => {
     try {
       const validatedData = insertOrderSchema.parse(req.body);
       const order = await storage.createOrder(validatedData);
@@ -6947,20 +7699,13 @@ async function registerRoutes(app2) {
     };
     try {
       try {
-        await db.execute(sql9`SELECT subcategory FROM products LIMIT 1`);
+        await db.execute(sql8`SELECT subcategory FROM products LIMIT 1`);
         results.tables["products.subcategory"] = "exists";
       } catch (e) {
         results.tables["products.subcategory"] = "missing";
         results.issues.push("products.subcategory column missing");
       }
-      try {
-        await db.execute(sql9`SELECT street FROM users LIMIT 1`);
-        results.tables["users.street"] = "exists";
-      } catch (e) {
-        results.tables["users.street"] = "missing";
-        results.issues.push("users.street column missing");
-      }
-      const addressCheck = await db.execute(sql9`
+      const addressCheck = await db.execute(sql8`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_name = 'addresses'
@@ -6996,8 +7741,8 @@ async function registerRoutes(app2) {
           title: products.name,
           subtitle: products.brand,
           price: products.price,
-          image: sql9`${products.images}->0`,
-          type: sql9`'product'`
+          image: sql8`${products.images}->0`,
+          type: sql8`'product'`
         }).from(products).where(
           and5(
             eq9(products.status, "active"),
@@ -7018,7 +7763,7 @@ async function registerRoutes(app2) {
         const categoryResults = await db.select({
           id: categories.id,
           title: categories.name,
-          type: sql9`'category'`
+          type: sql8`'category'`
         }).from(categories).where(
           and5(
             eq9(categories.isActive, true),
@@ -7123,16 +7868,16 @@ async function registerRoutes(app2) {
       const usersQuery = db.select().from(users).where(conditions.length > 0 ? and5(...conditions) : void 0).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
       switch (sortBy) {
         case "created":
-          usersQuery.orderBy(sortOrder === "desc" ? desc5(users.createdAt) : asc2(users.createdAt));
+          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.createdAt) : asc2(users.createdAt));
           break;
         case "name":
-          usersQuery.orderBy(sortOrder === "desc" ? desc5(users.firstName) : asc2(users.firstName));
+          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.firstName) : asc2(users.firstName));
           break;
         case "email":
-          usersQuery.orderBy(sortOrder === "desc" ? desc5(users.email) : asc2(users.email));
+          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.email) : asc2(users.email));
           break;
         default:
-          usersQuery.orderBy(desc5(users.createdAt));
+          usersQuery.orderBy(desc4(users.createdAt));
       }
       const usersList = await usersQuery;
       const usersWithStats = await Promise.all(
@@ -7260,7 +8005,7 @@ async function registerRoutes(app2) {
           name: products.name,
           views: products.views,
           price: products.price
-        }).from(products).orderBy(desc5(products.views)).limit(5);
+        }).from(products).orderBy(desc4(products.views)).limit(5);
         topProductsList = realTopProducts.map((p) => ({
           name: p.name,
           sales: 0,
@@ -7280,7 +8025,7 @@ async function registerRoutes(app2) {
         stockQuantity: products.stockQuantity,
         price: products.price,
         featured: products.featured
-      }).from(products).orderBy(desc5(products.views)).limit(10);
+      }).from(products).orderBy(desc4(products.views)).limit(10);
       const totalInventoryValue = allProducts.reduce((sum2, product) => {
         return sum2 + (parseFloat(product.price) || 0) * (product.stockQuantity || 0);
       }, 0);
@@ -7368,17 +8113,17 @@ async function registerRoutes(app2) {
       const minPrice = parseFloat(priceMin);
       const maxPrice = parseFloat(priceMax);
       if (minPrice > 0) {
-        conditions.push(gte4(sql9`CAST(${products.price} AS NUMERIC)`, minPrice));
+        conditions.push(gte4(sql8`CAST(${products.price} AS NUMERIC)`, minPrice));
       }
       if (maxPrice < 1e4) {
-        conditions.push(lte3(sql9`CAST(${products.price} AS NUMERIC)`, maxPrice));
+        conditions.push(lte3(sql8`CAST(${products.price} AS NUMERIC)`, maxPrice));
       }
       if (conditions.length > 0) {
         query = query.where(and5(...conditions));
       }
-      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql9`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
-      query = query.orderBy(sortOrder === "desc" ? desc5(sortColumn) : asc2(sortColumn));
-      let countQuery = db.select({ count: sql9`count(*)` }).from(products);
+      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql8`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
+      query = query.orderBy(sortOrder === "desc" ? desc4(sortColumn) : asc2(sortColumn));
+      let countQuery = db.select({ count: sql8`count(*)` }).from(products);
       if (conditions.length > 0) {
         countQuery = countQuery.where(and5(...conditions));
       }
@@ -7520,6 +8265,16 @@ async function registerRoutes(app2) {
     try {
       const { id } = req.params;
       await storage.deleteProduct(id);
+      try {
+        if (wsManager3?.publish) {
+          wsManager3.publish({
+            topic: "product:update",
+            productId: id
+          });
+        }
+      } catch (error) {
+        Logger.warn("WebSocket broadcast failed:", error);
+      }
       res.json({ success: true });
     } catch (error) {
       Logger.error("Error deleting product", error);
@@ -7557,7 +8312,7 @@ async function registerRoutes(app2) {
         displayOrder: categories.displayOrder,
         createdAt: categories.createdAt,
         updatedAt: categories.updatedAt,
-        productCount: sql9`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
+        productCount: sql8`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
       }).from(categories);
       const conditions = [];
       if (search) {
@@ -7571,10 +8326,10 @@ async function registerRoutes(app2) {
       if (conditions.length > 0) {
         query = query.where(and5(...conditions));
       }
-      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql9`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
-      query = query.orderBy(sortOrder === "desc" ? desc5(sortColumn) : asc2(sortColumn));
+      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql8`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
+      query = query.orderBy(sortOrder === "desc" ? desc4(sortColumn) : asc2(sortColumn));
       const result = await query;
-      const totalProducts = await db.select({ count: sql9`COUNT(*)` }).from(products);
+      const totalProducts = await db.select({ count: sql8`COUNT(*)` }).from(products);
       const activeCategories = result.filter((cat) => cat.isActive).length;
       const emptyCategories = result.filter((cat) => Number(cat.productCount) === 0).length;
       res.json({
@@ -7618,6 +8373,16 @@ async function registerRoutes(app2) {
           filterConfig: filter_config ? JSON.parse(filter_config) : {}
         };
         const newCategory = await storage.createCategory(categoryData);
+        try {
+          if (wsManager3?.publish) {
+            wsManager3.publish({
+              topic: "category:update",
+              categoryId: newCategory.id
+            });
+          }
+        } catch (error) {
+          Logger.warn("WebSocket broadcast failed:", error);
+        }
         res.json(newCategory);
       } catch (error) {
         Logger.error("Error creating category", error);
@@ -7642,6 +8407,16 @@ async function registerRoutes(app2) {
           filterConfig: filter_config ? JSON.parse(filter_config) : {}
         };
         const updatedCategory = await storage.updateCategory(req.params.id, updates);
+        try {
+          if (wsManager3?.publish) {
+            wsManager3.publish({
+              topic: "category:update",
+              categoryId: req.params.id
+            });
+          }
+        } catch (error) {
+          Logger.warn("WebSocket broadcast failed:", error);
+        }
         res.json(updatedCategory);
       } catch (error) {
         Logger.error("Error updating category", error);
@@ -7653,6 +8428,16 @@ async function registerRoutes(app2) {
     try {
       const { is_active } = req.body;
       await storage.updateCategory(req.params.id, { isActive: is_active });
+      try {
+        if (wsManager3?.publish) {
+          wsManager3.publish({
+            topic: "category:update",
+            categoryId: req.params.id
+          });
+        }
+      } catch (error) {
+        Logger.warn("WebSocket broadcast failed:", error);
+      }
       res.json({ success: true });
     } catch (error) {
       Logger.error("Error toggling category status", error);
@@ -7677,7 +8462,7 @@ async function registerRoutes(app2) {
   app2.delete("/api/admin/categories/:id", requireRole("developer"), async (req, res) => {
     try {
       const { id } = req.params;
-      const productCount = await db.select({ count: sql9`COUNT(*)` }).from(products).where(eq9(products.categoryId, id));
+      const productCount = await db.select({ count: sql8`COUNT(*)` }).from(products).where(eq9(products.categoryId, id));
       if (productCount[0]?.count > 0) {
         return res.status(400).json({
           error: "Cannot delete category with products",
@@ -7685,6 +8470,16 @@ async function registerRoutes(app2) {
         });
       }
       await db.delete(categories).where(eq9(categories.id, id));
+      try {
+        if (wsManager3?.publish) {
+          wsManager3.publish({
+            topic: "category:update",
+            categoryId: id
+          });
+        }
+      } catch (error) {
+        Logger.warn("WebSocket broadcast failed:", error);
+      }
       res.json({ success: true });
     } catch (error) {
       Logger.error("Error deleting category", error);
@@ -7699,7 +8494,7 @@ async function registerRoutes(app2) {
       let dbLatency = 0;
       try {
         const start = Date.now();
-        await db.select({ test: sql9`1` });
+        await db.select({ test: sql8`1` });
         dbLatency = Date.now() - start;
       } catch (error) {
         dbStatus = "Disconnected";
@@ -7743,9 +8538,9 @@ async function registerRoutes(app2) {
     try {
       const memoryUsage = process.memoryUsage();
       const uptime = process.uptime();
-      const [userCount] = await db.select({ count: sql9`COUNT(*)` }).from(users);
-      const [productCount] = await db.select({ count: sql9`COUNT(*)` }).from(products);
-      const [orderCount] = await db.select({ count: sql9`COUNT(*)` }).from(orders);
+      const [userCount] = await db.select({ count: sql8`COUNT(*)` }).from(users);
+      const [productCount] = await db.select({ count: sql8`COUNT(*)` }).from(products);
+      const [orderCount] = await db.select({ count: sql8`COUNT(*)` }).from(orders);
       const systemInfo = {
         application: {
           name: "Clean & Flip Admin",
@@ -7802,85 +8597,6 @@ async function registerRoutes(app2) {
       res.status(500).json({ message: "Failed to reorder categories" });
     }
   });
-  app2.get("/api/addresses", requireAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      Logger.info("=== /api/addresses DEBUG ===");
-      Logger.info("Authenticated userId:", userId);
-      const userWithAddress = await db.select({
-        id: users.id,
-        street: users.street,
-        city: users.city,
-        state: users.state,
-        zipCode: users.zipCode,
-        latitude: users.latitude,
-        longitude: users.longitude,
-        isLocalCustomer: users.isLocalCustomer
-      }).from(users).where(eq9(users.id, userId)).limit(1);
-      Logger.info("5. DB query result:", userWithAddress);
-      if (!userWithAddress.length) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      const user = userWithAddress[0];
-      const addresses3 = [];
-      if (user.street && user.city && user.state && user.zipCode) {
-        addresses3.push({
-          id: user.id,
-          street: user.street,
-          city: user.city,
-          state: user.state,
-          zipCode: user.zipCode,
-          latitude: user.latitude,
-          longitude: user.longitude,
-          isLocal: user.isLocalCustomer,
-          isDefault: true
-        });
-      }
-      Logger.info("6. Formatted addresses:", addresses3);
-      return res.json(addresses3);
-    } catch (error) {
-      Logger.error("Error fetching addresses", error);
-      return res.status(500).json({ error: "Failed to fetch addresses" });
-    }
-  });
-  app2.post("/api/addresses", requireAuth, async (req, res) => {
-    try {
-      const userId = req.userId;
-      const { street, city, state, zipCode, latitude, longitude } = req.body;
-      if (!street || !city || !state || !zipCode) {
-        return res.status(400).json({ error: "All address fields are required" });
-      }
-      const ashevilleZips = ["28801", "28802", "28803", "28804", "28805", "28806", "28810", "28813", "28814", "28815", "28816"];
-      const isLocal = ashevilleZips.includes(zipCode);
-      const [updatedUser] = await db.update(users).set({
-        street,
-        city,
-        state,
-        zipCode,
-        latitude: latitude ? parseFloat(latitude) : null,
-        longitude: longitude ? parseFloat(longitude) : null,
-        isLocalCustomer: isLocal,
-        updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq9(users.id, userId)).returning();
-      res.json({
-        success: true,
-        address: {
-          id: updatedUser.id,
-          street: updatedUser.street,
-          city: updatedUser.city,
-          state: updatedUser.state,
-          zipCode: updatedUser.zipCode,
-          latitude: updatedUser.latitude,
-          longitude: updatedUser.longitude,
-          isLocal: updatedUser.isLocalCustomer,
-          isDefault: true
-        }
-      });
-    } catch (error) {
-      Logger.error("Error saving address", error);
-      res.status(500).json({ error: "Failed to save address" });
-    }
-  });
   app2.get("/api/users", requireRole("developer"), async (req, res) => {
     try {
       const usersList = await db.select().from(users).limit(100);
@@ -7901,9 +8617,8 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "Failed to fetch users" });
     }
   });
-  app2.get("/api/user", (req, res) => {
+  app2.get("/api/user", async (req, res) => {
     Logger.debug(`[USER API] Authentication check - isAuthenticated: ${req.isAuthenticated?.()}, user: ${!!req.user}, sessionID: ${req.sessionID}`);
-    Logger.debug(`[USER API] Session passport: ${JSON.stringify(req.session?.passport)}`);
     if (!req.isAuthenticated || !req.isAuthenticated()) {
       Logger.debug("[USER API] Not authenticated - no isAuthenticated function or returns false");
       return res.status(401).json({ error: "Not authenticated" });
@@ -7912,26 +8627,97 @@ async function registerRoutes(app2) {
       Logger.debug("[USER API] Not authenticated - no user object");
       return res.status(401).json({ error: "Not authenticated" });
     }
-    Logger.debug(`[USER API] User found: ${JSON.stringify(req.user)}`);
-    const { password, ...userWithoutPassword } = req.user;
-    res.json(userWithoutPassword);
-  });
-  app2.post("/api/track-activity", async (req, res) => {
     try {
-      const { eventType, pageUrl, userId } = req.body;
-      const sessionId = req.sessionID || req.headers["x-session-id"] || "anonymous";
-      const activity = {
-        eventType,
-        pageUrl,
-        userId: userId || null,
-        sessionId: String(sessionId)
+      Logger.debug(`[USER API] User found: ${JSON.stringify(req.user)}`);
+      const userId2 = req.user.id;
+      const userWithAddress = await db.execute(sql8`
+        SELECT 
+          u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
+          u.profile_complete, u.onboarding_step, u.is_local_customer,
+          u.profile_address_id, u.onboarding_completed_at,
+          a.id as address_id, a.first_name as addr_first_name, 
+          a.last_name as addr_last_name, a.street1, a.street2, a.city, 
+          a.state, a.postal_code, a.country, a.latitude, a.longitude, 
+          a.is_local, a.is_default, a.created_at as address_created_at,
+          a.updated_at as address_updated_at,
+          COALESCE(da.id, a.id) as fallback_address_id
+        FROM users u
+        LEFT JOIN addresses a ON u.profile_address_id = a.id
+        LEFT JOIN addresses da ON da.user_id = u.id AND da.is_default = true
+        WHERE u.id = ${userId2}
+      `);
+      if (!userWithAddress.rows.length) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const userData = userWithAddress.rows[0];
+      const profileAddress = userData.address_id ? {
+        id: userData.address_id,
+        firstName: userData.addr_first_name,
+        lastName: userData.addr_last_name,
+        fullName: `${userData.addr_first_name} ${userData.addr_last_name}`,
+        street1: userData.street1,
+        street2: userData.street2 || "",
+        city: userData.city,
+        state: userData.state,
+        postalCode: userData.postal_code,
+        country: userData.country || "US",
+        latitude: userData.latitude ? parseFloat(userData.latitude) : void 0,
+        longitude: userData.longitude ? parseFloat(userData.longitude) : void 0,
+        isLocal: Boolean(userData.is_local),
+        isDefault: Boolean(userData.is_default),
+        createdAt: userData.address_created_at,
+        updatedAt: userData.address_updated_at
+      } : void 0;
+      const hasAnyAddress = Boolean(userData.fallback_address_id || userData.profile_address_id);
+      Logger.debug(`[USER API] Profile completion check:`, {
+        userId: userData.id,
+        profile_address_id: userData.profile_address_id,
+        fallback_address_id: userData.fallback_address_id,
+        hasAnyAddress,
+        profileComplete: hasAnyAddress
+      });
+      const response = {
+        id: userData.id,
+        email: userData.email,
+        firstName: userData.first_name,
+        lastName: userData.last_name,
+        phone: userData.phone,
+        role: userData.role,
+        profileComplete: hasAnyAddress,
+        // Profile complete if they have any address
+        profileAddressId: userData.profile_address_id || userData.fallback_address_id,
+        // Include profileAddressId for ProtectedRoute
+        onboardingStep: userData.onboarding_step || 0,
+        isLocal: Boolean(userData.is_local_customer),
+        onboardingCompleted: Boolean(userData.onboarding_completed_at),
+        profileAddress
       };
-      await storage.trackActivity(activity);
-      res.json({ success: true });
+      res.json(response);
     } catch (error) {
-      Logger.error("Error tracking activity:", error.message);
-      res.status(500).json({ error: "Failed to track activity" });
+      Logger.error("Error fetching user with address:", error);
+      res.status(500).json({ error: "Failed to fetch user data" });
     }
+  });
+  app2.post("/api/track-activity", (req, res) => {
+    res.status(202).end();
+    setImmediate(async () => {
+      try {
+        const { eventType, pageUrl, userId: userId2 } = req.body;
+        const sessionId = req.sessionID || req.headers["x-session-id"] || "anonymous";
+        const activity = {
+          eventType,
+          pageUrl,
+          userId: userId2 || null,
+          sessionId: String(sessionId),
+          ip: req.ip,
+          userAgent: req.get("user-agent") || null,
+          at: /* @__PURE__ */ new Date()
+        };
+        await storage.trackActivity(activity);
+      } catch (error) {
+        Logger.debug?.("track-activity failed", { error });
+      }
+    });
   });
   app2.get("/api/admin/system/health", requireRole("developer"), async (req, res) => {
     try {
@@ -7992,6 +8778,16 @@ async function registerRoutes(app2) {
         };
         Logger.debug(`Creating product with data: ${JSON.stringify(productData)}`);
         const newProduct = await storage.createProduct(productData);
+        try {
+          if (wsManager3?.publish) {
+            wsManager3.publish({
+              topic: "product:update",
+              productId: newProduct.id
+            });
+          }
+        } catch (error) {
+          Logger.warn("WebSocket broadcast failed:", error);
+        }
         res.json(newProduct);
       } catch (error) {
         Logger.error("Create product error:", error);
@@ -8033,6 +8829,16 @@ async function registerRoutes(app2) {
         }
         Logger.debug(`Updating product with data: ${JSON.stringify(updateData)}`);
         const updatedProduct = await storage.updateProduct(id, updateData);
+        try {
+          if (wsManager3?.publish) {
+            wsManager3.publish({
+              topic: "product:update",
+              productId: id
+            });
+          }
+        } catch (error) {
+          Logger.warn("WebSocket broadcast failed:", error);
+        }
         res.json(updatedProduct);
       } catch (error) {
         Logger.error("Update product error:", error);
@@ -8044,6 +8850,17 @@ async function registerRoutes(app2) {
     try {
       const { status } = req.body;
       await storage.updateProductStock(req.params.id, status);
+      try {
+        if (wsManager3?.publish) {
+          wsManager3.publish({
+            topic: "stock:update",
+            productId: req.params.id,
+            qty: status
+          });
+        }
+      } catch (error) {
+        Logger.warn("WebSocket broadcast failed:", error);
+      }
       res.json({ message: "Stock status updated" });
     } catch (error) {
       Logger.error("Error updating stock", error);
@@ -8082,13 +8899,10 @@ async function registerRoutes(app2) {
       }
       try {
         const { wsManager: wsManager4 } = await Promise.resolve().then(() => (init_websocket(), websocket_exports));
-        if (wsManager4) {
-          wsManager4.broadcast({
-            type: "user_update",
-            action: "update",
-            userId: id,
-            data: updatedUser,
-            timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        if (wsManager4?.publish) {
+          wsManager4.publish({
+            topic: "user:update",
+            userId: id
           });
         }
       } catch (error) {
@@ -8141,13 +8955,10 @@ async function registerRoutes(app2) {
       }
       try {
         const { wsManager: wsManager4 } = await Promise.resolve().then(() => (init_websocket(), websocket_exports));
-        if (wsManager4) {
-          wsManager4.broadcast({
-            type: "user_update",
-            action: "create",
-            userId: newUser.id,
-            data: newUser,
-            timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        if (wsManager4?.publish) {
+          wsManager4.publish({
+            topic: "user:update",
+            userId: newUser.id
           });
         }
       } catch (error) {
@@ -8178,14 +8989,14 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/equipment-submissions", requireAuth, async (req, res) => {
     try {
-      const userId = req.userId;
-      if (!userId) {
+      const userId2 = req.userId;
+      if (!userId2) {
         return res.status(401).json({
           error: "Authentication required",
           message: "Please log in to submit equipment"
         });
       }
-      const user = await storage.getUser(userId);
+      const user = await storage.getUser(userId2);
       if (!user) {
         return res.status(401).json({
           error: "User not found",
@@ -8196,7 +9007,7 @@ async function registerRoutes(app2) {
       const referenceNumber = await generateUniqueReference2();
       const submission = await storage.createSubmission({
         ...req.body,
-        userId,
+        userId: userId2,
         sellerEmail: user.email,
         // Required field from authenticated user
         referenceNumber
@@ -8261,10 +9072,10 @@ async function registerRoutes(app2) {
       const query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql9`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
-      }).from(equipmentSubmissions).leftJoin(users, eq9(equipmentSubmissions.userId, users.id)).orderBy(desc5(equipmentSubmissions.createdAt)).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
+      }).from(equipmentSubmissions).leftJoin(users, eq9(equipmentSubmissions.userId, users.id)).orderBy(desc4(equipmentSubmissions.createdAt)).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
       const submissions = conditions.length > 0 ? await query.where(and5(...conditions)) : await query;
       const statusCounts = await db.select({
         status: equipmentSubmissions.status,
@@ -8312,12 +9123,12 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/my-submissions", requireAuth, async (req, res) => {
     try {
-      const userId = req.userId;
-      if (!userId) {
+      const userId2 = req.userId;
+      if (!userId2) {
         Logger.error("No userId found in authentication sources");
         return res.json([]);
       }
-      const submissions = await db.select().from(equipmentSubmissions).where(eq9(equipmentSubmissions.userId, userId)).orderBy(desc5(equipmentSubmissions.createdAt));
+      const submissions = await db.select().from(equipmentSubmissions).where(eq9(equipmentSubmissions.userId, userId2)).orderBy(desc4(equipmentSubmissions.createdAt));
       res.json(submissions || []);
     } catch (error) {
       Logger.error("Error fetching user submissions:", error);
@@ -8328,15 +9139,15 @@ async function registerRoutes(app2) {
     try {
       const { id } = req.params;
       const { reason } = req.body;
-      const userId = req.userId;
-      if (!userId) {
+      const userId2 = req.userId;
+      if (!userId2) {
         Logger.error("No userId found in authentication sources for cancellation");
         return res.status(401).json({ error: "Authentication required" });
       }
       const submission = await db.select().from(equipmentSubmissions).where(
         and5(
           eq9(equipmentSubmissions.id, id),
-          eq9(equipmentSubmissions.userId, userId)
+          eq9(equipmentSubmissions.userId, userId2)
         )
       ).limit(1);
       if (!submission || submission.length === 0) {
@@ -8444,10 +9255,10 @@ async function registerRoutes(app2) {
       let query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql9`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
-      }).from(equipmentSubmissions).leftJoin(users, eq9(equipmentSubmissions.userId, users.id)).orderBy(desc5(equipmentSubmissions.createdAt));
+      }).from(equipmentSubmissions).leftJoin(users, eq9(equipmentSubmissions.userId, users.id)).orderBy(desc4(equipmentSubmissions.createdAt));
       if (conditions.length > 0) {
         query = query.where(and5(...conditions));
       }
@@ -8724,11 +9535,11 @@ async function registerRoutes(app2) {
     }
     process.exit(1);
   });
-  const checkUserPurchaseHistory = async (userId, productId) => {
+  const checkUserPurchaseHistory = async (userId2, productId) => {
     try {
       const [purchase] = await db.select().from(orderItems).innerJoin(orders, eq9(orders.id, orderItems.orderId)).where(
         and5(
-          eq9(orders.userId, userId),
+          eq9(orders.userId, userId2),
           eq9(orderItems.productId, productId),
           or3(
             eq9(orders.status, "delivered"),
@@ -8745,16 +9556,16 @@ async function registerRoutes(app2) {
   app2.post("/api/reviews", authMiddleware.requireAuth, async (req, res) => {
     try {
       const { productId, rating, comment } = req.body;
-      const userId = req.userId;
+      const userId2 = req.userId;
       if (!productId || !rating || rating < 1 || rating > 5) {
         return res.status(400).json({ error: "Valid product ID and rating (1-5) required" });
       }
       const review = await db.insert(reviews).values({
         productId: String(productId),
-        userId,
+        userId: userId2,
         rating,
         comment: comment || "",
-        verifiedPurchase: await checkUserPurchaseHistory(userId, productId),
+        verifiedPurchase: await checkUserPurchaseHistory(userId2, productId),
         createdAt: /* @__PURE__ */ new Date(),
         updatedAt: /* @__PURE__ */ new Date()
       }).returning();
@@ -8766,7 +9577,7 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/reviews/:productId", async (req, res) => {
     try {
-      const productReviews = await db.select().from(reviews).where(eq9(reviews.productId, req.params.productId)).orderBy(desc5(reviews.createdAt));
+      const productReviews = await db.select().from(reviews).where(eq9(reviews.productId, req.params.productId)).orderBy(desc4(reviews.createdAt));
       res.json(productReviews);
     } catch (error) {
       Logger.error("Error fetching reviews", error);
@@ -8852,7 +9663,11 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "Failed to subscribe" });
     }
   });
-  app2.use("/api/observability", observability_default);
+  app2.use(observability_default);
+  if (process.env.NODE_ENV === "production") {
+    const { setupProductionOptimizations: setupProductionOptimizations2 } = await Promise.resolve().then(() => (init_compression(), compression_exports));
+    setupProductionOptimizations2(app2);
+  }
   server2.on("listening", () => {
     Logger.info(`[STARTUP] Server is now accepting connections on ${host}:${port}`);
   });
@@ -8860,15 +9675,15 @@ async function registerRoutes(app2) {
 }
 
 // server/vite.ts
-import express2 from "express";
+import express5 from "express";
 import fs from "fs";
-import path2 from "path";
+import path3 from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 
 // vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path from "path";
+import path2 from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var vite_config_default = defineConfig({
   plugins: [
@@ -8882,14 +9697,14 @@ var vite_config_default = defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets")
+      "@": path2.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path2.resolve(import.meta.dirname, "shared"),
+      "@assets": path2.resolve(import.meta.dirname, "attached_assets")
     }
   },
-  root: path.resolve(import.meta.dirname, "client"),
+  root: path2.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path2.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     target: "es2020",
     minify: "terser",
@@ -8966,7 +9781,7 @@ async function setupVite(app2, server2) {
   app2.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = path2.resolve(
+      const clientTemplate = path3.resolve(
         import.meta.dirname,
         "..",
         "client",
@@ -8986,15 +9801,15 @@ async function setupVite(app2, server2) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
+  const distPath = path3.resolve(import.meta.dirname, "public");
   if (!fs.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
-  app2.use(express2.static(distPath));
+  app2.use(express5.static(distPath));
   app2.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
+    res.sendFile(path3.resolve(distPath, "index.html"));
   });
 }
 
@@ -9085,7 +9900,7 @@ function getEnvironmentInfo() {
 
 // server/middleware/security-enhancements.ts
 init_logger();
-import rateLimit2 from "express-rate-limit";
+import rateLimit3 from "express-rate-limit";
 import helmet2 from "helmet";
 var productionSecurityHeaders = helmet2({
   contentSecurityPolicy: {
@@ -9335,9 +10150,9 @@ var sanitizeRequest = (req, res, next) => {
 
 // server/index.ts
 init_db();
-import { sql as sql11 } from "drizzle-orm";
+import { sql as sql10 } from "drizzle-orm";
 import fs2 from "fs";
-import path3 from "path";
+import path4 from "path";
 
 // server/services/globalErrorCatcher.ts
 init_errorLogger();
@@ -9399,8 +10214,20 @@ var GlobalErrorCatcher = class _GlobalErrorCatcher {
 };
 
 // server/index.ts
-var app = express3();
+var app = express6();
 app.set("trust proxy", true);
+app.use(compression3({
+  filter: (req, res) => {
+    if (req.headers["x-no-compression"]) {
+      return false;
+    }
+    return true;
+  },
+  level: 6,
+  // Good balance between speed and compression ratio
+  threshold: 1024
+  // Only compress responses larger than 1KB
+}));
 app.use(productionSecurityHeaders);
 app.use(sanitizeRequest);
 app.use((req, res, next) => {
@@ -9410,11 +10237,11 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(express3.json({
+app.use(express6.json({
   limit: "1mb",
   strict: false
 }));
-app.use(express3.urlencoded({ limit: "1mb", extended: false }));
+app.use(express6.urlencoded({ limit: "1mb", extended: false }));
 app.use((error, req, res, next) => {
   if (error instanceof SyntaxError && "body" in error) {
     if (req.path === "/api/errors/client") {
@@ -9426,7 +10253,7 @@ app.use((error, req, res, next) => {
 });
 app.use((req, res, next) => {
   const start = Date.now();
-  const path4 = req.path;
+  const path5 = req.path;
   let capturedJsonResponse = void 0;
   const originalResJson = res.json;
   res.json = function(bodyJson, ...args) {
@@ -9435,8 +10262,8 @@ app.use((req, res, next) => {
   };
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path4.startsWith("/api")) {
-      let logLine = `${req.method} ${path4} ${res.statusCode} in ${duration}ms`;
+    if (path5.startsWith("/api")) {
+      let logLine = `${req.method} ${path5} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
@@ -9493,7 +10320,7 @@ app.use((req, res, next) => {
   setInterval(async () => {
     try {
       const deleted = await db.execute(
-        sql11`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
+        sql10`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
       );
       if (deleted.rowCount && deleted.rowCount > 0) {
         Logger.info(`[CLEANUP] Removed ${deleted.rowCount} expired password reset tokens`);
@@ -9567,7 +10394,7 @@ app.use((req, res, next) => {
       });
     }
   });
-  const isProductionBuild = fs2.existsSync(path3.resolve(import.meta.dirname, "public"));
+  const isProductionBuild = fs2.existsSync(path4.resolve(import.meta.dirname, "public"));
   if (isProductionBuild) {
     serveStatic(app);
   } else {
