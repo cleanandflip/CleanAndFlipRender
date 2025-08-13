@@ -68,7 +68,6 @@ export default function Checkout() {
   const cartItems = asArray(cartResp?.items);
 
   const defaultAddr =
-    user?.profileAddress ??
     addresses.find((a: any) => a.is_default) ??
     null;
 
@@ -141,7 +140,7 @@ export default function Checkout() {
     enabled: !!user?.id && cartItems.length > 0,
     staleTime: 0,
   });
-  const quotes = asArray(quotesResp?.quotes ?? quotesResp);
+  const quotes = asArray((quotesResp as any)?.quotes ?? []);
 
   // Change saved address → make it default on server → repopulate
   const mutateDefault = useMutation({
@@ -186,7 +185,7 @@ export default function Checkout() {
         longitude: values.longitude ?? null,
         is_default: !usingSavedAddressId, // first time, make default
       });
-      shippingAddressId = created?.id ?? created?.address?.id;
+      shippingAddressId = (created as any)?.id || (created as any)?.address?.id || null;
       setUsingSavedAddressId(shippingAddressId ?? null);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["addresses"] }),
@@ -279,13 +278,13 @@ export default function Checkout() {
                   <Label htmlFor="street" className="block mb-1 text-sm font-medium">Street Address</Label>
                   <AddressAutocomplete
                     placeholder="Start typing your address…"
+                    value={form.watch("street")}
                     onAddressSelect={(addressData: any) => {
                       const properties = addressData.properties || addressData;
                       fillFromGeoapify(properties);
                     }}
-                    className="mb-2"
+                    className="w-full"
                   />
-                  <Input {...form.register("street")} data-testid="input-street" />
                   {form.formState.errors.street && (
                     <p className="mt-1 text-sm text-red-400">{form.formState.errors.street.message}</p>
                   )}
@@ -338,7 +337,7 @@ export default function Checkout() {
                         size="sm"
                         onClick={() => {
                           const other = addresses.find((a: any) => a.id !== usingSavedAddressId) ?? addresses[0];
-                          if (other) {
+                          if (other?.id) {
                             setUsingSavedAddressId(other.id);
                             mutateDefault.mutate(other.id);
                           }
@@ -391,7 +390,7 @@ export default function Checkout() {
               {cartItems.map((line: any) => (
                 <li key={line.id} className="flex justify-between text-sm">
                   <span>{line.name ?? line.title} × {line.quantity ?? line.qty}</span>
-                  <span>${((line.price * line.quantity) ?? (line.total / 100)).toFixed(2)}</span>
+                  <span>${((line.price * line.quantity) || (line.total / 100) || 0).toFixed(2)}</span>
                 </li>
               ))}
             </ul>
