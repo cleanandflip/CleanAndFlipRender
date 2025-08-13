@@ -837,14 +837,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       const total = subtotal; // Can add shipping/tax calculation later
       
-      // Return consistent cart structure to prevent "Cannot read properties of undefined (reading 'length')" errors
-      res.json({ 
+      // SSOT FIX: Return clean cart structure that frontend expects
+      const cleanCart = { 
         id: `cart-${userId || sessionId}`, 
         items: items, 
         subtotal: subtotal, 
         total: total, 
         shippingAddressId: null 
-      });
+      };
+      
+      Logger.info(`[CART] Returning cart with ${items.length} items, subtotal: ${subtotal}`);
+      res.json(cleanCart);
     } catch (error) {
       Logger.error("Error fetching cart", error);
       res.status(500).json({ message: "Failed to fetch cart" });
@@ -896,10 +899,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update quantity instead of creating duplicate
         const newQuantity = existingItem.quantity + quantity;
         
-        // 3. Validate against stock
-        if (newQuantity > (product.stockQuantity || 0)) {
+        // 3. Validate against stock - FIXED LOGIC
+        const availableStock = product.stockQuantity || 0;
+        if (existingItem.quantity >= availableStock) {
           return res.status(400).json({ 
-            error: `Only ${product.stockQuantity || 0} available. You already have ${existingItem.quantity} in cart.` 
+            error: `Only ${availableStock} available. You already have ${existingItem.quantity} in cart.` 
+          });
+        }
+        
+        // Allow adding 1 more if there's stock available
+        if (newQuantity > availableStock) {
+          return res.status(400).json({ 
+            error: `Only ${availableStock} available total. You have ${existingItem.quantity} in cart.` 
           });
         }
         

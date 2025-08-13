@@ -51,7 +51,11 @@ export function useCart() {
       
       const data = await response.json();
       console.log('Cart data received:', data);
-      return data;
+      // SSOT FIX: Handle both old and new data structures
+      if (data.ok && data.data) {
+        return data.data; // Legacy structure
+      }
+      return data; // New structure
     },
     staleTime: 30000, // 30 seconds cache
     refetchOnWindowFocus: false,

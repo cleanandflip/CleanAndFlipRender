@@ -1307,112 +1307,21 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
   }
 
-  // Bulletproof Cart operations
+  // SSOT Legacy cart compatibility layer - CLEANED UP
   async getCart(userId: string): Promise<{ items: any[], subtotal: number } | undefined> {
-    const items = await db
-      .select({
-        id: cartItems.id,
-        productId: cartItems.productId,
-        quantity: cartItems.quantity,
-        product: products
-      })
-      .from(cartItems)
-      .innerJoin(products, eq(cartItems.productId, products.id))
-      .where(eq(cartItems.userId, userId));
-
-    const subtotal = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    const cartItemsData = await this.getCartItems(userId);
+    if (!cartItemsData?.length) return { items: [], subtotal: 0 };
     
+    const items = cartItemsData.map(item => ({
+      id: item.id,
+      productId: item.productId,
+      quantity: item.quantity,
+      product: item.product,
+      price: parseFloat(item.product.price || '0')
+    }));
+    
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     return { items, subtotal };
-  }
-
-  async addToCart(userId: string, productId: string, quantity: number, variantId?: string): Promise<{ items: any[], subtotal: number }> {
-    // Check if item already exists
-    const [existingItem] = await db
-      .select()
-      .from(cartItems)
-      .where(and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)));
-
-    if (existingItem) {
-      // Update quantity
-      await db
-        .update(cartItems)
-        .set({ quantity: existingItem.quantity + quantity })
-        .where(eq(cartItems.id, existingItem.id));
-    } else {
-      // Add new item
-      await db
-        .insert(cartItems)
-        .values({
-          id: randomUUID(),
-          userId,
-          productId,
-          quantity,
-          variantId
-        });
-    }
-
-    // Return updated cart
-    const cart = await this.getCart(userId);
-    return cart || { items: [], subtotal: 0 };
-  }
-
-  async updateCartItem(userId: string, itemId: string, quantity: number): Promise<{ items: any[], subtotal: number }> {
-    if (quantity <= 0) {
-      await db
-        .delete(cartItems)
-        .where(and(eq(cartItems.id, itemId), eq(cartItems.userId, userId)));
-    } else {
-      await db
-        .update(cartItems)
-        .set({ quantity })
-        .where(and(eq(cartItems.id, itemId), eq(cartItems.userId, userId)));
-    }
-
-    const cart = await this.getCart(userId);
-    return cart || { items: [], subtotal: 0 };
-  }
-
-  async removeFromCart(userId: string, itemId: string): Promise<{ items: any[], subtotal: number }> {
-    await db
-      .delete(cartItems)
-      .where(and(eq(cartItems.id, itemId), eq(cartItems.userId, userId)));
-
-    const cart = await this.getCart(userId);
-    return cart || { items: [], subtotal: 0 };
-  }
-
-  async removeFromCartByProductId(userId: string, productId: string): Promise<{ items: any[], subtotal: number }> {
-    await db
-      .delete(cartItems)
-      .where(and(eq(cartItems.productId, productId), eq(cartItems.userId, userId)));
-
-    const cart = await this.getCart(userId);
-    return cart || { items: [], subtotal: 0 };
-  }
-
-  async validateCart(userId: string): Promise<any> {
-    const cart = await this.getCart(userId);
-    if (!cart) return { valid: true, items: [] };
-
-    const validationResults = await Promise.all(
-      cart.items.map(async (item) => {
-        const product = await this.getProduct(item.productId);
-        return {
-          itemId: item.id,
-          productId: item.productId,
-          available: product && product.stockQuantity >= item.quantity,
-          currentPrice: product?.price,
-          requestedQuantity: item.quantity,
-          availableQuantity: product?.stockQuantity || 0
-        };
-      })
-    );
-
-    return {
-      valid: validationResults.every(r => r.available),
-      items: validationResults,
-      subtotal: cart.subtotal
-    };
   }
 }
 
