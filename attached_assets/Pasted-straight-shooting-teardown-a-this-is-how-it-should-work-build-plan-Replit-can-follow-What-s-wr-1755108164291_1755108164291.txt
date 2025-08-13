@@ -1,0 +1,205 @@
+straight-shooting teardown + a “this is how it should work” build plan Replit can follow.
+
+What’s wrong / missing in the current checkout
+Address state is ambiguous
+
+It says “Using: Saved address” but the fields are editable. Users can accidentally change a saved address inline.
+
+There’s no obvious way to switch to another saved address or to “use a new address”.
+
+Prefill isn’t reliable
+
+Default address doesn’t always prefill, and switching addresses isn’t reflected in the form or shipping method.
+
+Shipping Methods never appear
+
+Section always says “No options yet…”. This usually means the quotes request isn’t fired or is missing lat/lng (or the 50 miles local check never triggers).
+
+Order Summary looks wrong
+
+Shows $0.00 subtotal with “Item × 1” — it’s not bound to the real cart total and line items.
+
+Button is enabled even when the form/quotes aren’t valid.
+
+Edge-case handling
+
+No empty cart guard, no error toasts, no skeletons while loading, and no recovery if the quotes call fails.
+
+How to rebuild it so it works perfectly
+A. UX & Behavior (the spec)
+Address block (top left)
+
+A 3-way switch above the address fields:
+
+Use default address (locked fields, badge “Default”)
+
+Choose another saved address… (opens modal list; when chosen, fields lock)
+
+Use a new address (unlocks the form; “Save to profile” checkbox shows)
+
+When an address is saved mode (default or other):
+
+All address inputs are disabled (read-only).
+
+Show “Edit in Address Book” link (navigates to dashboard/addresses).
+
+Show a small “Change” button that opens the AddressPicker modal.
+
+When new address is selected:
+
+Geoapify autocomplete fills street, address2, city, state, zip, country, lat, lng, place_id.
+
+“Save to profile” toggle determines whether we persist it.
+
+Shipping Methods
+
+After an address (saved or new) is present and valid, fetch quotes:
+
+If is_local === true → show “Local Delivery (≤50 miles)” option(s).
+
+Always show standard shipping fallbacks if applicable.
+
+Require a selected shipping method before enabling “Continue to Payment”.
+
+Order Summary (right column)
+
+Real cart items (name, qty, line total), Subtotal, Shipping (selected quote), Tax (if you compute), Total.
+
+Skeleton while loading, graceful empty-cart message with a “Return to shop” button.
+
+Buttons & Guards
+
+“Continue to Payment” disabled until: valid address + one shipping method selected + cart has items.
+
+If no saved addresses exist → default to “Use a new address” mode.
+
+B. Data flow & state (React + React Query)
+Queries
+
+["user"] → /api/user (must include profile_address_id and profileAddress).
+
+["addresses"] → /api/addresses (default first).
+
+["cart"] → /api/cart (line items & subtotal).
+
+["shipping:quotes", key] → POST /api/shipping/quotes with either {addressId} or full {street, city, state, zip, country, lat, lng}.
+
+Local state
+
+ts
+Copy
+Edit
+type AddressMode = "default" | "saved" | "new";
+const [mode, setMode] = useState<AddressMode>("default");
+const [selectedAddressId, setSelectedAddressId] = useState<string|null>(null);
+const [selectedQuoteId, setSelectedQuoteId] = useState<string|null>(null);
+Choosing an address
+
+Default → selectedAddressId = user.profile_address_id and lock fields.
+
+Saved (other) → open AddressPicker; on select:
+
+Optimistic PATCH /api/addresses/:id/default (server also updates users.profile_address_id) OR “use once” (no default change) — pick one pattern; recommend make it default to keep SSOT clean.
+
+Invalidate ["user"], ["addresses"], re-prefill, re-quote shipping.
+
+New → unlock inputs. On Geoapify select, populate all fields including lat/lng/place_id.
+
+Quotes trigger
+
+useEffect with dependencies: mode, selectedAddressId, formValues:
+
+If mode is default/saved and you have an address id → request quotes with { addressId }.
+
+If mode is new and fields are valid → request quotes with full address payload.
+
+Use miles for local detection on the server; client just consumes is_local and quotes.
+
+Continue to Payment
+
+POST /api/checkout/start with:
+
+addressId (for saved) or serialized address object (for new)
+
+shippingQuoteId
+
+Returns { checkoutId, paymentUrl } (or go to next step).
+
+Navigate to /payment/:checkoutId or redirect to provider.
+
+C. Server requirements (SSOT & miles)
+/api/user returns { profile_address_id, profileAddress, isLocalUser } (isLocalUser derived from profileAddress.is_local).
+
+/api/addresses returns list sorted default-first; each has is_default, is_local, lat/lng, geoapify_place_id.
+
+PATCH /api/addresses/:id/default:
+
+Unset others, set this one, update users.profile_address_id, recompute is_local with 50 miles radius.
+
+POST /api/shipping/quotes accepts either {addressId} or a full address object and returns normalized quotes:
+
+ts
+Copy
+Edit
+{ quotes: [{ id, label, eta, price, isLocal:boolean }] }
+POST /api/checkout/start persists chosen address (or links it), selected quote, totals.
+
+D. Concrete UI structure (components)
+CheckoutPage
+
+AddressModeSwitch (Default | Choose saved | New)
+
+AddressSummary (locked view of selected saved address)
+
+AddressForm (enabled only in “new” mode; uses Geoapify)
+
+AddressPickerModal (radio list of saved addresses, shows “Default” badge)
+
+ShippingMethods (radios from quotes; shows skeleton/errors)
+
+OrderSummary (cart items → subtotal → shipping → tax → total)
+
+ContinueButton (disabled rules)
+
+Locked fields styling
+
+Use the same inputs but disabled with a subtle lock icon; show “Edit in Address Book” & “Change address” links.
+
+E. Validation, loading & errors
+Schema (Zod) for address (street, city, state, zip, country, lat, lng) and for quotes selection.
+
+Show inline errors under fields; top-level toast for network errors.
+
+Skeletons:
+
+Address card while ["user"] and ["addresses"] resolve.
+
+Order summary while ["cart"] resolves.
+
+Shipping methods while quotes load.
+
+F. Why your current screen misbehaves (and quick fixes)
+Saved-but-editable: wrap address inputs with disabled={mode!=="new"}.
+
+No quotes: fire quotes only after either selectedAddressId is set (saved) or new address is valid; ensure server has miles logic and address contains lat/lng.
+
+$0 order: bind summary to ["cart"] instead of props; don’t render totals until loaded.
+
+Button enabled too soon: gate on cart.items.length > 0 && addressValid && selectedQuoteId.
+
+G. Test checklist (do all)
+User with 2 addresses (A default local, B non-local).
+
+Page loads in Default mode with A locked; quotes show Local Delivery.
+
+Click Choose saved → pick B → fields lock to B, local options disappear.
+
+Select Use a new address → Geoapify pick fills all fields; quotes update; toggle “Save to profile” and complete.
+
+“Edit in Address Book” opens the dashboard tab. Can’t delete default; can make another default then delete the prior one.
+
+Empty cart shows guard, no crashes.
+
+Network failure on quotes shows error state + retry.
+
+If Replit implements the mode switch + locked saved address + quotes trigger exactly as above, the checkout will be predictable, fast, and bulletproof — and it will stay fully aligned with the SSOT address system and the 50-mile “Local Customer” rule.

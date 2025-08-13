@@ -40,12 +40,16 @@ const addressSchema = z.object({
 
 type AddressFormData = z.infer<typeof addressSchema>;
 
+type AddressMode = "default" | "saved" | "new";
+
 export default function Checkout() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
   const [usingSavedAddressId, setUsingSavedAddressId] = useState<string | null>(null);
+  const [mode, setMode] = useState<AddressMode>("default");
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   // Auth gate
   const { user, isLoading: userLoading } = useAuth();
@@ -152,33 +156,43 @@ export default function Checkout() {
       addrLoading,
       defaultAddr,
       prefilledBefore: prefilledRef.current,
-      addresses: addresses?.length
+      addresses: addresses?.length,
+      mode
     });
     
-    if (!prefilledRef.current && !userLoading && !addrLoading && defaultAddr) {
-      const formData = {
-        firstName: user?.firstName ?? "",
-        lastName: user?.lastName ?? "",
-        email: user?.email ?? "",
-        phone: user?.phone ?? "",
-        street: defaultAddr.street1 ?? defaultAddr.street ?? "",
-        address2: defaultAddr.street2 ?? defaultAddr.address2 ?? "",
-        city: defaultAddr.city ?? "",
-        state: defaultAddr.state ?? "",
-        zipCode: defaultAddr.postalCode ?? defaultAddr.zipCode ?? "",
-        country: defaultAddr.country ?? "US",
-        geoapify_place_id: defaultAddr.geoapify_place_id ?? "",
-        latitude: defaultAddr.latitude ?? null,
-        longitude: defaultAddr.longitude ?? null,
-        saveToProfile: false,
-        deliveryInstructions: "",
-      };
-      console.log("Auto-prefilling form with default address:", defaultAddr, "->", formData);
-      form.reset(formData);
-      setUsingSavedAddressId(defaultAddr.id);
+    if (!prefilledRef.current && !userLoading && !addrLoading) {
+      if (defaultAddr) {
+        // Default to using the default address
+        setMode("default");
+        setSelectedAddressId(defaultAddr.id);
+        setUsingSavedAddressId(defaultAddr.id);
+        
+        const formData = {
+          firstName: user?.firstName ?? "",
+          lastName: user?.lastName ?? "",
+          email: user?.email ?? "",
+          phone: user?.phone ?? "",
+          street: defaultAddr.street1 ?? defaultAddr.street ?? "",
+          address2: defaultAddr.street2 ?? defaultAddr.address2 ?? "",
+          city: defaultAddr.city ?? "",
+          state: defaultAddr.state ?? "",
+          zipCode: defaultAddr.postalCode ?? defaultAddr.zipCode ?? "",
+          country: defaultAddr.country ?? "US",
+          geoapify_place_id: defaultAddr.geoapify_place_id ?? "",
+          latitude: defaultAddr.latitude ?? null,
+          longitude: defaultAddr.longitude ?? null,
+          saveToProfile: false,
+          deliveryInstructions: "",
+        };
+        console.log("Auto-prefilling form with default address:", defaultAddr, "->", formData);
+        form.reset(formData);
+      } else {
+        // No saved addresses, default to new address mode
+        setMode("new");
+      }
       prefilledRef.current = true;
     }
-  }, [defaultAddr, user, userLoading, addrLoading]);
+  }, [defaultAddr, user, userLoading, addrLoading, mode]);
 
   // Invalidate cart on mount to get fresh data
   useEffect(() => {
@@ -442,16 +456,17 @@ export default function Checkout() {
                   const product = line.product;
                   const unitPrice = product?.price ? parseFloat(product.price) * 100 : 0; // Convert to cents
                   const quantity = line.qty ?? line.quantity ?? 1;
-                  const lineTotal = cents(
+                  
+                  // Calculate line total - prioritize unitPrice * quantity calculation
+                  const lineTotal = unitPrice > 0 && quantity > 0 ? unitPrice * quantity : cents(
                     line.total ?? 
                     (line.unit && line.qty ? line.unit * line.qty : 0) ??
-                    (unitPrice && quantity ? unitPrice * quantity : 0) ??
                     line.subtotal ??
                     0
                   );
-                  const title = line.title ?? line.name ?? product?.name ?? "Item";
                   
                   console.log("Cart line item:", line, "calculated total:", lineTotal);
+                  const title = line.title ?? line.name ?? product?.name ?? "Item";
                   
                   return (
                     <li key={line.id} className="flex justify-between text-sm">
@@ -465,7 +480,18 @@ export default function Checkout() {
 
             <div className="flex justify-between text-sm py-2 border-t border-white/10">
               <span>Subtotal</span>
-              <span>{money(cents(cartResp?.subtotal))}</span>
+              <span>{money(cartItems.reduce((total: number, line: any) => {
+                const product = line.product;
+                const unitPrice = product?.price ? parseFloat(product.price) * 100 : 0;
+                const quantity = line.qty ?? line.quantity ?? 1;
+                const lineTotal = unitPrice > 0 && quantity > 0 ? unitPrice * quantity : cents(
+                  line.total ?? 
+                  (line.unit && line.qty ? line.unit * line.qty : 0) ??
+                  line.subtotal ??
+                  0
+                );
+                return total + lineTotal;
+              }, 0))}</span>
             </div>
             <div className="flex justify-between text-sm py-2">
               <span>Shipping</span>
