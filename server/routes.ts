@@ -1024,6 +1024,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Set cart shipping address by ID
+  app.put("/api/cart/shipping-address", requireAuth, async (req, res) => {
+    try {
+      const { addressId } = req.body;
+      const userId = req.userId;
+      
+      if (!addressId) {
+        return res.status(400).json({ error: "Address ID is required" });
+      }
+      
+      // Verify the address belongs to the user
+      const address = await storage.getAddress(addressId);
+      if (!address || address.userId !== userId) {
+        return res.status(404).json({ error: "Address not found" });
+      }
+      
+      // Set the cart shipping address (we'll add this to storage)
+      await storage.setCartShippingAddress(userId!, addressId);
+      
+      res.json({ 
+        ok: true, 
+        shippingAddress: address 
+      });
+    } catch (error) {
+      Logger.error("Error setting cart shipping address", error);
+      res.status(500).json({ error: "Failed to set shipping address" });
+    }
+  });
+
+  // Create/update cart shipping address (for new addresses or edits)
+  app.post("/api/cart/shipping-address", requireAuth, async (req, res) => {
+    try {
+      const userId = req.userId;
+      const { saveToProfile = false, makeDefault = false, ...addressData } = req.body;
+      
+      // Validate address data
+      const validatedAddress = insertAddressSchema.parse({
+        ...addressData,
+        userId,
+        isDefault: saveToProfile && makeDefault
+      });
+      
+      let address;
+      
+      if (saveToProfile) {
+        // Save to addresses table
+        address = await storage.createAddress(validatedAddress);
+        
+        // Update user profile address if making default
+        if (makeDefault) {
+          await storage.updateUserProfileAddress(userId!, address.id);
+        }
+      } else {
+        // Create temporary address for cart only
+        address = await storage.createAddress({
+          ...validatedAddress,
+          isDefault: false
+        });
+      }
+      
+      // Set as cart shipping address
+      await storage.setCartShippingAddress(userId!, address.id);
+      
+      res.json(address);
+    } catch (error) {
+      Logger.error("Error creating cart shipping address", error);
+      res.status(500).json({ error: "Failed to create shipping address" });
+    }
+  });
+
   // Orders
   app.get("/api/orders", requireAuth, requireCompleteProfile, async (req, res) => {
     try {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useElements, useStripe, Elements, PaymentElement } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { Link, useLocation } from "wouter";
@@ -10,15 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { addressApi, type Address } from "@/api/addresses";
+import { cartApi } from "@/api/cart";
 import { getQuote, Quote } from "@/api/checkout";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { CheckoutAddressSchema, transformToCheckoutFormat } from "@shared/schemas/address";
-import { ShoppingCart, CreditCard, Truck, Lock, ArrowLeft } from "lucide-react";
+import { ShoppingCart, CreditCard, Truck, Lock, ArrowLeft, MapPin } from "lucide-react";
 
 // Load Stripe
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
@@ -39,7 +41,10 @@ const AddressSchema = z.object({
   country: z.string().default("US"),
   deliveryInstructions: z.string().optional(),
   saveToProfile: z.boolean().default(false),
+  makeDefault: z.boolean().default(false),
   billingSameAsShipping: z.boolean().default(true),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 type AddressForm = z.infer<typeof AddressSchema>;
@@ -50,6 +55,23 @@ const CheckoutForm = () => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [isProcessing, setIsProcessing] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Fetch user data and addresses using SSOT
+  const { data: user } = useQuery({ 
+    queryKey: ['/api/user'], 
+    retry: false 
+  });
+  
+  const { data: defaultAddress } = useQuery({
+    queryKey: ['/api/addresses', 'default'],
+    queryFn: () => addressApi.getDefault(),
+    enabled: !!user,
+  });
+
+  const { data: cart } = useQuery({ 
+    queryKey: ['/api/cart'] 
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,13 +132,22 @@ export default function Checkout() {
   const { cartItems, cartTotal, cartCount } = useCart();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [step, setStep] = useState(1);
   const [clientSecret, setClientSecret] = useState("");
   const [addressInputValue, setAddressInputValue] = useState("");
+  const [useProfileAddress, setUseProfileAddress] = useState(true);
   const isAuthenticated = !!user;
 
-  const { register, handleSubmit, setValue, watch, trigger,
+  // Fetch default address using SSOT
+  const { data: defaultAddress } = useQuery({
+    queryKey: ['/api/addresses', 'default'],
+    queryFn: () => addressApi.getDefaultAddress(),
+    enabled: !!user,
+  });
+
+  const { register, handleSubmit, setValue, watch, trigger, reset,
     formState: { errors, isValid, isSubmitting } } =
     useForm<AddressForm>({ 
       resolver: zodResolver(AddressSchema), 
@@ -127,26 +158,36 @@ export default function Checkout() {
       } 
     });
 
-  // Autofill address for authenticated users
+  // SSOT autofill: populate form from user profile and default address
   useEffect(() => {
-    if (!isAuthenticated) return;
-    (async () => {
-      const addr = await addressApi.getDefaultAddress();
-      if (!addr) return;
-      setValue("firstName", addr.firstName || "");
-      setValue("lastName", addr.lastName || "");
-      setValue("email", addr.email || "");
-      setValue("phone", addr.phone || "");
-      setValue("street1", addr.street1 || "");
-      setValue("street2", addr.street2 || "");
-      setValue("city", addr.city || "");
-      setValue("state", addr.state || "");
-      setValue("postalCode", addr.postalCode || "");
-      setValue("deliveryInstructions", addr.deliveryInstructions || "");
-      // Update the address input value for autocomplete
-      setAddressInputValue(addr.street1 || "");
-    })();
-  }, [isAuthenticated, setValue]);
+    if (!user) return;
+    
+    const address = user.profileAddress || defaultAddress;
+    if (!address) return;
+
+    // Use react-hook-form reset to populate all fields at once
+    reset({
+      firstName: address.firstName || user.firstName || "",
+      lastName: address.lastName || user.lastName || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      street1: address.street1 || "",
+      street2: address.street2 || "",
+      city: address.city || "",
+      state: address.state || "",
+      postalCode: address.postalCode || "",
+      country: address.country || "US",
+      deliveryInstructions: "",
+      saveToProfile: false,
+      makeDefault: false,
+      billingSameAsShipping: true,
+      latitude: address.latitude,
+      longitude: address.longitude
+    });
+
+    // Update autocomplete input value  
+    setAddressInputValue(address.street1 || "");
+  }, [user, defaultAddress, reset]);
 
   // Handle address selection from autocomplete
   const handleAddressSelect = (addressData: { street1: string; city: string; state: string; postalCode: string }) => {
@@ -201,10 +242,29 @@ export default function Checkout() {
     }
   }, [isValid, watchedFields.street1, watchedFields.city, watchedFields.state, watchedFields.postalCode]);
 
+  // SSOT address creation/update mutation  
+  const createShippingAddressMutation = useMutation({
+    mutationFn: cartApi.createShippingAddress,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/addresses'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/cart'] }),
+      ]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Address Error",
+        description: error.message || "Failed to save address",
+        variant: "destructive",
+      });
+    }
+  });
+
   const onSubmit = async (data: AddressForm) => {
     if (!quote) {
       toast({
-        title: "Missing Quote",
+        title: "Missing Quote", 
         description: "Please wait for shipping calculation to complete.",
         variant: "destructive",
       });
@@ -212,20 +272,12 @@ export default function Checkout() {
     }
 
     try {
-      // Save address if requested
+      // Create/update shipping address using SSOT system
       if (data.saveToProfile && isAuthenticated) {
-        await saveAddress({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          phone: data.phone,
-          street1: data.street1,
-          street2: data.street2,
-          city: data.city,
-          state: data.state,
-          postalCode: data.postalCode,
-          country: data.country,
-          deliveryInstructions: data.deliveryInstructions,
+        await createShippingAddressMutation.mutateAsync({
+          ...data,
+          saveToProfile: true,
+          makeDefault: data.makeDefault
         });
       }
 
@@ -488,18 +540,33 @@ export default function Checkout() {
               />
             </div>
 
-            {/* Options */}
+            {/* SSOT Address Options */}
             {isAuthenticated && (
-              <div className="mt-4">
-                <label className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    className="mr-2"
-                    data-testid="checkbox-saveToProfile"
-                    {...register("saveToProfile")} 
-                  />
-                  <span className="text-sm">Save this address to my profile</span>
-                </label>
+              <div className="mt-4 space-y-3">
+                <div className="p-3 rounded border border-white/10 bg-white/5">
+                  <MapPin className="inline mr-2" size={16} />
+                  <span className="text-sm font-medium">Address Options</span>
+                  
+                  <div className="mt-2 space-y-2">
+                    <label className="flex items-center">
+                      <Checkbox 
+                        data-testid="checkbox-saveToProfile"
+                        {...register("saveToProfile")} 
+                      />
+                      <span className="ml-2 text-sm">Save this address to my profile</span>
+                    </label>
+                    
+                    {watch("saveToProfile") && (
+                      <label className="flex items-center ml-4">
+                        <Checkbox 
+                          data-testid="checkbox-makeDefault"
+                          {...register("makeDefault")} 
+                        />
+                        <span className="ml-2 text-sm">Make this my default address</span>
+                      </label>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

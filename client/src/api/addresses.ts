@@ -75,6 +75,19 @@ export const addressApi = {
     await apiRequest('DELETE', `/api/addresses/${addressId}`);
   },
 
+  // Get default address
+  async getDefaultAddress(): Promise<Address | null> {
+    try {
+      const response = await apiRequest('GET', '/api/addresses/default');
+      return response.json();
+    } catch (error: any) {
+      if (error.message?.includes('404')) {
+        return null; // No default address set
+      }
+      throw error;
+    }
+  },
+
   // Update address (future enhancement)
   async updateAddress(addressId: string, addressData: Partial<CreateAddressRequest>): Promise<Address> {
     const response = await apiRequest('PUT', `/api/addresses/${addressId}`, addressData);
