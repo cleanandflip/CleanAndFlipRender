@@ -45,158 +45,11 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { apiRequest } from "@/lib/queryClient";
+import AddressesPanel from "@/components/dashboard/AddressesPanel";
 
 import type { Order, EquipmentSubmission } from "@shared/schema";
 
-function AddressesSection() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [editingAddress, setEditingAddress] = useState<any>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  
-  const { data: addresses = [], isLoading } = useQuery<any[]>({
-    queryKey: ["/api/addresses"],
-    enabled: !!user?.id,
-  });
-
-  const saveAddressMutation = useMutation({
-    mutationFn: async (addressData: any) => {
-      return apiRequest("POST", "/api/addresses", addressData);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Address updated successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/addresses"] });
-      setIsEditDialogOpen(false);
-      setEditingAddress(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update address",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleEditAddress = (address: any) => {
-    setEditingAddress(address);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleAddressSubmit = (addressData: any) => {
-    saveAddressMutation.mutate(addressData);
-  };
-
-  if (isLoading) {
-    return (
-      <Card className="p-6">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue mx-auto"></div>
-          <p className="text-text-secondary mt-4">Loading addresses...</p>
-        </div>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-bebas text-2xl">SAVED ADDRESSES</h2>
-        <Button onClick={() => {
-          setEditingAddress(null);
-          setIsEditDialogOpen(true);
-        }} data-testid="button-add-address">
-          Add New Address
-        </Button>
-      </div>
-
-      {addresses.length === 0 ? (
-        <div className="text-center py-12">
-          <MapPin className="mx-auto mb-4 text-gray-400" size={48} />
-          <h3 className="text-xl font-semibold mb-2">No saved addresses</h3>
-          <p className="text-text-secondary mb-6">
-            Add addresses to make checkout faster.
-          </p>
-          <Button onClick={() => {
-            setEditingAddress(null);
-            setIsEditDialogOpen(true);
-          }} data-testid="button-add-address-empty">
-            Add Address
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {addresses.map((address) => (
-            <div key={address.id} className="p-4 glass border border-border rounded-lg">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-white">
-                      Primary Address
-                    </h3>
-                    {address.isDefault && (
-                      <Badge className="bg-accent-blue text-white text-xs">
-                        Default
-                      </Badge>
-                    )}
-                    {address.isLocal && (
-                      <Badge className="bg-green-600 text-white text-xs flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" />
-                        Local Delivery
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-text-secondary text-sm leading-relaxed">
-                    {address.street}<br />
-                    {address.city}, {address.state} {address.postalCode || address.zipCode}
-                  </p>
-                  {address.isLocal && (
-                    <p className="text-green-400 text-sm mt-2">
-                      ✓ Free local delivery to your doorstep in Asheville area
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2 ml-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-xs"
-                    onClick={() => handleEditAddress(address)}
-                  >
-                    <Edit className="w-3 h-3 mr-1" />
-                    Edit
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Edit Address Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="glass border-border">
-          <DialogHeader>
-            <DialogTitle className="text-white">
-              {editingAddress ? 'Edit Address' : 'Add New Address'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <AddressAutocomplete
-              onAddressSelect={handleAddressSubmit}
-              value={editingAddress?.fullAddress || ''}
-              placeholder="Enter your address..."
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-}
+// REMOVED: Legacy AddressesSection - replaced with SSOT AddressesPanel
 
 function DashboardContent() {
   const { user } = useAuth();
@@ -780,9 +633,11 @@ function DashboardContent() {
             </Card>
           )}
 
-          {/* Addresses Tab */}
+          {/* Addresses Tab - SSOT System */}
           {activeTab === 'addresses' && (
-            <AddressesSection />
+            <div className="pt-4">
+              <AddressesPanel />
+            </div>
           )}
         </div>
       </div>

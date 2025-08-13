@@ -294,3 +294,5 @@ export function AddressForm({
     </Card>
   );
 }
+
+export default AddressForm;

@@ -1194,8 +1194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         results.issues.push('products.subcategory column missing');
       }
       
-      // REMOVED: Legacy users.street column check - using SSOT addresses table
-      results.tables['users.street'] = 'removed - using SSOT addresses table';
+      // SSOT system enforced - legacy address fields removed
       
       // Check if using separate addresses table
       const addressCheck = await db.execute(sql`

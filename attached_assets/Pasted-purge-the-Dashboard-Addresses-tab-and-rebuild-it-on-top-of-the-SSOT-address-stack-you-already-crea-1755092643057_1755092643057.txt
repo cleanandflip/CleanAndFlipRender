@@ -1,0 +1,247 @@
+purge the Dashboard > Addresses tab and rebuild it on top of the SSOT address stack you already created (/api/addresses, AddressForm, AddressList, Geoapify, default/local flags).
+
+🔧 PURGE & REBUILD — Dashboard “Addresses” Tab
+0) Hard-delete any legacy UI for addresses in the dashboard
+Kill old components/routes (names may vary). Remove and commit the deletions.
+
+swift
+Copy
+Edit
+client/src/components/profile/Address*.tsx
+client/src/components/dashboard/address*.tsx
+client/src/pages/dashboard/addresses*.tsx
+client/src/components/account/Address*.tsx
+Strip the addresses tab content inside client/src/pages/dashboard.tsx (or wherever the tabs render). Delete the old JSX for the tab that shows “No saved addresses” + “Add Address” placeholder.
+
+Guardrail: add/update the legacy-ban grep to fail CI/builds if any old files creep back:
+
+bash
+Copy
+Edit
+# scripts/check-legacy.sh
+set -e
+rg -n "(addresses?Old|LegacyAddress|ProfileAddress.*old|street[^1])" client/server && \
+  { echo "❌ Legacy address references found"; exit 1; } || \
+  echo "✅ No legacy address references detected"
+Add to package.json:
+
+json
+Copy
+Edit
+"scripts": {
+  "prebuild": "bash scripts/check-legacy.sh",
+  "prestart": "bash scripts/check-legacy.sh"
+}
+1) Drop in a new AddressesPanel that uses the SSOT system
+1.1 Create the panel
+client/src/components/dashboard/AddressesPanel.tsx
+
+tsx
+Copy
+Edit
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchAddresses, createAddress, updateAddress, removeAddress, setDefaultAddress } from "@/api/addresses";
+import AddressForm from "@/components/addresses/AddressForm";
+import AddressList from "@/components/addresses/AddressList";
+import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
+
+export default function AddressesPanel() {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<null | any>(null);
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["addresses"],
+    queryFn: fetchAddresses,          // GET /api/addresses
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleCreateOrUpdate = async (payload: any) => {
+    if (editing?.id) {
+      await updateAddress(editing.id, payload); // PUT /api/addresses/:id
+    } else {
+      await createAddress(payload);              // POST /api/addresses
+    }
+    setOpen(false);
+    setEditing(null);
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["addresses"] }),
+      qc.invalidateQueries({ queryKey: ["user"] }) // pick up profile_address_id/default
+    ]);
+  };
+
+  if (isError) return <Alert variant="destructive">Failed to load addresses: {String((error as any)?.message || error)}</Alert>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold">Saved Addresses</h3>
+        <Button onClick={() => setOpen(true)}>Add New Address</Button>
+      </div>
+
+      <AddressList
+        addresses={data || []}
+        isLoading={isLoading}
+        onEdit={(addr) => { setEditing(addr); setOpen(true); }}
+        onDelete={async (id) => { await removeAddress(id); await qc.invalidateQueries({ queryKey: ["addresses"] }); }}
+        onMakeDefault={async (id) => { await setDefaultAddress(id); await Promise.all([
+          qc.invalidateQueries({ queryKey: ["addresses"] }),
+          qc.invalidateQueries({ queryKey: ["user"] })
+        ]); }}
+        showLocalBadge     // uses addr.is_local
+        showDefaultBadge   // uses addr.is_default
+      />
+
+      {open && (
+        <AddressForm
+          initialValues={editing ?? undefined}
+          onCancel={() => { setOpen(false); setEditing(null); }}
+          onSubmit={handleCreateOrUpdate} // validates + Geoapify place id handled inside
+        />
+      )}
+    </div>
+  );
+}
+This panel delegates all CRUD to your SSOT API (/api/addresses) and uses your new shared components:
+
+AddressForm (Geoapify autocomplete, Zod validation)
+
+AddressList (renders cards, default/local badges, edit/delete/default actions)
+
+1.2 Wire the panel into the Dashboard tab
+In client/src/pages/dashboard.tsx (or wherever your tabs are defined), replace the legacy addresses tab body with:
+
+tsx
+Copy
+Edit
+import AddressesPanel from "@/components/dashboard/AddressesPanel";
+// ...
+{activeTab === "addresses" && (
+  <div className="pt-4">
+    <AddressesPanel />
+  </div>
+)}
+Remove any leftover conditional that renders the old “No saved addresses” empty state—the AddressList already handles empty/loading states.
+
+2) Ensure the panel + APIs use ONE SOURCE OF TRUTH
+2.1 Client API must call the new server
+Confirm client/src/api/addresses.ts only hits:
+
+GET /api/addresses (all)
+
+GET /api/addresses?default=true (default only)
+
+POST /api/addresses
+
+PUT /api/addresses/:id
+
+DELETE /api/addresses/:id
+
+POST /api/addresses/:id/default (or your chosen default route)
+
+Absolutely no direct reads/writes to user legacy fields.
+
+2.2 Server returns canonical fields
+server/routes/addresses.ts should emit the DTO you standardized:
+
+ts
+Copy
+Edit
+{
+  id, firstName, lastName,
+  street1, street2, city, state, postalCode, country,
+  latitude, longitude, geoapify_place_id,
+  is_default, is_local, created_at, updated_at
+}
+And update users.profile_address_id when default changes.
+
+3) Delete/disable anything that still renders legacy dashboard address UI
+Search & remove any “Saved Addresses” component not using AddressList/AddressForm:
+
+bash
+Copy
+Edit
+rg -n "Saved Addresses|Add Address|addresses tab|AddressCard|AddressItem" client/src
+If you still want a full page at /addresses, keep it—but make it render the same AddressesPanel to avoid drift:
+
+tsx
+Copy
+Edit
+// client/src/pages/addresses.tsx
+export default function AddressesPage() { return <AddressesPanel />; }
+4) Button wiring (screenshot shows two buttons)
+Both “Add New Address” (top-right) and the empty-state “Add Address” button must open the same modal:
+
+Delete the old handlers and replace with setOpen(true) from AddressesPanel.
+
+Remove any href to a legacy page.
+
+5) Local / Default behavior in the dashboard
+AddressList should visually tag:
+
+Default (is_default === true)
+
+Local (Free 48h delivery) when is_local === true
+
+Actions per item:
+
+Make Default → POST /api/addresses/:id/default
+
+Edit → opens AddressForm with initialValues
+
+Delete → DELETE /api/addresses/:id (block if it’s the only address; confirm modal)
+
+6) Hooks & query keys (avoid desync)
+Use the single query key ["addresses"] everywhere (dashboard, checkout, onboarding summary).
+
+After any mutate (create/update/delete/default), invalidateQueries(["addresses"]) and invalidateQueries(["user"]).
+
+7) Visual polish (match the new design system)
+Panel/container uses the same card styling as other dashboard sections (components.ts tokens).
+
+Inputs and modals are the shared ui/* components.
+
+Focus rings + stronger field borders (you requested more visible borders)—AddressForm should set className="border border-primary/40 focus:border-primary" on inputs.
+
+8) Testing checklist (must pass before shipping)
+Fresh user: sign up (email/password). Land in dashboard → Addresses tab shows “No saved addresses.”
+
+Click either Add New Address or Add Address → modal opens (Geoapify suggestions).
+
+Save a valid address → list shows 1 card, marked Default. users.profile_address_id matches this addresses.id.
+
+Add second address → list shows both; first remains Default.
+
+Click Make Default on the second → default flips; /api/user now returns the new profile_address_id.
+
+Local detection: add both a near and far address → near shows Local badge.
+
+Checkout and onboarding read the same default address (no additional inputs needed).
+
+Delete an address → list updates; default reassigns correctly (if you built that rule) or blocks deletion of the only address.
+
+Reload the dashboard → state persists; no legacy UI returns.
+
+Run npm run prebuild → ✅ no legacy references.
+
+9) Clean rebuild
+Remove old chunks from Vite cache:
+
+bash
+Copy
+Edit
+rm -rf node_modules/.vite client/.vite && npm run dev
+If you statically serve in prod, rebuild client and restart server.
+
+10) If anything still renders the old block
+It’s because dashboard.tsx (or a nested DashboardAddresses.tsx) is importing a stale component. Use:
+
+bash
+Copy
+Edit
+rg -n "Address(List|Form)|addresses\\b" client/src/pages/dashboard.tsx client/src
+Delete those files/usages and ensure only AddressesPanel is referenced for the addresses tab.
+
+When you finish these steps, the Addresses tab in the user profile will be fully purged and rebuilt on the SSOT system, sharing the exact same components and logic used by onboarding and checkout—no duplicates, one source of truth, and wired to Geoapify + local/default flags.
