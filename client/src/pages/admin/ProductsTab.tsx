@@ -30,6 +30,11 @@ export function ProductsTab() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { subscribe, ready } = useSocket();
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('🔌 ProductsTab ready state:', ready);
+  }, [ready]);
   const queryClient = useQueryClient();
 
   // Fetch products with React Query
@@ -232,6 +237,7 @@ export function ProductsTab() {
                   <span className="text-xs text-red-400 font-medium">Offline</span>
                 </div>
               )}
+              <span className="text-xs text-gray-500">({ready ? 'Connected' : 'Disconnected'})</span>
             </div>
           </div>
           <p className="text-gray-400 mt-1">Manage your product catalog and inventory</p>

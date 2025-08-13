@@ -27,6 +27,11 @@ export function CategoriesTab() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { subscribe, ready } = useSocket();
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('🔌 CategoriesTab ready state:', ready);
+  }, [ready]);
   const queryClient = useQueryClient();
 
   // Fetch categories with React Query
@@ -211,6 +216,7 @@ export function CategoriesTab() {
                   <span className="text-xs text-red-400 font-medium">Offline</span>
                 </div>
               )}
+              <span className="text-xs text-gray-500">({ready ? 'Connected' : 'Disconnected'})</span>
             </div>
           </div>
           <p className="text-gray-400 mt-1">Organize your products into categories</p>

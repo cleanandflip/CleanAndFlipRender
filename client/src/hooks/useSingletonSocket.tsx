@@ -70,6 +70,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
       ws.onopen = () => {
         console.log('🔌 WebSocket connected to', makeUrl());
+        console.log('🔌 Setting ready to true');
         setReady(true);
         retry = 0;
         // optional: send auth token if available (cookie/session)
