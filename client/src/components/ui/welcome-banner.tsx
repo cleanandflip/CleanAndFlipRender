@@ -9,16 +9,16 @@ export function ProfileNudge() {
   const [dismissed, setDismissed] = useState(false);
   const { user, isAuthenticated } = useAuth();
   
-  // Fetch addresses to check if user has default address
+  // Fetch addresses to check if user has ANY addresses (not just default)
   const { data: addresses = [] } = useQuery({
-    queryKey: ['addresses'],
+    queryKey: ['addresses'], 
     enabled: isAuthenticated,
     staleTime: 60000
   });
   
-  // Only show if user is authenticated but has no default address
-  const hasDefaultAddress = addresses.some((addr: any) => addr.isDefault);
-  const shouldShow = isAuthenticated && !hasDefaultAddress && !dismissed;
+  // FIXED: Don't show if user has ANY address in their profile (not just default)
+  const hasAnyAddress = Array.isArray(addresses) && addresses.length > 0;
+  const shouldShow = isAuthenticated && !hasAnyAddress && !dismissed;
   
   if (!shouldShow) return null;
   

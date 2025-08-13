@@ -13,7 +13,7 @@ interface AddToCartButtonProps {
   size?: "sm" | "default" | "lg";
 }
 
-export function AddToCartButton({ 
+export default function AddToCartButton({ 
   productId, 
   className, 
   variant = "default",
@@ -28,7 +28,7 @@ export function AddToCartButton({
   const addToCartMutation = useAddToCart();
   const removeFromCartMutation = useRemoveFromCart();
 
-  const isInCart = cart?.items?.some(item => item.productId === productId) || false;
+  const isInCart = cart?.data?.items?.some((item: any) => item.productId === productId) || false;
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -111,6 +111,3 @@ export function AddToCartButton({
     </Button>
   );
 }
-
-// Default export for compatibility
-export default AddToCartButton;

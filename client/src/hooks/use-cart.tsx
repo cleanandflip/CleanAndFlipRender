@@ -66,10 +66,24 @@ export function useAddToCart() {
   
   return useMutation({
     mutationFn: async (vars: { productId: string; quantity?: number }) => {
-      return await apiRequest('POST', '/api/cart/items', {
-        productId: vars.productId,
-        quantity: vars.quantity || 1,
+      const response = await fetch('/api/cart/items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          productId: vars.productId,
+          quantity: vars.quantity || 1,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add to cart');
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CART_KEY });

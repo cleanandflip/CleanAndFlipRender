@@ -872,11 +872,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Valid quantity is required' });
       }
       
-      // SECURITY FIX: Only use authenticated userId from middleware
-      const userId = req.userId; // Set by requireAuth middleware
-      const sessionId = req.sessionID;
+      // FIXED: Get userId from authenticated request
+      const userId = req.user?.id; // From passport authentication
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
       
-      Logger.debug(`Cart request - userId: ${userId}, sessionId: ${sessionId}, productId: ${productId}, quantity: ${quantity}`);
+      Logger.debug(`Cart request - userId: ${userId}, productId: ${productId}, quantity: ${quantity}`);
       
       // 1. Check product availability first
       const product = await storage.getProduct(productId);
@@ -888,73 +890,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Product not available' });
       }
       
-      // 2. Check existing cart item for smart quantity handling
-      // SECURITY FIX: Remove temp-user-id logic - only use authenticated users
-      const effectiveUserId = userId || null;
-      const effectiveSessionId = !userId ? sessionId : null;
-      
-      const existingItem = await storage.getCartItem(effectiveUserId, effectiveSessionId, productId);
+      // 2. Check for existing cart item
+      const existingItem = await storage.getCartItem(userId, null, productId);
       
       if (existingItem) {
-        // Update quantity instead of creating duplicate
+        // FIXED: Allow user to add more items if they want (normal e-commerce behavior)
         const newQuantity = existingItem.quantity + quantity;
-        
-        // 3. Validate against stock - FIXED LOGIC
         const availableStock = product.stockQuantity || 0;
-        if (existingItem.quantity >= availableStock) {
-          return res.status(400).json({ 
-            error: `Only ${availableStock} available. You already have ${existingItem.quantity} in cart.` 
-          });
-        }
         
-        // Allow adding 1 more if there's stock available
+        // Only block if total exceeds available stock
         if (newQuantity > availableStock) {
           return res.status(400).json({ 
-            error: `Only ${availableStock} available total. You have ${existingItem.quantity} in cart.` 
+            error: `Only ${availableStock} available. You have ${existingItem.quantity} in cart.` 
           });
         }
         
-        // Update existing item
+        // Update existing item quantity
         const updated = await storage.updateCartItem(existingItem.id, newQuantity);
         
-        // Broadcast cart update via WebSocket
-        if (effectiveUserId) {
-          broadcastCartUpdate(effectiveUserId);
-        }
+        // Broadcast WebSocket update
+        broadcastCartUpdate(userId);
         
         return res.json(updated);
       } else {
-        // 4. New item - validate quantity
+        // 3. Create new cart item
         if (quantity > (product.stockQuantity || 0)) {
           return res.status(400).json({ 
             error: `Only ${product.stockQuantity || 0} available` 
           });
         }
         
-        // Ensure session is saved first for guest users
-        if (!effectiveUserId) {
-          req.session.save((err) => {
-            if (err) Logger.error('Session save error', err);
-          });
-        }
-        
-        // Create cart item with proper user or session ID
+        // Create new cart item  
         const cartItemData = {
           productId,
           quantity,
-          userId: effectiveUserId,
-          sessionId: effectiveSessionId,
+          userId,
+          sessionId: null,
         };
-        
-        Logger.debug(`Cart item data: ${JSON.stringify(cartItemData)}`);
         
         const validatedData = insertCartItemSchema.parse(cartItemData);
         const cartItem = await storage.addToCart(validatedData);
         
-        // Broadcast cart update via WebSocket
-        if (effectiveUserId) {
-          broadcastCartUpdate(effectiveUserId);
-        }
+        // Broadcast WebSocket update
+        broadcastCartUpdate(userId);
         
         return res.json(cartItem);
       }
