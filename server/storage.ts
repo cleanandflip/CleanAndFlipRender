@@ -33,6 +33,7 @@ import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike, isNotNull 
 import { normalizeEmail, normalizeSearchTerm, normalizeBrand } from "@shared/utils";
 import { Logger } from "./utils/logger";
 import { randomUUID } from "crypto";
+import { addressRepo } from "./data/addressRepo";
 
 export interface IStorage {
   // User operations
@@ -103,11 +104,13 @@ export interface IStorage {
   removeFromCart(id: string): Promise<void>;
   clearCart(userId: string): Promise<void>;
 
-  // Address operations
+  // Address operations (new unified system)
   getUserAddresses(userId: string): Promise<Address[]>;
   createAddress(address: InsertAddress): Promise<Address>;
   updateAddress(id: string, address: Partial<InsertAddress>): Promise<Address>;
   deleteAddress(id: string): Promise<void>;
+  setDefaultAddress(userId: string, addressId: string): Promise<void>;
+  getDefaultAddress(userId: string): Promise<Address | null>;
 
   // Order operations
   getUserOrders(userId: string): Promise<Order[]>;
@@ -855,16 +858,21 @@ export class DatabaseStorage implements IStorage {
         const virtualAddress: Address = {
           id: `user-profile-${userId}`,
           userId: userId,
-          type: 'shipping',
-          firstName: user[0].firstName,
-          lastName: user[0].lastName,
+          label: 'Profile Address',
+          formatted: `${user[0].street}, ${city.trim()}, ${state.toUpperCase()} ${zipCode}`,
           street: user[0].street,
           city: city.trim(),
           state: state.toUpperCase(),
-          zipCode: zipCode,
+          postalCode: zipCode,
           country: 'US',
+          latitude: null,
+          longitude: null,
+          geoapifyPlaceId: null,
+          canonicalLine: '',
+          fingerprint: '',
           isDefault: true,
-          createdAt: new Date()
+          createdAt: new Date(),
+          updatedAt: new Date()
         };
         
         return [virtualAddress];
@@ -890,7 +898,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAddress(id: string): Promise<void> {
-    await db.delete(addresses).where(eq(addresses.id, id));
+    await addressRepo.deleteAddress(id);
+  }
+
+  async setDefaultAddress(userId: string, addressId: string): Promise<void> {
+    await addressRepo.setDefaultAddress(userId, addressId);
+  }
+
+  async getDefaultAddress(userId: string): Promise<Address | null> {
+    return await addressRepo.getDefaultAddress(userId);
   }
 
   // Order operations

@@ -1,0 +1,519 @@
+Build a Rock-Solid, Site-Wide Address + Local Customer Sync System
+with zero duplicates and a single source of truth across all forms
+
+Goals
+One source of truth for addresses across signup, onboarding (Google), profile, checkout, and cart. No field duplication anywhere.
+
+Auto-prefill: if signed in, all address fields are populated from the user’s saved default address. Guests enter manually; upon sign-in they can save it.
+
+Local customer detection that is deterministic, cached, and enforced server-side (Geoapify → normalized address → radius/polygon rule).
+
+Product fulfillment rules:
+
+Products can be LOCAL_ONLY, SHIP_ONLY, or LOCAL_OR_SHIP.
+
+Only local users can add LOCAL_ONLY items or submit items for sale.
+
+Local orders for Local-eligible items show free local delivery within 48 hours.
+
+Form sync: Change address once—propagate everywhere (with opt-in override at checkout).
+
+Zero duplicates: Database, API, and UI all prevent duplicate addresses and duplicated “local” state.
+
+Observability: No spammy error posts; validated payloads only.
+
+Deliverables (Acceptance Criteria)
+ DB schema uses a single addresses table + users.default_address_id. No address columns copied around other tables except immutable order snapshots.
+
+ Deduplication: Unique “address fingerprint” and/or Geoapify place_id constraints prevent duplicates. Backfill job merges historical dupes.
+
+ Local detection: Central isLocal(address) service (server) + cached users.is_local_customer updated on default address changes; client reads from /api/user.
+
+ Product rules enforced server-side in add-to-cart and cart validation; UI blocks with clear messaging.
+
+ Front-end: All forms use one AddressStore + one AddressFields component and one Zod schema.
+
+ Checkout UX: If signed in → prefilled from default; clear “Change” action; guests can save on sign-in.
+
+ Styling: Checkout form borders clearly visible (contrast + focus rings).
+
+ Tests: unit + e2e cover dedupe, local gating, product rules, save/override flows.
+
+ Observability: /api/observability/errors only accepts validated payloads (no repeated 400s).
+
+1) Database Migrations (Postgres)
+Rule: The only place we store canonical address fields is the addresses table.
+Orders get a one-time snapshot (immutable copy) for historical accuracy. Everything else references addresses.
+
+001_addresses.sql
+sql
+Copy
+Edit
+CREATE EXTENSION IF NOT EXISTS pgcrypto; -- for gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS citext;
+
+CREATE TABLE IF NOT EXISTS addresses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,  -- nullable for guest addresses saved later
+  label TEXT,                                           -- "Home", "Work" etc
+  formatted TEXT,                                       -- full single-line
+  street TEXT,
+  city TEXT,
+  state TEXT,
+  postal_code TEXT,
+  country TEXT DEFAULT 'US',
+  latitude NUMERIC(10,7),
+  longitude NUMERIC(10,7),
+  geoapify_place_id TEXT,                               -- from Geoapify result
+  -- canonical, lowercased+trimmed, no punctuation; see server-side canonicalizer
+  canonical_line TEXT NOT NULL,
+  -- SHA256 hash of canonical_line to enforce uniqueness efficiently
+  fingerprint TEXT NOT NULL,
+  is_default BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- One default address per user
+CREATE UNIQUE INDEX IF NOT EXISTS uq_addresses_default_per_user
+  ON addresses (user_id)
+  WHERE is_default IS TRUE;
+
+-- Prevent exact duplicates for a given user (same canonical content)
+CREATE UNIQUE INDEX IF NOT EXISTS uq_addresses_fingerprint_per_user
+  ON addresses (user_id, fingerprint);
+
+-- Also dedupe by geoapify_place_id when available
+CREATE UNIQUE INDEX IF NOT EXISTS uq_addresses_place_id_per_user
+  ON addresses (user_id, geoapify_place_id)
+  WHERE geoapify_place_id IS NOT NULL;
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS default_address_id UUID REFERENCES addresses(id),
+  ADD COLUMN IF NOT EXISTS is_local_customer BOOLEAN DEFAULT FALSE;
+
+-- Optional: local zones configuration (single radius or multiple polygons)
+CREATE TABLE IF NOT EXISTS service_zones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  -- Option A: center+radius
+  center_lat NUMERIC(10,7),
+  center_lng NUMERIC(10,7),
+  radius_km NUMERIC(8,3),
+  -- Option B: polygon (GeoJSON as JSONB)
+  polygon JSONB,
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Product fulfillment
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'fulfillment_type') THEN
+    CREATE TYPE fulfillment_type AS ENUM ('LOCAL_ONLY', 'SHIP_ONLY', 'LOCAL_OR_SHIP');
+  END IF;
+END$$;
+
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS fulfillment fulfillment_type DEFAULT 'LOCAL_OR_SHIP',
+  ADD COLUMN IF NOT EXISTS local_radius_km NUMERIC(8,3); -- optional per-product override
+002_order_snapshots.sql
+sql
+Copy
+Edit
+-- Immutable snapshot for orders (copied at order time)
+CREATE TABLE IF NOT EXISTS order_addresses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID UNIQUE NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  source_address_id UUID REFERENCES addresses(id),
+  formatted TEXT,
+  street TEXT,
+  city TEXT,
+  state TEXT,
+  postal_code TEXT,
+  country TEXT,
+  latitude NUMERIC(10,7),
+  longitude NUMERIC(10,7),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+2) Server: Single Source Services
+a) Canonicalizer (dedupe backbone)
+Create server/lib/addressCanonicalizer.ts:
+
+ts
+Copy
+Edit
+export function canonicalizeAddress(a: {
+  street?: string; city?: string; state?: string; postal_code?: string; country?: string;
+}) {
+  const clean = (s?: string) =>
+    (s ?? '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N} ]/gu, ' ')  // remove punctuation
+      .replace(/\s+/g, ' ')              // collapse whitespace
+      .trim();
+
+  const line = [
+    clean(a.street),
+    clean(a.city),
+    clean(a.state),
+    clean(a.postal_code),
+    clean(a.country || 'us'),
+  ].filter(Boolean).join('|');
+
+  return line;
+}
+b) Fingerprint helper
+server/lib/fingerprint.ts:
+
+ts
+Copy
+Edit
+import { createHash } from 'crypto';
+export const fingerprintOf = (canonicalLine: string) =>
+  createHash('sha256').update(canonicalLine).digest('hex');
+c) Local detection
+server/services/localService.ts:
+
+ts
+Copy
+Edit
+import type { Address } from '../types';
+import { haversineKm } from '../lib/haversine';
+
+export async function isLocal(address: Address): Promise<boolean> {
+  // read active zones
+  // if polygon present -> point-in-polygon; else center+radius
+  // fallback to env: LOCAL_CENTER_LAT/LNG, LOCAL_RADIUS_KM
+  // Return true if any active zone contains the address.
+  // Never use client decision; server is the authority.
+  ...
+}
+Note: If we don’t have PostGIS, do point-in-polygon in Node; use haversine for radius.
+
+d) Address Repository (enforces no duplicates)
+server/data/addressRepo.ts:
+
+ts
+Copy
+Edit
+import { canonicalizeAddress } from '../lib/addressCanonicalizer';
+import { fingerprintOf } from '../lib/fingerprint';
+
+export async function upsertAddress(params: {
+  userId?: string;
+  geoapify_place_id?: string | null;
+  street?: string; city?: string; state?: string; postal_code?: string; country?: string;
+  latitude?: number; longitude?: number;
+  setDefault?: boolean;
+}) {
+  const canonical = canonicalizeAddress(params);
+  const fp = fingerprintOf(canonical);
+
+  // Try by geoapify_place_id first (if present), else by (user_id, fingerprint)
+  // Use INSERT ... ON CONFLICT to avoid duplicates
+  const row = await sql/*sql*/`
+    INSERT INTO addresses (
+      user_id, geoapify_place_id, street, city, state, postal_code, country,
+      latitude, longitude, canonical_line, fingerprint, is_default
+    )
+    VALUES (
+      ${params.userId ?? null}, ${params.geoapify_place_id ?? null},
+      ${params.street ?? null}, ${params.city ?? null}, ${params.state ?? null},
+      ${params.postal_code ?? null}, ${params.country ?? 'US'},
+      ${params.latitude ?? null}, ${params.longitude ?? null},
+      ${canonical}, ${fp}, ${params.setDefault ?? false}
+    )
+    ON CONFLICT (user_id, fingerprint) DO UPDATE
+      SET latitude = EXCLUDED.latitude,
+          longitude = EXCLUDED.longitude,
+          updated_at = now()
+    RETURNING *;
+  `;
+
+  if (params.setDefault && params.userId) {
+    await sql/*sql*/`
+      UPDATE addresses SET is_default = FALSE WHERE user_id = ${params.userId};
+      UPDATE addresses SET is_default = TRUE  WHERE id = ${row.id};
+      UPDATE users SET default_address_id = ${row.id} WHERE id = ${params.userId};
+    `;
+    // Update cached local flag
+    const local = await isLocal(row);
+    await sql/*sql*/`UPDATE users SET is_local_customer = ${local} WHERE id = ${params.userId};`
+  }
+
+  return row;
+}
+e) API (only one shape everywhere)
+Zod schema server/schemas/address.ts exported and reused by all routes.
+
+Routes:
+
+GET /api/addresses → list user addresses (mark default).
+
+POST /api/addresses → upsert (uses canonicalizer & dedupe).
+
+PUT /api/addresses/:id → update, then recompute fingerprint & dedupe.
+
+PATCH /api/addresses/:id/default → set default, update users.default_address_id and users.is_local_customer.
+
+GET /api/user → always include { defaultAddress, isLocalCustomer }.
+
+POST /api/cart/validate → rejects non-local carts for LOCAL_ONLY; returns shippingOptions with freeLocalDelivery when applicable.
+
+POST /api/products/:id/add-to-cart → server-side block if product is LOCAL_ONLY and user is not local.
+
+POST /api/submissions → block if not local.
+
+Important: All places that need “localness” must call the same localService.isLocal() internally. Do not reimplement in handlers.
+
+3) Product Fulfillment Rules (server enforcement first)
+products.fulfillment ∈ { LOCAL_ONLY, SHIP_ONLY, LOCAL_OR_SHIP }
+
+Add-to-cart:
+
+LOCAL_ONLY → require users.is_local_customer = TRUE. Otherwise return 409 CONFLICT with code LOCAL_REQUIRED.
+
+SHIP_ONLY → shipping methods only (no local delivery messaging).
+
+LOCAL_OR_SHIP → if local, show “free local delivery in 48h” option; otherwise show shipping rates.
+
+Cart validation rechecks all items (no stale client state). Mixed carts disallowed if any line is LOCAL_ONLY and user is not local.
+
+4) Front-End: One Address Store + One Form
+a) Shared types + schema
+Create client/src/schemas/address.ts mirroring server Zod schema (export typed AddressDTO).
+
+Do not replicate address fields in per-page components.
+
+b) Address Store (single source in client)
+client/src/stores/addressStore.ts (Zustand or context):
+
+State: defaultAddress, isLocal, status (idle/loading/error).
+
+Actions: loadFromUser(), setFromGeoapify(result), setManual(formValues), saveAsDefault().
+
+Internally calls one API (/api/addresses or /api/user).
+
+Emits an address/updated event for dependent views; React Query invalidates user and cart.
+
+c) One AddressFields component
+client/src/components/AddressFields.tsx
+
+Props: { value, onChange, disabled?: boolean, showSaveToProfile?: boolean }
+
+Includes Geoapify Autocomplete:
+
+On selection → store geoapify_place_id, lat/lng, normalized fields (UI calls addressStore.setFromGeoapify).
+
+Manual entry allowed; “Validate with Geoapify” optional.
+
+Styling for visible borders (checkout and everywhere):
+
+Inputs: border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
+
+Groups: p-4 rounded-xl border-2 border-gray-200 bg-white shadow-sm
+
+Error states: border-red-500 + inline help text with aria-describedby.
+
+Ensure WCAG-AA contrast and :focus-visible styles.
+
+d) Form Sync rules
+Signup / Onboarding: If user inputs address, immediately POST /api/addresses with setDefault=true. Do not duplicate store; rely on AddressStore to update.
+
+Profile: Edits call the same upsert; toggling “Make default” updates user and recalculates isLocal.
+
+Checkout:
+
+If signed in → AddressStore preloads default; form locked by default with a Change button that opens AddressFields.
+
+If guest → AddressFields shown; on sign-in prompt “Save this as your default address?” (checkbox default ON).
+
+If user overrides address for a single order, do not change profile unless “Save to profile” is checked.
+
+e) Local UX
+Product cards:
+
+Show badge: Local Only, Ship Only, or Local or Ship.
+
+If not local and product is Local Only: disable Add to Cart with tooltip “Local address required.”
+
+Cart:
+
+If any Local Only item and user not local: banner with CTA “Set Local Address” (opens AddressFields modal).
+
+If local & eligible: show “Free Local Delivery — arrives within 48 hours.”
+
+5) Sync & No-Duplicate Guarantees (end-to-end)
+Database
+
+Unique indices:
+
+(user_id, fingerprint) and (user_id, geoapify_place_id) prevent duplicates.
+
+Backfill/merge script:
+
+Scan historical addresses; compute canonical_line + fingerprint; for duplicates, reassign foreign keys to the lowest id, delete the rest.
+
+API
+
+All creates/updates go through upsertAddress which:
+
+Computes canonical + fingerprint.
+
+Uses INSERT ... ON CONFLICT to dedupe.
+
+Optionally sets default and updates users.is_local_customer.
+
+One isLocal() service is called by:
+
+PATCH /addresses/:id/default
+
+user changes that affect default address
+
+cart validation
+
+add-to-cart checks
+
+submissions
+
+Client
+
+One AddressStore + one AddressFields. No per-page copies of address state.
+
+React Query keys: ['user'] and ['addresses'] are the source; all pages select from them.
+
+6) Environment & Config
+.env:
+
+ini
+Copy
+Edit
+GEOAPIFY_API_KEY=...
+LOCAL_CENTER_LAT=35.5946
+LOCAL_CENTER_LNG=-82.5540
+LOCAL_RADIUS_KM=35
+# optional: SERVICE_ZONES_POLYGON (JSON string) if using polygons
+If multiple zones are needed, insert records into service_zones table and set active=true. localService.isLocal should first check polygons; if none, use the env center+radius.
+
+7) Cart & Checkout Enforcement (server first)
+Hook into POST /api/products/:id/add-to-cart and POST /api/cart/validate:
+
+For LOCAL_ONLY:
+
+If user not local → 409 LOCAL_REQUIRED with message and optional guidance to update address.
+
+For LOCAL_OR_SHIP and SHIP_ONLY:
+
+If local and product allows local → include { method: 'LOCAL_DELIVERY', price: 0, etaHours: 48 } in shipping options.
+
+Stripe session creation must reflect chosen method; if local delivery, set shipping cost 0 and include note in metadata.
+
+8) Admin: Product Fulfillment UI
+In Admin Product editor add:
+
+Fulfillment select: Local Only / Ship Only / Local or Ship.
+
+Optional Local radius (km) override per product (use product value if set, else zone/global).
+
+Show badge on product list and detail.
+
+9) Observability Hardening
+/api/observability/errors:
+
+Validate payload (schema: message:string, stack?:string, context?:object, fingerprint?:string[], level?:'error'|'warn').
+
+Reject empty/heartbeat posts (no more repeated 400s from the client). Only send on real exceptions.
+
+Rate-limit per IP/user and coalesce by fingerprint.
+
+Server logs: include userId, addressId, and isLocal where relevant.
+
+10) Tests (must pass)
+Unit
+
+canonicalizeAddress produces identical output for formatting variants.
+
+isLocal returns correct values for points within/outside the zone (edge on boundary).
+
+upsertAddress de-dupes by fingerprint and geoapify_place_id.
+
+Integration
+
+Signup → provide address → becomes default; users.is_local_customer set accordingly.
+
+Profile change default → is_local_customer updates.
+
+Add-to-cart:
+
+Non-local + LOCAL_ONLY → blocked.
+
+Local + LOCAL_ONLY → allowed + “free local delivery” present.
+
+Checkout override address (order-only) does not change profile unless “Save to profile” checked.
+
+E2E (Playwright)
+
+Guest enters address at checkout → proceeds; on auth, choose “Save to profile” → subsequent visits prefill.
+
+Signed-in local user sees local delivery option and $0 shipping; order success.
+
+Non-local user cannot add LOCAL_ONLY items (UI + server).
+
+Duplicate attempts (same address via different pages) result in one address record.
+
+11) Implementation Notes & Gotchas
+No duplicate fields in tables/components:
+
+Don’t add address columns to users beyond default_address_id and is_local_customer.
+
+Don’t copy address props into page components—always use AddressStore + AddressFields.
+
+Order snapshots are the only legitimate duplication (immutable).
+
+Geoapify:
+
+Persist geoapify_place_id, lat/lng, and normalized fields; fall back to manual when unavailable.
+
+If user manually edits after selecting a place, recompute canonical + fingerprint.
+
+Caching: if Redis is available, cache isLocal(addressId) by fingerprint for 24h. Always recheck on default change.
+
+Accessibility: Ensure inputs have labels, aria-invalid on error, and visible focus rings.
+
+12) Post-Deployment Migration
+Backfill script:
+
+Pull any legacy address fields from users/orders, generate canonical_line/fingerprint, insert into addresses (one per unique), set users.default_address_id.
+
+Compute and set users.is_local_customer for all users with a default address.
+
+Deduplicate: reattach FKs to the canonical address id, delete extras.
+
+13) What to Hand Back
+SQL migrations (001, 002)
+
+New server modules: addressCanonicalizer, fingerprint, localService, addressRepo
+
+Updated routes + Zod schemas
+
+Front-end: AddressStore, AddressFields, checkout/profile integration, visible borders CSS
+
+Admin product editor updates
+
+Test suite (unit/integration/e2e) green
+
+Short runbook (how to change zones, how to backfill, how to debug local checks)
+
+Done Right = This Behavior
+I sign up and enter address → it is my default; profile & checkout prefill; cart knows if I’m local.
+
+I change it once in profile → all pages reflect; cart/eligibility updates.
+
+I try to buy Local Only as non-local → blocked with clear message.
+
+I’m local, buying local → “Free local delivery within 48 hours” shown, charged $0 shipping.
+
+I cannot create duplicate addresses even if I try from different forms or with tiny punctuation changes.
+
+Please implement exactly as above. If any conflict arises, favor “no duplication + single source of truth” and server-side enforcement.

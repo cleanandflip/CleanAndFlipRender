@@ -104,6 +104,13 @@ export const userRoleEnum = pgEnum("user_role", [
   "developer"
 ]);
 
+// Product fulfillment enum for local delivery system
+export const fulfillmentTypeEnum = pgEnum("fulfillment_type", [
+  "LOCAL_ONLY",
+  "SHIP_ONLY", 
+  "LOCAL_OR_SHIP"
+]);
+
 // Users table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -208,6 +215,9 @@ export const products = pgTable("products", {
   stripeLastSync: timestamp("stripe_last_sync"),
   sku: varchar("sku"),
   dimensions: jsonb("dimensions").$type<{length?: number, width?: number, height?: number}>(),
+  // Fulfillment and local delivery (temporarily commented out until migration)
+  // fulfillment: fulfillmentTypeEnum("fulfillment").default("LOCAL_OR_SHIP"),
+  // localRadiusKm: decimal("local_radius_km", { precision: 8, scale: 3 }), // Per-product override
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -221,19 +231,61 @@ export const products = pgTable("products", {
   index("idx_stripe_sync_status").on(table.stripeSyncStatus),
 ]);
 
-// Addresses
+// Unified Addresses table - Single source of truth
 export const addresses = pgTable("addresses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id),
-  type: varchar("type").notNull(), // 'shipping' or 'billing'
-  firstName: varchar("first_name").notNull(),
-  lastName: varchar("last_name").notNull(),
-  street: varchar("street").notNull(),
-  city: varchar("city").notNull(),
-  state: varchar("state").notNull(),
-  zipCode: varchar("zip_code").notNull(),
-  country: varchar("country").default("US"),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  label: text("label"), // "Home", "Work", etc.
+  formatted: text("formatted"), // Full single-line address
+  street: text("street"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
+  country: text("country").default("US"),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 11, scale: 7 }),
+  geoapifyPlaceId: text("geoapify_place_id"), // From Geoapify API
+  canonicalLine: text("canonical_line").notNull(), // Normalized for deduplication
+  fingerprint: text("fingerprint").notNull(), // SHA256 hash for efficient uniqueness
   isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  // One default address per user
+  index("uq_addresses_default_per_user").on(table.userId, table.isDefault).where(sql`${table.isDefault} IS TRUE`),
+  // Prevent duplicate addresses per user (same canonical content)
+  index("uq_addresses_fingerprint_per_user").on(table.userId, table.fingerprint),
+  // Dedupe by Geoapify place ID when available
+  index("uq_addresses_place_id_per_user").on(table.userId, table.geoapifyPlaceId).where(sql`${table.geoapifyPlaceId} IS NOT NULL`),
+]);
+
+// Service zones for local delivery configuration
+export const serviceZones = pgTable("service_zones", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  // Option A: center + radius
+  centerLat: decimal("center_lat", { precision: 10, scale: 7 }),
+  centerLng: decimal("center_lng", { precision: 11, scale: 7 }),
+  radiusKm: decimal("radius_km", { precision: 8, scale: 3 }),
+  // Option B: polygon (GeoJSON as JSONB)
+  polygon: jsonb("polygon"),
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Order addresses - immutable snapshots for historical accuracy
+export const orderAddresses = pgTable("order_addresses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().unique().references(() => orders.id, { onDelete: "cascade" }),
+  sourceAddressId: varchar("source_address_id").references(() => addresses.id),
+  formatted: text("formatted"),
+  street: text("street"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
+  country: text("country"),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 11, scale: 7 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -608,6 +660,12 @@ export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 
 export type Address = typeof addresses.$inferSelect;
 export type InsertAddress = z.infer<typeof insertAddressSchema>;
+
+export type ServiceZone = typeof serviceZones.$inferSelect;
+export type InsertServiceZone = typeof serviceZones.$inferInsert;
+
+export type OrderAddress = typeof orderAddresses.$inferSelect;
+export type InsertOrderAddress = typeof orderAddresses.$inferInsert;
 
 export type EquipmentSubmission = typeof equipmentSubmissions.$inferSelect;
 export type InsertEquipmentSubmission = z.infer<typeof insertEquipmentSubmissionSchema>;

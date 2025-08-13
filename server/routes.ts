@@ -2225,112 +2225,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // UNIFIED ADDRESS SYSTEM - Single definitive endpoint
+  // NEW UNIFIED ADDRESS SYSTEM - Zero duplicates, canonical management
   app.get("/api/addresses", requireAuth, async (req, res) => {
     try {
-      // SECURITY FIX: Use authenticated userId from middleware
-      const userId = req.userId; // Set by requireAuth middleware
-      
-      Logger.info("=== /api/addresses DEBUG ===");
-      Logger.info("Authenticated userId:", userId);
-      
-      // Fetch user with address data directly from database using Drizzle
-      const userWithAddress = await db
-        .select({
-          id: users.id,
-          street: users.street,
-          city: users.city,
-          state: users.state,
-          zipCode: users.zipCode,
-          latitude: users.latitude,
-          longitude: users.longitude,
-          isLocalCustomer: users.isLocalCustomer
-        })
-        .from(users)
-        .where(eq(users.id, userId!))
-        .limit(1);
-      
-      Logger.info("5. DB query result:", userWithAddress);
-      
-      if (!userWithAddress.length) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      
-      const user = userWithAddress[0];
-      
-      // Format address data for frontend
-      const addresses = [];
-      if (user.street && user.city && user.state && user.zipCode) {
-        addresses.push({
-          id: user.id,
-          street: user.street,
-          city: user.city,
-          state: user.state,
-          zipCode: user.zipCode,
-          latitude: user.latitude,
-          longitude: user.longitude,
-          isLocal: user.isLocalCustomer,
-          isDefault: true
-        });
-      }
-      
-      Logger.info("6. Formatted addresses:", addresses);
-      return res.json(addresses);
-      
+      const userId = req.user!.id;
+      const addresses = await storage.getUserAddresses(userId);
+      res.json(addresses);
     } catch (error) {
-      Logger.error("Error fetching addresses", error);
-      return res.status(500).json({ error: "Failed to fetch addresses" });
+      Logger.error("Error fetching addresses:", error);
+      res.status(500).json({ error: 'Failed to fetch addresses' });
     }
   });
 
   app.post("/api/addresses", requireAuth, async (req, res) => {
     try {
-      // SECURITY FIX: Use authenticated userId from middleware
-      const userId = req.userId; // Set by requireAuth middleware
-
-      const { street, city, state, zipCode, latitude, longitude } = req.body;
-
-      if (!street || !city || !state || !zipCode) {
-        return res.status(400).json({ error: "All address fields are required" });
-      }
-
-      // Check if this is in Asheville area (local customer detection)
-      const ashevilleZips = ['28801', '28802', '28803', '28804', '28805', '28806', '28810', '28813', '28814', '28815', '28816'];
-      const isLocal = ashevilleZips.includes(zipCode);
-
-      // Update user address directly in database using Drizzle
-      const [updatedUser] = await db
-        .update(users)
-        .set({
-          street,
-          city,
-          state,
-          zipCode,
-          latitude: latitude ? parseFloat(latitude) as any : null,
-          longitude: longitude ? parseFloat(longitude) as any : null,
-          isLocalCustomer: isLocal,
-          updatedAt: new Date()
-        })
-        .where(eq(users.id, userId!))
-        .returning();
-
-      res.json({
-        success: true,
-        address: {
-          id: updatedUser.id,
-          street: updatedUser.street,
-          city: updatedUser.city,
-          state: updatedUser.state,
-          zipCode: updatedUser.zipCode,
-          latitude: updatedUser.latitude,
-          longitude: updatedUser.longitude,
-          isLocal: updatedUser.isLocalCustomer,
-          isDefault: true
-        }
+      const { street, city, state, postalCode, country, latitude, longitude, geoapifyPlaceId, label, setDefault } = req.body;
+      
+      // Use unified address repository for canonical deduplication
+      const { addressRepo } = await import('./data/addressRepo');
+      const address = await addressRepo.upsertAddress({
+        userId: req.user!.id,
+        street,
+        city,
+        state,
+        postalCode,
+        country: country || 'US',
+        latitude,
+        longitude,
+        geoapifyPlaceId,
+        label,
+        setDefault
       });
+      
+      res.status(201).json(address);
     } catch (error) {
-      Logger.error("Error saving address", error);
-      res.status(500).json({ error: "Failed to save address" });
+      Logger.error('Error creating address:', error);
+      res.status(500).json({ error: 'Failed to create address' });
+    }
+  });
+
+  app.put("/api/addresses/:id/default", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.setDefaultAddress(req.user!.id, id);
+      res.status(200).json({ success: true });
+    } catch (error) {
+      Logger.error('Error setting default address:', error);
+      res.status(500).json({ error: 'Failed to set default address' });
+    }
+  });
+
+  app.delete("/api/addresses/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteAddress(id);
+      res.status(204).send();
+    } catch (error) {
+      Logger.error('Error deleting address:', error);
+      res.status(500).json({ error: 'Failed to delete address' });
     }
   });
 

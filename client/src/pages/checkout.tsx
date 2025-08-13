@@ -17,6 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { fetchDefaultAddress, saveAddress, Address } from "@/api/addresses";
 import { getQuote, Quote } from "@/api/checkout";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
+import { CheckoutAddressSchema, transformToCheckoutFormat } from "@shared/schemas/address";
 import { ShoppingCart, CreditCard, Truck, Lock, ArrowLeft } from "lucide-react";
 
 // Load Stripe
