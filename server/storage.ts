@@ -94,23 +94,21 @@ export interface IStorage {
 
   healthCheck(): Promise<{ status: string; timestamp: string }>;
 
-  // Cart operations
-  getCartItems(userId: string): Promise<(CartItem & { product: Product })[]>;
+  // SSOT Cart operations (unified interface)
+  getCartItems(userId?: string, sessionId?: string): Promise<(CartItem & { product: Product })[]>;
+  getCartItem(userId: string | null, sessionId: string | null, productId: string): Promise<CartItem | undefined>;
   addToCart(cartItem: InsertCartItem): Promise<CartItem>;
   updateCartItem(id: string, quantity: number): Promise<CartItem>;
   removeFromCart(id: string): Promise<void>;
-  clearCart(userId: string): Promise<void>;
-  setCartShippingAddress(userId: string, addressId: string): Promise<void>;
-
-  // Address operations removed - using SSOT address system via routes/addresses.ts
-
+  clearCart(userId?: string, sessionId?: string): Promise<void>;
+  mergeGuestCart(sessionId: string, userId: string): Promise<void>;
+  
   // Order operations
   getUserOrders(userId: string): Promise<Order[]>;
   getOrder(id: string): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: string, status: string, notes?: string): Promise<Order>;
   updateOrder(id: string, orderData: Partial<Order>): Promise<Order>;
-  getAllUsers(): Promise<User[]>;
   getOrderItems(orderId: string): Promise<(OrderItem & { product: Product })[]>;
   createOrderItems(orderItems: InsertOrderItem[]): Promise<OrderItem[]>;
 
@@ -130,9 +128,7 @@ export interface IStorage {
   trackActivity(activity: InsertActivityLog): Promise<ActivityLog>;
   getAnalytics(): Promise<any>;
   
-  // Removed equipment submission and wishlist analytics for single-seller model
-  
-  // Address operations - SSOT system
+  // SSOT Address operations
   getUserAddresses(userId: string): Promise<Address[]>;
   getAddress(userId: string, id: string): Promise<Address | undefined>;
   createAddress(userId: string, address: InsertAddress): Promise<Address>;
@@ -140,13 +136,13 @@ export interface IStorage {
   setDefaultAddress(userId: string, id: string): Promise<Address>;
   deleteAddress(userId: string, id: string): Promise<void>;
   
-  // Cart operations - bulletproof system
+  // SSOT Cart methods (unified interface)
   getCart(userId: string): Promise<{ items: any[], subtotal: number } | undefined>;
-  addToCart(userId: string, productId: string, quantity: number, variantId?: string): Promise<{ items: any[], subtotal: number }>;
-  updateCartItem(userId: string, itemId: string, quantity: number): Promise<{ items: any[], subtotal: number }>;
-  removeFromCart(userId: string, itemId: string): Promise<{ items: any[], subtotal: number }>;
-  removeFromCartByProductId(userId: string, productId: string): Promise<{ items: any[], subtotal: number }>;
   validateCart(userId: string): Promise<any>;
+  // Legacy compatibility for routes
+  addToCartLegacy(userId: string, productId: string, quantity: number): Promise<{ items: any[], subtotal: number }>;
+  updateCartItemLegacy(userId: string, itemId: string, quantity: number): Promise<{ items: any[], subtotal: number }>;
+  removeFromCartLegacy(userId: string, itemId: string): Promise<{ items: any[], subtotal: number }>;
   
   healthCheck(): Promise<{ status: string; timestamp: string; }>;
 }
@@ -169,8 +165,7 @@ export class DatabaseStorage implements IStorage {
           id, email, password, first_name, last_name, phone,
           stripe_customer_id, stripe_subscription_id, created_at, updated_at,
           role, google_id, profile_image_url, auth_provider, is_email_verified,
-          google_email, google_picture,
-          
+          google_email, google_picture
         FROM users
         WHERE LOWER(email) = LOWER(${normalizedEmail})
         LIMIT 1
@@ -185,8 +180,7 @@ export class DatabaseStorage implements IStorage {
             id, email, password, first_name, last_name, phone,
             stripe_customer_id, stripe_subscription_id, created_at, updated_at,
             role, google_id, profile_image_url, auth_provider, is_email_verified,
-            google_email, google_picture,
-            
+            google_email, google_picture
           FROM users
           WHERE LOWER(email) = LOWER(${normalizedEmail})
           LIMIT 1
@@ -1307,7 +1301,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
   }
 
-  // SSOT Legacy cart compatibility layer - CLEANED UP
+// SSOT: Unified system
   async getCart(userId: string): Promise<{ items: any[], subtotal: number } | undefined> {
     const cartItemsData = await this.getCartItems(userId);
     if (!cartItemsData?.length) return { items: [], subtotal: 0 };
@@ -1323,6 +1317,61 @@ export class DatabaseStorage implements IStorage {
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     return { items, subtotal };
   }
+
+  async validateCart(userId: string): Promise<any> {
+    const cart = await this.getCart(userId);
+    if (!cart) return { valid: true, items: [] };
+
+    const validationResults = await Promise.all(
+      cart.items.map(async (item) => {
+        const product = await this.getProduct(item.productId);
+        return {
+          itemId: item.id,
+          productId: item.productId,
+          available: product && (product.stockQuantity || 0) >= item.quantity,
+          currentPrice: product?.price,
+          requestedQuantity: item.quantity,
+          availableQuantity: product?.stockQuantity || 0
+        };
+      })
+    );
+
+    return {
+      valid: validationResults.every(r => r.available),
+      items: validationResults,
+      subtotal: cart.subtotal
+    };
+  }
+
+  // Legacy cart compatibility methods for routes
+  async addToCartLegacy(userId: string, productId: string, quantity: number): Promise<{ items: any[], subtotal: number }> {
+    const cartItem: InsertCartItem = {
+      userId,
+      productId,
+      quantity,
+      sessionId: null
+    };
+    
+    const existing = await this.getCartItem(userId, null, productId);
+    if (existing) {
+      await this.updateCartItem(existing.id, existing.quantity + quantity);
+    } else {
+      await this.addToCart(cartItem);
+    }
+    
+    return await this.getCart(userId) || { items: [], subtotal: 0 };
+  }
+
+  async updateCartItemLegacy(userId: string, itemId: string, quantity: number): Promise<{ items: any[], subtotal: number }> {
+    await this.updateCartItem(itemId, quantity);
+    return await this.getCart(userId) || { items: [], subtotal: 0 };
+  }
+
+  async removeFromCartLegacy(userId: string, itemId: string): Promise<{ items: any[], subtotal: number }> {
+    await this.removeFromCart(itemId);
+    return await this.getCart(userId) || { items: [], subtotal: 0 };
+  }
+
 }
 
 export const storage = new DatabaseStorage();

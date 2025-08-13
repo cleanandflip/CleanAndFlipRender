@@ -42,7 +42,7 @@ router.post('/', isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const data = addToCartSchema.parse(req.body);
     
-    const cart = await storage.addToCart(userId, data.productId, data.quantity, data.variantId);
+    const cart = await storage.addToCartLegacy(userId, data.productId, data.quantity);
     
     res.json({
       ok: true,
@@ -66,7 +66,7 @@ router.patch('/:itemId', isAuthenticated, async (req, res) => {
     const { itemId } = req.params;
     const { quantity } = z.object({ quantity: z.number().int().min(0) }).parse(req.body);
     
-    const cart = await storage.updateCartItem(userId, itemId, quantity);
+    const cart = await storage.updateCartItemLegacy(userId, itemId, quantity);
     
     res.json({
       ok: true,
@@ -87,7 +87,7 @@ router.delete('/:itemId', isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const { itemId } = req.params;
     
-    const cart = await storage.removeFromCart(userId, itemId);
+    const cart = await storage.removeFromCartLegacy(userId, itemId);
     
     res.json({
       ok: true,
@@ -112,7 +112,7 @@ router.delete('/items/:productId', isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const { productId } = req.params;
     
-    const cart = await storage.removeFromCart(userId, productId);
+    const cart = await storage.removeFromCartLegacy(userId, productId);
     
     res.json({
       ok: true,

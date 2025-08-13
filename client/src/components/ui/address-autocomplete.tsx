@@ -7,7 +7,7 @@ interface AddressData {
   lastName?: string;
   street1: string;
   street2?: string;
-  street?: string; // Legacy field for backward compatibility
+  // SSOT: Only street1/street2 fields used
   city: string;
   state: string;
   zipCode: string; // Client field name
@@ -154,7 +154,7 @@ export function AddressAutocomplete({
     
     const addressData: AddressData = {
       street1: suggestion.street || '',
-      street: suggestion.street || '', // Legacy field
+      // SSOT: Use street1 only
       city: suggestion.city || '',
       state: suggestion.state || '',
       zipCode: suggestion.zipCode || '', // Client field name

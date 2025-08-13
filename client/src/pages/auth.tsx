@@ -25,7 +25,7 @@ export default function AuthPage() {
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
-  // REMOVED: Legacy address fields - using SSOT address system instead
+  // SSOT: Using unified address system
   const formContainerRef = useRef<HTMLDivElement>(null);
   const loginFormRef = useRef<HTMLFormElement>(null);
   const registerFormRef = useRef<HTMLFormElement>(null);

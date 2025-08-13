@@ -243,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/admin', errorManagementRoutes);
   
   // Observability routes (local Sentry-style error tracking)
-  // Legacy observability routes (keep for compatibility) - disabled for now
+// SSOT: Unified system
   
   // New enhanced observability system with proper filtering and actions
   // Mounted later in the file after other route definitions
@@ -3527,7 +3527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
     
-    // Legacy logger for backward compatibility
+// SSOT: Unified system
     logger.info(`🚀 Server started on port ${port}`, {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',

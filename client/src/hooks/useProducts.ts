@@ -85,7 +85,7 @@ export function useProducts(args?: { q: string; category: string; sort: string; 
     total: filteredProducts.length,
     loading: isLoading,
     error,
-    // Legacy compatibility
+// SSOT: Unified system
     products: filteredProducts,
     categoryLabel,
     hasSearchQuery: Boolean(q?.trim()),
