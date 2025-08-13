@@ -56,18 +56,33 @@ export default function Checkout() {
     isDefault: false
   });
 
-  // Auto-select default address if available
+  // Auto-select address: DEFAULT first, then FIRST available, then show form
   useEffect(() => {
     if (!addressLoading && addresses.length > 0 && !selectedAddressId) {
-      const defaultAddr = addresses.find((addr: any) => addr.isDefault);
+      console.log('Checkout: Checking addresses for auto-selection', addresses);
+      
+      // Priority 1: Find DEFAULT address
+      const defaultAddr = addresses.find((addr: any) => addr.isDefault === true);
       if (defaultAddr) {
+        console.log('Checkout: Selected default address', defaultAddr.id);
         setSelectedAddressId(defaultAddr.id);
-      } else {
-        // If no default, show new address form
-        setShowNewAddressForm(true);
+        return;
+      }
+      
+      // Priority 2: Use FIRST address if no default
+      if (addresses.length > 0) {
+        console.log('Checkout: No default found, selecting first address', addresses[0].id);
+        setSelectedAddressId(addresses[0].id);
+        return;
       }
     }
-  }, [addresses, addressLoading, selectedAddressId]);
+    
+    // Priority 3: If NO addresses exist, show form
+    if (!addressLoading && addresses.length === 0 && !showNewAddressForm) {
+      console.log('Checkout: No addresses found, showing new address form');
+      setShowNewAddressForm(true);
+    }
+  }, [addresses, addressLoading, selectedAddressId, showNewAddressForm]);
 
   // Mutation to create new address
   const createAddressMutation = useMutation({

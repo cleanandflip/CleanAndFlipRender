@@ -23,9 +23,14 @@ export function ProfileNudge() {
     staleTime: 60000
   });
   
-  // FIXED: Don't show banner if user has ANY address in their profile  
+  // FIXED: Check ALL user addresses - default first, then any other addresses
   const addresses = addressesResponse?.data || addressesResponse || [];
+  
+  // Comprehensive address check: Look for default address first, then any address
+  const hasDefaultAddress = Array.isArray(addresses) && addresses.some((addr: any) => addr.isDefault === true);
   const hasAnyAddress = Array.isArray(addresses) && addresses.length > 0;
+  
+  // Only show banner if user has NO addresses at all (not just no default)
   const shouldShow = isAuthenticated && !hasAnyAddress && !dismissed;
   
   if (!shouldShow) return null;
