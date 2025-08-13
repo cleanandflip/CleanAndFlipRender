@@ -6,7 +6,7 @@ import { CheckoutSkeleton } from "@/components/ui/checkout-skeleton";
 import { AddressBlock } from "@/components/checkout/AddressBlock";
 import { useQuery } from "@tanstack/react-query";
 
-export default function CheckoutSimple() {
+export default function Checkout() {
   const { addresses, defaultAddress, isLoading: addressLoading } = useAddresses();
   
   const { data: cartResp, isLoading: cartLoading } = useQuery({

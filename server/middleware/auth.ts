@@ -1,5 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 
+// Check if user is logged in (compatible with Passport authentication)
+export const isAuthenticated = (req: any, res: Response, next: NextFunction) => {
+    // Check Passport authentication first
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      return next();
+    }
+    
+    // Fallback to session check for compatibility
+    if (req.session?.userId || req.session?.passport?.user) {
+      return next();
+    }
+    
+    return res.status(401).json({ error: 'Authentication required', message: 'Please log in to continue' });
+};
+
 export const authMiddleware = {
   // Check if user is logged in (compatible with Passport authentication)
   requireAuth: (req: any, res: Response, next: NextFunction) => {

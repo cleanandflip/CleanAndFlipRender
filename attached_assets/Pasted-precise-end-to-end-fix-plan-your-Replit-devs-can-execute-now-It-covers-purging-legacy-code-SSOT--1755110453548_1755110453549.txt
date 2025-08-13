@@ -1,0 +1,395 @@
+precise, end-to-end fix plan your Replit devs can execute now. It covers: purging legacy code, SSOT address rules (default + delete), checkout rebuild + auto-prefill, miles-based locality, and the “Add to Cart” UX/latency.
+
+0) Hard purge of legacy checkout/address code
+Delete these files entirely (they’re still getting imported by mistake per logs and route config):
+
+src/pages/checkout.tsx
+
+src/pages/checkout-new.tsx
+
+src/pages/checkout.jsx
+
+src/components/checkout/** (anything not referenced below)
+
+src/pages/onboarding/legacy/**
+
+Any unused AddressForm* variants except the one referenced below
+
+Old hooks: useDefaultAddress.ts*, useCheckout.ts* (keep only the versions referenced below)
+
+Keep & use only:
+
+src/pages/checkout-simple.tsx → rename to src/pages/checkout.tsx
+
+src/components/checkout/AddressBlock.tsx (new)
+
+src/hooks/use-addresses.ts (single source of truth)
+
+src/components/addresses/AddressForm.tsx (single form used everywhere)
+
+src/components/AddToCartButton.tsx (replace content with the version below)
+
+Routes
+
+src/config/routes.ts → route /checkout to pages/checkout.tsx (the renamed simple version) and remove every reference to the old pages.
+
+Build guard
+
+Add a prebuild script that fails CI if any of the deleted paths reappear:
+
+json
+Copy
+Edit
+// package.json
+"scripts": {
+  "prebuild": "node scripts/denylist-check.js"
+}
+scripts/denylist-check.js scans for filenames above and throws if found.
+
+1) Canonical address model + DB guarantees
+Data shape (SSOT)
+
+ts
+Copy
+Edit
+type Address = {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+
+  line1: string;      // street
+  line2?: string | null;
+  city: string;
+  state: string;      // 2-letter
+  postalCode: string; // 5-digit
+  country: 'US';
+
+  lat: number | null;
+  lng: number | null;
+
+  isDefault: boolean; // exactly one per user
+  isLocal: boolean;   // derived (<= 50 miles from warehouse)
+  createdAt: Date;
+  updatedAt: Date;
+}
+Migration (Postgres)
+
+sql
+Copy
+Edit
+-- 1) add derived + default flag if missing
+ALTER TABLE addresses
+  ADD COLUMN IF NOT EXISTS is_default boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS is_local boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS country text NOT NULL DEFAULT 'US';
+
+-- 2) enforce one default per user
+CREATE UNIQUE INDEX IF NOT EXISTS addresses_one_default_per_user
+ON addresses (user_id)
+WHERE is_default = true;
+Warehouse coords & miles
+Put in server/config/shipping.ts:
+
+ts
+Copy
+Edit
+export const WAREHOUSE = { lat: 35.5951, lng: -82.5515 }; // Asheville (example)
+export const LOCAL_RADIUS_MILES = 50;
+Miles distance util
+
+ts
+Copy
+Edit
+// server/lib/distance.ts
+export function milesBetween(a: {lat:number,lng:number}, b:{lat:number,lng:number}) {
+  const R = 3958.7613; // miles
+  const dLat = (b.lat - a.lat) * Math.PI/180;
+  const dLng = (b.lng - a.lng) * Math.PI/180;
+  const la1 = a.lat * Math.PI/180, la2 = b.lat * Math.PI/180;
+  const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+Derive isLocal on create/update
+
+ts
+Copy
+Edit
+import { WAREHOUSE, LOCAL_RADIUS_MILES } from '../config/shipping';
+import { milesBetween } from '../lib/distance';
+
+function deriveIsLocal(lat: number|null, lng: number|null) {
+  if (lat == null || lng == null) return false;
+  return milesBetween({lat, lng}, WAREHOUSE) <= LOCAL_RADIUS_MILES;
+}
+2) Address API (complete + safe)
+GET /api/addresses → list user addresses (default first)
+
+POST /api/addresses → create; if user has zero addresses, force isDefault = true; always compute isLocal
+
+PATCH /api/addresses/:id → update + recompute isLocal
+
+POST /api/addresses/:id/default → in a transaction: set this one true, set all others false
+
+DELETE /api/addresses/:id → forbid when is_default = true (must switch default first)
+
+Transaction sample (default switch):
+
+ts
+Copy
+Edit
+await db.$transaction(async (tx) => {
+  await tx.address.updateMany({ where: { userId }, data: { isDefault: false }});
+  await tx.address.update({ where: { id, userId }, data: { isDefault: true }});
+});
+First address auto-default
+In POST /api/addresses, count user addresses. If 0 → set isDefault = true regardless of request payload.
+
+3) Onboarding & “profile complete” gate
+Your logs show:
+
+bash
+Copy
+Edit
+[MIDDLEWARE] Blocking incomplete profile access ... /api/orders
+Replace any legacy check (km, old fields) with:
+
+ts
+Copy
+Edit
+// server/lib/profile.ts
+export async function isProfileComplete(userId: string) {
+  const addressCount = await db.address.count({ where: { userId }});
+  const hasDefault = await db.address.findFirst({ where: { userId, isDefault: true }, select: { id:true }});
+  return addressCount > 0 && !!hasDefault;
+}
+Use this everywhere (orders, cart checkout guard, dashboard tiles). Remove any old hasAddressKM, hasShipping, etc.
+
+4) Geoapify autocomplete → full field mapping
+Fix the mapping so selecting a suggestion fills every field and lat/lng:
+
+ts
+Copy
+Edit
+// client: components/ui/address-autocomplete.tsx (onSelect)
+const c = feature.properties; // Geoapify
+setValue('line1', c.address_line1 || `${c.housenumber ?? ''} ${c.street ?? ''}`.trim());
+setValue('line2', c.unit ?? '');
+setValue('city', c.city || c.town || c.village || '');
+setValue('state', c.state_code || '');
+setValue('postalCode', c.postcode || '');
+setValue('country', (c.country_code || 'US').toUpperCase());
+
+setValue('lat', feature.geometry?.coordinates?.[1] ?? null);
+setValue('lng', feature.geometry?.coordinates?.[0] ?? null);
+5) Dashboard → addresses panel (default label + delete)
+UI rules
+
+Show a “Default” badge on the default card.
+
+Non-default cards get: Make default + Delete buttons.
+
+Default card: Delete hidden/disabled (tooltip: “Set another default first”).
+
+First saved address becomes default automatically.
+
+Endpoints used
+
+POST /api/addresses/:id/default
+
+DELETE /api/addresses/:id
+
+Optimistic updates via TanStack Query:
+
+Query key: ['addresses','list']
+
+After default or delete → queryClient.invalidateQueries(['addresses','list'])
+
+6) Checkout rebuild (clean, fast, bulletproof)
+Component structure
+
+pgsql
+Copy
+Edit
+pages/checkout.tsx
+  <AddressBlock />        ← shows current selection (default on load)
+    - buttons: [Use default] [Choose saved…] [Use new address]
+    - if using saved: fields are READ-ONLY
+    - “Change” opens a modal list of saved addresses
+    - “Use new address” shows AddressForm (editable)
+  <ShippingMethod />      ← recomputes when selection changes
+  <OrderSummary />        ← cart items, totals
+Prefill logic
+
+On mount, call useAddresses() (query GET /api/addresses).
+
+If a default exists → set selectedAddressId = default.id and lock fields (read-only).
+
+“Choose saved…” opens a modal listing all addresses; selecting one locks fields to that saved address.
+
+“Use new address” toggles to editable AddressForm. Saving it:
+
+Writes via POST /api/addresses (honor “set as default” switch).
+
+Sets it selected.
+
+Invalidates ['addresses','list'].
+
+Never destructure null
+Fix the crash you saw:
+
+ts
+Copy
+Edit
+// hooks/use-addresses.ts
+export function useAddresses() {
+  const q = useQuery({...});
+  const addresses = q.data ?? [];
+  const defaultAddress = addresses.find(a => a.isDefault) ?? null;
+  return { addresses, defaultAddress, ...q };
+}
+// In components: always null-check before destructuring fields.
+Shipping options (miles)
+Show options only after an address is selected.
+
+If selected.isLocal === true → show Local Delivery (label: “within 50 miles”).
+
+Otherwise → show Ground Shipping (placeholder until carrier integration).
+
+Recompute when the user changes default or picks another address.
+
+7) Cart UX: instant “Add to Cart / In Cart” with hover-remove
+Client button (replace file content):
+
+tsx
+Copy
+Edit
+// components/AddToCartButton.tsx
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { addToCart, removeFromCart } from '@/api/cart';
+import { useState } from 'react';
+type Props = { productId: string; inCart: boolean };
+
+export default function AddToCartButton({ productId, inCart }: Props) {
+  const qc = useQueryClient();
+  const [hover, setHover] = useState(false);
+
+  const addMut = useMutation({
+    mutationKey: ['cart:add', productId],
+    mutationFn: () => addToCart(productId, 1),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ['cart'] });
+      const prev = qc.getQueryData<any>(['cart']);
+      qc.setQueryData(['cart'], (old: any) => optimisticAdd(old, productId));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => ctx?.prev && qc.setQueryData(['cart'], ctx.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['cart'] })
+  });
+
+  const rmMut = useMutation({
+    mutationKey: ['cart:remove', productId],
+    mutationFn: () => removeFromCart(productId),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ['cart'] });
+      const prev = qc.getQueryData<any>(['cart']);
+      qc.setQueryData(['cart'], (old: any) => optimisticRemove(old, productId));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => ctx?.prev && qc.setQueryData(['cart'], ctx.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['cart'] })
+  });
+
+  const busy = addMut.isPending || rmMut.isPending;
+  const active = inCart || addMut.isSuccess;
+
+  return (
+    <button
+      className={active ? 'btn btn-success' : 'btn btn-primary'}
+      disabled={busy}
+      onClick={() => (active ? rmMut.mutate() : addMut.mutate())}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      title={active ? (hover ? 'Remove from cart' : 'In Cart') : 'Add to Cart'}
+    >
+      {active ? (hover ? '✖ Remove' : 'In Cart') : 'Add to Cart'}
+    </button>
+  );
+}
+
+function optimisticAdd(old:any, productId:string){ /* return cart with item */ }
+function optimisticRemove(old:any, productId:string){ /* return cart without item */ }
+Server cart endpoints
+
+POST /api/cart/upsert (idempotent add/update qty)
+
+POST /api/cart/remove
+
+Return full cart so the client stays in sync.
+
+Index cart_items(user_id, product_id) for speed.
+
+This restores the blue→green state, with instant optimistic UI and a hover “✖ Remove”.
+
+8) Checkout: address read-only when using saved
+When selectedAddressId points to a saved address, render a read-only AddressCard (not the form).
+
+Show “Change” (choose another saved) and “Use new address”.
+
+Only the new address path shows editable inputs.
+
+9) Performance fixes you’ll see in logs
+The cart calls are ~200–800ms in your logs. With optimistic UI and idempotent endpoints, the UI becomes instant; the invalidation quietly refreshes in the background.
+
+Stop spamming /api/observability/errors (400 spam). Gate that endpoint behind NODE_ENV === 'production' and debounce client error reporting (e.g., 1 / 10s).
+
+Enable HTTP compression for /api/products/featured and /api/categories.
+
+Cache Geoapify autocomplete server-side for 60s per query string.
+
+10) QA / Acceptance checklist
+Addresses
+
+ Creating first address automatically sets isDefault = true.
+
+ Default address shows “Default” badge in dashboard.
+
+ Non-default addresses show Make default + Delete.
+
+ Attempting to delete default is blocked with a clear message.
+
+ Changing default triggers isLocal recomputation and immediately updates checkout shipping options.
+
+Checkout
+
+ Page loads with default address selected and read-only.
+
+ “Choose saved…” lists all addresses; selecting one updates shipping options and remains read-only.
+
+ “Use new address” shows editable form; saving adds it and (optionally) sets it as default.
+
+ Order summary always shows correct items and totals.
+
+ No crash when there’s no address yet (graceful empty state).
+
+Cart
+
+ Button shows Add to Cart (blue) → In Cart (green) instantly.
+
+ Hover green shows “✖ Remove” and removes optimistically.
+
+ Web requests succeed but UI never blocks on them.
+
+Guards
+
+ “Profile complete” uses addressCount>0 && hasDefault, not legacy checks.
+
+ Onboarding no longer 404s; autocomplete fills all fields.
+
+11) Small but important UI copy fixes
+Dashboard address actions: show Default badge on the default; change the action label on others to Set default (not “Make Default” everywhere).
+
+In checkout AddressBlock, button labels: Use default, Choose saved…, Use new address.
+
+Shipping method empty state: “Select an address to see shipping options.”

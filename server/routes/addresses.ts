@@ -1,287 +1,136 @@
-/**
- * SSOT Address System Routes - Single Source of Truth
- * Handles all address operations with proper validation, deduplication, and local customer detection
- */
-
-import express from 'express';
+import { Router } from 'express';
+import { storage } from '../storage';
 import { z } from 'zod';
-import { db } from '../db';
-import { addresses, users } from '../../shared/schema';
-import { eq, and, sql } from 'drizzle-orm';
-import { authMiddleware } from '../middleware/auth';
+import { isAuthenticated } from '../middleware/auth';
+import { isLocalMiles } from '../lib/distance';
 
-const { requireAuth } = authMiddleware;
-import { Logger } from '../utils/logger';
-import { isLocalMiles, getWarehouseCoords, isLocalAddress } from '../lib/distance';
+const router = Router();
 
-const router = express.Router();
-
-// Validation schemas
-const CreateAddressSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  street1: z.string().min(1, "Street address is required"),
-  street2: z.string().optional(),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(2, "State is required").max(2, "State must be 2 characters"),
-  postalCode: z.string().min(5, "Postal code is required"),
-  country: z.string().default("US"),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-  geoapifyPlaceId: z.string().optional(),
-  setDefault: z.boolean().optional().default(false)
+// Address schema with SSOT fields
+const addressSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  phone: z.string().optional().nullable(),
+  line1: z.string().min(1, 'Street address is required'),
+  line2: z.string().optional().nullable(),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().length(2, 'State must be 2 characters'),
+  postalCode: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid postal code'),
+  country: z.string().default('US'),
+  lat: z.number().nullable().optional(),
+  lng: z.number().nullable().optional(),
+  isDefault: z.boolean().default(false)
 });
 
-// Local customer detection service
-// Using SSOT distance calculation from lib/distance.ts (miles, not km)
-
-// PATCH /api/addresses/:id/default - Set address as default
-router.patch('/:id/default', requireAuth, async (req, res) => {
+// GET /api/addresses - list user addresses (default first)
+router.get('/', isAuthenticated, async (req, res) => {
   try {
-    const userId = (req.user as any).id;
-    const { id } = req.params;
+    const userId = req.user!.id;
+    const addresses = await storage.getUserAddresses(userId);
     
-    // Verify address belongs to user
-    const address = await db
-      .select()
-      .from(addresses)
-      .where(and(eq(addresses.id, id), eq(addresses.userId, userId)))
-      .limit(1);
+    // Sort with default first
+    const sorted = addresses.sort((a, b) => {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
     
-    if (!address.length) {
-      return res.status(404).json({ error: 'Address not found' });
+    res.json(sorted);
+  } catch (error) {
+    console.error('GET /api/addresses error:', error);
+    res.status(500).json({ message: 'Failed to fetch addresses' });
+  }
+});
+
+// POST /api/addresses - create address
+router.post('/', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const data = addressSchema.parse(req.body);
+    
+    // Check if user has zero addresses - if so, force this as default
+    const existingAddresses = await storage.getUserAddresses(userId);
+    if (existingAddresses.length === 0) {
+      data.isDefault = true;
     }
     
-    // Transaction: demote current default and promote new one
-    await db.transaction(async (tx) => {
-      // Remove default from all user's addresses
-      await tx
-        .update(addresses)
-        .set({ isDefault: false })
-        .where(and(eq(addresses.userId, userId), eq(addresses.isDefault, true)));
-      
-      // Set new default
-      await tx
-        .update(addresses)
-        .set({ isDefault: true })
-        .where(eq(addresses.id, id));
-      
-      // Update user profile
-      await tx
-        .update(users)
-        .set({ 
-          profileAddressId: id,
-          isLocalCustomer: address[0].isLocal
-        })
-        .where(eq(users.id, userId));
+    // Compute isLocal from coordinates
+    const isLocal = isLocalMiles(data.lat || null, data.lng || null);
+    
+    const address = await storage.createAddress(userId, {
+      ...data,
+      isLocal
     });
     
-    // Return sorted address list (default first)
-    const userAddresses = await db
-      .select()
-      .from(addresses)
-      .where(eq(addresses.userId, userId))
-      .orderBy(sql`${addresses.isDefault} DESC, ${addresses.createdAt} DESC`);
-    
-    Logger.info(`Address ${id} set as default for user ${userId}`);
-    res.json({ addresses: userAddresses, profileAddressId: id });
+    res.json(address);
   } catch (error) {
-    Logger.error('Error setting default address:', error);
-    res.status(500).json({ error: 'Failed to set default address' });
+    console.error('POST /api/addresses error:', error);
+    res.status(400).json({ 
+      message: error instanceof z.ZodError ? 'Invalid address data' : 'Failed to create address'
+    });
   }
 });
 
-// GET /api/addresses - Get user's addresses
-router.get('/', requireAuth, async (req, res) => {
+// PATCH /api/addresses/:id - update address
+router.patch('/:id', isAuthenticated, async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const data = addressSchema.partial().parse(req.body);
     
-    const userAddresses = await db
-      .select()
-      .from(addresses)
-      .where(eq(addresses.userId, userId))
-      .orderBy(sql`${addresses.isDefault} DESC, ${addresses.createdAt} DESC`);
+    // Recompute isLocal if coordinates changed
+    if (data.lat !== undefined || data.lng !== undefined) {
+      data.isLocal = isLocalMiles(data.lat || null, data.lng || null);
+    }
     
-    res.json(userAddresses);
+    const address = await storage.updateAddress(userId, id, data);
+    
+    res.json(address);
   } catch (error) {
-    Logger.error('Error fetching addresses:', error);
-    res.status(500).json({ error: 'Failed to fetch addresses' });
+    console.error('PATCH /api/addresses/:id error:', error);
+    res.status(400).json({ message: 'Failed to update address' });
   }
 });
 
-// POST /api/addresses - Create new address with SSOT deduplication
-router.post('/', requireAuth, async (req, res) => {
+// POST /api/addresses/:id/default - set as default
+router.post('/:id/default', isAuthenticated, async (req, res) => {
   try {
-    const userId = (req.user as any).id;
-    const validatedData = CreateAddressSchema.parse(req.body);
+    const userId = req.user!.id;
+    const { id } = req.params;
     
-    // Calculate if this is a local customer (within 50 miles) using SSOT distance system
-    const { isLocal, distanceMiles } = isLocalAddress(
-      validatedData.latitude || 0,
-      validatedData.longitude || 0
-    );
+    const address = await storage.setDefaultAddress(userId, id);
     
-    // Begin transaction for atomic operation
-    const result = await db.transaction(async (tx) => {
-      // If setting as default, unset current default
-      if (validatedData.setDefault) {
-        await tx
-          .update(addresses)
-          .set({ isDefault: false })
-          .where(eq(addresses.userId, userId));
-      }
-      
-      // Create the new address
-      const [newAddress] = await tx
-        .insert(addresses)
-        .values({
-          userId,
-          firstName: validatedData.firstName,
-          lastName: validatedData.lastName,
-          street1: validatedData.street1,
-          street2: validatedData.street2,
-          city: validatedData.city,
-          state: validatedData.state.toUpperCase(),
-          postalCode: validatedData.postalCode,
-          country: validatedData.country,
-          latitude: validatedData.latitude?.toString(),
-          longitude: validatedData.longitude?.toString(),
-          geoapifyPlaceId: validatedData.geoapifyPlaceId,
-          isDefault: validatedData.setDefault,
-          isLocal,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
-        .returning();
-      
-      // If this is the user's first address or set as default, update user's profile
-      const existingAddresses = await tx.select().from(addresses).where(eq(addresses.userId, userId)).limit(1);
-      if (validatedData.setDefault || existingAddresses.length === 0) {
-        await tx
-          .update(users)
-          .set({ 
-            profileAddressId: newAddress.id,
-            isLocalCustomer: isLocal
-          })
-          .where(eq(users.id, userId));
-      }
-      
-      return newAddress;
-    });
-    
-    Logger.info(`Address created for user ${userId}:`, { 
-      addressId: result.id, 
-      isLocal, 
-      isDefault: validatedData.setDefault 
-    });
-    
-    res.status(201).json(result);
+    res.json(address);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      Logger.warn('Address validation failed:', { errors: error.errors });
+    console.error('POST /api/addresses/:id/default error:', error);
+    res.status(400).json({ message: 'Failed to set default address' });
+  }
+});
+
+// DELETE /api/addresses/:id - delete address (forbid if default)
+router.delete('/:id', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    
+    // Check if this is the default address
+    const address = await storage.getAddress(userId, id);
+    if (!address) {
+      return res.status(404).json({ message: 'Address not found' });
+    }
+    
+    if (address.isDefault) {
       return res.status(400).json({ 
-        error: 'Validation failed',
-        fieldErrors: error.errors.reduce((acc, err) => {
-          acc[err.path.join('.')] = err.message;
-          return acc;
-        }, {} as Record<string, string>)
+        message: 'Cannot delete default address. Set another address as default first.' 
       });
     }
     
-    Logger.error('Error creating address:', error);
-    res.status(500).json({ error: 'Failed to create address' });
-  }
-});
-
-// PUT /api/addresses/:id/default - Set address as default
-router.put('/:id/default', requireAuth, async (req, res) => {
-  try {
-    const userId = (req.user as any).id;
-    const { id } = req.params;
+    await storage.deleteAddress(userId, id);
     
-    // Verify address belongs to user
-    const address = await db
-      .select()
-      .from(addresses)
-      .where(and(eq(addresses.id, id), eq(addresses.userId, userId)))
-      .limit(1);
-    
-    if (!address.length) {
-      return res.status(404).json({ error: 'Address not found' });
-    }
-    
-    // Update in transaction
-    await db.transaction(async (tx) => {
-      // Unset all user's default addresses
-      await tx
-        .update(addresses)
-        .set({ isDefault: false })
-        .where(eq(addresses.userId, userId));
-      
-      // Set this address as default
-      await tx
-        .update(addresses)
-        .set({ isDefault: true, updatedAt: new Date() })
-        .where(eq(addresses.id, id));
-      
-      // Update user profile
-      await tx
-        .update(users)
-        .set({ 
-          profileAddressId: id,
-          isLocalCustomer: address[0].isLocal
-        })
-        .where(eq(users.id, userId));
-    });
-    
-    Logger.info(`Address ${id} set as default for user ${userId}`);
-    res.json({ success: true });
+    res.json({ message: 'Address deleted successfully' });
   } catch (error) {
-    Logger.error('Error setting default address:', error);
-    res.status(500).json({ error: 'Failed to set default address' });
-  }
-});
-
-// DELETE /api/addresses/:id - Delete address
-router.delete('/:id', requireAuth, async (req, res) => {
-  try {
-    const userId = (req.user as any).id;
-    const { id } = req.params;
-    
-    // Verify address belongs to user
-    const address = await db
-      .select()
-      .from(addresses)
-      .where(and(eq(addresses.id, id), eq(addresses.userId, userId)))
-      .limit(1);
-    
-    if (!address.length) {
-      return res.status(404).json({ error: 'Address not found' });
-    }
-    
-    // PREVENT DEFAULT ADDRESS DELETE - return 409 error as specified in fix list
-    if (address[0].isDefault) {
-      return res.status(409).json({ 
-        code: "DEFAULT_ADDRESS_DELETE_FORBIDDEN",
-        error: "Cannot delete the default address. Set another default first." 
-      });
-    }
-    
-    // Delete the address (not default, so safe)
-    await db.delete(addresses).where(eq(addresses.id, id));
-    
-    // Return remaining addresses
-    const remainingAddresses = await db
-      .select()
-      .from(addresses)
-      .where(eq(addresses.userId, userId))
-      .orderBy(sql`${addresses.isDefault} DESC, ${addresses.createdAt} DESC`);
-    
-    Logger.info(`Address ${id} deleted for user ${userId}`);
-    res.json({ addresses: remainingAddresses });
-  } catch (error) {
-    Logger.error('Error deleting address:', error);
-    res.status(500).json({ error: 'Failed to delete address' });
+    console.error('DELETE /api/addresses/:id error:', error);
+    res.status(400).json({ message: 'Failed to delete address' });
   }
 });
 

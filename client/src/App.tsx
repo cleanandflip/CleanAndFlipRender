@@ -26,7 +26,7 @@ import OnboardingFlow from "@/pages/onboarding/index";
 import NotFound from "@/pages/not-found";
 
 // Lazy load less critical pages for better code splitting
-const Checkout = lazy(() => import("@/pages/checkout-simple"));
+const Checkout = lazy(() => import("@/pages/checkout"));
 const SellToUs = lazy(() => import("@/pages/sell-to-us"));
 const TrackSubmission = lazy(() => import("@/pages/track-submission"));
 // Removed Wishlist for single-seller model

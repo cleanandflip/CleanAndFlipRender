@@ -1,69 +1,24 @@
-/**
- * Distance calculations in miles for local delivery detection
- * SSOT for all distance-based features
- */
+// Miles distance calculation utility
+import { WAREHOUSE, LOCAL_RADIUS_MILES } from '../config/shipping';
 
-const EARTH_RADIUS_MILES = 3958.7613;
-
-export interface Coordinates {
-  lat: number;
-  lon: number;
+export function milesBetween(a: {lat:number,lng:number}, b:{lat:number,lng:number}) {
+  const R = 3958.7613; // Earth radius in miles
+  const dLat = (b.lat - a.lat) * Math.PI/180;
+  const dLng = (b.lng - a.lng) * Math.PI/180;
+  const la1 = a.lat * Math.PI/180, la2 = b.lat * Math.PI/180;
+  const h = Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
 }
 
-/**
- * Calculate distance between two points using Haversine formula (in miles)
- */
-export function haversineMiles(a: Coordinates, b: Coordinates): number {
-  const toRad = (v: number) => v * Math.PI / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLon = toRad(b.lon - a.lon);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
-  return 2 * EARTH_RADIUS_MILES * Math.asin(Math.sqrt(h));
+export function getWarehouseCoords() {
+  return WAREHOUSE;
 }
 
-/**
- * Check if user location is within local delivery radius (50 miles)
- */
-export function isLocalMiles(
-  userCoords: { latitude: number | null; longitude: number | null }, 
-  warehouseCoords: { latitude: number; longitude: number }, 
-  radiusMiles: number = 50
-): boolean {
-  if (userCoords.latitude == null || userCoords.longitude == null) return false;
-  
-  return haversineMiles(
-    { lat: userCoords.latitude, lon: userCoords.longitude },
-    { lat: warehouseCoords.latitude, lon: warehouseCoords.longitude }
-  ) <= radiusMiles;
+export function isLocalMiles(lat: number | null, lng: number | null): boolean {
+  if (lat == null || lng == null) return false;
+  return milesBetween({lat, lng}, WAREHOUSE) <= LOCAL_RADIUS_MILES;
 }
 
-/**
- * Get warehouse coordinates from environment
- */
-export function getWarehouseCoords(): Coordinates {
-  const lat = parseFloat(process.env.WAREHOUSE_LAT || '35.5951'); // Asheville, NC default
-  const lon = parseFloat(process.env.WAREHOUSE_LON || '-82.5515');
-  
-  if (isNaN(lat) || isNaN(lon)) {
-    throw new Error('Invalid warehouse coordinates in environment variables');
-  }
-  
-  return { lat, lon };
-}
-
-/**
- * Calculate distance and determine if local for address creation
- */
-export function isLocalAddress(addrLat: number, addrLon: number) {
-  const warehouse = getWarehouseCoords();
-  const distanceMiles = haversineMiles(
-    { lat: addrLat, lon: addrLon },
-    warehouse
-  );
-  return { 
-    isLocal: distanceMiles <= 50, 
-    distanceMiles: Math.round(distanceMiles * 10) / 10 // Round to 1 decimal 
-  };
+export function isLocalAddress(address: any): boolean {
+  return isLocalMiles(address.lat, address.lng);
 }
