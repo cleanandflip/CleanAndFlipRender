@@ -2469,6 +2469,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fix cart redirect issue: profile is complete if they have ANY default address
       const hasAnyAddress = Boolean(userData.fallback_address_id || userData.profile_address_id);
       
+      Logger.debug(`[USER API] Profile completion check:`, {
+        userId: userData.id,
+        profile_address_id: userData.profile_address_id,
+        fallback_address_id: userData.fallback_address_id,
+        hasAnyAddress,
+        profileComplete: hasAnyAddress
+      });
+      
       const response = {
         id: userData.id,
         email: userData.email,
@@ -2477,6 +2485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: userData.phone,
         role: userData.role,
         profileComplete: hasAnyAddress, // Profile complete if they have any address
+        profileAddressId: userData.profile_address_id || userData.fallback_address_id, // Include profileAddressId for ProtectedRoute
         onboardingStep: userData.onboarding_step || 0,
         isLocal: Boolean(userData.is_local_customer),
         onboardingCompleted: Boolean(userData.onboarding_completed_at),
