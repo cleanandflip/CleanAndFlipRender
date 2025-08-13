@@ -1,0 +1,149 @@
+You’ve got two things happening here:
+
+1) JSX parse error in client/src/pages/checkout.tsx
+bash
+Copy
+Edit
+Unterminated JSX contents (548:12) → points at the final </div>
+That means something inside the JSX above that line isn’t closed properly. The most common culprits:
+
+A plain comment inside JSX: /* … */ or // …
+✅ Must be {/* … */}
+
+A conditional block not fully closed:
+condition && ( <Section> … </Section> } ← missing )
+
+A tag not closed: <Input …> instead of <Input … />
+
+Extra/insufficient wrapper tags at the bottom (mismatched </form>, </aside>, </div>)
+
+Fast, surgical fix (do these in order)
+Fix comments in JSX
+Search the file for /* and // between the return ( and the final ); and convert to JSX comments:
+
+tsx
+Copy
+Edit
+{/* any comment text */}
+{/* @ts-expect-error Reason here */}
+Close any conditionals you opened
+For every &&( … or {( … ensure you end with ) and } before the final </div>:
+
+tsx
+Copy
+Edit
+{isLoggedIn && (
+  <AddressForm />
+)}  // ) and } both present
+Balance the bottom of the component
+The end of the file should look like exactly this structure (one grid wrapper with a <form> and an <aside>, then close and return):
+
+tsx
+Copy
+Edit
+return (
+  <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-6">
+    <form /* …props… */>
+      {/* …form fields… */}
+    </form>
+
+    <aside /* …props… */>
+      {/* …order summary… */}
+    </aside>
+  </div>
+); // end return
+}   // end function
+export default CheckoutPage; // or the actual component name
+Common mistake I’m expecting: an extra </div> or a missing ) right before the last </div>.
+
+Auto-format to reveal mismatches
+Run Prettier in Replit (Format) or from the shell:
+
+bash
+Copy
+Edit
+npx prettier client/src/pages/checkout.tsx -w
+If it bails, the location it stops at is where the mismatch begins.
+
+If it still errors after this, copy-paste the last ~100 lines of checkout.tsx and I’ll mark the exact character.
+
+2) Repeated 400s on /api/observability/errors
+You’re posting an empty or invalid body to that endpoint on page load:
+
+bash
+Copy
+Edit
+POST /api/observability/errors 400 (many times, 0–2ms)
+Fix front-end (only send when there’s a real error)
+In your globalErrorCatcher / errorLogger:
+
+ts
+Copy
+Edit
+export async function logClientError(payload?: {
+  message: string; stack?: string; url?: string; userAgent?: string; meta?: any;
+}) {
+  // Don’t send empty heartbeats
+  if (!payload?.message) return;
+
+  await fetch('/api/observability/errors', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+Ensure you only call logClientError inside window.onerror, unhandledrejection, React error boundary, etc.—not during startup.
+
+Fix back-end (accept JSON and validate)
+In your Express route, make sure JSON parsing is enabled and reject nicely:
+
+ts
+Copy
+Edit
+app.use('/api/observability/errors', express.json());
+
+app.post('/api/observability/errors', (req, res) => {
+  const { message, stack, url, userAgent, meta } = req.body || {};
+  if (!message) {
+    return res.status(400).json({ error: 'message is required' });
+  }
+  // TODO: persist to DB / queue
+  return res.sendStatus(202);
+});
+3) Slow dev fetches (/, /@vite/client, /src/index.css)
+These 1–2.7s dev hits are typical on Replit but you can trim them:
+
+Tailwind JIT: ensure content globs are minimal in tailwind.config.js.
+
+Vite deps pre-bundle:
+
+ts
+Copy
+Edit
+// vite.config.ts
+export default defineConfig({
+  server: { hmr: { overlay: true } },
+  optimizeDeps: {
+    include: ['react', 'react-dom', '@tanstack/react-query'],
+  },
+});
+Disable source maps in dev (if you don’t need them):
+
+ts
+Copy
+Edit
+export default defineConfig({ build: { sourcemap: false } });
+Quick checklist
+ No /* … */ or // … inside JSX — use {/* … */}
+
+ Every && ( has a matching )} before the final </div>
+
+ <form> and <aside> both closed; only one outer wrapper </div>
+
+ export default <ComponentName> present once
+
+ Client only posts to /api/observability/errors when there’s an actual error
+
+ Server route parses JSON and validates message
+
+Ping me with the file tail if you want me to mark the exact fix line-by-line.
