@@ -828,14 +828,52 @@ export class DatabaseStorage implements IStorage {
 
   // Address operations
   async getUserAddresses(userId: string): Promise<Address[]> {
-    // First check the separate addresses table
-    const addressRecords = await db.select().from(addresses).where(eq(addresses.userId, userId));
-    
-    if (addressRecords.length > 0) {
-      return addressRecords;
+    // EMERGENCY FIX: Handle schema mismatch between old table and new Address type
+    try {
+      // Use raw SQL to handle schema differences until migration completes
+      const rawAddresses = await db.execute(sql`
+        SELECT 
+          id,
+          user_id as "userId",
+          COALESCE(type, 'shipping') as label,
+          CONCAT(street, ', ', city, ', ', state, ' ', zip_code) as formatted,
+          street,
+          city, 
+          state,
+          zip_code as "postalCode",
+          COALESCE(country, 'US') as country,
+          NULL::text as latitude,
+          NULL::text as longitude,
+          NULL::text as "geoapifyPlaceId",
+          CONCAT(LOWER(street), '|', LOWER(city), '|', LOWER(state), '|', zip_code, '|us') as "canonicalLine",
+          encode(sha256(CONCAT(LOWER(street), '|', LOWER(city), '|', LOWER(state), '|', zip_code, '|us')::bytea), 'hex') as fingerprint,
+          COALESCE(is_default, false) as "isDefault",
+          created_at as "createdAt",
+          created_at as "updatedAt"
+        FROM addresses 
+        WHERE user_id = ${userId}
+        ORDER BY is_default DESC, created_at DESC
+      `);
+      
+      return rawAddresses.rows as Address[];
+    } catch (error) {
+      Logger.error(`Error in getUserAddresses for user ${userId}:`, error);
+      return [];
     }
-    
-    // If no separate addresses, check if user has address data in profile
+  }
+
+  async setDefaultAddress(userId: string, addressId: string): Promise<void> {
+    // Update old table schema for now
+    await db.execute(sql`UPDATE addresses SET is_default = false WHERE user_id = ${userId}`);
+    await db.execute(sql`UPDATE addresses SET is_default = true WHERE id = ${addressId}`);
+  }
+
+  async deleteAddress(addressId: string): Promise<void> {
+    await db.execute(sql`DELETE FROM addresses WHERE id = ${addressId}`);
+  }
+
+  // Legacy user address fallback (for migration compatibility)
+  async getUserProfileAddress(userId: string): Promise<Address | null> {
     const user = await db.select({
       id: users.id,
       firstName: users.firstName,
@@ -875,12 +913,11 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         };
         
-        return [virtualAddress];
+        return virtualAddress;
       }
     }
     
-    // Return empty array if no addresses found
-    return [];
+    return null;
   }
 
   async createAddress(address: InsertAddress): Promise<Address> {

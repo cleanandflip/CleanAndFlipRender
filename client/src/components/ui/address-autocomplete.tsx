@@ -5,7 +5,8 @@ interface AddressData {
   street: string;
   city: string;
   state: string;
-  zipCode: string;
+  zipCode?: string;
+  postalCode?: string;
 }
 
 interface AddressAutocompleteProps {

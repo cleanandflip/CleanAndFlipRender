@@ -106,7 +106,10 @@ function AddressesSection() {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-bebas text-2xl">SAVED ADDRESSES</h2>
-        <Button>
+        <Button onClick={() => {
+          setEditingAddress(null);
+          setIsEditDialogOpen(true);
+        }} data-testid="button-add-address">
           Add New Address
         </Button>
       </div>
@@ -118,7 +121,10 @@ function AddressesSection() {
           <p className="text-text-secondary mb-6">
             Add addresses to make checkout faster.
           </p>
-          <Button>
+          <Button onClick={() => {
+            setEditingAddress(null);
+            setIsEditDialogOpen(true);
+          }} data-testid="button-add-address-empty">
             Add Address
           </Button>
         </div>
@@ -146,7 +152,7 @@ function AddressesSection() {
                   </div>
                   <p className="text-text-secondary text-sm leading-relaxed">
                     {address.street}<br />
-                    {address.city}, {address.state} {address.zipCode}
+                    {address.city}, {address.state} {address.postalCode || address.zipCode}
                   </p>
                   {address.isLocal && (
                     <p className="text-green-400 text-sm mt-2">
@@ -175,7 +181,9 @@ function AddressesSection() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="glass border-border">
           <DialogHeader>
-            <DialogTitle className="text-white">Edit Address</DialogTitle>
+            <DialogTitle className="text-white">
+              {editingAddress ? 'Edit Address' : 'Add New Address'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <AddressAutocomplete
