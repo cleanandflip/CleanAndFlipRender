@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { LRUCache } from 'lru-cache';
+import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
 import { authMiddleware } from "./middleware/auth";
@@ -239,13 +240,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/health/live', healthLive);
   app.get('/health/ready', healthReady);
 
-  // GEOApify Proxy - avoid CORS issues with direct client calls
+  // GEOApify Proxy with caching and proper error handling
+  const geocodeCache = new LRUCache<string, any>({ max: 500, ttl: 1000 * 60 * 60 }); // 1h cache
+  const geocodeLimiter = rateLimit({ 
+    windowMs: 60_000, // 1 minute
+    limit: 30, // 30 requests per minute per IP
+    message: { error: "GEOCODE_RATE_LIMIT", message: "Too many geocoding requests" }
+  });
+
+  app.use("/api/geocode/autocomplete", geocodeLimiter);
+  
   app.get("/api/geocode/autocomplete", async (req, res) => {
     try {
-      const { text } = req.query;
+      const text = String(req.query.text || "").trim();
       
-      if (!text || typeof text !== 'string' || text.length < 3) {
+      if (text.length < 3) {
         return res.json({ results: [] });
+      }
+
+      // Check cache first
+      const cacheKey = `geo:${text.toLowerCase()}`;
+      const cached = geocodeCache.get(cacheKey);
+      if (cached) {
+        console.log('✅ Geocode cache hit:', text);
+        return res.json(cached);
       }
 
       const apiKey = process.env.VITE_GEOAPIFY_API_KEY;
@@ -265,19 +283,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const response = await fetch(url);
       
+      if (response.status === 429) {
+        // Pass through 429 (too many requests) - let client handle gracefully
+        return res.status(429).json({ error: "GEOCODE_RATE_LIMIT", message: "Quota exceeded" });
+      }
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('GEOApify API Error:', response.status, errorText);
-        return res.status(500).json({ error: 'Geocoding service error' });
+        // Return empty results for graceful degradation
+        return res.status(200).json({ results: [] });
       }
 
       const data = await response.json();
       console.log('✅ GEOApify success:', data.results?.length || 0, 'results');
       
+      // Cache successful results
+      geocodeCache.set(cacheKey, data);
+      
       res.json(data);
     } catch (error) {
       console.error('Geocoding proxy error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      // Graceful degradation - return empty results instead of 500
+      res.status(200).json({ results: [] });
     }
   });
   
@@ -825,8 +853,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 2. Check existing cart item for smart quantity handling
-      const effectiveUserId = userId && userId !== 'temp-user-id' ? userId : null;
-      const effectiveSessionId = !userId || userId === 'temp-user-id' ? sessionId : null;
+      // SECURITY FIX: Remove temp-user-id logic - only use authenticated users
+      const effectiveUserId = userId || null;
+      const effectiveSessionId = !userId ? sessionId : null;
       
       const existingItem = await storage.getCartItem(effectiveUserId, effectiveSessionId, productId);
       

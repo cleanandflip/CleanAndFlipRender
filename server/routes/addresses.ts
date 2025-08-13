@@ -1,25 +1,11 @@
 import { Router } from "express";
-import { z } from "zod";
 import { db } from "../db";
 import { addresses } from "../../shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "../auth";
+import { AddressSchema, toAddressDTO, type AddressDTO } from "../types/address";
 
 const router = Router();
-
-const AddressSchema = z.object({
-  firstName: z.string(),
-  lastName: z.string(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  street1: z.string(),
-  street2: z.string().optional(),
-  city: z.string(),
-  state: z.string(),
-  postalCode: z.string(),
-  country: z.string().default("US"),
-  isDefault: z.boolean().default(false),
-});
 
 // Get user addresses (default only for checkout autofill)
 router.get("/", requireAuth, async (req: any, res) => {
@@ -49,20 +35,8 @@ router.get("/", requireAuth, async (req: any, res) => {
       ORDER BY is_default DESC, created_at DESC
     `);
     
-    // Map to frontend expected format  
-    const mapped = (userAddresses.rows as any[]).map(addr => ({
-      id: addr.id,
-      firstName: addr.firstName || "",
-      lastName: addr.lastName || "",
-      street: addr.street || "",
-      city: addr.city || "", 
-      state: addr.state || "",
-      zipCode: addr.zipCode || "",
-      postalCode: addr.zipCode || "",
-      country: addr.country || "US",
-      isDefault: addr.isDefault || false,
-      isLocal: false // TODO: Add local delivery check
-    }));
+    // Map to frontend expected format using canonical DTO
+    const mapped = (userAddresses.rows as any[]).map(addr => toAddressDTO(addr));
     
     res.json(isDefault ? mapped[0] : mapped);
   } catch (error) {
@@ -71,34 +45,44 @@ router.get("/", requireAuth, async (req: any, res) => {
   }
 });
 
-// Save address
-router.post("/", requireAuth, async (req: any, res) => {
+// Save address with proper validation
+router.post("/", requireAuth, async (req: any, res, next) => {
+  const parsed = AddressSchema.safeParse(req.body);
+  if (!parsed.success) {
+    // Return 400 with detailed validation errors, not 500
+    return res.status(400).json({ 
+      error: "VALIDATION_FAILED", 
+      issues: parsed.error.flatten() 
+    });
+  }
+
   try {
     const userId = req.user.id;
-    const validated = AddressSchema.parse(req.body);
+    const dto = parsed.data;
 
     // If setting as default, unset other defaults first
-    if (validated.isDefault) {
-      await db.update(addresses)
-        .set({ isDefault: false })
-        .where(eq(addresses.userId, userId));
+    if (dto.isDefault) {
+      await db.execute(sql`
+        UPDATE addresses SET is_default = false WHERE user_id = ${userId}
+      `);
     }
 
-    // EMERGENCY FIX: Use raw SQL for insert too
+    // Insert new address using canonical DTO fields
     const savedAddress = await db.execute(sql`
       INSERT INTO addresses (
         user_id, type, first_name, last_name, street, city, state, zip_code, country, is_default
       ) VALUES (
-        ${userId}, 'shipping', ${validated.firstName}, ${validated.lastName}, 
-        ${validated.street1}, ${validated.city}, ${validated.state}, 
-        ${validated.postalCode}, ${validated.country}, ${validated.isDefault}
+        ${userId}, 'shipping', ${dto.firstName}, ${dto.lastName}, 
+        ${dto.street1}, ${dto.city}, ${dto.state}, 
+        ${dto.postalCode}, ${dto.country}, ${dto.isDefault || false}
       ) RETURNING *
     `);
 
-    res.json(savedAddress.rows[0]);
+    const result = toAddressDTO(savedAddress.rows[0]);
+    res.json(result);
   } catch (error) {
-    console.error("Error saving address:", error);
-    res.status(500).json({ error: "Failed to save address" });
+    console.error("Database error saving address:", error);
+    return next(error); // Let error handler deal with 500s
   }
 });
 

@@ -6,6 +6,7 @@ interface AddressData {
   city: string;
   state: string;
   zipCode?: string;
+  zip_code?: string; // Server expects snake_case
   postalCode?: string;
 }
 
@@ -148,7 +149,8 @@ export function AddressAutocomplete({
       street: suggestion.street || '',
       city: suggestion.city || '',
       state: suggestion.state || '',
-      zipCode: suggestion.zipCode || ''
+      zip_code: suggestion.zipCode || '', // Use snake_case for server
+      zipCode: suggestion.zipCode || '' // Keep camelCase for client compat
     };
     
     // Update input with just the street address (not full formatted)

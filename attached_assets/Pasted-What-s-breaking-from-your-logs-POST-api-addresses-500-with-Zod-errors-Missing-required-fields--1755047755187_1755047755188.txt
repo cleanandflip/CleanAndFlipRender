@@ -1,0 +1,211 @@
+What’s breaking (from your logs)
+POST /api/addresses → 500 with Zod errors
+Missing required fields: firstName, lastName, street1, postalCode. The server turns a validation error into a 500. Client likely sending wrong field names or an incomplete payload.
+
+Geoapify autocomplete → 429 “Quota exceeded” (and slow >1s when not 429)
+We’re hammering the API; no debounce/cache/rate-limit/fallback. Server returns 500 instead of propagating 429.
+
+/api/orders?userId=temp-user-id in use
+Insecure & brittle. Route should derive userId from the session, not query params.
+
+Intermittent 401 on /api/user
+UI sometimes fires requests before auth hydrates.
+
+✅ Fixes to ship
+A) Address API: validate correctly, never 500 on Zod, and normalize field names
+1. Pick one canonical public JSON shape (camelCase):
+
+ts
+Copy
+Edit
+// server/types/address.ts
+import { z } from "zod";
+
+export const AddressSchema = z.object({
+  id: z.string().uuid().optional(),
+  firstName: z.string().min(1, "Required"),
+  lastName: z.string().min(1, "Required"),
+  street1: z.string().min(1, "Required"),
+  street2: z.string().optional().nullable(),
+  city: z.string().min(1, "Required"),
+  state: z.string().min(2, "Required"),
+  postalCode: z.string().min(3, "Required"),
+  country: z.string().min(2).default("US"),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  isDefault: z.boolean().optional()
+});
+export type AddressDTO = z.infer<typeof AddressSchema>;
+2. Make the route return 400 on validation errors (not 500):
+
+ts
+Copy
+Edit
+// server/routes/addresses.ts (POST /api/addresses)
+router.post("/api/addresses", requireAuth, async (req, res, next) => {
+  const parsed = AddressSchema.safeParse(req.body);
+  if (!parsed.success) {
+    // don’t throw – respond 400 with details
+    return res.status(400).json({ error: "VALIDATION_FAILED", issues: parsed.error.flatten() });
+  }
+  try {
+    const dto = parsed.data;
+    const saved = await addressesRepo.upsert({ userId: req.user.id, ...dto });
+    if (dto.isDefault) await usersRepo.setDefaultAddress(req.user.id, saved.id);
+    return res.json(toAddressDTO(saved)); // ensure camelCase
+  } catch (e) {
+    return next(e);
+  }
+});
+3. Front-end: send the correct payload
+In the address form submit, ensure you post exactly the canonical keys above (not zipCode, not address1, etc.). Prefill firstName/lastName from the user profile so they’re never undefined:
+
+ts
+Copy
+Edit
+// client: on submit
+await api.post("/api/addresses", {
+  firstName: form.firstName || user.firstName,
+  lastName: form.lastName || user.lastName,
+  street1, street2, city, state, postalCode, country, latitude, longitude, isDefault
+});
+4. Surfacing errors in UI
+If server returns 400 { error: "VALIDATION_FAILED", issues }, map issues.fieldErrors back to form fields and show messages. Don’t swallow them.
+
+B) Geoapify: debounce, cache, rate-limit, proper 429 handling, and fallback
+1. Front-end debounce (400–500ms) & min length (≥3 chars):
+
+ts
+Copy
+Edit
+// client: useEffect for search text
+useEffect(() => {
+  if (query.trim().length < 3) return;
+  const id = setTimeout(() => geocode(query), 450);
+  return () => clearTimeout(id);
+}, [query]);
+2. Server: per-query LRU cache + rate limit + propagate 429:
+
+ts
+Copy
+Edit
+// server/routes/geocode.ts
+import LRU from "lru-cache";
+import rateLimit from "express-rate-limit";
+
+const cache = new LRU<string, any>({ max: 500, ttl: 1000 * 60 * 60 }); // 1h
+const limiter = rateLimit({ windowMs: 60_000, limit: 30 }); // per-IP
+
+app.use("/api/geocode/autocomplete", limiter);
+
+router.get("/api/geocode/autocomplete", async (req, res) => {
+  const text = String(req.query.text || "").trim();
+  if (text.length < 3) return res.json({ results: [] });
+
+  const key = `ga:${text.toLowerCase()}`;
+  const hit = cache.get(key);
+  if (hit) return res.json(hit);
+
+  try {
+    const r = await fetch(geoapifyUrl(text));
+    if (r.status === 429) {
+      return res.status(429).json({ error: "GEOCODE_RATE_LIMIT" });
+    }
+    if (!r.ok) {
+      // basic fallback: return empty (UI allows manual entry)
+      return res.status(200).json({ results: [] });
+    }
+    const data = await r.json();
+    cache.set(key, data);
+    return res.json(data);
+  } catch {
+    return res.status(200).json({ results: [] }); // graceful degrade
+  }
+});
+3. UI fallback when 429
+If 429, show: “Search limit reached — please type your address manually. All fields remain editable.” Keep the form usable without suggestions.
+
+C) Orders API: remove userId query param entirely
+Why: It’s insecure and creates “temp-user-id” reads. Derive from session.
+
+ts
+Copy
+Edit
+// server/routes/orders.ts
+router.get("/api/orders", requireAuth, async (req, res) => {
+  const orders = await ordersRepo.listByUser(req.user.id);
+  res.json(orders);
+});
+// (Ignore/strip any userId query param.)
+Front-end: call /api/orders with no userId.
+
+D) Auth hydration race: don’t call user-scoped endpoints before ready
+Wrap any address/orders calls behind authenticated state:
+
+ts
+Copy
+Edit
+const { status } = useSession(); // or your auth hook
+useQuery(['addresses'], fetchAddresses, { enabled: status === 'authenticated' });
+E) Keep “one source of truth” and keep everything in sync
+DTO types in one shared package (e.g., @app/shared-types) and imported by both server and client.
+
+React Query keys: ['user'] and ['addresses'] are the only sources.
+
+After any address create/update/default-set:
+
+ts
+Copy
+Edit
+queryClient.invalidateQueries({ queryKey: ['addresses'] });
+queryClient.invalidateQueries({ queryKey: ['user'] });
+Server mappers: (DB → DTO) and (Geoapify → DTO) live in one file to guarantee consistent field names.
+
+F) Quick regression steps (run now)
+Sign in, go to Dashboard → Addresses.
+
+Add an address using autocomplete; then try again after hitting 429 (simulate with many queries) — ensure manual entry still works and save succeeds.
+
+Verify POST /api/addresses returns 200; on missing fields returns 400 with field errors, not 500.
+
+Open Checkout — address prefilled; changing it updates Dashboard after save (query invalidations fire).
+
+Open Orders — confirm request is /api/orders (no userId param).
+
+Reload the app — no 401 races; queries only fire when authenticated.
+
+G) Small but important polish
+Log clarity: When returning 400 for Zod, log info with the field list, not an error stack. Reserve 5xx logs for real server faults.
+
+Geoapify masking: Keep masking the API key in logs (you already are 👍).
+
+Minimize API chatter: For autocomplete, only call when input changes (not on focus), and cancel in-flight requests on blur/unmount.
+
+Deliverables to confirm
+A diff (or excerpt) showing:
+
+AddressSchema + route returning 400 (not 500) on validation failure.
+
+Front-end payload posting the canonical keys.
+
+Geocode route with LRU cache + rate limit + 429 passthrough.
+
+Orders route using session user.id.
+
+Screenshots of Network tab for the successful address save and the 429 fallback case.
+
+Run these changes and the errors you pasted should disappear:
+
+No more 500 on /api/addresses for missing fields (it becomes a 400 with form errors shown).
+
+Geoapify stops rate-limit spirals and stays responsive via debounce/cache/fallback.
+
+Orders no longer reference temp-user-id.
+
+
+
+
+
+
+
+
