@@ -136,7 +136,7 @@ export default function AddressesPanel() {
           {addresses.map((address: any) => (
             <div key={address.id} className={`p-4 glass rounded-lg transition-all ${
               address.isDefault 
-                ? 'border-2 border-[#3B82F6] bg-gradient-to-r from-blue-900/20 to-blue-800/10 shadow-lg shadow-blue-500/20' 
+                ? 'border-2 border-[#3B82F6] bg-slate-800/30' 
                 : 'border border-border hover:border-gray-600'
             }`}>
               <div className="flex items-start justify-between">
