@@ -24,9 +24,9 @@ export default function Checkout() {
   // API SHAPE FIX: Server now returns plain array consistently  
   const addresses = Array.isArray(addressesRaw) ? addressesRaw : [];
 
+  // Cart should work for everyone, not just authenticated users
   const { data: cart, isLoading: cartLoading } = useQuery({
     queryKey: ['cart'],
-    enabled: isAuthenticated,
     staleTime: 30000
   });
 
@@ -99,7 +99,8 @@ export default function Checkout() {
     );
   }
 
-  // Cart data loaded successfully
+  // Debug cart structure
+  console.log('Cart data in checkout:', cart);
   
   const cartItems = (cart as any)?.items || [];
   const hasItems = cartItems.length > 0;
