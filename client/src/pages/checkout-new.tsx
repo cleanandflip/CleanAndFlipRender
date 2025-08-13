@@ -10,7 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { PageLoader } from "@/components/ui/page-loader";
-import { useDefaultAddress } from "@/hooks/useDefaultAddress";
+import { useAddresses } from "@/hooks/use-addresses";
+import { CheckoutSkeleton } from "@/components/ui/checkout-skeleton";
+import { AddressBlock } from "@/components/checkout/AddressBlock";
 import { useAuth } from "@/hooks/use-auth";
 import AddressPicker from "@/components/addresses/AddressPicker";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
@@ -41,6 +43,31 @@ type AddressFormData = z.infer<typeof addressSchema>;
 type AddressMode = "default" | "saved" | "new";
 
 export default function CheckoutNew() {
+  const { addresses, defaultAddress, isLoading } = useAddresses();
+  
+  if (isLoading) return <CheckoutSkeleton />;
+
+  // If no addresses exist, start in "new address" mode
+  const hasSaved = !!defaultAddress;
+
+  return (
+    <CheckoutShell
+      initialMode={hasSaved ? "default" : "new"}
+      defaultAddress={defaultAddress ?? undefined}
+      addresses={addresses}
+    />
+  );
+}
+
+function CheckoutShell({
+  initialMode,
+  defaultAddress,
+  addresses
+}: {
+  initialMode: "default" | "new";
+  defaultAddress?: any;
+  addresses: any[];
+}) {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -68,7 +95,7 @@ export default function CheckoutNew() {
 
   // Queries
   const { user, isLoading: userLoading } = useAuth();
-  const { defaultAddress, isLoading: addrLoading, addresses = [] } = useDefaultAddress();
+  const { addresses, defaultAddress, isLoading: addrLoading } = useAddresses();
   
   const { data: cartResp, isLoading: cartLoading } = useQuery({
     queryKey: ["/api/cart"],

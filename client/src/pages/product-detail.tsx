@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { productEvents } from "@/lib/queryClient";
-import { AddToCartButton } from "@/components/AddToCartButton";
+import AddToCartButton from "@/components/AddToCartButton";
 import { 
   ShoppingCart, 
   Heart, 
@@ -399,10 +399,7 @@ export default function ProductDetail() {
               {/* Cart Button - Full Width */}
               <div className="mt-6">
                 <AddToCartButton
-                  productId={product.id}
-                  stock={product.stockQuantity}
-                  quantity={quantity}
-                  className=""
+                  product={product}
                 />
               </div>
               

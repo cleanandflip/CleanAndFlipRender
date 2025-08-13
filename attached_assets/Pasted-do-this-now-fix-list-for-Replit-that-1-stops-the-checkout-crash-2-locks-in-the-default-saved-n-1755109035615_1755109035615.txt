@@ -1,0 +1,309 @@
+do-this-now fix list for Replit that (1) stops the checkout crash, (2) locks in the “default/saved/new” address behavior from our spec, (3) restores the Add-to-Cart UX (blue → green + red X on hover), and (4) removes the old checkout/cart code paths that keep sneaking back in.
+
+0) Kill the crash on /checkout-new (useDefaultAddress(...) is null)
+Problem: useDefaultAddress() sometimes returns null, and CheckoutNew destructures it.
+
+Fix (never return nulls, and guard in the page):
+
+Create/replace: client/src/hooks/use-addresses.ts
+
+ts
+Copy
+Edit
+import { useQuery } from "@tanstack/react-query";
+import { getAddresses } from "@/api/addresses"; // SSOT client
+import { getUser } from "@/api/auth"; // must include profile_address_id & profileAddress
+
+export function useAddresses() {
+  const userQ = useQuery({ queryKey: ["user"], queryFn: getUser });
+  const addrsQ = useQuery({ queryKey: ["addresses"], queryFn: getAddresses, enabled: !!userQ.data });
+
+  const addresses = addrsQ.data ?? [];
+  const defaultAddress = addresses.find(a => a.is_default) ?? addresses[0] ?? null;
+  const isLocalUser = !!defaultAddress?.is_local;
+
+  return {
+    addresses,
+    defaultAddress,       // may be null when user has none
+    isLocalUser,
+    isLoading: userQ.isLoading || addrsQ.isLoading,
+    isError: userQ.isError || addrsQ.isError,
+  };
+}
+Harden the page: client/src/pages/checkout-new.tsx
+
+ts
+Copy
+Edit
+import { useAddresses } from "@/hooks/use-addresses";
+
+export default function CheckoutNew() {
+  const { addresses, defaultAddress, isLoading } = useAddresses();
+
+  if (isLoading) return <CheckoutSkeleton />;
+
+  // If no addresses exist, start in "new address" mode
+  const hasSaved = !!defaultAddress;
+
+  return (
+    <CheckoutShell
+      initialMode={hasSaved ? "default" : "new"}
+      defaultAddress={defaultAddress ?? undefined}
+      addresses={addresses}
+    />
+  );
+}
+Never destructure a hook return that can be null. Either pass undefined or gate rendering.
+
+1) Route to the new page only & purge legacy
+Do this:
+
+Delete all legacy checkout files:
+
+client/src/pages/checkout.tsx
+
+client/src/pages/checkout_broken.tsx
+
+any components/checkout/* that the old page used.
+
+Wire one route only:
+
+client/src/config/routes.ts → map /checkout to CheckoutNew (and only that component).
+
+Search & remove every import of the old components:
+
+grep -R "checkout_broken\|pages/checkout.tsx" client -n
+
+In the server, make sure no SSR or redirect still points to legacy slugs.
+
+2) Implement the address mode switch (saved/new) and lock fields
+Create/replace: client/src/components/checkout/AddressBlock.tsx
+
+tsx
+Copy
+Edit
+type Mode = "default" | "saved" | "new";
+
+export function AddressBlock({
+  addresses, defaultAddress, initialMode, onAddressResolved
+}: {
+  addresses: AddressDTO[];
+  defaultAddress?: AddressDTO;
+  initialMode: Mode;
+  onAddressResolved: (addr: { addressId?: string; addressObj?: AddressDTO }) => void;
+}) {
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const [selectedId, setSelectedId] = useState<string | undefined>(defaultAddress?.id);
+
+  // When mode or selection changes, inform parent for shipping quotes
+  useEffect(() => {
+    if (mode === "new") return; // parent will pass addressObj from the form
+    const addr = addresses.find(a => a.id === (selectedId ?? defaultAddress?.id));
+    if (addr) onAddressResolved({ addressId: addr.id });
+  }, [mode, selectedId, defaultAddress?.id, addresses]);
+
+  return (
+    <section className="space-y-3">
+      <div className="flex gap-2">
+        <ModeChip active={mode==="default"} onClick={() => { setMode("default"); setSelectedId(defaultAddress?.id) }}>
+          Use default
+        </ModeChip>
+        <ModeChip active={mode==="saved"} onClick={() => setMode("saved")}>
+          Choose saved…
+        </ModeChip>
+        <ModeChip active={mode==="new"} onClick={() => setMode("new")}>
+          Use new address
+        </ModeChip>
+      </div>
+
+      {mode !== "new" ? (
+        <LockedAddressCard
+          address={addresses.find(a => a.id === (selectedId ?? defaultAddress?.id))}
+          onChange={() => openAddressPicker(/* modal -> setSelectedId(id) */)}
+          onEditAddressBook={() => navigate("/dashboard?tab=addresses")}
+        />
+      ) : (
+        <EditableAddressForm
+          onValidAddress={(addrObj) => onAddressResolved({ addressObj: addrObj })}
+          // Geoapify autocomplete must fill street, address2, city, state, zip, country, lat, lng, geoapify_place_id
+          geoapify // existing integration
+        />
+      )}
+    </section>
+  );
+}
+Locked when using saved/default; editable only in “new” mode.
+
+Parent receives { addressId } or { addressObj } and triggers quotes.
+
+3) Quotes & local detection (miles)
+Client: client/src/components/checkout/ShippingMethods.tsx
+
+ts
+Copy
+Edit
+const quotesQ = useQuery({
+  queryKey: ["shipping:quotes", keyFromAddress(addressId, addressObj)],
+  queryFn: () => api.getQuotes({ addressId, addressObj }),
+  enabled: !!addressId || !!isAddressValid(addressObj),
+});
+Server (already implemented—verify):
+
+POST /api/shipping/quotes accepts { addressId } or full address payload.
+
+Local detection uses 50 miles Haversine (not km). Return normalized:
+
+json
+Copy
+Edit
+{ "quotes": [{ "id":"local", "label":"Local Delivery (≤50 mi)", "eta":"1-2 days", "price": 0, "isLocal":true }] }
+4) Fix the checkout summary + button gating
+Order Summary must read React Query cart:
+
+useQuery(["cart"], api.getCart)
+
+Show skeleton while loading; if empty, render “Cart is empty” with a button to /shop.
+
+“Continue to Payment” is disabled until:
+
+cart.items.length > 0
+
+We have either addressId or valid addressObj
+
+A shippingQuoteId is selected
+
+5) Restore the Add-to-Cart button behavior (blue→green + red X hover)
+Replace client/src/components/AddToCartButton.tsx with this pattern:
+
+tsx
+Copy
+Edit
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCart } from "@/hooks/use-cart";
+
+export default function AddToCartButton({ product }: { product: Product }) {
+  const qc = useQueryClient();
+  const { cart } = useCart(); // queryKey ["cart"]
+  const inCart = !!cart?.items?.some(i => i.productId === product.id);
+
+  const addM = useMutation({
+    mutationFn: () => api.cart.addItem({ productId: product.id, qty: 1 }),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["cart"] });
+      const prev = qc.getQueryData<Cart>(["cart"]);
+      qc.setQueryData<Cart>(["cart"], old => optimisticAdd(old, product));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => ctx?.prev && qc.setQueryData(["cart"], ctx.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["cart"] }),
+  });
+
+  const removeM = useMutation({
+    mutationFn: () => api.cart.removeItem({ productId: product.id }),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["cart"] });
+      const prev = qc.getQueryData<Cart>(["cart"]);
+      qc.setQueryData<Cart>(["cart"], old => optimisticRemove(old, product.id));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => ctx?.prev && qc.setQueryData(["cart"], ctx.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["cart"] }),
+  });
+
+  return (
+    <div className="relative">
+      {!inCart ? (
+        <button
+          className="btn btn-primary w-full"
+          onClick={() => addM.mutate()}
+          disabled={addM.isPending}
+          aria-label="Add to cart"
+        >
+          {addM.isPending ? "Adding…" : "Add to Cart"}
+        </button>
+      ) : (
+        <button
+          className="btn w-full bg-green-600 hover:bg-green-700"
+          disabled
+          aria-label="In cart"
+        >
+          In Cart
+        </button>
+      )}
+
+      {inCart && (
+        <button
+          className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-red-600 hover:bg-red-700 text-white
+                     flex items-center justify-center"
+          title="Remove from cart"
+          onClick={() => removeM.mutate()}
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
+Why this fixes “failed to find mutation”:
+
+We use one useMutation per action, scoped to this component. We don’t try to “find” global mutations later.
+
+We only use invalidateQueries(["cart"]) after settle. No custom mutation registry → no lookup errors.
+
+Server endpoints expected:
+
+POST /api/cart/items { productId, qty }
+
+DELETE /api/cart/items/:productId
+
+6) Dashboard addresses: one default, delete rules
+Ensure server enforces 1 default per user.
+
+Client: In dashboard list, show a Default badge.
+
+Disable “Delete” for the default item; allow “Make Default” on others.
+
+After “Make Default”, invalidate ["user"], ["addresses"], and re-run local-user check.
+
+7) Local-user status must react to default changes
+On PATCH /api/addresses/:id/default, recompute is_local with 50 miles and update users.profile_address_id.
+
+Client: listen to ["addresses"] invalidation → useAddresses() recomputes isLocalUser.
+
+Anywhere we gate features by “Local Customer”, read from useAddresses().isLocalUser (SSOT).
+
+8) QA checklist (run ALL)
+No addresses → checkout opens in new mode; Geoapify select populates all fields; quotes show; can save to profile.
+
+Has 2 addresses (A default local, B not) → opens locked with A; quotes show “Local Delivery”. Choose saved→B; quotes recompute (no local).
+
+Switch default in dashboard → revisit checkout: it locks to the new default & quotes match.
+
+Order summary shows correct items/prices; empty cart guard.
+
+Add to Cart UI flips blue→green; red × removes; no “failed to find mutation”.
+
+Auth off → /checkout redirects to login (ProtectedRoute) instead of crashing.
+
+9) Quick file map (so nothing leaks legacy)
+Keep
+
+client/src/pages/checkout-new.tsx
+
+client/src/components/checkout/{AddressBlock, EditableAddressForm, AddressPickerModal, ShippingMethods, OrderSummary}.tsx
+
+client/src/hooks/use-addresses.ts
+
+client/src/components/AddToCartButton.tsx (new one above)
+
+Remove
+
+client/src/pages/checkout.tsx
+
+client/src/pages/checkout_broken.tsx
+
+any old useDefaultAddress.ts that returns null/resolves to any
+
+legacy cart mutations/utilities that aren’t used by the new button
+
+If Replit follows the above exactly, the checkout page stops crashing, saved/default addresses are locked & switchable, quotes compute from a single SSOT source in miles, the order summary is correct, and the Add-to-Cart interaction is back to the blue→green + red-X flow you specified.

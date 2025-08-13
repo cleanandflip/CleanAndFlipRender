@@ -20,7 +20,7 @@ import type { Product } from "@shared/schema";
 import { routes } from "@/config/routes";
 import { StockIndicator } from "@/components/ui/StockIndicator";
 import { ProductPrice } from "@/components/ui/ProductPrice";
-import { AddToCartButton } from "@/components/AddToCartButton";
+import AddToCartButton from "@/components/AddToCartButton";
 
 interface ProductCardProps {
   product: Product;
@@ -127,10 +127,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 
                 <div className="flex items-center gap-2">
                   <AddToCartButton
-                    productId={product.id}
-                    stock={product.stockQuantity}
-                    size="sm"
-                    className=""
+                    product={product}
                   />
                 </div>
               </div>
@@ -221,10 +218,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       {/* Static Add to Cart Button */}
       <div className="px-4 pb-4" onClick={(e) => e.stopPropagation()}>
         <AddToCartButton
-          productId={product.id}
-          stock={product.stockQuantity}
-          size="sm"
-          className="w-full"
+          product={product}
         />
       </div>
     </div>

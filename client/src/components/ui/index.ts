@@ -1,6 +1,6 @@
 // Unified UI Components - Single source of truth
 
-export { AddToCartButton } from '../AddToCartButton';
+// AddToCartButton imported directly from component file
 export { ProductPrice } from './ProductPrice';
 export { StockIndicator } from './StockIndicator';
 export { LoadingSpinner } from './LoadingSpinner';
