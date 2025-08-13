@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { CreditCard, RefreshCw, CheckCircle, XCircle, TrendingUp, DollarSign, Activity, Zap, Clock } from 'lucide-react';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useSocket } from '@/hooks/useSingletonSocket.tsx';
+import { useWebSocketReady } from '@/hooks/useWebSocketState';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
@@ -20,7 +21,8 @@ export function StripeTab() {
     avgTransaction: 0
   });
   
-  const { isConnected, send } = useWebSocket();
+  const { subscribe } = useSocket();
+  const ready = useWebSocketReady();
   
   // Fetch real Stripe transactions
   const { data: transactionData, refetch: refetchTransactions } = useQuery({
@@ -158,9 +160,9 @@ export function StripeTab() {
         <div>
           <h2 className="text-2xl font-bold text-white">Stripe Integration</h2>
           <div className="flex items-center gap-2 mt-1">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'} animate-pulse`} />
+            <div className={`w-2 h-2 rounded-full ${ready ? 'bg-green-400' : 'bg-red-400'} animate-pulse`} />
             <p className="text-gray-400">
-              {isConnected ? 'Live sync active' : 'Reconnecting...'}
+              {ready ? 'Live sync active' : 'Reconnecting...'}
             </p>
           </div>
         </div>

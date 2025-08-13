@@ -1,11 +1,13 @@
 // UNIFIED ANALYTICS TAB
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, Users, ShoppingCart, DollarSign, BarChart3, Activity } from 'lucide-react';
+import { TrendingUp, Users, ShoppingCart, DollarSign, BarChart3, Activity, Wifi, WifiOff } from 'lucide-react';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useWebSocketReady } from '@/hooks/useWebSocketState';
 
 export function AnalyticsTab() {
+  const ready = useWebSocketReady();
   const { data: analyticsData, isLoading } = useQuery({
     queryKey: ['admin-analytics'],
     queryFn: async () => {
@@ -49,6 +51,29 @@ export function AnalyticsTab() {
 
   return (
     <div className="space-y-8">
+      {/* Header with WebSocket Status */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-white">Analytics Dashboard</h2>
+            <div className="flex items-center gap-2">
+              {ready ? (
+                <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full">
+                  <Wifi className="w-3 h-3 text-green-400 animate-pulse" />
+                  <span className="text-xs text-green-400 font-medium">Live Sync</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 px-2 py-1 bg-red-500/20 rounded-full">
+                  <WifiOff className="w-3 h-3 text-red-400" />
+                  <span className="text-xs text-red-400 font-medium">Offline</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <p className="text-gray-400 mt-1">Real-time business analytics and insights</p>
+        </div>
+      </div>
+      
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         <UnifiedMetricCard

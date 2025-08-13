@@ -8,7 +8,8 @@ import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedUserModal } from '@/components/admin/modals/EnhancedUserModal';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useSocket } from '@/hooks/useSingletonSocket.tsx';
+import { useWebSocketReady } from '@/hooks/useWebSocketState';
 
 interface User {
   id: string;
@@ -27,7 +28,8 @@ export function UsersTab() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { isConnected, lastMessage } = useWebSocket();
+  const { subscribe } = useSocket();
+  const ready = useWebSocketReady();
 
   const { data: usersData, isLoading, refetch } = useQuery({
     queryKey: ['admin-users', searchQuery],
@@ -251,7 +253,7 @@ export function UsersTab() {
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold text-white">User Management</h2>
             <div className="flex items-center gap-2">
-              {isConnected ? (
+              {ready ? (
                 <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full">
                   <Wifi className="w-3 h-3 text-green-400 animate-pulse" />
                   <span className="text-xs text-green-400 font-medium">Live Sync</span>

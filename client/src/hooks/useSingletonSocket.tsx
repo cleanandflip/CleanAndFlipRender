@@ -55,8 +55,18 @@ function makeUrl() {
 export function SocketProvider({ children }: { children: ReactNode }) {
   const sockRef = useRef<WebSocket | null>(null);
   const handlers = useRef<Map<string, Set<Handler>>>(new Map());
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(webSocketState.ready);
   const forceUpdate = useRef(0);
+  
+  // Sync local state with global state
+  useEffect(() => {
+    const unsubscribe = webSocketState.subscribe((newReady) => {
+      console.log('🔌 SocketProvider syncing ready state to:', newReady);
+      setReady(newReady);
+      forceUpdate.current = forceUpdate.current + 1;
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (sockRef.current) {
@@ -80,6 +90,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         console.log('🔌 WebSocket connected to', makeUrl());
         setReady(true);
         webSocketState.setReady(true);
+        forceUpdate.current = forceUpdate.current + 1;
         retry = 0;
         // optional: send auth token if available (cookie/session)
         const token = window.localStorage.getItem("accessToken") || undefined;
@@ -100,6 +111,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         clearInterval(heartbeat);
         setReady(false);
         webSocketState.setReady(false);
+        forceUpdate.current = forceUpdate.current + 1;
         sockRef.current = null;
         setTimeout(connect, Math.min(1000 * 2 ** retry++, 15_000));
       };

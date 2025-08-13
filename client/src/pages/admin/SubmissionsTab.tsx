@@ -8,7 +8,8 @@ import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedSubmissionModal } from '@/components/admin/modals/EnhancedSubmissionModal';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useSocket } from '@/hooks/useSingletonSocket.tsx';
+import { useWebSocketReady } from '@/hooks/useWebSocketState';
 
 interface Submission {
   id: string;
@@ -27,7 +28,8 @@ export function SubmissionsTab() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const { toast } = useToast();
-  const { send, isConnected } = useWebSocket();
+  const { subscribe } = useSocket();
+  const ready = useWebSocketReady();
 
   const { data: submissionsData, isLoading, refetch } = useQuery({
     queryKey: ['admin-submissions', searchQuery],
@@ -223,7 +225,7 @@ export function SubmissionsTab() {
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold text-white">Equipment Submissions</h2>
             <div className="flex items-center gap-2">
-              {isConnected ? (
+              {ready ? (
                 <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full">
                   <Wifi className="w-3 h-3 text-green-400 animate-pulse" />
                   <span className="text-xs text-green-400 font-medium">Live Sync</span>
