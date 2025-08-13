@@ -1,0 +1,269 @@
+Here’s a precise, end-to-end fix list for Replit to implement now. It covers: default-address rules, dashboard UI, safe deletes, cart crash, and order page error. It assumes the SSOT addresses table is the only source of truth.
+
+1) Database guarantees (one default per user, safe deletes)
+Migration – add partial unique index + FK + trigger helper
+
+sql
+Copy
+Edit
+-- ONE default address per user (enforced by DB)
+CREATE UNIQUE INDEX IF NOT EXISTS addresses_one_default_per_user
+  ON addresses(user_id)
+  WHERE is_default = true;
+
+-- Keep users.profile_address_id synced to an address
+ALTER TABLE users
+  ADD CONSTRAINT users_profile_address_fkey
+  FOREIGN KEY (profile_address_id)
+  REFERENCES addresses(id)
+  ON DELETE SET NULL;
+
+-- Optional: prevent deleting the default address at DB level (safer to do in API too)
+CREATE OR REPLACE FUNCTION prevent_default_address_delete() RETURNS trigger AS $$
+BEGIN
+  IF OLD.is_default THEN
+    RAISE EXCEPTION 'Cannot delete the default address. Set another default first.' USING ERRCODE = 'P0001';
+  END IF;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_prevent_default_address_delete ON addresses;
+CREATE TRIGGER trg_prevent_default_address_delete
+  BEFORE DELETE ON addresses
+  FOR EACH ROW EXECUTE FUNCTION prevent_default_address_delete();
+Seed rule: when inserting the first address for a user, force is_default = true.
+
+2) Server API (authoritative behavior in one place)
+server/routes/addresses.ts – add/ensure these endpoints & rules (wrap in a SQL/Drizzle transaction):
+
+PATCH /api/addresses/:id/default
+
+Auth: user owns :id.
+
+Txn:
+
+UPDATE addresses SET is_default=false WHERE user_id=$userId AND is_default=true;
+
+UPDATE addresses SET is_default=true WHERE id=$id AND user_id=$userId;
+
+UPDATE users SET profile_address_id=$id WHERE id=$userId;
+
+Optional: UPDATE carts SET shipping_address_id=$id WHERE user_id=$userId;
+
+Return the full, sorted address list (default first) and profileAddressId.
+
+DELETE /api/addresses/:id
+
+If address is default → 409 { code: "DEFAULT_ADDRESS_DELETE_FORBIDDEN" }.
+
+Otherwise delete and return remaining addresses.
+
+POST /api/addresses
+
+If user has no addresses: force is_default=true and set users.profile_address_id.
+
+If body has is_default=true, apply the same demotion/promotion logic as above.
+
+GET /api/addresses
+
+Always sort: ORDER BY is_default DESC, created_at DESC.
+
+Miles, not KM: ensure local delivery checks use miles
+
+ts
+Copy
+Edit
+const MILES = 50;
+const EARTH_RADIUS_MI = 3958.7613;
+// Haversine with EARTH_RADIUS_MI
+Return shapes must never omit arrays; respond with addresses: [] (not undefined) and normalize strings.
+
+3) Dashboard “Addresses” tab — new UX & wiring
+What to show
+
+Badge “Default” on the default address.
+
+“Make Default” button for non-default addresses.
+
+“Delete” button hidden/disabled for default; enabled for others.
+
+“Edit” allowed for all.
+
+Client API (already have client/src/api/addresses.ts)
+Add:
+
+ts
+Copy
+Edit
+export const setDefaultAddress = async (id: string) =>
+  j(await fetch(`/api/addresses/${id}/default`, { method: 'PATCH', credentials: 'include' }));
+
+export const deleteAddress = async (id: string) =>
+  j(await fetch(`/api/addresses/${id}`, { method: 'DELETE', credentials: 'include' }));
+React Query hooks
+
+ts
+Copy
+Edit
+export const ADDR_QK = ['addresses'] as const;
+export function useAddresses() {
+  return useQuery({ queryKey: ADDR_QK, queryFn: fetchAddresses, staleTime: 30_000 });
+}
+export function useSetDefaultAddress() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationKey: ['addresses:setDefault'],
+    mutationFn: setDefaultAddress,
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ADDR_QK });
+      qc.invalidateQueries({ queryKey: ['user'] }); // refresh profile_address_id
+      qc.invalidateQueries({ queryKey: ['cart'] }); // if cart uses profile address
+    },
+  });
+}
+export function useDeleteAddress() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationKey: ['addresses:delete'],
+    mutationFn: deleteAddress,
+    onError: async (e: any) => {
+      // show toast if 409
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ADDR_QK }),
+  });
+}
+UI flags
+
+Render Default badge when addr.is_default is true.
+
+Disable “Make Default” button when addr.is_default.
+
+Hide/disable “Delete” for default.
+
+Confirm modal before delete; if server returns 409, toast: “Set another default before deleting this address.”
+
+4) Checkout prefill and address picker
+Goal: Shipping and contact fields autofill from users.profile_address_id (or fallback to the default address) and user profile.
+
+API: ensure GET /api/user returns:
+
+json
+Copy
+Edit
+{
+  "id":"…",
+  "email":"…",
+  "firstName":"…",
+  "lastName":"…",
+  "profileAddress": { /* full address dto */ }
+}
+Client (/checkout):
+
+ts
+Copy
+Edit
+const { data: user } = useQuery({ queryKey: ['user'], queryFn: fetchUser });
+const { data: addresses } = useAddresses();
+const defaultAddr = user?.profileAddress ?? addresses?.find(a => a.is_default);
+useEffect(() => {
+  if (defaultAddr) form.reset(mapAddressToForm(defaultAddr, user));
+}, [defaultAddr, user]);
+Provide a “Use a different address” control that opens an address selector using addresses. When a different one is chosen, PATCH /api/addresses/:id/default then refills the form (keeps a single source of truth).
+
+5) Fix cart crash: “Cannot read properties of undefined (reading 'length')”
+Crash site: src/pages/cart.tsx:97 – code is reading data.items.length when data or items is undefined.
+
+Do both sides:
+
+Server:
+
+GET /api/cart must always return:
+
+json
+Copy
+Edit
+{ "id": "...", "items": [], "subtotal": 0, "total": 0, "shippingAddressId": null }
+Never omit items.
+
+Client:
+
+ts
+Copy
+Edit
+const { data, isLoading, isError } = useCart();
+const items = data?.items ?? [];
+if (isLoading) return <PageLoader/>;
+if (isError) return <ErrorState/>;
+if (items.length === 0) return <EmptyCart/>;
+// ...render items
+Remove any direct cart.items.length without null-checking.
+
+6) “Error Loading Orders” on dashboard
+Server: GET /api/orders must return [] if none; not null/undefined. Use a left join that still yields an empty array.
+
+Client: same pattern as cart:
+
+ts
+Copy
+Edit
+const orders = data ?? [];
+Add try/catch inside the query fn to throw a nice error message, and ensure the ErrorBoundary includes the request id.
+
+7) Onboarding: address selection & routing
+Geoapify fill: in address-autocomplete.tsx, when a suggestion is chosen, call a mapper that sets all RHF fields:
+
+ts
+Copy
+Edit
+const pick = suggestion.properties;
+setValue('street', [pick.housenumber, pick.street].filter(Boolean).join(' '));
+setValue('city', pick.city || pick.town || pick.village || '');
+setValue('state', pick.state_code || pick.state || '');
+setValue('zipCode', pick.postcode || '');
+setValue('country', pick.country_code?.toUpperCase() || 'US');
+setValue('geoapify_place_id', pick.place_id);
+Miles: your local-delivery alert should use the same miles function as the server.
+
+404 after submit: fix navigation to navigate('/onboarding?step=2') (not /onboarding/2). Add a guard: if user.profile_complete === true, redirect to /checkout when from=cart.
+
+After successfully saving an address in step 1, if it’s the first address, mark it default (server handles this via rule in §2).
+
+8) QA script (quick to run locally)
+DB reset (users, addresses, carts, orders).
+
+Create user U1 → add A1 (first) → assert A1 is default (index allows only one).
+
+Add A2 → PATCH /addresses/:A2/default → assert A2 default, A1 not.
+
+Try DELETE /addresses/:A2 → expect 409 (cannot delete default).
+
+DELETE /addresses/:A1 → success.
+
+Visit /dashboard?tab=addresses → “Default” badge appears on A2; A2 has no Delete; A1 gone.
+
+/checkout loads with A2 prefilled and user info.
+
+Add product → POST /api/cart/items seen in logs, no mutation errors; cart page renders (items.length safe).
+
+Orders tab shows empty state, not an error.
+
+9) Small UI polish (copy)
+Default badge: “Default (Used)” so it’s obvious which address is active.
+
+Toasts:
+
+On set default: “Default address updated.”
+
+On delete default: “Can’t delete your default address. Set another default first.”
+
+Quick grep list to finish cleanup
+bash
+Copy
+Edit
+rg -n "isDefault|defaultAddress|profile_address|street\b|zipCode\b|setDefault" server client
+rg -n "cart\.items\.length" client/src/pages
+rg -n "mutationKey|getMutationCache|useMutation\('"
+Remove legacy patterns and ensure all address logic flows through the endpoints in §2.
+
+Implementing the above locks the “one default address” rule at the database, exposes clear API actions, gives the dashboard the right controls, and eliminates the cart/orders crashes by hardening both server responses and client rendering.

@@ -35,6 +35,62 @@ const CreateAddressSchema = z.object({
 // Local customer detection service
 // Using SSOT distance calculation from lib/distance.ts (miles, not km)
 
+// PATCH /api/addresses/:id/default - Set address as default
+router.patch('/:id/default', requireAuth, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    const { id } = req.params;
+    
+    // Verify address belongs to user
+    const address = await db
+      .select()
+      .from(addresses)
+      .where(and(eq(addresses.id, id), eq(addresses.userId, userId)))
+      .limit(1);
+    
+    if (!address.length) {
+      return res.status(404).json({ error: 'Address not found' });
+    }
+    
+    // Transaction: demote current default and promote new one
+    await db.transaction(async (tx) => {
+      // Remove default from all user's addresses
+      await tx
+        .update(addresses)
+        .set({ isDefault: false })
+        .where(and(eq(addresses.userId, userId), eq(addresses.isDefault, true)));
+      
+      // Set new default
+      await tx
+        .update(addresses)
+        .set({ isDefault: true })
+        .where(eq(addresses.id, id));
+      
+      // Update user profile
+      await tx
+        .update(users)
+        .set({ 
+          profileAddressId: id,
+          isLocalCustomer: address[0].isLocal
+        })
+        .where(eq(users.id, userId));
+    });
+    
+    // Return sorted address list (default first)
+    const userAddresses = await db
+      .select()
+      .from(addresses)
+      .where(eq(addresses.userId, userId))
+      .orderBy(sql`${addresses.isDefault} DESC, ${addresses.createdAt} DESC`);
+    
+    Logger.info(`Address ${id} set as default for user ${userId}`);
+    res.json({ addresses: userAddresses, profileAddressId: id });
+  } catch (error) {
+    Logger.error('Error setting default address:', error);
+    res.status(500).json({ error: 'Failed to set default address' });
+  }
+});
+
 // GET /api/addresses - Get user's addresses
 router.get('/', requireAuth, async (req, res) => {
   try {
@@ -203,51 +259,26 @@ router.delete('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Address not found' });
     }
     
-    const wasDefault = address[0].isDefault;
+    // PREVENT DEFAULT ADDRESS DELETE - return 409 error as specified in fix list
+    if (address[0].isDefault) {
+      return res.status(409).json({ 
+        code: "DEFAULT_ADDRESS_DELETE_FORBIDDEN",
+        error: "Cannot delete the default address. Set another default first." 
+      });
+    }
     
-    // Delete in transaction
-    await db.transaction(async (tx) => {
-      // Delete the address
-      await tx.delete(addresses).where(eq(addresses.id, id));
-      
-      // If this was the default address, update user profile
-      if (wasDefault) {
-        // Find another address to set as default
-        const remainingAddresses = await tx
-          .select()
-          .from(addresses)
-          .where(eq(addresses.userId, userId))
-          .limit(1);
-        
-        if (remainingAddresses.length > 0) {
-          // Set first remaining address as default
-          await tx
-            .update(addresses)
-            .set({ isDefault: true })
-            .where(eq(addresses.id, remainingAddresses[0].id));
-          
-          await tx
-            .update(users)
-            .set({ 
-              profileAddressId: remainingAddresses[0].id,
-              isLocalCustomer: remainingAddresses[0].isLocal
-            })
-            .where(eq(users.id, userId));
-        } else {
-          // No addresses left, clear user profile
-          await tx
-            .update(users)
-            .set({ 
-              profileAddressId: null,
-              isLocalCustomer: false
-            })
-            .where(eq(users.id, userId));
-        }
-      }
-    });
+    // Delete the address (not default, so safe)
+    await db.delete(addresses).where(eq(addresses.id, id));
+    
+    // Return remaining addresses
+    const remainingAddresses = await db
+      .select()
+      .from(addresses)
+      .where(eq(addresses.userId, userId))
+      .orderBy(sql`${addresses.isDefault} DESC, ${addresses.createdAt} DESC`);
     
     Logger.info(`Address ${id} deleted for user ${userId}`);
-    res.status(204).send();
+    res.json({ addresses: remainingAddresses });
   } catch (error) {
     Logger.error('Error deleting address:', error);
     res.status(500).json({ error: 'Failed to delete address' });

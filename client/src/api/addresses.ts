@@ -44,6 +44,21 @@ export interface AddressFieldErrors {
   [key: string]: string;
 }
 
+// API helper functions that match fix list requirements
+const j = async (res: Response) => {
+  if (!res.ok) throw new Error(await res.text() || `${res.status}`);
+  return res.json();
+};
+
+export const setDefaultAddress = async (id: string) =>
+  j(await fetch(`/api/addresses/${id}/default`, { method: 'PATCH', credentials: 'include' }));
+
+export const deleteAddress = async (id: string) =>
+  j(await fetch(`/api/addresses/${id}`, { method: 'DELETE', credentials: 'include' }));
+
+export const fetchAddresses = async () =>
+  j(await fetch('/api/addresses', { credentials: 'include' }));
+
 export interface AddressApiError {
   error: string;
   fieldErrors?: AddressFieldErrors;
@@ -65,14 +80,15 @@ export const addressApi = {
   },
 
   // Set address as default
-  async setDefaultAddress(addressId: string): Promise<{ success: boolean }> {
-    const response = await apiRequest('PUT', `/api/addresses/${addressId}/default`);
+  async setDefaultAddress(addressId: string): Promise<{ addresses: Address[]; profileAddressId: string }> {
+    const response = await apiRequest('PATCH', `/api/addresses/${addressId}/default`);
     return response.json();
   },
 
   // Delete address
-  async deleteAddress(addressId: string): Promise<void> {
-    await apiRequest('DELETE', `/api/addresses/${addressId}`);
+  async deleteAddress(addressId: string): Promise<{ addresses: Address[] }> {
+    const response = await apiRequest('DELETE', `/api/addresses/${addressId}`);
+    return response.json();
   },
 
   // Get default address

@@ -95,9 +95,9 @@ export const queryClient = new QueryClient({
 // Dev diagnostics to prevent "failed to find mutation" errors
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   queryClient.getMutationCache().subscribe((event) => {
-    if (event?.type === 'mutationError') {
+    if (event?.type === 'error') {
       // Surface to console in dev
-      console.error('[RQ] mutationError', event);
+      console.error('[RQ] mutation error', event);
     }
   });
 }

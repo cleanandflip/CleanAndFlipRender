@@ -4,11 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import { ProtectedRoute } from "@/lib/protected-route";
-import { useCart } from "@/hooks/use-cart";
+import { useCart, useUpdateCartItem, useRemoveFromCart } from "@/hooks/use-cart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 
 function Cart() {
-  const { cartItems, updateQuantity, removeFromCart, cartTotal, cartCount, isLoading } = useCart();
+  const { data, isLoading, isError } = useCart();
+  const updateMutation = useUpdateCartItem();
+  const removeMutation = useRemoveFromCart();
+  
+  // Safe access to cart data with defaults
+  const cartItems = data?.items ?? [];
+  const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   
   // Validate cart on mount and listen for product updates
   useEffect(() => {
@@ -66,6 +73,26 @@ function Cart() {
     );
   }
 
+  // Handle error state
+  if (isError) {
+    return (
+      <div className="min-h-screen pt-32 px-6">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="font-bebas text-4xl md:text-6xl mb-8">YOUR CART</h1>
+          <Card className="p-12 text-center">
+            <h2 className="text-2xl font-semibold mb-4">Error loading cart</h2>
+            <p className="text-text-secondary mb-8">
+              We couldn't load your cart. Please try refreshing the page.
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Refresh Page
+            </Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen pt-32 px-6">
@@ -108,15 +135,15 @@ function Cart() {
           {/* Cart Items */}
           <div className="lg:col-span-2">
             <Card className="divide-y divide-glass-border">
-              {cartItems.map((item) => (
+              {cartItems.map((item: any) => (
                 <div key={item.id} className="p-6">
                   <div className="flex gap-6">
                     {/* Product Image - Always Fresh */}
                     <div className="flex-shrink-0">
-                      {item.product.images && item.product.images.length > 0 ? (
+                      {item.product?.images && item.product.images.length > 0 ? (
                         <img
                           src={getImageUrl(item.product.images[0]) || ''}
-                          alt={item.product.name}
+                          alt={item.product?.name || item.name}
                           className="w-24 h-24 object-cover rounded-lg"
                         />
                       ) : (
@@ -133,17 +160,17 @@ function Cart() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <Link href={`/products/${item.product.id}`}>
+                          <Link href={`/products/${item.productId}`}>
                             <h3 className="font-semibold text-lg hover:text-accent-blue transition-colors cursor-pointer">
-                              {item.product.name}
+                              {item.product?.name || item.name}
                             </h3>
                           </Link>
-                          {item.product.brand && (
+                          {item.product?.brand && (
                             <p className="text-text-muted text-sm">{item.product.brand}</p>
                           )}
                         </div>
                         <button
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeMutation.mutate(item.id)}
                           className="text-gray-400 hover:text-red-400 transition-colors p-1"
                         >
                           <Trash2 size={18} />
@@ -154,7 +181,7 @@ function Cart() {
                         {/* Quantity Controls */}
                         <div className="flex items-center glass rounded-lg">
                           <button
-                            onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                            onClick={() => updateMutation.mutate({ itemId: item.id, quantity: Math.max(1, item.quantity - 1) })}
                             className="p-2 hover:bg-white/10 transition-colors"
                             disabled={item.quantity <= 1}
                           >
@@ -162,9 +189,9 @@ function Cart() {
                           </button>
                           <span className="px-4 py-2 min-w-[3rem] text-center">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => updateMutation.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
                             className="p-2 hover:bg-white/10 transition-colors"
-                            disabled={!item.product.stockQuantity || item.quantity >= item.product.stockQuantity}
+                            disabled={!item.product?.stockQuantity || item.quantity >= (item.product?.stockQuantity || 0)}
                           >
                             <Plus size={16} />
                           </button>
@@ -173,16 +200,16 @@ function Cart() {
                         {/* Price */}
                         <div className="text-right">
                           <div className="font-semibold text-lg">
-                            ${(Number(item.product.price) * item.quantity).toFixed(2)}
+                            ${(Number(item.product?.price || item.price) * item.quantity).toFixed(2)}
                           </div>
                           <div className="text-text-muted text-sm">
-                            ${item.product.price} each
+                            ${item.product?.price || item.price} each
                           </div>
                         </div>
                       </div>
 
                       {/* Stock Warning */}
-                      {item.product.stockQuantity && item.product.stockQuantity <= 3 && (
+                      {item.product?.stockQuantity && item.product.stockQuantity <= 3 && (
                         <div className="mt-3 text-red-400 text-sm">
                           Only {item.product.stockQuantity} left in stock
                         </div>

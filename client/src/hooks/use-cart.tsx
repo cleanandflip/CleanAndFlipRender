@@ -56,10 +56,12 @@ export function useAddToCart() {
 export function useUpdateCartItem() {
   const qc = useQueryClient();
   return useMutation({
-    mutationKey: ['cart:updateItem'] as const,
-    mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
+    mutationKey: ['cart:update'] as const,
+    mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) => 
       cartApi.updateItem(itemId, quantity),
-    onSettled: () => qc.invalidateQueries({ queryKey: CART_QK }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: CART_QK });
+    },
   });
 }
 
@@ -67,34 +69,32 @@ export function useRemoveFromCart() {
   const qc = useQueryClient();
   return useMutation({
     mutationKey: ['cart:remove'] as const,
-    mutationFn: (itemId: string) => cartApi.removeItem(itemId),
-    onSettled: () => qc.invalidateQueries({ queryKey: CART_QK }),
+    mutationFn: cartApi.removeItem,
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: CART_QK });
+    },
   });
 }
 
-// Legacy context-style helpers for backward compatibility
+// Legacy compatibility hooks for components that haven't been updated yet
 export function useCartLegacy() {
-  const { data: cart, isLoading } = useCart();
-  const addMutation = useAddToCart();
-  const updateMutation = useUpdateCartItem();  
+  const { data, isLoading, isError } = useCart();
+  const updateMutation = useUpdateCartItem();
   const removeMutation = useRemoveFromCart();
   
-  const cartItems = cart?.items || [];
-  const cartCount = cartItems.reduce((n, i) => n + i.quantity, 0);
-  const cartTotal = cartItems.reduce((n, i) => n + (i.price * i.quantity), 0);
+  const items = data?.items ?? [];
+  const cartTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
   
   return {
-    cartItems,
-    cartCount,
-    cartTotal,
-    isLoading,
-    addToCart: (params: { productId: string; quantity?: number }) => addMutation.mutate(params),
+    cartItems: items,
     updateQuantity: (itemId: string, quantity: number) => updateMutation.mutate({ itemId, quantity }),
     removeFromCart: (itemId: string) => removeMutation.mutate(itemId),
-    isInCart: (productId: string) => cartItems.some(i => i.productId === productId),
-    removeProductFromCart: (productId: string) => {
-      const item = cartItems.find(i => i.productId === productId);
-      if (item) removeMutation.mutate(item.id);
-    }
+    cartTotal,
+    cartCount,
+    isLoading,
+    isError
   };
 }
+
+

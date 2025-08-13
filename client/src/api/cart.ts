@@ -33,13 +33,14 @@ const j = async (res: Response) => {
 
 export const cartApi = {
   get: async (): Promise<Cart> => {
-    const items = await j(await fetch('/api/cart', { credentials: 'include' }));
-    // Transform to expected format
-    return { 
-      id: 'cart', 
-      items: Array.isArray(items) ? items : [],
-      subtotal: 0,
-      total: 0
+    const response = await j(await fetch('/api/cart', { credentials: 'include' }));
+    // Server now returns { id, items, subtotal, total, shippingAddressId }
+    return {
+      id: response.id || 'cart',
+      items: response.items || [],
+      subtotal: response.subtotal || 0,
+      total: response.total || 0,
+      shippingAddressId: response.shippingAddressId || null
     };
   },
 

@@ -842,7 +842,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId || undefined,
         sessionId
       );
-      res.json(cartItems);
+      
+      // CRASH FIX: Always return consistent cart structure
+      const items = Array.isArray(cartItems) ? cartItems : [];
+      const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const total = subtotal; // Can add shipping/tax calculation later
+      
+      // Return consistent cart structure to prevent "Cannot read properties of undefined (reading 'length')" errors
+      res.json({ 
+        id: `cart-${userId || sessionId}`, 
+        items: items, 
+        subtotal: subtotal, 
+        total: total, 
+        shippingAddressId: null 
+      });
     } catch (error) {
       Logger.error("Error fetching cart", error);
       res.status(500).json({ message: "Failed to fetch cart" });
