@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { fetchDefaultAddress, saveAddress, Address } from "@/api/addresses";
 import { getQuote, Quote } from "@/api/checkout";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { ShoppingCart, CreditCard, Truck, Lock, ArrowLeft } from "lucide-react";
 
 // Load Stripe
@@ -111,6 +112,7 @@ export default function Checkout() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [step, setStep] = useState(1);
   const [clientSecret, setClientSecret] = useState("");
+  const [addressInputValue, setAddressInputValue] = useState("");
   const isAuthenticated = !!user;
 
   const { register, handleSubmit, setValue, watch, trigger,
@@ -140,8 +142,24 @@ export default function Checkout() {
       setValue("state", addr.state || "");
       setValue("postalCode", addr.postalCode || "");
       setValue("deliveryInstructions", addr.deliveryInstructions || "");
+      // Update the address input value for autocomplete
+      setAddressInputValue(addr.street1 || "");
     })();
   }, [isAuthenticated, setValue]);
+
+  // Handle address selection from autocomplete
+  const handleAddressSelect = (addressData: { street: string; city: string; state: string; zipCode: string }) => {
+    setValue("street1", addressData.street || "");
+    setValue("city", addressData.city || "");
+    setValue("state", addressData.state || "");
+    setValue("postalCode", addressData.zipCode || "");
+    
+    // Update the input value to match the selected address
+    setAddressInputValue(addressData.street || "");
+    
+    // Trigger validation for the updated fields
+    trigger(["street1", "city", "state", "postalCode"]);
+  };
 
   // Watch for changes to trigger quote updates
   const watchedFields = watch();
@@ -382,15 +400,14 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Address */}
+            {/* Address with Autocomplete */}
             <div className="mt-4">
               <label className="block mb-1 text-sm font-medium" htmlFor="street1">Street Address</label>
-              <Input 
-                id="street1" 
-                autoComplete="address-line1" 
-                aria-invalid={!!errors.street1} 
-                data-testid="input-street1"
-                {...register("street1")} 
+              <AddressAutocomplete
+                value={addressInputValue}
+                placeholder="Start typing your address..."
+                onAddressSelect={handleAddressSelect}
+                className="w-full"
               />
               {errors.street1 && (
                 <p role="alert" className="mt-1 text-sm text-red-400">
