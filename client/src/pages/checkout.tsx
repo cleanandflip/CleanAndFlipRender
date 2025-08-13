@@ -14,20 +14,18 @@ export default function Checkout() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   
-  // Fetch user's addresses and cart - DEFENSIVE ARRAY NORMALIZATION
+  // Fetch user's addresses - NORMALIZED API RESPONSE
   const { data: addressesRaw = [], isLoading: addressLoading } = useQuery({
-    queryKey: ['/api/addresses'],
+    queryKey: ['addresses'],
     enabled: isAuthenticated,
     staleTime: 60000
   });
   
-  // API SHAPE FIX: Handle {ok, data} response structure from server
-  const addresses = Array.isArray(addressesRaw) ? addressesRaw : 
-                   (addressesRaw?.ok && Array.isArray(addressesRaw?.data)) ? addressesRaw.data :
-                   Array.isArray(addressesRaw?.addresses) ? addressesRaw.addresses : [];
+  // API SHAPE FIX: Server now returns plain array consistently  
+  const addresses = Array.isArray(addressesRaw) ? addressesRaw : [];
 
   const { data: cart, isLoading: cartLoading } = useQuery({
-    queryKey: ['/api/cart'],
+    queryKey: ['cart'],
     enabled: isAuthenticated,
     staleTime: 30000
   });
@@ -63,9 +61,10 @@ export default function Checkout() {
     mutationFn: async (addressData: any) => {
       return await apiRequest('POST', '/api/addresses', addressData);
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/addresses'] });
-      setSelectedAddressId(data.id);
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['addresses'] });
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      setSelectedAddressId(data?.id);
       setShowNewAddressForm(false);
       toast({
         title: "Address saved",
@@ -100,14 +99,14 @@ export default function Checkout() {
     );
   }
 
-  const cartItems = cart?.items || [];
+  const cartItems = (cart as any)?.items || [];
   const hasItems = cartItems.length > 0;
   const subtotal = cartItems.reduce((sum: number, item: any) => {
     return sum + (Number(item.product?.price || 0) * (item.quantity || 0));
   }, 0);
 
   const handleSaveNewAddress = () => {
-    if (!newAddress.firstName || !newAddress.lastName || !newAddress.streetAddress || !newAddress.city || !newAddress.state || !newAddress.zipCode) {
+    if (!newAddress.firstName || !newAddress.lastName || !newAddress.street1 || !newAddress.city || !newAddress.state || !newAddress.postalCode) {
       toast({
         title: "Missing fields",
         description: "Please fill in all required fields",
@@ -215,21 +214,21 @@ export default function Checkout() {
                   </div>
 
                   <div>
-                    <Label htmlFor="streetAddress">Street Address *</Label>
+                    <Label htmlFor="street1">Street Address *</Label>
                     <Input
-                      id="streetAddress"
-                      value={newAddress.streetAddress}
-                      onChange={(e) => setNewAddress(prev => ({ ...prev, streetAddress: e.target.value }))}
+                      id="street1"
+                      value={newAddress.street1}
+                      onChange={(e) => setNewAddress(prev => ({ ...prev, street1: e.target.value }))}
                       placeholder="123 Main St"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="apartment">Apartment, Suite, Unit (Optional)</Label>
+                    <Label htmlFor="street2">Apartment, Suite, Unit (Optional)</Label>
                     <Input
-                      id="apartment"
-                      value={newAddress.apartment}
-                      onChange={(e) => setNewAddress(prev => ({ ...prev, apartment: e.target.value }))}
+                      id="street2"
+                      value={newAddress.street2}
+                      onChange={(e) => setNewAddress(prev => ({ ...prev, street2: e.target.value }))}
                       placeholder="Apt 2B"
                     />
                   </div>
@@ -255,11 +254,11 @@ export default function Checkout() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="zipCode">ZIP Code *</Label>
+                      <Label htmlFor="postalCode">ZIP Code *</Label>
                       <Input
-                        id="zipCode"
-                        value={newAddress.zipCode}
-                        onChange={(e) => setNewAddress(prev => ({ ...prev, zipCode: e.target.value }))}
+                        id="postalCode"
+                        value={newAddress.postalCode}
+                        onChange={(e) => setNewAddress(prev => ({ ...prev, postalCode: e.target.value }))}
                         placeholder="90210"
                         maxLength={10}
                       />
@@ -291,11 +290,11 @@ export default function Checkout() {
                         setNewAddress({
                           firstName: "",
                           lastName: "",
-                          streetAddress: "",
-                          apartment: "",
+                          street1: "",
+                          street2: "",
                           city: "",
                           state: "",
-                          zipCode: "",
+                          postalCode: "",
                           isDefault: false
                         });
                       }}
@@ -318,7 +317,7 @@ export default function Checkout() {
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-2">Shipping to:</p>
                   <p className="font-medium">
-                    {selectedAddress.streetAddress}, {selectedAddress.city}, {selectedAddress.state} {selectedAddress.zipCode}
+                    {selectedAddress.street1}, {selectedAddress.city}, {selectedAddress.state} {selectedAddress.postalCode}
                   </p>
                   <div className="mt-4 p-3 border rounded bg-white">
                     <div className="flex justify-between items-center">

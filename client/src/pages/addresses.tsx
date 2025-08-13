@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, MapPin } from 'lucide-react';
 import { AddressForm } from '@/components/addresses/AddressForm';
 import { AddressList } from '@/components/addresses/AddressList';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { Redirect } from 'wouter';
 
 export function AddressesPage() {

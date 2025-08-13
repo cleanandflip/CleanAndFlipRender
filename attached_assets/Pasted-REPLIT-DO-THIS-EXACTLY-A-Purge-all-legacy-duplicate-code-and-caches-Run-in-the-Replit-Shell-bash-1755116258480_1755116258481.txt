@@ -1,0 +1,376 @@
+REPLIT — DO THIS EXACTLY
+A) Purge all legacy/duplicate code and caches
+Run in the Replit Shell
+
+bash
+Copy
+Edit
+# 0) Safety commit
+git add -A && git commit -m "pre-purge safety checkpoint" || true
+
+# 1) Remove legacy UI/route code (onboarding, duplicate checkout, old cart paths, etc.)
+rm -rf \
+  src/pages/onboarding \
+  src/pages/checkout-simple.tsx \
+  src/pages/checkout-old.tsx \
+  src/components/checkout/legacy* \
+  src/components/cart/legacy* \
+  src/lib/legacy* \
+  server/routes/onboarding* \
+  server/middleware/ensureProfileComplete* \
+  server/controllers/legacy* \
+  server/routes/checkout-old* \
+  server/routes/cart-legacy* \
+  server/utils/legacy* || true
+
+# 2) Kill build/runtime caches that can resurrect removed code
+rm -rf node_modules/.vite .vite .cache dist build .turbo .next .parcel-cache || true
+
+# 3) Grep for any stragglers and delete them if they exist
+grep -RIl --line-number -E "(onboarding|checkout-simple|ensureProfileComplete|/api/cart/remove|observability/errors)" \
+  src server || true
+
+# 4) Pin one (and only one) checkout page
+test -f src/pages/checkout.tsx || touch src/pages/checkout.tsx
+
+# 5) Reinstall & restart
+rm -rf node_modules && pnpm i || npm i
+pnpm dev || npm run dev
+B) Replace “onboarding” with a simple, robust flow
+Remove gating middleware that blocks general browsing. It’s causing the “cart can’t open” and intermittent 401/403s.
+
+Delete any middleware that blocks routes based on “incomplete profile.”
+Keep gating only at order creation.
+
+Create server/middleware/requireDefaultAddress.ts:
+
+ts
+Copy
+Edit
+import { Request, Response, NextFunction } from "express";
+
+/** Use only for order creation/checkout submit, not for cart or browsing. */
+export function requireDefaultAddress(req: Request, res: Response, next: NextFunction) {
+  const user = req.user as any;
+  if (!user?.id) return res.status(401).json({ message: "Auth required" });
+  if (!user?.defaultAddressId) {
+    return res.status(409).json({ code: "NO_DEFAULT_ADDRESS", message: "Please set a default shipping address before checking out." });
+  }
+  next();
+}
+Apply it only on the order POST route:
+
+ts
+Copy
+Edit
+// server/routes/orders.ts
+import { requireDefaultAddress } from "../middleware/requireDefaultAddress";
+router.post("/", requireDefaultAddress, createOrderHandler);
+UI replacement for onboarding
+
+Show a non-blocking banner on Home/Products/Cart if no default address:
+
+“Add your shipping address to unlock checkout.” CTA opens the normal Address modal (the one you already have).
+
+Do not block cart drawer or product browsing.
+
+Files to touch:
+
+src/components/ui/welcome-banner.tsx (repurpose as ProfileNudge)
+
+src/components/addresses/AddressForm.tsx (already good)
+
+Remove any route guards in src/lib/protected-route.tsx that reference onboarding; allow access.
+
+C) Fix the cart/checkout/address bugs (based on your logs)
+1) 401s → cart shows empty, checkout mismatch
+Root cause: early /api/cart and /api/user requests run without cookies; the first read wins and sets an empty cache.
+
+Fixes
+
+Ensure all fetch/axios calls include credentials:
+
+ts
+Copy
+Edit
+// src/lib/queryClient.ts (or your API client)
+export const api = axios.create({ baseURL: "/api", withCredentials: true });
+In React Query, invalidate the cart after login and after any add/remove:
+
+ts
+Copy
+Edit
+// src/hooks/use-cart.tsx
+queryClient.invalidateQueries({ queryKey: ["cart"] });
+2) Remove-from-cart path mismatch
+Logs show this twice:
+
+broken: CART REQUEST BLOCKED … /api/cart/remove/:id
+
+working: DELETE /api/cart/items/:id 200
+
+Directive: Delete all client code that calls /api/cart/remove/*.
+Only support these endpoints:
+
+txt
+Copy
+Edit
+GET    /api/cart
+POST   /api/cart                 { productId, qty? }
+DELETE /api/cart/items/:cartItemId
+POST   /api/cart/validate
+Update buttons:
+
+src/components/AddToCartButton.tsx → POST /api/cart
+
+src/pages/cart.tsx trash icon → DELETE /api/cart/items/:id
+
+src/components/products/product-card.tsx “Remove” → same DELETE
+
+After any cart mutation: invalidateQueries(["cart"]); invalidateQueries(["cart-validate"]);
+
+3) NaN totals in cart summary
+Root cause: totals come back undefined or as strings.
+
+Server: return numbers only.
+
+ts
+Copy
+Edit
+// server/routes/cart.ts
+res.json({
+  items,
+  totals: {
+    subtotal: Number(subtotal) || 0,
+    shipping: Number(shipping) || 0,
+    tax: Number(tax) || 0,
+    total: Number(total) || 0
+  }
+});
+Client formatting: guard nullish.
+
+ts
+Copy
+Edit
+const fmt = (n?: number) => currency.format(n ?? 0);
+4) Checkout: addresses.find is not a function
+Root cause: sometimes the API returns { addresses: [...] }, other times it returns [...], and your component expects an array.
+
+Normalize on the client:
+
+ts
+Copy
+Edit
+// src/pages/checkout.tsx
+const raw = addressesResp?.data;
+const addresses: Address[] = Array.isArray(raw) ? raw : Array.isArray(raw?.addresses) ? raw.addresses : [];
+const defaultAddr = addresses.find(a => a.isDefault) ?? addresses[0];
+Server: always return a plain array from /api/addresses.
+
+ts
+Copy
+Edit
+// server/routes/addresses.ts
+res.json(addressesArray); // not { addresses: ... }
+5) Address defaults + delete rules
+DB: enforce one default per user (transaction).
+
+On first saved address → auto isDefault = true.
+
+Cannot delete the default (return 409 with useful message).
+
+UI: show “Default (cannot delete)” exactly as you now do; show Delete on non-default.
+
+Server snippets:
+
+ts
+Copy
+Edit
+// POST /api/addresses
+if (!(await hasAnyAddress(userId))) body.isDefault = true;
+
+// POST /api/addresses/:id/default
+await db.tx(async t => {
+  await t.none("update addresses set is_default=false where user_id=$1", [userId]);
+  await t.none("update addresses set is_default=true where id=$1 and user_id=$2", [id, userId]);
+});
+D) Add clear “Local vs Ships” indicators everywhere
+Data
+Each product should have:
+
+ts
+Copy
+Edit
+interface Product {
+  id: string;
+  title: string;
+  price: number;
+  ships: boolean;        // true if shippable
+  localOnly: boolean;    // true if pick-up only
+  locationZip?: string;  // seller zip (optional for distance messaging)
+}
+UI (all places)
+Badge on product cards and detail:
+
+If localOnly → badge “Local pickup only”
+
+Else if ships → badge “Ships”
+
+If user has a default address and product has locationZip, show a sub-label:
+
+“Near you” if within 50 miles (simple zip distance or same city/state check)
+
+“Outside your area” otherwise
+
+Files:
+
+src/components/products/product-card.tsx (add badges & sublabel)
+
+src/pages/product-detail.tsx (same)
+
+src/pages/cart.tsx line items (show the badge)
+
+src/pages/checkout.tsx line items (show the badge)
+
+src/pages/dashboard.tsx → in Profile block, show “Service area: {city, state} (default address)”
+
+Optional distance helper (cheap & cheerful):
+
+ts
+Copy
+Edit
+// src/lib/geo.ts
+export const isSameCityState = (a?: Address, b?: AddressLike) =>
+  !!a && !!b && a.city?.toLowerCase() === b.city?.toLowerCase() && a.state === b.state;
+E) Performance & UX polish
+Optimistic cart mutations:
+
+On add/remove, update local cache immediately, then reconcile.
+
+Throttle cart validation:
+
+Don’t call /api/cart/validate on every keystroke; debounce 300ms.
+
+WebSocket: don’t refetch cart on every track-activity tick; your logs show a lot of 202 /api/track-activity. Keep it, but it shouldn’t invalidate cart.
+
+F) Stop the observability 400 spam (dev only)
+Logs show repeated:
+POST /api/observability/errors 400
+
+In dev, disable client error posting entirely, or fix the payload.
+
+Client:
+
+ts
+Copy
+Edit
+// src/lib/errorTracking.ts
+const ENABLE_ERROR_POST = import.meta.env.PROD; // only prod
+export function postError(evt: any) {
+  if (!ENABLE_ERROR_POST) return;
+  return api.post("/observability/errors", evt).catch(() => {});
+}
+Server (optional schema guard):
+
+ts
+Copy
+Edit
+// server/routes/observability.ts
+if (!body?.message) return res.status(400).json({ ok: false, reason: "Missing message" });
+G) Single source of truth for cart data
+Unify React Query keys. Use only these:
+
+ts
+Copy
+Edit
+["user"]
+["addresses"]
+["cart"]
+["cart-validate"] // totals
+["products", filters?]
+Make sure checkout reads ["cart"] (not a different key), which fixes “Cart page has items but checkout says empty.”
+
+H) Acceptance checklist (run these manual tests)
+Anonymous user can browse, open cart drawer, add to cart, but the Checkout CTA shows a nudge to sign in & add an address (no blocking overlays).
+
+Email login user with no address: can add/remove items; “Proceed to Checkout” redirects to Checkout with banner “Please add default address.” Address modal opens, save sets default automatically.
+
+Google login user with 2 addresses: the one marked Default is auto-selected at Checkout and in Shipping section; other addresses render with “Make default” and “Delete.”
+
+Remove-from-cart works from Products cards and from Cart page (DELETE /api/cart/items/:id), UI updates instantly.
+
+Cart totals show numbers (no $NaN).
+
+Product cards show Local pickup only / Ships badges, and “Near you / Outside your area” when default address exists.
+
+No more 400 spam to /api/observability/errors in dev logs.
+
+No more references anywhere to:
+
+onboarding
+
+checkout-simple
+
+/api/cart/remove
+
+ensureProfileComplete
+
+I) Quick code patches you’re likely to need
+src/pages/checkout.tsx (address normalization + unified cart key)
+
+ts
+Copy
+Edit
+const { data: addrResp } = useQuery({ queryKey: ["addresses"], queryFn: () => api.get("/addresses").then(r => r.data) });
+const addresses: Address[] = Array.isArray(addrResp) ? addrResp : Array.isArray(addrResp?.addresses) ? addrResp.addresses : [];
+const defaultAddress = addresses.find(a => a.isDefault) ?? addresses[0];
+
+const { data: cart } = useQuery({ queryKey: ["cart"], queryFn: () => api.get("/cart").then(r => r.data) });
+// cart?.items drives the right-hand “Order Summary”
+src/components/AddToCartButton.tsx (optimistic + correct path)
+
+ts
+Copy
+Edit
+const mutation = useMutation({
+  mutationFn: (productId: string) => api.post("/cart", { productId }),
+  onMutate: async (productId) => {
+    await queryClient.cancelQueries({ queryKey: ["cart"] });
+    const prev = queryClient.getQueryData<any>(["cart"]);
+    queryClient.setQueryData(["cart"], (c: any) => ({ ...c, items: [...(c?.items ?? []), { id: "temp-"+productId, productId, qty: 1 }] }));
+    return { prev };
+  },
+  onError: (_e, _v, ctx) => ctx?.prev && queryClient.setQueryData(["cart"], ctx.prev),
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ["cart"] });
+    queryClient.invalidateQueries({ queryKey: ["cart-validate"] });
+  }
+});
+src/pages/cart.tsx (delete path)
+
+ts
+Copy
+Edit
+const removeItem = useMutation({
+  mutationFn: (itemId: string) => api.delete(`/cart/items/${itemId}`),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["cart"] });
+    queryClient.invalidateQueries({ queryKey: ["cart-validate"] });
+  }
+});
+Summary of the concrete fixes for issues you reported
+✅ Onboarding removed entirely; replaced with a simple banner + modal and order-time check only.
+
+✅ Cart/Checkout mismatch fixed by: cookies on requests, unified React Query keys, and invalidating on mutations.
+
+✅ Remove from cart uses one canonical path: DELETE /api/cart/items/:id (old /remove path purged).
+
+✅ Address errors fixed: /api/addresses returns a plain array; checkout normalizes; first address becomes default; consistent “Default (cannot delete)” UI; delete allowed for non-default.
+
+✅ Local vs Ships badges added across Products, Cart, Checkout, Profile.
+
+✅ NaN totals removed (server returns numbers; client guards).
+
+✅ Observability 400 spam disabled in dev.
+
+✅ Build caches and legacy files purged so old behavior can’t “come back.”

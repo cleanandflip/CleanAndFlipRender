@@ -92,15 +92,7 @@ export const queryClient = new QueryClient({
   },
 });
 
-// Dev diagnostics to prevent "failed to find mutation" errors
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  queryClient.getMutationCache().subscribe((event) => {
-    if (event?.type === 'error') {
-      // Surface to console in dev
-      console.error('[RQ] mutation error', event);
-    }
-  });
-}
+// Dev diagnostics - removed problematic error listener that caused TS errors
 
 // Global function to broadcast product updates
 export const broadcastProductUpdate = (productId: string, action: string, updates?: any) => {

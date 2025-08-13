@@ -26,7 +26,7 @@ import {
   type InsertEquipmentSubmission,
   type ActivityLog,
   type InsertActivityLog,
-  userOnboarding,
+  // userOnboarding removed - simplified flow without forced onboarding
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike, isNotNull } from "drizzle-orm";
@@ -169,8 +169,8 @@ export class DatabaseStorage implements IStorage {
           id, email, password, first_name, last_name, phone,
           stripe_customer_id, stripe_subscription_id, created_at, updated_at,
           role, google_id, profile_image_url, auth_provider, is_email_verified,
-          google_email, google_picture, profile_complete, onboarding_step,
-          is_local_customer, profile_address_id, onboarding_completed_at
+          google_email, google_picture,
+          
         FROM users
         WHERE LOWER(email) = LOWER(${normalizedEmail})
         LIMIT 1
@@ -185,8 +185,8 @@ export class DatabaseStorage implements IStorage {
             id, email, password, first_name, last_name, phone,
             stripe_customer_id, stripe_subscription_id, created_at, updated_at,
             role, google_id, profile_image_url, auth_provider, is_email_verified,
-            google_email, google_picture, profile_complete, onboarding_step,
-            is_local_customer, profile_address_id, onboarding_completed_at
+            google_email, google_picture,
+            
           FROM users
           WHERE LOWER(email) = LOWER(${normalizedEmail})
           LIMIT 1

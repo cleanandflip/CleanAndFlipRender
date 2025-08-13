@@ -1,47 +1,50 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { X, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useAuth } from '@/hooks/use-auth';
+import { useQuery } from '@tanstack/react-query';
 
-export function WelcomeBanner() {
-  const [location] = useLocation();
-  const [show, setShow] = useState(false);
+export function ProfileNudge() {
+  const [dismissed, setDismissed] = useState(false);
+  const { user, isAuthenticated } = useAuth();
   
-  useEffect(() => {
-    // Check URL parameters for Google OAuth onboarding
-    const urlParams = new URLSearchParams(window.location.search);
-    const google = urlParams.get('google');
-    const isNew = urlParams.get('new');
-    
-    if (google === 'true' && isNew === 'true') {
-      setShow(true);
-      // Clean up URL parameters
-      const url = new URL(window.location.href);
-      url.searchParams.delete('google');
-      url.searchParams.delete('new');
-      window.history.replaceState({}, '', url.toString());
-    }
-  }, [location]);
+  // Fetch addresses to check if user has default address
+  const { data: addresses = [] } = useQuery({
+    queryKey: ['addresses'],
+    enabled: isAuthenticated,
+    staleTime: 60000
+  });
   
-  if (!show) return null;
+  // Only show if user is authenticated but has no default address
+  const hasDefaultAddress = addresses.some((addr: any) => addr.isDefault);
+  const shouldShow = isAuthenticated && !hasDefaultAddress && !dismissed;
+  
+  if (!shouldShow) return null;
   
   return (
     <Card className="mx-4 mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border-blue-200 dark:border-blue-700">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
-            Welcome to Clean & Flip! 🏋️
+          <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+            <MapPin className="w-5 h-5" />
+            Add Your Shipping Address
           </h3>
-          <p className="text-blue-800 dark:text-blue-200 text-sm">
-            Thanks for signing up with Google! Please complete your profile below so we can process orders and handle shipping.
-            This information is required for all shopping functionality.
+          <p className="text-blue-800 dark:text-blue-200 text-sm mb-3">
+            Add your shipping address to unlock checkout and see if you qualify for free local delivery.
           </p>
+          <Button 
+            size="sm" 
+            onClick={() => window.location.href = '/addresses'}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Add Address
+          </Button>
         </div>
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={() => setShow(false)}
+          onClick={() => setDismissed(true)}
           className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
         >
           <X className="h-4 w-4" />
@@ -50,3 +53,6 @@ export function WelcomeBanner() {
     </Card>
   );
 }
+
+// Keep old export for backward compatibility during migration
+export const WelcomeBanner = ProfileNudge;

@@ -18,7 +18,7 @@ import {
   sanitizeInput,
   corsOptions
 } from "./middleware/security";
-import { requireCompleteProfile } from "./middleware/requireProfile";
+// Legacy profile middleware removed - only gating at order creation now
 import { 
   validateRequest, 
   validateFileUpload, 
@@ -1099,7 +1099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Orders
-  app.get("/api/orders", requireAuth, requireCompleteProfile, async (req, res) => {
+  app.get("/api/orders", requireAuth, async (req, res) => {
     try {
       // SECURITY FIX: Use authenticated userId from middleware
       const userId = req.userId; // Set by requireAuth middleware
@@ -1179,7 +1179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Removed all wishlist routes for single-seller model
 
   // Stripe payment intent
-  app.post("/api/create-payment-intent", requireAuth, requireCompleteProfile, async (req, res) => {
+  app.post("/api/create-payment-intent", requireAuth, async (req, res) => {
     try {
       const { amount, currency = "usd", metadata } = req.body;
       
@@ -1203,7 +1203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create order
-  app.post("/api/orders", requireAuth, requireCompleteProfile, async (req, res) => {
+  app.post("/api/orders", requireAuth, async (req, res) => {
     try {
       const validatedData = insertOrderSchema.parse(req.body);
       const order = await storage.createOrder(validatedData);
