@@ -126,14 +126,28 @@ export function useUpdateCartItem() {
   });
 }
 
-// Remove from cart mutation
+// Remove from cart mutation - FIXED API CALL
 export function useRemoveFromCart() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   return useMutation({
     mutationFn: async (productId: string) => {
-      return await apiRequest('DELETE', `/api/cart/items/${productId}`);
+      console.log('[CART REMOVAL CLIENT] Removing product:', productId);
+      const response = await fetch(`/api/cart/items/${productId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to remove from cart');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CART_KEY });

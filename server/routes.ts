@@ -967,9 +967,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       Logger.info(`[CART REMOVAL] User ${userId} removing product ${productId}`);
 
-      // Find cart item by product ID, not by cart item ID
+      // CRITICAL FIX: Find cart item by product ID - this was the bug!
       const cartItems = await storage.getCartItems(userId || undefined, sessionId);
       const itemToRemove = cartItems.find(item => item.productId === productId);
+      
+      console.log(`[CART REMOVAL DEBUG] Found ${cartItems.length} items in cart`);
+      console.log(`[CART REMOVAL DEBUG] Looking for productId: ${productId}`);
+      console.log(`[CART REMOVAL DEBUG] Cart items:`, cartItems.map(i => ({ id: i.id, productId: i.productId })));
+      console.log(`[CART REMOVAL DEBUG] Item to remove:`, itemToRemove);
       
       if (!itemToRemove) {
         Logger.warn(`[CART REMOVAL] Cart item not found for product ${productId}`);
