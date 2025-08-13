@@ -25,13 +25,13 @@ export function AddToCartButton({
   const [isHovering, setIsHovering] = useState(false);
 
   // Query cart to check if item is already in cart
-  const { data: cart } = useQuery({
+  const { data: cartData } = useQuery({
     queryKey: ['/api/cart'],
     enabled: isAuthenticated,
     staleTime: 30000 // 30 seconds
   });
 
-  const isInCart = cart?.some((item: any) => item.productId === productId) || false;
+  const isInCart = cartData?.items?.some((item: any) => item.productId === productId) || false;
 
   // Optimistic add to cart mutation
   const addToCartMutation = useMutation({
@@ -53,7 +53,7 @@ export function AddToCartButton({
         if (!old) return { items: [], subtotal: 0 };
         return {
           ...old,
-          items: [...old.items, { productId, quantity: 1 }]
+          items: [...(old.items || []), { productId, quantity: 1 }]
         };
       });
       
@@ -95,7 +95,7 @@ export function AddToCartButton({
         if (!old) return { items: [], subtotal: 0 };
         return {
           ...old,
-          items: old.items.filter((item: any) => item.productId !== productId)
+          items: (old.items || []).filter((item: any) => item.productId !== productId)
         };
       });
       
