@@ -133,8 +133,8 @@ export default function Navigation() {
       return;
     }
     
-    // SSOT check: user needs profileAddress - phone is optional (can be added at checkout)
-    if (!user.profileAddress) {
+    // CART ACCESS FIX: Check for actual address ID, not just profileAddress object
+    if (!user.profileAddressId) {
       toast({
         title: "Complete Your Profile",
         description: `Please add your shipping address to access your cart and shop with us. This helps us provide better service and shipping options.`,
