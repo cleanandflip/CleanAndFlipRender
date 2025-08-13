@@ -30,9 +30,12 @@ export default function CartPage() {
     removeMutation.mutate(productId);
   };
 
-  // Get first image URL with fallback
-  const getImageUrl = (images: string[]): string => {
-    if (!images || images.length === 0) return '/placeholder-product.jpg';
+  // FIXED: Get first image URL from product.images with proper fallback
+  const getImageUrl = (item: CartItem): string => {
+    const images = item.product?.images;
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      return '/placeholder-product.jpg';
+    }
     return images[0];
   };
 
@@ -104,7 +107,7 @@ export default function CartPage() {
                   {/* Product Image */}
                   <div className="flex-shrink-0">
                     <ImageWithFallback
-                      src={getImageUrl(item.product?.images || [])}
+                      src={getImageUrl(item)}
                       alt={item.product?.name || 'Product'}
                       className="w-24 h-24 object-cover rounded-lg"
                       fallback="/placeholder-product.jpg"

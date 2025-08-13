@@ -14,21 +14,34 @@ export default function Checkout() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   
-  // Fetch user's addresses - NORMALIZED API RESPONSE
-  const { data: addressesRaw = [], isLoading: addressLoading } = useQuery({
+  // FIXED: Fetch addresses with correct API structure
+  const { data: addressesResponse, isLoading: addressLoading } = useQuery({
     queryKey: ['addresses'],
+    queryFn: async () => {
+      const response = await fetch('/api/addresses', { credentials: 'include' });
+      if (!response.ok) return [];
+      return response.json();
+    },
     enabled: isAuthenticated,
     staleTime: 60000
   });
   
-  // API SHAPE FIX: Server now returns plain array consistently  
-  const addresses = Array.isArray(addressesRaw) ? addressesRaw : [];
+  // FIXED: Extract addresses from proper response structure
+  const addresses = addressesResponse?.data || addressesResponse || [];
 
-  // Cart should work for everyone, not just authenticated users
-  const { data: cart, isLoading: cartLoading } = useQuery({
+  // FIXED: Cart data with proper structure extraction
+  const { data: cartResponse, isLoading: cartLoading } = useQuery({
     queryKey: ['cart'],
+    queryFn: async () => {
+      const response = await fetch('/api/cart', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch cart');
+      return response.json();
+    },
     staleTime: 30000
   });
+  
+  // FIXED: Extract cart items from proper response structure
+  const cart = cartResponse?.data || cartResponse || { items: [], subtotal: 0, total: 0 };
 
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
@@ -161,11 +174,11 @@ export default function Checkout() {
                                 {address.firstName} {address.lastName}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {address.streetAddress}
-                                {address.apartment && `, ${address.apartment}`}
+                                {address.street1}
+                                {address.street2 && `, ${address.street2}`}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {address.city}, {address.state} {address.zipCode}
+                                {address.city}, {address.state} {address.postalCode}
                               </p>
                               {address.isDefault && (
                                 <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded mt-1">

@@ -958,9 +958,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/cart/items/:itemId", requireAuth, async (req, res) => {
+  // FIXED: Remove item from cart by product ID (not cart item ID)
+  app.delete("/api/cart/items/:productId", requireAuth, async (req, res) => {
     try {
-      await storage.removeFromCart(req.params.itemId);
+      const userId = req.userId;
+      const sessionId = req.sessionID;
+      const { productId } = req.params;
+
+      Logger.info(`[CART REMOVAL] User ${userId} removing product ${productId}`);
+
+      // Find cart item by product ID, not by cart item ID
+      const cartItems = await storage.getCartItems(userId || undefined, sessionId);
+      const itemToRemove = cartItems.find(item => item.productId === productId);
+      
+      if (!itemToRemove) {
+        Logger.warn(`[CART REMOVAL] Cart item not found for product ${productId}`);
+        return res.status(404).json({ error: "Cart item not found" });
+      }
+
+      await storage.removeFromCart(itemToRemove.id);
+      Logger.info(`[CART REMOVAL] Successfully removed cart item ${itemToRemove.id}`);
+      
+      // Broadcast cart update
+      if (userId) broadcastCartUpdate(userId);
+      
       res.json({ message: "Item removed from cart" });
     } catch (error) {
       Logger.error("Error removing from cart", error);
