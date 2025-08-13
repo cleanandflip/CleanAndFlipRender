@@ -1,78 +1,121 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
-// Cart interfaces matching the comprehensive fix plan
+// SSOT Cart interfaces matching server structure
+export interface CartProduct {
+  id: string;
+  name: string;
+  price: string;
+  images: string[];
+  brand?: string;
+  stockQuantity: number;
+}
+
 export interface CartItem {
   id: string;
   productId: string;
-  name: string;
-  price: number;
   quantity: number;
-  variantId?: string | null;
+  product: CartProduct;
 }
 
 export interface Cart {
+  id: string;
   items: CartItem[];
   subtotal: number;
+  total: number;
+  shippingAddressId: string | null;
 }
 
 export const CART_KEY = ['cart'] as const;
 
-// Main cart hook with optimistic updates
+// Main cart hook - uses new SSOT API structure
 export function useCart() {
   return useQuery({
     queryKey: CART_KEY,
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/cart');
-      const result = await response.json();
-      return result.ok ? result.data : result; // Handle both new and legacy formats
-    },
-    staleTime: 60000, // 1 minute cache as per fix plan
+    staleTime: 30000, // 30 seconds cache
+    refetchOnWindowFocus: false,
   });
 }
 
-// Optimistic add to cart mutation
+// Add to cart mutation using new API structure  
 export function useAddToCart() {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   return useMutation({
-    mutationKey: ['cart:add'] as const,
-    mutationFn: async (vars: { productId: string; quantity?: number; variantId?: string }) => {
-      const response = await apiRequest('POST', '/api/cart', {
+    mutationFn: async (vars: { productId: string; quantity?: number }) => {
+      return await apiRequest('POST', '/api/cart/items', {
         productId: vars.productId,
         quantity: vars.quantity || 1,
-        variantId: vars.variantId
       });
-      const result = await response.json();
-      return result.ok ? result.data : result;
     },
-    onMutate: async (vars) => {
-      await qc.cancelQueries({ queryKey: CART_KEY });
-      const prev = qc.getQueryData<Cart>(CART_KEY);
-      if (prev) {
-        const existingItem = prev.items.find(i => i.productId === vars.productId && i.variantId === (vars.variantId ?? null));
-        if (existingItem) {
-          // Update existing item quantity
-          const next: Cart = {
-            ...prev,
-            items: prev.items.map(i => 
-              i.id === existingItem.id 
-                ? { ...i, quantity: i.quantity + (vars.quantity ?? 1) }
-                : i
-            ),
-          };
-          qc.setQueryData(CART_KEY, next);
-        } else {
-          // Add new provisional item
-          const next: Cart = {
-            ...prev,
-            items: [
-              ...prev.items,
-              {
-                id: `temp-${Date.now()}`,
-                productId: vars.productId,
-                name: 'Adding...',
-                price: 0,
-                quantity: vars.quantity ?? 1,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CART_KEY });
+      toast({
+        title: "Added to cart",
+        description: "Item has been added to your cart"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add item to cart",
+        variant: "destructive"
+      });
+    },
+  });
+}
+
+// Update cart item quantity
+export function useUpdateCartItem() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (vars: { productId: string; quantity: number }) => {
+      return await apiRequest('PUT', `/api/cart/items/${vars.productId}`, {
+        quantity: vars.quantity,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CART_KEY });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update cart",
+        variant: "destructive"
+      });
+    },
+  });
+}
+
+// Remove from cart mutation
+export function useRemoveFromCart() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: async (productId: string) => {
+      return await apiRequest('DELETE', `/api/cart/items/${productId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CART_KEY });
+      toast({
+        title: "Item removed",
+        description: "Item has been removed from your cart"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to remove item",
+        variant: "destructive"
+      });
+    },
+  });
+}
                 variantId: vars.variantId ?? null,
               }
             ],
@@ -138,6 +181,12 @@ export function useRemoveFromCart() {
   });
 }
 
+// Get cart items count for badge display
+export function useCartCount() {
+  const { data: cart } = useCart();
+  return cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+}
+
 // Legacy compatibility hooks for components that haven't been updated yet
 export function useCartLegacy() {
   const { data, isLoading, isError } = useCart();
@@ -158,5 +207,3 @@ export function useCartLegacy() {
     isError
   };
 }
-
-

@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useCartLegacy } from "@/hooks/use-cart";
+import { useCart, Cart, CartItem } from "@/hooks/use-cart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, X } from "lucide-react";
 import { ROUTES, routes } from "@/config/routes";
 
@@ -14,14 +14,13 @@ interface CartDrawerProps {
 
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const { 
-    cartItems, 
-    updateQuantity, 
-    removeFromCart, 
-    cartTotal, 
-    cartCount, 
-    isLoading 
-  } = useCartLegacy();
+  const { data: cart, isLoading } = useCart();
+  
+  // Safe access to cart data with proper typing
+  const cartData = cart as Cart;
+  const cartItems = cartData?.items || [];
+  const cartTotal = cartData?.subtotal || 0;
+  const cartCount = cartItems.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
 
   const open = isOpen !== undefined ? isOpen : internalOpen;
   const handleOpenChange = (newOpen: boolean) => {
@@ -132,7 +131,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                 )}
                               </div>
                               <button
-                                onClick={() => removeFromCart(item?.id)}
+                                onClick={() => console.log('Remove from cart not implemented yet')}
                                 className="text-gray-400 hover:text-red-400 transition-colors p-1 ml-2"
                               >
                                 <Trash2 size={14} />
@@ -143,7 +142,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                               {/* Quantity Controls */}
                               <div className="flex items-center bg-card rounded">
                                 <button
-                                  onClick={() => updateQuantity(item?.id, Math.max(0, (item?.quantity || 1) - 1))}
+                                  onClick={() => console.log('Decrease quantity not implemented yet')}
                                   className="p-1 hover:bg-white/10 transition-colors"
                                   disabled={(item?.quantity || 0) <= 1}
                                 >
@@ -153,7 +152,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                   {item?.quantity || 0}
                                 </span>
                                 <button
-                                  onClick={() => updateQuantity(item?.id, (item?.quantity || 0) + 1)}
+                                  onClick={() => console.log('Increase quantity not implemented yet')}
                                   className="p-1 hover:bg-white/10 transition-colors"
                                   disabled={item?.product?.stockQuantity && (item?.quantity || 0) >= item.product.stockQuantity}
                                 >

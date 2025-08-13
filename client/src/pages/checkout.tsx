@@ -99,8 +99,7 @@ export default function Checkout() {
     );
   }
 
-  // Debug cart structure
-  console.log('Cart data in checkout:', cart);
+  // Cart data properly structured from new SSOT API
   
   const cartItems = (cart as any)?.items || [];
   const hasItems = cartItems.length > 0;
