@@ -1057,7 +1057,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Remove if product deleted or inactive
         if (!product || product.status !== 'active') {
-          await storage.removeFromCart(item.id);
+          // Direct database deletion for product validation cleanup
+          await db.delete(cartItems).where(eq(cartItems.id, item.id));
           updates.push({ action: 'removed', itemId: item.id, reason: 'Product unavailable' });
           continue;
         }
@@ -1066,7 +1067,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (item.quantity > (product.stockQuantity || 0)) {
           const newQuantity = Math.max(0, product.stockQuantity || 0);
           if (newQuantity === 0) {
-            await storage.removeFromCart(item.id);
+            // Direct database deletion for out of stock cleanup
+            await db.delete(cartItems).where(eq(cartItems.id, item.id));
             updates.push({ action: 'removed', itemId: item.id, reason: 'Out of stock' });
           } else {
             await storage.updateCartItem(item.id, newQuantity);

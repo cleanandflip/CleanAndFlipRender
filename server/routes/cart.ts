@@ -106,30 +106,7 @@ router.delete('/:itemId', isAuthenticated, async (req, res) => {
   }
 });
 
-// Alternative route for legacy compatibility
-router.delete('/items/:productId', isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.user!.id;
-    const { productId } = req.params;
-    
-    const cart = await storage.removeFromCartLegacy(userId, productId);
-    
-    res.json({
-      ok: true,
-      data: {
-        items: cart.items,
-        subtotal: cart.subtotal
-      }
-    });
-  } catch (error) {
-    console.error('DELETE /api/cart/items/:productId error:', error);
-    res.status(400).json({ 
-      ok: false,
-      error: 'REMOVAL_FAILED',
-      message: 'Failed to remove item from cart'
-    });
-  }
-});
+// REMOVED - This route was conflicting with the main DELETE route in routes.ts
 
 // Cart validation endpoint
 router.post('/validate', isAuthenticated, async (req, res) => {
