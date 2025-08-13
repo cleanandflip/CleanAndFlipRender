@@ -816,7 +816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.userId;
       const sessionId = req.sessionID;
       
-      Logger.debug(`Get cart - userId: ${userId}, sessionId: ${sessionId}`);
+      Logger.info(`[CART] Get cart - userId: ${userId}, sessionId: ${sessionId}, isAuthenticated: ${req.isAuthenticated?.()}`);
       
       // Set cache-busting headers to prevent any caching
       res.set({

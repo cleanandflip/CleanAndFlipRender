@@ -33,6 +33,26 @@ export const CART_KEY = ['cart'] as const;
 export function useCart() {
   return useQuery({
     queryKey: CART_KEY,
+    queryFn: async () => {
+      console.log('Fetching cart data...');
+      const response = await fetch('/api/cart', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Cart response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Cart fetch failed:', response.status, errorText);
+        throw new Error(`Failed to fetch cart: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Cart data received:', data);
+      return data;
+    },
     staleTime: 30000, // 30 seconds cache
     refetchOnWindowFocus: false,
   });
