@@ -849,9 +849,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/cart", authMiddleware.optionalAuth, async (req, res) => {
+  // TanStack Query v5 compatible endpoint
+  app.post("/api/cart/items", authMiddleware.optionalAuth, async (req, res) => {
     try {
-      Logger.info(`[CART DEBUG] POST /api/cart reached handler - body: ${JSON.stringify(req.body)}, productId: ${req.body?.productId}, quantity: ${req.body?.quantity}`);
+      Logger.info(`[CART DEBUG] POST /api/cart/items reached handler - body: ${JSON.stringify(req.body)}, productId: ${req.body?.productId}, quantity: ${req.body?.quantity}`);
       
       const { productId, quantity = 1 } = req.body;
       
@@ -954,10 +955,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/cart/:id", requireAuth, async (req, res) => {
+  // TanStack Query v5 compatible endpoints
+  app.patch("/api/cart/items/:itemId", requireAuth, async (req, res) => {
     try {
       const { quantity } = req.body;
-      const cartItem = await storage.updateCartItem(req.params.id, quantity);
+      const cartItem = await storage.updateCartItem(req.params.itemId, quantity);
       res.json(cartItem);
     } catch (error) {
       Logger.error("Error updating cart item", error);
@@ -965,9 +967,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/cart/:id", requireAuth, async (req, res) => {
+  app.delete("/api/cart/items/:itemId", requireAuth, async (req, res) => {
     try {
-      await storage.removeFromCart(req.params.id);
+      await storage.removeFromCart(req.params.itemId);
       res.json({ message: "Item removed from cart" });
     } catch (error) {
       Logger.error("Error removing from cart", error);

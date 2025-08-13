@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useCart } from "@/hooks/use-cart";
+import { useCartLegacy } from "@/hooks/use-cart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, X } from "lucide-react";
 import { ROUTES, routes } from "@/config/routes";
 
@@ -21,7 +21,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     cartTotal, 
     cartCount, 
     isLoading 
-  } = useCart();
+  } = useCartLegacy();
 
   const open = isOpen !== undefined ? isOpen : internalOpen;
   const handleOpenChange = (newOpen: boolean) => {

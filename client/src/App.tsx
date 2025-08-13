@@ -1,11 +1,11 @@
+import React, { useEffect, lazy, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { ROUTES } from "@/config/routes";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { CartProvider } from "@/hooks/use-cart";
+// CartProvider removed - using direct TanStack Query hooks
 import { AuthProvider } from "@/hooks/use-auth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Navigation from "@/components/layout/navigation";
@@ -186,10 +186,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <CartProvider>
+          <React.Fragment>
             <Toaster />
             <Router />
-          </CartProvider>
+          </React.Fragment>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
