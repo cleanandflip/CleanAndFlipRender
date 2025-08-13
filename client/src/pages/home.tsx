@@ -92,7 +92,7 @@ function HomeSections() {
               <div className="flex items-center justify-center gap-3">
                 <LocalBadge isLocal={true} />
                 <span className="text-green-800 font-medium">
-                  Eligible for FREE Local Delivery! Local items deliver to your doorstep within 24-48 hours!
+                  You are in our FREE DELIVERY zone! Items to your doorstep within 24-48 hours guaranteed!
                 </span>
               </div>
             </div>

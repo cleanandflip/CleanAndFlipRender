@@ -37,7 +37,7 @@ export default function ProductsPage() {
             <LocalBadge isLocal={locality.isLocal} />
             <span className="text-sm text-gray-300">
               {locality.isLocal ? (
-                "Eligible for FREE Local Delivery! Local items deliver within 24-48 hours!"
+                "You are in our FREE DELIVERY zone! Items within 24-48 hours guaranteed!"
               ) : locality.hasAddress ? (
                 "You're outside our Local Delivery area — shipping available"
               ) : (

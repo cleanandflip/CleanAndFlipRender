@@ -287,7 +287,7 @@ export default function Navigation() {
                         {/* Second line: Dynamic locality message */}
                         <div className="px-3 py-2 mb-3 text-xs text-muted-foreground">
                           {locality?.isLocal ? (
-                            <div>FREE Local Delivery within 24-48 hours!</div>
+                            <div>FREE DELIVERY zone! Items within 24-48 hours guaranteed!</div>
                           ) : (
                             <div>Shipping area — set a default address to check Local Delivery</div>
                           )}

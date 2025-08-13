@@ -11,7 +11,7 @@ Preferred communication style: Simple, everyday language.
   - **SINGLE SOURCE OF TRUTH**: Created unified locality detection engine (`server/lib/locality.ts`) with 50-mile radius from Asheville warehouse
   - **CRITICAL BUG FIXES**: Resolved missing latitude/longitude coordinates in user addresses - all addresses now properly geocoded
   - **LIVE DATABASE INTEGRATION**: Real-time locality calculations with 0-mile accuracy (warehouse location = instant local detection)
-  - **ENHANCED MESSAGING**: Updated all locality copy to "Eligible for FREE Local Delivery! Local items deliver to your doorstep within 24-48 hours!"
+  - **ENHANCED MESSAGING**: Updated all locality copy to "You are in our FREE DELIVERY zone! Items to your doorstep within 24-48 hours guaranteed!"
   - **API ENDPOINTS CREATED**: `/api/locality/status` for user locality, `/api/cart/validate` for restriction checking
   - **DATABASE SCHEMA UPDATED**: Added `is_local`/`is_default` to addresses, `is_local_delivery_available`/`is_shipping_available` to products
   - **CART GUARD SYSTEM**: Bulletproof protection preventing non-local users from adding local-only products (409 errors)
