@@ -68,8 +68,14 @@ export default function AddressesPanel() {
       await apiRequest("POST", `/api/addresses/${id}/default`);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["/api/addresses"] }),
-        qc.invalidateQueries({ queryKey: ["/api/user"] })
+        qc.invalidateQueries({ queryKey: ["/api/user"] }),
+        qc.invalidateQueries({ queryKey: ["locality"] })
       ]);
+      
+      // Dispatch events to trigger immediate locality updates
+      window.dispatchEvent(new CustomEvent('defaultAddressChanged', { detail: { id } }));
+      window.dispatchEvent(new CustomEvent('addressUpdated', { detail: { id } }));
+      
       toast({
         title: "Success",
         description: "Default address updated successfully",
