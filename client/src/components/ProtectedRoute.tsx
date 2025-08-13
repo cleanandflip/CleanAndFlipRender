@@ -25,22 +25,19 @@ export function ProtectedRoute({ children, requireCompleteProfile = false }: Pro
     return <Redirect to="/login" />;
   }
   
-  // Require profile completion for shopping functionality
-  if (requireCompleteProfile && !user.profileComplete && !window.location.pathname.includes('onboarding')) {
-    // Determine specific step needed based on user data
-    let step = 1;
-    const fromPath = window.location.pathname;
+  // CART ACCESS FIX: Don't redirect users who actually have addresses
+  if (requireCompleteProfile && !window.location.pathname.includes('onboarding')) {
+    console.log("[PROTECTED ROUTE DEBUG] Checking profile completion:", {
+      profileComplete: user.profileComplete,
+      profileAddressId: user.profileAddressId,
+      hasAddresses: !!user.profileAddressId
+    });
     
-    // Check what data is missing to determine the right step using SSOT system
+    // Only redirect if user truly has no addresses (not just profileComplete false)
     if (!user.profileAddressId) {
-      step = 1; // Address step
-    } else if (!user.phone) {
-      step = 2; // Phone step  
-    } else if (!user.profileComplete) {
-      step = 3; // Summary step
+      const fromPath = window.location.pathname;
+      return <Redirect to={`/onboarding?step=1&from=${fromPath.replace('/', '')}&required=true`} />;
     }
-    
-    return <Redirect to={`/onboarding?step=${step}&from=${fromPath.replace('/', '')}&required=true`} />;
   }
   
   return <>{children}</>;
