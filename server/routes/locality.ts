@@ -14,17 +14,6 @@ router.get('/status', requireAuth, async (req, res) => {
     const addresses = await storage.getUserAddresses(userId);
     const defaultAddress = addresses.find(addr => addr.isDefault);
     
-    console.log('LOCALITY DEBUG - User ID:', userId);
-    console.log('LOCALITY DEBUG - Found addresses:', addresses?.length || 0);
-    console.log('LOCALITY DEBUG - Default address:', defaultAddress ? {
-      id: defaultAddress.id,
-      street: defaultAddress.street1,
-      city: defaultAddress.city,
-      latitude: defaultAddress.latitude,
-      longitude: defaultAddress.longitude,
-      isLocal: defaultAddress.isLocal
-    } : 'NONE');
-    
     if (!defaultAddress) {
       return res.json({
         isLocal: false,
@@ -36,8 +25,6 @@ router.get('/status', requireAuth, async (req, res) => {
     
     // Use the unified locality detection system
     const localityResult = isLocalMiles(defaultAddress.latitude, defaultAddress.longitude);
-    
-    console.log('LOCALITY DEBUG - Calculation result:', localityResult);
     
     res.json({
       isLocal: localityResult.isLocal,

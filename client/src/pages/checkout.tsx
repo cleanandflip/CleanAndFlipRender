@@ -186,7 +186,7 @@ export default function Checkout() {
             </div>
             <p className="text-sm text-gray-300">
               {locality.isLocal ? (
-                "🎉 You qualify for FREE Local Delivery on eligible items in your cart!"
+                "Eligible for FREE Local Delivery! Local items deliver to your doorstep within 24-48 hours!"
               ) : locality.hasAddress ? (
                 "You're outside our Local Delivery area. Shipping costs will be calculated for your items."
               ) : (
