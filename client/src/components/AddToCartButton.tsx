@@ -1,167 +1,213 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { ShoppingCart, Check, Loader2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, Check, Minus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 interface AddToCartButtonProps {
   productId: string;
-  inCart?: boolean;
-  quantity?: number;
-  variant?: 'default' | 'compact';
   className?: string;
+  variant?: "default" | "outline" | "ghost";
+  size?: "sm" | "default" | "lg";
 }
 
-export default function AddToCartButton({ 
+export function AddToCartButton({ 
   productId, 
-  inCart: propInCart,
-  quantity = 1,
-  variant = 'default',
-  className = ''
+  className, 
+  variant = "default",
+  size = "default" 
 }: AddToCartButtonProps) {
-  const queryClient = useQueryClient();
-  const [hover, setHover] = useState(false);
-  const [localInCart, setLocalInCart] = useState(propInCart ?? false);
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const [isHovering, setIsHovering] = useState(false);
 
-  // Check if item is in cart from query data
-  useEffect(() => {
-    if (propInCart === undefined) {
-      const cartData = queryClient.getQueryData(['cart']) as any;
-      const items = cartData?.items ?? [];
-      setLocalInCart(items.some((item: any) => item.productId === productId));
-    } else {
-      setLocalInCart(propInCart);
-    }
-  }, [productId, propInCart, queryClient]);
+  // Query cart to check if item is already in cart
+  const { data: cart } = useQuery({
+    queryKey: ['/api/cart'],
+    enabled: isAuthenticated,
+    staleTime: 30000 // 30 seconds
+  });
 
-  const addMutation = useMutation({
-    mutationKey: ['cart:add', productId],
-    mutationFn: () => apiRequest('/api/cart', {
-      method: 'POST',
-      body: { productId, quantity }
-    }),
+  const isInCart = cart?.items?.some((item: any) => item.productId === productId) || false;
+
+  // Optimistic add to cart mutation
+  const addToCartMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/cart', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          productId, 
+          quantity: 1 
+        })
+      });
+    },
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['cart'] });
-      const prev = queryClient.getQueryData<any>(['cart']);
+      // Cancel any outgoing queries
+      await queryClient.cancelQueries({ queryKey: ['/api/cart'] });
       
-      // Optimistic update
-      queryClient.setQueryData(['cart'], (old: any) => {
-        const items = old?.items ?? [];
-        const existing = items.find((item: any) => item.productId === productId);
-        
-        if (existing) {
-          return {
-            ...old,
-            items: items.map((item: any) => 
-              item.productId === productId 
-                ? { ...item, quantity: item.quantity + quantity }
-                : item
-            )
-          };
-        } else {
-          return {
-            ...old,
-            items: [...items, { 
-              id: `temp-${Date.now()}`, 
-              productId, 
-              quantity,
-              price: 0,
-              name: 'Adding...'
-            }]
-          };
-        }
+      // Snapshot the previous value
+      const previousCart = queryClient.getQueryData(['/api/cart']);
+      
+      // Optimistically update the cache
+      queryClient.setQueryData(['/api/cart'], (old: any) => {
+        if (!old) return { items: [], subtotal: 0 };
+        return {
+          ...old,
+          items: [...old.items, { productId, quantity: 1 }]
+        };
       });
       
-      setLocalInCart(true);
-      return { prev };
+      return { previousCart };
     },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) queryClient.setQueryData(['cart'], ctx.prev);
-      setLocalInCart(false);
+    onError: (error, variables, context) => {
+      // Rollback on error
+      queryClient.setQueryData(['/api/cart'], context?.previousCart);
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart",
+        variant: "destructive"
+      });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['cart'] })
-  });
-
-  const removeMutation = useMutation({
-    mutationKey: ['cart:remove', productId],
-    mutationFn: () => apiRequest(`/api/cart/remove/${productId}`, { method: 'DELETE' }),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['cart'] });
-      const prev = queryClient.getQueryData<any>(['cart']);
-      
-      queryClient.setQueryData(['cart'], (old: any) => ({
-        ...old,
-        items: (old?.items ?? []).filter((item: any) => item.productId !== productId)
-      }));
-      
-      setLocalInCart(false);
-      return { prev };
+    onSuccess: () => {
+      toast({
+        title: "Added to cart",
+        description: "Item has been added to your cart"
+      });
     },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) queryClient.setQueryData(['cart'], ctx.prev);
-      setLocalInCart(true);
-    },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['cart'] })
-  });
-
-  const busy = addMutation.isPending || removeMutation.isPending;
-  const active = localInCart || addMutation.isSuccess;
-
-  const handleClick = () => {
-    if (active && hover) {
-      removeMutation.mutate();
-    } else if (!active) {
-      addMutation.mutate();
+    onSettled: () => {
+      // Refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
     }
+  });
+
+  // Optimistic remove from cart mutation
+  const removeFromCartMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest(`/api/cart/remove/${productId}`, {
+        method: 'DELETE'
+      });
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['/api/cart'] });
+      
+      const previousCart = queryClient.getQueryData(['/api/cart']);
+      
+      // Optimistically remove from cache
+      queryClient.setQueryData(['/api/cart'], (old: any) => {
+        if (!old) return { items: [], subtotal: 0 };
+        return {
+          ...old,
+          items: old.items.filter((item: any) => item.productId !== productId)
+        };
+      });
+      
+      return { previousCart };
+    },
+    onError: (error, variables, context) => {
+      queryClient.setQueryData(['/api/cart'], context?.previousCart);
+      toast({
+        title: "Error", 
+        description: "Failed to remove item from cart",
+        variant: "destructive"
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Removed from cart",
+        description: "Item has been removed from your cart"
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+    }
+  });
+
+  const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to add items to cart",
+        variant: "destructive"
+      });
+      return;
+    }
+    addToCartMutation.mutate();
   };
 
-  const buttonText = active ? (hover ? '✖ Remove' : 'In Cart') : 'Add to Cart';
-  const buttonClass = active 
-    ? (hover ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700')
-    : 'bg-blue-600 hover:bg-blue-700';
+  const handleRemoveFromCart = () => {
+    if (!isAuthenticated) return;
+    removeFromCartMutation.mutate();
+  };
 
-  if (variant === 'compact') {
+  // Not signed in - show blue Add to Cart button
+  if (!isAuthenticated) {
     return (
       <Button
-        size="sm"
-        disabled={busy}
-        onClick={handleClick}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        className={`${buttonClass} text-white ${className}`}
-        title={buttonText}
+        variant={variant}
+        size={size}
+        className={cn("w-full bg-blue-600 hover:bg-blue-700", className)}
+        onClick={handleAddToCart}
+        data-testid={`button-add-to-cart-${productId}`}
       >
-        {busy ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : active ? (
-          hover ? '✖' : <Check className="w-4 h-4" />
-        ) : (
-          <ShoppingCart className="w-4 h-4" />
-        )}
+        <ShoppingCart className="w-4 h-4 mr-2" />
+        Add to Cart
       </Button>
     );
   }
 
+  // In cart - show green button that turns red on hover with remove functionality
+  if (isInCart) {
+    return (
+      <Button
+        variant="secondary"
+        size={size}
+        className={cn(
+          "w-full transition-all duration-200",
+          isHovering 
+            ? "bg-red-600 hover:bg-red-700 text-white" 
+            : "bg-green-600 hover:bg-green-700 text-white",
+          className
+        )}
+        onClick={handleRemoveFromCart}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        disabled={removeFromCartMutation.isPending}
+        data-testid={`button-remove-from-cart-${productId}`}
+      >
+        {removeFromCartMutation.isPending ? (
+          <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : isHovering ? (
+          <Minus className="w-4 h-4 mr-2" />
+        ) : (
+          <Check className="w-4 h-4 mr-2" />
+        )}
+        {isHovering ? "Remove" : "In Cart"}
+      </Button>
+    );
+  }
+
+  // Not in cart - show blue Add to Cart button
   return (
     <Button
-      disabled={busy}
-      onClick={handleClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      className={`${buttonClass} text-white ${className}`}
-      title={buttonText}
+      variant={variant}
+      size={size}
+      className={cn("w-full bg-blue-600 hover:bg-blue-700", className)}
+      onClick={handleAddToCart}
+      disabled={addToCartMutation.isPending}
+      data-testid={`button-add-to-cart-${productId}`}
     >
-      {busy ? (
-        <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Adding...</>
-      ) : active ? (
-        hover ? (
-          <><span className="mr-2">✖</span> Remove</>
-        ) : (
-          <><Check className="w-4 h-4 mr-2" /> In Cart</>
-        )
+      {addToCartMutation.isPending ? (
+        <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
       ) : (
-        <><ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart</>
+        <ShoppingCart className="w-4 h-4 mr-2" />
       )}
+      {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
     </Button>
   );
 }
+
+// Default export for compatibility
+export default AddToCartButton;

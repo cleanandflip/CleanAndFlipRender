@@ -132,6 +132,22 @@ export interface IStorage {
   
   // Removed equipment submission and wishlist analytics for single-seller model
   
+  // Address operations - SSOT system
+  getUserAddresses(userId: string): Promise<Address[]>;
+  getAddress(userId: string, id: string): Promise<Address | undefined>;
+  createAddress(userId: string, address: InsertAddress): Promise<Address>;
+  updateAddress(userId: string, id: string, updates: Partial<InsertAddress>): Promise<Address>;
+  setDefaultAddress(userId: string, id: string): Promise<Address>;
+  deleteAddress(userId: string, id: string): Promise<void>;
+  
+  // Cart operations - bulletproof system
+  getCart(userId: string): Promise<{ items: any[], subtotal: number } | undefined>;
+  addToCart(userId: string, productId: string, quantity: number, variantId?: string): Promise<{ items: any[], subtotal: number }>;
+  updateCartItem(userId: string, itemId: string, quantity: number): Promise<{ items: any[], subtotal: number }>;
+  removeFromCart(userId: string, itemId: string): Promise<{ items: any[], subtotal: number }>;
+  removeFromCartByProductId(userId: string, productId: string): Promise<{ items: any[], subtotal: number }>;
+  validateCart(userId: string): Promise<any>;
+  
   healthCheck(): Promise<{ status: string; timestamp: string; }>;
 }
 
@@ -1199,6 +1215,205 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Removed all wishlist operations for single-seller model
+
+  async healthCheck(): Promise<{ status: string; timestamp: string }> {
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  // SSOT Address operations
+  async getUserAddresses(userId: string): Promise<Address[]> {
+    return await db
+      .select()
+      .from(addresses)
+      .where(eq(addresses.userId, userId))
+      .orderBy(desc(addresses.isDefault), desc(addresses.createdAt));
+  }
+
+  async getAddress(userId: string, id: string): Promise<Address | undefined> {
+    const [address] = await db
+      .select()
+      .from(addresses)
+      .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
+    return address;
+  }
+
+  async createAddress(userId: string, address: InsertAddress): Promise<Address> {
+    // If setting as default, clear other defaults first
+    if (address.isDefault) {
+      await db
+        .update(addresses)
+        .set({ isDefault: false })
+        .where(eq(addresses.userId, userId));
+    }
+
+    const [newAddress] = await db
+      .insert(addresses)
+      .values({
+        ...address,
+        userId,
+        id: randomUUID()
+      })
+      .returning();
+    return newAddress;
+  }
+
+  async updateAddress(userId: string, id: string, updates: Partial<InsertAddress>): Promise<Address> {
+    // If setting as default, clear other defaults first
+    if (updates.isDefault) {
+      await db
+        .update(addresses)
+        .set({ isDefault: false })
+        .where(eq(addresses.userId, userId));
+    }
+
+    const [updatedAddress] = await db
+      .update(addresses)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(addresses.id, id), eq(addresses.userId, userId)))
+      .returning();
+    
+    if (!updatedAddress) {
+      throw new Error('Address not found');
+    }
+    return updatedAddress;
+  }
+
+  async setDefaultAddress(userId: string, id: string): Promise<Address> {
+    // Clear all defaults first
+    await db
+      .update(addresses)
+      .set({ isDefault: false })
+      .where(eq(addresses.userId, userId));
+
+    // Set the new default
+    const [defaultAddress] = await db
+      .update(addresses)
+      .set({ isDefault: true, updatedAt: new Date() })
+      .where(and(eq(addresses.id, id), eq(addresses.userId, userId)))
+      .returning();
+    
+    if (!defaultAddress) {
+      throw new Error('Address not found');
+    }
+    return defaultAddress;
+  }
+
+  async deleteAddress(userId: string, id: string): Promise<void> {
+    await db
+      .delete(addresses)
+      .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
+  }
+
+  // Bulletproof Cart operations
+  async getCart(userId: string): Promise<{ items: any[], subtotal: number } | undefined> {
+    const items = await db
+      .select({
+        id: cartItems.id,
+        productId: cartItems.productId,
+        quantity: cartItems.quantity,
+        product: products
+      })
+      .from(cartItems)
+      .innerJoin(products, eq(cartItems.productId, products.id))
+      .where(eq(cartItems.userId, userId));
+
+    const subtotal = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    
+    return { items, subtotal };
+  }
+
+  async addToCart(userId: string, productId: string, quantity: number, variantId?: string): Promise<{ items: any[], subtotal: number }> {
+    // Check if item already exists
+    const [existingItem] = await db
+      .select()
+      .from(cartItems)
+      .where(and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)));
+
+    if (existingItem) {
+      // Update quantity
+      await db
+        .update(cartItems)
+        .set({ quantity: existingItem.quantity + quantity })
+        .where(eq(cartItems.id, existingItem.id));
+    } else {
+      // Add new item
+      await db
+        .insert(cartItems)
+        .values({
+          id: randomUUID(),
+          userId,
+          productId,
+          quantity,
+          variantId
+        });
+    }
+
+    // Return updated cart
+    const cart = await this.getCart(userId);
+    return cart || { items: [], subtotal: 0 };
+  }
+
+  async updateCartItem(userId: string, itemId: string, quantity: number): Promise<{ items: any[], subtotal: number }> {
+    if (quantity <= 0) {
+      await db
+        .delete(cartItems)
+        .where(and(eq(cartItems.id, itemId), eq(cartItems.userId, userId)));
+    } else {
+      await db
+        .update(cartItems)
+        .set({ quantity })
+        .where(and(eq(cartItems.id, itemId), eq(cartItems.userId, userId)));
+    }
+
+    const cart = await this.getCart(userId);
+    return cart || { items: [], subtotal: 0 };
+  }
+
+  async removeFromCart(userId: string, itemId: string): Promise<{ items: any[], subtotal: number }> {
+    await db
+      .delete(cartItems)
+      .where(and(eq(cartItems.id, itemId), eq(cartItems.userId, userId)));
+
+    const cart = await this.getCart(userId);
+    return cart || { items: [], subtotal: 0 };
+  }
+
+  async removeFromCartByProductId(userId: string, productId: string): Promise<{ items: any[], subtotal: number }> {
+    await db
+      .delete(cartItems)
+      .where(and(eq(cartItems.productId, productId), eq(cartItems.userId, userId)));
+
+    const cart = await this.getCart(userId);
+    return cart || { items: [], subtotal: 0 };
+  }
+
+  async validateCart(userId: string): Promise<any> {
+    const cart = await this.getCart(userId);
+    if (!cart) return { valid: true, items: [] };
+
+    const validationResults = await Promise.all(
+      cart.items.map(async (item) => {
+        const product = await this.getProduct(item.productId);
+        return {
+          itemId: item.id,
+          productId: item.productId,
+          available: product && product.stockQuantity >= item.quantity,
+          currentPrice: product?.price,
+          requestedQuantity: item.quantity,
+          availableQuantity: product?.stockQuantity || 0
+        };
+      })
+    );
+
+    return {
+      valid: validationResults.every(r => r.available),
+      items: validationResults,
+      subtotal: cart.subtotal
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();

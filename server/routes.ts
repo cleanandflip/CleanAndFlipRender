@@ -218,6 +218,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const addressRoutes = await import('./routes/addresses');
   app.use('/api/addresses', addressRoutes.default);
   
+  // Import bulletproof cart routes
+  const cartRoutes = await import('./routes/cart');
+  app.use('/api/cart', cartRoutes.default);
+  
   // Shipping quotes API
   const shippingRoutes = await import('./routes/shipping');
   app.use('/api/shipping', shippingRoutes.default);

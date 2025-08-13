@@ -6,16 +6,16 @@ import { isLocalMiles } from '../lib/distance';
 
 const router = Router();
 
-// Address schema with SSOT fields
+// Address schema with SSOT fields - matching frontend names
 const addressSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   phone: z.string().optional().nullable(),
-  line1: z.string().min(1, 'Street address is required'),
-  line2: z.string().optional().nullable(),
+  streetAddress: z.string().min(1, 'Street address is required'),
+  apartment: z.string().optional().nullable(),
   city: z.string().min(1, 'City is required'),
   state: z.string().length(2, 'State must be 2 characters'),
-  postalCode: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid postal code'),
+  zipCode: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid postal code'),
   country: z.string().default('US'),
   lat: z.number().nullable().optional(),
   lng: z.number().nullable().optional(),
@@ -59,6 +59,9 @@ router.post('/', isAuthenticated, async (req, res) => {
     
     const address = await storage.createAddress(userId, {
       ...data,
+      line1: data.streetAddress,
+      line2: data.apartment || null,
+      postalCode: data.zipCode,
       isLocal
     });
     
