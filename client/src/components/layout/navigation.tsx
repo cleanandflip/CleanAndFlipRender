@@ -133,39 +133,18 @@ export default function Navigation() {
       return;
     }
     
-    // Debug logging for authenticated users
-    console.log('Cart Click Debug:', {
-      user: {
-        profileAddress: user.profileAddress,
-        profileComplete: user.profileComplete,
-        phone: user.phone
-      }
-    });
-    
-    // SSOT check: user needs profileAddress (not legacy fields) and profileComplete
-    if (!user.profileAddress || !user.profileComplete) {
-      // Determine what step they need to start from based on SSOT system
-      let step = 1;
-      if (!user.profileAddress) {
-        step = 1; // Address step - SSOT requirement
-      } else if (!user.phone) {
-        step = 2; // Phone step  
-      } else if (!user.profileComplete) {
-        step = 3; // Summary step
-      }
-      
-      const stepText = step === 1 ? "shipping address" : step === 2 ? "phone number" : "profile";
-      
+    // SSOT check: user needs profileAddress - phone is optional (can be added at checkout)
+    if (!user.profileAddress) {
       toast({
         title: "Complete Your Profile",
-        description: `Please add your ${stepText} to access your cart and shop with us. This helps us provide better service and shipping options.`,
+        description: `Please add your shipping address to access your cart and shop with us. This helps us provide better service and shipping options.`,
         variant: "default",
         action: (
           <button 
-            onClick={() => setLocation(`/onboarding?step=${step}&from=cart`)}
+            onClick={() => setLocation(`/onboarding?step=1&from=cart`)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
           >
-            Add ${stepText === "profile" ? "Info" : stepText}
+            Add Address
           </button>
         )
       });

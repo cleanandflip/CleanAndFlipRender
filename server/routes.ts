@@ -2373,15 +2373,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: userData.last_name,
         phone: userData.phone,
         role: userData.role,
-        profileComplete: Boolean(userData.profile_complete),
+        profileComplete: Boolean(userData.profile_address_id), // Profile is complete if they have an address
         onboardingStep: userData.onboarding_step || 0,
         isLocal: Boolean(userData.is_local_customer),
         onboardingCompleted: Boolean(userData.onboarding_completed_at),
         profileAddress
       };
       
-      // Debug log the response
-      Logger.debug(`[USER API] Sending response: ${JSON.stringify(response, null, 2)}`);
+
 
       res.json(response);
     } catch (error) {
