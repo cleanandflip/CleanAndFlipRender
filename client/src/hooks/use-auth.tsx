@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
   user: SelectUser | null;
+  isAuthenticated: boolean;
   isLoading: boolean;
   error: Error | null;
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
@@ -46,11 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     retry: false, // Don't retry 401s for auth checks
     throwOnError: false, // Handle errors gracefully
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes to reduce network calls
-    gcTime: 0, // CRITICAL FIX: Don't keep in cache after logout
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes - CRITICAL FIX
     refetchOnWindowFocus: false, // Don't check auth on window focus
     refetchOnReconnect: false, // Don't spam on reconnect
-    refetchOnMount: true, // CRITICAL FIX: Always check fresh auth state
+    refetchOnMount: true, // Always check fresh auth state
   });
 
   // Auto-redirect to onboarding for incomplete profiles
@@ -230,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user: user ?? null,
+        isAuthenticated: !!user,
         isLoading,
         error,
         loginMutation,
