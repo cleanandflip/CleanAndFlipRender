@@ -5,11 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCart, useUpdateCartItem, useRemoveFromCart, Cart, CartItem } from "@/hooks/use-cart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { LocalBadge } from "@/components/locality/LocalBadge";
+import { useLocality } from "@/hooks/useLocality";
+import { Badge } from "@/components/ui/badge";
 
 export default function CartPage() {
   const { data: cart, isLoading, isError } = useCart();
   const updateMutation = useUpdateCartItem();
   const removeMutation = useRemoveFromCart();
+  const { data: locality } = useLocality();
   
   // Safe access to cart data with proper typing
   const cartData = cart as Cart;
@@ -96,7 +100,17 @@ export default function CartPage() {
   return (
     <div className="min-h-screen pt-32 px-6">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bebas mb-8">SHOPPING CART</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bebas">SHOPPING CART</h1>
+          <LocalBadge isLocal={locality?.isLocal ?? false} />
+        </div>
+
+        {/* Local delivery banner */}
+        {locality?.isLocal && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 text-green-800 text-sm">
+            FREE Local Delivery applies to eligible items.
+          </div>
+        )}
         
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
@@ -122,6 +136,17 @@ export default function CartPage() {
                     {item.product?.brand && (
                       <p className="text-gray-600 text-sm mb-2">{item.product.brand}</p>
                     )}
+                    <div className="flex items-center gap-2 mb-2">
+                      {item.product?.is_local_delivery_available && item.product?.is_shipping_available && (
+                        <Badge variant="outline" className="text-xs">Both</Badge>
+                      )}
+                      {item.product?.is_local_delivery_available && !item.product?.is_shipping_available && (
+                        <Badge variant="outline" className="text-xs text-blue-700">Local Only</Badge>
+                      )}
+                      {!item.product?.is_local_delivery_available && item.product?.is_shipping_available && (
+                        <Badge variant="outline" className="text-xs">Shipping Only</Badge>
+                      )}
+                    </div>
                     <p className="text-2xl font-bebas">
                       ${parseFloat(item.product?.price || '0').toFixed(2)}
                     </p>
@@ -188,8 +213,8 @@ export default function CartPage() {
                 </div>
                 
                 <div className="flex justify-between">
-                  <span>Shipping:</span>
-                  <span>Calculated at checkout</span>
+                  <span>Delivery:</span>
+                  <span>{locality?.isLocal ? "FREE Local Delivery" : "Calculated at checkout"}</span>
                 </div>
                 
                 <Separator />

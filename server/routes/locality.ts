@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../auth';
 import { storage } from '../storage';
-import { isLocalMiles } from '../lib/locality';
+import { isLocalMiles, milesBetween } from '../lib/distance';
 
 const router = Router();
 

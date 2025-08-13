@@ -11,6 +11,8 @@ import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code, LayoutGrid, Code2, Shield } from "lucide-react";
+import { LocalBadge } from "@/components/locality/LocalBadge";
+import { useLocality } from "@/hooks/useLocality";
 
 import { ROUTES } from "@/config/routes";
 
@@ -27,6 +29,7 @@ export default function Navigation() {
   const cartCount = cart?.items?.length || 0;
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
+  const { data: locality } = useLocality();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -276,6 +279,20 @@ export default function Navigation() {
 
                       {/* Navigation Links */}
                       <div className="py-1 px-1">
+                        {/* First item: LocalBadge */}
+                        <div className="px-3 py-2.5 mb-2">
+                          <LocalBadge isLocal={locality?.isLocal ?? false} />
+                        </div>
+
+                        {/* Second line: Dynamic locality message */}
+                        <div className="px-3 py-2 mb-3 text-xs text-muted-foreground">
+                          {locality?.isLocal ? (
+                            <div>FREE Local Delivery to your default address</div>
+                          ) : (
+                            <div>Shipping area — set a default address to check Local Delivery</div>
+                          )}
+                        </div>
+                        
                         <button
                           onClick={() => {
                             handleNavigation(ROUTES.DASHBOARD);
@@ -284,7 +301,7 @@ export default function Navigation() {
                           className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
                         >
                           <User className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">My Profile</span>
+                          <span className="text-sm">Manage addresses</span>
                         </button>
                         
                         <button

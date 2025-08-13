@@ -16,11 +16,15 @@ import { searchService } from "@/lib/searchService";
 import ProductsResults from "@/components/products/ProductsResults";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useProducts } from "@/hooks/useProducts";
+import { useLocality } from "@/hooks/useLocality";
+import { useAuth } from "@/hooks/use-auth";
 import type { Product } from "@shared/schema";
 
 function HomeSections() {
   const queryClient = useQueryClient();
   const { lastMessage, isConnected } = useWebSocket();
+  const { data: locality } = useLocality();
+  const { user } = useAuth();
   
   const { data: featuredProducts, refetch } = useQuery<Product[]>({
     queryKey: ["/api/products/featured"],
@@ -74,6 +78,26 @@ function HomeSections() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Locality Banner - Minimal */}
+      {user && locality && (
+        <motion.div 
+          className="max-w-4xl mx-auto mb-8 px-6 pt-24"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          {locality.isLocal ? (
+            <div className="text-center bg-green-50 border border-green-200 rounded-lg p-3 text-green-800 text-sm">
+              🎉 You're in our Local Delivery area — delivery is FREE.
+            </div>
+          ) : !locality.hasAddress ? (
+            <div className="text-center bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-800 text-sm">
+              Add your address to see if you qualify for FREE Local Delivery.
+            </div>
+          ) : null}
+        </motion.div>
+      )}
+
       {/* Hero Section - Full Screen */}
       <section className="min-h-screen flex items-center justify-center pt-20 pb-12 px-6">
         <div className="max-w-6xl mx-auto text-center">

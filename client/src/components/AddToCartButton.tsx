@@ -5,9 +5,15 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useCart, useAddToCart, useRemoveFromCart } from "@/hooks/use-cart";
+import { useLocality } from "@/hooks/useLocality";
+import { Link } from "wouter";
 
 interface AddToCartButtonProps {
   productId: string;
+  product?: {
+    is_local_delivery_available?: boolean;
+    is_shipping_available?: boolean;
+  };
   className?: string;
   variant?: "default" | "outline" | "ghost";
   size?: "sm" | "default" | "lg";
@@ -15,6 +21,7 @@ interface AddToCartButtonProps {
 
 export default function AddToCartButton({ 
   productId, 
+  product,
   className, 
   variant = "default",
   size = "default" 
@@ -23,12 +30,17 @@ export default function AddToCartButton({
   const { toast } = useToast();
   const [isHovering, setIsHovering] = useState(false);
 
-  // Use the unified cart hooks
+  // Use the unified cart hooks and locality
   const { data: cart } = useCart();
   const addToCartMutation = useAddToCart();
   const removeFromCartMutation = useRemoveFromCart();
+  const { data: locality } = useLocality();
 
   const isInCart = cart?.items?.some((item: any) => item.productId === productId) || false;
+  
+  // Locality gate: check if product is local-only and user is not local
+  const isLocalOnly = product?.is_local_delivery_available && !product?.is_shipping_available;
+  const isBlocked = !locality?.isLocal && isLocalOnly;
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -39,6 +51,16 @@ export default function AddToCartButton({
       });
       return;
     }
+    
+    if (isBlocked) {
+      toast({
+        title: "Local Delivery Only",
+        description: "Update your address to one in our Local Delivery area.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     addToCartMutation.mutate({ productId, quantity: 1 });
   };
 

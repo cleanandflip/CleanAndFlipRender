@@ -21,6 +21,9 @@ import { routes } from "@/config/routes";
 import { StockIndicator } from "@/components/ui/StockIndicator";
 import { ProductPrice } from "@/components/ui/ProductPrice";
 import AddToCartButton from "@/components/AddToCartButton";
+import { ProductAvailabilityChips } from "@/components/locality/ProductAvailabilityChips";
+import { FreeDeliveryPill } from "@/components/locality/FreeDeliveryPill";
+import { useLocality } from "@/hooks/useLocality";
 
 interface ProductCardProps {
   product: Product;
@@ -34,6 +37,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
   const imageData = product.images?.[0];
   const mainImage = typeof imageData === 'string' ? imageData : (imageData as any)?.url;
   const hasImage = mainImage && mainImage.length > 0;
+  const { data: locality } = useLocality();
 
   if (compact) {
     return (
@@ -125,9 +129,17 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                   className="mb-2"
                 />
                 
-                <div className="flex items-center gap-2">
+                <div className="space-y-2">
+                  <ProductAvailabilityChips 
+                    local={product.is_local_delivery_available ?? false}
+                    ship={product.is_shipping_available ?? false}
+                  />
+                  {locality?.isLocal && product.is_local_delivery_available && (
+                    <FreeDeliveryPill />
+                  )}
                   <AddToCartButton
                     productId={product.id}
+                    product={product}
                   />
                 </div>
               </div>
@@ -215,10 +227,18 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
         </div>
       </SmartLink>
       
-      {/* Static Add to Cart Button */}
-      <div className="px-4 pb-4" onClick={(e) => e.stopPropagation()}>
+      {/* Availability chips and add to cart */}
+      <div className="px-4 pb-4 space-y-2" onClick={(e) => e.stopPropagation()}>
+        <ProductAvailabilityChips 
+          local={product.is_local_delivery_available ?? false}
+          ship={product.is_shipping_available ?? false}
+        />
+        {locality?.isLocal && product.is_local_delivery_available && (
+          <FreeDeliveryPill />
+        )}
         <AddToCartButton
           productId={product.id}
+          product={product}
         />
       </div>
     </div>

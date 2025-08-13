@@ -1,0 +1,297 @@
+🔧 IMPLEMENTATION PROMPT — Local Delivery (NO NEW PAGES)
+0) Non-negotiables
+Do NOT add new pages or routes. Only modify existing files:
+
+client/src/components/layout/navigation.tsx (user dropdown)
+
+client/src/components/dashboard/AddressesPanel.tsx (addresses tab)
+
+client/src/pages/cart.tsx (cart page)
+
+client/src/pages/checkout.tsx (checkout page)
+
+client/src/pages/home.tsx (home — minimal UI only)
+
+client/src/components/products/product-card.tsx and client/src/pages/product-detail.tsx (availability chips only)
+
+client/src/components/AddToCartButton.tsx (gating)
+
+Use one source of truth for locality: server-side coordinate/radius check against default address (Asheville warehouse, 50mi).
+
+No pickup anywhere. “Local” = Local Delivery only (we deliver).
+
+Purge legacy logic (zip checks, placeholders, old cart endpoints, onboarding gates).
+
+1) Server: unify and expose locality status
+Goal: single, fast endpoint the UI can bind to.
+
+Ensure the canonical function is used everywhere:
+
+server/lib/distance.ts → isLocalMiles(lat: number, lng: number): boolean
+
+Radius = 50mi, Warehouse = { lat: 35.5951, lng: -82.5515 }.
+
+Create/confirm endpoint (reuse existing controller if present; do not create new route file):
+
+GET /api/locality/status → returns:
+
+json
+Copy
+Edit
+{
+  "isLocal": true,
+  "distanceMiles": 12.4,
+  "hasAddress": true,
+  "defaultAddressId": "uuid"
+}
+Implementation:
+
+Read user’s default address (DB).
+
+If none: { isLocal:false, hasAddress:false }.
+
+If default exists with coordinates: compute isLocal via isLocalMiles.
+
+Never use zip-code or random/placeholder logic.
+
+Recompute isLocal whenever default address changes:
+
+In POST /api/addresses/:id/default, after DB update, no extra writes needed—the endpoint computes on demand.
+
+Keep fast; index default addresses.
+
+Cart + checkout validation:
+
+Only these routes for cart:
+
+Add: POST /api/cart (body: { productId, quantity })
+
+Remove: DELETE /api/cart/items/:cartItemId
+
+Read: GET /api/cart
+
+Validate: POST /api/cart/validate
+
+Validation rule: non-local users cannot have local-only products (product.is_local_delivery_available && !product.is_shipping_available).
+
+Return actionable errors the UI can show (e.g., {"code":"LOCAL_ONLY_ITEM","cartItemId":"…"}).
+
+Purge server legacy (delete/replace everywhere):
+
+Any isLocalCustomer(zip) or zip arrays.
+
+Any Math.random() locality in checkout.
+
+Any old cart paths like /api/cart/remove/:id or /cart/remove/:id.
+
+Any onboarding-gated locality branches.
+
+2) Client: single hook & consistent query keys
+Hook: client/src/hooks/useLocality.ts
+
+ts
+Copy
+Edit
+import { useQuery } from "@tanstack/react-query";
+export function useLocality() {
+  return useQuery({
+    queryKey: ["locality"],
+    queryFn: async () => {
+      const r = await fetch("/api/locality/status");
+      if (!r.ok) throw new Error("locality_fetch_failed");
+      return r.json() as Promise<{isLocal:boolean; distanceMiles?:number; hasAddress:boolean; defaultAddressId?:string}>;
+    },
+    staleTime: 60_000
+  });
+}
+Only this hook should be used to know if a user is local.
+
+React Query keys (standardize):
+
+Locality: ["locality"]
+
+Cart: ["cart"]
+
+Addresses: ["addresses"]
+
+On default address change → queryClient.invalidateQueries({ queryKey:["locality","cart"] }).
+
+Fix unsafe destructures to prevent UI crashes:
+
+Anywhere we did const { defaultAddress } = useDefaultAddress() → guard nulls.
+
+Ensure addresses is always an array from API responses (addresses.find is not a function must never recur).
+
+3) Reusable, minimal UI atoms (no new pages)
+Create tiny components (in existing UI directories). These are atoms, not pages.
+
+A) LocalBadge (used in header, addresses, cart, checkout)
+Props: { isLocal: boolean }
+
+Renders pill:
+
+Local: “Local Delivery Area” ✅
+
+Non-local: “Shipping Area” ℹ️
+
+aria-label included; compact (xs/sm), rounded-full.
+
+B) ProductAvailabilityChips
+Props: { local: boolean; ship: boolean }
+
+Renders:
+
+both → “Local Delivery & Shipping”
+
+local only → “Local Delivery Only”
+
+shipping only → “Shipping Only”
+
+C) FreeDeliveryPill (show only if user is local and product is local-eligible)
+Copy: “FREE Local Delivery” (small truck icon).
+
+D) LocalityGate (logic only; reused inside AddToCart)
+If !isLocal && product.localOnly → block add-to-cart:
+
+Disabled button + tooltip “Local Delivery only. Update your address.”
+
+Secondary inline link: “Manage addresses”.
+
+Keep styling consistent with your design system (no bespoke pages).
+
+4) Integrate into existing screens only
+4.1 Nav header → User dropdown (navigation.tsx)
+First item: <LocalBadge isLocal={loc?.isLocal ?? false} />
+
+Second line (dynamic):
+
+Local: “FREE Local Delivery to your default address”
+
+Non-local: “Shipping area — set a default address to check Local Delivery”
+
+Link: “Manage addresses” → /dashboard (Addresses tab)
+
+4.2 Profile → Addresses tab (AddressesPanel.tsx)
+Page header right: <LocalBadge isLocal={loc.isLocal} />
+
+Each address card:
+
+“Default” chip if default.
+
+Local status chip: “Local Delivery Eligible” / “Shipping Area”.
+
+On “Make Default” success:
+
+Invalidate ["locality","cart"]
+
+Toast:
+
+Local: “Default address qualifies for FREE Local Delivery.”
+
+Non-local: “Default address is outside local zone (shipping only).”
+
+4.3 Product list cards (product-card.tsx) & PDP (product-detail.tsx)
+Show <ProductAvailabilityChips local={p.is_local_delivery_available} ship={p.is_shipping_available} />
+
+If loc.isLocal && p.is_local_delivery_available → show <FreeDeliveryPill />
+
+AddToCartButton.tsx:
+
+Import useLocality().
+
+If !loc.isLocal && p.is_local_delivery_available && !p.is_shipping_available → disable + tooltip; show “Manage addresses”.
+
+Else: maintain Blue → Green (“In Cart”) → red hover X behavior using new cart endpoints only.
+
+4.4 Cart page (cart.tsx)
+Top of content: <LocalBadge />
+
+If local: small banner “FREE Local Delivery applies to eligible items.”
+
+Line items: tiny chip (local-only / shipping-only / both).
+
+Any stale restricted item (non-local + local-only) must render inline warning with “Remove” CTA.
+
+Footer price summary:
+
+Local user: “Delivery: FREE Local Delivery”
+
+Non-local: “Delivery: Calculated at checkout”
+
+All actions hit new endpoints:
+
+Remove: DELETE /api/cart/items/:cartItemId
+
+Add/update: POST /api/cart
+
+After mutation: invalidate ["cart"]
+
+4.5 Checkout page (checkout.tsx)
+Header row: <LocalBadge /> + (if local) <FreeDeliveryPill />
+
+Shipping method area:
+
+Local user: preselect “Local Delivery — FREE” if all items allow it; also show shipping if needed for mixed carts.
+
+Non-local: shipping options only.
+
+If invalid mix (should be caught earlier), block submit with modal:
+
+“Your cart includes Local Delivery only items. Remove them to continue.”
+
+Primary: “Remove and continue” (server mutation), Secondary: “Back to cart”
+
+Summary panel: show the delivery line exactly (“Local Delivery — FREE” vs “Shipping — $X”).
+
+Always call POST /api/cart/validate before Place Order.
+
+4.6 Home page (home.tsx) — minimal only
+If local: subtle top ribbon (single line): “🎉 You’re in our Local Delivery area — delivery is FREE.”
+
+If non-local and has no default address: “Add your address to see if you qualify for FREE Local Delivery.”
+
+No new sections/cards.
+
+5) Purge legacy & fix regressions (must do)
+Remove zip-based helpers and any isLocalCustomer(zip) calls.
+
+Delete any onboarding-only checks gating cart/checkout; locality must work from profile or checkout address edits.
+
+Nuke old cart routes (e.g., /api/cart/remove/:id, /cart/remove/:id).
+Only use /api/cart, /api/cart/items/:id, /api/cart/validate, GET /api/cart.
+
+Fix the errors seen previously:
+
+Cannot destructure 'defaultAddress'… is null → guard null and render address selector gracefully.
+
+addresses.find is not a function → ensure API normalizes addresses to an array.
+
+Cart/Checkout mismatch → both must read from GET /api/cart (same query key ["cart"]), not mixed legacy stores.
+
+6) Copy, tone, accessiblity
+Keep badges/chips compact, readable, and keyboard accessible (aria-label, tooltips focusable).
+
+Local advantage copy uses success tone; non-local uses neutral tone.
+
+No “pickup” wording—Local Delivery only.
+
+7) Testing & acceptance
+Changing default address flips LocalBadge everywhere without reload (query invalidation).
+
+Non-local user cannot add Local Delivery Only item (button gated, clear tooltip).
+
+Cart and Checkout always show identical items and same delivery line.
+
+Local user sees FREE Local Delivery in Cart & Checkout totals.
+
+No console spam; only meaningful errors/warnings remain.
+
+All cart actions use new endpoints and are idempotent with proper UI states.
+
+8) Performance & logging hygiene
+Remove noisy console.log/server [INFO]/[WARN] spam unrelated to errors (retain error tracking).
+
+Keep staleTime for locality to 60s; avoid thrashing.
+
+Debounce “Manage addresses” interactions where needed.
+
