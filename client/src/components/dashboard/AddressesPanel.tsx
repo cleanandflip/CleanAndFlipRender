@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/shared/AnimatedComponents";
-import { AlertCircle, MapPin, Edit, CheckCircle, Truck } from "lucide-react";
+import { AlertCircle, MapPin, Edit, CheckCircle, Truck, Trash2, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AddressesPanel() {
@@ -134,7 +134,11 @@ export default function AddressesPanel() {
       ) : (
         <div className="space-y-4">
           {addresses.map((address: any) => (
-            <div key={address.id} className="p-4 glass border border-border rounded-lg">
+            <div key={address.id} className={`p-4 glass rounded-lg transition-all ${
+              address.is_default 
+                ? 'border-2 border-accent-blue bg-gradient-to-r from-blue-900/10 to-transparent' 
+                : 'border border-border hover:border-gray-600'
+            }`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -142,7 +146,8 @@ export default function AddressesPanel() {
                       {address.firstName} {address.lastName}
                     </h3>
                     {address.is_default && (
-                      <Badge className="bg-accent-blue text-white text-xs">
+                      <Badge className="bg-accent-blue text-white text-xs flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-current" />
                         Default
                       </Badge>
                     )}
@@ -172,19 +177,42 @@ export default function AddressesPanel() {
                       setEditing(address);
                       setOpen(true);
                     }}
+                    data-testid={`button-edit-address-${address.id}`}
                   >
                     <Edit className="w-3 h-3 mr-1" />
                     Edit
                   </Button>
                   {!address.is_default && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-xs"
-                      onClick={() => handleMakeDefault(address.id)}
-                    >
-                      Make Default
-                    </Button>
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs"
+                        onClick={() => handleMakeDefault(address.id)}
+                        data-testid={`button-make-default-${address.id}`}
+                      >
+                        Make Default
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs text-red-400 hover:text-red-300 hover:border-red-400"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to delete this address?')) {
+                            handleDelete(address.id);
+                          }
+                        }}
+                        data-testid={`button-delete-address-${address.id}`}
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Delete
+                      </Button>
+                    </>
+                  )}
+                  {address.is_default && (
+                    <span className="text-xs text-gray-500 px-3 py-1.5 italic">
+                      Default (cannot delete)
+                    </span>
                   )}
                 </div>
               </div>
