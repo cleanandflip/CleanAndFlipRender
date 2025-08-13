@@ -31,17 +31,14 @@ export function AddToCartButton({
     staleTime: 30000 // 30 seconds
   });
 
-  const isInCart = cart?.items?.some((item: any) => item.productId === productId) || false;
+  const isInCart = cart?.some((item: any) => item.productId === productId) || false;
 
   // Optimistic add to cart mutation
   const addToCartMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/cart', {
-        method: 'POST',
-        body: JSON.stringify({ 
-          productId, 
-          quantity: 1 
-        })
+      return await apiRequest('POST', '/api/cart', { 
+        productId, 
+        quantity: 1 
       });
     },
     onMutate: async () => {
@@ -86,9 +83,7 @@ export function AddToCartButton({
   // Optimistic remove from cart mutation
   const removeFromCartMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/cart/remove/${productId}`, {
-        method: 'DELETE'
-      });
+      return await apiRequest('DELETE', `/api/cart/remove/${productId}`);
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ['/api/cart'] });
@@ -146,9 +141,8 @@ export function AddToCartButton({
   if (!isAuthenticated) {
     return (
       <Button
-        variant={variant}
         size={size}
-        className={cn("w-full bg-blue-600 hover:bg-blue-700", className)}
+        className={cn("w-full bg-blue-600 hover:bg-blue-700 text-white border-0", className)}
         onClick={handleAddToCart}
         data-testid={`button-add-to-cart-${productId}`}
       >
@@ -162,13 +156,12 @@ export function AddToCartButton({
   if (isInCart) {
     return (
       <Button
-        variant="secondary"
         size={size}
         className={cn(
-          "w-full transition-all duration-200",
+          "w-full transition-all duration-200 border-0",
           isHovering 
-            ? "bg-red-600 hover:bg-red-700 text-white" 
-            : "bg-green-600 hover:bg-green-700 text-white",
+            ? "bg-red-600 hover:bg-red-600 text-white" 
+            : "bg-green-600 hover:bg-green-600 text-white",
           className
         )}
         onClick={handleRemoveFromCart}
@@ -192,9 +185,8 @@ export function AddToCartButton({
   // Not in cart - show blue Add to Cart button
   return (
     <Button
-      variant={variant}
       size={size}
-      className={cn("w-full bg-blue-600 hover:bg-blue-700", className)}
+      className={cn("w-full bg-blue-600 hover:bg-blue-700 text-white border-0", className)}
       onClick={handleAddToCart}
       disabled={addToCartMutation.isPending}
       data-testid={`button-add-to-cart-${productId}`}
