@@ -1,0 +1,236 @@
+REPLIT: Clean DB → Seed Test Users → Full SSOT/Local QA
+0) Preconditions
+Use development DB (not prod). Confirm .env:
+
+DATABASE_URL points to the dev Postgres you’ve been using.
+
+HQ_LAT, HQ_LNG, LOCAL_RADIUS_MILES are set (e.g., Asheville HQ + 25mi).
+
+Redis is off in dev (fine). If you enable it, also run the Redis flush step below.
+
+1) BACK UP (just in case)
+Run and keep the dump locally:
+
+bash
+Copy
+Edit
+pg_dump "$DATABASE_URL" -Fc -f backup_before_user_wipe.dump
+2) CLEAN SLATE — Remove all user data (keep products/categories)
+Run this SQL exactly as one transaction to avoid FK issues:
+
+sql
+Copy
+Edit
+BEGIN;
+
+-- Stop depending ops from failing on FK while truncating
+SET session_replication_role = replica;
+
+-- Clear sessions (name may be session or sessions; handle both safely)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='sessions') THEN
+    EXECUTE 'TRUNCATE TABLE sessions RESTART IDENTITY CASCADE';
+  ELSIF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='session') THEN
+    EXECUTE 'TRUNCATE TABLE session RESTART IDENTITY CASCADE';
+  END IF;
+END $$;
+
+-- Clear user-owned, cart, orders, addresses, submissions, oauth, etc.
+-- Adjust table names if your schema differs; order here is safe with replica mode.
+TRUNCATE TABLE
+  cart_items,
+  carts,
+  order_items,
+  orders,
+  submissions,
+  addresses,
+  oauth_accounts,
+  user_preferences
+RESTART IDENTITY CASCADE;
+
+-- Finally users
+TRUNCATE TABLE users RESTART IDENTITY CASCADE;
+
+SET session_replication_role = DEFAULT;
+COMMIT;
+If Redis is enabled, also:
+
+bash
+Copy
+Edit
+redis-cli FLUSHALL
+Reset any in-app caches by restarting the dev server after the SQL completes.
+
+3) Start server fresh
+bash
+Copy
+Edit
+npm run dev
+Wait for “Server successfully started…”
+
+4) Create TEST ACCOUNTS via the UI (preferred)
+Do these in a clean browser session (incognito) so cookies/sessions are isolated.
+
+A. Email/Password Sign-up – LOCAL
+Go to /signup and create:
+
+Email: local.tester+1@example.com
+
+PW: any valid test pw
+
+You’ll be redirected to onboarding (required).
+
+Step 1 (Address) — use a clearly local address (inside your LOCAL_RADIUS_MILES):
+
+Street: 10 Magnolia Farms Drive
+
+City/State/ZIP: Asheville, NC 28806
+
+Select from Geoapify suggestions; ensure latitude/longitude populate.
+
+Submit → proceeds to Step 2.
+
+Step 2 (Contact) — enter a valid E.164 phone (validation is enforced):
+
+Example: +18285551234
+
+Confirm letters or 1 digit are rejected and the button is disabled until valid.
+
+Step 3 (Prefs) — SMS is removed; leave email notifications on.
+Submit → POST /api/onboarding/complete → redirected back (to cart if from=cart, else dashboard).
+
+Expected after completion:
+
+/api/user returns profileAddress populated and isLocal: true.
+
+/dashboard?tab=addresses lists the address (default).
+
+B. Email/Password Sign-up – NON-LOCAL
+Repeat A with:
+
+Email: nonlocal.tester+1@example.com
+
+Address outside radius (e.g., Charlotte, NC 28202 — 100 N Tryon St, Charlotte, NC 28202).
+Expected: /api/user.isLocal === false.
+
+C. Boundary Case (near the edge of radius)
+Email: edge.tester+1@example.com
+
+Pick an address right near the boundary (just inside). If you have a test pair, use it; otherwise a Weaverville/Hendersonville address you know is inside 25mi.
+Expected: isLocal === true.
+Then edit same user’s address to one just outside the radius and re-save → isLocal === false. This verifies recomputation on save.
+
+D. Google Sign-in
+Use a Google test account and go through the same onboarding:
+
+Account: local.gtester@example.com (any test Google identity)
+
+Choose a local address to confirm isLocal: true.
+
+Then sign out, sign back in with another Google test account using a non-local address to confirm isLocal: false.
+
+If Google isn’t available in this dev workspace, add a temporary dev-only “Simulate Google” route that maps provider=google to a user; or manually insert a row into oauth_accounts after creating a user via email to emulate the linkage. Either way, still complete onboarding through the UI so the address is saved via the single source of truth.
+
+5) Address syncing QA (must pass all)
+For each of the 4 surfaces:
+
+/dashboard?tab=addresses
+
+“Add Address” and “Add New Address” buttons open modal and save via POST /api/addresses.
+
+After saving, the new address appears, is_default toggles correctly, and /api/user.profileAddress matches the default.
+
+Deleting the default promotes another to default, and users.profile_address_id updates.
+
+/onboarding?step=1&from=cart and /onboarding
+
+Step 1 saves address via POST /api/addresses with all required fields: firstName, lastName, street1, city, state, postalCode, country, latitude, longitude.
+
+On success, you land on Step 2 (no loop back to Step 1).
+
+Step 2 rejects invalid phone input (letters, <8 digits, missing + when needed).
+
+Step 3 has no SMS option. Submitting calls POST /api/onboarding/complete and redirects correctly.
+
+After completion, refresh /api/user and confirm profileAddress populated; open /dashboard?tab=addresses and confirm same address is visible there as default. (This proves SSOT.)
+
+Checkout (Shipping panel)
+
+Signed-in users: shipping form is pre-filled from profileAddress. You can edit and Save & Continue which updates both the address list and /api/user.
+
+Guests: shipping form works and quotes shipping from session only (no /api/addresses write). Signing up mid-checkout should carry address forward and set as default.
+
+Borders and focus rings are visibly stronger (contrast and focus styles applied).
+
+Local gating
+
+For a local user, adding a local-only product succeeds; checkout shows “Free local delivery within 48 hours” and $0 shipping.
+
+For a non-local user, “Add to Cart” on local-only products is disabled (tooltip) and server-side guard blocks any attempt (400).
+
+POST /api/cart/validate rechecks gating before payment.
+
+6) Automated sanity checks (SQL & logs)
+Run these queries after each test user to verify SSOT is set:
+
+sql
+Copy
+Edit
+-- Current user count (should match # test accounts created)
+SELECT COUNT(*) AS users FROM users;
+
+-- Each user must have exactly 1 default address (or 0 for guest-only tests)
+SELECT u.id AS user_id, COUNT(*) FILTER (WHERE a.is_default) AS defaults
+FROM users u
+LEFT JOIN addresses a ON a.user_id = u.id
+GROUP BY u.id;
+
+-- Users -> profile address pointer not null when addresses exist
+SELECT u.id, u.profile_address_id IS NOT NULL AS has_profile_pointer
+FROM users u;
+
+-- Address is_local sanity
+SELECT a.id, a.user_id, a.is_local, a.city, a.state, a.postal_code
+FROM addresses a
+ORDER BY a.created_at DESC
+LIMIT 50;
+Watch server logs to ensure:
+
+No more ZodError 500s on /api/addresses (client must send all required fields).
+
+No /api/observability/errors 400 spam (payload/CT incoming as JSON).
+
+No Geoapify 429 loops (autocomplete debounced + cached; on 429, return empty suggestions gracefully).
+
+7) Report back (artifacts to provide)
+Screenshot of /dashboard?tab=addresses for each test user showing addresses list.
+
+Network tab captures for:
+
+POST /api/addresses (payload includes all required fields; response includes is_local).
+
+GET /api/user (shows profileAddress and isLocal).
+
+POST /api/cart/validate (when cart has local-only items for non-local user → 400 with clear error).
+
+Short note confirming:
+
+SMS removed from onboarding & profile.
+
+Phone validation enforced client + server.
+
+Checkout prefill works; edits persist.
+
+Local gating enforced UI + server.
+
+8) If anything fails (fix steps)
+Onboarding loop → Ensure Step 1 actually calls POST /api/addresses and success path sets users.profile_address_id. Step 3 must call POST /api/onboarding/complete.
+
+Zod 500s → Align client keys with server schema (firstName,lastName,street1,city,state,postalCode,country,latitude,longitude). Return 400 with field list; never 500.
+
+Add Address buttons → Wire onClick to open Address modal and call saveAddress(); ensure the modal form uses the shared hook and schema (no bespoke DTOs).
+
+Geoapify 429 → Confirm client debounce (≥400ms), min 3 chars, server cache, and 429 backoff handling.
+
+Follow these steps exactly. When done, the database will be clean, test users (email + Google) will be onboarded, and we’ll have proof that the single source of truth address system and local customer logic work everywhere (dashboard, onboarding, checkout).
