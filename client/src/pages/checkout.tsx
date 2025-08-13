@@ -174,25 +174,24 @@ export default function Checkout() {
       {/* Locality Banner for Checkout */}
       {locality && (
         <motion.div 
-          className="mb-8"
+          className="mb-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin className="w-4 h-4 text-blue-400" />
-              <span className="text-sm font-medium">Delivery Information</span>
+          <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-3">
+              <MapPin className="w-4 h-4 text-blue-400 flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-200">
+                {locality.isLocal ? (
+                  "You are in our FREE DELIVERY zone!"
+                ) : locality.hasAddress ? (
+                  "You're outside our Local Delivery area. Shipping costs will be calculated for your items."
+                ) : (
+                  "Please add your address to determine delivery options and costs."
+                )}
+              </span>
             </div>
-            <p className="text-sm text-gray-300">
-              {locality.isLocal ? (
-                "You are in our FREE DELIVERY zone! Items to your doorstep within 24-48 hours guaranteed!"
-              ) : locality.hasAddress ? (
-                "You're outside our Local Delivery area. Shipping costs will be calculated for your items."
-              ) : (
-                "Please add your address to determine delivery options and costs."
-              )}
-            </p>
           </div>
         </motion.div>
       )}

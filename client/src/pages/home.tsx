@@ -88,11 +88,11 @@ function HomeSections() {
           transition={{ duration: 0.4 }}
         >
           {locality.isLocal ? (
-            <div className="text-center bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-xl p-4 shadow-lg">
+            <div className="text-center bg-gradient-to-r from-green-50 to-blue-50 border border-green-300 rounded-xl px-4 py-3">
               <div className="flex items-center justify-center gap-3">
                 <LocalBadge isLocal={true} />
                 <span className="text-green-800 font-medium">
-                  You are in our FREE DELIVERY zone! Items to your doorstep within 24-48 hours guaranteed!
+                  You are in our FREE DELIVERY zone!
                 </span>
               </div>
             </div>
