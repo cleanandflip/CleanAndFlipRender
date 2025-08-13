@@ -28,7 +28,7 @@ export default function AddToCartButton({
   const addToCartMutation = useAddToCart();
   const removeFromCartMutation = useRemoveFromCart();
 
-  const isInCart = cart?.data?.items?.some((item: any) => item.productId === productId) || false;
+  const isInCart = cart?.items?.some((item: any) => item.productId === productId) || false;
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {

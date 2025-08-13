@@ -22,7 +22,9 @@ export default function Navigation() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [dropdownCoords, setDropdownCoords] = useState<{ top: number; left: number; width: number } | null>(null);
-  const { cartCount } = useCart();
+  // Cart functionality with real-time updates - FIXED DATA ACCESS
+  const { data: cart } = useCart();  
+  const cartCount = cart?.items?.length || 0;
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const dropdownRef = useRef<HTMLDivElement>(null);

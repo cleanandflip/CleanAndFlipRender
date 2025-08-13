@@ -51,8 +51,8 @@ export function useCart() {
       
       const data = await response.json();
       console.log('Cart data received:', data);
-      // SSOT: Clean data structure - no legacy handling needed
-      return data;
+      // SSOT: Return unified structure that components expect
+      return data.data ? data.data : { items: [], subtotal: 0, total: 0, id: null, shippingAddressId: null };
     },
     staleTime: 30000, // 30 seconds cache
     refetchOnWindowFocus: false,

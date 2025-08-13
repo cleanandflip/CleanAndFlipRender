@@ -9,14 +9,22 @@ export function ProfileNudge() {
   const [dismissed, setDismissed] = useState(false);
   const { user, isAuthenticated } = useAuth();
   
-  // Fetch addresses to check if user has ANY addresses (not just default)
-  const { data: addresses = [] } = useQuery({
+  // FIXED: Fetch user's addresses with correct API endpoint
+  const { data: addressesResponse } = useQuery({
     queryKey: ['addresses'], 
+    queryFn: async () => {
+      const response = await fetch('/api/addresses', {
+        credentials: 'include'
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
     enabled: isAuthenticated,
     staleTime: 60000
   });
   
-  // FIXED: Don't show if user has ANY address in their profile (not just default)
+  // FIXED: Don't show banner if user has ANY address in their profile  
+  const addresses = addressesResponse?.data || addressesResponse || [];
   const hasAnyAddress = Array.isArray(addresses) && addresses.length > 0;
   const shouldShow = isAuthenticated && !hasAnyAddress && !dismissed;
   
