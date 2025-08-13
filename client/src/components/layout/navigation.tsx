@@ -115,11 +115,11 @@ export default function Navigation() {
   const handleCartClick = (e: React.MouseEvent) => {
     e.preventDefault();
     
-    // SSOT check: user needs profileAddressId (not legacy fields) and profileComplete
-    if (user && (!user.profileAddressId || !user.profileComplete)) {
+    // SSOT check: user needs profileAddress (not legacy fields) and profileComplete
+    if (user && (!user.profileAddress || !user.profileComplete)) {
       // Determine what step they need to start from based on SSOT system
       let step = 1;
-      if (!user.profileAddressId) {
+      if (!user.profileAddress) {
         step = 1; // Address step - SSOT requirement
       } else if (!user.phone) {
         step = 2; // Phone step  
