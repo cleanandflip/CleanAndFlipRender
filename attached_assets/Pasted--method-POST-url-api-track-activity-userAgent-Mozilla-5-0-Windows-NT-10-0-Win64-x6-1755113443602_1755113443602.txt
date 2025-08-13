@@ -1,0 +1,471 @@
+ method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.19',
+  userId: undefined,
+  duration: 125,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 125ms 
+7:29:21 PM POST    /api/track-activity                      202 126ms
+[INFO] API GET /api/categories?active=true 200 134ms {
+  method: 'GET',
+  url: '/api/categories?active=true',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.59',
+  userId: undefined,
+  duration: 134,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:29:21 PM GET     /api/categories?active=true              200 135ms
+[INFO] API GET /api/products/featured 200 133ms {
+  method: 'GET',
+  url: '/api/products/featured',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.3.108',
+  userId: undefined,
+  duration: 133,
+  statusCode: 200,
+  contentLength: 726
+}
+7:29:21 PM GET     /api/products/featured                   200 134ms
+[WS] Client connected: xxan6kqvunqmead6hbc (Total: 1)
+[INFO] API GET /api/user 200 175ms {
+  method: 'GET',
+  url: '/api/user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 175,
+  statusCode: 200,
+  contentLength: 595
+}
+7:29:21 PM GET     /api/user                                200 176ms
+[INFO] API POST /api/track-activity 202 132ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 132,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 132ms 
+7:29:22 PM POST    /api/track-activity                      202 133ms
+[INFO] GET /src/pages/dashboard.tsx 304 451ms 
+[INFO] API POST /api/track-activity 202 482ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.8.95',
+  userId: undefined,
+  duration: 482,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 482ms 
+7:29:38 PM POST    /api/track-activity                      202 483ms
+[INFO] GET /src/components/ui/alert-dialog.tsx 304 124ms 
+[INFO] GET /src/components/dashboard/AddressesPanel.tsx 200 123ms 
+[WS] Client disconnected: xxan6kqvunqmead6hbc (Remaining: 0)
+[INFO] [MIDDLEWARE] Blocking incomplete profile access: { userId: '40d4c8e0-0d7c-41e1-a686-96daac2d7c8b', path: '/api/orders' }
+[WARN] API GET /api/orders 403 129ms {
+  method: 'GET',
+  url: '/api/orders',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 129,
+  statusCode: 403,
+  contentLength: 122
+}
+[WARN] GET /api/orders 403 129ms {
+  method: 'GET',
+  url: '/api/orders',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 129,
+  statusCode: 403,
+  contentLength: 122
+}
+7:29:39 PM GET     /api/orders                              403 130ms
+[INFO] API GET /api/my-submissions 200 162ms {
+  method: 'GET',
+  url: '/api/my-submissions',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.19',
+  userId: undefined,
+  duration: 162,
+  statusCode: 200,
+  contentLength: 2
+}
+[INFO] GET /api/my-submissions 200 162ms 
+7:29:39 PM GET     /api/my-submissions                      200 163ms
+[INFO] API GET / 200 161ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 161,
+  statusCode: 200,
+  contentLength: 843
+}
+[INFO] GET / 200 161ms 
+7:29:39 PM GET     /api/addresses                           200 162ms
+[WS] Client connected: v9y0gl27aemead6vef (Total: 1)
+[INFO] API POST /48b41ad5-2597-4911-a1b5-4e7a400542f9/default 200 211ms {
+  method: 'POST',
+  url: '/48b41ad5-2597-4911-a1b5-4e7a400542f9/default',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 211,
+  statusCode: 200,
+  contentLength: 419
+}
+[INFO] POST /48b41ad5-2597-4911-a1b5-4e7a400542f9/default 200 212ms 
+7:29:44 PM POST    /api/addresses/48b41ad5-2597-4911-a1b5-4e7a400542f9/default 200 213ms
+[INFO] API GET / 200 167ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 167,
+  statusCode: 200,
+  contentLength: 843
+}
+[INFO] GET / 200 167ms 
+7:29:44 PM GET     /api/addresses                           200 168ms
+[INFO] API GET /api/user 200 173ms {
+  method: 'GET',
+  url: '/api/user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.19',
+  userId: undefined,
+  duration: 173,
+  statusCode: 200,
+  contentLength: 593
+}
+7:29:44 PM GET     /api/user                                200 174ms
+[INFO] API POST /62d16a54-d01f-4441-b87e-9615f6870623/default 200 220ms {
+  method: 'POST',
+  url: '/62d16a54-d01f-4441-b87e-9615f6870623/default',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.19',
+  userId: undefined,
+  duration: 220,
+  statusCode: 200,
+  contentLength: 420
+}
+[INFO] POST /62d16a54-d01f-4441-b87e-9615f6870623/default 200 220ms 
+7:29:48 PM POST    /api/addresses/62d16a54-d01f-4441-b87e-9615f6870623/default 200 222ms
+[INFO] API GET /api/user 200 167ms {
+  method: 'GET',
+  url: '/api/user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 167,
+  statusCode: 200,
+  contentLength: 594
+}
+7:29:48 PM GET     /api/user                                200 168ms
+[INFO] API GET / 200 170ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.19',
+  userId: undefined,
+  duration: 170,
+  statusCode: 200,
+  contentLength: 843
+}
+[INFO] GET / 200 170ms 
+7:29:48 PM GET     /api/addresses                           200 170ms
+[INFO] API DELETE /48b41ad5-2597-4911-a1b5-4e7a400542f9 200 218ms {
+  method: 'DELETE',
+  url: '/48b41ad5-2597-4911-a1b5-4e7a400542f9',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.19',
+  userId: undefined,
+  duration: 218,
+  statusCode: 200,
+  contentLength: 42
+}
+[INFO] DELETE /48b41ad5-2597-4911-a1b5-4e7a400542f9 200 218ms 
+7:29:50 PM DELETE  /api/addresses/48b41ad5-2597-4911-a1b5-4e7a400542f9 200 219ms
+[INFO] API GET / 200 171ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.19',
+  userId: undefined,
+  duration: 171,
+  statusCode: 200,
+  contentLength: 422
+}
+[INFO] GET / 200 171ms 
+7:29:50 PM GET     /api/addresses                           200 171ms
+🔍 Server-side GEOApify request: {
+  text: '10 magnolia',
+  maskedUrl: 'https://api.geoapify.com/v1/geocode/autocomplete?text=10%20magnolia&apiKey=***&filter=countrycode:us&limit=5&format=json'
+}
+✅ GEOApify success: 5 results
+[INFO] API GET /api/geocode/autocomplete?text=10%20magnolia 200 874ms {
+  method: 'GET',
+  url: '/api/geocode/autocomplete?text=10%20magnolia',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.19',
+  userId: undefined,
+  duration: 874,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/geocode/autocomplete?text=10%20magnolia 200 875ms 
+7:29:57 PM GET     /api/geocode/autocomplete?text=10%20magnolia 200 878ms
+🔍 Server-side GEOApify request: {
+  text: '10 magnolia farmsd',
+  maskedUrl: 'https://api.geoapify.com/v1/geocode/autocomplete?text=10%20magnolia%20farmsd&apiKey=***&filter=countrycode:us&limit=5&format=json'
+}
+✅ GEOApify success: 0 results
+🔍 Server-side GEOApify request: {
+  text: '10 magnolia farms',
+  maskedUrl: 'https://api.geoapify.com/v1/geocode/autocomplete?text=10%20magnolia%20farms&apiKey=***&filter=countrycode:us&limit=5&format=json'
+}
+[INFO] API GET /api/geocode/autocomplete?text=10%20magnolia%20farmsd 200 971ms {
+  method: 'GET',
+  url: '/api/geocode/autocomplete?text=10%20magnolia%20farmsd',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.19',
+  userId: undefined,
+  duration: 971,
+  statusCode: 200,
+  contentLength: 136
+}
+[INFO] GET /api/geocode/autocomplete?text=10%20magnolia%20farmsd 200 971ms 
+7:30:00 PM GET     /api/geocode/autocomplete?text=10%20magnolia%20farmsd 200 972ms
+✅ GEOApify success: 3 results
+[WARN] Slow request detected: GET /api/geocode/autocomplete took 1114ms 
+[INFO] API GET /api/geocode/autocomplete?text=10%20magnolia%20farms 200 1159ms {
+  method: 'GET',
+  url: '/api/geocode/autocomplete?text=10%20magnolia%20farms',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 1159,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/geocode/autocomplete?text=10%20magnolia%20farms 200 1159ms 
+7:30:01 PM GET     /api/geocode/autocomplete?text=10%20magnolia%20farms 200 1161ms
+7:30:01 PM warn: Slow request detected: GET /api/geocode/autocomplete?text=10%20magnolia%20farms took 1161ms
+POST /api/addresses error: ZodError: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "streetAddress"
+    ],
+    "message": "Required"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "zipCode"
+    ],
+    "message": "Required"
+  }
+]
+    at get error [as error] (file:///home/runner/workspace/node_modules/zod/v3/types.js:39:31)
+    at ZodObject.parse (file:///home/runner/workspace/node_modules/zod/v3/types.js:114:22)
+    at <anonymous> (/home/runner/workspace/server/routes/addresses.ts:49:32)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at isAuthenticated (/home/runner/workspace/server/middleware/auth.ts:7:14)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/home/runner/workspace/node_modules/express/lib/router/index.js:175:3)
+    at router (/home/runner/workspace/node_modules/express/lib/router/index.js:47:12)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at strategy.pass (/home/runner/workspace/node_modules/passport/lib/middleware/authenticate.js:355:9)
+    at /home/runner/workspace/node_modules/passport/lib/strategies/session.js:120:12
+    at pass (/home/runner/workspace/node_modules/passport/lib/authenticator.js:352:31)
+    at deserialized (/home/runner/workspace/node_modules/passport/lib/authenticator.js:364:7)
+    at <anonymous> (/home/runner/workspace/server/auth.ts:242:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  issues: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    }
+  ],
+  addIssue: [Function (anonymous)],
+  addIssues: [Function (anonymous)],
+  errors: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    }
+  ]
+}
+[WARN] API POST / 400 416ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 416,
+  statusCode: 400,
+  contentLength: 34
+}
+[WARN] POST / 400 417ms {
+  method: 'POST',
+  url: '/api/addresses',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 417,
+  statusCode: 400,
+  contentLength: 34
+}
+7:30:12 PM POST    /api/addresses                           400 417ms
+POST /api/addresses error: ZodError: [
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "streetAddress"
+    ],
+    "message": "Required"
+  },
+  {
+    "code": "invalid_type",
+    "expected": "string",
+    "received": "undefined",
+    "path": [
+      "zipCode"
+    ],
+    "message": "Required"
+  }
+]
+    at get error [as error] (file:///home/runner/workspace/node_modules/zod/v3/types.js:39:31)
+    at ZodObject.parse (file:///home/runner/workspace/node_modules/zod/v3/types.js:114:22)
+    at <anonymous> (/home/runner/workspace/server/routes/addresses.ts:49:32)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at isAuthenticated (/home/runner/workspace/server/middleware/auth.ts:7:14)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at Function.handle (/home/runner/workspace/node_modules/express/lib/router/index.js:175:3)
+    at router (/home/runner/workspace/node_modules/express/lib/router/index.js:47:12)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at strategy.pass (/home/runner/workspace/node_modules/passport/lib/middleware/authenticate.js:355:9)
+    at /home/runner/workspace/node_modules/passport/lib/strategies/session.js:120:12
+    at pass (/home/runner/workspace/node_modules/passport/lib/authenticator.js:352:31)
+    at deserialized (/home/runner/workspace/node_modules/passport/lib/authenticator.js:364:7)
+    at <anonymous> (/home/runner/workspace/server/auth.ts:242:7)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  issues: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    }
+  ],
+  addIssue: [Function (anonymous)],
+  addIssues: [Function (anonymous)],
+  errors: [
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    },
+    {
+      code: 'invalid_type',
+      expected: 'string',
+      received: 'undefined',
+      path: [Array],
+      message: 'Required'
+    }
+  ]
+}
+[WARN] API POST / 400 138ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 138,
+  statusCode: 400,
+  contentLength: 34
+}
+[WARN] POST / 400 139ms {
+  method: 'POST',
+  url: '/api/addresses',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.246',
+  userId: undefined,
+  duration: 139,
+  statusCode: 400,
+  contentLength: 34
+}
+7:30:14 PM POST    /api/addresses                           400 140ms

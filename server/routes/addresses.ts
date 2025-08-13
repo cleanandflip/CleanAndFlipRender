@@ -6,20 +6,20 @@ import { isLocalMiles } from '../lib/distance';
 
 const router = Router();
 
-// Address schema with SSOT fields - matching frontend names
+// Address schema matching database schema exactly
 const addressSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  phone: z.string().optional().nullable(),
-  streetAddress: z.string().min(1, 'Street address is required'),
-  apartment: z.string().optional().nullable(),
+  street1: z.string().min(1, 'Street address is required'),
+  street2: z.string().optional().nullable(),
   city: z.string().min(1, 'City is required'),
   state: z.string().length(2, 'State must be 2 characters'),
-  zipCode: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid postal code'),
+  postalCode: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid postal code'),
   country: z.string().default('US'),
-  lat: z.number().nullable().optional(),
-  lng: z.number().nullable().optional(),
-  isDefault: z.boolean().default(false)
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  geoapifyPlaceId: z.string().optional().nullable(),
+  setDefault: z.boolean().default(false)
 });
 
 // GET /api/addresses - list user addresses (default first)
@@ -55,13 +55,11 @@ router.post('/', isAuthenticated, async (req, res) => {
     }
     
     // Compute isLocal from coordinates
-    const isLocal = isLocalMiles(data.lat || null, data.lng || null);
+    const isLocal = isLocalMiles(data.latitude || null, data.longitude || null);
     
     const address = await storage.createAddress(userId, {
       ...data,
-      line1: data.streetAddress,
-      line2: data.apartment || null,
-      postalCode: data.zipCode,
+      isDefault: data.setDefault,
       isLocal
     });
     
@@ -82,8 +80,8 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
     const data = addressSchema.partial().parse(req.body);
     
     // Recompute isLocal if coordinates changed
-    if (data.lat !== undefined || data.lng !== undefined) {
-      data.isLocal = isLocalMiles(data.lat || null, data.lng || null);
+    if (data.latitude !== undefined || data.longitude !== undefined) {
+      data.isLocal = isLocalMiles(data.latitude || null, data.longitude || null);
     }
     
     const address = await storage.updateAddress(userId, id, data);
