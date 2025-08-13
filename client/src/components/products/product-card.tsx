@@ -127,7 +127,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 
                 <div className="flex items-center gap-2">
                   <AddToCartButton
-                    product={product}
+                    productId={product.id}
                   />
                 </div>
               </div>
@@ -218,7 +218,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       {/* Static Add to Cart Button */}
       <div className="px-4 pb-4" onClick={(e) => e.stopPropagation()}>
         <AddToCartButton
-          product={product}
+          productId={product.id}
         />
       </div>
     </div>

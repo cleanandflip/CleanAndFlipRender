@@ -1,30 +1,36 @@
-import { useQuery } from "@tanstack/react-query";
-// Import addresses API - using the existing endpoint
-const getAddresses = async () => {
-  const response = await fetch('/api/addresses');
-  if (!response.ok) throw new Error('Failed to fetch addresses');
-  return response.json();
-};
-import { useAuth } from "@/hooks/use-auth";
+// Safe address hook (no more null destructures) - from punch list
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useAddresses() {
-  const { user, isLoading: userLoading } = useAuth();
-  
-  const addrsQ = useQuery({
-    queryKey: ["addresses"],
-    queryFn: getAddresses,
-    enabled: !!user,
+  const qc = useQueryClient();
+
+  const { data, isLoading, isFetching, error } = useQuery({
+    queryKey: ['addresses'],
+    queryFn: async () => (await fetch('/api/addresses')).json(),
+    staleTime: 60_000,
   });
 
-  const addresses = addrsQ.data ?? [];
-  const defaultAddress = addresses.find(a => a.is_default) ?? addresses[0] ?? null;
-  const isLocalUser = !!defaultAddress?.is_local;
+  const addresses = data?.addresses ?? [];
+  const defaultAddress = addresses.find((a: any) => a.is_default) ?? null;
+  const defaultAddressId = data?.defaultAddressId ?? defaultAddress?.id ?? null;
 
-  return {
-    addresses,
-    defaultAddress,       // may be null when user has none
-    isLocalUser,
-    isLoading: userLoading || addrsQ.isLoading,
-    isError: addrsQ.isError,
-  };
+  const setDefault = useMutation({
+    mutationKey: ['addresses:setDefault'],
+    mutationFn: async (id: string) => {
+      const r = await fetch(`/api/addresses/${id}/default`, { method: 'POST' });
+      if (!r.ok) throw new Error('Failed to set default address');
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['addresses'] })
+  });
+
+  const remove = useMutation({
+    mutationKey: ['addresses:remove'],
+    mutationFn: async (id: string) => {
+      const r = await fetch(`/api/addresses/${id}`, { method: 'DELETE' });
+      if (!r.ok) throw new Error('Delete failed');
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['addresses'] })
+  });
+
+  return { addresses, defaultAddress, defaultAddressId, isLoading, isFetching, error, setDefault, remove };
 }

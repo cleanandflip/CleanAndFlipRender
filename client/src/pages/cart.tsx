@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import { ProtectedRoute } from "@/lib/protected-route";
-import { useCart, useUpdateCartItem, useRemoveFromCart } from "@/hooks/use-cart";
+import { useCart } from "@/api/cart";
+import { useUpdateCartItem, useRemoveFromCart } from "@/hooks/use-cart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 
 function Cart() {
@@ -12,10 +13,10 @@ function Cart() {
   const updateMutation = useUpdateCartItem();
   const removeMutation = useRemoveFromCart();
   
-  // Safe access to cart data with defaults
-  const cartItems = data?.items ?? [];
-  const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  // Safe access to cart data with defaults (from punch list)
+  const items = data?.items ?? [];
+  const cartTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
   
   // Validate cart on mount and listen for product updates
   useEffect(() => {
@@ -93,7 +94,7 @@ function Cart() {
     );
   }
 
-  if (cartItems.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="min-h-screen pt-32 px-6">
         <div className="max-w-6xl mx-auto">
@@ -135,7 +136,7 @@ function Cart() {
           {/* Cart Items */}
           <div className="lg:col-span-2">
             <Card className="divide-y divide-glass-border">
-              {cartItems.map((item: any) => (
+              {items.map((item: any) => (
                 <div key={item.id} className="p-6">
                   <div className="flex gap-6">
                     {/* Product Image - Always Fresh */}

@@ -218,6 +218,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const addressRoutes = await import('./routes/addresses');
   app.use('/api/addresses', addressRoutes.default);
   
+  // Shipping quotes API
+  const shippingRoutes = await import('./routes/shipping');
+  app.use('/api/shipping', shippingRoutes.default);
+  
+  // Observability error handler (dev tolerant)
+  const observabilityRoutes = await import('./routes/observability');
+  app.use('/api/observability', observabilityRoutes.default);
+  
   // NEW: Onboarding routes using SSOT system
   const onboardingRoutes = await import('./routes/onboarding');
   app.use('/api/onboarding', onboardingRoutes.default);

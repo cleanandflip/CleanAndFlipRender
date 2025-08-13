@@ -1,126 +1,69 @@
-import React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
-import { useCart } from "@/hooks/use-cart";
-import { apiRequest } from "@/lib/queryClient";
+// Add-to-Cart button (restore green/hover-remove UX) from punch list
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { CART_QK, ADD_MUTATION_KEY, REMOVE_MUTATION_KEY } from '@/lib/cartKeys';
+import { X } from 'lucide-react';
 
-type Product = {
-  id: string;
-  name: string;
-  price: string | number;
-  stockQuantity?: number;
-};
-
-function optimisticAdd(oldCart: any, product: Product) {
-  if (!oldCart) return { items: [{ productId: product.id, quantity: 1, product }] };
-  
-  const existingItem = oldCart.items?.find((item: any) => item.productId === product.id);
-  if (existingItem) {
-    return {
-      ...oldCart,
-      items: oldCart.items.map((item: any) =>
-        item.productId === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ),
-    };
-  }
-  
-  return {
-    ...oldCart,
-    items: [...(oldCart.items || []), { productId: product.id, quantity: 1, product }],
-  };
+interface AddToCartButtonProps {
+  productId: string;
+  className?: string;
 }
 
-function optimisticRemove(oldCart: any, productId: string) {
-  if (!oldCart) return { items: [] };
-  
-  return {
-    ...oldCart,
-    items: oldCart.items?.filter((item: any) => item.productId !== productId) || [],
-  };
-}
-
-export default function AddToCartButton({ product }: { product: Product }) {
+export default function AddToCartButton({ productId, className = "" }: AddToCartButtonProps) {
   const qc = useQueryClient();
-  const { cart } = useCart();
-  const inCart = !!cart?.items?.some((i: any) => i.productId === product.id);
+  const cart = (qc.getQueryData(CART_QK) as any) ?? { items: [] };
+  const inCart = !!cart.items?.some((i: any) => i.productId === productId);
 
-  const addM = useMutation({
-    mutationFn: () => apiRequest("/api/cart", {
-      method: 'POST',
-      body: JSON.stringify({ productId: product.id, quantity: 1 })
-    }),
-    onMutate: async () => {
-      await qc.cancelQueries({ queryKey: ["/api/cart"] });
-      const prev = qc.getQueryData(["/api/cart"]);
-      qc.setQueryData(["/api/cart"], (old: any) => optimisticAdd(old, product));
-      return { prev };
+  const add = useMutation({
+    mutationKey: ADD_MUTATION_KEY,
+    mutationFn: async () => {
+      const r = await fetch('/api/cart/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, qty: 1 })
+      });
+      if (!r.ok) throw new Error('Add failed');
     },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["/api/cart"], ctx.prev);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["/api/cart"] });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: CART_QK })
   });
 
-  const removeM = useMutation({
-    mutationFn: () => apiRequest(`/api/cart/items/${product.id}`, {
-      method: 'DELETE'
-    }),
-    onMutate: async () => {
-      await qc.cancelQueries({ queryKey: ["/api/cart"] });
-      const prev = qc.getQueryData(["/api/cart"]);
-      qc.setQueryData(["/api/cart"], (old: any) => optimisticRemove(old, product.id));
-      return { prev };
+  const remove = useMutation({
+    mutationKey: REMOVE_MUTATION_KEY,
+    mutationFn: async () => {
+      const r = await fetch(`/api/cart/items/${productId}`, { method: 'DELETE' });
+      if (!r.ok) throw new Error('Remove failed');
     },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["/api/cart"], ctx.prev);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["/api/cart"] });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: CART_QK })
   });
 
-  return (
-    <div className="relative">
-      {!inCart ? (
-        <Button
-          className="btn btn-primary w-full bg-blue-600 hover:bg-blue-700"
-          onClick={() => addM.mutate()}
-          disabled={addM.isPending || (product.stockQuantity !== undefined && product.stockQuantity <= 0)}
-          aria-label="Add to cart"
-          data-testid="button-add-to-cart"
-        >
-          {addM.isPending ? "Adding…" : "Add to Cart"}
-        </Button>
-      ) : (
-        <Button
-          className="btn w-full bg-green-600 hover:bg-green-700 text-white"
-          disabled
-          aria-label="In cart"
-          data-testid="button-in-cart"
+  if (inCart) {
+    return (
+      <div className={`relative group ${className}`}>
+        <button 
+          className="btn bg-green-600 hover:bg-green-700 w-full text-white"
+          data-testid={`button-in-cart-${productId}`}
         >
           In Cart
-        </Button>
-      )}
-
-      {inCart && (
-        <button
-          className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-red-600 hover:bg-red-700 text-white
-                     flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
-          title="Remove from cart"
-          onClick={(e) => {
-            e.stopPropagation();
-            removeM.mutate();
-          }}
-          data-testid="button-remove-from-cart"
-        >
-          <X className="h-4 w-4" />
         </button>
-      )}
-    </div>
+        <button
+          title="Remove from cart"
+          onClick={() => remove.mutate()}
+          className="absolute -right-2 -top-2 hidden group-hover:flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
+          data-testid={`button-remove-cart-${productId}`}
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+  
+  return (
+    <button 
+      className={`btn bg-blue-600 hover:bg-blue-700 w-full text-white ${className}`}
+      onClick={() => add.mutate()}
+      disabled={add.isPending}
+      data-testid={`button-add-cart-${productId}`}
+    >
+      {add.isPending ? 'Adding...' : 'Add to Cart'}
+    </button>
   );
 }
