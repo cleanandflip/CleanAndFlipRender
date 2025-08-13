@@ -149,14 +149,35 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const normalizedEmail = normalizeEmail(email);
     try {
-      const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
-      return user;
+      // FIXED: Only select columns that exist in current schema (no legacy address fields)
+      const result = await db.execute(sql`
+        SELECT
+          id, email, password, first_name, last_name, phone,
+          stripe_customer_id, stripe_subscription_id, created_at, updated_at,
+          role, google_id, profile_image_url, auth_provider, is_email_verified,
+          google_email, google_picture, profile_complete, onboarding_step,
+          is_local_customer, profile_address_id, onboarding_completed_at
+        FROM users
+        WHERE LOWER(email) = LOWER(${normalizedEmail})
+        LIMIT 1
+      `);
+      return result.rows[0] as User | undefined;
     } catch (error: any) {
       Logger.error('Error getting user by email:', error.message);
       if (error.code === '57P01') {
         // Retry once on connection termination
-        const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${normalizedEmail}`);
-        return user;
+        const result = await db.execute(sql`
+          SELECT
+            id, email, password, first_name, last_name, phone,
+            stripe_customer_id, stripe_subscription_id, created_at, updated_at,
+            role, google_id, profile_image_url, auth_provider, is_email_verified,
+            google_email, google_picture, profile_complete, onboarding_step,
+            is_local_customer, profile_address_id, onboarding_completed_at
+          FROM users
+          WHERE LOWER(email) = LOWER(${normalizedEmail})
+          LIMIT 1
+        `);
+        return result.rows[0] as User | undefined;
       }
       throw error;
     }
@@ -286,10 +307,9 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set({
-        street: addressData.street,
-        city: addressData.city,
-        state: addressData.state,
-        zipCode: addressData.zipCode,
+        // REMOVED: Legacy street field - using SSOT addresses table
+        // REMOVED: Legacy city/state fields - using SSOT addresses table
+        // REMOVED: Legacy zipCode field - using SSOT addresses table
         latitude: addressData.latitude ? String(addressData.latitude) : undefined,
         longitude: addressData.longitude ? String(addressData.longitude) : undefined,
         updatedAt: new Date(),

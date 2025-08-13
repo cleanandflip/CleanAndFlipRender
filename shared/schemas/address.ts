@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 // Base address schema used everywhere
 export const AddressSchema = z.object({
-  street: z.string().min(1, 'Street address is required'),
+  // REMOVED: Legacy street field - using SSOT street1/street2
   city: z.string().min(1, 'City is required'),
   state: z.string().min(2, 'State is required').max(2, 'State must be 2 characters'),
   postalCode: z.string().min(5, 'ZIP code is required'),

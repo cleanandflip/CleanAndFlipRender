@@ -1194,14 +1194,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         results.issues.push('products.subcategory column missing');
       }
       
-      // Test users.street
-      try {
-        await db.execute(sql`SELECT street FROM users LIMIT 1`);
-        results.tables['users.street'] = 'exists';
-      } catch (e: any) {
-        results.tables['users.street'] = 'missing';
-        results.issues.push('users.street column missing');
-      }
+      // REMOVED: Legacy users.street column check - using SSOT addresses table
+      results.tables['users.street'] = 'removed - using SSOT addresses table';
       
       // Check if using separate addresses table
       const addressCheck = await db.execute(sql`

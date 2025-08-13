@@ -38,10 +38,10 @@ export interface AddressDTO {
   fullName?: string; // Computed field
   street1: string;
   street2?: string;
-  street: string; // Legacy compatibility  
+  // REMOVED: Legacy street field - using SSOT street1/street2  
   city: string;
   state: string;
-  zipCode: string; // Client field name
+  // REMOVED: Legacy zipCode field - using SSOT postalCode
   postalCode: string; // Server field name
   country: string;
   latitude?: number;
@@ -80,7 +80,7 @@ export function toAddressDTO(dbRow: any): AddressDTO {
     fullName: `${firstName} ${lastName}`,
     street1: dbRow.street1 || dbRow.street,
     street2: dbRow.street2 || "",
-    street: dbRow.street1 || dbRow.street, // Legacy field
+    // REMOVED: Legacy street mapping - using SSOT street1/street2
     city: dbRow.city,
     state: dbRow.state,
     zipCode,

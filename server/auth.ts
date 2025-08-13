@@ -322,10 +322,9 @@ export function setupAuth(app: Express) {
         firstName,
         lastName,
         phone: normalizedPhone,
-        street: street || undefined,
-        city: city || undefined,
-        state: state || undefined,
-        zipCode: zipCode || undefined,
+        // REMOVED: Legacy street field - using SSOT addresses table
+        // REMOVED: Legacy city/state fields - using SSOT addresses table
+        // REMOVED: Legacy zipCode field - using SSOT addresses table
         latitude: latitude ? String(latitude) : undefined,
         longitude: longitude ? String(longitude) : undefined,
         role,

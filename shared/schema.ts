@@ -275,7 +275,7 @@ export const orderAddresses = pgTable("order_addresses", {
   orderId: varchar("order_id").notNull().unique().references(() => orders.id, { onDelete: "cascade" }),
   sourceAddressId: varchar("source_address_id").references(() => addresses.id),
   formatted: text("formatted"),
-  street: text("street"),
+  // REMOVED: Legacy street field - using SSOT addresses table
   city: text("city"),
   state: text("state"),
   postalCode: text("postal_code"),
@@ -630,7 +630,7 @@ export type InsertUserOnboarding = typeof userOnboarding.$inferInsert;
 // Registration specific type that includes additional fields
 export const registerDataSchema = insertUserSchema.extend({
   confirmPassword: z.string(),
-  fullAddress: z.string().optional(),
+  // REMOVED: Legacy fullAddress field - using SSOT formatted address
 }).omit({
   role: true,
   stripeCustomerId: true,
