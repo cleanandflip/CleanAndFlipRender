@@ -11,11 +11,11 @@ export function LocalBadge({ isLocal }: LocalBadgeProps) {
       <Badge 
         variant="default" 
         className="bg-green-100 text-green-800 hover:bg-green-200 text-xs rounded-full border-0"
-        aria-label="Local Delivery Area"
-        data-testid="badge-local-delivery-area"
+        aria-label="Local Delivery Available"
+        data-testid="badge-local-delivery"
       >
         <CheckCircle2 className="h-3 w-3 mr-1" />
-        Local Delivery Area
+        Free Local Delivery
       </Badge>
     );
   }
@@ -24,11 +24,11 @@ export function LocalBadge({ isLocal }: LocalBadgeProps) {
     <Badge 
       variant="secondary" 
       className="bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs rounded-full border-0"
-      aria-label="Shipping Area"
-      data-testid="badge-shipping-area"
+      aria-label="Shipping Only"
+      data-testid="badge-shipping-only"
     >
       <Info className="h-3 w-3 mr-1" />
-      Shipping Area
+      Shipping Only
     </Badge>
   );
 }
