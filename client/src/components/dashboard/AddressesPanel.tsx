@@ -135,7 +135,7 @@ export default function AddressesPanel() {
         <div className="space-y-4">
           {addresses.map((address: any) => (
             <div key={address.id} className={`p-4 glass rounded-lg transition-all ${
-              address.is_default 
+              address.isDefault 
                 ? 'border-2 border-accent-blue bg-gradient-to-r from-blue-900/10 to-transparent' 
                 : 'border border-border hover:border-gray-600'
             }`}>
@@ -145,13 +145,13 @@ export default function AddressesPanel() {
                     <h3 className="font-semibold text-white">
                       {address.firstName} {address.lastName}
                     </h3>
-                    {address.is_default && (
+                    {address.isDefault && (
                       <Badge className="bg-accent-blue text-white text-xs flex items-center gap-1">
                         <Star className="w-3 h-3 fill-current" />
                         Default
                       </Badge>
                     )}
-                    {address.is_local && (
+                    {address.isLocal && (
                       <Badge className="bg-green-600 text-white text-xs flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" />
                         Local Delivery
@@ -162,7 +162,7 @@ export default function AddressesPanel() {
                     {address.street1}<br />
                     {address.city}, {address.state} {address.postalCode}
                   </p>
-                  {address.is_local && (
+                  {address.isLocal && (
                     <p className="text-green-400 text-sm mt-2">
                       ✓ Free local delivery to your doorstep in Asheville area
                     </p>
@@ -182,7 +182,7 @@ export default function AddressesPanel() {
                     <Edit className="w-3 h-3 mr-1" />
                     Edit
                   </Button>
-                  {!address.is_default && (
+                  {!address.isDefault && (
                     <>
                       <Button 
                         variant="outline" 
@@ -209,7 +209,7 @@ export default function AddressesPanel() {
                       </Button>
                     </>
                   )}
-                  {address.is_default && (
+                  {address.isDefault && (
                     <span className="text-xs text-gray-500 px-3 py-1.5 italic">
                       Default (cannot delete)
                     </span>
