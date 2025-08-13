@@ -76,10 +76,7 @@ export default function AuthPage() {
       return;
     }
     
-    // Determine if local customer
-    const ashevilleZips = ['28801', '28802', '28803', '28804', '28805', '28806', '28810', '28813', '28814', '28815', '28816'];
-    const isLocalCustomer = ashevilleZips.includes(addressData.zipCode);
-    
+    // FIXED: Register without address - user will complete onboarding after registration
     registerMutation.mutate({
       email: formData.get("email") as string,
       password,
@@ -87,11 +84,7 @@ export default function AuthPage() {
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
       phone: (formData.get("phone") as string) || undefined,
-      latitude: addressData.latitude || undefined,
-      longitude: addressData.longitude || undefined,
-      isLocalCustomer,
-      fullAddress: `${addressData.street}, ${addressData.city}, ${addressData.state} ${addressData.zipCode}`
-    } as any);
+    });
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {

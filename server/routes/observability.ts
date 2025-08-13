@@ -7,10 +7,10 @@ const ErrorEvent = z.object({
   name: z.string().optional().default("Error"),
   message: z.string().min(1),
   stack: z.string().optional(),
-  url: z.string().url().optional(),
-  userId: z.string().uuid().optional(),
+  url: z.string().optional(), // Remove URL validation to be more tolerant
+  userId: z.string().optional(),
   meta: z.record(z.any()).optional(),
-});
+}).passthrough(); // Allow additional fields
 
 router.post("/api/observability/errors", async (req, res) => {
   const parse = ErrorEvent.safeParse(req.body);
