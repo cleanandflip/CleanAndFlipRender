@@ -69,6 +69,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       }, 25_000);
 
       ws.onopen = () => {
+        console.log('🔌 WebSocket connected to', makeUrl());
         setReady(true);
         retry = 0;
         // optional: send auth token if available (cookie/session)
@@ -86,15 +87,20 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       };
 
       ws.onclose = () => {
+        console.log('🔌 WebSocket disconnected, retrying in', Math.min(1000 * 2 ** retry, 15_000), 'ms');
         clearInterval(heartbeat);
         setReady(false);
         sockRef.current = null;
         setTimeout(connect, Math.min(1000 * 2 ** retry++, 15_000));
       };
 
-      ws.onerror = () => ws.close();
+      ws.onerror = (error) => {
+        console.log('🔌 WebSocket error:', error);
+        ws.close();
+      };
     };
 
+    console.log('🔌 Initializing WebSocket connection to', makeUrl());
     connect();
     return () => { sockRef.current?.close(); sockRef.current = null; setReady(false); };
   }, []);
