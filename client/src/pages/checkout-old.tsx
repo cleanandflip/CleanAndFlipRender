@@ -12,11 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
+import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { addressApi, type Address } from "@/api/addresses";
+import { cartApi } from "@/api/cart";
 import { getQuote, Quote } from "@/api/checkout";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
+import { CheckoutAddressSchema, transformToCheckoutFormat } from "@shared/schemas/address";
 import { ShoppingCart, CreditCard, Truck, Lock, ArrowLeft, MapPin } from "lucide-react";
 
 // Load Stripe
@@ -52,6 +55,7 @@ const CheckoutForm = () => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [isProcessing, setIsProcessing] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +82,7 @@ const CheckoutForm = () => {
     } else {
       toast({
         title: "Payment Successful",
-        description: "Your order has been placed successfully!",
+        description: "Thank you for your purchase!",
       });
       navigate("/order/success");
     }
@@ -87,7 +91,7 @@ const CheckoutForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 rounded-2xl border-2 border-white/15 hover:border-white/25 transition-colors">
+    <form onSubmit={handleSubmit}>
       <Card className="p-6 mb-6">
         <h3 className="font-bebas text-xl mb-4 flex items-center">
           <CreditCard className="mr-2" size={20} />
@@ -120,6 +124,7 @@ export default function Checkout() {
   const [step, setStep] = useState(1);
   const [clientSecret, setClientSecret] = useState("");
   const [addressInputValue, setAddressInputValue] = useState("");
+  const [useProfileAddress, setUseProfileAddress] = useState(true);
   const isAuthenticated = !!user;
 
   // SAFE CART DATA: Ensure cartItems is always an array with proper typing
@@ -154,30 +159,33 @@ export default function Checkout() {
 
   // SSOT autofill: populate form from user profile and default address
   useEffect(() => {
-    if (!user || !defaultAddress) return;
+    if (!user) return;
+    
+    const address = defaultAddress;
+    if (!address) return;
 
     // Use react-hook-form reset to populate all fields at once
     reset({
-      firstName: defaultAddress.firstName || user.firstName || "",
-      lastName: defaultAddress.lastName || user.lastName || "",
+      firstName: address.firstName || user.firstName || "",
+      lastName: address.lastName || user.lastName || "",
       email: user.email || "",
       phone: user.phone || "",
-      street1: defaultAddress.street1 || "",
-      street2: defaultAddress.street2 || "",
-      city: defaultAddress.city || "",
-      state: defaultAddress.state || "",
-      postalCode: defaultAddress.postalCode || "",
-      country: defaultAddress.country || "US",
+      street1: address.street1 || "",
+      street2: address.street2 || "",
+      city: address.city || "",
+      state: address.state || "",
+      postalCode: address.postalCode || "",
+      country: address.country || "US",
       deliveryInstructions: "",
       saveToProfile: false,
       makeDefault: false,
       billingSameAsShipping: true,
-      latitude: defaultAddress.latitude,
-      longitude: defaultAddress.longitude
+      latitude: address.latitude,
+      longitude: address.longitude
     });
 
     // Update autocomplete input value  
-    setAddressInputValue(defaultAddress.street1 || "");
+    setAddressInputValue(address.street1 || "");
   }, [user, defaultAddress, reset]);
 
   // Handle address selection from autocomplete
@@ -200,12 +208,19 @@ export default function Checkout() {
   const getQuoteMutation = useMutation({
     mutationFn: async (data: AddressForm) => {
       const quoteData = await getQuote({
-        street1: data.street1,
-        street2: data.street2,
-        city: data.city,
-        state: data.state,
-        postalCode: data.postalCode,
-        country: data.country,
+        address: {
+          street1: data.street1,
+          street2: data.street2,
+          city: data.city,
+          state: data.state,
+          postalCode: data.postalCode,
+          country: data.country,
+        },
+        items: cartItems.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        })),
       });
       setQuote(quoteData);
       return quoteData;
@@ -226,6 +241,25 @@ export default function Checkout() {
     }
   }, [isValid, watchedFields.street1, watchedFields.city, watchedFields.state, watchedFields.postalCode]);
 
+  // SSOT address creation/update mutation  
+  const createShippingAddressMutation = useMutation({
+    mutationFn: cartApi.createShippingAddress,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['/api/user'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/addresses'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/cart'] }),
+      ]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Address Error",
+        description: error.message || "Failed to save address",
+        variant: "destructive",
+      });
+    }
+  });
+
   const onSubmit = async (data: AddressForm) => {
     if (!quote) {
       toast({
@@ -237,6 +271,15 @@ export default function Checkout() {
     }
 
     try {
+      // Create/update shipping address using SSOT system
+      if (data.saveToProfile && isAuthenticated) {
+        await createShippingAddressMutation.mutateAsync({
+          ...data,
+          saveToProfile: true,
+          makeDefault: data.makeDefault
+        });
+      }
+
       // Create payment intent
       const response = await apiRequest("POST", "/api/checkout/create-payment-intent", {
         shippingAddress: {

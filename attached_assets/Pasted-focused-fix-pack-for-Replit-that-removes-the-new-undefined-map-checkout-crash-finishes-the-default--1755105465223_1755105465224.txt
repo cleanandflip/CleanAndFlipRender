@@ -1,0 +1,261 @@
+focused fix pack for Replit that removes the new undefined.map checkout crash, finishes the default-address UX, and locks the whole flow to the SSOT address system.
+
+A) Kill the checkout “undefined.map” crash
+Root cause: src/pages/checkout.tsx is calling .map() on data that can be undefined while queries are loading or when APIs return null instead of arrays (addresses, cart items, shipping quotes, payment methods, etc.).
+
+1) Make all API responses array-safe
+Server: return arrays, never null/omitted.
+
+GET /api/addresses → { addresses: [] } when none.
+
+GET /api/cart → { items: [], subtotal: 0, total: 0, shippingAddressId: null }.
+
+GET /api/shipping/quotes (or equivalent) → { quotes: [] }.
+
+GET /api/payment/methods → { methods: [] }.
+
+If any of these were returning null or omitting fields, fix now.
+
+2) Harden the checkout page (no .map on possibly undefined)
+File: client/src/pages/checkout.tsx
+
+At the top of the component, normalize all the data you later iterate over:
+
+ts
+Copy
+Edit
+// Helpers (place in a shared util if you prefer)
+const asArray = <T,>(x: T[] | null | undefined): T[] => Array.isArray(x) ? x : [];
+
+const { data: user } = useQuery({ queryKey: ['user'], queryFn: fetchUser });
+const { data: addressesResp, isLoading: addrLoading } = useQuery({ queryKey: ['addresses'], queryFn: fetchAddresses });
+const { data: cartResp, isLoading: cartLoading } = useQuery({ queryKey: ['cart'], queryFn: fetchCart });
+const { data: quotesResp, isLoading: quotesLoading } = useQuery({ queryKey: ['shipping:quotes'], queryFn: fetchShippingQuotes, enabled: (cartResp?.items?.length ?? 0) > 0 });
+const { data: pmResp, isLoading: pmLoading } = useQuery({ queryKey: ['payment:methods'], queryFn: fetchPaymentMethods });
+
+const addresses = asArray(addressesResp?.addresses ?? addressesResp);  // supports either shape
+const cartItems = asArray(cartResp?.items);
+const quotes    = asArray(quotesResp?.quotes ?? quotesResp);
+const payMethods = asArray(pmResp?.methods ?? pmResp);
+
+// Derive default/profile address safely
+const defaultAddress = user?.profileAddress ?? addresses.find(a => a.is_default) ?? null;
+Then replace every .map( usage on those lists with the normalized variables above.
+Example fixes (near your crash around line ~976):
+
+tsx
+Copy
+Edit
+{/* BEFORE: addressesResp.addresses.map(...)  // crashes if undefined */}
+{addresses.map(addr => (
+  <AddressCard key={addr.id} addr={addr} isDefault={!!addr.is_default} />
+))}
+
+{/* Shipping quotes */}
+{quotes.length === 0 ? (
+  <EmptyState text="No shipping options yet. Enter or change your address." />
+) : (
+  quotes.map(q => <QuoteRow key={q.id ?? `${q.service}-${q.price}`} quote={q} />)
+)}
+
+{/* Cart lines */}
+{cartItems.length === 0 ? (
+  <EmptyCart />
+) : (
+  cartItems.map(line => <CartLine key={line.id} line={line} />)
+)}
+Guard rendering while loading (don’t touch fields until queries settle):
+
+tsx
+Copy
+Edit
+if (addrLoading || cartLoading || pmLoading || quotesLoading) {
+  return <PageLoader />;
+}
+B) Default address UX & protections (Dashboard + DB)
+You want one default address, clearly marked, and non-default addresses deletable; default cannot be deleted.
+
+1) Enforce in the database
+sql
+Copy
+Edit
+-- One default per user
+CREATE UNIQUE INDEX IF NOT EXISTS addresses_one_default_per_user
+  ON addresses(user_id)
+  WHERE is_default = true;
+
+-- Keep profile link valid
+ALTER TABLE users
+  ADD CONSTRAINT users_profile_address_fkey
+  FOREIGN KEY (profile_address_id) REFERENCES addresses(id)
+  ON DELETE SET NULL;
+
+-- Block deleting default at DB level (extra safety)
+CREATE OR REPLACE FUNCTION prevent_default_address_delete() RETURNS trigger AS $$
+BEGIN
+  IF OLD.is_default THEN
+    RAISE EXCEPTION 'Cannot delete the default address. Set another default first.' USING ERRCODE = 'P0001';
+  END IF;
+  RETURN OLD;
+END; $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_prevent_default_address_delete ON addresses;
+CREATE TRIGGER trg_prevent_default_address_delete
+  BEFORE DELETE ON addresses
+  FOR EACH ROW EXECUTE FUNCTION prevent_default_address_delete();
+2) Server endpoints (single source of truth)
+In server/routes/addresses.ts:
+
+PATCH /api/addresses/:id/default (transactional):
+
+UPDATE addresses SET is_default=false WHERE user_id=$uid AND is_default=true;
+
+UPDATE addresses SET is_default=true WHERE id=$id AND user_id=$uid;
+
+UPDATE users SET profile_address_id=$id WHERE id=$uid;
+
+Optionally: UPDATE carts SET shipping_address_id=$id WHERE user_id=$uid;
+→ Return full list sorted default-first + profileAddressId.
+
+DELETE /api/addresses/:id
+Deny with 409 if is_default=true (message: “Set another default before deleting”).
+
+POST /api/addresses
+If it’s the first address for the user, force is_default=true and set users.profile_address_id in the same transaction. If the payload requests is_default=true, run the same demote/promote logic as above.
+
+GET /api/addresses
+Always sort ORDER BY is_default DESC, created_at DESC.
+
+All distance math = miles (EARTH_RADIUS_MI = 3958.7613).
+
+3) Dashboard “Addresses” tab UI
+Show a “Default (Used)” badge on is_default.
+
+“Make Default” button on non-default rows.
+
+“Delete” hidden/disabled for default; enabled for others.
+
+Wire actions with React Query:
+
+ts
+Copy
+Edit
+const qc = useQueryClient();
+const setDefault = useMutation({
+  mutationKey: ['addresses:setDefault'],
+  mutationFn: (id: string) => api.patch(`/api/addresses/${id}/default`),
+  onSettled: () => {
+    qc.invalidateQueries({ queryKey: ['addresses'] });
+    qc.invalidateQueries({ queryKey: ['user'] });
+    qc.invalidateQueries({ queryKey: ['cart'] });
+  },
+});
+
+const deleteAddr = useMutation({
+  mutationKey: ['addresses:delete'],
+  mutationFn: (id: string) => api.delete(`/api/addresses/${id}`),
+  onError: (e: any) => {
+    if (e?.status === 409) toast.error('Set another default before deleting this address.');
+  },
+  onSettled: () => qc.invalidateQueries({ queryKey: ['addresses'] }),
+});
+C) Checkout prefill + “use another address” switch
+GET /api/user must include profileAddress (expanded).
+
+In checkout, after queries settle:
+
+ts
+Copy
+Edit
+useEffect(() => {
+  if (defaultAddress) {
+    form.reset(mapAddressToForm(defaultAddress, user));
+  }
+}, [defaultAddress, user]);
+Provide a “Use a different address” selector that calls PATCH /api/addresses/:id/default (don’t just swap local form state). The server becomes the source of truth; React Query invalidations repopulate the form.
+
+D) Geoapify selection should populate all fields
+client/src/components/ui/address-autocomplete.tsx (or wherever selection is handled):
+
+ts
+Copy
+Edit
+const p = suggestion.properties;
+setValue('firstName', user?.firstName ?? '');
+setValue('lastName',  user?.lastName ?? '');
+setValue('street', [p.housenumber, p.street].filter(Boolean).join(' '));
+setValue('address2', p.unit ?? '');
+setValue('city', p.city || p.town || p.village || '');
+setValue('state', p.state_code || p.state || '');
+setValue('zipCode', p.postcode || '');
+setValue('country', (p.country_code || 'US').toUpperCase());
+setValue('geoapify_place_id', p.place_id);
+setValue('latitude',  p.lat ?? p.latLng?.lat ?? null);
+setValue('longitude', p.lon ?? p.latLng?.lng ?? null);
+E) Fix the “failed to find mutation” on Add-to-Cart
+Likely caused by legacy code that probes the mutation cache with the wrong key. Stop searching the cache; use the mutation state directly.
+
+ts
+Copy
+Edit
+const qc = useQueryClient();
+const addToCart = useMutation({
+  mutationKey: ['cart:addItem'],
+  mutationFn: (payload: { productId: string; qty: number }) =>
+    api.post('/api/cart/items', payload),
+  onSuccess: () => qc.invalidateQueries({ queryKey: ['cart'] }),
+});
+
+// In UI:
+<Button onClick={() => addToCart.mutate({ productId: id, qty: 1 })} disabled={addToCart.isPending}>
+  {addToCart.isPending ? 'Adding…' : 'Add to Cart'}
+</Button>
+Remove any queryClient.getMutationCache().find(...) checks tied to old keys.
+
+F) Orders & Cart error states
+Server endpoints must return empty arrays (not null).
+
+Client pages should never assume presence:
+
+ts
+Copy
+Edit
+const orders = asArray(ordersResp);
+return orders.length === 0 ? <EmptyOrders/> : <OrdersTable orders={orders}/>;
+G) Routing & onboarding gating
+After onboarding Step 1 save, route with navigate('/onboarding?step=2') (not /onboarding/2).
+
+If from=cart and user.profile_complete === true, redirect to /checkout.
+
+Cart gate should check SSOT: user.profile_address_id !== null (not legacy flags). Remove any legacy “KM” checks.
+
+H) Quick validation checklist (run now)
+Reset DB users/addresses/carts.
+
+Create user → add first address → server promotes to default; users.profile_address_id set.
+
+Add second address → “Make Default” swaps default + updates users.profile_address_id.
+
+Try deleting default → blocked with 409.
+
+Delete non-default → succeeds.
+
+/dashboard?tab=addresses shows “Default (Used)” badge; delete hidden for default.
+
+/checkout prefilled from default/profile address; “Use a different address” triggers PATCH :id/default and refills form.
+
+Add to cart works; no “failed to find mutation” logs.
+
+No undefined.map or undefined.length anywhere; skeletons show while loading.
+
+If Replit applies the above exactly, the checkout .map crash disappears, default address behavior becomes bulletproof, and all pages consistently pull from the single SSOT address source.
+
+
+
+
+
+
+
+
+
+Ask ChatGPT
