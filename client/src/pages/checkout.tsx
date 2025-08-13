@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { fetchDefaultAddress, saveAddress, Address } from "@/api/addresses";
+import { addressApi, type Address } from "@/api/addresses";
 import { getQuote, Quote } from "@/api/checkout";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { CheckoutAddressSchema, transformToCheckoutFormat } from "@shared/schemas/address";
@@ -131,7 +131,7 @@ export default function Checkout() {
   useEffect(() => {
     if (!isAuthenticated) return;
     (async () => {
-      const addr = await fetchDefaultAddress();
+      const addr = await addressApi.getDefaultAddress();
       if (!addr) return;
       setValue("firstName", addr.firstName || "");
       setValue("lastName", addr.lastName || "");
@@ -149,14 +149,14 @@ export default function Checkout() {
   }, [isAuthenticated, setValue]);
 
   // Handle address selection from autocomplete
-  const handleAddressSelect = (addressData: { street: string; city: string; state: string; zipCode: string }) => {
-    setValue("street1", addressData.street || "");
+  const handleAddressSelect = (addressData: { street1: string; city: string; state: string; postalCode: string }) => {
+    setValue("street1", addressData.street1 || "");
     setValue("city", addressData.city || "");
     setValue("state", addressData.state || "");
-    setValue("postalCode", addressData.zipCode || "");
+    setValue("postalCode", addressData.postalCode || "");
     
     // Update the input value to match the selected address
-    setAddressInputValue(addressData.street || "");
+    setAddressInputValue(addressData.street1 || "");
     
     // Trigger validation for the updated fields
     trigger(["street1", "city", "state", "postalCode"]);

@@ -217,85 +217,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import and use SSOT address routes
   const addressRoutes = await import('./routes/addresses');
   app.use('/api/addresses', addressRoutes.default);
+  
+  // NEW: Onboarding routes using SSOT system
+  const onboardingRoutes = await import('./routes/onboarding');
+  app.use('/api/onboarding', onboardingRoutes.default);
+  
   app.use('/api/checkout', checkoutRoutes);
 
-  // SSOT Profile management endpoint  
-  app.post("/api/user/profile", requireAuth, async (req: any, res) => {
+  // NEW: User profile update endpoint for onboarding completion
+  app.put("/api/user", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { firstName, lastName, phone, address } = req.body;
+      const { phone, profileComplete, onboardingStep } = req.body;
       
-      // Validate required fields
-      if (!firstName || !lastName) {
-        return res.status(400).json({ 
-          error: "VALIDATION_FAILED", 
-          message: "First name and last name are required" 
-        });
-      }
-
-      // Update user profile
       await db.execute(sql`
         UPDATE users 
-        SET first_name = ${firstName}, last_name = ${lastName}, 
-            phone = ${phone || null}, profile_complete = true,
-            onboarding_step = GREATEST(onboarding_step, 2),
-            updated_at = NOW()
+        SET 
+          phone = COALESCE(${phone}, phone),
+          profile_complete = COALESCE(${profileComplete}, profile_complete),
+          onboarding_step = COALESCE(${onboardingStep}, onboarding_step),
+          updated_at = NOW()
         WHERE id = ${userId}
       `);
-
-      // If address is provided, save it as the profile address
-      if (address) {
-        const { AddressSchema } = await import("./types/address");
-        const { isLocal } = await import("./lib/geo");
-        
-        const addressValidation = AddressSchema.safeParse(address);
-        if (!addressValidation.success) {
-          return res.status(400).json({ 
-            error: "ADDRESS_VALIDATION_FAILED", 
-            issues: addressValidation.error.flatten().fieldErrors 
-          });
-        }
-
-        const addressData = addressValidation.data;
-        let isLocalCustomer = false;
-        
-        if (addressData.latitude && addressData.longitude) {
-          isLocalCustomer = isLocal({ 
-            lat: addressData.latitude, 
-            lng: addressData.longitude 
-          });
-        }
-
-        // Unset previous default addresses for this user
-        await db.execute(sql`
-          UPDATE addresses SET is_default = false WHERE user_id = ${userId}
-        `);
-
-        // Insert new profile address
-        const newAddress = await db.execute(sql`
-          INSERT INTO addresses (
-            user_id, type, first_name, last_name, street, street2, city, state, 
-            zip_code, country, latitude, longitude, is_local, is_default, updated_at
-          ) VALUES (
-            ${userId}, 'shipping', ${addressData.firstName}, ${addressData.lastName}, 
-            ${addressData.street1}, ${addressData.street2 || ''}, ${addressData.city}, 
-            ${addressData.state}, ${addressData.postalCode}, ${addressData.country}, 
-            ${addressData.latitude}, ${addressData.longitude}, ${isLocalCustomer}, true, NOW()
-          ) RETURNING id
-        `);
-
-        // Update user with new profile address
-        await db.execute(sql`
-          UPDATE users 
-          SET profile_address_id = ${newAddress.rows[0].id}, 
-              is_local_customer = ${isLocalCustomer},
-              onboarding_step = GREATEST(onboarding_step, 3),
-              onboarding_completed_at = CASE 
-                WHEN onboarding_completed_at IS NULL AND onboarding_step >= 3 
-                THEN NOW() ELSE onboarding_completed_at END
-          WHERE id = ${userId}
-        `);
-      }
 
       res.json({ success: true, message: "Profile updated successfully" });
     } catch (error) {
@@ -2395,8 +2338,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           u.profile_complete, u.onboarding_step, u.is_local_customer,
           u.profile_address_id, u.onboarding_completed_at,
           a.id as address_id, a.first_name as addr_first_name, 
-          a.last_name as addr_last_name, a.street, a.street2, a.city, 
-          a.state, a.zip_code, a.country, a.latitude, a.longitude, 
+          a.last_name as addr_last_name, a.street1, a.street2, a.city, 
+          a.state, a.postal_code, a.country, a.latitude, a.longitude, 
           a.is_local, a.is_default, a.created_at as address_created_at,
           a.updated_at as address_updated_at
         FROM users u
@@ -2416,13 +2359,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstName: userData.addr_first_name,
         lastName: userData.addr_last_name,
         fullName: `${userData.addr_first_name} ${userData.addr_last_name}`,
-        street1: userData.street,
+        street1: userData.street1,
         street2: userData.street2 || "",
-        street: userData.street, // Legacy field
         city: userData.city,
         state: userData.state,
-        zipCode: userData.zip_code,
-        postalCode: userData.zip_code,
+        postalCode: userData.postal_code,
         country: userData.country || "US",
         latitude: userData.latitude ? parseFloat(userData.latitude) : undefined,
         longitude: userData.longitude ? parseFloat(userData.longitude) : undefined,

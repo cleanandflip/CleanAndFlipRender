@@ -1,0 +1,267 @@
+“purge & rebuild” set of instructions for Replit to delete every legacy trace and recreate onboarding, profile address, checkout shipping, and cart on top of the new SSOT address system. It also addresses the exact failures you’re seeing (onboarding page loop/not referenced, profile address not showing, Zod undefined fields, Geoapify throttling, cart/local logic).
+
+0) Nuke legacy code, routes, and DB remnants (no compatibility, no stubs)
+0.1 Rip out every legacy reference (fail the build if anything remains)
+Run exactly:
+
+bash
+Copy
+Edit
+# show me there are ZERO hits after deletions
+rg -n --hidden -S -e "checkout_broken" \
+  -e "addressRepo" \
+  -e "getUserAddresses\\(" \
+  -e "/api/addresses" server/routes.ts \
+  -e "sms" \
+  -e "smsOptIn" \
+  -e "street\\s*:" client \
+  -e "zip_code" \
+  -e "legacy" \
+  -e "Geoapify.*direct" \
+  -e "onboarding.*Old" \
+  -e "Address.*Old"
+Delete these (do not comment-out):
+
+client/src/pages/checkout_broken.tsx
+
+Any *Old* or *Legacy* address components and modals.
+
+In server/routes.ts: delete all legacy /api/addresses code blocks, and any “user with profile address” JOIN code. The only address API must live in server/routes/addresses.ts.
+
+Remove all SMS UI & code (smsOptIn, SMS toggles, SMS labels) anywhere (onboarding, settings, reducers, schemas).
+
+0.2 DB: drop legacy columns from users (no dual sources)
+You previously “kept for compatibility.” Remove them now to make misuse impossible.
+
+Create a migration:
+
+sql
+Copy
+Edit
+ALTER TABLE users
+  DROP COLUMN IF EXISTS street,
+  DROP COLUMN IF EXISTS city,
+  DROP COLUMN IF EXISTS state,
+  DROP COLUMN IF EXISTS zip_code,
+  DROP COLUMN IF EXISTS latitude,
+  DROP COLUMN IF EXISTS longitude;
+Run migrations. If any code still references those columns, the build should break—fix those references by pointing to SSOT.
+
+0.3 Purge dev data and sessions (clean slate)
+Dev only:
+
+sql
+Copy
+Edit
+TRUNCATE TABLE sessions RESTART IDENTITY CASCADE;
+TRUNCATE TABLE cart_items RESTART IDENTITY CASCADE;
+TRUNCATE TABLE carts RESTART IDENTITY CASCADE;
+TRUNCATE TABLE addresses RESTART IDENTITY CASCADE;
+TRUNCATE TABLE users RESTART IDENTITY CASCADE;
+Restart server.
+
+1) Onboarding — delete & rebuild and ensure router references the new page
+1.1 Remove the old onboarding page(s)
+Delete any of:
+
+client/src/pages/onboarding.tsx
+
+client/src/pages/onboarding/* (if this is the legacy tree)
+
+1.2 Create the new onboarding flow (3 steps, no SMS)
+Files (new):
+
+client/src/pages/onboarding/index.tsx (router entry)
+
+client/src/pages/onboarding/StepAddress.tsx
+
+client/src/pages/onboarding/StepPhone.tsx
+
+client/src/pages/onboarding/StepSummary.tsx
+
+Rules:
+
+Step 1 (Address) uses the same AddressForm component used everywhere else, posts AddressInput with exactly these keys:
+firstName, lastName, street1, street2?, city, state, postalCode, country='US', latitude?, longitude?, geoapifyPlaceId?
+Include isDefault: true. If a default already exists, update it instead.
+
+Step 2 (Phone): remove SMS checkbox; validate strictly with libphonenumber-js (US default). Block letters/single digits. Disallow continue if invalid.
+
+Step 3 (Summary): shows normalized default address and phone. “Complete Setup” calls /api/user/complete-onboarding (or your existing equivalent), then redirect back to from query (e.g., cart/checkout) or home.
+
+1.3 Router must point to the new component
+Update the app router (e.g., client/src/App.tsx or client/src/config/routes.ts) so /onboarding imports the new file:
+
+Ensure no other onboarding import exists.
+
+After build, run rg -n "onboarding.*from" client and confirm only the new path is referenced.
+
+1.4 Fix the “loop back to start” bug
+The guard that sends users to /onboarding?required=true must check the SSOT condition: user has a default address (GET /api/addresses?default=true) and a valid phone.
+
+Once both are present, the guard must not redirect again.
+
+2) Profile Address (Dashboard → Addresses tab) — rebuild UI against SSOT
+2.1 One reusable AddressForm everywhere
+Keep/replace with a single component:
+
+client/src/components/addresses/AddressForm.tsx (react-hook-form + Zod)
+
+Accepts initial values (for edit) or blank; emits AddressInput.
+
+Submits via client/src/api/addresses.ts.
+
+2.2 Dashboard addresses page
+Rebuild client/src/pages/addresses.tsx (or the dashboard tab implementation) to:
+
+Fetch list via GET /api/addresses.
+
+Show exactly one “Default” badge (server uniqueness enforced).
+
+Actions: “Set Default”, “Edit”, “Delete”.
+
+“Add Address” opens AddressForm. If it’s the first address, force default.
+
+Show “Local ✅/❌” per address (read is_local).
+
+Important: The dashboard tab at /dashboard?tab=addresses must render this page/section. If your dashboard renders tabs, ensure the Addresses tab imports this exact file (search for imports).
+
+3) Checkout Shipping — rebuild to read only the default SSOT address
+Prefill shipping summary from GET /api/addresses?default=true.
+
+Button “Use a different address” opens AddressForm. On save:
+
+If new → create with isDefault: true (server clears old default; DB unique index protects).
+
+If edit → update then set default if needed.
+
+Never read legacy fields or /api/user address joins.
+
+Show “Free local delivery within 48 hours” if user is local and any cart item is local-only.
+
+4) Cart — rebuild gating and totals
+Server:
+
+Add products.is_local_only boolean DEFAULT false.
+
+On POST /api/cart/items and at GET /api/cart recalc:
+
+If any item is local-only and user is not local (users.is_local_customer=false) → respond 400 with message “Local-only item requires a local address. Update your address to continue.”
+
+Client:
+
+Disable Add-to-cart for local-only products when not local (defense-in-depth; server still enforces).
+
+At checkout, if blocked, show link to “Update address” (opens AddressForm modal).
+
+Shipping:
+
+If the cart contains any local-only items, shipping = $0 and show the 48h banner.
+
+5) Server address API — verify strict validator and body parsing
+Your logs showed:
+
+bash
+Copy
+Edit
+ZodError: ... firstName, lastName, street1, postalCode: "Required"
+POST /api/addresses 500
+Fixes:
+
+Ensure the POST body parser runs before validation:
+
+ts
+Copy
+Edit
+app.use(express.json({ limit: "1mb" }));
+In server/routes/addresses.ts POST/PUT:
+
+Validate req.body against AddressInput (keys must match exactly).
+
+If validation fails → return 400 with zodError.flatten() (never 500).
+
+Ensure the client submits with Content-Type: application/json and camelCase field names listed above.
+Search and delete any client component still sending street, zip_code, etc.
+
+6) Geoapify — keep, but harden
+Debounce client calls (300–400ms).
+
+Server proxy GET /api/geocode/autocomplete:
+
+IP rate-limit (e.g., 5 req / 5s).
+
+LRU cache 10m (Redis if available; fallback Map).
+
+On 429 from Geoapify, return 200 { results: [], exhausted: true } and let the user type address manually.
+
+7) Visual fixes & UX
+Inputs: increase border contrast (focus + error) across AddressForm and checkout.
+
+Disable submit while pending; show field-level errors.
+
+Remove all SMS UI (onboarding step, settings, any toggles).
+
+Phone: use libphonenumber-js to enforce valid US numbers; do not allow advancing with letters/single digit.
+
+8) Acceptance tests (you must run these)
+8.1 Unit/API sanity
+POST /api/addresses with valid payload returns 200 and sets is_default when first.
+
+POST /api/addresses invalid → 400 (never 500).
+
+8.2 E2E (Playwright)
+Email sign-up (local address)
+
+Complete onboarding (Step 1 saves default addr, Step 2 valid phone, Step 3 completes).
+
+Assert GET /api/user returns isLocalCustomer=true and a non-null profileAddress.
+
+/dashboard?tab=addresses lists the address with “Default” and “Local ✅”.
+
+Email sign-up (non-local address)
+
+isLocalCustomer=false.
+
+Add local-only product → client blocks; server also blocks on request.
+
+Google sign-up
+
+Same flow as email; confirm onboarding uses new page (check network: only /api/addresses POST exists; no legacy calls).
+
+Checkout
+
+Prefills from default; “Use a different address” → creates new default; summary updates immediately.
+
+9) Definition of Done (fail PR if any unchecked)
+ rg shows no legacy references (see 0.1 command)
+
+ Legacy users address columns dropped
+
+ Only server/routes/addresses.ts handles address CRUD
+
+ /onboarding imports the new page; no loop after completion
+
+ Dashboard Addresses tab shows SSOT data, “Default” unique, Local badge accurate
+
+ Checkout reads default only; modal uses the same AddressForm
+
+ Cart: client disables + server blocks local-only when non-local
+
+ Geoapify 429 handled gracefully; manual entry works
+
+ Phone step validates strictly; SMS removed everywhere
+
+ All invalid address payloads → 400 with field errors (no 500s)
+
+Likely root causes you’re seeing (and how these steps fix them)
+Onboarding “not referenced” / loops → Router still pointed to legacy component + guard checking legacy fields; steps above delete old file and fix guard to check SSOT default address + phone.
+
+Profile address not showing → Dashboard tab imported legacy list; now it imports the rebuilt page hitting GET /api/addresses.
+
+Zod “undefined” fields → Client(s) posting street/zip_code (legacy names). Rebuild sends canonical camelCase and server returns 400 (not 500) if wrong.
+
+Geoapify 429 → Previously bubbled as 500; now handled and UI allows manual entry.
+
+Cart/local rules inconsistent → Now enforced both client & server, reading only SSOT & users.is_local_customer.
+
+This plan fully deletes the legacy systems (code and DB columns), forces the app to read from a single source of truth, and rebuilds all address-related UI (onboarding, profile, checkout, cart) on top of it.

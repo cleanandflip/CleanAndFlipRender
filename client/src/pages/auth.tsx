@@ -25,15 +25,7 @@ export default function AuthPage() {
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
-  const [addressData, setAddressData] = useState({
-    street: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    fullAddress: '',
-    latitude: undefined as number | undefined,
-    longitude: undefined as number | undefined
-  });
+  // REMOVED: Legacy address fields - using SSOT address system instead
   const formContainerRef = useRef<HTMLDivElement>(null);
   const loginFormRef = useRef<HTMLFormElement>(null);
   const registerFormRef = useRef<HTMLFormElement>(null);
@@ -279,26 +271,7 @@ export default function AuthPage() {
                     onFocus={scrollToForm}
                   />
                   
-                  {/* Address Autocomplete */}
-                  <div className="space-y-2">
-                    <Label htmlFor="address" className="text-text-secondary text-sm">Address</Label>
-                    <AddressAutocomplete
-                      value={addressData.fullAddress}
-                      onAddressSelect={(parsed: any) => {
-                        setAddressData({
-                          street: parsed.street,
-                          city: parsed.city,
-                          state: parsed.state,
-                          zipCode: parsed.zipCode,
-                          fullAddress: parsed.fullAddress,
-                          latitude: parsed.coordinates?.lat,
-                          longitude: parsed.coordinates?.lng
-                        });
-                      }}
-                      placeholder="Start typing your address..."
-                      className="h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white"
-                    />
-                  </div>
+                  {/* REMOVED: Address input - handled in onboarding flow */}
                   
                   {/* Password with inline helper */}
                   <div className="space-y-1">
