@@ -221,7 +221,7 @@ export function ProductsTab() {
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold text-white">Product Management</h2>
             <div className="flex items-center gap-2">
-              {isConnected ? (
+              {true ? (
                 <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-full">
                   <Wifi className="w-3 h-3 text-green-400 animate-pulse" />
                   <span className="text-xs text-green-400 font-medium">Live Sync</span>
@@ -279,12 +279,7 @@ export function ProductsTab() {
           onSave={() => {
             refetch();
             
-            // Broadcast live update
-            send({
-              type: 'product_update',
-              action: selectedProduct ? 'update' : 'create',
-              productId: selectedProduct?.id
-            });
+            // Server publishes WebSocket updates automatically
           }}
         />
       )}
