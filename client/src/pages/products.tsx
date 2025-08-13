@@ -28,14 +28,14 @@ export default function ProductsPage() {
       {/* Locality Banner - Prominent */}
       {user && locality && (
         <motion.div 
-          className="mb-5"
+          className="mb-5 text-center"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="flex items-center justify-center gap-3 bg-gradient-to-r from-gray-800/20 to-gray-700/20 border border-gray-600/30 rounded-2xl px-4 py-2.5 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2.5 bg-gradient-to-r from-gray-800/20 to-gray-700/20 border border-gray-600/30 rounded-2xl px-3 py-1.5 backdrop-blur-sm">
             <LocalBadge isLocal={locality.isLocal} />
-            <span className="text-xs font-semibold text-gray-100 tracking-wide">
+            <span className="text-sm font-semibold text-gray-100 tracking-wide whitespace-nowrap">
               {locality.isLocal ? (
                 "You are in our FREE DELIVERY zone!"
               ) : locality.hasAddress ? (
