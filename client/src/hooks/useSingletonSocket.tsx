@@ -54,10 +54,18 @@ function makeUrl() {
 export function SocketProvider({ children }: { children: ReactNode }) {
   const sockRef = useRef<WebSocket | null>(null);
   const handlers = useRef<Map<string, Set<Handler>>>(new Map());
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(() => {
+    // Check if WebSocket is already connected on initial render
+    const ws = sockRef.current;
+    return ws?.readyState === WebSocket.OPEN;
+  });
 
   useEffect(() => {
-    if (sockRef.current) return;
+    if (sockRef.current) {
+      // If WebSocket already exists, set ready state based on its current state
+      setReady(sockRef.current.readyState === WebSocket.OPEN);
+      return;
+    }
 
     let retry = 0;
     const connect = () => {
@@ -89,6 +97,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
       ws.onclose = () => {
         console.log('🔌 WebSocket disconnected, retrying in', Math.min(1000 * 2 ** retry, 15_000), 'ms');
+        console.log('🔌 Setting ready to false');
         clearInterval(heartbeat);
         setReady(false);
         sockRef.current = null;
@@ -106,24 +115,31 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     return () => { sockRef.current?.close(); sockRef.current = null; setReady(false); };
   }, []);
 
-  const api: Ctx = useMemo(() => ({
-    ready,
-    send: (msg: ClientToServer) => {
-      const ws = sockRef.current;
-      if (ws && ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
-    },
-    subscribe: (topic, fn) => {
-      const map = handlers.current;
-      if (!map.has(topic)) map.set(topic, new Set());
-      map.get(topic)!.add(fn);
-      return () => map.get(topic)?.delete(fn);
-    },
-  }), [ready]);
+  const api: Ctx = useMemo(() => {
+    console.log('🔌 useMemo api with ready:', ready);
+    return {
+      ready,
+      send: (msg: ClientToServer) => {
+        const ws = sockRef.current;
+        if (ws && ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
+      },
+      subscribe: (topic, fn) => {
+        const map = handlers.current;
+        if (!map.has(topic)) map.set(topic, new Set());
+        map.get(topic)!.add(fn);
+        return () => map.get(topic)?.delete(fn);
+      },
+    };
+  }, [ready]);
 
   return <SocketCtx.Provider value={api}>{children}</SocketCtx.Provider>;
 }
 
-export function useSocket() { return useContext(SocketCtx); }
+export function useSocket() { 
+  const ctx = useContext(SocketCtx);
+  console.log('🔌 useSocket returning ready:', ctx.ready);
+  return ctx;
+}
 
 // Legacy shim so existing imports keep working during migration:
 export function useSingletonSocket() { return useSocket(); }
