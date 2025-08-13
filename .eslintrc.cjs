@@ -12,6 +12,16 @@ module.exports = {
           { name: "@/components/dropdown-menu", message: "Use src/components/ui/Dropdown instead." },
           { name: "@/components/ui/select", message: "Use src/components/ui/Dropdown instead." },
         ],
+        patterns: [
+          "*storage*",
+          "*SessionCart*",
+          "*cart-legacy*",
+          "*addresses-legacy*",
+          "*checkout-old*",
+          "*checkout-simple*",
+          "*onboarding*",
+          "*ensureProfileComplete*"
+        ]
       },
     ],
   },

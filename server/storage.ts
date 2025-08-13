@@ -99,7 +99,7 @@ export interface IStorage {
   getCartItem(userId: string | null, sessionId: string | null, productId: string): Promise<CartItem | undefined>;
   addToCart(cartItem: InsertCartItem): Promise<CartItem>;
   updateCartItem(id: string, quantity: number): Promise<CartItem>;
-  removeFromCart(id: string): Promise<void>;
+  removeFromCart(id: string): Promise<boolean>;
   clearCart(userId?: string, sessionId?: string): Promise<void>;
   mergeGuestCart(sessionId: string, userId: string): Promise<void>;
   
@@ -144,7 +144,7 @@ export interface IStorage {
   updateCartItemLegacy(userId: string, itemId: string, quantity: number): Promise<{ items: any[], subtotal: number }>;
   removeFromCartLegacy(userId: string, itemId: string): Promise<{ items: any[], subtotal: number }>;
   
-  healthCheck(): Promise<{ status: string; timestamp: string; }>;
+  // Removed duplicate healthCheck declaration
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1213,12 +1213,7 @@ export class DatabaseStorage implements IStorage {
 
   // Removed all wishlist operations for single-seller model
 
-  async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    return {
-      status: 'healthy',
-      timestamp: new Date().toISOString()
-    };
-  }
+  // Removed duplicate healthCheck - keeping the one at line 932
 
   // SSOT Address operations
   async getUserAddresses(userId: string): Promise<Address[]> {
@@ -1370,7 +1365,9 @@ export class DatabaseStorage implements IStorage {
     return await this.getCart(userId) || { items: [], subtotal: 0 };
   }
 
+  // LEGACY COMPATIBILITY: This method should not be used - DELETE routes handle removal directly
   async removeFromCartLegacy(userId: string, itemId: string): Promise<{ items: any[], subtotal: number }> {
+    console.log(`[DEPRECATED] removeFromCartLegacy called - this should be replaced with direct DELETE routes`);
     await this.removeFromCart(itemId);
     return await this.getCart(userId) || { items: [], subtotal: 0 };
   }
