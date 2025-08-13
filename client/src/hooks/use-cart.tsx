@@ -150,9 +150,11 @@ export function useRemoveFromCart() {
       return response.json();
     },
     onSuccess: () => {
+      // Force immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: CART_KEY });
+      queryClient.refetchQueries({ queryKey: CART_KEY });
       toast({
-        title: "Item removed",
+        title: "Item removed", 
         description: "Item has been removed from your cart"
       });
     },

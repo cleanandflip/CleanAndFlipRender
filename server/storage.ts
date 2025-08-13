@@ -576,11 +576,11 @@ export class DatabaseStorage implements IStorage {
     return updatedItem;
   }
 
-  async removeFromCart(id: string): Promise<boolean> {
-    console.log(`[STORAGE] Deleting cart item ${id}`);
-    const result = await db.delete(cartItems).where(eq(cartItems.id, id));
-    console.log(`[STORAGE] Delete result:`, result);
-    return true;
+  async removeFromCart(cartItemId: string): Promise<boolean> {
+    console.log(`[STORAGE] Deleting cart item with ID: ${cartItemId}`);
+    const result = await db.delete(cartItems).where(eq(cartItems.id, cartItemId));
+    console.log(`[STORAGE] Delete result - rowCount:`, result.rowCount);
+    return result.rowCount > 0;
   }
 
   async clearCart(userId?: string, sessionId?: string): Promise<void> {

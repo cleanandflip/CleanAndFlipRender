@@ -981,7 +981,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Cart item not found" });
       }
 
-      // CRITICAL FIX: Actually remove the item and verify it's gone
+      // CRITICAL FIX: Pass the CART ITEM ID, not product ID to removeFromCart
+      console.log(`[CART REMOVAL DEBUG] Removing cart item with ID: ${itemToRemove.id}`);
       const removed = await storage.removeFromCart(itemToRemove.id);
       console.log(`[CART REMOVAL DEBUG] Remove operation result:`, removed);
       
