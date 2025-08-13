@@ -54,15 +54,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnMount: true, // Always check fresh auth state
   });
 
-  // Auto-redirect to onboarding for incomplete profiles
+  // REMOVED: Auto-redirect logic conflicts with ProtectedRoute cart access
+  // ProtectedRoute now handles all onboarding redirects properly
   useEffect(() => {
-    if (user && !isLoading && !user.profileComplete && (user.onboardingStep || 0) > 0) {
-      const currentPath = window.location.pathname;
+    // Debug profile completion status for cart access issue
+    if (user && !isLoading) {
+      console.log("[AUTH DEBUG] User profile status:", {
+        profileComplete: user.profileComplete,
+        profileAddressId: user.profileAddressId,
+        onboardingStep: user.onboardingStep
+      });
+    }
+    
+    // Only redirect for Google OAuth new users, never for cart access
+    if (user && !isLoading && !user.profileComplete) {
       const urlParams = new URLSearchParams(window.location.search);
       const isGoogleCallback = urlParams.get('google') === 'true';
+      const currentPath = window.location.pathname;
       
-      // Don't redirect if already on onboarding or if user just logged in with Google
-      if (currentPath !== '/onboarding' && !isGoogleCallback) {
+      // Only redirect Google OAuth users, let ProtectedRoute handle cart
+      if (isGoogleCallback && currentPath !== '/onboarding') {
         // Auto-redirecting to onboarding for incomplete profile
         window.location.href = `/onboarding?step=${user.onboardingStep || 1}&auto=true`;
       }
