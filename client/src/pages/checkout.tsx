@@ -14,12 +14,17 @@ export default function Checkout() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   
-  // Fetch user's addresses and cart
-  const { data: addresses = [], isLoading: addressLoading } = useQuery({
+  // Fetch user's addresses and cart - DEFENSIVE ARRAY NORMALIZATION
+  const { data: addressesRaw = [], isLoading: addressLoading } = useQuery({
     queryKey: ['/api/addresses'],
     enabled: isAuthenticated,
     staleTime: 60000
   });
+  
+  // API SHAPE FIX: Handle {ok, data} response structure from server
+  const addresses = Array.isArray(addressesRaw) ? addressesRaw : 
+                   (addressesRaw?.ok && Array.isArray(addressesRaw?.data)) ? addressesRaw.data :
+                   Array.isArray(addressesRaw?.addresses) ? addressesRaw.addresses : [];
 
   const { data: cart, isLoading: cartLoading } = useQuery({
     queryKey: ['/api/cart'],

@@ -8,9 +8,16 @@ export function useAddresses() {
     queryKey: ['addresses'],
     queryFn: async () => (await fetch('/api/addresses')).json(),
     staleTime: 60_000,
+    select: (data) => {
+      // API SHAPE FIX: Handle {ok, data} response structure from server
+      if (Array.isArray(data)) return data;
+      if (data?.ok && Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.addresses)) return data.addresses;
+      return []; // never return null/undefined/object
+    }
   });
 
-  const addresses = data?.addresses ?? [];
+  const addresses = Array.isArray(data) ? data : [];
   const defaultAddress = addresses.find((a: any) => a.is_default) ?? null;
   const defaultAddressId = data?.defaultAddressId ?? defaultAddress?.id ?? null;
 
