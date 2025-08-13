@@ -1,76 +1,32 @@
-type Level = "error"|"warn"|"info";
+export function reportClientError(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error ? err.stack : undefined;
 
-export function reportClientError(e: { 
-  message: string; 
-  stack?: string; 
-  level?: Level; 
-  tags?: Record<string,string>; 
-  extra?: Record<string,any>; 
-  resource?: any; 
-  test?: boolean 
-}) {
-  const payload = {
-    message: e.message || "Unknown error",
-    stack: e.stack,
-    level: e.level ?? "error",
-    env: import.meta.env.MODE || "development",
-    url: location.href,
-    userAgent: navigator.userAgent,
-    tags: e.tags,
-    extra: e.extra,
-    resource: e.resource,
-    timestamp: Date.now(),
-    test: e.test,
-  };
-
-  // Try beacon first, fall back to fetch
-  const ok = "sendBeacon" in navigator && navigator.sendBeacon(
-    "/api/observability/errors",
-    new Blob([JSON.stringify(payload)], { type: "application/json" })
-  );
-  
-  if (!ok) {
-    fetch("/api/observability/errors", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      keepalive: true,
-    }).catch(()=>{/* swallow */});
-  }
+  fetch("/api/observability/errors", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    keepalive: true,
+    body: JSON.stringify({
+      name: err instanceof Error ? err.name : "Error",
+      message,
+      stack,
+      url: window.location.href,
+      meta: { ua: navigator.userAgent },
+    }),
+  }).catch(() => {
+    // Silently ignore fetch failures to prevent infinite loops
+  });
 }
 
+// Placeholder function to maintain compatibility
 export function installGlobalErrorHandlers() {
-  if (typeof window !== 'undefined') {
-    // Expose for testing
-    (window as any).reportClientError = reportClientError;
-    
-    // Auto-capture unhandled errors
-    window.addEventListener('error', (event) => {
-      reportClientError({
-        message: event.message || 'Script error',
-        stack: event.error?.stack,
-        level: 'error',
-        extra: {
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno,
-        }
-      });
-    });
+  // Global error handler for unhandled exceptions
+  window.addEventListener('error', (event) => {
+    reportClientError(event.error || new Error(event.message));
+  });
 
-    // Auto-capture unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
-      reportClientError({
-        message: `Unhandled promise rejection: ${event.reason}`,
-        stack: event.reason?.stack,
-        level: 'error',
-        extra: {
-          reason: event.reason,
-        }
-      });
-    });
-  }
+  // Global handler for unhandled promise rejections
+  window.addEventListener('unhandledrejection', (event) => {
+    reportClientError(event.reason || new Error('Unhandled Promise Rejection'));
+  });
 }
-
-// Initialize automatically
-installGlobalErrorHandlers();

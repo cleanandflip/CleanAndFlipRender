@@ -46,7 +46,7 @@ import { healthLive, healthReady } from "./config/health";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
 import { db } from "./db";
-import observabilityRouter from "./routes/observability";
+import observability from "./routes/observability";
 
 // WebSocket Manager for broadcasting updates
 let wsManager: any = null;
@@ -3624,7 +3624,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mount observability router
-  app.use("/api/observability", observabilityRouter);
+  app.use(observability);
+  
+  // Apply production optimizations (compression, static asset caching)
+  if (process.env.NODE_ENV === "production") {
+    const { setupProductionOptimizations } = await import('./middleware/compression');
+    setupProductionOptimizations(app);
+  }
 
   server.on('listening', () => {
     Logger.info(`[STARTUP] Server is now accepting connections on ${host}:${port}`);

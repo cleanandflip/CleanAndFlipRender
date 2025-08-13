@@ -86,11 +86,11 @@ export default function ProductDetail() {
   const { data: product, isLoading, error, refetch } = useQuery<Product>({
     queryKey: [`/api/products/${id}`],
     enabled: !!id && typeof id === 'string' && id !== '[object Object]',
-    refetchOnWindowFocus: true, // Always refetch when user returns to tab
+    refetchOnWindowFocus: false, // Don't refetch on window focus to reduce noise
     refetchOnMount: true, // Always refetch when component mounts
-    staleTime: 0, // Always consider data stale for real-time accuracy
-    gcTime: 0, // No client-side caching to prevent stale data (v5)
-    refetchInterval: 30000, // Auto-refetch every 30 seconds for live updates
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes - products don't change often
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    refetchInterval: false, // Disable automatic polling
     retry: false,
   });
 

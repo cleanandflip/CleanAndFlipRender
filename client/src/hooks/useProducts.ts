@@ -27,6 +27,10 @@ export function useProducts(args?: { q: string; category: string; sort: string; 
   // Fetch all products from API
   const { data: productsResponse, isLoading, error } = useQuery<ProductsResponse>({
     queryKey: ['/api/products'],
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes - products don't change often
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: false, // Don't refetch on reconnect
   });
 
   const allProducts = Array.isArray(productsResponse?.products) ? productsResponse.products : [];

@@ -46,9 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     retry: false, // Don't retry 401s for auth checks
     throwOnError: false, // Handle errors gracefully
-    staleTime: 0, // CRITICAL FIX: Don't cache user data after logout
-    gcTime: 0, // CRITICAL FIX: Don't keep in cache
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes to reduce network calls
+    gcTime: 0, // CRITICAL FIX: Don't keep in cache after logout
     refetchOnWindowFocus: false, // Don't check auth on window focus
+    refetchOnReconnect: false, // Don't spam on reconnect
     refetchOnMount: true, // CRITICAL FIX: Always check fresh auth state
   });
 

@@ -27,11 +27,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const { data: cartItems = [], isLoading, refetch } = useQuery<(CartItem & { product: Product })[]>({
     queryKey: ["cart"],
     queryFn: () => cartApi.get(),
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 60 * 1000, // Cache for 1 minute to reduce network calls
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchInterval: 30000,
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: false, // Don't refetch on reconnect
+    refetchInterval: false, // Disable automatic polling
   });
   
   // Listen for product update events to refresh cart
