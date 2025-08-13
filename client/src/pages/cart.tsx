@@ -4,17 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
 import { ProtectedRoute } from "@/lib/protected-route";
-import { useCart } from "@/api/cart";
-import { useUpdateCartItem, useRemoveFromCart } from "@/hooks/use-cart";
+import { useCart, useUpdateCartItem, useRemoveFromCart } from "@/hooks/use-cart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 
 function Cart() {
-  const { data, isLoading, isError } = useCart();
+  const { data: cart, isLoading, isError } = useCart();
   const updateMutation = useUpdateCartItem();
   const removeMutation = useRemoveFromCart();
   
   // Safe access to cart data with defaults (from punch list)
-  const items = data?.items ?? [];
+  const items = cart?.items ?? [];
   const cartTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
   

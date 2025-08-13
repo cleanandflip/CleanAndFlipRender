@@ -2422,6 +2422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       
       // Fetch user with profile address using SSOT approach
+      // Also check if user has any default address (fix for cart redirect issue)
       const userWithAddress = await db.execute(sql`
         SELECT 
           u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
@@ -2431,9 +2432,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           a.last_name as addr_last_name, a.street1, a.street2, a.city, 
           a.state, a.postal_code, a.country, a.latitude, a.longitude, 
           a.is_local, a.is_default, a.created_at as address_created_at,
-          a.updated_at as address_updated_at
+          a.updated_at as address_updated_at,
+          COALESCE(da.id, a.id) as fallback_address_id
         FROM users u
         LEFT JOIN addresses a ON u.profile_address_id = a.id
+        LEFT JOIN addresses da ON da.user_id = u.id AND da.is_default = true
         WHERE u.id = ${userId}
       `);
 
@@ -2463,6 +2466,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: userData.address_updated_at
       } : undefined;
 
+      // Fix cart redirect issue: profile is complete if they have ANY default address
+      const hasAnyAddress = Boolean(userData.fallback_address_id || userData.profile_address_id);
+      
       const response = {
         id: userData.id,
         email: userData.email,
@@ -2470,7 +2476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: userData.last_name,
         phone: userData.phone,
         role: userData.role,
-        profileComplete: Boolean(userData.profile_address_id), // Profile is complete if they have an address
+        profileComplete: hasAnyAddress, // Profile complete if they have any address
         onboardingStep: userData.onboarding_step || 0,
         isLocal: Boolean(userData.is_local_customer),
         onboardingCompleted: Boolean(userData.onboarding_completed_at),
