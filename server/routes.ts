@@ -216,6 +216,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/stripe', stripeWebhookRoutes);
   app.use('/api/addresses', addressRoutes);
   app.use('/api/checkout', checkoutRoutes);
+
+  // SSOT Profile management endpoint  
+  app.post("/api/user/profile", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { firstName, lastName, phone, address } = req.body;
+      
+      // Validate required fields
+      if (!firstName || !lastName) {
+        return res.status(400).json({ 
+          error: "VALIDATION_FAILED", 
+          message: "First name and last name are required" 
+        });
+      }
+
+      // Update user profile
+      await db.execute(sql`
+        UPDATE users 
+        SET first_name = ${firstName}, last_name = ${lastName}, 
+            phone = ${phone || null}, profile_complete = true,
+            onboarding_step = GREATEST(onboarding_step, 2),
+            updated_at = NOW()
+        WHERE id = ${userId}
+      `);
+
+      // If address is provided, save it as the profile address
+      if (address) {
+        const { AddressSchema } = await import("./types/address");
+        const { isLocal } = await import("./lib/geo");
+        
+        const addressValidation = AddressSchema.safeParse(address);
+        if (!addressValidation.success) {
+          return res.status(400).json({ 
+            error: "ADDRESS_VALIDATION_FAILED", 
+            issues: addressValidation.error.flatten().fieldErrors 
+          });
+        }
+
+        const addressData = addressValidation.data;
+        let isLocalCustomer = false;
+        
+        if (addressData.latitude && addressData.longitude) {
+          isLocalCustomer = isLocal({ 
+            lat: addressData.latitude, 
+            lng: addressData.longitude 
+          });
+        }
+
+        // Unset previous default addresses for this user
+        await db.execute(sql`
+          UPDATE addresses SET is_default = false WHERE user_id = ${userId}
+        `);
+
+        // Insert new profile address
+        const newAddress = await db.execute(sql`
+          INSERT INTO addresses (
+            user_id, type, first_name, last_name, street, street2, city, state, 
+            zip_code, country, latitude, longitude, is_local, is_default, updated_at
+          ) VALUES (
+            ${userId}, 'shipping', ${addressData.firstName}, ${addressData.lastName}, 
+            ${addressData.street1}, ${addressData.street2 || ''}, ${addressData.city}, 
+            ${addressData.state}, ${addressData.postalCode}, ${addressData.country}, 
+            ${addressData.latitude}, ${addressData.longitude}, ${isLocalCustomer}, true, NOW()
+          ) RETURNING id
+        `);
+
+        // Update user with new profile address
+        await db.execute(sql`
+          UPDATE users 
+          SET profile_address_id = ${newAddress.rows[0].id}, 
+              is_local_customer = ${isLocalCustomer},
+              onboarding_step = GREATEST(onboarding_step, 3),
+              onboarding_completed_at = CASE 
+                WHEN onboarding_completed_at IS NULL AND onboarding_step >= 3 
+                THEN NOW() ELSE onboarding_completed_at END
+          WHERE id = ${userId}
+        `);
+      }
+
+      res.json({ success: true, message: "Profile updated successfully" });
+    } catch (error) {
+      Logger.error("Error updating user profile:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
   
   // Admin metrics routes  
   app.use('/api/admin', adminMetricsRoutes);
@@ -2339,10 +2424,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User endpoint (protected) - Using proper Passport authentication
-  app.get("/api/user", (req, res) => {
+  // User endpoint (protected) - SSOT with profile address
+  app.get("/api/user", async (req, res) => {
     Logger.debug(`[USER API] Authentication check - isAuthenticated: ${req.isAuthenticated?.()}, user: ${!!req.user}, sessionID: ${req.sessionID}`);
-    Logger.debug(`[USER API] Session passport: ${JSON.stringify((req.session as any)?.passport)}`);
     
     // Use Passport's built-in authentication check
     if (!req.isAuthenticated || !req.isAuthenticated()) {
@@ -2356,11 +2440,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Not authenticated" });
     }
     
-    Logger.debug(`[USER API] User found: ${JSON.stringify(req.user)}`);
-    
-    // Remove sensitive data before sending user info
-    const { password, ...userWithoutPassword } = req.user as any;
-    res.json(userWithoutPassword);
+    try {
+      Logger.debug(`[USER API] User found: ${JSON.stringify(req.user)}`);
+      
+      const userId = (req.user as any).id;
+      
+      // Fetch user with profile address using SSOT approach
+      const userWithAddress = await db.execute(sql`
+        SELECT 
+          u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
+          u.profile_complete, u.onboarding_step, u.is_local_customer,
+          u.profile_address_id, u.onboarding_completed_at,
+          a.id as address_id, a.first_name as addr_first_name, 
+          a.last_name as addr_last_name, a.street, a.street2, a.city, 
+          a.state, a.zip_code, a.country, a.latitude, a.longitude, 
+          a.is_local, a.is_default, a.created_at as address_created_at,
+          a.updated_at as address_updated_at
+        FROM users u
+        LEFT JOIN addresses a ON u.profile_address_id = a.id
+        WHERE u.id = ${userId}
+      `);
+
+      if (!userWithAddress.rows.length) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const userData = userWithAddress.rows[0];
+      
+      // Build response with SSOT address structure
+      const profileAddress = userData.address_id ? {
+        id: userData.address_id,
+        firstName: userData.addr_first_name,
+        lastName: userData.addr_last_name,
+        fullName: `${userData.addr_first_name} ${userData.addr_last_name}`,
+        street1: userData.street,
+        street2: userData.street2 || "",
+        street: userData.street, // Legacy field
+        city: userData.city,
+        state: userData.state,
+        zipCode: userData.zip_code,
+        postalCode: userData.zip_code,
+        country: userData.country || "US",
+        latitude: userData.latitude ? parseFloat(userData.latitude) : undefined,
+        longitude: userData.longitude ? parseFloat(userData.longitude) : undefined,
+        isLocal: Boolean(userData.is_local),
+        isDefault: Boolean(userData.is_default),
+        createdAt: userData.address_created_at,
+        updatedAt: userData.address_updated_at
+      } : undefined;
+
+      const response = {
+        id: userData.id,
+        email: userData.email,
+        firstName: userData.first_name,
+        lastName: userData.last_name,
+        phone: userData.phone,
+        role: userData.role,
+        profileComplete: Boolean(userData.profile_complete),
+        onboardingStep: userData.onboarding_step || 0,
+        isLocal: Boolean(userData.is_local_customer),
+        onboardingCompleted: Boolean(userData.onboarding_completed_at),
+        profileAddress
+      };
+
+      res.json(response);
+    } catch (error) {
+      Logger.error("Error fetching user with address:", error);
+      res.status(500).json({ error: "Failed to fetch user data" });
+    }
   });
 
   // Activity tracking endpoint - fire and forget for performance

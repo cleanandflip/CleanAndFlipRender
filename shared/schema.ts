@@ -138,6 +138,9 @@ export const users = pgTable("users", {
   isEmailVerified: boolean("is_email_verified").default(false),
   profileComplete: boolean("profile_complete").default(false),
   onboardingStep: integer("onboarding_step").default(0),
+  // SSOT Profile address reference
+  profileAddressId: varchar("profile_address_id").references(() => addresses.id),
+  onboardingCompletedAt: timestamp("onboarding_completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -231,32 +234,41 @@ export const products = pgTable("products", {
   index("idx_stripe_sync_status").on(table.stripeSyncStatus),
 ]);
 
-// Unified Addresses table - Single source of truth
+// SSOT Addresses table - Single source of truth with enhanced fields
 export const addresses = pgTable("addresses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  type: varchar("type").default("shipping"), // shipping, billing, etc.
+  firstName: varchar("first_name").notNull(), // Required for shipping
+  lastName: varchar("last_name").notNull(), // Required for shipping
+  street: text("street").notNull(), // Main street address
+  street2: text("street2"), // Apt, Suite, Unit
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  zipCode: varchar("zip_code").notNull(), // Server field name
+  country: text("country").default("US"),
+  latitude: decimal("latitude", { precision: 9, scale: 6 }),
+  longitude: decimal("longitude", { precision: 9, scale: 6 }),
+  isLocal: boolean("is_local").default(false), // Computed field
+  isDefault: boolean("is_default").default(false),
+  // Legacy/advanced fields for future use
   label: text("label"), // "Home", "Work", etc.
   formatted: text("formatted"), // Full single-line address
-  street: text("street"),
-  city: text("city"),
-  state: text("state"),
-  postalCode: text("postal_code"),
-  country: text("country").default("US"),
-  latitude: decimal("latitude", { precision: 10, scale: 7 }),
-  longitude: decimal("longitude", { precision: 11, scale: 7 }),
   geoapifyPlaceId: text("geoapify_place_id"), // From Geoapify API
-  canonicalLine: text("canonical_line").notNull(), // Normalized for deduplication
-  fingerprint: text("fingerprint").notNull(), // SHA256 hash for efficient uniqueness
-  isDefault: boolean("is_default").default(false),
+  canonicalLine: text("canonical_line"), // Normalized for deduplication
+  fingerprint: text("fingerprint"), // SHA256 hash for efficient uniqueness
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   // One default address per user
   index("uq_addresses_default_per_user").on(table.userId, table.isDefault).where(sql`${table.isDefault} IS TRUE`),
-  // Prevent duplicate addresses per user (same canonical content)
-  index("uq_addresses_fingerprint_per_user").on(table.userId, table.fingerprint),
+  // Prevent duplicate addresses per user (same canonical content) - when fingerprint is available
+  index("uq_addresses_fingerprint_per_user").on(table.userId, table.fingerprint).where(sql`${table.fingerprint} IS NOT NULL`),
   // Dedupe by Geoapify place ID when available
   index("uq_addresses_place_id_per_user").on(table.userId, table.geoapifyPlaceId).where(sql`${table.geoapifyPlaceId} IS NOT NULL`),
+  // Index for geo queries
+  index("idx_addresses_coordinates").on(table.latitude, table.longitude),
+  index("idx_addresses_local").on(table.isLocal),
 ]);
 
 // Service zones for local delivery configuration

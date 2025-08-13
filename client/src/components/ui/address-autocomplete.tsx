@@ -1,13 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 
+// SSOT Address interface for client-server communication
 interface AddressData {
-  street: string;
+  firstName?: string;
+  lastName?: string;
+  street1: string;
+  street2?: string;
+  street?: string; // Legacy field for backward compatibility
   city: string;
   state: string;
-  zipCode?: string;
-  zip_code?: string; // Server expects snake_case
-  postalCode?: string;
+  zipCode: string; // Client field name
+  postalCode: string; // Server field name
+  country?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface AddressAutocompleteProps {
@@ -146,11 +153,13 @@ export function AddressAutocomplete({
     // Selected suggestion
     
     const addressData: AddressData = {
-      street: suggestion.street || '',
+      street1: suggestion.street || '',
+      street: suggestion.street || '', // Legacy field
       city: suggestion.city || '',
       state: suggestion.state || '',
-      zip_code: suggestion.zipCode || '', // Use snake_case for server
-      zipCode: suggestion.zipCode || '' // Keep camelCase for client compat
+      zipCode: suggestion.zipCode || '', // Client field name
+      postalCode: suggestion.zipCode || '', // Server field name
+      country: 'US'
     };
     
     // Update input with just the street address (not full formatted)
