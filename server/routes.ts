@@ -72,7 +72,7 @@ import googleAuthRoutes from "./routes/auth-google";
 import stripeWebhookRoutes from './routes/stripe-webhooks';
 import adminMetricsRoutes from './routes/admin-metrics';
 import errorManagementRoutes from './routes/admin/error-management';
-import addressRoutes from './routes/addresses';
+// addressRoutes dynamically imported below
 import checkoutRoutes from './routes/checkout';
 
 import crypto from 'crypto';
@@ -214,7 +214,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Critical: Stripe webhook routes (must use raw body parser)
   app.use('/api/stripe', stripeWebhookRoutes);
-  app.use('/api/addresses', addressRoutes);
+  // Import and use SSOT address routes
+  const addressRoutes = await import('./routes/addresses');
+  app.use('/api/addresses', addressRoutes.default);
   app.use('/api/checkout', checkoutRoutes);
 
   // SSOT Profile management endpoint  
@@ -2339,66 +2341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // UNIFIED ADDRESS SYSTEM - Disabled in favor of routes/addresses.ts
-  // app.get("/api/addresses", requireAuth, async (req, res) => {
-  //   try {
-  //     const userId = req.user!.id;
-  //     const addresses = await storage.getUserAddresses(userId);
-  //     res.json(addresses);
-  //   } catch (error) {
-  //     Logger.error("Error fetching addresses:", error);
-  //     res.status(500).json({ error: 'Failed to fetch addresses' });
-  //   }
-  // });
-
-  app.post("/api/addresses", requireAuth, async (req, res) => {
-    try {
-      const { street, city, state, postalCode, country, latitude, longitude, geoapifyPlaceId, label, setDefault } = req.body;
-      
-      // Use unified address repository for canonical deduplication
-      const { addressRepo } = await import('./data/addressRepo');
-      const address = await addressRepo.upsertAddress({
-        userId: req.user!.id,
-        street,
-        city,
-        state,
-        postalCode,
-        country: country || 'US',
-        latitude,
-        longitude,
-        geoapifyPlaceId,
-        label,
-        setDefault
-      });
-      
-      res.status(201).json(address);
-    } catch (error) {
-      Logger.error('Error creating address:', error);
-      res.status(500).json({ error: 'Failed to create address' });
-    }
-  });
-
-  app.put("/api/addresses/:id/default", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      await storage.setDefaultAddress(req.user!.id, id);
-      res.status(200).json({ success: true });
-    } catch (error) {
-      Logger.error('Error setting default address:', error);
-      res.status(500).json({ error: 'Failed to set default address' });
-    }
-  });
-
-  app.delete("/api/addresses/:id", requireAuth, async (req, res) => {
-    try {
-      const { id } = req.params;
-      await storage.deleteAddress(id);
-      res.status(204).send();
-    } catch (error) {
-      Logger.error('Error deleting address:', error);
-      res.status(500).json({ error: 'Failed to delete address' });
-    }
-  });
+  // All address endpoints moved to server/routes/addresses.ts for SSOT
 
   // Simple users endpoint for admin
   app.get("/api/users", requireRole('developer'), async (req, res) => {

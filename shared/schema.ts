@@ -234,39 +234,28 @@ export const products = pgTable("products", {
   index("idx_stripe_sync_status").on(table.stripeSyncStatus),
 ]);
 
-// SSOT Addresses table - Single source of truth with enhanced fields
+// SSOT Addresses table - Single source of truth with canonical SSOT schema
 export const addresses = pgTable("addresses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
-  type: varchar("type").default("shipping"), // shipping, billing, etc.
-  firstName: varchar("first_name").notNull(), // Required for shipping
-  lastName: varchar("last_name").notNull(), // Required for shipping
-  street: text("street").notNull(), // Main street address
+  firstName: text("first_name").notNull(), // Required for shipping
+  lastName: text("last_name").notNull(), // Required for shipping
+  street1: text("street1").notNull(), // Main street address
   street2: text("street2"), // Apt, Suite, Unit
   city: text("city").notNull(),
   state: text("state").notNull(),
-  zipCode: varchar("zip_code").notNull(), // Server field name
-  country: text("country").default("US"),
-  latitude: decimal("latitude", { precision: 9, scale: 6 }),
-  longitude: decimal("longitude", { precision: 9, scale: 6 }),
-  isLocal: boolean("is_local").default(false), // Computed field
-  isDefault: boolean("is_default").default(false),
-  // Legacy/advanced fields for future use
-  label: text("label"), // "Home", "Work", etc.
-  formatted: text("formatted"), // Full single-line address
+  postalCode: text("postal_code").notNull(), // Client field name matches
+  country: text("country").default("US").notNull(),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
   geoapifyPlaceId: text("geoapify_place_id"), // From Geoapify API
-  canonicalLine: text("canonical_line"), // Normalized for deduplication
-  fingerprint: text("fingerprint"), // SHA256 hash for efficient uniqueness
+  isDefault: boolean("is_default").default(false).notNull(),
+  isLocal: boolean("is_local").default(false).notNull(), // Computed field
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
-  // One default address per user
-  index("uq_addresses_default_per_user").on(table.userId, table.isDefault).where(sql`${table.isDefault} IS TRUE`),
-  // Prevent duplicate addresses per user (same canonical content) - when fingerprint is available
-  index("uq_addresses_fingerprint_per_user").on(table.userId, table.fingerprint).where(sql`${table.fingerprint} IS NOT NULL`),
-  // Dedupe by Geoapify place ID when available
-  index("uq_addresses_place_id_per_user").on(table.userId, table.geoapifyPlaceId).where(sql`${table.geoapifyPlaceId} IS NOT NULL`),
-  // Index for geo queries
+  // One default address per user (enforced by database constraint)
+  index("idx_addresses_user").on(table.userId),
   index("idx_addresses_coordinates").on(table.latitude, table.longitude),
   index("idx_addresses_local").on(table.isLocal),
 ]);

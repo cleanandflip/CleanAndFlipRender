@@ -42,6 +42,7 @@ const ObservabilityPage = lazy(() => import("@/pages/observability"));
 const AuthPage = lazy(() => import("@/pages/auth"));
 const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
+const AddressesPage = lazy(() => import("@/pages/addresses").then(module => ({ default: module.AddressesPage })));
 
 function ScrollRestoration() {
   const [location] = useLocation();
@@ -136,6 +137,7 @@ function Router() {
               <Route path={ROUTES.ORDERS} component={Orders} />
               <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />
               <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
+              <Route path="/addresses" component={AddressesPage} />
 
               
               {/* Admin Routes */}

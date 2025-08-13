@@ -33,7 +33,7 @@ import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike, isNotNull 
 import { normalizeEmail, normalizeSearchTerm, normalizeBrand } from "@shared/utils";
 import { Logger } from "./utils/logger";
 import { randomUUID } from "crypto";
-import { addressRepo } from "./data/addressRepo";
+// addressRepo removed - using SSOT address system
 
 export interface IStorage {
   // User operations
@@ -104,13 +104,7 @@ export interface IStorage {
   removeFromCart(id: string): Promise<void>;
   clearCart(userId: string): Promise<void>;
 
-  // Address operations (new unified system)
-  getUserAddresses(userId: string): Promise<Address[]>;
-  createAddress(address: InsertAddress): Promise<Address>;
-  updateAddress(id: string, address: Partial<InsertAddress>): Promise<Address>;
-  deleteAddress(id: string): Promise<void>;
-  setDefaultAddress(userId: string, addressId: string): Promise<void>;
-  getDefaultAddress(userId: string): Promise<Address | null>;
+  // Address operations removed - using SSOT address system via routes/addresses.ts
 
   // Order operations
   getUserOrders(userId: string): Promise<Order[]>;
@@ -826,125 +820,7 @@ export class DatabaseStorage implements IStorage {
     return [headers.join(','), ...rows.map((row: any) => row.join(','))].join('\n');
   }
 
-  // Address operations
-  async getUserAddresses(userId: string): Promise<Address[]> {
-    // EMERGENCY FIX: Handle schema mismatch between old table and new Address type
-    try {
-      // Use raw SQL to handle schema differences until migration completes
-      const rawAddresses = await db.execute(sql`
-        SELECT 
-          id,
-          user_id as "userId",
-          COALESCE(type, 'shipping') as label,
-          CONCAT(street, ', ', city, ', ', state, ' ', zip_code) as formatted,
-          street,
-          city, 
-          state,
-          zip_code as "postalCode",
-          COALESCE(country, 'US') as country,
-          NULL::numeric as latitude,
-          NULL::numeric as longitude,
-          NULL::text as "geoapifyPlaceId",
-          CONCAT(LOWER(street), '|', LOWER(city), '|', LOWER(state), '|', zip_code, '|us') as "canonicalLine",
-          encode(sha256(CONCAT(LOWER(street), '|', LOWER(city), '|', LOWER(state), '|', zip_code, '|us')::bytea), 'hex') as fingerprint,
-          COALESCE(is_default, false) as "isDefault",
-          created_at as "createdAt",
-          created_at as "updatedAt"
-        FROM addresses 
-        WHERE user_id = ${userId}
-        ORDER BY is_default DESC, created_at DESC
-      `);
-      
-      return rawAddresses.rows as Address[];
-    } catch (error) {
-      Logger.error(`Error in getUserAddresses for user ${userId}:`, error);
-      return [];
-    }
-  }
-
-  async setDefaultAddress(userId: string, addressId: string): Promise<void> {
-    // Update old table schema for now
-    await db.execute(sql`UPDATE addresses SET is_default = false WHERE user_id = ${userId}`);
-    await db.execute(sql`UPDATE addresses SET is_default = true WHERE id = ${addressId}`);
-  }
-
-  async deleteAddress(addressId: string): Promise<void> {
-    await db.execute(sql`DELETE FROM addresses WHERE id = ${addressId}`);
-  }
-
-  // Legacy user address fallback (for migration compatibility)
-  async getUserProfileAddress(userId: string): Promise<Address | null> {
-    const user = await db.select({
-      id: users.id,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      street: users.street,
-      city: users.city,
-      state: users.state,
-      zipCode: users.zipCode
-    }).from(users).where(eq(users.id, userId));
-    
-    if (user[0]?.street && user[0]?.city) {
-      // Parse city, state, zip from the combined field (case-insensitive)
-      const cityStateZipRegex = /^(.+),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/i;
-      const match = user[0].city?.match(cityStateZipRegex);
-      
-      if (match) {
-        const [, city, state, zipCode] = match;
-        
-        // Create a virtual address record from user profile data
-        const virtualAddress: Address = {
-          id: `user-profile-${userId}`,
-          userId: userId,
-          label: 'Profile Address',
-          formatted: `${user[0].street}, ${city.trim()}, ${state.toUpperCase()} ${zipCode}`,
-          street: user[0].street,
-          city: city.trim(),
-          state: state.toUpperCase(),
-          postalCode: zipCode,
-          country: 'US',
-          latitude: null,
-          longitude: null,
-          geoapifyPlaceId: null,
-          canonicalLine: '',
-          fingerprint: '',
-          isDefault: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        
-        return virtualAddress;
-      }
-    }
-    
-    return null;
-  }
-
-  async createAddress(address: InsertAddress): Promise<Address> {
-    const [newAddress] = await db.insert(addresses).values(address).returning();
-    return newAddress;
-  }
-
-  async updateAddress(id: string, address: Partial<InsertAddress>): Promise<Address> {
-    const [updatedAddress] = await db
-      .update(addresses)
-      .set(address)
-      .where(eq(addresses.id, id))
-      .returning();
-    return updatedAddress;
-  }
-
-  async deleteAddress(id: string): Promise<void> {
-    await addressRepo.deleteAddress(id);
-  }
-
-  async setDefaultAddress(userId: string, addressId: string): Promise<void> {
-    await addressRepo.setDefaultAddress(userId, addressId);
-  }
-
-  async getDefaultAddress(userId: string): Promise<Address | null> {
-    return await addressRepo.getDefaultAddress(userId);
-  }
+  // All legacy address methods removed - using SSOT address system via routes/addresses.ts
 
   // Order operations
   async getUserOrders(userId: string): Promise<Order[]> {
