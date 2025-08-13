@@ -1,0 +1,17 @@
+Something went wrong
+We apologize for the inconvenience. The error has been automatically reported.
+
+Error ID: boundary-1755112263038-3tpcxlxs6
+
+Error Details (Development)
+NotFoundError: Failed to execute 'insertBefore' on 'Node': The node before which the new node is to be inserted is not a child of this node.
+    at insertBefore (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=01ba9731:8493:26)
+    at insertOrAppendPlacementNode (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=01ba9731:17481:15)
+    at insertOrAppendPlacementNode (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=01ba9731:17489:15)
+    at commitPlacement (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=01ba9731:17437:15)
+    at commitReconciliationEffects (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=01ba9731:17956:15)
+    at commitMutationEffectsOnFiber (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=01ba9731:17750:15)
+    at recursivelyTraverseMutationEffects (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=01ba9731:17735:15)
+    at commitMutationEffectsOnFiber (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=01ba9731:17946:15)
+    at recursivelyTraverseMutationEffects (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=01ba9731:17735:15)
+    at commitMutationEffectsOnFiber (https://638201a2-6056-4744-bf60-a9b53fd36a2c-00-25748jeyndz3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-NXESFFTV.js?v=01ba9731:17787:15)

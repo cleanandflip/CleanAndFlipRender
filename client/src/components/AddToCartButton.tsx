@@ -157,7 +157,7 @@ export function AddToCartButton({
     return (
       <button
         className={cn(
-          "w-full px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 border-0 text-white flex items-center justify-center",
+          "w-full px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 border-0 text-white flex items-center justify-center disabled:opacity-50",
           isHovering 
             ? "!bg-red-600 hover:!bg-red-600" 
             : "!bg-green-600 hover:!bg-green-600",
@@ -169,14 +169,16 @@ export function AddToCartButton({
         disabled={removeFromCartMutation.isPending}
         data-testid={`button-remove-from-cart-${productId}`}
       >
-        {removeFromCartMutation.isPending ? (
-          <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        ) : isHovering ? (
-          <Minus className="w-4 h-4 mr-2" />
-        ) : (
-          <Check className="w-4 h-4 mr-2" />
-        )}
-        {isHovering ? "Remove" : "In Cart"}
+        <div className="flex items-center justify-center">
+          {removeFromCartMutation.isPending ? (
+            <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : isHovering ? (
+            <Minus className="w-4 h-4 mr-2" key="minus-icon" />
+          ) : (
+            <Check className="w-4 h-4 mr-2" key="check-icon" />
+          )}
+          {isHovering ? "Remove" : "In Cart"}
+        </div>
       </button>
     );
   }
