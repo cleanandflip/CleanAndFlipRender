@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useCart, Cart, CartItem } from "@/hooks/use-cart";
+import { useCart, useUpdateCartItem, useRemoveFromCart, Cart, CartItem } from "@/hooks/use-cart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, X } from "lucide-react";
 import { ROUTES, routes } from "@/config/routes";
 
@@ -15,6 +15,8 @@ interface CartDrawerProps {
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const { data: cart, isLoading } = useCart();
+  const updateCartMutation = useUpdateCartItem();
+  const removeCartMutation = useRemoveFromCart();
   
   // Safe access to cart data with proper typing
   const cartData = cart as Cart;
@@ -131,8 +133,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                 )}
                               </div>
                               <button
-                                onClick={() => console.log('Remove from cart not implemented yet')}
+                                onClick={() => removeCartMutation.mutate(item.productId)}
                                 className="text-gray-400 hover:text-red-400 transition-colors p-1 ml-2"
+                                disabled={removeCartMutation.isPending}
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -142,9 +145,16 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                               {/* Quantity Controls */}
                               <div className="flex items-center bg-card rounded">
                                 <button
-                                  onClick={() => console.log('Decrease quantity not implemented yet')}
+                                  onClick={() => {
+                                    const newQuantity = (item?.quantity || 1) - 1;
+                                    if (newQuantity <= 0) {
+                                      removeCartMutation.mutate(item.productId);
+                                    } else {
+                                      updateCartMutation.mutate({ productId: item.productId, quantity: newQuantity });
+                                    }
+                                  }}
                                   className="p-1 hover:bg-white/10 transition-colors"
-                                  disabled={(item?.quantity || 0) <= 1}
+                                  disabled={(item?.quantity || 0) <= 1 || updateCartMutation.isPending}
                                 >
                                   <Minus size={12} />
                                 </button>
@@ -152,9 +162,12 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                   {item?.quantity || 0}
                                 </span>
                                 <button
-                                  onClick={() => console.log('Increase quantity not implemented yet')}
+                                  onClick={() => {
+                                    const newQuantity = (item?.quantity || 0) + 1;
+                                    updateCartMutation.mutate({ productId: item.productId, quantity: newQuantity });
+                                  }}
                                   className="p-1 hover:bg-white/10 transition-colors"
-                                  disabled={item?.product?.stockQuantity && (item?.quantity || 0) >= item.product.stockQuantity}
+                                  disabled={!!(item?.product?.stockQuantity && (item?.quantity || 0) >= item.product.stockQuantity) || updateCartMutation.isPending}
                                 >
                                   <Plus size={12} />
                                 </button>

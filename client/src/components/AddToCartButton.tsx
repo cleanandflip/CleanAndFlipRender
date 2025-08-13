@@ -13,6 +13,11 @@ interface AddToCartButtonProps {
   product?: {
     is_local_delivery_available?: boolean;
     is_shipping_available?: boolean;
+    name?: string;
+    price?: string;
+    images?: string[];
+    brand?: string;
+    stockQuantity?: number;
   };
   className?: string;
   variant?: "default" | "outline" | "ghost";
@@ -61,7 +66,18 @@ export default function AddToCartButton({
       return;
     }
     
-    addToCartMutation.mutate({ productId, quantity: 1 });
+    addToCartMutation.mutate({ 
+      productId, 
+      quantity: 1, 
+      productData: {
+        id: productId,
+        name: product?.name || 'Product',
+        price: product?.price || '0',
+        images: product?.images || [],
+        brand: product?.brand,
+        stockQuantity: product?.stockQuantity || 0
+      }
+    });
   };
 
   const handleRemoveFromCart = () => {

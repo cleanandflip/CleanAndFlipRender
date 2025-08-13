@@ -54,18 +54,18 @@ export function useCart() {
       // SSOT: Return unified structure that components expect
       return data.data ? data.data : { items: [], subtotal: 0, total: 0, id: null, shippingAddressId: null };
     },
-    staleTime: 30000, // 30 seconds cache
+    staleTime: 5000, // 5 seconds cache for faster updates
     refetchOnWindowFocus: false,
   });
 }
 
-// Add to cart mutation using new API structure  
+// Add to cart mutation with optimistic updates
 export function useAddToCart() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (vars: { productId: string; quantity?: number }) => {
+    mutationFn: async (vars: { productId: string; quantity?: number; productData?: CartProduct }) => {
       const response = await fetch('/api/cart/items', {
         method: 'POST',
         headers: {
@@ -85,14 +85,63 @@ export function useAddToCart() {
 
       return response.json();
     },
+    onMutate: async (vars) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: CART_KEY });
+      
+      // Optimistically update the cache
+      if (vars.productData) {
+        const previousCart = queryClient.getQueryData<Cart>(CART_KEY);
+        
+        if (previousCart) {
+          const existingItemIndex = previousCart.items.findIndex(
+            item => item.productId === vars.productId
+          );
+          
+          const newCart = { ...previousCart };
+          
+          if (existingItemIndex >= 0) {
+            // Update existing item
+            newCart.items[existingItemIndex] = {
+              ...newCart.items[existingItemIndex],
+              quantity: newCart.items[existingItemIndex].quantity + (vars.quantity || 1)
+            };
+          } else {
+            // Add new item
+            const newItem: CartItem = {
+              id: `temp-${Date.now()}`, // Temporary ID
+              productId: vars.productId,
+              quantity: vars.quantity || 1,
+              product: vars.productData
+            };
+            newCart.items.push(newItem);
+          }
+          
+          // Recalculate totals
+          newCart.subtotal = newCart.items.reduce((sum, item) => 
+            sum + (parseFloat(item.product.price) * item.quantity), 0
+          );
+          newCart.total = newCart.subtotal;
+          
+          queryClient.setQueryData<Cart>(CART_KEY, newCart);
+        }
+      }
+      
+      return { previousCart: queryClient.getQueryData<Cart>(CART_KEY) };
+    },
     onSuccess: () => {
+      // Invalidate to get the real data from server
       queryClient.invalidateQueries({ queryKey: CART_KEY });
       toast({
         title: "Added to cart",
         description: "Item has been added to your cart"
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, vars, context) => {
+      // Rollback the optimistic update
+      if (context?.previousCart) {
+        queryClient.setQueryData(CART_KEY, context.previousCart);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to add item to cart",
@@ -102,14 +151,13 @@ export function useAddToCart() {
   });
 }
 
-// Update cart item quantity - FIXED API CALL
+// Update cart item quantity with optimistic updates
 export function useUpdateCartItem() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   return useMutation({
     mutationFn: async ({ productId, quantity }: { productId: string; quantity: number }) => {
-      console.log(`[CART UPDATE CLIENT] Updating product ${productId} to quantity ${quantity}`);
       const response = await fetch(`/api/cart/items/${productId}`, {
         method: 'PATCH',
         credentials: 'include',
@@ -126,12 +174,45 @@ export function useUpdateCartItem() {
       
       return response.json();
     },
-    onSuccess: () => {
-      // Force immediate cache invalidation and refetch
-      queryClient.invalidateQueries({ queryKey: CART_KEY });
-      queryClient.refetchQueries({ queryKey: CART_KEY });
+    onMutate: async ({ productId, quantity }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: CART_KEY });
+      
+      // Snapshot the previous value
+      const previousCart = queryClient.getQueryData<Cart>(CART_KEY);
+      
+      // Optimistically update the cache
+      if (previousCart) {
+        const newCart = { ...previousCart };
+        const itemIndex = newCart.items.findIndex(item => item.productId === productId);
+        
+        if (itemIndex >= 0) {
+          newCart.items[itemIndex] = {
+            ...newCart.items[itemIndex],
+            quantity
+          };
+          
+          // Recalculate totals
+          newCart.subtotal = newCart.items.reduce((sum, item) => 
+            sum + (parseFloat(item.product.price) * item.quantity), 0
+          );
+          newCart.total = newCart.subtotal;
+          
+          queryClient.setQueryData<Cart>(CART_KEY, newCart);
+        }
+      }
+      
+      return { previousCart };
     },
-    onError: (error: any) => {
+    onSuccess: () => {
+      // Just invalidate, don't force refetch - let stale data handle it
+      queryClient.invalidateQueries({ queryKey: CART_KEY });
+    },
+    onError: (error: any, variables, context) => {
+      // Rollback the optimistic update
+      if (context?.previousCart) {
+        queryClient.setQueryData(CART_KEY, context.previousCart);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to update cart item",
@@ -141,14 +222,13 @@ export function useUpdateCartItem() {
   });
 }
 
-// Remove from cart mutation - FIXED API CALL
+// Remove from cart mutation with optimistic updates
 export function useRemoveFromCart() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   return useMutation({
     mutationFn: async (productId: string) => {
-      console.log('[CART REMOVAL CLIENT] Removing product:', productId);
       const response = await fetch(`/api/cart/items/${productId}`, {
         method: 'DELETE',
         credentials: 'include',
@@ -164,16 +244,44 @@ export function useRemoveFromCart() {
       
       return response.json();
     },
+    onMutate: async (productId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: CART_KEY });
+      
+      // Snapshot the previous value
+      const previousCart = queryClient.getQueryData<Cart>(CART_KEY);
+      
+      // Optimistically remove the item
+      if (previousCart) {
+        const newCart = {
+          ...previousCart,
+          items: previousCart.items.filter(item => item.productId !== productId)
+        };
+        
+        // Recalculate totals
+        newCart.subtotal = newCart.items.reduce((sum, item) => 
+          sum + (parseFloat(item.product.price) * item.quantity), 0
+        );
+        newCart.total = newCart.subtotal;
+        
+        queryClient.setQueryData<Cart>(CART_KEY, newCart);
+      }
+      
+      return { previousCart };
+    },
     onSuccess: () => {
-      // Force immediate cache invalidation and refetch
+      // Just invalidate, don't force refetch
       queryClient.invalidateQueries({ queryKey: CART_KEY });
-      queryClient.refetchQueries({ queryKey: CART_KEY });
       toast({
         title: "Item removed", 
         description: "Item has been removed from your cart"
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, productId, context) => {
+      // Rollback the optimistic update
+      if (context?.previousCart) {
+        queryClient.setQueryData(CART_KEY, context.previousCart);
+      }
       toast({
         title: "Error", 
         description: error.message || "Failed to remove item",

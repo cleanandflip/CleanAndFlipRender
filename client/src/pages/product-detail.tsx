@@ -399,6 +399,7 @@ export default function ProductDetail() {
               {/* Cart Button - Full Width */}
               <div className="mt-6">
                 <AddToCartButton
+                  productId={product.id}
                   product={product}
                 />
               </div>
