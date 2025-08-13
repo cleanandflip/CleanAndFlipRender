@@ -2379,6 +2379,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         onboardingCompleted: Boolean(userData.onboarding_completed_at),
         profileAddress
       };
+      
+      // Debug log the response
+      Logger.debug(`[USER API] Sending response: ${JSON.stringify(response, null, 2)}`);
 
       res.json(response);
     } catch (error) {

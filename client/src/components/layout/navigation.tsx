@@ -115,8 +115,35 @@ export default function Navigation() {
   const handleCartClick = (e: React.MouseEvent) => {
     e.preventDefault();
     
+    // Check if user is authenticated first
+    if (!user) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to access your cart",
+        variant: "default",
+        action: (
+          <button 
+            onClick={() => setLocation('/auth')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+          >
+            Sign In
+          </button>
+        )
+      });
+      return;
+    }
+    
+    // Debug logging for authenticated users
+    console.log('Cart Click Debug:', {
+      user: {
+        profileAddress: user.profileAddress,
+        profileComplete: user.profileComplete,
+        phone: user.phone
+      }
+    });
+    
     // SSOT check: user needs profileAddress (not legacy fields) and profileComplete
-    if (user && (!user.profileAddress || !user.profileComplete)) {
+    if (!user.profileAddress || !user.profileComplete) {
       // Determine what step they need to start from based on SSOT system
       let step = 1;
       if (!user.profileAddress) {
