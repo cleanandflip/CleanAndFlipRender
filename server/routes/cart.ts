@@ -15,10 +15,19 @@ const addToCartSchema = z.object({
 });
 
 // Cart endpoints with optimistic UI support
-router.get('/', isAuthenticated, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const cart = await storage.getCart(userId);
+    const userId = req.user?.id;
+    const sessionId = (req as any).sessionId;
+    
+    // Support both authenticated users and guest sessions
+    if (!userId && !sessionId) {
+      return res.json({
+        ok: true,
+        data: { items: [], subtotal: 0, total: 0, id: null, shippingAddressId: null }
+      });
+    }
+    const cart = await storage.getCart(userId || sessionId);
     
     // Return consistent cart structure with ok wrapper
     res.json({

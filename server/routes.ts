@@ -221,9 +221,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const addressRoutes = await import('./routes/addresses');
   app.use('/api/addresses', addressRoutes.default);
   
-  // Import bulletproof cart routes
+  // Import bulletproof cart routes with session middleware
   const cartRoutes = await import('./routes/cart');
-  app.use('/api/cart', cartRoutes.default);
+  const { ensureSession } = await import('./middleware/ensureSession');
+  app.use('/api/cart', ensureSession, cartRoutes.default);
   
   // Shipping quotes API
   const shippingRoutes = await import('./routes/shipping');
@@ -237,8 +238,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.use('/api/checkout', checkoutRoutes);
   
-  // Locality routes for unified local delivery detection
-  app.use('/api/locality', localityRoutes);
+  // Locality routes for unified local delivery detection (with caching)
+  const { addCacheHeaders } = await import('./middleware/performanceOptimization');
+  app.use('/api/locality', addCacheHeaders(300), localityRoutes);
   
   // Cart validation route
   const cartValidationRoutes = await import('./routes/cart-validation');

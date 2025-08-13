@@ -16,6 +16,7 @@ import { environment } from "@/lib/environment";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Analytics } from "@/components/Analytics";
 import { PWAInstaller } from "@/components/PWAInstaller";
+import { useSingletonSocket } from "@/hooks/useWebSocket";
 
 // Import critical pages directly to avoid lazy loading issues with routing
 import Home from "@/pages/home";
@@ -163,6 +164,8 @@ function Router() {
 }
 
 function App() {
+  // Initialize singleton WebSocket connection to prevent duplicates
+  const { connected } = useSingletonSocket();
   useEffect(() => {
     // Disable Replit's embed warnings globally
     environment.disableReplitEmbeds();
