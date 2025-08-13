@@ -2225,17 +2225,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // NEW UNIFIED ADDRESS SYSTEM - Zero duplicates, canonical management
-  app.get("/api/addresses", requireAuth, async (req, res) => {
-    try {
-      const userId = req.user!.id;
-      const addresses = await storage.getUserAddresses(userId);
-      res.json(addresses);
-    } catch (error) {
-      Logger.error("Error fetching addresses:", error);
-      res.status(500).json({ error: 'Failed to fetch addresses' });
-    }
-  });
+  // UNIFIED ADDRESS SYSTEM - Disabled in favor of routes/addresses.ts
+  // app.get("/api/addresses", requireAuth, async (req, res) => {
+  //   try {
+  //     const userId = req.user!.id;
+  //     const addresses = await storage.getUserAddresses(userId);
+  //     res.json(addresses);
+  //   } catch (error) {
+  //     Logger.error("Error fetching addresses:", error);
+  //     res.status(500).json({ error: 'Failed to fetch addresses' });
+  //   }
+  // });
 
   app.post("/api/addresses", requireAuth, async (req, res) => {
     try {

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db";
 import { addresses } from "../../shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "../auth";
 
 const router = Router();
@@ -27,26 +27,41 @@ router.get("/", requireAuth, async (req: any, res) => {
     const userId = req.user.id;
     const isDefault = req.query.default === "true";
     
-    let query = db.select().from(addresses).where(eq(addresses.userId, userId));
+    // EMERGENCY FIX: Use raw SQL to handle schema mismatch until migration
+    const userAddresses = await db.execute(sql`
+      SELECT 
+        id,
+        user_id as "userId",
+        COALESCE(type, 'shipping') as label,
+        CONCAT(first_name, ' ', last_name) as "fullName",
+        first_name as "firstName",
+        last_name as "lastName",
+        street,
+        city,
+        state,
+        zip_code as "zipCode",
+        country,
+        is_default as "isDefault",
+        created_at as "createdAt"
+      FROM addresses 
+      WHERE user_id = ${userId}
+      ${isDefault ? sql`AND is_default = true` : sql``}
+      ORDER BY is_default DESC, created_at DESC
+    `);
     
-    if (isDefault) {
-      query = query.where(and(eq(addresses.userId, userId), eq(addresses.isDefault, true)));
-    }
-
-    const userAddresses = await query;
-    
-    // Map to frontend expected format
-    const mapped = userAddresses.map(addr => ({
-      firstName: addr.firstName,
-      lastName: addr.lastName,
-      email: addr.email || "",
-      phone: addr.phone || "",
-      street1: addr.street,
-      street2: "",
-      city: addr.city,
-      state: addr.state,
-      postalCode: addr.zipCode,
+    // Map to frontend expected format  
+    const mapped = (userAddresses.rows as any[]).map(addr => ({
+      id: addr.id,
+      firstName: addr.firstName || "",
+      lastName: addr.lastName || "",
+      street: addr.street || "",
+      city: addr.city || "", 
+      state: addr.state || "",
+      zipCode: addr.zipCode || "",
+      postalCode: addr.zipCode || "",
       country: addr.country || "US",
+      isDefault: addr.isDefault || false,
+      isLocal: false // TODO: Add local delivery check
     }));
     
     res.json(isDefault ? mapped[0] : mapped);
@@ -69,22 +84,18 @@ router.post("/", requireAuth, async (req: any, res) => {
         .where(eq(addresses.userId, userId));
     }
 
-    const [savedAddress] = await db.insert(addresses)
-      .values({
-        userId,
-        type: "shipping",
-        firstName: validated.firstName,
-        lastName: validated.lastName,
-        street: validated.street1,
-        city: validated.city,
-        state: validated.state,
-        zipCode: validated.postalCode,
-        country: validated.country,
-        isDefault: validated.isDefault,
-      })
-      .returning();
+    // EMERGENCY FIX: Use raw SQL for insert too
+    const savedAddress = await db.execute(sql`
+      INSERT INTO addresses (
+        user_id, type, first_name, last_name, street, city, state, zip_code, country, is_default
+      ) VALUES (
+        ${userId}, 'shipping', ${validated.firstName}, ${validated.lastName}, 
+        ${validated.street1}, ${validated.city}, ${validated.state}, 
+        ${validated.postalCode}, ${validated.country}, ${validated.isDefault}
+      ) RETURNING *
+    `);
 
-    res.json(savedAddress);
+    res.json(savedAddress.rows[0]);
   } catch (error) {
     console.error("Error saving address:", error);
     res.status(500).json({ error: "Failed to save address" });
