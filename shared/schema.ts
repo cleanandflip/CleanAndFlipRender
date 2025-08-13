@@ -119,12 +119,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name").notNull(),
   lastName: varchar("last_name").notNull(),
   phone: varchar("phone"), // Optional field
-  street: varchar("street", { length: 255 }),
-  city: varchar("city", { length: 100 }),
-  state: varchar("state", { length: 2 }),
-  zipCode: varchar("zip_code", { length: 10 }),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  // REMOVED: Legacy address fields - using SSOT addresses table instead
   isLocalCustomer: boolean("is_local_customer").default(false),
   role: userRoleEnum("role").default("user"),
   stripeCustomerId: varchar("stripe_customer_id"),
