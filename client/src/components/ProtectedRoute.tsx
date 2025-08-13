@@ -25,20 +25,7 @@ export function ProtectedRoute({ children, requireCompleteProfile = false }: Pro
     return <Redirect to="/login" />;
   }
   
-  // CART ACCESS FIX: Don't redirect users who actually have addresses
-  if (requireCompleteProfile && !window.location.pathname.includes('onboarding')) {
-    console.log("[PROTECTED ROUTE DEBUG] Checking profile completion:", {
-      profileComplete: user.profileComplete,
-      profileAddressId: user.profileAddressId,
-      hasAddresses: !!user.profileAddressId
-    });
-    
-    // Only redirect if user truly has no addresses (not just profileComplete false)
-    if (!user.profileAddressId) {
-      const fromPath = window.location.pathname;
-      return <Redirect to={`/onboarding?step=1&from=${fromPath.replace('/', '')}&required=true`} />;
-    }
-  }
+  // PROFILE GATING REMOVED - Allow cart/checkout access, handle address requirement at order time only
   
   return <>{children}</>;
 }

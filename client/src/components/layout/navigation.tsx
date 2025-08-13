@@ -133,23 +133,7 @@ export default function Navigation() {
       return;
     }
     
-    // CART ACCESS FIX: Check for actual address ID, not just profileAddress object
-    if (!user.profileAddressId) {
-      toast({
-        title: "Complete Your Profile",
-        description: `Please add your shipping address to access your cart and shop with us. This helps us provide better service and shipping options.`,
-        variant: "default",
-        action: (
-          <button 
-            onClick={() => setLocation(`/onboarding?step=1&from=cart`)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
-          >
-            Add Address
-          </button>
-        )
-      });
-      return;
-    }
+    // CART ACCESS UNRESTRICTED - Users can browse cart freely, address required only at checkout
     
     if (!isCartOpen) {
       // Save current location before opening cart

@@ -9,16 +9,7 @@ export function ProfilePrompt() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    // Auto-redirect incomplete profiles to onboarding when they hit checkout
-    if (user && !user.profileComplete) {
-      const timer = setTimeout(() => {
-        setLocation('/onboarding?checkout=true');
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [user, setLocation]);
+  // ONBOARDING REMOVED - Simple addresses UI handles profile completion
 
   if (!user || user.profileComplete) {
     return null;
@@ -41,7 +32,7 @@ export function ProfilePrompt() {
         </div>
         
         <Button 
-          onClick={() => setLocation('/onboarding?checkout=true')}
+          onClick={() => setLocation('/addresses')}
           className="bg-orange-600 hover:bg-orange-700 text-white"
         >
           <User className="h-4 w-4 mr-2" />

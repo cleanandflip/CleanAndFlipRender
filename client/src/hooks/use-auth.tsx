@@ -54,20 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnMount: true, // Always check fresh auth state
   });
 
-  // Auto-redirect to onboarding for incomplete profiles
-  useEffect(() => {
-    if (user && !isLoading && !user.profileComplete && (user.onboardingStep || 0) > 0) {
-      const currentPath = window.location.pathname;
-      const urlParams = new URLSearchParams(window.location.search);
-      const isGoogleCallback = urlParams.get('google') === 'true';
-      
-      // Don't redirect if already on onboarding or if user just logged in with Google
-      if (currentPath !== '/onboarding' && !isGoogleCallback) {
-        // Auto-redirecting to onboarding for incomplete profile
-        window.location.href = `/onboarding?step=${user.onboardingStep || 1}&auto=true`;
-      }
-    }
-  }, [user, isLoading]);
+  // ONBOARDING REMOVED - No more auto-redirects, users browse freely
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {

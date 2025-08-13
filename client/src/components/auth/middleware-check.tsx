@@ -8,18 +8,7 @@ export function MiddlewareCheck() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!isLoading && user) {
-      // Check if user needs onboarding
-      if (user.authProvider === 'google' && !user.profileComplete) {
-        toast({
-          title: "Complete Your Profile",
-          description: "Let's finish setting up your account for local delivery",
-        });
-        navigate('/onboarding?step=' + (user.onboardingStep || 1));
-      }
-    }
-  }, [user, isLoading, navigate, toast]);
+  // ONBOARDING REMOVED - Users browse freely, profile completion handled at checkout only
 
   return null;
 }

@@ -35,7 +35,7 @@ router.get('/', isAuthenticated, async (req, res) => {
       return (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0);
     });
     
-    res.json({ ok: true, data: sorted });
+    res.json(sorted); // Return plain array for consistency
   } catch (error) {
     console.error('GET /api/addresses error:', error);
     res.status(500).json({ message: 'Failed to fetch addresses' });
@@ -61,7 +61,7 @@ router.post('/', isAuthenticated, async (req, res) => {
       isLocal
     });
     
-    res.json({ ok: true, data: address });
+    res.json(address); // Return plain object for consistency
   } catch (error) {
     console.error('POST /api/addresses error:', error);
     if (error instanceof z.ZodError) {
@@ -98,7 +98,7 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
     
     const address = await storage.updateAddress(userId, id, updateData);
     
-    res.json({ ok: true, data: address });
+    res.json(address); // Return plain object for consistency
   } catch (error) {
     console.error('PATCH /api/addresses/:id error:', error);
     res.status(400).json({ message: 'Failed to update address' });

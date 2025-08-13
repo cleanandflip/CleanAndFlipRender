@@ -14,7 +14,7 @@ export function WelcomeBanner() {
     const google = urlParams.get('google');
     const isNew = urlParams.get('new');
     
-    if (google === 'true' && isNew === 'true' && location.includes('/onboarding')) {
+    if (google === 'true' && isNew === 'true') {
       setShow(true);
       // Clean up URL parameters
       const url = new URL(window.location.href);

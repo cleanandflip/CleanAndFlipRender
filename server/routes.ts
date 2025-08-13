@@ -230,34 +230,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const observabilityRoutes = await import('./routes/observability');
   app.use('/api/observability', observabilityRoutes.default);
   
-  // NEW: Onboarding routes using SSOT system
-  const onboardingRoutes = await import('./routes/onboarding');
-  app.use('/api/onboarding', onboardingRoutes.default);
+  // ONBOARDING REMOVED - Users browse freely, address required only at checkout
   
   app.use('/api/checkout', checkoutRoutes);
 
-  // NEW: User profile update endpoint for onboarding completion
-  app.put("/api/user", requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { phone, profileComplete, onboardingStep } = req.body;
-      
-      await db.execute(sql`
-        UPDATE users 
-        SET 
-          phone = COALESCE(${phone}, phone),
-          profile_complete = COALESCE(${profileComplete}, profile_complete),
-          onboarding_step = COALESCE(${onboardingStep}, onboarding_step),
-          updated_at = NOW()
-        WHERE id = ${userId}
-      `);
-
-      res.json({ success: true, message: "Profile updated successfully" });
-    } catch (error) {
-      Logger.error("Error updating user profile:", error);
-      res.status(500).json({ error: "Failed to update profile" });
-    }
-  });
+  // ONBOARDING REMOVED - Profile completion handled via address creation
   
   // Admin metrics routes  
   app.use('/api/admin', adminMetricsRoutes);
