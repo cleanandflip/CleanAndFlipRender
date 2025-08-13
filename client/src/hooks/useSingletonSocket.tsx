@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, ReactNode } from "react";
+import { webSocketState } from "./useWebSocketState";
 
 // Mirror server Topics for type-safety (keep in sync)
 type Topics =
@@ -54,16 +55,15 @@ function makeUrl() {
 export function SocketProvider({ children }: { children: ReactNode }) {
   const sockRef = useRef<WebSocket | null>(null);
   const handlers = useRef<Map<string, Set<Handler>>>(new Map());
-  const [ready, setReady] = useState(() => {
-    // Check if WebSocket is already connected on initial render
-    const ws = sockRef.current;
-    return ws?.readyState === WebSocket.OPEN;
-  });
+  const [ready, setReady] = useState(false);
+  const forceUpdate = useRef(0);
 
   useEffect(() => {
     if (sockRef.current) {
       // If WebSocket already exists, set ready state based on its current state
-      setReady(sockRef.current.readyState === WebSocket.OPEN);
+      const isOpen = sockRef.current.readyState === WebSocket.OPEN;
+      setReady(isOpen);
+      console.log('🔌 WebSocket already exists, ready:', isOpen);
       return;
     }
 
@@ -78,8 +78,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
       ws.onopen = () => {
         console.log('🔌 WebSocket connected to', makeUrl());
-        console.log('🔌 Setting ready to true');
         setReady(true);
+        webSocketState.setReady(true);
         retry = 0;
         // optional: send auth token if available (cookie/session)
         const token = window.localStorage.getItem("accessToken") || undefined;
@@ -97,9 +97,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
       ws.onclose = () => {
         console.log('🔌 WebSocket disconnected, retrying in', Math.min(1000 * 2 ** retry, 15_000), 'ms');
-        console.log('🔌 Setting ready to false');
         clearInterval(heartbeat);
         setReady(false);
+        webSocketState.setReady(false);
         sockRef.current = null;
         setTimeout(connect, Math.min(1000 * 2 ** retry++, 15_000));
       };
@@ -116,7 +116,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const api: Ctx = useMemo(() => {
-    console.log('🔌 useMemo api with ready:', ready);
+    console.log('🔌 useMemo api with ready:', ready, 'forceUpdate:', forceUpdate.current);
     return {
       ready,
       send: (msg: ClientToServer) => {
@@ -130,7 +130,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         return () => map.get(topic)?.delete(fn);
       },
     };
-  }, [ready]);
+  }, [ready, forceUpdate.current]);
 
   return <SocketCtx.Provider value={api}>{children}</SocketCtx.Provider>;
 }

@@ -6,6 +6,7 @@ import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { EnhancedProductModal } from '@/components/admin/modals/EnhancedProductModal';
 import { useSocket } from '@/hooks/useSingletonSocket.tsx';
+import { useWebSocketReady } from '@/hooks/useWebSocketState';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 
@@ -29,12 +30,8 @@ export function ProductsTab() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { subscribe, ready } = useSocket();
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('🔌 ProductsTab ready state:', ready);
-  }, [ready]);
+  const { subscribe } = useSocket();
+  const ready = useWebSocketReady();
   const queryClient = useQueryClient();
 
   // Fetch products with React Query
