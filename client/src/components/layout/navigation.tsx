@@ -247,19 +247,19 @@ export default function Navigation() {
                     }}
                     className="transition duration-200"
                   >
-                    <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden">
-                      {/* Profile Section - Enhanced visibility */}
-                      <div className="px-3 py-2.5 rounded-lg bg-muted/60 mb-2 mx-2 mt-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center ring-2 ring-white/20 flex-shrink-0">
-                            <span className="text-white font-semibold text-sm">
+                    <div className="rounded-lg border bg-popover text-popover-foreground shadow-xl overflow-hidden w-72">
+                      {/* Profile Section - More compact */}
+                      <div className="px-3 py-2 border-b border-border/50">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center ring-1 ring-white/20 flex-shrink-0">
+                            <span className="text-white font-semibold text-xs">
                               {user?.firstName?.[0]?.toUpperCase() || 
                                user?.email?.[0]?.toUpperCase() || 
                                'U'}
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
+                            <p className="text-sm font-medium text-foreground truncate leading-tight">
                               {user?.firstName && user?.lastName 
                                 ? `${user?.firstName} ${user?.lastName}` 
                                 : user?.email?.split('@')[0] || 'User'
@@ -269,20 +269,21 @@ export default function Navigation() {
                               {user?.email}
                             </p>
                             {user?.role?.includes('developer') && (
-                              <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-400 rounded-full">
+                              <span className="inline-block mt-0.5 px-1.5 py-0.5 text-xs font-medium bg-blue-500/20 text-blue-400 rounded-full">
                                 Developer
                               </span>
                             )}
                           </div>
                         </div>
+                        
+                        {/* LocalBadge integrated in user section */}
+                        <div className="mt-2 flex justify-center">
+                          <LocalBadge isLocal={locality?.isLocal ?? false} />
+                        </div>
                       </div>
 
                       {/* Navigation Links */}
-                      <div className="py-1 px-1">
-                        {/* LocalBadge under user info */}
-                        <div className="px-3 py-2 mb-3 flex justify-center">
-                          <LocalBadge isLocal={locality?.isLocal ?? false} />
-                        </div>
+                      <div className="py-1">
 
                         
                         <button
@@ -290,10 +291,10 @@ export default function Navigation() {
                             handleNavigation(ROUTES.DASHBOARD);
                             setIsUserDropdownOpen(false);
                           }}
-                          className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
+                          className="w-full text-left flex items-center gap-2.5 px-3 py-2 mx-1 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
                         >
                           <User className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">Dashboard</span>
+                          <span className="text-sm font-medium">Dashboard</span>
                         </button>
                         
                         <button
@@ -301,10 +302,10 @@ export default function Navigation() {
                             handleNavigation(ROUTES.ORDERS);
                             setIsUserDropdownOpen(false);
                           }}
-                          className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
+                          className="w-full text-left flex items-center gap-2.5 px-3 py-2 mx-1 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
                         >
                           <Package className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">My Orders</span>
+                          <span className="text-sm font-medium">My Orders</span>
                         </button>
 
                         {user?.role?.includes('developer') && (
@@ -313,25 +314,25 @@ export default function Navigation() {
                               handleNavigation(ROUTES.ADMIN);
                               setIsUserDropdownOpen(false);
                             }}
-                            className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
+                            className="w-full text-left flex items-center gap-2.5 px-3 py-2 mx-1 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
                           >
                             <Shield className="w-4 h-4 text-blue-400" />
-                            <span className="text-sm">Developer Dashboard</span>
+                            <span className="text-sm font-medium">Developer Dashboard</span>
                           </button>
                         )}
                         
                         {/* Divider */}
-                        <div className="my-2 h-px bg-border/60" />
+                        <div className="my-1.5 mx-3 h-px bg-border/60" />
 
                         <button
                           onClick={() => {
                             logoutMutation.mutate();
                             setIsUserDropdownOpen(false);
                           }}
-                          className="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
+                          className="w-full text-left flex items-center gap-2.5 px-3 py-2 mx-1 rounded-md select-none transition-[background,transform,opacity] duration-150 ease-out hover:bg-muted/60 hover:translate-x-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 cursor-pointer"
                         >
                           <LogOut className="w-4 h-4 text-red-400" />
-                          <span className="text-sm text-red-400">Sign Out</span>
+                          <span className="text-sm font-medium text-red-400">Sign Out</span>
                         </button>
                       </div>
                     </div>
