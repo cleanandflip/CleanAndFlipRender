@@ -46,6 +46,8 @@ import { healthLive, healthReady } from "./config/health";
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
 import { db } from "./db";
+import { cartItems } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import observability from "./routes/observability";
 
 // WebSocket Manager for broadcasting updates
@@ -1009,8 +1011,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // CRITICAL FIX: Pass the CART ITEM ID, not product ID to removeFromCart
       console.log(`[CART REMOVAL DEBUG] Removing cart item with ID: ${itemToRemove.id}`);
-      const removed = await storage.removeFromCart(itemToRemove.id);
-      console.log(`[CART REMOVAL DEBUG] Remove operation result:`, removed);
+      
+      // EMERGENCY FIX: Direct database deletion to bypass any ORM issues
+      const directResult = await db.delete(cartItems).where(eq(cartItems.id, itemToRemove.id));
+      console.log(`[CART REMOVAL DEBUG] Direct delete result - rowCount:`, directResult.rowCount);
+      
+      const removed = directResult.rowCount > 0;
+      console.log(`[CART REMOVAL DEBUG] Direct delete result - removed:`, removed);
       
       // Verify removal worked by checking cart again
       const cartAfterRemoval = await storage.getCartItems(userId || undefined, sessionId);
