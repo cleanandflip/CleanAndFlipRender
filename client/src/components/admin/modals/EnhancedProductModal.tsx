@@ -4,6 +4,7 @@ import { X, Upload, Trash2, Loader2, Plus, Check, AlertCircle } from 'lucide-rea
 import { toast } from '@/hooks/use-toast';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useQuery } from '@tanstack/react-query';
 
 interface ProductModalProps {
   product?: any;
@@ -17,6 +18,16 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const { send } = useWebSocket();
+
+  // Fetch categories for dropdown
+  const { data: categories = [] } = useQuery({
+    queryKey: ['/api/categories'],
+    queryFn: async () => {
+      const res = await fetch('/api/categories?active=true');
+      if (!res.ok) throw new Error('Failed to fetch categories');
+      return res.json();
+    }
+  });
   
   // Lock body scroll while modal is open
   useScrollLock(true);
@@ -415,9 +426,11 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
                     required
                   >
                     <option value="">Select category</option>
-                    <option value="Strength Training">Strength Training</option>
-                    <option value="Cardio Equipment">Cardio Equipment</option>
-                    <option value="Accessories">Accessories</option>
+                    {categories.map((category: any) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

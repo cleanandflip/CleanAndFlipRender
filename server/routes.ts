@@ -2783,9 +2783,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(updatedProduct);
-    } catch (error) {
+    } catch (error: any) {
       Logger.error('Update product error:', error);
-      res.status(500).json({ error: 'Failed to update product: ' + (error as any).message });
+      
+      // Handle specific database constraint errors
+      if (error?.code === '23503') {
+        return res.status(400).json({ 
+          error: 'Invalid category selected. Please choose a valid category.',
+          details: 'The selected category does not exist.'
+        });
+      }
+      
+      if (error?.code === '23505') {
+        return res.status(409).json({ 
+          error: 'Duplicate value detected.',
+          details: 'A product with this SKU or identifier already exists.'
+        });
+      }
+      
+      res.status(500).json({ error: 'Failed to update product: ' + (error?.message || 'Unknown error') });
     }
   });
 
