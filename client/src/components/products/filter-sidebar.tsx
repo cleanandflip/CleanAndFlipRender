@@ -22,6 +22,7 @@ interface FilterSidebarProps {
     condition?: string[] | string;
     brand?: string[] | string;
     tags?: string[] | string;
+    fulfillment?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   };
@@ -72,6 +73,13 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
     { value: "good", label: "Good", color: "bg-yellow-500" },
     { value: "fair", label: "Fair", color: "bg-orange-500" },
     { value: "needs_repair", label: "Needs Repair", color: "bg-red-500" },
+  ];
+
+  // Fulfillment options
+  const fulfillmentOptions = [
+    { value: "local_delivery", label: "Local Delivery", icon: "🚚" },
+    { value: "shipping", label: "Shipping", icon: "📦" },
+    { value: "pickup", label: "Pickup", icon: "🏪" },
   ];
 
   // Use actual brands from database, fallback to popular brands if not loaded
@@ -319,6 +327,40 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                 />
                 <div className={`w-3 h-3 rounded-full ${condition.color} mr-1`}></div>
                 <span className="text-sm">{condition.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <Separator className="bg-bg-secondary-border" />
+
+        {/* Fulfillment Options */}
+        <div>
+          <h4 className="font-semibold mb-3">Delivery & Fulfillment</h4>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="fulfillment"
+                value=""
+                checked={!localFilters.fulfillment}
+                onChange={() => handleFilterChange('fulfillment', undefined)}
+                className="w-4 h-4 text-accent-blue bg-transparent border-gray-600 focus:ring-accent-blue"
+              />
+              <span className="text-sm">All Options</span>
+            </label>
+            {fulfillmentOptions.map((option) => (
+              <label key={option.value} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="fulfillment"
+                  value={option.value}
+                  checked={localFilters.fulfillment === option.value}
+                  onChange={(e) => handleFilterChange('fulfillment', e.target.value)}
+                  className="w-4 h-4 text-accent-blue bg-transparent border-gray-600 focus:ring-accent-blue"
+                />
+                <span className="mr-1">{option.icon}</span>
+                <span className="text-sm">{option.label}</span>
               </label>
             ))}
           </div>

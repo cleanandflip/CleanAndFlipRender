@@ -1,5 +1,5 @@
 // Tiny URL state helper for q/category/sort/page
-type Query = { q: string; category: string; sort: string; page: number };
+type Query = { q: string; category: string; sort: string; page: number; fulfillment?: string };
 
 const parse = (): Query => {
   if (typeof window === 'undefined') {
@@ -9,9 +9,10 @@ const parse = (): Query => {
   const q         = (sp.get("q") ?? "");
   const category  = (sp.get("category") ?? "");
   const sort      = (sp.get("sort") ?? "");
+  const fulfillment = sp.get("fulfillment") || undefined;
   const pageRaw   = Number(sp.get("page") ?? "1");
   const page      = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
-  return { q, category, sort, page };
+  return { q, category, sort, page, fulfillment };
 };
 
 const write = (next: Partial<Query>, opts: { replace?: boolean } = {}) => {

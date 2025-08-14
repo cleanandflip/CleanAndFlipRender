@@ -1,0 +1,151 @@
+wire up the Delivery & Fulfillment UI across the whole app.
+
+TASK: Add Delivery & Fulfillment UI to all products (admin + storefront) and make it live
+Goal
+Re-add and standardize per-product fulfillment controls and badges everywhere:
+
+Admin: product create/edit modal shows Delivery & Fulfillment section with 3 modes.
+
+Storefront: product cards, product detail, and filters visibly reflect availability.
+
+Backend + APIs + WS: fields are persisted, returned, cached, and live-updated.
+
+Canonical fields & helpers
+Use two booleans as source of truth everywhere:
+
+is_local_delivery_available / isLocalDeliveryAvailable
+
+is_shipping_available / isShippingAvailable
+
+Helper (shared on FE + BE):
+
+ts
+Copy
+Edit
+export type FulfillmentMode = 'local_only' | 'shipping_only' | 'both';
+
+export const modeFromProduct = (p:any): FulfillmentMode => {
+  const local = p?.is_local_delivery_available ?? p?.isLocalDeliveryAvailable ?? false;
+  const ship  = p?.is_shipping_available ?? p?.isShippingAvailable ?? false;
+  if (local && ship) return 'both';
+  if (local) return 'local_only';
+  return 'shipping_only';
+};
+
+export const booleansFromMode = (m: FulfillmentMode) => ({
+  isLocalDeliveryAvailable: m !== 'shipping_only',
+  isShippingAvailable: m !== 'local_only',
+});
+Data model / DB
+Add columns if missing:
+
+sql
+Copy
+Edit
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS is_local_delivery_available boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS is_shipping_available boolean NOT NULL DEFAULT true;
+-- Optional backfill: if product requires shipping => shipping_available=true
+Backend (server/storage + routes)
+Accept & return both snake_case and camelCase for the two fields.
+
+In POST/PUT /api/admin/products, map camel→snake and persist.
+
+In responses, include both forms for compatibility (temporary).
+
+Ensure list/detail endpoints include the two booleans.
+
+Stripe sync: add these to metadata so the site reflects changes on rebuilds (no behavior change required).
+
+WebSocket live updates
+Standardize to { type: 'product:update', payload: { …full product… } }.
+
+Update publisher in the WS manager to send type (not topic) and include the two booleans.
+
+Update any client listeners still reading topic → read type.
+
+Admin UI
+Files:
+
+src/components/admin/modals/EnhancedProductModal.tsx
+
+(and any older modal names if present)
+
+Actions:
+
+Add Delivery & Fulfillment section with 3 buttons: Local only / Shipping only / Local + Shipping.
+On click, compute booleans with booleansFromMode and merge into form state.
+
+On submit, send both snake + camel keys for the two booleans.
+
+After success, React Query invalidate any product queries (["adminProducts"], ["products"], ["product", id]).
+
+No hard reloads.
+
+Minimal JSX (use your styling system):
+
+tsx
+Copy
+Edit
+// inside modal
+<div className="section">
+  <h3>Delivery & Fulfillment</h3>
+  <div className="grid grid-cols-3 gap-2">
+    <button type="button" onClick={() => changeMode('local_only')}>Local only</button>
+    <button type="button" onClick={() => changeMode('shipping_only')}>Shipping only</button>
+    <button type="button" onClick={() => changeMode('both')}>Local + Shipping</button>
+  </div>
+  <p className="hint">
+    {mode === 'local_only' && 'Only free local delivery (50 miles).'}
+    {mode === 'shipping_only' && 'Nationwide shipping only.'}
+    {mode === 'both' && 'Local delivery + nationwide shipping.'}
+  </p>
+</div>
+Storefront UI
+Files to touch:
+
+src/components/products/product-card.tsx
+
+src/components/locality/ProductAvailabilityChips.tsx (or create)
+
+src/pages/products.tsx (filters)
+
+src/pages/product-detail.tsx
+
+Actions:
+
+Show chips/badges: “Local delivery”, “Shipping”, or both (derive via modeFromProduct).
+
+Add a fulfillment filter (All / Local delivery / Shipping) that filters by the booleans.
+
+Product detail: show the same badges + a short line of copy matching the mode.
+
+Types / hooks
+Update product types (src/lib/products/types.ts or equivalent) to include both booleans.
+
+Ensure useProducts, useProduct, useProductLiveSync keep the two booleans in cache and hydrate from WS payloads.
+
+Caching / stale data
+In all product write paths, only use React Query invalidation (no window.location.reload()).
+
+Confirm /status poller and SW update handler do not reload the page after product updates.
+
+Tests / acceptance
+Saving each mode updates DB and immediately shows correct badges on:
+
+Admin grid row
+
+Storefront product card
+
+Storefront product detail
+
+Storefront filters behave correctly
+
+WS product:update switches badges live without refresh.
+
+Rollback safety
+Keep both snake + camel in requests/responses for one release window.
+
+Log a warning if only legacy topic is seen on WS; remove after rollout.
+
+Deliverable: PR that adds the UI, server fields wiring, live updates, filters, and invalidations as above, plus a short test plan confirming badges and filters work and no full-page reloads occur.

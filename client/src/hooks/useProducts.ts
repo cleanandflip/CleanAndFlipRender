@@ -77,6 +77,23 @@ export function useProducts(args?: { q: string; category: string; sort: string; 
       });
     }
 
+    // Filter by fulfillment options
+    const fulfillmentFilter = query.fulfillment;
+    if (fulfillmentFilter) {
+      list = list.filter((product) => {
+        switch (fulfillmentFilter) {
+          case 'local_delivery':
+            return product.isLocalDeliveryAvailable === true;
+          case 'shipping':
+            return product.isShippingAvailable === true;
+          case 'pickup':
+            return true; // All products support pickup
+          default:
+            return true;
+        }
+      });
+    }
+
     return list;
   }, [allProducts, q, categorySlug]);
 
