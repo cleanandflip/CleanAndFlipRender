@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast"; // shadcn hook already used across app
 import { cn } from "@/lib/utils";
-import useScrollLock from "@/hooks/useScrollLock";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 /**
  * Types kept lightweight to avoid tight coupling with server models
@@ -98,9 +98,9 @@ export function EnhancedProductModal({ product, onClose, onSave, onSaved }: Prop
     condition: (product as any)?.condition ?? "Good",
     weight: product?.weight ?? "",
     sku: product?.sku ?? "",
-    isFeatured: product?.is_featured ?? product?.isFeatured ?? false,
-    isLocalDeliveryAvailable: product?.is_local_delivery_available ?? product?.isLocalDeliveryAvailable ?? false,
-    isShippingAvailable: product?.is_shipping_available ?? product?.isShippingAvailable ?? true,
+    isFeatured: product?.isFeatured ?? product?.is_featured ?? false,
+    isLocalDeliveryAvailable: product?.isLocalDeliveryAvailable ?? product?.is_local_delivery_available ?? false,
+    isShippingAvailable: product?.isShippingAvailable ?? product?.is_shipping_available ?? true,
   }));
 
   // keep booleans in sync if mode changes from outside
@@ -173,13 +173,15 @@ export function EnhancedProductModal({ product, onClose, onSave, onSaved }: Prop
       weight: form.weight === "" || form.weight == null ? 0 : numeric(form.weight, 0),
       sku: form.sku || null,
 
-      // booleans — send both cases for backward compatibility
-      is_featured: !!form.isFeatured,
+      // Featured flag - send both styles
       isFeatured: !!form.isFeatured,
-      is_local_delivery_available: !!form.isLocalDeliveryAvailable,
+      is_featured: !!form.isFeatured,
+      
+      // Fulfillment booleans - send both styles for backward compatibility
       isLocalDeliveryAvailable: !!form.isLocalDeliveryAvailable,
-      is_shipping_available: !!form.isShippingAvailable,
+      is_local_delivery_available: !!form.isLocalDeliveryAvailable,
       isShippingAvailable: !!form.isShippingAvailable,
+      is_shipping_available: !!form.isShippingAvailable,
     };
 
     try {
@@ -208,7 +210,7 @@ export function EnhancedProductModal({ product, onClose, onSave, onSaved }: Prop
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["adminProducts"] }),
         queryClient.invalidateQueries({ queryKey: ["products"] }),
-        queryClient.invalidateQueries({ queryKey: ["products:featured"] }),
+        queryClient.invalidateQueries({ queryKey: ["products", "featured"] }),
         queryClient.invalidateQueries({ queryKey: ["/api/products/featured"] }),
         isEdit && product?.id
           ? queryClient.invalidateQueries({ queryKey: ["product", product!.id] })
