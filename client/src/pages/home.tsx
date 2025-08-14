@@ -39,6 +39,16 @@ function HomeSections() {
 
   // Add live sync for featured products
   useProductLiveSync({ queryKey: ["/api/products/featured"] });
+  
+  // Additional direct WebSocket listener for immediate updates
+  useEffect(() => {
+    const unsubscribe = subscribe("product:update", (payload: any) => {
+      console.log('🏠 Home page received product update:', payload);
+      // Force refetch of featured products immediately
+      refetch();
+    });
+    return unsubscribe;
+  }, [subscribe, refetch]);
 
   // Legacy event listeners for admin updates
   useEffect(() => {

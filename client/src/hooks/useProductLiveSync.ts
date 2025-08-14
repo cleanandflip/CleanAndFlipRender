@@ -10,10 +10,16 @@ export function useProductLiveSync({ queryKey, productId }: Opts) {
   useEffect(() => {
     const offUpdate = subscribe("product:update", (payload: any) => {
       console.log('🔄 Live sync: Product update received', payload);
+      console.log('🔄 Current queryKey:', queryKey);
+      console.log('🔄 Matching productId:', productId, 'vs payload ids:', payload?.id, payload?.productId);
+      
       if (!productId || payload?.id === productId || payload?.productId === productId) {
+        console.log('🔥 INVALIDATING QUERIES due to product update');
         queryClient.invalidateQueries({ queryKey });
-        // Also invalidate featured products when any product updates
+        
+        // ALWAYS invalidate featured products on any product update
         queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] });
+        queryClient.refetchQueries({ queryKey: ['/api/products/featured'] });
       }
     });
     const offCreate = subscribe("product:create", () => {

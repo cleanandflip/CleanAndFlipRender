@@ -2793,17 +2793,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedProduct = await storage.updateProduct(id, baseData);
       
-      // Broadcast to all clients
+      // Broadcast to all clients with enhanced debugging
       try {
         if (wsManager?.publishMessage) {
-          wsManager.publishMessage("product:update", {
+          const payload = {
             id: id,
             productId: id,
-            product: updatedProduct
-          });
+            product: updatedProduct,
+            featured: updatedProduct.featured
+          };
+          console.log('🚀 Broadcasting product update:', payload);
+          wsManager.publishMessage("product:update", payload);
+          Logger.info('WebSocket broadcast sent successfully for product:', id);
+        } else {
+          Logger.warn('WebSocket manager not available for broadcast');
         }
       } catch (error) {
-        Logger.warn('WebSocket broadcast failed:', error);
+        Logger.error('WebSocket broadcast failed:', error);
       }
       
       res.json(updatedProduct);

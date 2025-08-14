@@ -311,14 +311,17 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         return;
       }
 
+      // Force immediate invalidation with precise query keys
+      console.log('🔥 FORCING CACHE INVALIDATION - FEATURED PRODUCTS');
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['adminProducts'] }),
-        queryClient.invalidateQueries({ queryKey: ['products'] }),
-        queryClient.invalidateQueries({ queryKey: ['products:featured'] }),
         queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] }),
+        queryClient.invalidateQueries({ queryKey: ['adminProducts'] }),
         queryClient.invalidateQueries({ queryKey: ['/api/admin/products'] }),
         product?.id ? queryClient.invalidateQueries({ queryKey: ['product', product.id] }) : Promise.resolve(),
       ]);
+      
+      // Also trigger a manual refetch
+      queryClient.refetchQueries({ queryKey: ['/api/products/featured'] });
 
       toast({ title: "Product updated", description: "Fulfillment settings saved." });
       setLoading(false);
