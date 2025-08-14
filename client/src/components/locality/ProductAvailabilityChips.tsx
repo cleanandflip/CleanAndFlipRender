@@ -1,47 +1,35 @@
-import React from "react";
+import { getFulfillment } from "@/lib/products/fulfillment";
 
-type Props = {
-  is_local_delivery_available?: boolean;
-  is_shipping_available?: boolean;
+export default function ProductAvailabilityChips({ product }: { product: any }) {
+  const { local, shipping } = getFulfillment(product);
 
-  // keep backward compat with camelCase props as well
-  isLocalDeliveryAvailable?: boolean;
-  isShippingAvailable?: boolean;
-};
-
-export default function ProductAvailabilityChips(props: Props) {
-  const local =
-    props.is_local_delivery_available ?? props.isLocalDeliveryAvailable ?? false;
-  const shipping =
-    props.is_shipping_available ?? props.isShippingAvailable ?? false;
-
+  // nothing available → render nothing
   if (!local && !shipping) return null;
 
-  const base =
-    "inline-flex items-center rounded-full text-xs px-2 py-1 border";
-  if (local && shipping) {
+  // Local-only → one chip, clearly labeled (no emoji)
+  if (local && !shipping) {
     return (
       <div className="mt-2">
-        <span className={`${base} bg-blue-500/10 text-blue-100 border-blue-500/30`}>
-          Local + Shipping
-        </span>
-      </div>
-    );
-  }
-  if (local) {
-    return (
-      <div className="mt-2">
-        <span className={`${base} bg-amber-500/10 text-amber-100 border-amber-500/30`}>
+        <span className="inline-flex items-center rounded-full bg-amber-600/15 text-amber-100 text-xs px-2 py-1">
           Local delivery only
         </span>
       </div>
     );
   }
+
+  // Both or shipping-only
   return (
-    <div className="mt-2">
-      <span className={`${base} bg-emerald-500/10 text-emerald-100 border-emerald-500/30`}>
-        Shipping only
-      </span>
+    <div className="flex flex-wrap gap-2 mt-2">
+      {local && (
+        <span className="inline-flex items-center rounded-full bg-emerald-600/15 text-emerald-100 text-xs px-2 py-1">
+          Local delivery
+        </span>
+      )}
+      {shipping && (
+        <span className="inline-flex items-center rounded-full bg-blue-600/15 text-blue-100 text-xs px-2 py-1">
+          Nationwide shipping
+        </span>
+      )}
     </div>
   );
 }

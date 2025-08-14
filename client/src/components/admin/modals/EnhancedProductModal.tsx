@@ -8,18 +8,21 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 type FulfillmentMode = "local_only" | "shipping_only" | "both";
 
-const modeFromProduct = (p: any): FulfillmentMode => {
-  const local = p?.is_local_delivery_available ?? p?.isLocalDeliveryAvailable ?? false;
-  const ship  = p?.is_shipping_available ?? p?.isShippingAvailable ?? false;
+function modeFromProduct(p: any): FulfillmentMode {
+  const local = p.isLocalDeliveryAvailable ?? p.is_local_delivery_available ?? false;
+  const ship  = p.isShippingAvailable ?? p.is_shipping_available ?? false;
   if (local && ship) return "both";
-  if (local) return "local_only";
-  return "shipping_only";
-};
+  if (local && !ship) return "local_only";
+  if (!local && ship) return "shipping_only";
+  return "shipping_only"; // default to purchasable
+}
 
-const booleansFromMode = (m: FulfillmentMode) => ({
-  isLocalDeliveryAvailable: m !== "shipping_only",
-  isShippingAvailable: m !== "local_only",
-});
+function booleansFromMode(mode: FulfillmentMode) {
+  return {
+    isLocalDeliveryAvailable: mode !== "shipping_only",
+    isShippingAvailable: mode !== "local_only",
+  };
+}
 
 interface ProductModalProps {
   product?: any;
@@ -50,12 +53,6 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   
   // Add fulfillment mode state
   const [mode, setMode] = useState<FulfillmentMode>(product ? modeFromProduct(product) : "shipping_only");
-
-  // Keep the form booleans and mode in sync when the user switches
-  const changeMode = (m: FulfillmentMode) => {
-    setMode(m);
-    setFormData((f) => ({ ...f, ...booleansFromMode(m) }));
-  };
   
   const [formData, setFormData] = useState({
     name: '',
@@ -259,39 +256,24 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
     try {
       const fulfillment = booleansFromMode(mode);
 
-      const method = product ? "PUT" : "POST";
-      const stockNum = parseInt(String(formData.stock)) || 0;
-
-      const submitData = {
-        name: formData.name,
-        description: formData.description,
-        categoryId: formData.categoryId,
-        brand: formData.brand,
-        price: parseFloat(String(formData.price)) || 0,
-        compareAtPrice: formData.compareAtPrice ? parseFloat(String(formData.compareAtPrice)) : null,
-        cost: formData.cost ? parseFloat(String(formData.cost)) : null,
-        stockQuantity: stockNum,
-        status: formData.status,
-        weight: formData.weight ? parseFloat(String(formData.weight)) : 0,
-        sku: formData.sku || null,
-
-        // booleans (server expects snake_case — send both for safety)
-        is_featured: !!formData.featured,
-        isFeatured: !!formData.featured,
-
-        is_local_delivery_available: !!formData.isLocalDeliveryAvailable,
-        isLocalDeliveryAvailable: !!formData.isLocalDeliveryAvailable,
-
-        is_shipping_available: !!formData.isShippingAvailable,
-        isShippingAvailable: !!formData.isShippingAvailable,
+      const payload = {
+        ...formData, // your existing fields
+        ...fulfillment, // <<< the only source of truth
+        price: parseFloat(formData.price) || 0,
+        compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
+        cost: formData.cost ? parseFloat(formData.cost) : null,
+        stockQuantity: parseInt(formData.stock || "0", 10),
+        weight: formData.weight ? parseInt(formData.weight) : null,
+        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
       };
 
+      const method = product ? "PUT" : "POST";
       const url = product ? `/api/admin/products/${product.id}` : `/api/admin/products`;
 
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(submitData),
+        body: JSON.stringify(payload),
         credentials: 'include'
       });
 
@@ -303,10 +285,10 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
       }
 
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["adminProducts"] }),
-        queryClient.invalidateQueries({ queryKey: ["products"] }),
-        queryClient.invalidateQueries({ queryKey: ["products:featured"] }),
-        product?.id ? queryClient.invalidateQueries({ queryKey: ["product", product.id] }) : Promise.resolve(),
+        queryClient.invalidateQueries({ queryKey: ["products"], exact: false }),
+        queryClient.invalidateQueries({ queryKey: ["product", product?.id], exact: false }),
+        queryClient.invalidateQueries({ queryKey: ["featuredProducts"], exact: false }),
+        queryClient.invalidateQueries({ predicate: q => String(q.queryKey?.[0] ?? "").includes("products") }),
       ]);
 
       toast({ title: "Product updated", description: "Fulfillment settings saved." });

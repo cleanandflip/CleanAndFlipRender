@@ -2736,36 +2736,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
-      // accept both shapes from client
-      const featuredBool = req.body.isFeatured ?? req.body.is_featured ?? false;
-      const localBool    = req.body.isLocalDeliveryAvailable ?? req.body.is_local_delivery_available ?? false;
-      const shipBool     = req.body.isShippingAvailable ?? req.body.is_shipping_available ?? false;
+      // Accept camelCase or snake_case
+      const localBool = req.body.isLocalDeliveryAvailable ?? req.body.is_local_delivery_available ?? false;
+      const shipBool  = req.body.isShippingAvailable      ?? req.body.is_shipping_available      ?? false;
 
-      const numeric = (v: any, def = 0) => (isNaN(parseFloat(v)) ? def : parseFloat(v));
-      const intNum  = (v: any, def = 0) => (isNaN(parseInt(v)) ? def : parseInt(v));
+      const updateData = {
+        ...req.body,
+        // strong types / coercion for numeric fields (safe defaults)
+        price: req.body.price != null ? Number(req.body.price) : undefined,
+        compareAtPrice: req.body.compareAtPrice != null ? Number(req.body.compareAtPrice) : undefined,
+        cost: req.body.cost != null ? Number(req.body.cost) : undefined,
+        stockQuantity: req.body.stockQuantity != null ? parseInt(req.body.stockQuantity, 10) : undefined,
+        weight: req.body.weight != null ? Number(req.body.weight) : undefined,
 
-      const baseData = {
-        name: req.body.name,
-        description: req.body.description,
-        categoryId: req.body.categoryId,
-        brand: req.body.brand ?? null,
-        price: numeric(req.body.price),
-        compare_at_price: req.body.compareAtPrice != null ? numeric(req.body.compareAtPrice) : null,
-        cost: req.body.cost != null ? numeric(req.body.cost) : null,
-        stockQuantity: intNum(req.body.stockQuantity ?? req.body.stock, 0),
-        status: req.body.status ?? "Active",
-        weight: numeric(req.body.weight, 0),
-        sku: req.body.sku ?? null,
-
-        // canonical DB fields
-        is_featured: !!featuredBool,
+        // single source of truth for fulfillment (snake_case for DB)
         is_local_delivery_available: !!localBool,
         is_shipping_available: !!shipBool,
       };
 
-      Logger.debug(`Updating product with data: ${JSON.stringify(baseData)}`);
+      // drop camelCase duplicates to avoid unknown column warnings downstream
+      delete (updateData as any).isLocalDeliveryAvailable;
+      delete (updateData as any).isShippingAvailable;
+
+      Logger.info(`Updating product ${id} with fulfillment: local=${updateData.is_local_delivery_available}, ship=${updateData.is_shipping_available}`);
       
-      const updatedProduct = await storage.updateProduct(id, baseData);
+      // Handle images array from form data - always update images field
+      if ('images' in req.body) {
+        if (req.body.images && req.body.images.length > 0) {
+          const images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+          updateData.images = images.filter((img: any) => {
+            if (typeof img === 'string') {
+              return img.trim() !== '';
+            } else if (img && typeof img === 'object' && img.url) {
+              return img.url.trim() !== '';
+            }
+            return false;
+          });
+        } else {
+          // Explicitly set to empty array when no images
+          updateData.images = [];
+        }
+      }
+      
+      // Add new images if uploaded via multer
+      if (req.files && (req.files as any[]).length > 0) {
+        const newImages = (req.files as any[]).map(file => file.path);
+        updateData.images = updateData.images ? [...updateData.images, ...newImages] : newImages;
+      }
+      
+      Logger.debug(`Updating product with data: ${JSON.stringify(updateData)}`);
+      const updatedProduct = await storage.updateProduct(id, updateData);
       
       // Broadcast to all clients
       try {

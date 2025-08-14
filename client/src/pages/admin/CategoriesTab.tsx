@@ -27,7 +27,7 @@ export function CategoriesTab() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { connected } = useWebSocketState();
+  const ready = useWebSocketState();
   const queryClient = useQueryClient();
 
   // Fetch categories with React Query
