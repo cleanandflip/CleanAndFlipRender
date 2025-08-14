@@ -82,7 +82,7 @@ function HomeSections() {
       {/* Locality Banner - Minimal */}
       {user && locality && (
         <motion.div 
-          className="max-w-4xl mx-auto mb-8 px-6 pt-24 flex justify-center"
+          className="max-w-4xl mx-auto mb-8 px-6 pt-8 flex justify-center"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
@@ -112,8 +112,8 @@ function HomeSections() {
         </motion.div>
       )}
 
-      {/* Hero Section - Full Screen */}
-      <section className="min-h-screen flex items-center justify-center pt-20 pb-12 px-6">
+      {/* Hero Section - Compact */}
+      <section className="flex items-center justify-center py-12 px-6">
         <div className="max-w-6xl mx-auto text-center">
           {/* Main Heading */}
           <motion.div 
