@@ -1,0 +1,301 @@
+end-to-end fix for the three problems you’re seeing:
+
+✅ Only one “Local delivery only / Shipping only / Local + Shipping” chip, no emojis
+
+✅ EnhancedProductModal actually saves fulfillment + featured to the DB and live-updates UI
+
+✅ Categories tab runtime error removed (no more subscribe is not defined / duplicate imports)
+
+Below are minimal, copy-paste patches.
+
+1) One chip, no emojis
+client/src/components/locality/ProductAvailabilityChips.tsx
+
+tsx
+Copy
+Edit
+import React from "react";
+
+type Props = {
+  is_local_delivery_available?: boolean;
+  is_shipping_available?: boolean;
+
+  // keep backward compat with camelCase props as well
+  isLocalDeliveryAvailable?: boolean;
+  isShippingAvailable?: boolean;
+};
+
+export default function ProductAvailabilityChips(props: Props) {
+  const local =
+    props.is_local_delivery_available ?? props.isLocalDeliveryAvailable ?? false;
+  const shipping =
+    props.is_shipping_available ?? props.isShippingAvailable ?? false;
+
+  if (!local && !shipping) return null;
+
+  const base =
+    "inline-flex items-center rounded-full text-xs px-2 py-1 border";
+  if (local && shipping) {
+    return (
+      <div className="mt-2">
+        <span className={`${base} bg-blue-500/10 text-blue-100 border-blue-500/30`}>
+          Local + Shipping
+        </span>
+      </div>
+    );
+  }
+  if (local) {
+    return (
+      <div className="mt-2">
+        <span className={`${base} bg-amber-500/10 text-amber-100 border-amber-500/30`}>
+          Local delivery only
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2">
+      <span className={`${base} bg-emerald-500/10 text-emerald-100 border-emerald-500/30`}>
+        Shipping only
+      </span>
+    </div>
+  );
+}
+2) Admin modal: fulfillment + featured actually persist
+Helpers (mode mapping)
+At the top of client/src/components/admin/modals/EnhancedProductModal.tsx, add:
+
+tsx
+Copy
+Edit
+type FulfillmentMode = "local_only" | "shipping_only" | "both";
+
+const modeFromProduct = (p: any): FulfillmentMode => {
+  const local = p?.is_local_delivery_available ?? p?.isLocalDeliveryAvailable ?? false;
+  const ship  = p?.is_shipping_available ?? p?.isShippingAvailable ?? false;
+  if (local && ship) return "both";
+  if (local) return "local_only";
+  return "shipping_only";
+};
+
+const booleansFromMode = (m: FulfillmentMode) => ({
+  isLocalDeliveryAvailable: m !== "shipping_only",
+  isShippingAvailable: m !== "local_only",
+});
+State (ensure featured + fulfillment are bound correctly)
+Replace your initial state with:
+
+tsx
+Copy
+Edit
+// Lock body scroll while modal is open
+useScrollLock(true);
+
+const [mode, setMode] = useState<FulfillmentMode>(
+  product ? modeFromProduct(product) : "shipping_only"
+);
+
+const [formData, setFormData] = useState({
+  name: product?.name ?? "",
+  description: product?.description ?? "",
+  categoryId: product?.categoryId ?? "",
+  brand: product?.brand ?? "",
+  price: product?.price ?? "",
+  compareAtPrice: product?.compare_at_price ?? product?.compareAtPrice ?? "",
+  cost: product?.cost ?? "",
+  stock: product?.stockQuantity ?? product?.stock ?? "",
+  status: product?.status ?? "Active",
+  weight: product?.weight ?? "",
+  sku: product?.sku ?? "",
+
+  // important: single source of truth in the form
+  isFeatured: product?.is_featured ?? product?.isFeatured ?? false,
+  isLocalDeliveryAvailable:
+    product?.is_local_delivery_available ?? product?.isLocalDeliveryAvailable ?? false,
+  isShippingAvailable:
+    product?.is_shipping_available ?? product?.isShippingAvailable ?? true,
+});
+Keep the form booleans and mode in sync when the user switches:
+
+tsx
+Copy
+Edit
+const changeMode = (m: FulfillmentMode) => {
+  setMode(m);
+  setFormData((f) => ({ ...f, ...booleansFromMode(m) }));
+};
+UI (radio buttons)
+Replace your “Delivery & Fulfillment Options” section with:
+
+tsx
+Copy
+Edit
+<div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
+  <h3 className="text-lg font-semibold text-white mb-4">Delivery & Fulfillment Options</h3>
+  <p className="text-sm text-gray-400 mb-6">Choose how customers can receive this product.</p>
+
+  <div className="grid grid-cols-3 gap-3">
+    {[
+      { key: "local_only", label: "Local only" },
+      { key: "shipping_only", label: "Shipping only" },
+      { key: "both", label: "Local + Shipping" },
+    ].map((opt) => (
+      <button
+        key={opt.key}
+        type="button"
+        onClick={() => changeMode(opt.key as FulfillmentMode)}
+        className={`h-10 rounded-lg border px-3 text-sm ${
+          mode === opt.key
+            ? "border-blue-400 bg-blue-500/10 text-blue-100"
+            : "border-gray-700 text-gray-300 hover:border-gray-500"
+        }`}
+        aria-pressed={mode === opt.key}
+      >
+        {opt.label}
+      </button>
+    ))}
+  </div>
+
+  <div className="mt-3 text-xs text-gray-400">
+    {mode === "local_only" && "This product will only be available for local delivery."}
+    {mode === "shipping_only" && "This product will only be available for nationwide shipping."}
+    {mode === "both" && "This product will be available for both local delivery and shipping."}
+  </div>
+</div>
+Save handler (send canonical server fields)
+Inside handleSubmit, build the payload like this (replace the existing construction):
+
+tsx
+Copy
+Edit
+const method = product ? "PUT" : "POST";
+const stockNum = parseInt(String(formData.stock)) || 0;
+
+const submitData = {
+  name: formData.name,
+  description: formData.description,
+  categoryId: formData.categoryId,
+  brand: formData.brand,
+  price: parseFloat(String(formData.price)) || 0,
+  compareAtPrice: formData.compareAtPrice ? parseFloat(String(formData.compareAtPrice)) : null,
+  cost: formData.cost ? parseFloat(String(formData.cost)) : null,
+  stockQuantity: stockNum,
+  status: formData.status,
+  weight: formData.weight ? parseFloat(String(formData.weight)) : 0,
+  sku: formData.sku || null,
+
+  // booleans (server expects snake_case — send both for safety)
+  is_featured: !!formData.isFeatured,
+  isFeatured: !!formData.isFeatured,
+
+  is_local_delivery_available: !!formData.isLocalDeliveryAvailable,
+  isLocalDeliveryAvailable: !!formData.isLocalDeliveryAvailable,
+
+  is_shipping_available: !!formData.isShippingAvailable,
+  isShippingAvailable: !!formData.isShippingAvailable,
+};
+After the request resolves OK, invalidate all relevant caches:
+
+tsx
+Copy
+Edit
+await Promise.all([
+  queryClient.invalidateQueries({ queryKey: ["adminProducts"] }),
+  queryClient.invalidateQueries({ queryKey: ["products"] }),
+  queryClient.invalidateQueries({ queryKey: ["products:featured"] }),
+  product?.id ? queryClient.invalidateQueries({ queryKey: ["product", product.id] }) : Promise.resolve(),
+]);
+(Optional) You can keep your WebSocket publish, but it should not block saves.
+
+3) Server: accept camelCase + snake_case and persist correctly
+Update both PUT and POST handlers that save products.
+
+server/routes.ts (inside the handler where updateData/createData is formed):
+
+ts
+Copy
+Edit
+// accept both shapes from client
+const featuredBool = req.body.isFeatured ?? req.body.is_featured ?? false;
+const localBool    = req.body.isLocalDeliveryAvailable ?? req.body.is_local_delivery_available ?? false;
+const shipBool     = req.body.isShippingAvailable ?? req.body.is_shipping_available ?? false;
+
+const numeric = (v: any, def = 0) => (isNaN(parseFloat(v)) ? def : parseFloat(v));
+const intNum  = (v: any, def = 0) => (isNaN(parseInt(v)) ? def : parseInt(v));
+
+const baseData = {
+  name: req.body.name,
+  description: req.body.description,
+  categoryId: req.body.categoryId,
+  brand: req.body.brand ?? null,
+  price: numeric(req.body.price),
+  compare_at_price: req.body.compareAtPrice != null ? numeric(req.body.compareAtPrice) : null,
+  cost: req.body.cost != null ? numeric(req.body.cost) : null,
+  stockQuantity: intNum(req.body.stockQuantity ?? req.body.stock, 0),
+  status: req.body.status ?? "Active",
+  weight: numeric(req.body.weight, 0),
+  sku: req.body.sku ?? null,
+
+  // canonical DB fields
+  is_featured: !!featuredBool,
+  is_local_delivery_available: !!localBool,
+  is_shipping_available: !!shipBool,
+};
+
+// then use baseData in your create/update call
+Logger.debug(`Updating product with data: ${JSON.stringify(baseData)}`);
+const updatedProduct = await storage.updateProduct(id, baseData);
+If you have a POST /api/admin/products route, apply the same mapping before storage.createProduct(...).
+
+Ensure “Featured” endpoint filters properly
+server: wherever you implement /api/products/featured, make sure it only returns is_featured = true (and whatever other filters you want, e.g., status = Active). That prevents “ghost featured” when the flag is false.
+
+4) Categories tab error + duplicate import
+client/src/pages/admin/CategoriesTab.tsx
+
+Remove the duplicate import line.
+
+Make sure you don’t reference subscribe unless you actually get it from the hook.
+
+tsx
+Copy
+Edit
+// ONE import only:
+import { useWebSocketState } from "@/hooks/useWebSocketState";
+
+// If you don’t use subscribe here, don’t destructure it:
+const { connected } = useWebSocketState(); // or remove entirely if unused
+Also delete any subscribe(...) calls in this file. That removes:
+
+vbnet
+Copy
+Edit
+ReferenceError: subscribe is not defined
+Why it wasn’t saving before
+The client was sending camelCase (e.g., isLocalDeliveryAvailable) while the server only persisted snake_case. Your change visually “saved” but the booleans were discarded. Mapping both cases on the server fixes this.
+
+The “Featured Product” toggle wasn’t wired to the canonical is_featured DB field. Now it is.
+
+Categories tab crashed due to a stray subscribe symbol + a duplicate import; fixed.
+
+Quick verification checklist
+Open any product → toggle Featured Product off → Update Product
+
+Response 200
+
+Home page /api/products/featured returns an array without that product.
+
+In the modal, switch Fulfillment to Local only → Update Product
+
+Product cards show a single “Local delivery only” chip (no emojis) everywhere.
+
+GET /api/products/:id shows:
+
+vbnet
+Copy
+Edit
+is_local_delivery_available: true
+is_shipping_available:      false
+Categories tab loads without the boundary error.
+
+If anything still acts up after these patches, paste the exact request/response body for the PUT /api/admin/products/:id and I’ll zero in on it.
