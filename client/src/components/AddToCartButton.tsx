@@ -41,14 +41,14 @@ export default function AddToCartButton({
   const { data: cart } = useCart();
   const addToCartMutation = useAddToCart();
   const removeFromCartMutation = useRemoveFromCart();
-  const { data: locality } = useLocality();
+  const locality = useLocality();
 
   const isInCart = cart?.items?.some((item: any) => item.productId === productId) || false;
   
-  // Check if this product is local-only and user is outside service area  
-  const { local, shipping } = getFulfillment(product || {});
-  const localOnly = local && !shipping;
-  const blocked = localOnly && !locality?.isLocal;
+  // Check if this is LOCAL_ONLY product using unified locality system
+  const isLocalOnlyProduct = product?.isLocalDeliveryAvailable && !product?.isShippingAvailable;
+  const isEligibleForLocalOnly = locality.eligible;
+  const isBlocked = isLocalOnlyProduct && !isEligibleForLocalOnly;
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -60,10 +60,10 @@ export default function AddToCartButton({
       return;
     }
     
-    if (blocked) {
+    if (isBlocked) {
       toast({
-        title: "Local Delivery Only",
-        description: "Update your address to one in our Local Delivery area.",
+        title: "Not available in your area",
+        description: "This item is local delivery only. Set a local default address or enter a local ZIP to order.",
         variant: "destructive"
       });
       return;
@@ -134,7 +134,21 @@ export default function AddToCartButton({
     );
   }
 
-  // Not in cart - show blue Add to Cart button
+  // Not in cart - show Add to Cart button (disabled if blocked)
+  if (isBlocked) {
+    return (
+      <Button
+        size={size}
+        className={cn("w-full bg-gray-400 text-gray-600 cursor-not-allowed", className)}
+        disabled={true}
+        data-testid={`button-add-to-cart-blocked-${productId}`}
+      >
+        <ShoppingCart className="w-4 h-4 mr-2" />
+        Local delivery only
+      </Button>
+    );
+  }
+
   return (
     <Button
       size={size}

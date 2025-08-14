@@ -58,8 +58,8 @@ export function useCart() {
       // Rollback on error
       queryClient.setQueryData(["cart"], context?.previousCart);
       
-      // Handle LOCAL_ONLY_NOT_ELIGIBLE specially
-      if (error.message?.includes('409') && error.message?.includes('LOCAL_ONLY_NOT_ELIGIBLE')) {
+      // Handle LOCAL_ONLY_NOT_ELIGIBLE specially (server returns 403 with structured error)
+      if (error.message?.includes('403') || (error.data && error.data.code === 'LOCAL_ONLY_NOT_ELIGIBLE')) {
         toast({
           title: "Not available in your area",
           description: "This item is local delivery only.",

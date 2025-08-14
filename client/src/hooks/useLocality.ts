@@ -1,58 +1,54 @@
+// Unified Locality Hook - Single Source of Truth
 import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback } from 'react';
+import type { LocalityStatus } from '@shared/locality';
 
-interface LocalityData {
-  isLocal: boolean;
-  zoneName?: string;
-  freeDelivery: boolean;
-  etaHours: [number, number];
+export interface UseLocalityResult extends LocalityStatus {
+  isLoading: boolean;
+  error: Error | null;
+  refresh: (zip?: string) => Promise<void>;
 }
 
-interface LocalityResponse extends LocalityData {
-  // API response format
-}
-
-export function useLocality() {
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const { data, isLoading, error } = useQuery<LocalityResponse>({
-    queryKey: ['/api/locality/status', refreshKey],
+export function useLocality(zipOverride?: string): UseLocalityResult {
+  const queryKey = ['locality', zipOverride].filter(Boolean);
+  
+  const query = useQuery({
+    queryKey,
     queryFn: async () => {
-      const response = await fetch('/api/locality/status');
+      const url = zipOverride 
+        ? `/api/locality/status?zip=${encodeURIComponent(zipOverride)}`
+        : '/api/locality/status';
+      
+      const response = await fetch(url, { credentials: 'include' });
       if (!response.ok) {
-        throw new Error('Failed to fetch locality status');
+        throw new Error(`Locality check failed: ${response.status}`);
       }
-      return response.json();
+      return response.json() as Promise<LocalityStatus>;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 1,
+    refetchOnWindowFocus: false
   });
 
-  const refresh = useCallback(async (zip?: string) => {
-    if (zip) {
-      try {
-        const response = await fetch(`/api/locality/status?zip=${encodeURIComponent(zip)}`);
-        if (response.ok) {
-          setRefreshKey(prev => prev + 1);
-          return await response.json();
-        }
-      } catch (error) {
-        console.error('Failed to refresh locality with ZIP:', error);
-      }
-    } else {
-      setRefreshKey(prev => prev + 1);
+  const refresh = async (zip?: string) => {
+    const newQueryKey = ['locality', zip].filter(Boolean);
+    await query.refetch();
+  };
+
+  if (process.env.NODE_ENV === 'development') {
+    const data = query.data;
+    if (data) {
+      console.log(`[LOCALITY] eligible=${data.eligible} zone=${data.zone} source=${data.source} zip=${data.zip || 'none'}`);
     }
-  }, []);
+  }
 
   return {
-    isLocal: data?.isLocal ?? false,
-    zoneName: data?.zoneName,
-    freeDelivery: data?.freeDelivery ?? false,
-    eta: data?.etaHours ?? [24, 48] as [number, number],
-    isLoading,
-    error,
-    refresh,
+    eligible: query.data?.eligible || false,
+    zone: query.data?.zone || 'NON_LOCAL',
+    zip: query.data?.zip,
+    reason: query.data?.reason,
+    source: query.data?.source || 'IP',
+    isLoading: query.isLoading,
+    error: query.error as Error | null,
+    refresh
   };
 }
-
-export default useLocality;

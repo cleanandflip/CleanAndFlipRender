@@ -74,14 +74,13 @@ export function AddressForm({
       // Dispatch events to trigger locality updates immediately
       window.dispatchEvent(new CustomEvent('addressUpdated', { detail: data }));
       if (form.getValues('setDefault')) {
-        // Use React Query invalidation instead of window events that can trigger reloads
-        (async () => {
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['addresses'] }),
-            queryClient.invalidateQueries({ queryKey: ['cart'] }),
-            queryClient.invalidateQueries({ queryKey: ['user'] }),
-          ]);
-        })();
+        // Use React Query invalidation without await to prevent build errors
+        void Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['addresses'] }),
+          queryClient.invalidateQueries({ queryKey: ['cart'] }),
+          queryClient.invalidateQueries({ queryKey: ['user'] }),
+          queryClient.invalidateQueries({ queryKey: ['locality'] }),
+        ]);
         // Keep event for backward compatibility but avoid reload triggers
         window.dispatchEvent(new CustomEvent('defaultAddressChanged', { detail: data }));
       }

@@ -50,6 +50,7 @@ import { cartItems } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import observability from "./routes/observability";
 import { localityService } from "./services/locality";
+import { evaluateLocality } from "@shared/locality";
 
 // WebSocket Manager for broadcasting updates
 let wsManager: any = null;
@@ -884,23 +885,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "NOT_FOUND", message: "Product not found" });
       }
       
-      // CRITICAL FIX: Block LOCAL_ONLY items for non-local users at server level
+      // CRITICAL FIX: Block LOCAL_ONLY items using unified locality system
       if (productCheck.isLocalDeliveryAvailable && !productCheck.isShippingAvailable) {
-        // This is LOCAL_ONLY - check if user is eligible
-        const zipCode = (req.session as any)?.zipCode || req.body?.zipCode;
-        if (zipCode) {
-          const isLocal = await localityService.isLocalZipCode(zipCode);
-          if (!isLocal) {
-            return res.status(409).json({
-              error: "LOCAL_ONLY_NOT_ELIGIBLE",
-              message: "This product is only available for local delivery in your area."
-            });
+        // This is LOCAL_ONLY - check eligibility using unified evaluation
+        const getDefaultAddress = async (userId: string) => {
+          try {
+            const addresses = await storage.getAddresses(userId);
+            return addresses.find(addr => addr.isDefault) || null;
+          } catch {
+            return null;
           }
-        } else {
-          // No zip code available - assume non-local to be safe
-          return res.status(409).json({
-            error: "LOCAL_ONLY_NOT_ELIGIBLE", 
-            message: "This product is only available for local delivery in your area."
+        };
+        
+        const locality = await evaluateLocality({
+          user: req.user ? { id: req.user.id } : undefined,
+          zipOverride: req.body?.zipCode,
+          ip: req.ip,
+          getDefaultAddress
+        });
+        
+        if (!locality.eligible) {
+          return res.status(403).json({
+            code: "LOCAL_ONLY_NOT_ELIGIBLE",
+            message: "This item is only available for local delivery.",
+            resolution: "Set a local default address or enter a local ZIP."
           });
         }
       }
