@@ -1,0 +1,274 @@
+Your PUTs are succeeding (200 + Stripe sync) but the modal shows “Save failed: send is not a function.” That’s a frontend-only error caused by calling a socket method that doesn’t exist (or was renamed).
+
+You want the delivery/fulfillment UX shown everywhere, and block non-local users from adding local-only products.
+
+Below is a clean, start-to-finish set of surgical edits Replit should apply. They won’t touch your 404 page or routes.
+
+A) Stop save failures: make socket notify optional (and compatible)
+1) EnhancedProductModal: don’t treat socket as required
+File: client/src/components/admin/modals/EnhancedProductModal.tsx
+
+diff
+Copy
+Edit
+- import { useSocket } from "@/hooks/useSingletonSocket";
+- // or import { useWebSocket } from "@/hooks/useWebSocket";
++ import { useWebSocketState } from "@/hooks/useWebSocketState";
+
+ // inside component
+- const { send } = useSocket() || {};
++ const { ready, subscribe, lastMessage, /* publish? sendJsonMessage? */ } = useWebSocketState();
+
+ // on successful save (after the PUT resolves 200)
+- await api.updateProduct(id, payload);
+- send("products.updated", { id, payload });       // ❌ throws when send is undefined
+- toast.error("Save Failed")                        // ❌ you were likely falling into catch due to the line above
++ await api.updateProduct(id, payload);
++ try {
++   // Socket announce is BEST-EFFORT and non-blocking
++   const msg = { type: "products.updated", payload: { id, ...payload } };
++   const maybeSend: any =
++     // try common names without breaking if missing
++     (typeof (send as any) === "function" && (send as any)) ||
++     (typeof (publish as any) === "function" && (publish as any)) ||
++     (typeof (sendJsonMessage as any) === "function" && (sendJsonMessage as any));
++   if (ready && typeof maybeSend === "function") {
++     maybeSend("products.updated", msg) || maybeSend(msg);
++   }
++ } catch { /* ignore */ }
++ toast.success("Product updated");
++ // ensure UI refresh even without sockets
++ queryClient.invalidateQueries({ queryKey: ["admin-products"] });
++ onClose?.();
+This makes the socket “announce” optional and never blocks a successful save.
+
+(If you prefer to keep a single explicit method name, use publish everywhere and skip the probing above.)
+
+2) ProductsTab / UsersTab / CategoriesTab / other admin files
+Replace any remaining socket calls with the same best-effort pattern:
+
+diff
+Copy
+Edit
+- send("products.updated", data)
++ if (ready && typeof publish === "function") publish("products.updated", data);
+Find & fix:
+
+bash
+Copy
+Edit
+grep -RIn --include="*.ts*" -E 'send\(' client/src | grep -v node_modules
+3) (Optional) Add a compatibility alias in the hook
+File: client/src/hooks/useWebSocketState.tsx
+
+At the bottom (without adding a default export):
+
+ts
+Copy
+Edit
+// If your hook exposes `publish`, this creates a safe alias:
+export function useWebSocketReady() {
+  const { ready } = useWebSocketState();
+  return ready;
+}
+
+/** Back-compat alias so old code using `send(...)` keeps working */
+export function useWebSocketSend() {
+  const api = useWebSocketState() as any;
+  return (typeOrMsg: any, payload?: any) => {
+    const fn =
+      (typeof api.publish === "function" && api.publish) ||
+      (typeof api.sendJsonMessage === "function" && api.sendJsonMessage);
+    if (typeof fn === "function") {
+      // support both shapes: (type, payload) and (msgObject)
+      if (typeof typeOrMsg === "string") return fn(typeOrMsg, payload);
+      return fn(typeOrMsg);
+    }
+  };
+}
+Then components may do:
+
+ts
+Copy
+Edit
+const send = useWebSocketSend();
+if (ready) send("products.updated", data);
+B) Show Delivery/Fulfillment on product cards & lists
+You already have ProductAvailabilityChips.tsx and FreeDeliveryPill.tsx. Let’s standardize the props they read:
+
+1) Normalize product flags (front-end)
+Make sure every product object exposes:
+
+ts
+Copy
+Edit
+type Product = {
+  // ...
+  localDelivery?: boolean;        // true if you deliver locally
+  nationwideShipping?: boolean;   // true if you ship nationwide
+  // (or via product.fulfillment?.localDelivery / .shipping – just map to the two booleans)
+};
+If your API uses fulfillment.local and fulfillment.shipping, map them when you read or in a helper.
+
+2) ProductAvailabilityChips (one source of truth)
+File: client/src/components/locality/ProductAvailabilityChips.tsx
+
+diff
+Copy
+Edit
+type Props = { product: Product };
+
+export default function ProductAvailabilityChips({ product }: Props) {
+- const local = product.fulfillment?.local ?? product.localDelivery;
+- const shipping = product.fulfillment?.shipping ?? product.nationwideShipping;
++ const local = Boolean(product.localDelivery ?? product.fulfillment?.local);
++ const shipping = Boolean(product.nationwideShipping ?? product.fulfillment?.shipping);
+
+  return (
+    <div className="flex gap-2 mt-2">
+      {local && <span className="px-2 py-1 text-xs rounded-full bg-blue-600/10 text-blue-300">Local delivery</span>}
+      {shipping && <span className="px-2 py-1 text-xs rounded-full bg-emerald-600/10 text-emerald-300">Ships nationwide</span>}
+    </div>
+  );
+}
+3) Render the chips everywhere a product is shown
+client/src/components/products/product-card.tsx — under price:
+
+diff
+Copy
+Edit
++ <ProductAvailabilityChips product={product} />
+client/src/components/products/ProductsResults.tsx (or list rows/cards) — same.
+
+C) Prevent non-local users from adding local-only items
+A product is local-only when:
+
+ini
+Copy
+Edit
+localDelivery === true AND nationwideShipping === false
+1) Frontend guard in AddToCartButton
+File: client/src/components/AddToCartButton.tsx
+
+diff
+Copy
+Edit
++ import { useLocality } from "@/hooks/useLocality";
++ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+export default function AddToCartButton({ product, ...props }) {
++ const { data: locality } = useLocality(); // { isLocal: boolean, ... }
++ const localOnly = Boolean(product.localDelivery && !product.nationwideShipping);
++ const blocked = localOnly && !locality?.isLocal;
+
+  const handleAdd = async () => {
++   if (blocked) return;
+    // ...existing add-to-cart call
+  };
+
+- return <Button onClick={handleAdd}>Add to cart</Button>;
++ return (
++   <Tooltip>
++     <TooltipTrigger asChild>
++       <Button onClick={handleAdd} disabled={blocked} variant={blocked ? "secondary" : "default"}>
++         {blocked ? "Local only" : "Add to cart"}
++       </Button>
++     </TooltipTrigger>
++     {blocked && (
++       <TooltipContent>
++         This item is only available for local delivery. You’re outside our local area.
++       </TooltipContent>
++     )}
++   </Tooltip>
++ );
+}
+2) Server-side enforcement (authoritative check)
+File: server/routes/cart.ts (or wherever you handle “add to cart”)
+
+diff
+Copy
+Edit
+router.post('/cart/items', async (req, res) => {
+  const { productId, quantity = 1 } = req.body;
+
+  const product = await db.product.findById(productId); // adjust to your ORM
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+
++ // Normalize flags
++ const localDelivery = !!(product.localDelivery ?? product.fulfillment?.local);
++ const nationwideShipping = !!(product.nationwideShipping ?? product.fulfillment?.shipping);
++ const localOnly = localDelivery && !nationwideShipping;
+
++ // Determine locality (reuse your existing locality util)
++ // If you already expose /api/locality/status, mirror that logic here:
++ const isLocal = await localityService.isRequestLocal(req); // implement to match your /status endpoint
+
++ if (localOnly && !isLocal) {
++   return res.status(400).json({
++     error: 'LOCAL_ONLY',
++     message: 'This product is available for local delivery only.'
++   });
++ }
+
+  // ...existing add-to-cart logic
+  return res.status(200).json({ ok: true });
+});
+Minimal locality helper (if you don’t already have one on the server):
+File: server/services/localityService.ts
+
+ts
+Copy
+Edit
+export const localityService = {
+  async isRequestLocal(req: any): Promise<boolean> {
+    // Example: trust what the client already resolved (if you send it),
+    // or implement IP/ZIP checks or session flag.
+    // For now, default to false unless explicitly marked:
+    return Boolean(req.headers["x-user-is-local"] ?? req.session?.isLocal ?? false);
+  },
+};
+If you already have middleware for locality (you likely do, given /api/locality/status), call that instead of the simple stub above.
+
+3) Handle server error gracefully on the client
+Where you call the add-to-cart API, add:
+
+ts
+Copy
+Edit
+try {
+  await api.addToCart(product.id, qty);
+  toast.success("Added to cart");
+} catch (e: any) {
+  if (e?.response?.data?.error === "LOCAL_ONLY") {
+    toast.error("Local delivery only — we can’t ship this item to you.");
+  } else {
+    toast.error("Could not add to cart");
+  }
+}
+D) Quick verification checklist
+Open Admin → Products → edit → Update Product
+
+You should get “Product updated” (no “send is not a function”).
+
+List refreshes via invalidateQueries.
+
+Home / Products grid: cards show Local delivery and/or Ships nationwide chips.
+
+From a non-local context (simulate by forcing useLocality() to return { isLocal:false } or send x-user-is-local: false), Local-only products:
+
+Button is disabled with “Local only”.
+
+Attempting an add via API returns 400 LOCAL_ONLY.
+
+E) One last sweep to prevent regressions
+bash
+Copy
+Edit
+# No lingering direct 'send(' calls
+grep -RIn --include="*.ts*" -E 'send\(' client/src | grep -v useWebSocketSend
+
+# No legacy socket imports
+grep -RIn --include="*.ts*" -E '@/hooks/useWebSocket(?!State)|useSingletonSocket|useSocket\(' client/src
+Fix any hits by switching to useWebSocketState and the best-effort publish block shown above.
+
+That’s it. Saves will no longer fail (socket becomes optional), delivery/fulfillment is visible across the catalog, and local-only items are blocked for non-local users both in the UI and on the server.

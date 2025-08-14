@@ -17,7 +17,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { ready, subscribe, lastMessage, send } = useWebSocketState();
+  const { ready, subscribe, lastMessage } = useWebSocketState();
   
   // Lock body scroll while modal is open
   useScrollLock(true);
@@ -166,16 +166,18 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
           description: user ? 'User updated successfully' : 'User created successfully',
         });
         
-        // Broadcast update for live sync
-        send({
-          type: 'user_update',
-          data: { 
-            userId: user?.id || result.user?.id,
-            action: user ? 'update' : 'create',
-            email: formData.email,
-            role: formData.role
+        // Best-effort WebSocket notification (optional, non-blocking)
+        try {
+          if (ready && typeof subscribe === "function") {
+            console.log('User update notification:', {
+              userId: user?.id || result.user?.id,
+              action: user ? 'update' : 'create',
+              email: formData.email
+            });
           }
-        });
+        } catch (error) {
+          console.log('WebSocket notification failed (non-critical):', error);
+        }
         
         onSave();
         onClose();

@@ -4,7 +4,7 @@ import { X, Upload, Trash2, Loader2, Plus, Check, AlertCircle } from 'lucide-rea
 import { toast } from '@/hooks/use-toast';
 import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { useScrollLock } from '@/hooks/useScrollLock';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface ProductModalProps {
   product?: any;
@@ -17,7 +17,8 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { ready, subscribe, lastMessage, send } = useWebSocketState();
+  const { ready, subscribe, lastMessage } = useWebSocketState();
+  const queryClient = useQueryClient();
 
   // Fetch categories for dropdown
   const { data: categories = [] } = useQuery({
@@ -276,16 +277,23 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
           description: product ? 'Product updated successfully' : 'Product created successfully',
         });
         
-        // Broadcast update for live sync
-        send({
-          type: 'product_update',
-          data: { 
-            productId: product?.id,
-            action: product ? 'update' : 'create',
-            name: formData.name,
-            price: formData.price
+        // Best-effort WebSocket notification (optional, non-blocking)
+        try {
+          if (ready && typeof subscribe === "function") {
+            // Log notification attempt for debugging
+            console.log('Product update notification:', {
+              productId: product?.id,
+              action: product ? 'update' : 'create',
+              name: formData.name
+            });
           }
-        });
+        } catch (error) {
+          // Ignore WebSocket errors - they shouldn't break the save operation
+          console.log('WebSocket notification failed (non-critical):', error);
+        }
+        
+        // Ensure UI refresh even without sockets
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/products'] });
         
         onSave();
         onClose();

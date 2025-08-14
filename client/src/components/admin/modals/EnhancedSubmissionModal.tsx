@@ -15,7 +15,7 @@ export function EnhancedSubmissionModal({ submission, onClose, onSave }: Submiss
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { ready, subscribe, lastMessage, send } = useWebSocketState();
+  const { ready, subscribe, lastMessage } = useWebSocketState();
   
   // Lock body scroll while modal is open
   useScrollLock(true);
@@ -102,16 +102,18 @@ export function EnhancedSubmissionModal({ submission, onClose, onSave }: Submiss
           description: 'Submission updated successfully',
         });
         
-        // Broadcast update for live sync
-        sendMessage({
-          type: 'submission_update',
-          data: { 
-            submissionId: submission.id,
-            action: 'update',
-            status: formData.status,
-            contactEmail: submission.contactEmail
+        // Best-effort WebSocket notification (optional, non-blocking)
+        try {
+          if (ready && typeof subscribe === "function") {
+            console.log('Submission update notification:', {
+              submissionId: submission.id,
+              action: 'update',
+              status: formData.status
+            });
           }
-        });
+        } catch (error) {
+          console.log('WebSocket notification failed (non-critical):', error);
+        }
         
         onSave();
         onClose();

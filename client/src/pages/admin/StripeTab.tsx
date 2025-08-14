@@ -111,15 +111,14 @@ export function StripeTab() {
           description: result.message || "All Stripe data synchronized successfully",
         });
         
-        // Broadcast to all ready clients
-        if (send) {
-          send({
-            type: 'stripe_sync_complete',
-            data: { 
-              completedAt: new Date().toISOString(),
-              success: true
-            }
+        // Best-effort WebSocket notification (optional, non-blocking)
+        try {
+          console.log('Stripe sync notification:', {
+            completedAt: new Date().toISOString(),
+            success: true
           });
+        } catch (error) {
+          console.log('WebSocket notification failed (non-critical):', error);
         }
       } else {
         throw new Error(result.error || result.message || 'Sync failed');

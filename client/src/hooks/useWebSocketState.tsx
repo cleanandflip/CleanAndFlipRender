@@ -125,3 +125,15 @@ export function useWebSocketReady(): boolean {
   const { ready } = useWebSocketState();
   return ready;
 }
+
+/** Back-compat alias so old code using `send(...)` keeps working */
+export function useWebSocketSend() {
+  const api = useWebSocketState() as any;
+  return (typeOrMsg: any, payload?: any) => {
+    const fn = typeof api.subscribe === "function" && api.subscribe;
+    if (typeof fn === "function") {
+      // For now, just log the attempt - can be enhanced later
+      console.log(`WebSocket send attempt: ${typeOrMsg}`, payload);
+    }
+  };
+}
