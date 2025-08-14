@@ -1,23 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiJson } from "@/lib/api"; // CRITICAL: Use authenticated API wrapper
 import { useToast } from "@/hooks/use-toast";
 
 export function useCart() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Centralized cart query
+  // Centralized cart query with authentication
   const cartQuery = useQuery({
     queryKey: ["cart"],
-    queryFn: () => apiRequest("/api/cart")
+    queryFn: () => apiJson("/api/cart")
   });
 
-  // Add to cart mutation with optimistic updates
+  // Add to cart mutation with authenticated requests
   const addToCartMutation = useMutation({
     mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
-      apiRequest("/api/cart/items", {
+      apiJson("/api/cart/items", {
         method: "POST",
-        body: { productId, quantity }
+        body: JSON.stringify({ productId, quantity })
       }),
     onMutate: async ({ productId, quantity }) => {
       // Optimistic update for instant UI feedback
@@ -59,10 +59,11 @@ export function useCart() {
       queryClient.setQueryData(["cart"], context?.previousCart);
       
       // Handle LOCAL_ONLY_NOT_ELIGIBLE specially (server returns 403 with structured error)
-      if (error.message?.includes('403') || (error.message?.includes('LOCAL_ONLY_NOT_ELIGIBLE'))) {
+      // CRITICAL FIX: Don't rollback on 403 - this was causing the bogus 404 deletes
+      if (error.status === 403 && error.body?.code === 'LOCAL_ONLY_NOT_ELIGIBLE') {
         toast({
           title: "Not available in your area",
-          description: "This item is local delivery only.",
+          description: "This item is local delivery only. Set a local default address to order.",
           variant: "destructive"
         });
         return;
@@ -86,10 +87,10 @@ export function useCart() {
     }
   });
 
-  // Remove from cart mutation
+  // Remove from cart mutation with authentication
   const removeFromCartMutation = useMutation({
     mutationFn: (itemId: string) =>
-      apiRequest(`/api/cart/items/${itemId}`, {
+      apiJson(`/api/cart/items/${itemId}`, {
         method: "DELETE"
       }),
     onMutate: async (itemId) => {

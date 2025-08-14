@@ -1,0 +1,253 @@
+What the logs say (symptoms)
+Cart add is being 403’d even when you’re local
+
+Evidence: eligible=true source=DEFAULT_ADDRESS zip=28806 appears right before
+POST /api/cart/items 403 … userId: undefined.
+
+Conclusion: the cart POST isn’t sending the auth/session cookie, so the server can’t see your default address and treats you as non-local.
+
+Follow-on 404s when deleting cart items
+
+After the 403, the UI calls DELETE /api/cart/items/:id and gets 404 because the add never succeeded. That’s an optimistic-update rollback bug.
+
+Two different shapes of locality fetches
+
+Early requests: [LOCALITY] … eligible=false source=NONE when not logged in; later they flip to eligible=true source=DEFAULT_ADDRESS.
+
+OK behavior, but we should standardize URL construction (no trailing ?) and cache keys.
+
+Legacy/duplicate code still being bundled
+
+GET /src/components/locality/LocalBadge.tsx shows the old component still ships. Keep the look, but remove dead imports to avoid mixed sources.
+
+Occasional slow dev responses
+
+GET / and index.css sometimes 2–2.5s (dev HMR). Not critical, but a couple easy wins listed below.
+
+Fixes Replit should implement
+A) Client: always send cookies on API calls (critical)
+Create a single, shared fetch wrapper and use it everywhere (cart, addresses, checkout, etc.).
+
+client/src/lib/api.ts
+
+ts
+Copy
+Edit
+export async function apiFetch(path: string, init: RequestInit = {}) {
+  const res = await fetch(path, {
+    credentials: 'include',              // <-- CRITICAL
+    headers: { 'Content-Type': 'application/json', ...(init.headers || {}) },
+    ...init,
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const e = new Error(errBody.message || `HTTP ${res.status}`);
+    (e as any).status = res.status;
+    (e as any).body = errBody;
+    throw e;
+  }
+  return res;
+}
+export async function apiJson<T>(path: string, init: RequestInit = {}) {
+  const res = await apiFetch(path, init);
+  return res.json() as Promise<T>;
+}
+Refactor call sites (examples):
+
+useCart.tsx add:
+
+ts
+Copy
+Edit
+await apiJson('/api/cart/items', {
+  method: 'POST',
+  body: JSON.stringify({ productId, quantity }),
+});
+Any existing fetch('/api/...') → replace with apiFetch/apiJson so cookies are always sent.
+
+This will fix userId: undefined on the cart route and stop the false 403s for local-only products.
+
+B) Client: stop the bogus delete after a blocked add
+In client/src/hooks/useCart.ts (or wherever the optimistic add lives):
+
+ts
+Copy
+Edit
+try {
+  await apiJson('/api/cart/items', { method:'POST', body: JSON.stringify({ productId, quantity }) });
+  // ... success toast
+} catch (e: any) {
+  // If server blocked because not local, do NOT issue a delete/rollback
+  if (e?.status === 403 && e?.body?.code === 'LOCAL_ONLY_NOT_ELIGIBLE') {
+    toast({
+      title: 'Not available in your area',
+      description: 'This item is local delivery only. Set a local default address to order.',
+      variant: 'destructive',
+    });
+    // IMPORTANT: bail out; no rollback DELETE
+    return;
+  }
+  // handle other errors...
+}
+That eliminates the DELETE … 404 noise seen after each 403.
+
+C) Server: be robust in how we read the user id + add trace logs
+1) Centralize user extraction:
+
+server/utils/auth.ts
+
+ts
+Copy
+Edit
+export function getUserIdFromReq(req: any): string | null {
+  return (
+    req.user?.id ||
+    req.session?.userId ||
+    req.auth?.userId ||
+    null
+  );
+}
+2) Reuse one helper to evaluate locality for a request:
+
+server/locality/getLocalityForRequest.ts
+
+ts
+Copy
+Edit
+import { evaluateLocality } from '../../shared/locality';
+import { db } from '../db';
+import { getUserIdFromReq } from '../utils/auth';
+
+async function getDefaultZip(userId: string | null) {
+  if (!userId) return null;
+  const row = await db.queryOne<{ zip: string | null }>(
+    `SELECT zip FROM addresses WHERE user_id=$1 AND is_default=TRUE LIMIT 1`,
+    [userId]
+  );
+  return row?.zip ?? null;
+}
+
+export async function getLocalityForRequest(req: any, zipOverride?: string | null) {
+  const userId = getUserIdFromReq(req);
+  const defaultZip = await getDefaultZip(userId);
+  return evaluateLocality({ defaultAddressZip: defaultZip, zipOverride: zipOverride ?? null, ipZipFallback: null });
+}
+3) Use it in /api/locality/status and cart POST, plus add clear instrumentation:
+
+Locality endpoint
+
+ts
+Copy
+Edit
+app.get('/api/locality/status', async (req, res) => {
+  const zip = (req.query.zip as string | undefined) ?? null;
+  const status = await getLocalityForRequest(req, zip);
+  // short, useful log
+  console.log('[LOCALITY] /status', {
+    eligible: status.eligible,
+    source: status.source,
+    zip: status.zipUsed || 'none',
+    user: getUserIdFromReq(req) || 'guest'
+  });
+  res.json(status);
+});
+Cart add enforcement
+
+ts
+Copy
+Edit
+app.post('/api/cart/items', requireSession, async (req, res, next) => {
+  try {
+    const { productId, quantity } = req.body;
+    const product = await storage.getProductById(productId);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    const status = await getLocalityForRequest(req);
+    const mode = modeFromProduct(product);
+
+    console.log('[CART ENFORCE]', {
+      user: getUserIdFromReq(req) || 'guest',
+      productId,
+      mode,
+      eligible: status.eligible,
+      zip: status.zipUsed || 'none'
+    });
+
+    if (mode === 'LOCAL_ONLY' && !status.eligible) {
+      return res.status(403).json({
+        code: 'LOCAL_ONLY_NOT_ELIGIBLE',
+        message: 'This item is local delivery only and not available in your area.',
+        resolution: 'Set a default local address or enter a local ZIP.'
+      });
+    }
+
+    // proceed to normal add
+    return next();
+  } catch (e) {
+    next(e);
+  }
+});
+With A+B, these logs should now show a real user id on POST and no more false 403s.
+
+D) Client: locality hook URL hygiene + cache key
+Remove the trailing ? when no zip is passed and keep a stable key:
+
+ts
+Copy
+Edit
+export function useLocality(zipOverride?: string | null) {
+  const path = zipOverride ? `/api/locality/status?zip=${encodeURIComponent(zipOverride)}` : '/api/locality/status';
+  return useQuery<LocalityStatus>({
+    queryKey: ['locality', zipOverride ?? null],   // stable and specific
+    queryFn: () => apiJson<LocalityStatus>(path),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+E) Purge remaining legacy imports (keep visuals)
+Search & remove imports/usages of:
+
+LocalBadge.tsx (legacy)
+
+any isLocalZipCode( from old service
+
+“Shipping Only” strings
+
+Ensure product cards, banners, and badges use the new FulfillmentBadge, ProductAvailabilityChips, and DeliveryEligibilityBanner.
+
+Do not alter their styles—just stop bundling old code so there’s one data path.
+
+F) Sell-to-Us hard gate (already UI-blocked)—enforce server too
+Confirm POST /api/submissions (or your create endpoint) has requireLocalCustomer before the handler.
+
+On the page, keep the current banner and blocked card—no visual change needed.
+
+G) Small perf wins (dev)
+Enable gzip & cache headers for static in dev middleware (if not already), or accept dev-mode slowness.
+
+Add DB index to help the default address lookup:
+
+sql
+Copy
+Edit
+CREATE INDEX IF NOT EXISTS idx_addresses_user_default ON addresses(user_id, is_default);
+H) Quick test script
+Log in, set default address to a local ZIP (e.g., 28806).
+
+Reload; verify /api/locality/status log shows eligible=true source=DEFAULT_ADDRESS zip=28806 user=<id>.
+
+Add LOCAL_ONLY product → 200; verify cart contains it.
+
+Switch default address to a non-local ZIP → the Add to Cart button disables; server returns 403 if forced.
+
+Try to add as guest (no login) → non-local by default; 403 for LOCAL_ONLY.
+
+Sell-to-Us page loads only when eligible=true; server rejects otherwise.
+
+Why this fixes your exact issue
+The cart 403s happened because the POST lacked credentials, so the server never saw your default address and blocked as non-local. The shared apiFetch (+ server robustness and logs) fixes that decisively.
+
+The noisy 404 deletes are removed by handling the 403 as a blocked add (no rollback).
+
+With legacy imports purged, there’s no second code path to re-introduce conflicting decisions.
+
+Hand this to Replit as-is and you should be able to add local-only items when your default address is local, while everyone else is cleanly blocked.

@@ -12,11 +12,13 @@ export type LocalityStatus = {
 
 export function useLocality(zipOverride?: string | null) {
   const query = useQuery<LocalityStatus>({
-    queryKey: ['locality', { zipOverride: zipOverride ?? null }],
+    queryKey: ['locality', zipOverride ?? null], // Stable and specific key
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (zipOverride) params.set('zip', zipOverride);
-      const res = await fetch(`/api/locality/status?${params.toString()}`, { credentials: 'include' });
+      // Clean URL construction - no trailing ? when no ZIP
+      const path = zipOverride 
+        ? `/api/locality/status?zip=${encodeURIComponent(zipOverride)}` 
+        : '/api/locality/status';
+      const res = await fetch(path, { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch locality');
       return res.json();
     },
