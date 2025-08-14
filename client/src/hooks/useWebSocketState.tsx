@@ -117,3 +117,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 }
 
 export default undefined as unknown as never; // keep it explicitly non-default to prevent old default imports
+
+// --- compatibility wrapper for legacy imports ---
+// Some components still import { useWebSocketReady } and expect a boolean.
+// Keep them working by exposing a thin wrapper around useWebSocketState.
+export function useWebSocketReady(): boolean {
+  const { ready } = useWebSocketState();
+  return ready;
+}
