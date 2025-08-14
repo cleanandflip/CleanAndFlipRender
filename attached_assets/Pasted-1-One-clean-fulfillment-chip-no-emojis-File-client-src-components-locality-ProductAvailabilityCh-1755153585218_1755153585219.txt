@@ -1,0 +1,263 @@
+1) One clean fulfillment chip (no emojis)
+File: client/src/components/locality/ProductAvailabilityChips.tsx
+
+tsx
+Copy
+Edit
+import { getFulfillment } from "@/lib/products/fulfillment";
+
+export default function ProductAvailabilityChips({ product }: { product: any }) {
+  const { local, shipping } = getFulfillment(product);
+
+  if (!local && !shipping) return null;
+
+  // Local-only → one chip, clearly labeled (no emoji)
+  if (local && !shipping) {
+    return (
+      <div className="mt-2">
+        <span className="inline-flex items-center rounded-full bg-amber-600/15 text-amber-100 text-xs px-2 py-1">
+          Local delivery only
+        </span>
+      </div>
+    );
+  }
+
+  // Both or shipping-only
+  return (
+    <div className="flex flex-wrap gap-2 mt-2">
+      {local && (
+        <span className="inline-flex items-center rounded-full bg-emerald-600/15 text-emerald-100 text-xs px-2 py-1">
+          Local delivery
+        </span>
+      )}
+      {shipping && (
+        <span className="inline-flex items-center rounded-full bg-blue-600/15 text-blue-100 text-xs px-2 py-1">
+          Nationwide shipping
+        </span>
+      )}
+    </div>
+  );
+}
+This removes the emoji and guarantees only one chip when it’s local-only.
+
+2) EnhancedProductModal: make fulfillment changes save + broadcast
+2a) Frontend – normalize the UI to a single “Fulfillment” control
+File: client/src/components/admin/modals/EnhancedProductModal.tsx
+
+Add a radio group (Local only / Shipping only / Both).
+
+Map that to API booleans on submit.
+
+Invalidate all relevant queries so the customer pages refresh even without websockets.
+
+tsx
+Copy
+Edit
+// imports (ensure only one hook import)
+import { useQueryClient } from "@tanstack/react-query";
+import { useWebSocketState } from "@/hooks/useWebSocketState"; // single import only
+import { toast } from "@/hooks/use-toast";
+// ...other imports
+
+type FulfillmentMode = "local_only" | "shipping_only" | "both";
+
+function modeFromProduct(p: any): FulfillmentMode {
+  const local = p.isLocalDeliveryAvailable ?? p.is_local_delivery_available ?? false;
+  const ship  = p.isShippingAvailable ?? p.is_shipping_available ?? false;
+  if (local && ship) return "both";
+  if (local && !ship) return "local_only";
+  if (!local && ship) return "shipping_only";
+  return "shipping_only"; // default to purchasable
+}
+
+function booleansFromMode(mode: FulfillmentMode) {
+  return {
+    isLocalDeliveryAvailable: mode !== "shipping_only",
+    isShippingAvailable: mode !== "local_only",
+  };
+}
+
+export function EnhancedProductModal(props: { product: any; onClose: () => void }) {
+  const { product } = props;
+  const qc = useQueryClient();
+  const [mode, setMode] = React.useState<FulfillmentMode>(modeFromProduct(product));
+  const { socket } = useWebSocketState(); // optional; server also broadcasts
+
+  async function handleSave(updatedFields: any) {
+    // Merge fulfillment booleans from current mode
+    const fulfillment = booleansFromMode(mode);
+
+    const payload = {
+      ...updatedFields,
+      ...fulfillment,
+    };
+
+    // Send camelCase booleans; backend maps to snake_case if needed
+    const res = await fetch(`/api/admin/products/${product.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      toast({ title: "Save failed", description: "Could not update product.", variant: "destructive" });
+      return;
+    }
+
+    const updated = await res.json();
+
+    // Best-effort WS ping (optional; do not rely on it)
+    try {
+      socket?.send?.(JSON.stringify({ event: "product:update", data: { id: product.id } }));
+    } catch {}
+
+    // Hard invalidate everywhere the product can appear
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["products"], exact: false }),
+      qc.invalidateQueries({ queryKey: ["featuredProducts"], exact: false }),
+      qc.invalidateQueries({ queryKey: ["product", product.id], exact: false }),
+      // any search/list variants
+      qc.invalidateQueries({ predicate: q => String(q.queryKey?.[0] ?? "").includes("products") }),
+    ]);
+
+    toast({ title: "Product updated", description: "Fulfillment settings saved." });
+    props.onClose();
+  }
+
+  return (
+    // …inside your modal content, somewhere in “Delivery & Fulfillment Options”
+    <div className="space-y-3">
+      <label className="text-sm font-medium">Fulfillment</label>
+      <div className="grid grid-cols-3 gap-2">
+        <button
+          type="button"
+          onClick={() => setMode("local_only")}
+          className={`px-3 py-2 rounded-md border ${mode === "local_only" ? "border-amber-400 bg-amber-500/10" : "border-border"}`}
+        >
+          Local only
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("shipping_only")}
+          className={`px-3 py-2 rounded-md border ${mode === "shipping_only" ? "border-blue-400 bg-blue-500/10" : "border-border"}`}
+        >
+          Shipping only
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("both")}
+          className={`px-3 py-2 rounded-md border ${mode === "both" ? "border-emerald-400 bg-emerald-500/10" : "border-border"}`}
+        >
+          Local + Shipping
+        </button>
+      </div>
+
+      {/* …your existing form fields… */}
+
+      {/* your footer save handler should pass the other edited fields */}
+      {/* <Button onClick={() => handleSave(collectedFields)}>Update Product</Button> */}
+    </div>
+  );
+}
+Why this works: we submit only two booleans (isLocalDeliveryAvailable, isShippingAvailable) derived from the chosen mode. We then invalidate all product-related caches so the shop, lists, and product pages refresh.
+
+2b) Backend – accept the booleans and broadcast
+File (example): server/routes/admin/products.ts (or wherever your admin update lives)
+
+Map camelCase → snake_case for DB if needed.
+
+After saving, broadcast product:update with the updated product so connected clients live-sync.
+
+ts
+Copy
+Edit
+router.put("/products/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Accept both camelCase and snake_case (backward compat)
+    const localBool   = req.body.isLocalDeliveryAvailable ?? req.body.is_local_delivery_available ?? false;
+    const shipBool    = req.body.isShippingAvailable      ?? req.body.is_shipping_available      ?? false;
+
+    const update = {
+      ...req.body,
+      is_local_delivery_available: !!localBool,
+      is_shipping_available: !!shipBool,
+    };
+
+    // remove camelCase to avoid unknown column errors if using SQL directly
+    delete (update as any).isLocalDeliveryAvailable;
+    delete (update as any).isShippingAvailable;
+
+    const updated = await storage.updateProduct(id, update);
+
+    // Broadcast to all clients
+    req.app.get("wss")?.clients?.forEach((c: any) => {
+      try {
+        c.readyState === 1 &&
+          c.send(JSON.stringify({ event: "product:update", data: { id, product: updated } }));
+      } catch {}
+    });
+
+    res.json(updated);
+  } catch (e) {
+    req.log?.error?.(e);
+    res.status(500).json({ error: "Failed to update product" });
+  }
+});
+The client’s useProductLiveSync hook should already subscribe to product:update and invalidate/refresh; the extra client-side invalidation in the modal guarantees UX even if WS is momentarily disconnected.
+
+3) Keep the rest of the app in sync
+Products page already calls useProductLiveSync({ queryKey: ["products"] }).
+
+Product detail should call useProductLiveSync({ queryKey: ["product", id], productId: id }) (you added this—good).
+
+Home/featured: ensure the same hook is used:
+
+File: client/src/pages/home.tsx
+
+tsx
+Copy
+Edit
+import { useProductLiveSync } from "@/hooks/useProductLiveSync";
+// …
+useProductLiveSync({ queryKey: ["featuredProducts"] });
+4) (Minor) cart guard correctness
+Make sure the server-side cart restriction doesn’t crash if there’s no default address.
+
+File: server/routes/cart.ts (inside add-to-cart handler)
+
+ts
+Copy
+Edit
+const addresses = await storage.getUserAddresses(userId);
+const defaultAddress = addresses.find(a => a.isDefault) ?? addresses[0];
+
+const localityResult = defaultAddress
+  ? isLocalMiles(Number(defaultAddress.latitude), Number(defaultAddress.longitude))
+  : { isLocal: false };
+
+// Now guard with the same two booleans:
+guardCartItemAgainstLocality({
+  userIsLocal: localityResult.isLocal,
+  product: {
+    is_local_delivery_available: product.isLocalDeliveryAvailable ?? product.is_local_delivery_available ?? false,
+    is_shipping_available: product.isShippingAvailable ?? product.is_shipping_available ?? false,
+  },
+});
+Quick test checklist
+Open Admin → Edit Product → switch Fulfillment between modes → Save.
+
+See toast “Product updated”.
+
+Without refreshing, check:
+
+/products grid → chips update (and one chip for local-only).
+
+Product detail → chip reflects new setting.
+
+Home “Featured” cards → chips reflect new setting.
+
+If you’re outside the local zone, local-only items show disabled “Add to Cart”.
+
+If anything still doesn’t sync on a specific screen, tell me which route and I’ll give you the exact 3-line tweak for that component.

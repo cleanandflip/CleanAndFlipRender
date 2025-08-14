@@ -6,6 +6,24 @@ import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+type FulfillmentMode = "local_only" | "shipping_only" | "both";
+
+function modeFromProduct(p: any): FulfillmentMode {
+  const local = p.isLocalDeliveryAvailable ?? p.is_local_delivery_available ?? false;
+  const ship  = p.isShippingAvailable ?? p.is_shipping_available ?? false;
+  if (local && ship) return "both";
+  if (local && !ship) return "local_only";
+  if (!local && ship) return "shipping_only";
+  return "shipping_only"; // default to purchasable
+}
+
+function booleansFromMode(mode: FulfillmentMode) {
+  return {
+    isLocalDeliveryAvailable: mode !== "shipping_only",
+    isShippingAvailable: mode !== "local_only",
+  };
+}
+
 interface ProductModalProps {
   product?: any;
   onClose: () => void;
@@ -17,7 +35,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { ready, subscribe, lastMessage } = useWebSocketState();
+  const { connected, socket, subscribe } = useWebSocketState();
   const queryClient = useQueryClient();
 
   // Fetch categories for dropdown
@@ -32,6 +50,9 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   
   // Lock body scroll while modal is open
   useScrollLock(true);
+  
+  // Add fulfillment mode state
+  const [mode, setMode] = useState<FulfillmentMode>(product ? modeFromProduct(product) : "shipping_only");
   
   const [formData, setFormData] = useState({
     name: '',
@@ -101,6 +122,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
       };
       setFormData(data);
       setInitialData(data);
+      setMode(modeFromProduct(product));
     } else {
       setInitialData(formData);
     }
@@ -231,16 +253,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
       return;
     }
 
-    // Validate delivery options - at least one must be selected
-    if (!formData.isLocalDeliveryAvailable && !formData.isShippingAvailable) {
-      toast({
-        title: "Validation Error",
-        description: "Please select at least one delivery option",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
+    // Fulfillment mode validation is handled by the radio buttons (always has a selection)
 
     try {
       const endpoint = product 
@@ -249,10 +262,14 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
       
       const method = product ? 'PUT' : 'POST';
       
+      // Merge fulfillment booleans from current mode
+      const fulfillment = booleansFromMode(mode);
+
       // Prepare data with proper status handling
       const stockNum = parseInt(formData.stock) || 0;
       const submitData = {
         ...formData,
+        ...fulfillment,
         price: parseFloat(formData.price) || 0,
         compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
         cost: formData.cost ? parseFloat(formData.cost) : null,
@@ -277,23 +294,19 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
           description: product ? 'Product updated successfully' : 'Product created successfully',
         });
         
-        // Best-effort WebSocket notification (optional, non-blocking)
+        // Best-effort WS ping (optional; do not rely on it)
         try {
-          if (ready && typeof subscribe === "function") {
-            // Log notification attempt for debugging
-            console.log('Product update notification:', {
-              productId: product?.id,
-              action: product ? 'update' : 'create',
-              name: formData.name
-            });
-          }
-        } catch (error) {
-          // Ignore WebSocket errors - they shouldn't break the save operation
-          console.log('WebSocket notification failed (non-critical):', error);
-        }
-        
-        // Ensure UI refresh even without sockets
-        queryClient.invalidateQueries({ queryKey: ['/api/admin/products'] });
+          socket?.send?.(JSON.stringify({ event: "product:update", data: { id: product?.id } }));
+        } catch {}
+
+        // Hard invalidate everywhere the product can appear
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["products"], exact: false }),
+          queryClient.invalidateQueries({ queryKey: ["featuredProducts"], exact: false }),
+          queryClient.invalidateQueries({ queryKey: ["product", product?.id], exact: false }),
+          // any search/list variants
+          queryClient.invalidateQueries({ predicate: q => String(q.queryKey?.[0] ?? "").includes("products") }),
+        ]);
         
         onSave();
         onClose();
@@ -598,44 +611,54 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
             {/* Delivery & Fulfillment Options */}
             <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
               <h3 className="text-lg font-semibold text-white mb-4">Delivery & Fulfillment Options</h3>
-              <p className="text-sm text-gray-400 mb-6">Choose how customers can receive this product. Select at least one option.</p>
+              <p className="text-sm text-gray-400 mb-6">Choose how customers can receive this product.</p>
               
-              <div className="space-y-4">
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={formData.isLocalDeliveryAvailable}
-                    onChange={(e) => setFormData({ ...formData, isLocalDeliveryAvailable: e.target.checked })}
-                    className="w-4 h-4 mt-1 rounded border-gray-700 bg-transparent text-blue-500 focus:ring-2 focus:ring-blue-500"
-                  />
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">
-                      Local Delivery
-                    </span>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Free delivery within 50 miles of Asheville, NC warehouse
-                    </p>
-                  </div>
-                </label>
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-400">Fulfillment</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMode("local_only")}
+                    className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
+                      mode === "local_only" 
+                        ? "border-amber-400 bg-amber-500/10 text-amber-200" 
+                        : "border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300"
+                    }`}
+                  >
+                    Local only
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("shipping_only")}
+                    className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
+                      mode === "shipping_only" 
+                        ? "border-blue-400 bg-blue-500/10 text-blue-200" 
+                        : "border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300"
+                    }`}
+                  >
+                    Shipping only
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("both")}
+                    className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
+                      mode === "both" 
+                        ? "border-emerald-400 bg-emerald-500/10 text-emerald-200" 
+                        : "border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300"
+                    }`}
+                  >
+                    Local + Shipping
+                  </button>
+                </div>
                 
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={formData.isShippingAvailable}
-                    onChange={(e) => setFormData({ ...formData, isShippingAvailable: e.target.checked })}
-                    className="w-4 h-4 mt-1 rounded border-gray-700 bg-transparent text-blue-500 focus:ring-2 focus:ring-blue-500"
-                  />
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">
-                      Nationwide Shipping
-                    </span>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Ship to customers anywhere in the United States
-                    </p>
-                  </div>
-                </label>
-                
-
+                {/* Description based on selected mode */}
+                <div className="mt-4 p-3 rounded-lg bg-gray-800/50 border border-gray-700">
+                  <p className="text-xs text-gray-400">
+                    {mode === "local_only" && "This product will only be available for free local delivery within 50 miles of Asheville, NC."}
+                    {mode === "shipping_only" && "This product will only be available for nationwide shipping."}
+                    {mode === "both" && "This product will be available for both local delivery (free within 50 miles) and nationwide shipping."}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

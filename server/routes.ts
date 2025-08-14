@@ -2736,12 +2736,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
+      // Accept both camelCase and snake_case (backward compat)
+      const localBool   = req.body.isLocalDeliveryAvailable ?? req.body.is_local_delivery_available ?? false;
+      const shipBool    = req.body.isShippingAvailable      ?? req.body.is_shipping_available      ?? false;
+
       const updateData = {
         ...req.body,
         price: parseFloat(req.body.price) || 0,
         stockQuantity: parseInt(req.body.stockQuantity) || 0,
-        weight: parseFloat(req.body.weight) || 0
+        weight: parseFloat(req.body.weight) || 0,
+        is_local_delivery_available: !!localBool,
+        is_shipping_available: !!shipBool,
       };
+
+      // remove camelCase to avoid unknown column errors if using SQL directly
+      delete (updateData as any).isLocalDeliveryAvailable;
+      delete (updateData as any).isShippingAvailable;
       
       // Handle images array from form data - always update images field
       if ('images' in req.body) {
@@ -2770,12 +2780,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Logger.debug(`Updating product with data: ${JSON.stringify(updateData)}`);
       const updatedProduct = await storage.updateProduct(id, updateData);
       
-      // Broadcast update via WebSocket using new typed system
+      // Broadcast to all clients
       try {
         if (wsManager?.publish) {
           wsManager.publish({
             topic: "product:update",
-            productId: id
+            productId: id,
+            product: updatedProduct
           });
         }
       } catch (error) {
