@@ -1,0 +1,232 @@
+logs make the root cause pretty clear. You are local (eligible=true source=DEFAULT_ADDRESS zip=28806), but the cart POST is still hitting an old handler and returning 403. Notice the marker:
+
+swift
+Copy
+Edit
+[CART DEBUG] POST /api/cart/items reached handler …
+… 403
+We never see the newer [CART ENFORCE] log we added earlier. That means a legacy /api/cart/items route is still mounted (or mounted earlier in the chain) and it’s using the old, ZIP-only check. A few GETs also show up as guest, which points to cookie/session config inconsistencies for POSTs.
+
+Below is a single, unified fix-list for Replit to apply. It keeps the UI exactly as-is.
+
+🚧 Unified fixes (apply all)
+1) Purge duplicate cart routes & mount order
+Action
+
+Grep for every definition of /api/cart/items:
+
+rg "app\.post\(.*/api/cart/items" -n server
+
+rg "router\.post\(.*/items" -n server
+
+Remove or disable any “v1/legacy” routes and leave exactly one cart POST.
+
+In server/index.ts, mount once and after sessions/auth:
+
+ts
+Copy
+Edit
+app.use(sessionMiddleware);            // already present
+app.use('/api/cart', cartRouterV2);    // the ONLY cart router
+Delete imports/usages of server/services/locality.ts from any cart code.
+
+Keep only the shared evaluator from shared/locality.ts.
+
+2) Replace cart add with the v2 locality-aware handler
+server/cart.routes.ts (single source)
+
+ts
+Copy
+Edit
+import { Router } from 'express';
+import { modeFromProduct } from '../../shared/fulfillment';
+import { getLocalityForRequest } from '../locality/getLocalityForRequest';
+import { products } from '../stores/products';
+import { carts } from '../stores/carts';
+import { getUserIdFromReq } from '../utils/auth';
+
+export const cartRouterV2 = Router();
+
+// NOTE: guest carts allowed; locality enforcement still applies
+cartRouterV2.post('/items', async (req, res, next) => {
+  try {
+    const { productId, quantity = 1 } = req.body ?? {};
+    if (!productId) return res.status(400).json({ message: 'productId required' });
+
+    const userId = getUserIdFromReq(req);                // may be null (guest)
+    const product = await products.getById(productId);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    const mode = modeFromProduct(product);
+    const locality = await getLocalityForRequest(req);   // unified evaluator
+
+    console.log('[CART ENFORCE V2]', {
+      user: userId || 'guest',
+      productId,
+      mode,
+      eligible: locality.eligible,
+      source: locality.source,
+      zip: locality.zipUsed || 'none',
+    });
+
+    if (mode === 'LOCAL_ONLY' && !locality.eligible) {
+      return res.status(403).json({
+        code: 'LOCAL_ONLY_NOT_ELIGIBLE',
+        message: 'This item is local delivery only and not available in your area.',
+        resolution: 'Set a default local address in Asheville ZIPs (28801, 28803, 28804, 28805, 28806, 28808) or enter a local ZIP.',
+      });
+    }
+
+    const item = await carts.addItem({ userId, sessionId: req.sessionID, productId, quantity });
+    return res.status(200).json(item);
+  } catch (e) { next(e); }
+});
+After this change you should see [CART ENFORCE V2] in the logs instead of [CART DEBUG].
+
+3) Client: force credentials on all API calls
+Create/keep a single wrapper and use it everywhere (cart, addresses, checkout, user, locality).
+
+client/src/lib/api.ts
+
+ts
+Copy
+Edit
+export async function apiFetch(path: string, init: RequestInit = {}) {
+  const res = await fetch(path, {
+    credentials: 'include',                         // <- required
+    headers: { 'Content-Type': 'application/json', ...(init.headers || {}) },
+    ...init,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const err: any = new Error(body.message || `HTTP ${res.status}`);
+    err.status = res.status; err.body = body;
+    throw err;
+  }
+  return res;
+}
+export const apiJson = <T>(p: string, i?: RequestInit) => apiFetch(p, i).then(r => r.json() as Promise<T>);
+Refactor all remaining direct fetch('/api/...') calls to apiJson.
+Specifically check:
+
+client/src/hooks/useCart.tsx
+
+client/src/components/AddToCartButton.tsx
+
+any cart utilities/services
+
+4) Stop the bogus rollback after a blocked add
+client/src/hooks/useCart.tsx (or the add function)
+
+ts
+Copy
+Edit
+try {
+  await apiJson('/api/cart/items', { method: 'POST', body: JSON.stringify({ productId, quantity }) });
+} catch (e: any) {
+  if (e?.status === 403 && e?.body?.code === 'LOCAL_ONLY_NOT_ELIGIBLE') {
+    toast({ title: 'Not available in your area', description: 'This item is local delivery only. Set a local default address to order.', variant: 'destructive' });
+    return; // <-- do NOT issue DELETE rollback; the add never happened
+  }
+  throw e;
+}
+This removes the DELETE … 404 noise that follows each 403.
+
+5) Session cookie settings (make POSTs consistent)
+If the frontend and API are on different subdomains, Lax cookies can be dropped on cross-site POSTs. Make the cookie policy explicit.
+
+server/session.ts
+
+ts
+Copy
+Edit
+app.set('trust proxy', 1);
+const isProd = process.env.NODE_ENV === 'production';
+
+app.use(session({
+  name: 'cf.sid',
+  secret: process.env.SESSION_SECRET!,
+  resave: false,
+  saveUninitialized: false,
+  store: pgStore,
+  cookie: {
+    httpOnly: true,
+    secure: isProd,                     // Replit HTTPS = true
+    sameSite: isProd ? 'none' : 'lax',  // 'none' if any cross-site; 'lax' in dev same-origin
+    maxAge: 30 * 24 * 3600 * 1000,
+  },
+}));
+If you’re definitely same-origin in dev, sameSite: 'lax' is fine; if any cross-site is involved, flip to 'none' (must be secure: true).
+
+6) Locality hook URL hygiene & cache key (tiny but reduces inconsistencies)
+ts
+Copy
+Edit
+export function useLocality(zipOverride?: string | null) {
+  const url = zipOverride ? `/api/locality/status?zip=${encodeURIComponent(zipOverride)}` : '/api/locality/status';
+  return useQuery({
+    queryKey: ['locality', zipOverride ?? null],
+    queryFn: () => apiJson<LocalityStatus>(url),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+(Prevents the trailing ? variant and mismatched cache hits.)
+
+7) Remove legacy locality UI/logic (keep visuals)
+Delete client/src/components/locality/LocalBadge.tsx and any imports.
+
+Ensure cards/banners use FulfillmentBadge, ProductAvailabilityChips, DeliveryEligibilityBanner only.
+
+Remove any imports of server/services/locality.ts from routes.
+
+8) Hard gate Sell-to-Us (no UI change)
+Server: middleware on create submission enforces eligible=true from getLocalityForRequest(req); return 403 with resolution text otherwise.
+
+Page is already visually blocked; just ensure server path matches.
+
+9) Add two smoke endpoints for quick diagnosis (temporary)
+ts
+Copy
+Edit
+app.get('/api/_whoami', (req,res)=>res.json({
+  user: getUserIdFromReq(req) || 'guest',
+  hasSessionCookie: Boolean(req.headers.cookie?.includes('cf.sid')),
+}));
+ts
+Copy
+Edit
+app.get('/api/_route-health', (req,res)=>res.json({
+  cartPost: 'v2',
+  localitySource: 'shared/evaluateLocality',
+}));
+If you hit /api/_route-health and don’t see v2, you’re not running the new router.
+
+✅ What should change after this
+Logs on add should show:
+
+csharp
+Copy
+Edit
+[CART ENFORCE V2] { user: '40d4c8e0…', mode: 'LOCAL_ONLY', eligible: true, … }
+and the response should be 200 (item added).
+
+No more [CART DEBUG] lines.
+
+No more DELETE … 404 after a blocked add.
+
+/api/locality/status remains consistent (no trailing ?, stable cache key).
+
+If you purposely switch to a non-local default address, add for LOCAL_ONLY is correctly 403 with the structured error.
+
+Quick verification steps
+Sign in → set default address ZIP 28806.
+
+Reload products; confirm banner shows local.
+
+Add a LOCAL_ONLY item → expect 200 and drawer updates.
+
+Check logs → [CART ENFORCE V2] … eligible:true and no legacy DEBUG line.
+
+Switch default to a non-local ZIP and repeat → 403 with toast, and no delete rollback.
+
+Apply the above as a single patch and the “local user can’t add local-only item” issue will be resolved without touching the new UI.

@@ -283,6 +283,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // UNIFIED Locality Status Endpoint - Single Source of Truth
   app.get("/api/locality/status", apiLimiter, getLocalityStatus);
   
+  // V2 Cart Router - Single Source with Unified Locality Enforcement
+  const { cartRouterV2 } = await import('./routes/cart.v2');
+  app.use('/api/cart', cartRouterV2);
+  
+  // Diagnostic routes for debugging
+  const { addDiagnosticRoutes } = await import('./utils/_diagnostic');
+  addDiagnosticRoutes(app);
+  
   // Health check endpoints
   app.get('/health', healthLive);
   app.get('/health/live', healthLive);
@@ -876,7 +884,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TanStack Query v5 compatible endpoint
+  // REMOVED: Legacy cart route replaced with V2 router
+  // LEGACY ROUTE DISABLED - using cartRouterV2 instead
+  /*
   app.post("/api/cart/items", authMiddleware.optionalAuth, async (req, res) => {
     try {
       Logger.info(`[CART DEBUG] POST /api/cart/items reached handler - body: ${JSON.stringify(req.body)}, productId: ${req.body?.productId}, quantity: ${req.body?.quantity}`);
@@ -999,6 +1009,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: errorMessage });
     }
   });
+  */ // END LEGACY ROUTE DISABLED
 
   // FIXED: Update cart item quantity by product ID 
   app.patch("/api/cart/items/:productId", requireAuth, async (req, res) => {
