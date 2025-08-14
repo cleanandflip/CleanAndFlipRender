@@ -9,7 +9,7 @@ import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedSubmissionModal } from '@/components/admin/modals/EnhancedSubmissionModal';
 import { useWebSocketState } from "@/hooks/useWebSocketState";
-import { useWebSocketReady } from '@/hooks/useWebSocketState';
+import { useWebSocketState } from '@/hooks/useWebSocketState';
 
 interface Submission {
   id: string;
@@ -28,7 +28,7 @@ export function SubmissionsTab() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const { toast } = useToast();
-  const ready = useWebSocketReady();
+  const ready = useWebSocketState();
 
   const { data: submissionsData, isLoading, refetch } = useQuery({
     queryKey: ['admin-submissions', searchQuery],

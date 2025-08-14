@@ -21,7 +21,7 @@ import { routes } from "@/config/routes";
 import { StockIndicator } from "@/components/ui/StockIndicator";
 import { ProductPrice } from "@/components/ui/ProductPrice";
 import AddToCartButton from "@/components/AddToCartButton";
-import { ProductAvailabilityChips } from "@/components/locality/ProductAvailabilityChips";
+import ProductAvailabilityChips from "@/components/locality/ProductAvailabilityChips";
 import { FreeDeliveryPill } from "@/components/locality/FreeDeliveryPill";
 import { useLocality } from "@/hooks/useLocality";
 
@@ -60,6 +60,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           <div className="p-3">
             <h4 className="font-semibold text-sm line-clamp-2 mb-1">{product.name}</h4>
             <p className="text-accent-blue font-bold text-sm">${product.price}</p>
+            <ProductAvailabilityChips product={product} compact={true} />
           </div>
         </Card>
       </SmartLink>

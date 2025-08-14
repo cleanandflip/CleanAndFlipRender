@@ -2,6 +2,7 @@ import { useWebSocketState } from "@/hooks/useWebSocketState";
 import * as React from "react";
 import ProductsResults from "@/components/products/ProductsResults";
 import { useProducts } from '@/hooks/useProducts';
+import { useProductLiveSync } from "@/hooks/useProductLiveSync";
 import CategoryTabs from '@/components/products/CategoryTabs';
 import { WelcomeBanner } from '@/components/ui/welcome-banner';
 import { searchService } from "@/lib/searchService";
@@ -13,6 +14,9 @@ import { motion } from "framer-motion";
 export default function ProductsPage() {
   const { user } = useAuth();
   const { data: locality } = useLocality();
+  
+  // Add live sync for product listings
+  useProductLiveSync({ queryKey: ["products"] });
   
   // No extra search input here. Header SearchBar drives q.
   // Reset page to 1 whenever q/category/sort changes (optional: put in fetch hook).

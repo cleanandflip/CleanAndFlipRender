@@ -4,10 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, Users, ShoppingCart, DollarSign, BarChart3, Activity, Wifi, WifiOff } from 'lucide-react';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useWebSocketReady } from '@/hooks/useWebSocketState';
+import { useWebSocketState } from '@/hooks/useWebSocketState';
 
 export function AnalyticsTab() {
-  const ready = useWebSocketReady();
+  const ready = useWebSocketState();
   const { data: analyticsData, isLoading } = useQuery({
     queryKey: ['admin-analytics'],
     queryFn: async () => {

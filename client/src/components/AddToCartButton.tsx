@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useCart, useAddToCart, useRemoveFromCart } from "@/hooks/use-cart";
 import { useLocality } from "@/hooks/useLocality";
+import { isLocalOnly } from "@/lib/products/fulfillment";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "wouter";
 
 interface AddToCartButtonProps {
@@ -44,8 +46,7 @@ export default function AddToCartButton({
   const isInCart = cart?.items?.some((item: any) => item.productId === productId) || false;
   
   // Locality gate: check if product is local-only and user is not local
-  const isLocalOnly = product?.is_local_delivery_available && !product?.is_shipping_available;
-  const isBlocked = !locality?.isLocal && isLocalOnly;
+  const blocked = isLocalOnly(product) && !locality?.isLocal;
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -57,7 +58,7 @@ export default function AddToCartButton({
       return;
     }
     
-    if (isBlocked) {
+    if (blocked) {
       toast({
         title: "Local Delivery Only",
         description: "Update your address to one in our Local Delivery area.",

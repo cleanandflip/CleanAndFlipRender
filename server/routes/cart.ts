@@ -57,7 +57,7 @@ router.post('/', isAuthenticated, async (req, res) => {
     const addresses = await storage.getUserAddresses(userId);
     const defaultAddress = addresses.find(addr => addr.isDefault);
     const localityResult = defaultAddress ? 
-      isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : 
+      isLocalMiles(Number(defaultAddress.latitude), Number(defaultAddress.longitude)) : 
       { isLocal: false };
     
     // Get product to check availability
@@ -71,8 +71,8 @@ router.post('/', isAuthenticated, async (req, res) => {
       guardCartItemAgainstLocality({
         userIsLocal: localityResult.isLocal,
         product: {
-          is_local_delivery_available: product.isLocalDeliveryAvailable,
-          is_shipping_available: product.isShippingAvailable
+          is_local_delivery_available: product.isLocalDeliveryAvailable ?? false,
+          is_shipping_available: product.isShippingAvailable ?? false
         }
       });
     } catch (error: any) {

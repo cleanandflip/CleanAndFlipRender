@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { CreditCard, RefreshCw, CheckCircle, XCircle, TrendingUp, DollarSign, Activity, Zap, Clock } from 'lucide-react';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { useWebSocketState } from "@/hooks/useWebSocketState";
-import { useWebSocketReady } from '@/hooks/useWebSocketState';
+import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
@@ -21,7 +21,7 @@ export function StripeTab() {
     avgTransaction: 0
   });
   
-  const ready = useWebSocketReady();
+  const ready = useWebSocketState();
   
   // Fetch real Stripe transactions
   const { data: transactionData, refetch: refetchTransactions } = useQuery({

@@ -5,10 +5,10 @@ import { Server, Database, Cpu, HardDrive, Activity, AlertTriangle, Wifi, WifiOf
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
-import { useWebSocketReady } from '@/hooks/useWebSocketState';
+import { useWebSocketState } from '@/hooks/useWebSocketState';
 
 export function SystemTab() {
-  const ready = useWebSocketReady();
+  const ready = useWebSocketState();
   const { toast } = useToast();
   const { data: systemHealth, isLoading, refetch } = useQuery({
     queryKey: ['admin-system-health'],

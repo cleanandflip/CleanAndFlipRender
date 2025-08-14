@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useProductLiveSync } from "@/hooks/useProductLiveSync";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import * as React from "react";

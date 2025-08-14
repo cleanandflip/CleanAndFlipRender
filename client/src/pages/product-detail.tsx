@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useProductLiveSync } from "@/hooks/useProductLiveSync";
+import ProductAvailabilityChips from "@/components/locality/ProductAvailabilityChips";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { SmartLink } from "@/components/ui/smart-link";
@@ -30,6 +32,9 @@ import type { Product } from "@shared/schema";
 
 export default function ProductDetail() {
   const { id } = useParams();
+  
+  // Add live sync for this specific product
+  useProductLiveSync({ queryKey: ["product", id], productId: id });
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -372,6 +377,11 @@ export default function ProductDetail() {
 
             <Separator className="bg-glass-border" />
 
+            {/* Delivery Availability */}
+            <ProductAvailabilityChips product={product} />
+
+            <Separator className="bg-glass-border" />
+
             {/* Add to Cart Section */}
             <div className="space-y-4">
               {/* Quantity Selector */}
@@ -400,7 +410,12 @@ export default function ProductDetail() {
               <div className="mt-6">
                 <AddToCartButton
                   productId={product.id}
-                  product={product}
+                  product={{
+                    ...product,
+                    images: product.images || [],
+                    is_local_delivery_available: product.isLocalDeliveryAvailable,
+                    is_shipping_available: product.isShippingAvailable
+                  }}
                 />
               </div>
               

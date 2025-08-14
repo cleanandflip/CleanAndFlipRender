@@ -1,50 +1,35 @@
 import { Badge } from "@/components/ui/badge";
 import { Truck, Package } from "lucide-react";
+import { getFulfillmentFlags } from "@/lib/products/fulfillment";
 
 interface ProductAvailabilityChipsProps {
-  local: boolean;
-  ship: boolean;
+  product: any;
+  compact?: boolean;
 }
 
-export function ProductAvailabilityChips({ local, ship }: ProductAvailabilityChipsProps) {
-  if (local && ship) {
-    return (
-      <Badge 
-        variant="outline" 
-        className="text-xs"
-        data-testid="chip-local-and-shipping"
-      >
-        <Truck className="h-3 w-3 mr-1" />
-        Local Delivery & Shipping
-      </Badge>
-    );
-  }
+export default function ProductAvailabilityChips({ product, compact }: ProductAvailabilityChipsProps) {
+  const { localDelivery, nationwideShipping } = getFulfillmentFlags(product);
+  if (!localDelivery && !nationwideShipping) return null;
   
-  if (local && !ship) {
-    return (
-      <Badge 
-        variant="outline" 
-        className="text-xs text-blue-700 border-blue-200"
-        data-testid="chip-local-only"
-      >
-        <Truck className="h-3 w-3 mr-1" />
-        Local Delivery Only
-      </Badge>
-    );
-  }
+  const base = compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs";
   
-  if (!local && ship) {
-    return (
-      <Badge 
-        variant="outline" 
-        className="text-xs"
-        data-testid="chip-shipping-only"
-      >
-        <Package className="h-3 w-3 mr-1" />
-        Shipping Only
-      </Badge>
-    );
-  }
-  
-  return null;
+  return (
+    <div className={`flex gap-2 ${compact ? "mt-1" : "mt-2"}`}>
+      {localDelivery && (
+        <span className={`${base} rounded-full bg-blue-600/10 text-blue-300`}>
+          <Truck className="h-3 w-3 mr-1 inline" />
+          Local delivery
+        </span>
+      )}
+      {nationwideShipping && (
+        <span className={`${base} rounded-full bg-emerald-600/10 text-emerald-300`}>
+          <Package className="h-3 w-3 mr-1 inline" />
+          Ships nationwide
+        </span>
+      )}
+    </div>
+  );
 }
+
+// Keep legacy named export for backward compatibility
+export { ProductAvailabilityChips };
