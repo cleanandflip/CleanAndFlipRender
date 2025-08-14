@@ -1,0 +1,291 @@
+The PUTs are 200 and Stripe syncs, so the blocker is fulfillment booleans not truly persisting + not being broadcast/serialized consistently, and a tiny leftover emoji in the chip. Below is a one-pass fix (frontend + backend) you can paste in.
+
+A) Frontend — EnhancedProductModal must send exactly two booleans
+File: client/src/components/admin/modals/EnhancedProductModal.tsx
+
+Add helpers and state:
+
+tsx
+Copy
+Edit
+type FulfillmentMode = "local_only" | "shipping_only" | "both";
+
+function modeFromProduct(p: any): FulfillmentMode {
+  const local = p?.isLocalDeliveryAvailable ?? p?.is_local_delivery_available ?? false;
+  const ship  = p?.isShippingAvailable      ?? p?.is_shipping_available      ?? false;
+  if (local && ship) return "both";
+  if (local) return "local_only";
+  if (ship) return "shipping_only";
+  return "shipping_only";
+}
+
+function booleansFromMode(mode: FulfillmentMode) {
+  return {
+    isLocalDeliveryAvailable: mode !== "shipping_only",
+    isShippingAvailable: mode !== "local_only",
+  };
+}
+Inside the component:
+
+tsx
+Copy
+Edit
+const [mode, setMode] = useState<FulfillmentMode>(modeFromProduct(product));
+Replace any old checkbox validation (that checked formData.isLocalDeliveryAvailable / formData.isShippingAvailable) with no-op validation (radio always has a value).
+
+Ensure handleSubmit merges the booleans from mode and invalidates all product queries:
+
+tsx
+Copy
+Edit
+const queryClient = useQueryClient();
+
+async function handleSubmit(e: React.FormEvent) {
+  e.preventDefault();
+  setLoading(true);
+
+  const fulfillment = booleansFromMode(mode);
+
+  const payload = {
+    ...formData, // your existing fields
+    ...fulfillment, // <<< the only source of truth
+    price: parseFloat(formData.price) || 0,
+    compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
+    cost: formData.cost ? parseFloat(formData.cost) : null,
+    stockQuantity: parseInt(formData.stockQuantity || formData.stock || "0", 10),
+  };
+
+  const method = product ? "PUT" : "POST";
+  const url = product ? `/api/admin/products/${product.id}` : `/api/admin/products`;
+
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    toast({ title: "Save failed", description: "Could not update product.", variant: "destructive" });
+    setLoading(false);
+    return;
+  }
+
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["products"], exact: false }),
+    queryClient.invalidateQueries({ queryKey: ["product", product?.id], exact: false }),
+    queryClient.invalidateQueries({ queryKey: ["featuredProducts"], exact: false }),
+    queryClient.invalidateQueries({ predicate: q => String(q.queryKey?.[0] ?? "").includes("products") }),
+  ]);
+
+  toast({ title: "Product updated", description: "Fulfillment settings saved." });
+  setLoading(false);
+  onClose();
+}
+UI — swap the old two checkboxes for one radio group:
+
+tsx
+Copy
+Edit
+<div className="space-y-3">
+  <label className="text-sm font-medium">Fulfillment</label>
+  <div className="grid grid-cols-3 gap-2">
+    <button type="button"
+      onClick={() => setMode("local_only")}
+      className={`px-3 py-2 rounded-md border ${mode === "local_only" ? "border-amber-400 bg-amber-500/10" : "border-border"}`}>
+      Local only
+    </button>
+    <button type="button"
+      onClick={() => setMode("shipping_only")}
+      className={`px-3 py-2 rounded-md border ${mode === "shipping_only" ? "border-blue-400 bg-blue-500/10" : "border-border"}`}>
+      Shipping only
+    </button>
+    <button type="button"
+      onClick={() => setMode("both")}
+      className={`px-3 py-2 rounded-md border ${mode === "both" ? "border-emerald-400 bg-emerald-500/10" : "border-border"}`}>
+      Local + Shipping
+    </button>
+  </div>
+</div>
+Important: remove any references to formData.isLocalDeliveryAvailable and formData.isShippingAvailable from the DOM and validation—the radio controls own the state now.
+
+B) Frontend — clean chips, no emoji, no duplicates
+File: client/src/components/locality/ProductAvailabilityChips.tsx
+
+Make sure the old emoji line is gone (you had both lines temporarily). Use only this:
+
+tsx
+Copy
+Edit
+import { getFulfillment } from "@/lib/products/fulfillment";
+
+export default function ProductAvailabilityChips({ product }: { product: any }) {
+  const { local, shipping } = getFulfillment(product);
+  if (!local && !shipping) return null;
+
+  if (local && !shipping) {
+    return (
+      <div className="mt-2">
+        <span className="inline-flex items-center rounded-full bg-amber-600/15 text-amber-100 text-xs px-2 py-1">
+          Local delivery only
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2 mt-2">
+      {local && (
+        <span className="inline-flex items-center rounded-full bg-emerald-600/15 text-emerald-100 text-xs px-2 py-1">
+          Local delivery
+        </span>
+      )}
+      {shipping && (
+        <span className="inline-flex items-center rounded-full bg-blue-600/15 text-blue-100 text-xs px-2 py-1">
+          Nationwide shipping
+        </span>
+      )}
+    </div>
+  );
+}
+C) Backend — normalize, persist, and broadcast
+Your logs show the PUT runs and Stripe syncs, but fulfillment fields may be dropped by the storage layer or not normalized. Fix the route and the storage whitelist.
+
+Route (Express): server/routes/admin/products.ts (or your server/routes.ts where the PUT is defined)
+
+ts
+Copy
+Edit
+router.put("/api/admin/products/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Accept camelCase or snake_case
+    const localBool = req.body.isLocalDeliveryAvailable ?? req.body.is_local_delivery_available ?? false;
+    const shipBool  = req.body.isShippingAvailable      ?? req.body.is_shipping_available      ?? false;
+
+    const updateData = {
+      ...req.body,
+      // strong types / coercion for numeric fields (safe defaults)
+      price: req.body.price != null ? Number(req.body.price) : undefined,
+      compareAtPrice: req.body.compareAtPrice != null ? Number(req.body.compareAtPrice) : undefined,
+      cost: req.body.cost != null ? Number(req.body.cost) : undefined,
+      stockQuantity: req.body.stockQuantity != null ? parseInt(req.body.stockQuantity, 10) : undefined,
+      weight: req.body.weight != null ? Number(req.body.weight) : undefined,
+
+      // single source of truth for fulfillment (snake_case for DB)
+      is_local_delivery_available: !!localBool,
+      is_shipping_available: !!shipBool,
+    };
+
+    // drop camelCase duplicates to avoid unknown column warnings downstream
+    delete (updateData as any).isLocalDeliveryAvailable;
+    delete (updateData as any).isShippingAvailable;
+
+    req.log?.info?.(`Updating product ${id} with fulfillment: local=${updateData.is_local_delivery_available}, ship=${updateData.is_shipping_available}`);
+
+    const updated = await storage.updateProduct(id, updateData);
+
+    // Broadcast to all connected clients
+    const wss = req.app.get("wss");
+    if (wss?.clients) {
+      for (const client of wss.clients) {
+        try {
+          if (client.readyState === 1) {
+            client.send(JSON.stringify({ event: "product:update", data: { id, product: updated } }));
+          }
+        } catch {}
+      }
+    }
+
+    return res.json(updated);
+  } catch (err) {
+    req.log?.error?.(err);
+    return res.status(500).json({ error: "Failed to update product" });
+  }
+});
+Storage whitelist: make sure the persistence layer actually writes those two columns.
+
+If you use SQL/knex (server/storage/products.ts):
+
+ts
+Copy
+Edit
+export async function updateProduct(id: string, data: any) {
+  const dbData = {
+    name: data.name,
+    description: data.description,
+    price: data.price,
+    compare_at_price: data.compareAtPrice ?? null,
+    cost: data.cost ?? null,
+    stock_quantity: data.stockQuantity,
+    weight: data.weight,
+    is_local_delivery_available: data.is_local_delivery_available, // <<< ensure included
+    is_shipping_available: data.is_shipping_available,             // <<< ensure included
+    updated_at: db.fn.now(),
+  };
+
+  const [row] = await db("products").where({ id }).update(dbData).returning("*");
+  return row;
+}
+If you use Prisma:
+
+ts
+Copy
+Edit
+await prisma.product.update({
+  where: { id },
+  data: {
+    name: data.name,
+    description: data.description,
+    price: data.price,
+    compareAtPrice: data.compareAtPrice ?? null,
+    cost: data.cost ?? null,
+    stockQuantity: data.stockQuantity,
+    weight: data.weight,
+    is_local_delivery_available: data.is_local_delivery_available, // include these
+    is_shipping_available: data.is_shipping_available,
+    updated_at: new Date(),
+  },
+});
+Serialization for the public API: make sure GET endpoints include these flags. If you camelize on output, great; if not, your getFulfillment reads both, so you’re safe. Example mapper:
+
+ts
+Copy
+Edit
+function toClient(p: any) {
+  return {
+    ...p,
+    isLocalDeliveryAvailable: p.is_local_delivery_available,
+    isShippingAvailable: p.is_shipping_available,
+  };
+}
+Use it in /api/products, /api/products/:id, /api/products/featured.
+
+D) Live refresh everywhere
+In client/src/pages/home.tsx, ensure:
+
+tsx
+Copy
+Edit
+import { useProductLiveSync } from "@/hooks/useProductLiveSync";
+useProductLiveSync({ queryKey: ["featuredProducts"] });
+In product list and detail screens you already have useProductLiveSync; keep it.
+
+The modal’s queryClient.invalidateQueries(...) (above) guarantees refresh even if WS reconnects late.
+
+E) Quick verification (1 minute)
+Open Admin → edit any product → switch Fulfillment between the 3 radio options → Save.
+
+Check the response body (Network tab) includes the two snake_case booleans toggled correctly.
+
+Without page reload:
+
+Home featured cards chips update.
+
+/products grid chips update.
+
+Product detail chip updates.
+
+Confirm the public GET payloads now contain is_local_delivery_available/is_shipping_available (or camelized variants).
+
+If a specific GET still shows stale flags, tell me which route and I’ll give the exact mapper for that endpoint.

@@ -253,75 +253,54 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
       return;
     }
 
-    // Fulfillment mode validation is handled by the radio buttons (always has a selection)
-
     try {
-      const endpoint = product 
-        ? `/api/admin/products/${product.id}`
-        : '/api/admin/products';
-      
-      const method = product ? 'PUT' : 'POST';
-      
-      // Merge fulfillment booleans from current mode
       const fulfillment = booleansFromMode(mode);
 
-      // Prepare data with proper status handling
-      const stockNum = parseInt(formData.stock) || 0;
-      const submitData = {
-        ...formData,
-        ...fulfillment,
+      const payload = {
+        ...formData, // your existing fields
+        ...fulfillment, // <<< the only source of truth
         price: parseFloat(formData.price) || 0,
         compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
         cost: formData.cost ? parseFloat(formData.cost) : null,
-        stock: stockNum,
-        stockQuantity: stockNum, // For compatibility
+        stockQuantity: parseInt(formData.stock || "0", 10),
         weight: formData.weight ? parseInt(formData.weight) : null,
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
-        // Auto-set status based on stock - use 'inactive' instead of 'out-of-stock'
-        status: stockNum === 0 && !formData.continueSellingWhenOutOfStock ? 'inactive' : formData.status
       };
-      
-      const res = await fetch(endpoint, {
+
+      const method = product ? "PUT" : "POST";
+      const url = product ? `/api/admin/products/${product.id}` : `/api/admin/products`;
+
+      const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submitData),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
         credentials: 'include'
       });
 
-      if (res.ok) {
-        toast({
-          title: "Success!",
-          description: product ? 'Product updated successfully' : 'Product created successfully',
-        });
-        
-        // Best-effort WS ping (optional; do not rely on it)
-        try {
-          socket?.send?.(JSON.stringify({ event: "product:update", data: { id: product?.id } }));
-        } catch {}
-
-        // Hard invalidate everywhere the product can appear
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["products"], exact: false }),
-          queryClient.invalidateQueries({ queryKey: ["featuredProducts"], exact: false }),
-          queryClient.invalidateQueries({ queryKey: ["product", product?.id], exact: false }),
-          // any search/list variants
-          queryClient.invalidateQueries({ predicate: q => String(q.queryKey?.[0] ?? "").includes("products") }),
-        ]);
-        
-        onSave();
-        onClose();
-      } else {
+      if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.message || 'Failed to save product');
+        toast({ title: "Save failed", description: error.message || "Could not update product.", variant: "destructive" });
+        setLoading(false);
+        return;
       }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["products"], exact: false }),
+        queryClient.invalidateQueries({ queryKey: ["product", product?.id], exact: false }),
+        queryClient.invalidateQueries({ queryKey: ["featuredProducts"], exact: false }),
+        queryClient.invalidateQueries({ predicate: q => String(q.queryKey?.[0] ?? "").includes("products") }),
+      ]);
+
+      toast({ title: "Product updated", description: "Fulfillment settings saved." });
+      setLoading(false);
+      onSave();
+      onClose();
     } catch (error: any) {
-      // Save failed
       toast({
         title: "Save Failed",
         description: error.message || 'Failed to save product',
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };

@@ -2736,22 +2736,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
-      // Accept both camelCase and snake_case (backward compat)
-      const localBool   = req.body.isLocalDeliveryAvailable ?? req.body.is_local_delivery_available ?? false;
-      const shipBool    = req.body.isShippingAvailable      ?? req.body.is_shipping_available      ?? false;
+      // Accept camelCase or snake_case
+      const localBool = req.body.isLocalDeliveryAvailable ?? req.body.is_local_delivery_available ?? false;
+      const shipBool  = req.body.isShippingAvailable      ?? req.body.is_shipping_available      ?? false;
 
       const updateData = {
         ...req.body,
-        price: parseFloat(req.body.price) || 0,
-        stockQuantity: parseInt(req.body.stockQuantity) || 0,
-        weight: parseFloat(req.body.weight) || 0,
+        // strong types / coercion for numeric fields (safe defaults)
+        price: req.body.price != null ? Number(req.body.price) : undefined,
+        compareAtPrice: req.body.compareAtPrice != null ? Number(req.body.compareAtPrice) : undefined,
+        cost: req.body.cost != null ? Number(req.body.cost) : undefined,
+        stockQuantity: req.body.stockQuantity != null ? parseInt(req.body.stockQuantity, 10) : undefined,
+        weight: req.body.weight != null ? Number(req.body.weight) : undefined,
+
+        // single source of truth for fulfillment (snake_case for DB)
         is_local_delivery_available: !!localBool,
         is_shipping_available: !!shipBool,
       };
 
-      // remove camelCase to avoid unknown column errors if using SQL directly
+      // drop camelCase duplicates to avoid unknown column warnings downstream
       delete (updateData as any).isLocalDeliveryAvailable;
       delete (updateData as any).isShippingAvailable;
+
+      Logger.info(`Updating product ${id} with fulfillment: local=${updateData.is_local_delivery_available}, ship=${updateData.is_shipping_available}`);
       
       // Handle images array from form data - always update images field
       if ('images' in req.body) {
