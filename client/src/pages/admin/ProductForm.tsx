@@ -9,7 +9,8 @@ import { Dropdown } from '@/components/ui';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Upload, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Upload, X, Truck, Package, MapPin } from 'lucide-react';
 import { broadcastProductUpdate } from '@/lib/queryClient';
 
 interface ProductFormData {
@@ -22,6 +23,9 @@ interface ProductFormData {
   condition: string;
   brand: string;
   images: File[];
+  isLocalDeliveryAvailable: boolean;
+  isShippingAvailable: boolean;
+  isLocalPickup: boolean;
 }
 
 // Popular equipment brands - same list as sell form
@@ -70,7 +74,10 @@ export function ProductForm() {
     weight: 0,
     condition: 'like_new',
     brand: '',
-    images: []
+    images: [],
+    isLocalDeliveryAvailable: true,
+    isShippingAvailable: true,
+    isLocalPickup: true
   });
   
   const [imagePreview, setImagePreview] = useState<string[]>([]);
@@ -107,7 +114,10 @@ export function ProductForm() {
         weight: product.weight || 0,
         condition: product.condition || 'like_new',
         brand: product.brand || '',
-        images: productImages
+        images: productImages,
+        isLocalDeliveryAvailable: product.isLocalDeliveryAvailable ?? true,
+        isShippingAvailable: product.isShippingAvailable ?? true,
+        isLocalPickup: product.isLocalPickup ?? true
       });
       setImagePreview(productImages);
     }
@@ -268,6 +278,15 @@ export function ProductForm() {
     // Validate required fields
     if (!formData.name || !formData.brand || !formData.categoryId || formData.price <= 0) {
       toast({ title: "Validation Error", description: "Please fill in all required fields" });
+      return;
+    }
+    
+    // Validate delivery options
+    if (!formData.isLocalDeliveryAvailable && !formData.isShippingAvailable && !formData.isLocalPickup) {
+      toast({ 
+        title: "Validation Error", 
+        description: "Please select at least one delivery or shipping option" 
+      });
       return;
     }
     
@@ -540,6 +559,89 @@ export function ProductForm() {
               <p>• Recommended: Square images (1500x1500px) for best quality</p>
               <p>• First image will be the main product photo</p>
             </div>
+          </CardContent>
+        </Card>
+        
+        {/* Delivery & Shipping Options */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Truck className="w-5 h-5" />
+              Delivery & Shipping Options
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Choose how customers can receive this product. You can select multiple options.
+            </p>
+            
+            <div className="grid gap-4">
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="localDelivery"
+                  checked={formData.isLocalDeliveryAvailable}
+                  onCheckedChange={(checked) => 
+                    setFormData({...formData, isLocalDeliveryAvailable: checked === true})
+                  }
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="localDelivery" className="flex items-center gap-2 cursor-pointer">
+                    <MapPin className="w-4 h-4 text-green-500" />
+                    Local Delivery (Free within 50 miles of Asheville, NC)
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Free delivery for customers in our local service area
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="shipping"
+                  checked={formData.isShippingAvailable}
+                  onCheckedChange={(checked) => 
+                    setFormData({...formData, isShippingAvailable: checked === true})
+                  }
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="shipping" className="flex items-center gap-2 cursor-pointer">
+                    <Package className="w-4 h-4 text-blue-500" />
+                    Nationwide Shipping
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Ship this product anywhere in the US
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="pickup"
+                  checked={formData.isLocalPickup}
+                  onCheckedChange={(checked) => 
+                    setFormData({...formData, isLocalPickup: checked === true})
+                  }
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="pickup" className="flex items-center gap-2 cursor-pointer">
+                    <MapPin className="w-4 h-4 text-orange-500" />
+                    Local Pickup
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Customers can pick up at our warehouse
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Validation warning */}
+            {!formData.isLocalDeliveryAvailable && !formData.isShippingAvailable && !formData.isLocalPickup && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  ⚠️ Please select at least one delivery or shipping option for this product.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
         
