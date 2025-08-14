@@ -12,6 +12,7 @@ import { MapPin, Plus, Check } from "lucide-react";
 import { LocalBadge } from "@/components/locality/LocalBadge";
 import { useLocality } from "@/hooks/useLocality";
 import { motion } from "framer-motion";
+import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryEligibilityBanner';
 
 export default function Checkout() {
   const { user, isAuthenticated } = useAuth();

@@ -8,6 +8,7 @@ import ImageWithFallback from "@/components/ImageWithFallback";
 import { LocalBadge } from "@/components/locality/LocalBadge";
 import { useLocality } from "@/hooks/useLocality";
 import { Badge } from "@/components/ui/badge";
+import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryEligibilityBanner';
 
 export default function CartPage() {
   const { data: cart, isLoading, isError } = useCart();
@@ -104,6 +105,10 @@ export default function CartPage() {
   return (
     <div className="min-h-screen pt-32 px-6">
       <div className="max-w-6xl mx-auto">
+        {/* Delivery Eligibility Banner for Cart */}
+        <div className="mb-6">
+          <DeliveryEligibilityBanner />
+        </div>
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bebas">SHOPPING CART</h1>
           <LocalBadge isLocal={locality?.isLocal ?? false} />

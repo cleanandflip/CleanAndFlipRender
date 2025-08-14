@@ -9,6 +9,7 @@ import { searchService } from "@/lib/searchService";
 import { LocalBadge } from "@/components/locality/LocalBadge";
 import { useLocality } from "@/hooks/useLocality";
 import { useAuth } from "@/hooks/use-auth";
+import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryEligibilityBanner';
 import { motion } from "framer-motion";
 
 export default function ProductsPage() {
@@ -30,28 +31,10 @@ export default function ProductsPage() {
     <div className="container mx-auto px-4 py-8">
       <WelcomeBanner />
       
-      {/* Locality Banner - Prominent */}
-      {user && locality && (
-        <motion.div 
-          className="mb-6 flex justify-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-slate-800/30 to-slate-700/30 border border-slate-600/40 rounded-2xl px-4 py-2 backdrop-blur-sm shadow-lg">
-            <LocalBadge isLocal={locality.isLocal} />
-            <span className="text-sm font-medium text-slate-100">
-              {locality.isLocal ? (
-                "You are in our FREE DELIVERY zone!"
-              ) : locality.hasAddress ? (
-                "You're outside our Local Delivery area — shipping available"
-              ) : (
-                "Add your address to check if you qualify for FREE Local Delivery"
-              )}
-            </span>
-          </div>
-        </motion.div>
-      )}
+      {/* New Delivery Eligibility Banner */}
+      <div className="mb-6">
+        <DeliveryEligibilityBanner />
+      </div>
       
       <div className="flex flex-col lg:flex-row gap-8">
         <aside className="lg:w-64 flex-shrink-0">

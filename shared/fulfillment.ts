@@ -1,44 +1,86 @@
+// Shared fulfillment/delivery types and utilities for the comprehensive system
+
 export type FulfillmentMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
 
-export const FULFILLMENT = {
-  LOCAL_ONLY: 'LOCAL_ONLY',
-  BOTH: 'LOCAL_AND_SHIPPING',
+// Product type interface for fulfillment system
+export interface ProductFulfillment {
+  fulfillmentMode?: FulfillmentMode;
+  isLocalDeliveryAvailable?: boolean;
+  isShippingAvailable?: boolean;
+}
+
+// Legacy field mapping for backward compatibility
+export function modeFromProduct(product: any): FulfillmentMode | null {
+  // Primary: check for new fulfillmentMode field
+  if (product?.fulfillmentMode) {
+    return product.fulfillmentMode as FulfillmentMode;
+  }
+  
+  // Fallback: derive from legacy boolean fields
+  const hasLocal = product?.isLocalDeliveryAvailable || product?.is_local_delivery_available;
+  const hasShipping = product?.isShippingAvailable || product?.is_shipping_available;
+  
+  if (hasLocal && hasShipping) {
+    return 'LOCAL_AND_SHIPPING';
+  } else if (hasLocal && !hasShipping) {
+    return 'LOCAL_ONLY';
+  } else {
+    // Default fallback
+    return 'LOCAL_AND_SHIPPING';
+  }
+}
+
+// Get display label for a fulfillment mode
+export function getFulfillmentLabel(mode: FulfillmentMode): string {
+  switch (mode) {
+    case 'LOCAL_ONLY':
+      return 'Local delivery only';
+    case 'LOCAL_AND_SHIPPING':
+      return 'Local delivery & shipping';
+    default:
+      return 'Local delivery & shipping';
+  }
+}
+
+// Validation helpers
+export function isValidFulfillmentMode(mode: any): mode is FulfillmentMode {
+  return mode === 'LOCAL_ONLY' || mode === 'LOCAL_AND_SHIPPING';
+}
+
+// Convert mode to boolean flags (for legacy compatibility)
+export function modeToFlags(mode: FulfillmentMode): { 
+  isLocalDeliveryAvailable: boolean; 
+  isShippingAvailable: boolean; 
+} {
+  switch (mode) {
+    case 'LOCAL_ONLY':
+      return {
+        isLocalDeliveryAvailable: true,
+        isShippingAvailable: false,
+      };
+    case 'LOCAL_AND_SHIPPING':
+      return {
+        isLocalDeliveryAvailable: true,
+        isShippingAvailable: true,
+      };
+    default:
+      return {
+        isLocalDeliveryAvailable: true,
+        isShippingAvailable: true,
+      };
+  }
+}
+
+// Constants for enum values
+export const FULFILLMENT_MODES = {
+  LOCAL_ONLY: 'LOCAL_ONLY' as const,
+  LOCAL_AND_SHIPPING: 'LOCAL_AND_SHIPPING' as const,
 } as const;
 
-export const isLocalOnly = (m: FulfillmentMode) => m === 'LOCAL_ONLY';
-export const isShippable = (m: FulfillmentMode) => m === 'LOCAL_AND_SHIPPING';
-export const labelFor = (m: FulfillmentMode) =>
-  m === 'LOCAL_ONLY' ? 'Local delivery only' : 'Local delivery + Shipping';
-
-export const modeFromProduct = (p: any): FulfillmentMode => {
-  // Use new fulfillment_mode field if available
-  if (p?.fulfillment_mode) {
-    return p.fulfillment_mode as FulfillmentMode;
-  }
-  
-  // Fallback to legacy boolean fields
-  const local = p?.is_local_delivery_available ?? p?.isLocalDeliveryAvailable ?? false;
-  const ship = p?.is_shipping_available ?? p?.isShippingAvailable ?? false;
-  
-  if (local && !ship) return 'LOCAL_ONLY';
-  return 'LOCAL_AND_SHIPPING'; // Default to both
-};
-
-export const booleansFromMode = (m: FulfillmentMode) => ({
-  isLocalDeliveryAvailable: m === 'LOCAL_ONLY' || m === 'LOCAL_AND_SHIPPING',
-  isShippingAvailable: m === 'LOCAL_AND_SHIPPING',
-});
-
-export const getFulfillmentLabel = (mode: FulfillmentMode): string => {
-  switch (mode) {
-    case 'LOCAL_ONLY': return 'Local delivery only';
-    case 'LOCAL_AND_SHIPPING': return 'Local delivery + Shipping';
-  }
-};
-
-export const getFulfillmentDescription = (mode: FulfillmentMode): string => {
-  switch (mode) {
-    case 'LOCAL_ONLY': return 'Heavy/bulky items. Only purchasable by local customers.';
-    case 'LOCAL_AND_SHIPPING': return 'Available for both local delivery and nationwide shipping.';
-  }
+export default {
+  modeFromProduct,
+  getFulfillmentLabel,
+  isValidFulfillmentMode,
+  modeToFlags,
+  FULFILLMENT_MODES,
 };

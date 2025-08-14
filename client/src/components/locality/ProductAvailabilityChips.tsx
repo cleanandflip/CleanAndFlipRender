@@ -1,53 +1,27 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Truck, Package } from 'lucide-react';
-import { modeFromProduct, getFulfillmentLabel } from '@shared/fulfillment';
+import { FulfillmentBadge } from '@/components/fulfillment/FulfillmentBadge';
+import { modeFromProduct } from '@shared/fulfillment';
+import type { FulfillmentMode } from '@shared/fulfillment';
 
 interface ProductAvailabilityChipsProps {
   product: any;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  subtle?: boolean;
 }
 
-export function ProductAvailabilityChips({ product, className = '', size = 'md' }: ProductAvailabilityChipsProps) {
-  const mode = modeFromProduct(product);
+export function ProductAvailabilityChips({ product, className = '', subtle = false }: ProductAvailabilityChipsProps) {
+  const mode = modeFromProduct(product) as FulfillmentMode;
   
-  const chipSize = {
-    sm: 'text-xs px-2 py-1',
-    md: 'text-sm px-2 py-1',
-    lg: 'text-base px-3 py-2'
-  }[size];
+  if (!mode || (mode !== 'LOCAL_ONLY' && mode !== 'LOCAL_AND_SHIPPING')) {
+    return null;
+  }
 
   return (
-    <div className={`flex gap-1 flex-wrap ${className}`}>
-      {mode === 'LOCAL_ONLY' && (
-        <Badge 
-          variant="secondary" 
-          className={`${chipSize} bg-green-100 text-green-800 border-green-200 flex items-center gap-1`}
-        >
-          <Truck className="h-3 w-3" />
-          Local delivery only
-        </Badge>
-      )}
-      {mode === 'LOCAL_AND_SHIPPING' && (
-        <>
-          <Badge 
-            variant="secondary" 
-            className={`${chipSize} bg-green-100 text-green-800 border-green-200 flex items-center gap-1`}
-          >
-            <Truck className="h-3 w-3" />
-            Local delivery
-          </Badge>
-          <Badge 
-            variant="secondary" 
-            className={`${chipSize} bg-blue-100 text-blue-800 border-blue-200 flex items-center gap-1`}
-          >
-            <Package className="h-3 w-3" />
-            Shipping
-          </Badge>
-        </>
-      )}
-    </div>
+    <FulfillmentBadge 
+      mode={mode} 
+      subtle={subtle}
+      className={className}
+    />
   );
 }
 

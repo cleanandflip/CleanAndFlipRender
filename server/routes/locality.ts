@@ -9,47 +9,61 @@ const router = Router();
 router.get('/status', async (req, res) => {
   try {
     const user = req.user;
+    const { zip } = req.query;
+    let isLocal = false;
+    let zoneName = undefined;
+    let distanceMiles = null;
     
-    // If not authenticated, return safe default state
-    if (!user) {
-      return res.status(200).json({
-        isLocal: false,
-        hasAddress: false,
-        distanceMiles: null,
-        defaultAddressId: null,
-        authenticated: false
-      });
+    // If ZIP provided, check against that location
+    if (zip && typeof zip === 'string') {
+      try {
+        // Enhanced ZIP-based locality check for Asheville area
+        const ashevilleZips = ['28801', '28802', '28803', '28804', '28805', '28806', '28810', '28813', '28815'];
+        isLocal = ashevilleZips.some(validZip => zip.startsWith(validZip.substring(0, 3)));
+        if (isLocal) {
+          zoneName = 'Greater Asheville Area';
+          distanceMiles = 25; // Approximate for ZIP-based checks
+        }
+      } catch (error) {
+        console.error('Error checking ZIP:', error);
+      }
+    } else if (user) {
+      // Check user's default address
+      const userId = user.id;
+      const addresses = await storage.getUserAddresses(userId);
+      const defaultAddress = addresses.find(addr => addr.isDefault);
+      
+      if (defaultAddress?.latitude && defaultAddress?.longitude) {
+        const localityResult = isLocalMiles(Number(defaultAddress.latitude), Number(defaultAddress.longitude));
+        isLocal = localityResult.isLocal;
+        distanceMiles = localityResult.distanceMiles;
+        if (isLocal) {
+          zoneName = 'Greater Asheville Area';
+        }
+      }
     }
-    
-    const userId = user.id;
-    
-    // Get user's default address
-    const addresses = await storage.getUserAddresses(userId);
-    const defaultAddress = addresses.find(addr => addr.isDefault);
-    
-    if (!defaultAddress) {
-      return res.json({
-        isLocal: false,
-        distanceMiles: null,
-        hasAddress: false,
-        defaultAddressId: null,
-        authenticated: true
-      });
-    }
-    
-    // Use the unified locality detection system
-    const localityResult = isLocalMiles(Number(defaultAddress.latitude), Number(defaultAddress.longitude));
     
     res.json({
-      isLocal: localityResult.isLocal,
-      distanceMiles: localityResult.distanceMiles,
-      hasAddress: true,
-      defaultAddressId: defaultAddress.id,
-      authenticated: true
+      isLocal,
+      zoneName,
+      freeDelivery: isLocal,
+      etaHours: [24, 48] as [number, number],
+      distanceMiles,
+      hasAddress: !!user,
+      authenticated: !!user,
+      message: isLocal ? 'You are in our local delivery zone!' : 'You are outside our local delivery zone.'
     });
   } catch (error) {
     console.error('Error checking locality status:', error);
-    res.status(500).json({ error: 'Failed to check locality status' });
+    res.status(500).json({ 
+      isLocal: false,
+      freeDelivery: false,
+      etaHours: [24, 48] as [number, number],
+      distanceMiles: null,
+      hasAddress: false,
+      authenticated: false,
+      error: 'Failed to check locality status'
+    });
   }
 });
 

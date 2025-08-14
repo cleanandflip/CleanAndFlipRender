@@ -1,48 +1,58 @@
-import { useQuery } from "@tanstack/react-query";
-import React from "react";
+import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+
+interface LocalityData {
+  isLocal: boolean;
+  zoneName?: string;
+  freeDelivery: boolean;
+  etaHours: [number, number];
+}
+
+interface LocalityResponse extends LocalityData {
+  // API response format
+}
 
 export function useLocality() {
-  const { data: locality, refetch } = useQuery({
-    queryKey: ["locality"],
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const { data, isLoading, error } = useQuery<LocalityResponse>({
+    queryKey: ['/api/locality/status', refreshKey],
     queryFn: async () => {
-      const r = await fetch("/api/locality/status");
-      if (!r.ok) {
-        // If not authenticated, return empty state instead of throwing
-        if (r.status === 401) {
-          return { isLocal: false, distanceMiles: null, hasAddress: false, defaultAddressId: null };
-        }
-        throw new Error("locality_fetch_failed");
+      const response = await fetch('/api/locality/status');
+      if (!response.ok) {
+        throw new Error('Failed to fetch locality status');
       }
-      return r.json() as Promise<{
-        isLocal: boolean; 
-        distanceMiles?: number; 
-        hasAddress: boolean; 
-        defaultAddressId?: string;
-      }>;
+      return response.json();
     },
-    staleTime: 60_000, // Cache for 60 seconds for better performance
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchInterval: false, // Disable automatic polling for performance
-    refetchOnMount: true,
-    retry: 1
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Listen for address updates and refetch immediately
-  React.useEffect(() => {
-    const handleAddressUpdate = () => {
-      refetch();
-    };
+  const refresh = useCallback(async (zip?: string) => {
+    if (zip) {
+      try {
+        const response = await fetch(`/api/locality/status?zip=${encodeURIComponent(zip)}`);
+        if (response.ok) {
+          setRefreshKey(prev => prev + 1);
+          return await response.json();
+        }
+      } catch (error) {
+        console.error('Failed to refresh locality with ZIP:', error);
+      }
+    } else {
+      setRefreshKey(prev => prev + 1);
+    }
+  }, []);
 
-    // Listen for address changes
-    window.addEventListener('addressUpdated', handleAddressUpdate);
-    window.addEventListener('defaultAddressChanged', handleAddressUpdate);
-    
-    return () => {
-      window.removeEventListener('addressUpdated', handleAddressUpdate);
-      window.removeEventListener('defaultAddressChanged', handleAddressUpdate);
-    };
-  }, [refetch]);
-
-  return { data: locality };
+  return {
+    isLocal: data?.isLocal ?? false,
+    zoneName: data?.zoneName,
+    freeDelivery: data?.freeDelivery ?? false,
+    eta: data?.etaHours ?? [24, 48] as [number, number],
+    isLoading,
+    error,
+    refresh,
+  };
 }
+
+export default useLocality;
