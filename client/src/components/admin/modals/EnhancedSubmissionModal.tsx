@@ -15,7 +15,7 @@ export function EnhancedSubmissionModal({ submission, onClose, onSave }: Submiss
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { sendMessage } = useWebSocket();
+  const { sendMessage } = useWebSocketState();
   
   // Lock body scroll while modal is open
   useScrollLock(true);

@@ -17,7 +17,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { send } = useWebSocket();
+  const { send } = useWebSocketState();
 
   // Fetch categories for dropdown
   const { data: categories = [] } = useQuery({

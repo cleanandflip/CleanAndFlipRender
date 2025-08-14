@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { CreditCard, RefreshCw, CheckCircle, XCircle, TrendingUp, DollarSign, Activity, Zap, Clock } from 'lucide-react';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
-import { useSocket } from '@/hooks/useSingletonSocket.tsx';
+import { useWebSocketState } from "@/hooks/useWebSocketState";
 import { useWebSocketReady } from '@/hooks/useWebSocketState';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -21,7 +21,7 @@ export function StripeTab() {
     avgTransaction: 0
   });
   
-  const { subscribe } = useSocket();
+  const { subscribe } = useWebSocketState();
   const ready = useWebSocketReady();
   
   // Fetch real Stripe transactions
@@ -112,7 +112,7 @@ export function StripeTab() {
           description: result.message || "All Stripe data synchronized successfully",
         });
         
-        // Broadcast to all connected clients
+        // Broadcast to all ready clients
         if (send) {
           send({
             type: 'stripe_sync_complete',

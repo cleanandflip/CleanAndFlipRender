@@ -1,6 +1,6 @@
 // This file is deprecated - using new dynamic error system
-import { ErrorPage } from "@/components/error-boundary";
+import { ErrorPage } from "@/components/ErrorBoundary";
 
 export default function NotFound() {
-  return <ErrorPage status={404} />;
+  
 }

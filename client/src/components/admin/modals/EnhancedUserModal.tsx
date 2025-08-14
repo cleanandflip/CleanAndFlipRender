@@ -17,7 +17,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { send } = useWebSocket();
+  const { send } = useWebSocketState();
   
   // Lock body scroll while modal is open
   useScrollLock(true);

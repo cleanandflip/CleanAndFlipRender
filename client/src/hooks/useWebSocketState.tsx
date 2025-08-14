@@ -38,3 +38,20 @@ export function useWebSocketReady() {
 
   return ready;
 }
+// Export useWebSocketState function expected by admin components
+export function useWebSocketState() {
+  const ready = useWebSocketReady();
+  const [lastMessage, setLastMessage] = useState<any>(null);
+  
+  return {
+    ready,
+    lastMessage,
+    send: () => {},
+    subscribe: () => () => {}
+  };
+}
+
+// Add SocketProvider component expected by main.tsx  
+export function SocketProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}

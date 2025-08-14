@@ -1,0 +1,181 @@
+One-shot fix plan (copy/paste into Replit Shell)
+This ONLY adjusts the current codebase. No new features, providers, or routes are added.
+
+bash
+Copy
+Edit
+set -e
+
+echo "== 0) Optional safety checkpoint =="
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git add -A && git commit -m "pre-fix checkpoint" || true
+
+echo "== 1) Keep the current 404 page styling & remove conflicting import/return =="
+# Remove the deprecated ErrorPage import and the early return, keep the styled JSX as-is.
+if [ -f client/src/pages/not-found.tsx ]; then
+  sed -i '/ErrorBoundary/d' client/src/pages/not-found.tsx
+  sed -i 's#return <ErrorPage status={404} />;##g' client/src/pages/not-found.tsx
+fi
+
+echo "== 2) Standardize ErrorBoundary import casing (legacy -> current) =="
+find client/src -type f \( -name "*.tsx" -o -name "*.ts" \) -print0 \
+| xargs -0 sed -i 's#@/components/error-boundary#@/components/ErrorBoundary#g'
+
+echo "== 3) Purge legacy websocket hooks (files) =="
+rm -f client/src/hooks/useSingletonSocket.tsx || true
+rm -f client/src/hooks/useWebSocket.ts  || true
+
+echo "== 4) Force all imports to the single canonical hook: useWebSocketState (named export) =="
+# Replace any default import of useWebSocketState with the named import.
+find client/src -type f \( -name "*.tsx" -o -name "*.ts" \) -print0 \
+| xargs -0 sed -i -E 's#import[[:space:]]+useWebSocketState[[:space:]]+from[[:space:]]+"@/hooks/useWebSocketState(\.tsx)?"#import { useWebSocketState } from "@/hooks/useWebSocketState"#g'
+
+# Replace any import of legacy hooks with the canonical one.
+find client/src -type f \( -name "*.tsx" -o -name "*.ts" \) -print0 \
+| xargs -0 sed -i -E '
+  s#import[[:space:]]+\{?[[:space:]]*useSingletonSocket[[:space:]]*\}?[[:space:]]+from[[:space:]]+"@/hooks/useSingletonSocket(\.tsx)?"#import { useWebSocketState } from "@/hooks/useWebSocketState"#g;
+  s#import[[:space:]]+\{?[[:space:]]*useSocket[[:space:]]*\}?[[:space:]]+from[[:space:]]+"@/hooks/useSingletonSocket(\.tsx)?"#import { useWebSocketState } from "@/hooks/useWebSocketState"#g;
+  s#import[[:space:]]+\{?[[:space:]]*useWebSocket[[:space:]]*\}?[[:space:]]+from[[:space:]]+"@/hooks/useWebSocket"#import { useWebSocketState } from "@/hooks/useWebSocketState"#g
+'
+
+echo "== 5) Rewrite hook calls to use useWebSocketState() =="
+# Convert any remaining calls to legacy hooks into the new hook.
+find client/src -type f \( -name "*.tsx" -o -name "*.ts" \) -print0 \
+| xargs -0 sed -i -E '
+  s#\buseSingletonSocket\(\)#useWebSocketState()#g;
+  s#\buseSocket\(\)#useWebSocketState()#g;
+  s#\buseWebSocket\(\)#useWebSocketState()#g
+'
+
+echo "== 6) Normalize common connection flags: isConnected/connected/socketReady -> ready =="
+# Only touch files that referenced legacy hooks to avoid false positives.
+FILES=$(grep -rl --include="*.tsx" --include="*.ts" -E "@/hooks/useWebSocket|useSingletonSocket|useSocket" client/src || true)
+if [ -n "$FILES" ]; then
+  echo "$FILES" | xargs sed -i -E '
+    s/\bisConnected\b/ready/g;
+    s/\bsocketReady\b/ready/g;
+    s/\bconnected\b/ready/g
+  '
+fi
+
+echo "== 7) Make lastMessage access safe everywhere =="
+# Prevent runtime crashes: lastMessage?.data instead of lastMessage.data
+LM_FILES=$(grep -rl --include="*.tsx" --include="*.ts" 'lastMessage.data' client/src || true)
+if [ -n "$LM_FILES" ]; then
+  echo "$LM_FILES" | xargs sed -i -E 's/\blastMessage\.data\b/lastMessage?.data/g'
+fi
+
+echo "== 8) Surgical fixes for known files that caused errors in logs =="
+
+# 8a) App.tsx – remove any leftover singleton usage, keep only useWebSocketState
+if [ -f client/src/App.tsx ]; then
+  sed -i -E '
+    s#^.*useSingletonSocket.*$##g;
+    s#\{[[:space:]]*connected[[:space:]]*\}[[:space:]]*=[[:space:]]*useWebSocketState\(\);##g;
+  ' client/src/App.tsx
+fi
+
+# 8b) Home.tsx – ensure it uses the canonical hook and the ready flag
+if [ -f client/src/pages/home.tsx ]; then
+  sed -i -E '
+    s#^.*@/hooks/useWebSocket".*$#import { useWebSocketState } from "@/hooks/useWebSocketState";#g;
+    s#\{[[:space:]]*lastMessage[[:space:]]*,[[:space:]]*isConnected[[:space:]]*\}[[:space:]]*=[[:space:]]*useWebSocketState\(\);#{ lastMessage, ready } = useWebSocketState();#g;
+    s/\bisConnected\b/ready/g;
+  ' client/src/pages/home.tsx
+fi
+
+# 8c) SubmissionsTab.tsx – remove the broken import and rely on the canonical hook
+if [ -f client/src/pages/admin/SubmissionsTab.tsx ]; then
+  sed -i -E '
+    s#^.*@/hooks/useSingletonSocket\.tsx".*$##g;
+    s#^.*@/hooks/useSingletonSocket".*$##g;
+    s#\buseSocket\(\)#useWebSocketState()#g;
+  ' client/src/pages/admin/SubmissionsTab.tsx
+
+  # Ensure we have an import of the canonical hook
+  grep -q 'useWebSocketState' client/src/pages/admin/SubmissionsTab.tsx \
+    || sed -i '1 i import { useWebSocketState } from "@/hooks/useWebSocketState";' client/src/pages/admin/SubmissionsTab.tsx
+fi
+
+# 8d) UsersTab.tsx – define lastMessage properly to avoid ReferenceError
+if [ -f client/src/pages/admin/UsersTab.tsx ]; then
+  # Ensure the hook is imported
+  grep -q 'useWebSocketState' client/src/pages/admin/UsersTab.tsx \
+    || sed -i '1 i import { useWebSocketState } from "@/hooks/useWebSocketState";' client/src/pages/admin/UsersTab.tsx
+
+  # If the component uses lastMessage but doesn't declare it, add a declaration after the component start.
+  # Insert after the first line that starts the component function.
+  awk '
+    BEGIN{inserted=0}
+    /export default function UsersTab|export function UsersTab|function UsersTab/ && inserted==0 {
+      print; 
+      print "  const { lastMessage } = useWebSocketState();";
+      inserted=1; 
+      next
+    }
+    {print}
+  ' client/src/pages/admin/UsersTab.tsx > /tmp/UsersTab.tsx && mv /tmp/UsersTab.tsx client/src/pages/admin/UsersTab.tsx
+
+  # Make accesses safe
+  sed -i -E 's/\blastMessage\.data\b/lastMessage?.data/g' client/src/pages/admin/UsersTab.tsx
+fi
+
+# 8e) AdminLayout & EnhancedCategoryModal – remove any singleton usage if present
+for F in client/src/components/admin/AdminLayout.tsx client/src/components/admin/modals/EnhancedCategoryModal.tsx; do
+  if [ -f "$F" ]; then
+    sed -i -E '
+      s#^.*@/hooks/useSingletonSocket\.tsx".*$##g;
+      s#^.*@/hooks/useSingletonSocket".*$##g;
+      s#\buseSingletonSocket\(\)#useWebSocketState()#g;
+      s#\buseSocket\(\)#useWebSocketState()#g;
+    ' "$F"
+    grep -q 'useWebSocketState' "$F" || sed -i '1 i import { useWebSocketState } from "@/hooks/useWebSocketState";' "$F"
+  fi
+done
+
+echo "== 9) Verify no remaining legacy imports exist =="
+if grep -R --include="*.tsx" --include="*.ts" -nE "@/hooks/useSingletonSocket|@/hooks/useWebSocket\"" client/src | tee /dev/stderr; then
+  echo "ERROR: Legacy websocket imports still present. Fix them before continuing." && exit 1
+fi
+
+echo "== 10) Build/run smoke & API checks =="
+npm run dev >/dev/null 2>&1 &  # start in background
+SERVER_PID=$!
+sleep 3
+
+# Featured products should be 200 now (previous Drizzle error was resolved in latest logs)
+curl -sSf http://localhost:5000/api/products/featured >/dev/null && echo "OK: /api/products/featured 200" || (echo "FAIL: /api/products/featured" && kill $SERVER_PID && exit 1)
+
+# Health + status
+curl -sSf http://localhost:5000/status     >/dev/null && echo "OK: /status 200" || (echo "FAIL: /status" && kill $SERVER_PID && exit 1)
+curl -sSf http://localhost:5000/health     >/dev/null && echo "OK: /health 200" || (echo "FAIL: /health" && kill $SERVER_PID && exit 1)
+
+# Shut down background server cleanly
+kill $SERVER_PID >/dev/null 2>&1 || true
+
+echo "== 11) Final checkpoint =="
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git add -A && git commit -m "unify websocket hooks; remove legacy; keep 404 styling" || true
+
+echo "All done ✅"
+What this does (and nothing more)
+Keeps your existing 404 page design (removes the conflicting ErrorPage import and stray early return, leaves your styled JSX untouched).
+
+Deletes legacy websocket hooks (useSingletonSocket, useWebSocket) so they can’t be pulled in accidentally.
+
+Standardizes every import/call to the single, current hook:
+import { useWebSocketState } from "@/hooks/useWebSocketState";
+
+Normalizes connection flags to the ready boolean (replacing isConnected/connected/socketReady only in files that previously used legacy hooks).
+
+Null-safes any lastMessage.data access to lastMessage?.data (prevents runtime crashes).
+
+Patches known offenders from your logs:
+
+SubmissionsTab.tsx: removes broken useSingletonSocket import/calls.
+
+UsersTab.tsx: defines lastMessage via useWebSocketState() to eliminate ReferenceError.
+
+App.tsx, Home.tsx, AdminLayout.tsx, EnhancedCategoryModal.tsx: remove stray legacy usage.
+
+Verifies no legacy imports remain and runs quick API smoke tests.
+
+Run that block as-is. If any check fails, the script stops and prints exactly what’s still wrong so you can fix just that bit, without re-introducing old code.

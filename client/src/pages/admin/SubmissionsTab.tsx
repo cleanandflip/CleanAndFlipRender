@@ -8,7 +8,7 @@ import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedSubmissionModal } from '@/components/admin/modals/EnhancedSubmissionModal';
-import { useSocket } from '@/hooks/useSingletonSocket.tsx';
+import { useWebSocketState } from "@/hooks/useWebSocketState";
 import { useWebSocketReady } from '@/hooks/useWebSocketState';
 
 interface Submission {
@@ -28,7 +28,7 @@ export function SubmissionsTab() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const { toast } = useToast();
-  const { subscribe } = useSocket();
+  const { subscribe } = useWebSocketState();
   const ready = useWebSocketReady();
 
   const { data: submissionsData, isLoading, refetch } = useQuery({
