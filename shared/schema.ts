@@ -213,9 +213,9 @@ export const products = pgTable("products", {
   stripeLastSync: timestamp("stripe_last_sync"),
   sku: varchar("sku"),
   dimensions: jsonb("dimensions").$type<{length?: number, width?: number, height?: number}>(),
-  // Fulfillment and local delivery (temporarily commented out until migration)
-  // fulfillment: fulfillmentTypeEnum("fulfillment").default("LOCAL_OR_SHIP"),
-  // localRadiusKm: decimal("local_radius_km", { precision: 8, scale: 3 }), // Per-product override
+  // Delivery options - Active columns
+  isLocalDeliveryAvailable: boolean("is_local_delivery_available").default(true),
+  isShippingAvailable: boolean("is_shipping_available").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [

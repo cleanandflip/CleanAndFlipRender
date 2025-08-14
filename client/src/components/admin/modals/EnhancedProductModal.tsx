@@ -24,7 +24,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: '',
+    categoryId: '',
     price: '',
     compareAtPrice: '',
     cost: '',
@@ -49,8 +49,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
     location: 'warehouse',
     // Delivery Options
     isLocalDeliveryAvailable: true,
-    isShippingAvailable: true,
-    isLocalPickup: true
+    isShippingAvailable: true
   });
 
   // TRACK INITIAL DATA
@@ -61,7 +60,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
       const data = {
         name: product.name || '',
         description: product.description || '',
-        category: product.category || '',
+        categoryId: product.categoryId || '',
         price: product.price?.toString() || '',
         compareAtPrice: product.compareAtPrice?.toString() || '',
         cost: product.cost?.toString() || '',
@@ -86,8 +85,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         location: product.location || 'warehouse',
         // Delivery Options
         isLocalDeliveryAvailable: product.isLocalDeliveryAvailable ?? true,
-        isShippingAvailable: product.isShippingAvailable ?? true,
-        isLocalPickup: product.isLocalPickup ?? true
+        isShippingAvailable: product.isShippingAvailable ?? true
       };
       setFormData(data);
       setInitialData(data);
@@ -211,7 +209,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
     setLoading(true);
 
     // Validate required fields
-    if (!formData.name || !formData.price || !formData.category) {
+    if (!formData.name || !formData.price || !formData.categoryId) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields (name, price, category)",
@@ -222,7 +220,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
     }
 
     // Validate delivery options - at least one must be selected
-    if (!formData.isLocalDeliveryAvailable && !formData.isShippingAvailable && !formData.isLocalPickup) {
+    if (!formData.isLocalDeliveryAvailable && !formData.isShippingAvailable) {
       toast({
         title: "Validation Error",
         description: "Please select at least one delivery option",
@@ -411,8 +409,8 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
                     Category <span className="text-red-400">*</span>
                   </label>
                   <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    value={formData.categoryId}
+                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                     className="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   >
@@ -616,22 +614,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
                   </div>
                 </label>
                 
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={formData.isLocalPickup}
-                    onChange={(e) => setFormData({ ...formData, isLocalPickup: e.target.checked })}
-                    className="w-4 h-4 mt-1 rounded border-gray-700 bg-transparent text-blue-500 focus:ring-2 focus:ring-blue-500"
-                  />
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">
-                      Local Pickup
-                    </span>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Customers can pick up at warehouse location
-                    </p>
-                  </div>
-                </label>
+
               </div>
             </div>
           </div>
@@ -658,7 +641,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
               </button>
               <button
                 type="submit"
-                disabled={loading || (!formData.name || !formData.price || !formData.category)}
+                disabled={loading || (!formData.name || !formData.price || !formData.categoryId)}
                 className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 btn-glow"
               >
                 {loading ? (
