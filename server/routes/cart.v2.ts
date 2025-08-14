@@ -89,26 +89,13 @@ cartRouterV2.get('/', async (req, res, next) => {
   }
 });
 
-// Remove from cart - delete by userId + productId
-cartRouterV2.delete('/items/:productId', async (req, res, next) => {
+// Remove from cart
+cartRouterV2.delete('/items/:itemId', async (req, res, next) => {
   try {
     const userId = getUserIdFromReq(req);
-    if (!userId) return res.status(401).json({ ok: false, code: 'AUTH_REQUIRED', message: 'Sign in required' });
-
-    const { productId } = req.params;
     const { storage } = await import('../storage');
-    
-    // Find and remove cart items matching userId + productId
-    const cartItems = await storage.getCartItems(userId, undefined);
-    const itemsToRemove = cartItems.filter(item => item.productId === productId);
-    
-    let removed = 0;
-    for (const item of itemsToRemove) {
-      await storage.removeFromCart(item.id);
-      removed++;
-    }
-    
-    return res.status(200).json({ ok: true, removed });
+    await storage.removeFromCart(req.params.itemId);
+    res.json({ ok: true });
   } catch (e) {
     next(e);
   }
