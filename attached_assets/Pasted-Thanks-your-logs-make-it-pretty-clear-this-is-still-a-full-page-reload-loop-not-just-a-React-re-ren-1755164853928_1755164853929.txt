@@ -1,0 +1,181 @@
+Thanks—your logs make it pretty clear this is still a full page reload loop, not just a React re-render. The culprits are almost always one (or more) of these firing together:
+
+a “version/status” poller that reloads on any change,
+
+a service-worker update handler that reloads too eagerly, and/or
+
+a checkout effect (address/cart normalization) that still calls a hard reload.
+
+Below is a tight, copy-pasteable fix plan for Replit that stops the loop and prevents it from coming back.
+
+✅ Replit: stop the checkout infinite refresh loop
+0) Proof from logs
+You can see bursts of GET / (the app shell) followed by GET /api/addresses on repeat. That only happens when something calls a hard reload (not a client-side route change). It begins right after defaulting an address and continues while /status is being polled.
+
+1) Kill all hard reloads in checkout & shared address/cart code
+Search and replace any hard reloads that can run after address/cart/user changes.
+
+bash
+Copy
+Edit
+# FIND ALL HARD RELOADS / “reload-like” redirects
+grep -R "location\.reload\|navigate(0)\|window\.location\.\(assign\|replace\)(window\.location\.href)" src/ -n
+grep -R "controllerchange" src/ -n
+grep -R "defaultAddress\|setDefaultAddress" src/ -n
+Replace with React Query invalidations only:
+
+diff
+Copy
+Edit
+- window.location.reload();
+- navigate(0);
+- window.location.assign(window.location.href);
++ await Promise.all([
++   queryClient.invalidateQueries({ queryKey: ['addresses'] }),
++   queryClient.invalidateQueries({ queryKey: ['cart'] }),
++   queryClient.invalidateQueries({ queryKey: ['user'] }),
++]);
+Guard any redirect/effect with a “run once” ref:
+
+ts
+Copy
+Edit
+// in checkout.tsx (or any hook doing redirects/normalization)
+const didRun = useRef(false);
+useEffect(() => {
+  if (didRun.current) return;
+  if (needsAddress /* boolean only, no entire objects in deps */) {
+    didRun.current = true;
+    navigate('/dashboard?tab=addresses', { replace: true });
+  }
+}, [navigate, needsAddress]);
+Don’t depend on whole user/cart objects in effects; depend on a stable boolean (e.g., needsAddress).
+
+2) Fix the /status poller (this is a typical reload loop source)
+Your logs show /status returning both 200 and 304 with varying content length. If the client reloads on any “change”, that alone can loop forever.
+
+Make the server return a stable version and don’t include changing timestamps:
+
+ts
+Copy
+Edit
+// server /status handler (routes.ts)
+res.json({
+  ok: true,
+  version: process.env.COMMIT_SHA || process.env.APP_VERSION || 'dev',
+  // DO NOT include Date.now() or volatile fields that change each request
+});
+Make the client reload only if the version truly changed, and only once:
+
+ts
+Copy
+Edit
+// src/lib/useAppVersionPoller.ts
+import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+
+export function useAppVersionPoller() {
+  const qc = useQueryClient();
+  const reloadedOnce = useRef(false);
+  const last = (localStorage.getItem('appVersion') || '');
+
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch('/status', { cache: 'no-store' });
+        const j = await res.json().catch(() => null);
+        const next = j?.version || '';
+        if (next && next !== last) {
+          localStorage.setItem('appVersion', next);
+          // Prefer soft update first
+          await qc.invalidateQueries();
+          if (!reloadedOnce.current && !import.meta.env.VITE_DISABLE_HARD_RELOADS) {
+            reloadedOnce.current = true;
+            // give queries a beat to settle
+            setTimeout(() => window.location.reload(), 500);
+          }
+        }
+      } catch {}
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [qc, last]);
+}
+If you’re iterating a lot, you can temporarily set VITE_DISABLE_HARD_RELOADS=true to prove the loop stops.
+
+3) Tame the service worker update handler (common hidden loop)
+Many SW templates reload on every controllerchange, which cascades with the status poller.
+
+diff
+Copy
+Edit
+// src/components/PWAInstaller.tsx (or wherever SW update lives)
+let hasReloaded = false;
+
+navigator.serviceWorker.addEventListener('controllerchange', () => {
+-  window.location.reload();
++  if (hasReloaded) return;
++  hasReloaded = true;
++  // Only reload if the app version changed (aligns with /status)
++  const current = localStorage.getItem('appVersion') || '';
++  const next = sessionStorage.getItem('swInstallVersion') || current;
++  if (next !== current && !import.meta.env.VITE_DISABLE_HARD_RELOADS) {
++    window.location.reload();
++  }
+});
+Also ensure you don’t register multiple SW listeners on hot reload. Mount it once at app root.
+
+4) Fix leftover “address defaulting” reloads
+The loop often starts right after:
+
+bash
+Copy
+Edit
+POST /api/addresses/:id/default 200
+Make sure none of these components call a hard reload:
+
+src/components/addresses/AddressForm.tsx
+
+src/components/dashboard/AddressesPanel.tsx
+
+any useAddresses/useCheckout hooks
+
+Pattern to use after defaulting an address:
+
+ts
+Copy
+Edit
+await Promise.all([
+  qc.invalidateQueries({ queryKey: ['addresses'] }),
+  qc.invalidateQueries({ queryKey: ['cart'] }),
+]);
+toast({ title: 'Default address saved' }); // no reload
+5) Safety net: one-line guard (optional but handy during dev)
+Add this tiny helper and wrap any remaining reloads until you’ve purged them:
+
+ts
+Copy
+Edit
+// src/lib/safeReload.ts
+export function safeReload() {
+  if (import.meta.env.VITE_DISABLE_HARD_RELOADS === 'true') return;
+  window.location.reload();
+}
+Then replace any remaining direct window.location.reload() calls with safeReload().
+
+6) Quick acceptance checklist
+Add an item → go to checkout → set default address → no full reload; UI updates via invalidations.
+
+With service worker enabled, idle on checkout for 2–3 minutes: no spontaneous reloads while /status continues to poll.
+
+Toggle an address again: still no reload.
+
+Why this will fix what you’re seeing in the video
+Even without watching the video here, the logs you posted show the hallmark signature of document reloads triggered by either /status watcher or SW update code, and then amplified by a checkout effect that also reloads after address normalization. The changes above:
+
+remove all reloads from checkout,
+
+make /status changes not trigger a loop,
+
+and make the SW update handler reload once only when the actual version changes.
+
+If you want me to pinpoint the exact file that’s still calling reload(), run the two grep commands above and paste any hits—you’ll see the last remaining offender right away.

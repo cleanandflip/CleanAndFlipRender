@@ -30,7 +30,7 @@ function HomeSections() {
   
   const { data: featuredProducts, refetch } = useQuery<Product[]>({
     queryKey: ["/api/products/featured"],
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnWindowFocus: false, // Disabled to prevent reload loops
     refetchOnMount: true, // Always refetch when component mounts
     staleTime: 0, // Always consider data stale for real-time accuracy
     gcTime: 0, // No client-side caching to prevent stale data (v5)

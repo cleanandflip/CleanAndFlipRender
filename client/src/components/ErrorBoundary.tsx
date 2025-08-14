@@ -87,7 +87,11 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  if (!import.meta.env.VITE_DISABLE_HARD_RELOADS) {
+                    window.location.reload();
+                  }
+                }}
                 className="glass border-border"
               >
                 Reload Page

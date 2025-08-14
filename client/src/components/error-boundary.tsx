@@ -41,7 +41,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleRetry = () => {
-    window.location.reload();
+    // Use safe reload with development guard
+    if (!import.meta.env.VITE_DISABLE_HARD_RELOADS) {
+      window.location.reload();
+    }
   };
 
   private handleGoHome = () => {

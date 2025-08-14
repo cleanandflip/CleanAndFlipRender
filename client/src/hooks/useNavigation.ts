@@ -54,7 +54,18 @@ export const useNavigation = () => {
     
     // Utility methods
     goBack: () => window.history.back(),
-    refresh: () => window.location.reload(),
+    refresh: () => {
+      // Use React Query invalidation instead of hard reload
+      import('@tanstack/react-query').then(({ useQueryClient }) => {
+        const queryClient = useQueryClient();
+        queryClient.invalidateQueries();
+      }).catch(() => {
+        // Fallback to safe reload only if React Query unavailable
+        if (!import.meta.env.VITE_DISABLE_HARD_RELOADS) {
+          window.location.reload();
+        }
+      });
+    },
     
     // Helper for checking admin routes
     isDeveloperRoute: () => location.startsWith('/admin'),

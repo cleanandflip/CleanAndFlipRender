@@ -84,7 +84,7 @@ function DashboardContent() {
     retry: 2,
     staleTime: 30000,
     gcTime: 0, // No client-side caching to prevent stale data
-    refetchOnWindowFocus: true, // Always refetch when user returns to tab
+    refetchOnWindowFocus: false, // Disabled to prevent reload loops
     refetchOnMount: true, // Always refetch when component mounts
   });
 

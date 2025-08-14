@@ -69,7 +69,11 @@ export default function CartPage() {
         <Card className="p-8 text-center max-w-md">
           <CardContent>
             <p className="text-red-600 mb-4">Failed to load cart</p>
-            <Button onClick={() => window.location.reload()}>Retry</Button>
+            <Button onClick={() => {
+              if (!import.meta.env.VITE_DISABLE_HARD_RELOADS) {
+                window.location.reload();
+              }
+            }}>Retry</Button>
           </CardContent>
         </Card>
       </div>

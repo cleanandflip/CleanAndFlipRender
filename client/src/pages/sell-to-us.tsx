@@ -245,7 +245,11 @@ export default function SellToUs() {
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => window.location.reload()} 
+                onClick={() => {
+                  if (!import.meta.env.VITE_DISABLE_HARD_RELOADS) {
+                    window.location.reload();
+                  }
+                }} 
                 className="glass border-border"
               >
                 Submit Another Item
