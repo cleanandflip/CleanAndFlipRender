@@ -463,12 +463,23 @@ export class DatabaseStorage implements IStorage {
   async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product> {
     Logger.debug('DatabaseStorage.updateProduct - received data:', product);
     
+    // Build update object with only provided fields
+    const updateData: any = {
+      ...(product as any),
+      updatedAt: new Date(),
+    };
+    
+    // Handle optional cost and compareAtPrice fields safely
+    if (product.cost !== undefined) {
+      updateData.cost = product.cost;
+    }
+    if ((product as any).compareAtPrice !== undefined) {
+      updateData.compare_at_price = (product as any).compareAtPrice;
+    }
+    
     const [updatedProduct] = await db
       .update(products)
-      .set({
-        ...(product as any),
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(products.id, id))
       .returning();
       
@@ -490,7 +501,38 @@ export class DatabaseStorage implements IStorage {
   async getFeaturedProducts(limit: number = 6): Promise<Product[]> {
     try {
       return await db
-        .select()
+        .select({
+          id: products.id,
+          name: products.name,
+          description: products.description,
+          price: products.price,
+          categoryId: products.categoryId,
+          subcategory: products.subcategory,
+          brand: products.brand,
+          weight: products.weight,
+          condition: products.condition,
+          status: products.status,
+          images: products.images,
+          specifications: products.specifications,
+          stockQuantity: products.stockQuantity,
+          views: products.views,
+          featured: products.featured,
+          searchVector: products.searchVector,
+          stripeProductId: products.stripeProductId,
+          stripePriceId: products.stripePriceId,
+          stripeSyncStatus: products.stripeSyncStatus,
+          stripeLastSync: products.stripeLastSync,
+          sku: products.sku,
+          dimensions: products.dimensions,
+          cost: products.cost,
+          compareAtPrice: products.compareAtPrice,
+          isLocalDeliveryAvailable: products.isLocalDeliveryAvailable,
+          isShippingAvailable: products.isShippingAvailable,
+          availableLocal: products.availableLocal,
+          availableShipping: products.availableShipping,
+          createdAt: products.createdAt,
+          updatedAt: products.updatedAt,
+        })
         .from(products)
         .where(
           and(

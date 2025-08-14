@@ -2773,6 +2773,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isShippingAvailable: !!shipBool,
         is_shipping_available: !!shipBool,
         fulfillmentMode: fulfillmentMode,
+        fulfillment_mode: fulfillmentMode,
+        compareAtPrice: req.body.compareAtPrice != null ? numeric(req.body.compareAtPrice) : null,
+        compare_at_price: req.body.compareAtPrice != null ? numeric(req.body.compareAtPrice) : null,
       };
 
       Logger.debug(`Updating product with data: ${JSON.stringify(baseData)}`);
