@@ -9,11 +9,17 @@ import {
 } from '@/components/ui';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ProductModal } from '@/components/admin/ProductModal';
+import { EnhancedProductModal } from '@/components/admin/modals/EnhancedProductModal';
 import { Plus, Edit, Eye, Trash2 } from 'lucide-react';
-import { formatCurrency } from '@/utils/submissionHelpers';
 import { useToast } from '@/hooks/use-toast';
 import { broadcastProductUpdate } from '@/lib/queryClient';
+
+// Simple formatCurrency utility function
+const formatCurrency = (amount: number) => 
+  new Intl.NumberFormat('en-US', { 
+    style: 'currency', 
+    currency: 'USD' 
+  }).format(amount);
 
 interface Product {
   id: string;
@@ -586,24 +592,24 @@ export function ProductsManager() {
         onPageChange={(page) => setFilters({ ...filters, page })}
       />
 
-      {/* Product Modals */}
-      <ProductModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setEditingProduct(null);
-        }}
-        product={editingProduct}
-        categories={categories || []}
-        onSave={refetch}
-      />
+      {/* Enhanced Product Modals */}
+      {isEditModalOpen && (
+        <EnhancedProductModal
+          product={editingProduct}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingProduct(null);
+          }}
+          onSave={refetch}
+        />
+      )}
       
-      <ProductModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        categories={categories || []}
-        onSave={refetch}
-      />
+      {isCreateModalOpen && (
+        <EnhancedProductModal
+          onClose={() => setIsCreateModalOpen(false)}
+          onSave={refetch}
+        />
+      )}
     </DashboardLayout>
   );
 }
