@@ -54,9 +54,20 @@ export function useCart() {
       
       return { previousCart };
     },
-    onError: (error, variables, context) => {
+    onError: (error: any, variables, context) => {
       // Rollback on error
       queryClient.setQueryData(["cart"], context?.previousCart);
+      
+      // Handle LOCAL_ONLY_NOT_ELIGIBLE specially
+      if (error.message?.includes('409') && error.message?.includes('LOCAL_ONLY_NOT_ELIGIBLE')) {
+        toast({
+          title: "Not available in your area",
+          description: "This item is local delivery only.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       toast({
         title: "Error",
         description: error.message || "Failed to add item to cart",

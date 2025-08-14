@@ -75,11 +75,13 @@ export function AddressForm({
       window.dispatchEvent(new CustomEvent('addressUpdated', { detail: data }));
       if (form.getValues('setDefault')) {
         // Use React Query invalidation instead of window events that can trigger reloads
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['addresses'] }),
-          queryClient.invalidateQueries({ queryKey: ['cart'] }),
-          queryClient.invalidateQueries({ queryKey: ['user'] }),
-        ]);
+        (async () => {
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['addresses'] }),
+            queryClient.invalidateQueries({ queryKey: ['cart'] }),
+            queryClient.invalidateQueries({ queryKey: ['user'] }),
+          ]);
+        })();
         // Keep event for backward compatibility but avoid reload triggers
         window.dispatchEvent(new CustomEvent('defaultAddressChanged', { detail: data }));
       }

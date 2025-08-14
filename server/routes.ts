@@ -49,6 +49,7 @@ import { db } from "./db";
 import { cartItems } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import observability from "./routes/observability";
+import { localityService } from "./services/locality";
 
 // WebSocket Manager for broadcasting updates
 let wsManager: any = null;
@@ -874,7 +875,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       Logger.info(`[CART DEBUG] POST /api/cart/items reached handler - body: ${JSON.stringify(req.body)}, productId: ${req.body?.productId}, quantity: ${req.body?.quantity}`);
       
-      const { productId, quantity = 1 } = req.body;
+      const productId = req.body?.productId;
+      const quantity = req.body?.quantity || 1;
+      
+      // Validate product exists first
+      const productCheck = await storage.getProduct(productId);
+      if (!productCheck) {
+        return res.status(404).json({ error: "NOT_FOUND", message: "Product not found" });
+      }
+      
+      // CRITICAL FIX: Block LOCAL_ONLY items for non-local users at server level
+      if (productCheck.isLocalDeliveryAvailable && !productCheck.isShippingAvailable) {
+        // This is LOCAL_ONLY - check if user is eligible
+        const zipCode = (req.session as any)?.zipCode || req.body?.zipCode;
+        if (zipCode) {
+          const isLocal = await localityService.isLocalZipCode(zipCode);
+          if (!isLocal) {
+            return res.status(409).json({
+              error: "LOCAL_ONLY_NOT_ELIGIBLE",
+              message: "This product is only available for local delivery in your area."
+            });
+          }
+        } else {
+          // No zip code available - assume non-local to be safe
+          return res.status(409).json({
+            error: "LOCAL_ONLY_NOT_ELIGIBLE", 
+            message: "This product is only available for local delivery in your area."
+          });
+        }
+      }
       
       // Basic validation
       if (!productId) {
@@ -895,11 +924,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       Logger.debug(`Cart request - userId: ${userId}, productId: ${productId}, quantity: ${quantity}`);
       
-      // 1. Check product availability first
-      const product = await storage.getProduct(productId);
-      if (!product) {
-        return res.status(404).json({ error: 'Product not found' });
-      }
+      // 1. Use the product we already checked above
+      const product = productCheck;
       
       if ((product.stockQuantity || 0) < 1) {
         return res.status(400).json({ error: 'Product not available' });
