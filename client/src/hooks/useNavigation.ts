@@ -1,6 +1,5 @@
 import { useLocation } from "wouter";
 import { ROUTES, routes } from "@/config/routes";
-import { queryClient } from "@/lib/queryClient";
 
 /**
  * 🎯 CENTRALIZED NAVIGATION SERVICE - Single source of truth for all app navigation
@@ -55,10 +54,7 @@ export const useNavigation = () => {
     
     // Utility methods
     goBack: () => window.history.back(),
-    refresh: () => {
-      // FIXED: Use query invalidation instead of hard reload
-      queryClient.invalidateQueries();
-    },
+    refresh: () => window.location.reload(),
     
     // Helper for checking admin routes
     isDeveloperRoute: () => location.startsWith('/admin'),
