@@ -13,6 +13,20 @@ export type LocalityStatus = {
   zipUsed?: string | null;
   city?: string | null;
   state?: string | null;
+  zip: string;                 // Normalized ZIP for UI consistency
+  user?: string | null;        // User ID if authenticated
+};
+
+// Default locality state to prevent null/undefined crashes
+export const DEFAULT_LOCALITY: LocalityStatus = {
+  eligible: false,
+  source: 'NONE',
+  reason: 'FALLBACK_NON_LOCAL',
+  zipUsed: null,
+  city: null,
+  state: null,
+  zip: 'none',
+  user: null,
 };
 
 const LOCAL_ZIPS = new Set(['28801','28803','28804','28805','28806','28808']);

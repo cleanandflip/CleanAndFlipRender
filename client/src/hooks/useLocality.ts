@@ -1,40 +1,40 @@
-// Unified Locality Hook - Single Source of Truth
 import { useQuery } from '@tanstack/react-query';
+import { DEFAULT_LOCALITY, LocalityStatus } from '../../../shared/locality';
 
-export type LocalityStatus = {
-  eligible: boolean;
-  source: 'DEFAULT_ADDRESS' | 'ZIP_OVERRIDE' | 'IP' | 'NONE';
-  reason: 'IN_LOCAL_AREA' | 'NO_DEFAULT_ADDRESS' | 'ZIP_NOT_LOCAL' | 'FALLBACK_NON_LOCAL';
-  zipUsed?: string | null;
-  city?: string | null;
-  state?: string | null;
-};
+function buildLocalityUrl(zip?: string) {
+  const base = '/api/locality/status';
+  return zip ? `${base}?zip=${encodeURIComponent(zip)}` : base; // no stray '?'
+}
 
-export function useLocality(zipOverride?: string | null) {
-  const query = useQuery<LocalityStatus>({
-    queryKey: ['locality', zipOverride ?? null], // Stable and specific key
-    queryFn: async () => {
-      // Clean URL construction - no trailing ? when no ZIP
-      const path = zipOverride 
-        ? `/api/locality/status?zip=${encodeURIComponent(zipOverride)}` 
-        : '/api/locality/status';
-      const res = await fetch(path, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch locality');
-      return res.json();
-    },
+async function fetchLocality(zip?: string): Promise<LocalityStatus> {
+  const res = await fetch(buildLocalityUrl(zip), { credentials: 'include' });
+  if (!res.ok) throw new Error(`Locality request failed: ${res.status}`);
+  const data = (await res.json()) as LocalityStatus;
+  // harden the shape to avoid undefined in the UI
+  return {
+    eligible: !!data.eligible,
+    source: data.source ?? 'NONE',
+    reason: data.reason ?? 'FALLBACK_NON_LOCAL',
+    zipUsed: data.zipUsed ?? null,
+    city: data.city ?? null,
+    state: data.state ?? null,
+    zip: data.zip ?? data.zipUsed ?? 'none',
+    user: data.user ?? null,
+  };
+}
+
+export function useLocality(zipOverride?: string) {
+  const q = useQuery({
+    queryKey: ['locality', zipOverride ?? null],
+    queryFn: () => fetchLocality(zipOverride),
+    placeholderData: DEFAULT_LOCALITY, // shows immediately
     staleTime: 5 * 60 * 1000,
-    retry: 1,
-    refetchOnWindowFocus: false
+    gcTime: 30 * 60 * 1000,
   });
 
-  if (process.env.NODE_ENV === 'development' && query.data) {
-    console.log(`[LOCALITY] Client: eligible=${query.data.eligible} source=${query.data.source} zip=${query.data.zipUsed || 'none'}`);
-  }
-
+  // ALWAYS return a concrete object
   return {
-    status: query.data,
-    eligible: query.data?.eligible ?? false,
-    loading: query.isLoading,
-    error: query.error as Error | null
+    ...q,
+    data: (q.data ?? DEFAULT_LOCALITY) as LocalityStatus,
   };
 }

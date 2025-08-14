@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code, LayoutGrid, Code2, Shield } from "lucide-react";
 import { LocalBadge } from "@/components/locality/LocalBadge";
 import { useLocality } from "@/hooks/useLocality";
+import { DEFAULT_LOCALITY } from "../../../../shared/locality";
 
 import { ROUTES } from "@/config/routes";
 
@@ -29,7 +30,8 @@ export default function Navigation() {
   const cartCount = cart?.items?.length || 0;
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
-  const { data: locality } = useLocality();
+  const { data: locality, isLoading: localityLoading } = useLocality();
+  const local = locality ?? DEFAULT_LOCALITY; // Never undefined
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -279,11 +281,11 @@ export default function Navigation() {
                         {/* Unified Locality Status Badge */}
                         <div className="mt-2 flex justify-center">
                           <div className={`text-xs px-2 py-1 rounded-full ${
-                            locality.eligible 
+                            local.eligible 
                               ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                               : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                           }`}>
-                            {locality.eligible ? "✅ Local delivery eligible" : "❌ Outside local delivery zone"}
+                            {local.eligible ? "✅ Local delivery eligible" : "❌ Outside local delivery zone"}
                           </div>
                         </div>
                       </div>
