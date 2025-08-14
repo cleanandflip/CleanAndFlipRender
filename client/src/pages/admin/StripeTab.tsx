@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { CreditCard, RefreshCw, CheckCircle, XCircle, TrendingUp, DollarSign, Activity, Zap, Clock } from 'lucide-react';
 import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
-import { useWebSocketState } from "@/hooks/useWebSocketState";
 import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';

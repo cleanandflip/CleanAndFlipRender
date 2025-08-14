@@ -2,8 +2,7 @@ import { Router } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
 import { isAuthenticated } from '../middleware/auth';
-import { isLocalMiles } from '../lib/locality';
-import { guardCartItemAgainstLocality } from '../services/cartGuard';
+import { isLocalMiles, guardCartItemAgainstLocality } from '../utils/fulfillment';
 
 const router = Router();
 
@@ -53,37 +52,24 @@ router.post('/', isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const data = addToCartSchema.parse(req.body);
     
-    // Get user's locality status
     const addresses = await storage.getUserAddresses(userId);
-    const defaultAddress = addresses.find(addr => addr.isDefault);
-    const localityResult = defaultAddress ? 
-      isLocalMiles(Number(defaultAddress.latitude), Number(defaultAddress.longitude)) : 
-      { isLocal: false };
-    
-    // Get product to check availability
+    const defaultAddress = addresses.find(a => a.isDefault) ?? addresses[0];
+    const { isLocal } = defaultAddress
+      ? isLocalMiles(Number(defaultAddress.latitude), Number(defaultAddress.longitude))
+      : { isLocal: false };
+
     const product = await storage.getProduct(data.productId);
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
-    // Guard against locality restrictions
-    try {
-      guardCartItemAgainstLocality({
-        userIsLocal: localityResult.isLocal,
-        product: {
-          is_local_delivery_available: product.isLocalDeliveryAvailable ?? false,
-          is_shipping_available: product.isShippingAvailable ?? false
-        }
-      });
-    } catch (error: any) {
-      if (error.code === 'LOCALITY_RESTRICTED') {
-        return res.status(409).json({ 
-          error: error.message,
-          code: 'LOCALITY_RESTRICTED'
-        });
-      }
-      throw error;
-    }
+
+    guardCartItemAgainstLocality({
+      userIsLocal: isLocal,
+      product: {
+        is_local_delivery_available: !!(product as any).isLocalDeliveryAvailable,
+        is_shipping_available: !!(product as any).isShippingAvailable,
+      },
+    });
     
     const cart = await storage.addToCartLegacy(userId, data.productId, data.quantity);
     

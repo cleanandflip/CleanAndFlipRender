@@ -413,8 +413,10 @@ export default function ProductDetail() {
                   product={{
                     ...product,
                     images: product.images || [],
-                    is_local_delivery_available: product.isLocalDeliveryAvailable,
-                    is_shipping_available: product.isShippingAvailable
+                    brand: product.brand || undefined,
+                    stockQuantity: product.stockQuantity || 0,
+                    is_local_delivery_available: product.isLocalDeliveryAvailable ?? false,
+                    is_shipping_available: product.isShippingAvailable ?? false
                   }}
                 />
               </div>

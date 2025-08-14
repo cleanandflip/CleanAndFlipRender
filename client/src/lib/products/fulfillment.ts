@@ -1,13 +1,18 @@
-export type FulfillmentFlags = { localDelivery: boolean; nationwideShipping: boolean; };
+export type AnyProduct = Record<string, any>;
 
-export function getFulfillmentFlags(p: any): FulfillmentFlags {
-  return {
-    localDelivery: Boolean(p?.localDelivery ?? p?.fulfillment?.local ?? p?.isLocalDeliveryAvailable),
-    nationwideShipping: Boolean(p?.nationwideShipping ?? p?.fulfillment?.shipping ?? p?.isShippingAvailable),
-  };
-}
+export function getFulfillment(p: AnyProduct) {
+  // normalize different shapes from server/older clients
+  const local =
+    p.is_local_delivery_available ??
+    p.isLocalDeliveryAvailable ??
+    p.localDelivery ??
+    false;
 
-export function isLocalOnly(p: any) {
-  const f = getFulfillmentFlags(p);
-  return f.localDelivery && !f.nationwideShipping;
+  const shipping =
+    p.is_shipping_available ??
+    p.isShippingAvailable ??
+    p.shipping ??
+    false;
+
+  return { local: !!local, shipping: !!shipping };
 }

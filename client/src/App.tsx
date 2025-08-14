@@ -139,7 +139,7 @@ function Router() {
               <Route path={ROUTES.ORDERS} component={Orders} />
               <Route path={ROUTES.SUBMIT_EQUIPMENT} component={SellToUs} />
               <Route path={ROUTES.TRACK_SUBMISSION} component={TrackSubmission} />
-              <Route path="/addresses" component={AddressesPage} />
+              {/* Addresses route removed - functionality integrated into dashboard */}
 
               
               {/* Admin Routes */}
@@ -154,7 +154,7 @@ function Router() {
               <Route path="/privacy-policy" component={LegalPrivacyPolicy} />
               
               {/* 404 */}
-              <Route component={NotFound} />
+              <Route path="*" component={NotFound} />
             </Switch>
           </Suspense>
         </main>
@@ -166,7 +166,7 @@ function Router() {
 
 function App() {
   // Initialize singleton WebSocket connection to prevent duplicates
-  const { ready } = useWebSocketState();
+  const { connected } = useWebSocketState();
   useEffect(() => {
     // Disable Replit's embed warnings globally
     environment.disableReplitEmbeds();

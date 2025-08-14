@@ -24,7 +24,7 @@ import type { Product } from "@shared/schema";
 
 function HomeSections() {
   const queryClient = useQueryClient();
-  const { lastMessage, ready } = useWebSocketState();
+  const { connected, subscribe } = useWebSocketState();
   const { data: locality } = useLocality();
   const { user } = useAuth();
   
@@ -37,14 +37,8 @@ function HomeSections() {
     refetchInterval: 30000, // Auto-refetch every 30 seconds for live updates
   });
 
-  // Real-time WebSocket event listeners for live sync
-  useEffect(() => {
-    if (lastMessage?.type === 'product_update') {
-      // Product update received, refreshing featured products
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-    }
-  }, [lastMessage, refetch, queryClient]);
+  // Add live sync for featured products
+  useProductLiveSync({ queryKey: ["/api/products/featured"] });
 
   // Legacy event listeners for admin updates
   useEffect(() => {
@@ -512,13 +506,13 @@ function HomeSections() {
               {/* Live Sync Status */}
               <div className="flex items-center gap-2 mb-4">
                 <div 
-                  className={`w-2 h-2 rounded-full ${ready ? 'bg-green-500' : 'bg-red-500'}`}
+                  className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}
                 ></div>
                 <span 
                   className="text-xs"
                   style={{ color: theme.colors.text.muted }}
                 >
-                  {ready ? 'Live Updates Active' : 'Connecting...'}
+                  {connected ? 'Live Updates Active' : 'Connecting...'}
                 </span>
               </div>
 

@@ -1,31 +1,26 @@
 import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocketState } from "@/hooks/useWebSocketState";
+import { queryClient } from "@/lib/queryClient";
 
-export function useProductLiveSync({ queryKey, productId }: { queryKey: any; productId?: string }) {
-  const qc = useQueryClient();
-  const { ready, subscribe } = useWebSocketState();
-  
+type Opts = { queryKey: any[]; productId?: string };
+
+export function useProductLiveSync({ queryKey, productId }: Opts) {
+  const { subscribe } = useWebSocketState();
+
   useEffect(() => {
-    if (!ready || typeof subscribe !== "function") return;
-    
-    const unsub = subscribe((msg: any) => {
-      const t = msg?.type || msg?.data?.type;
-      const payload = msg?.payload || msg?.data?.payload;
-      
-      if (!t) return;
-      
-      if (["products.updated", "products.created", "products.deleted", "product:update", "product:create", "product:delete"].includes(t)) {
-        if (!productId || payload?.id === productId || payload?.productId === productId) {
-          qc.invalidateQueries({ queryKey });
-        }
+    const offUpdate = subscribe("product:update", (payload: any) => {
+      if (!productId || payload?.id === productId) {
+        queryClient.invalidateQueries({ queryKey });
       }
     });
-    
-    return () => { 
-      try { 
-        unsub?.(); 
-      } catch {} 
+    const offCreate = subscribe("product:create", () =>
+      queryClient.invalidateQueries({ queryKey })
+    );
+    const offDelete = subscribe("product:delete", () =>
+      queryClient.invalidateQueries({ queryKey })
+    );
+    return () => {
+      offUpdate?.(); offCreate?.(); offDelete?.();
     };
-  }, [ready, subscribe, qc, JSON.stringify(queryKey), productId]);
+  }, [subscribe, JSON.stringify(queryKey), productId]);
 }

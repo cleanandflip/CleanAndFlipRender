@@ -1,68 +1,86 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 
-type Msg = any;
-type Sub = (m: Msg) => void;
-
-let socket: WebSocket | null = null;
-const subs = new Set<Sub>();
+// ---- module-singleton so multiple hooks share one socket ----
+let _socket: WebSocket | null = null;
+let _connected = false;
+const _listeners = new Map<string, Set<(payload: any) => void>>();
 
 function ensureSocket() {
-  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return socket;
-  socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`);
-  socket.onmessage = (ev) => {
-    let data: any = undefined;
-    try { data = JSON.parse(ev.data); } catch { data = ev.data; }
-    subs.forEach(fn => { try { fn(data); } catch {} });
-  };
-  return socket;
+  if (_socket) return _socket;
+
+  const wsUrl =
+    (import.meta as any).env?.VITE_WS_URL ||
+    location.origin.replace(/^http/, "ws") + "/ws";
+
+  _socket = new WebSocket(wsUrl);
+
+  _socket.addEventListener("open", () => {
+    _connected = true;
+  });
+
+  _socket.addEventListener("close", () => {
+    _connected = false;
+    // lightweight retry
+    setTimeout(() => {
+      _socket = null;
+      ensureSocket();
+    }, 2000);
+  });
+
+  _socket.addEventListener("message", (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      const set = _listeners.get(msg?.type);
+      if (set) for (const fn of set) fn(msg.payload);
+    } catch {}
+  });
+
+  return _socket;
 }
 
 export function useWebSocketState() {
-  const [ready, setReady] = useState(false);
-  const [lastMessage, setLastMessage] = useState<any>(null);
-  const isMounted = useRef(true);
-
-  useEffect(() => () => { isMounted.current = false; }, []);
+  const [, force] = useState(0);
+  const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const s = ensureSocket();
-    const onOpen = () => isMounted.current && setReady(true);
-    const onClose = () => isMounted.current && setReady(false);
-    const onMsg = (ev: MessageEvent) => {
-      try { setLastMessage(JSON.parse(ev.data)); } catch { setLastMessage(ev.data); }
-    };
-    s.addEventListener("open", onOpen);
-    s.addEventListener("close", onClose);
-    s.addEventListener("message", onMsg);
-    return () => {
-      s.removeEventListener("open", onOpen);
-      s.removeEventListener("close", onClose);
-      s.removeEventListener("message", onMsg);
-    };
+    socketRef.current = ensureSocket();
+    const id = setInterval(() => force((n) => n + 1), 500); // shallow reactivity for connected flag
+    return () => clearInterval(id);
   }, []);
 
-  const subscribe = useCallback((fn: Sub) => {
-    subs.add(fn);
-    return () => subs.delete(fn);
+  const subscribe = useCallback((type: string, handler: (payload: any) => void) => {
+    if (!_listeners.has(type)) _listeners.set(type, new Set());
+    _listeners.get(type)!.add(handler);
+    return () => _listeners.get(type)!.delete(handler);
   }, []);
 
-  // publish with graceful fallback
-  const sendJsonMessage = useCallback((typeOrPayload: any, maybePayload?: any) => {
-    const s = ensureSocket();
-    const payload = typeof typeOrPayload === "string"
-      ? { type: typeOrPayload, payload: maybePayload }
-      : typeOrPayload;
-    try { s.send(JSON.stringify(payload)); } catch {}
+  const publish = useCallback((type: string, payload?: any) => {
+    const s = socketRef.current ?? _socket;
+    if (s && s.readyState === WebSocket.OPEN) {
+      s.send(JSON.stringify({ type, payload }));
+    }
   }, []);
 
-  const publish = sendJsonMessage; // alias for compatibility
-
-  return { ready, lastMessage, subscribe, sendJsonMessage, publish };
+  return useMemo(
+    () => ({ connected: _connected, socket: socketRef.current, subscribe, publish }),
+    [_connected, socketRef.current, subscribe, publish]
+  );
 }
 
-// Add SocketProvider component expected by main.tsx  
+// ---- Compatibility so legacy code won't crash ----
+export const useWebSocketReady = () => {
+  const { connected } = useWebSocketState();
+  return connected;
+};
+
+// Some legacy code destructures { send }, so provide a no-op alias.
+export function useLegacySocket() {
+  const { publish } = useWebSocketState();
+  const send = publish; // alias
+  return { send, publish };
+}
+
+// Compatibility wrapper component for legacy App.tsx
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
-
-export default undefined as unknown as never; // keep it explicitly non-default to prevent old default imports

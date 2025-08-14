@@ -60,7 +60,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           <div className="p-3">
             <h4 className="font-semibold text-sm line-clamp-2 mb-1">{product.name}</h4>
             <p className="text-accent-blue font-bold text-sm">${product.price}</p>
-            <ProductAvailabilityChips product={product} compact={true} />
+            <ProductAvailabilityChips product={product} />
           </div>
         </Card>
       </SmartLink>
@@ -131,10 +131,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 />
                 
                 <div className="space-y-2">
-                  <ProductAvailabilityChips 
-                    local={product.is_local_delivery_available ?? false}
-                    ship={product.is_shipping_available ?? false}
-                  />
+                  <ProductAvailabilityChips product={product} />
                   {locality?.isLocal && product.is_local_delivery_available && (
                     <FreeDeliveryPill />
                   )}
@@ -230,10 +227,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       
       {/* Availability chips and add to cart */}
       <div className="px-4 pb-4 space-y-2" onClick={(e) => e.stopPropagation()}>
-        <ProductAvailabilityChips 
-          local={product.is_local_delivery_available ?? false}
-          ship={product.is_shipping_available ?? false}
-        />
+        <ProductAvailabilityChips product={product} />
         {locality?.isLocal && product.is_local_delivery_available && (
           <FreeDeliveryPill />
         )}

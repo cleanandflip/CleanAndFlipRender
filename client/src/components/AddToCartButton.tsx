@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useCart, useAddToCart, useRemoveFromCart } from "@/hooks/use-cart";
 import { useLocality } from "@/hooks/useLocality";
-import { isLocalOnly } from "@/lib/products/fulfillment";
+import { getFulfillment } from "@/lib/products/fulfillment";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "wouter";
 
@@ -45,8 +45,10 @@ export default function AddToCartButton({
 
   const isInCart = cart?.items?.some((item: any) => item.productId === productId) || false;
   
-  // Locality gate: check if product is local-only and user is not local
-  const blocked = isLocalOnly(product) && !locality?.isLocal;
+  // Check if this product is local-only and user is outside service area  
+  const { local, shipping } = getFulfillment(product || {});
+  const localOnly = local && !shipping;
+  const blocked = localOnly && !locality?.isLocal;
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
