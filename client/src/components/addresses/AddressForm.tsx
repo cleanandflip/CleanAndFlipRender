@@ -149,23 +149,6 @@ export function AddressForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {/* Address Autocomplete */}
-          <div className="space-y-2">
-            <Label>Search Address</Label>
-            <AddressAutocomplete
-              onAddressSelect={handleAddressSelect}
-              placeholder="Start typing your address..."
-            />
-            {isLocalDelivery && (
-              <Alert>
-                <Truck className="h-4 w-4" />
-                <AlertDescription>
-                  🎉 Great! This address qualifies for free local delivery.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-
           {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -196,15 +179,23 @@ export function AddressForm({
             </div>
           </div>
 
-          {/* Address Fields */}
+          {/* Address Fields with Autocomplete */}
           <div className="space-y-2">
             <Label htmlFor="street1">Street Address *</Label>
-            <Input
-              id="street1"
-              {...form.register('street1')}
-              placeholder="123 Main St"
-              data-testid="input-street1"
+            <AddressAutocomplete
+              onAddressSelect={handleAddressSelect}
+              value={form.watch('street1')}
+              placeholder="Start typing your address..."
+              onChange={(value) => form.setValue('street1', value, { shouldValidate: true, shouldDirty: true })}
             />
+            {isLocalDelivery && (
+              <Alert>
+                <Truck className="h-4 w-4" />
+                <AlertDescription>
+                  🎉 Great! This address qualifies for free local delivery.
+                </AlertDescription>
+              </Alert>
+            )}
             {form.formState.errors.street1 && (
               <p className="text-sm text-red-600">
                 {form.formState.errors.street1.message}

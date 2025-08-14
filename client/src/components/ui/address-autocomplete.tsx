@@ -22,6 +22,7 @@ interface AddressAutocompleteProps {
   value?: string;
   placeholder?: string;
   className?: string;
+  onChange?: (value: string) => void;
 }
 
 // Simple debounce hook
@@ -45,7 +46,8 @@ export function AddressAutocomplete({
   onAddressSelect, 
   value = '', 
   placeholder = "Start typing your address...",
-  className = ""
+  className = "",
+  onChange
 }: AddressAutocompleteProps) {
   const [input, setInput] = useState(value);
   
@@ -200,6 +202,11 @@ export function AddressAutocomplete({
     const newValue = e.target.value;
     const previousValue = input;
     setInput(newValue);
+    
+    // Call onChange prop to update parent form field
+    if (onChange) {
+      onChange(newValue);
+    }
     
     // Only reset justSelected if user manually typed something different
     // (not just from our automatic setting)
