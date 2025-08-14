@@ -94,7 +94,7 @@ cartRouterV2.delete('/items/:itemId', async (req, res, next) => {
   try {
     const userId = getUserIdFromReq(req);
     const { storage } = await import('../storage');
-    await storage.removeCartItem(req.params.itemId);
+    await storage.removeFromCart(req.params.itemId);
     res.json({ ok: true });
   } catch (e) {
     next(e);

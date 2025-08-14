@@ -166,16 +166,9 @@ app.use((req, res, next) => {
     }
   }, 60 * 60 * 1000); // Every hour
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    // Don't throw in production
-    if (process.env.NODE_ENV !== 'production') {
-      throw err;
-    }
-  });
+  // Import JSON error handler
+  const { jsonErrorHandler } = await import('./middleware/error-handler.js');
+  app.use(jsonErrorHandler);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
