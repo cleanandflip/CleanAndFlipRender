@@ -30,8 +30,12 @@ function ensureSocket() {
   _socket.addEventListener("message", (e) => {
     try {
       const msg = JSON.parse(e.data);
-      const set = _listeners.get(msg?.topic || msg?.type);
-      if (set) for (const fn of set) fn(msg.payload || msg);
+      const type = msg.type ?? msg.topic;     // tolerate old server format
+      const payload = msg.payload ?? msg.data ?? msg; // tolerate variants
+      if (!type) return;
+      
+      const set = _listeners.get(type);
+      if (set) for (const fn of set) fn(payload);
     } catch {}
   });
 

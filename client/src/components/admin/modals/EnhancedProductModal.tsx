@@ -312,11 +312,12 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
       }
 
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["adminProducts"] }),
-        queryClient.invalidateQueries({ predicate: (q) =>
-          Array.isArray(q.queryKey) && q.queryKey.some(k => String(k).includes('products'))
-        }),
-        product?.id ? queryClient.invalidateQueries({ queryKey: ["product", product.id] }) : Promise.resolve(),
+        queryClient.invalidateQueries({ queryKey: ['adminProducts'] }),
+        queryClient.invalidateQueries({ queryKey: ['products'] }),
+        queryClient.invalidateQueries({ queryKey: ['products:featured'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/products'] }),
+        product?.id ? queryClient.invalidateQueries({ queryKey: ['product', product.id] }) : Promise.resolve(),
       ]);
 
       toast({ title: "Product updated", description: "Fulfillment settings saved." });

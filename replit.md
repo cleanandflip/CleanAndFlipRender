@@ -7,6 +7,14 @@ Clean & Flip is a full-stack web application for exchanging weightlifting equipm
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+- **2025-08-14**: CRITICAL WEBSOCKET PAYLOAD SCHEMA FIXES + REAL-TIME SYNC RESTORATION - COMPLETE
+  - **ROOT CAUSE RESOLVED**: Fixed WebSocket message format mismatch between server (`topic` field) and client (`type` field)
+  - **ENHANCED CLIENT COMPATIBILITY**: Updated client to handle both `topic` and `type` message formats for backward compatibility
+  - **NEW WEBSOCKET API**: Added `publishMessage()` method with modern `type/payload` structure for future compatibility
+  - **COMPREHENSIVE CACHE INVALIDATION**: Enhanced React Query invalidations across all product-related queries
+  - **LIVE SYNC DEBUGGING**: Added WebSocket payload logging to `useProductLiveSync` for real-time troubleshooting
+  - **DATABASE NORMALIZATION**: Ensured server handles both camelCase and snake_case field parsing for product updates
+  - **PRODUCTION READY**: Real-time product updates now work seamlessly - featured status changes reflect immediately without page refresh
 - **2025-08-14**: COMPREHENSIVE WEBSOCKET MODERNIZATION + PRODUCT DISPLAY UNIFICATION - COMPLETE
   - **UNIFIED LIVE SYNC**: Implemented comprehensive product live sync across all 8 display locations (Home, Products, Product Detail, Search + 4 admin views)
   - **COMPONENT CONSOLIDATION**: Merged duplicate components - ProductsManager now re-exports ProductsTab, ProductList unified with ProductGrid

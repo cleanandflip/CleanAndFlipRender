@@ -2742,40 +2742,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
-      // accept both shapes from client
-      const featuredBool = req.body.isFeatured ?? req.body.is_featured ?? req.body.featured ?? false;
-      const localBool    = req.body.isLocalDeliveryAvailable ?? req.body.is_local_delivery_available ?? false;
-      const shipBool     = req.body.isShippingAvailable ?? req.body.is_shipping_available ?? false;
-      const fulfillmentMode = req.body.fulfillmentMode ?? req.body.fulfillment_mode ?? (localBool && shipBool ? 'both' : localBool ? 'local_only' : 'shipping_only');
-
+      // Normalize request parsing - handle both camel and snake case
+      const b = req.body ?? {};
+      const safeBool = (val: any, defaultVal: boolean = false): boolean => {
+        if (typeof val === 'boolean') return val;
+        if (typeof val === 'string') return val.toLowerCase() === 'true';
+        return !!val || defaultVal;
+      };
+      
       const numeric = (v: any, def = 0) => (isNaN(parseFloat(v)) ? def : parseFloat(v));
       const intNum  = (v: any, def = 0) => (isNaN(parseInt(v)) ? def : parseInt(v));
 
-      const baseData = {
-        name: req.body.name,
-        description: req.body.description,
-        categoryId: req.body.categoryId ?? req.body.category_id,
-        brand: req.body.brand ?? null,
-        price: numeric(req.body.price),
-        compare_at_price: req.body.compareAtPrice != null ? numeric(req.body.compareAtPrice) : null,
-        cost: req.body.cost != null ? numeric(req.body.cost) : null,
-        stockQuantity: intNum(req.body.stockQuantity ?? req.body.stock, 0),
-        status: req.body.status ?? "active",
-        weight: numeric(req.body.weight, 0),
-        sku: req.body.sku ?? null,
-        images: req.body.images ?? [],
+      // Handle all field variations with proper fallbacks
+      const categoryId = b.categoryId ?? b.category_id ?? null;
+      const isFeatured = safeBool(b.isFeatured ?? b.is_featured ?? b.featured, false);
+      const isLocal = safeBool(b.isLocalDeliveryAvailable ?? b.is_local_delivery_available ?? b.local_delivery, false);
+      const isShip = safeBool(b.isShippingAvailable ?? b.is_shipping_available ?? b.shipping_available, true);
+      
+      // Determine fulfillment mode
+      let fulfillmentMode = "LOCAL_OR_SHIP";
+      if (isLocal && !isShip) fulfillmentMode = "LOCAL_ONLY";
+      else if (!isLocal && isShip) fulfillmentMode = "SHIP_ONLY";
 
-        // canonical DB fields (all the different field names)
-        featured: !!featuredBool,
-        is_featured: !!featuredBool,
-        isLocalDeliveryAvailable: !!localBool,
-        is_local_delivery_available: !!localBool,
-        isShippingAvailable: !!shipBool,
-        is_shipping_available: !!shipBool,
+      const baseData = {
+        name: b.name,
+        description: b.description,
+        categoryId: categoryId,
+        brand: b.brand ?? null,
+        price: numeric(b.price),
+        compare_at_price: b.compareAtPrice != null ? numeric(b.compareAtPrice) : null,
+        cost: b.cost != null ? numeric(b.cost) : null,
+        stockQuantity: intNum(b.stockQuantity ?? b.stock_quantity ?? b.stock, 0),
+        status: b.status ?? "active",
+        weight: numeric(b.weight, 0),
+        sku: b.sku ?? null,
+        images: b.images ?? [],
+
+        // Use normalized boolean values consistently
+        featured: isFeatured,
+        is_featured: isFeatured,
+        isLocalDeliveryAvailable: isLocal,
+        is_local_delivery_available: isLocal,
+        isShippingAvailable: isShip,
+        is_shipping_available: isShip,
         fulfillmentMode: fulfillmentMode,
         fulfillment_mode: fulfillmentMode,
-        compareAtPrice: req.body.compareAtPrice != null ? numeric(req.body.compareAtPrice) : null,
-        compare_at_price: req.body.compareAtPrice != null ? numeric(req.body.compareAtPrice) : null,
       };
 
       Logger.debug(`Updating product with data: ${JSON.stringify(baseData)}`);
@@ -2784,9 +2795,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Broadcast to all clients
       try {
-        if (wsManager?.publish) {
-          wsManager.publish({
-            topic: "product:update",
+        if (wsManager?.publishMessage) {
+          wsManager.publishMessage("product:update", {
+            id: id,
             productId: id,
             product: updatedProduct
           });

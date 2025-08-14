@@ -123,6 +123,16 @@ export class WebSocketManager {
     for (const c of this.clients.values()) this.safeSend(c, data);
   }
 
+  // New publish method with type/payload format for future compatibility
+  publishMessage(type: string, payload?: any) {
+    const message = { type, payload };
+    for (const c of this.clients.values()) {
+      if (c.ws.readyState === c.ws.OPEN) {
+        c.ws.send(JSON.stringify(message));
+      }
+    }
+  }
+
   publishToRole<T extends ServerToClient>(role: Role, data: T) {
     for (const c of this.clients.values()) if (c.role === role) this.safeSend(c, data);
   }

@@ -1,0 +1,255 @@
+🚨 Please fix these across the codebase
+1) WebSocket payload schema mismatch (root cause of stale UI)
+What we see
+
+Server publishes { topic: "product:update", ... }
+
+Client expects { type: "product:update", payload }
+
+Result: client listeners don’t fire → lists/cards don’t refresh after save.
+
+Fix (either side or both). Recommend server emits the new shape and client is backward-compatible.
+
+Server (server/ws.ts or server/websocket.ts)
+ts
+Copy
+Edit
+// before (current)
+publish(ws, message: { topic: string; [k: string]: any }) {
+  ws.send(JSON.stringify(message));
+}
+
+// after
+type WSOut = { type: string; payload?: any };
+export function publish(ws: WebSocket, type: string, payload?: any) {
+  const msg: WSOut = { type, payload };
+  ws.send(JSON.stringify(msg));
+}
+
+// usage example
+publish(ws, 'product:update', { id: productId });
+If you keep a channel system, still send type:
+
+ts
+Copy
+Edit
+ws.send(JSON.stringify({ channel, type, payload }));
+Client (src/hooks/useWebSocketState.tsx)
+Make the listener accept both formats so we’re future-proof:
+
+ts
+Copy
+Edit
+// inside onmessage
+let msg: any;
+try { msg = JSON.parse(ev.data); } catch { return; }
+
+const type = msg.type ?? msg.topic;     // ← tolerate old server
+const payload = msg.payload ?? msg.data ?? msg; // tolerate variants
+if (!type) return;
+
+// dispatch…
+listeners.current.forEach(fn => fn({ type, payload }));
+With this in place, product cards and the admin table will live-refresh again (no more “save looks like it did nothing”).
+
+2) 500s on update & featured list — missing DB columns
+Symptoms in logs
+
+error: column "cost" does not exist (both on UPDATE and on the featured query)
+
+Because of the 500 on PUT /api/admin/products/:id, the modal toast shows “Could not update product”, and none of the fields (including fulfillment) persist.
+
+Fix
+Add the columns (plus consistent defaults) or stop selecting them. Easiest + safest: add the columns.
+
+Migration (once)
+sql
+Copy
+Edit
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS cost NUMERIC(10,2),
+  ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS is_local_delivery_available BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS is_shipping_available BOOLEAN NOT NULL DEFAULT TRUE;
+Storage/query safety (server/storage.ts)
+If you still want to run without a migration in dev, guard selects:
+
+sql
+Copy
+Edit
+-- example select
+SELECT
+  id, name, price,
+  CASE WHEN EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='products' AND column_name='cost'
+  )
+  THEN cost ELSE NULL END AS cost,
+  is_featured, is_local_delivery_available, is_shipping_available
+FROM products
+WHERE is_featured = TRUE
+ORDER BY created_at DESC
+LIMIT $1;
+But prefer running the migration and using a normal SELECT.
+
+3) Normalize request parsing on the server (camel & snake keys)
+We’re sending both from the modal for safety. The server should read either style.
+
+Routes (server/routes.ts – update product handler)
+ts
+Copy
+Edit
+// helpers
+const bool = (v: any, def=false) => typeof v === 'boolean' ? v : !!v;
+
+// body
+const b = req.body ?? {};
+const categoryId = b.categoryId ?? b.category_id ?? null;
+
+const isFeatured = bool(b.isFeatured ?? b.is_featured, false);
+const isLocal =  bool(b.isLocalDeliveryAvailable ?? b.is_local_delivery_available, false);
+const isShip  =  bool(b.isShippingAvailable       ?? b.is_shipping_available, true);
+const cost    =  b.cost ?? null;
+
+// use in update
+await db.updateProduct(id, {
+  name: b.name,
+  description: b.description,
+  category_id: categoryId,
+  price: b.price,
+  compare_at_price: b.compareAtPrice ?? null,
+  cost,                               // column now exists
+  stock_quantity: b.stockQuantity ?? 0,
+  status: b.status ?? 'active',
+  weight: b.weight ?? 0,
+  sku: b.sku ?? null,
+  images: b.images ?? [],
+  is_featured: isFeatured,
+  is_local_delivery_available: isLocal,
+  is_shipping_available: isShip,
+});
+Ensure API response uses a single, consistent shape
+Create a single serializer so the front-end never has to guess field names.
+
+ts
+Copy
+Edit
+// server/storage.ts
+function toProductJSON(r: any) {
+  return {
+    id: r.id,
+    name: r.name,
+    description: r.description,
+    categoryId: r.category_id,
+    price: Number(r.price),
+    compareAtPrice: r.compare_at_price == null ? null : Number(r.compare_at_price),
+    cost: r.cost == null ? null : Number(r.cost),
+    stockQuantity: r.stock_quantity,
+    status: r.status,
+    weight: Number(r.weight ?? 0),
+    sku: r.sku,
+    images: r.images ?? [],
+    isFeatured: !!r.is_featured,
+    isLocalDeliveryAvailable: !!r.is_local_delivery_available,
+    isShippingAvailable: !!r.is_shipping_available,
+    // …any other fields mapped once here
+  };
+}
+Use this serializer everywhere you return a product.
+
+4) “Featured” showing when the box isn’t checked
+Likely cause: inconsistent boolean (DB is_featured default true or server sets truthy from undefined) and/or the featured list query doesn’t filter strictly.
+
+Fixes
+
+Migration above sets DEFAULT FALSE.
+
+In update handler use !!b.isFeatured (already shown).
+
+In featured route, require is_featured = TRUE (no fallbacks).
+
+5) Fulfillment not persisting from the modal
+Once the 500 is removed, the modal code you have (sending both snake & camel + authoritative mode) will persist fine. The server change in #3 ensures it’s read and saved.
+
+Double-check the public product mappers used by the storefront cards (src/lib/products/fulfillment.ts). Make sure they read only the normalized fields returned by the API (isLocalDeliveryAvailable / isShippingAvailable). Remove any legacy fallbacks to avoid surprises.
+
+6) Categories tab crash: ReferenceError: subscribe is not defined
+In src/pages/admin/CategoriesTab.tsx you’re calling subscribe(...) without a binding.
+
+Fix
+
+tsx
+Copy
+Edit
+import { useWebSocketState } from '@/hooks/useWebSocketState';
+
+export default function CategoriesTab() {
+  const { subscribe } = useWebSocketState();  // ← get it from the hook
+
+  useEffect(() => {
+    const off = subscribe(({ type }) => {
+      if (type === 'category:updated') refetch();
+    });
+    return () => off?.();
+  }, [subscribe]);
+}
+7) Scroll lock import error:
+SyntaxError: ...useScrollLock.tsx does not provide an export named 'default'
+
+Fix one of:
+
+Export default in the hook:
+
+ts
+Copy
+Edit
+// src/hooks/useScrollLock.tsx
+export function useScrollLock(lock: boolean) { /* ... */ }
+export default useScrollLock;
+Or ensure all imports use the named form:
+
+ts
+Copy
+Edit
+import { useScrollLock } from '@/hooks/useScrollLock';
+(There’s at least one default import lingering — change it.)
+
+8) Admin update succeeded but UI didn’t refresh (when there wasn’t a 500)
+Even with the schema fixed, make sure React Query invalidations catch all caches:
+
+ts
+Copy
+Edit
+await Promise.all([
+  qc.invalidateQueries({ queryKey: ['adminProducts'] }),
+  qc.invalidateQueries({ queryKey: ['products'] }),
+  qc.invalidateQueries({ queryKey: ['products:featured'] }),
+  product?.id ? qc.invalidateQueries({ queryKey: ['product', product.id] }) : Promise.resolve(),
+]);
+And with WebSocket fix (#1), you’ll also get instant UI updates without a refetch.
+
+9) One-time cleanup: unify field names end-to-end
+DB: snake_case columns.
+
+Server in/out: convert to camelCase once via a serializer + the flexible request parsing above.
+
+Client: only camelCase (no guessing / no mixing).
+
+Remove all code that does foo ?? foo_bar in the client after the API is consistent.
+
+Quick checklist to close this out
+ Add migration for cost and fulfillment/featured boolean columns.
+
+ Change server publish to { type, payload } and make client handler accept both type/topic.
+
+ Normalize request parsing (camel & snake) and always return camel in API.
+
+ Fix CategoriesTab to properly get subscribe from the hook.
+
+ Fix useScrollLock export (add default or update all imports).
+
+ Update featured query to require is_featured = TRUE and stop referencing nonexistent columns.
+
+ Keep React Query invalidations + verify WS live updates.
+
+Once these are in, the Enhanced Product Modal saves properly (including fulfillment), the “featured” flag behaves, categories stop erroring, and the storefront stops drifting out of sync.
