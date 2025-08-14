@@ -117,20 +117,23 @@ export function AddressForm({
     createAddressMutation.mutate(addressRequest);
   };
 
-  // SSOT Address Selection - Comprehensive Geoapify field mapping
-  const handleAddressSelect = (suggestion: any) => {
-    setSelectedGeoapify(suggestion);
+  // Handle address selection from autocomplete
+  const handleAddressSelect = (addressData: any) => {
+    // Store for locality detection (create a mock geoapify object for compatibility)
+    setSelectedGeoapify({
+      properties: {
+        distance_km: 0 // Will be calculated by backend
+      }
+    });
     
-    // SSOT comprehensive mapping as per instructions
-    const p = suggestion.properties || suggestion;
-    if (p) {
-      // Map all fields comprehensively
-      form.setValue('street1', [p.housenumber, p.street || p.street_name].filter(Boolean).join(' '), { shouldValidate: true, shouldDirty: true });
-      form.setValue('street2', p.address_line2 || '');
-      form.setValue('city', p.city || p.municipality || p.county || '', { shouldValidate: true });
-      form.setValue('state', p.state_code || p.state || '', { shouldValidate: true });
-      form.setValue('postalCode', p.postcode || p.zip || '', { shouldValidate: true });
-      form.setValue('country', p.country_code?.toUpperCase() || 'US');
+    // Map the AddressData fields to form fields
+    if (addressData) {
+      form.setValue('street1', addressData.street1 || '', { shouldValidate: true, shouldDirty: true });
+      form.setValue('street2', addressData.street2 || '');
+      form.setValue('city', addressData.city || '', { shouldValidate: true });
+      form.setValue('state', addressData.state || '', { shouldValidate: true });
+      form.setValue('postalCode', addressData.postalCode || addressData.zipCode || '', { shouldValidate: true });
+      form.setValue('country', addressData.country || 'US');
       
       // Trigger validation on all mapped fields
       form.trigger(['street1', 'city', 'state', 'postalCode']);
