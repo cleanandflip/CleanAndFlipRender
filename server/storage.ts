@@ -102,6 +102,8 @@ export interface IStorage {
   removeFromCart(id: string): Promise<boolean>;
   clearCart(userId?: string, sessionId?: string): Promise<void>;
   mergeGuestCart(sessionId: string, userId: string): Promise<void>;
+  // NEW: additive wrapper for compound key removal
+  removeFromCartByUserAndProduct(userId: string, productId: string): Promise<number>;
   
   // Order operations
   getUserOrders(userId: string): Promise<Order[]>;
@@ -650,6 +652,14 @@ export class DatabaseStorage implements IStorage {
       .update(cartItems)
       .set({ userId: userId, sessionId: null })
       .where(eq(cartItems.sessionId, sessionId));
+  }
+
+  // NEW: additive wrapper for compound key removal
+  async removeFromCartByUserAndProduct(userId: string, productId: string): Promise<number> {
+    const result = await db
+      .delete(cartItems)
+      .where(and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)));
+    return result.rowCount || 0;
   }
 
   // Set cart shipping address

@@ -1,0 +1,218 @@
+PROMPT FOR REPLIT
+Objective:
+Finish locality-safe cart operations and UI gating without deleting or renaming any existing code. All changes must be additive, minimal, and reversible.
+
+Non-negotiable constraints (read first)
+Do not delete, rename, or comment out any existing files, exports, routes, handlers, or storage functions.
+
+Do not change DB schema or migrations.
+
+Do not change existing API response shapes used by the client.
+
+If the same behavior already exists, leave it; add wrappers/aliases only.
+
+Put all new server code behind small helper functions and new routes that call the existing storage layer.
+
+Keep the app returning JSON for all errors. If you touch error middleware, only ensure it runs last; do not remove anything.
+
+Make a checkpoint/commit before starting.
+
+What to deliver (business behavior)
+A) Local users can add & remove LOCAL_ONLY items normally.
+B) When a user changes their default address from local → non-local, automatically remove all LOCAL_ONLY items from their cart and return how many were removed.
+C) Non-local users see a clear “Unavailable in your area” message on the Sell-to-Us page, and the form is not rendered.
+D) All client fetch calls keep working (no route deletions) and no HTML error pages are returned to JSON parsers (fix the “Unexpected token <” issue).
+
+Server – strictly additive changes
+1) Cart delete by compound key (userId + productId)
+Keep any existing delete route (e.g., DELETE /api/cart/items/:itemId).
+
+Add an alias route that deletes by productId for the current user:
+
+File: server/routes/cart.v2.ts (or the active cart router)
+
+ts
+Copy
+Edit
+// NEW: alias route – delete by productId for the authenticated user
+cartRouterV2.delete('/items/:productId', async (req, res, next) => {
+  try {
+    const userId = req.session?.user?.id as string | undefined;
+    if (!userId) return res.status(401).json({ ok:false, code:'AUTH_REQUIRED', message:'Sign in required' });
+
+    const { productId } = req.params;
+    const { storage } = await import('../storage');
+
+    // Use existing storage API. Do NOT remove existing removeById().
+    // If no compound-key helper exists, add a small wrapper inside storage (see below).
+    const removed = await storage.removeFromCartByUserAndProduct(userId, productId);
+    return res.json({ ok:true, removed });
+  } catch (err) { next(err); }
+});
+File: server/storage/index.ts (or the active storage module)
+Add a wrapper only; do not remove/rename existing methods.
+
+ts
+Copy
+Edit
+// NEW helper. Use the DB/ORM that storage already uses.
+export async function removeFromCartByUserAndProduct(userId: string, productId: string) {
+  // Prefer a deleteMany user_id + product_id.
+  // If you only have removeFromCart(itemId), first look up the cart item id for this user+product.
+  // Return a number (how many removed) without throwing if nothing matched.
+}
+Implementation detail: If the storage layer already has getCartItems(userId, includeProduct?) and removeFromCart(itemId), just find the item id for {userId, productId} and call removeFromCart(id). Do not delete or modify existing functions.
+
+2) Auto-purge LOCAL_ONLY items when user becomes non-local
+Add a tiny service that:
+
+loads the user’s cart with products,
+
+filters products whose mode is LOCAL_ONLY (use modeFromProduct from shared/fulfillment or the existing equivalent),
+
+removes those items by id using the existing storage removal function.
+
+File: server/services/cartCleanup.ts
+
+ts
+Copy
+Edit
+import { modeFromProduct } from '../../shared/fulfillment';
+
+export async function purgeLocalOnlyItemsIfIneligible(userId: string) {
+  try {
+    const { storage } = await import('../storage');
+    const items = await storage.getCartItems(userId, /* include product */ true);
+
+    const localOnlyItemIds = items
+      .filter(i => i.product && modeFromProduct(i.product) === 'LOCAL_ONLY')
+      .map(i => i.id);
+
+    let removed = 0;
+    for (const id of localOnlyItemIds) {
+      await storage.removeFromCart(id); // use existing method; do not rename it
+      removed++;
+    }
+    return { removed };
+  } catch (e) {
+    console.error('[cartCleanup] purge error', e);
+    return { removed: 0 };
+  }
+}
+Hook it where the user sets/changes their default address:
+
+After the address is saved and locality is re-evaluated, if eligible === false, call purgeLocalOnlyItemsIfIneligible(userId) and include purgedLocalItems in the JSON response.
+
+Do not remove or change any existing address routes. If a “set default” route does not exist, add a PUT /api/addresses/:id/default that updates default and returns { ok:true, locality, purgedLocalItems }.
+
+3) Keep JSON errors (fix the “Unexpected token <”)
+Ensure the existing JSON error middleware is last:
+
+ts
+Copy
+Edit
+app.use(jsonErrorHandler); // must be after all routers
+Do not remove other middleware. The goal is just order, so the client never receives an HTML error page for API routes.
+
+4) Preserve add-to-cart enforcement
+In the existing POST /api/cart/items handler, keep (or add if missing) this logic:
+
+if product is LOCAL_ONLY and locality.eligible !== true → 403 JSON { ok:false, code:'LOCAL_ONLY_NOT_ELIGIBLE', ... }.
+
+Do not change any other behavior.
+
+Client – strictly additive changes
+1) Always send cookies
+Verify the project’s apiJson() (or equivalent) wrapper uses credentials: 'include' for all API calls. If not, update the wrapper; do not touch individual calls.
+
+2) Null-safe locality hook
+In src/hooks/useLocality.ts, ensure the hook always returns an object, e.g.:
+
+ts
+Copy
+Edit
+export const DEFAULT_LOCALITY = { eligible: false, source: 'NONE', zip: 'none' as const };
+Until data arrives, return DEFAULT_LOCALITY to prevent crashes like Cannot read properties of undefined (reading 'eligible').
+
+3) Sell-to-Us page gating (UI only; no route changes)
+File: src/pages/sell-to-us.tsx
+
+At top of component, read const { locality } = useLocality();.
+
+If !locality?.eligible, render a friendly block (alert card) saying:
+
+“Unavailable in your area – Sell to Us is local only.”
+
+Buttons: “Set a local address” → /dashboard#addresses and “See service area” → /about.
+
+Do not render the form when ineligible.
+
+Do not change routes or exports.
+
+4) Address change UX
+Wherever the client calls the “set default address” endpoint, if the response includes purgedLocalItems > 0, show a toast:
+
+“Removed X local-only items that can’t be delivered to your new address.”
+
+Then refetch the cart query. Do not change any other behavior.
+
+5) Defensive JSON parsing
+Ensure the global fetch wrapper handles non-ok responses by reading JSON safely (try/catch). Do not modify callers.
+
+Logging (additive)
+Keep existing logs.
+
+You may add short logs:
+
+[CART] delete by user+product with userId & productId,
+
+[LOCALITY] address change → purged N local-only items.
+
+Do not rename existing log tags.
+
+Acceptance tests (what I will check)
+Local add/remove
+
+Signed-in user with local default address (e.g., ZIP 28806).
+
+Add a LOCAL_ONLY product → 200.
+
+DELETE /api/cart/items/:productId → returns { ok:true, removed: 1 } and the item is gone.
+
+Non-local purge on address change
+
+With a LOCAL_ONLY item in cart, change default address to a non-local ZIP.
+
+Server response includes purgedLocalItems: N (>0); cart refetch shows item removed.
+
+Sell-to-Us block
+
+As non-local, visiting /sell-to-us shows an “Unavailable in your area” message and no form.
+
+JSON everywhere
+
+For any rejected request (e.g., add LOCAL_ONLY as non-local), the response is valid JSON; the client does not throw “Unexpected token <”.
+
+No regressions
+
+Existing routes still work; no functions were deleted or renamed; no schema changes.
+
+Deliverables
+New/updated files (additive only):
+
+server/routes/cart.v2.ts (added alias delete route – by productId)
+
+server/storage/index.ts (new helper removeFromCartByUserAndProduct, no removals)
+
+server/services/cartCleanup.ts (new)
+
+src/hooks/useLocality.ts (safe default return)
+
+src/pages/sell-to-us.tsx (in-area gating UI)
+
+Confirmation that error middleware is last in the server pipeline.
+
+A brief summary of exactly what was added (no deletions), plus test outputs showing the 5 acceptance cases pass.
+
+If something is unclear
+Do not guess or refactor. Leave existing behavior untouched and add thin wrappers only. Ask before changing any function signatures or removing code.

@@ -80,6 +80,7 @@ export default function SellToUs() {
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
+  const { data: locality } = useLocality();
   
   // CRITICAL FIX: Force fresh auth check when accessing sell-to-us
   useEffect(() => {
@@ -163,6 +164,40 @@ export default function SellToUs() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [isSubmitted]);
+
+  // Show locality gate for non-local users (AFTER all hooks are defined)
+  if (!authLoading && user && !locality?.eligible) {
+    return (
+      <div className="min-h-screen pt-32 px-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-8">
+            <h2 className="text-2xl font-semibold text-yellow-800 dark:text-yellow-200 mb-4">
+              Unavailable in your area
+            </h2>
+            <p className="text-yellow-700 dark:text-yellow-300 mb-6 leading-relaxed">
+              Sell to Us is local delivery only. We need to be able to pick up items from your location in the Asheville, NC area.
+            </p>
+            <div className="flex gap-4 flex-col sm:flex-row">
+              <Button 
+                variant="outline" 
+                className="border-yellow-300 text-yellow-800 hover:bg-yellow-100 dark:border-yellow-700 dark:text-yellow-300"
+                onClick={() => window.location.href = '/dashboard#addresses'}
+              >
+                Set a local address
+              </Button>
+              <Button 
+                variant="outline"
+                className="border-yellow-300 text-yellow-800 hover:bg-yellow-100 dark:border-yellow-700 dark:text-yellow-300"
+                onClick={() => window.location.href = '/about'}
+              >
+                See service area
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show login prompt for unauthenticated users (AFTER all hooks are defined)
   if (!authLoading && !user) {

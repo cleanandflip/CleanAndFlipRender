@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { DEFAULT_LOCALITY, LocalityStatus } from '../../../shared/locality';
 
+// Ensure always returns safe object
+export { DEFAULT_LOCALITY };
+
 function buildLocalityUrl(zip?: string) {
   const base = '/api/locality/status';
   return zip ? `${base}?zip=${encodeURIComponent(zip)}` : base; // no stray '?'

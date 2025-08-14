@@ -100,3 +100,19 @@ cartRouterV2.delete('/items/:itemId', async (req, res, next) => {
     next(e);
   }
 });
+
+// NEW: alias route – delete by productId for the authenticated user
+cartRouterV2.delete('/product/:productId', async (req, res, next) => {
+  try {
+    const userId = req.session?.user?.id as string | undefined;
+    if (!userId) return res.status(401).json({ ok:false, code:'AUTH_REQUIRED', message:'Sign in required' });
+
+    const { productId } = req.params;
+    const { storage } = await import('../storage');
+
+    // Use existing storage API with new compound-key helper
+    const removed = await storage.removeFromCartByUserAndProduct(userId, productId);
+    console.log(`[CART] delete by user+product with userId: ${userId} & productId: ${productId}`);
+    return res.json({ ok:true, removed });
+  } catch (err) { next(err); }
+});
