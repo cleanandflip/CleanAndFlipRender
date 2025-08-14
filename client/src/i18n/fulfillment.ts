@@ -1,42 +1,25 @@
-// Centralized copy for fulfillment/delivery system
 export const fulfillmentCopy = {
-  badges: {
+  badge: {
     localOnly: "Local delivery only",
-    localAndShipping: "Local delivery & shipping"
+    local: "Local delivery",
+    shipping: "Shipping",
   },
-  
-  banners: {
-    inZone: "Free local delivery in your area • Most orders arrive in 24–48 hrs",
-    outOfZone: "You're outside our local delivery area. Local-only items can't be added."
+  banner: {
+    local: "✅ You're in our FREE DELIVERY zone. Most orders delivered in 24–48h.",
+    nonLocal: "🚚 Local delivery is limited to {areas}. Enter ZIP to check.",
   },
-  
-  pdp: {
-    localOnlyNote: "This heavy item is local delivery only. Delivered within 24–48 hrs in our area."
+  checkout: {
+    localEta: "Local order — delivery ETA 24–48 hours",
   },
-  
-  cart: {
-    blockedTooltip: "Local-only item. Not available in your area."
+  blocked: "Not available in your area",
+  tooltip: {
+    local: "Delivered by C&F within 24–48h in the local zone.",
+    shipping: "Ships via carrier; rates shown at checkout.",
+    blocked: "Not available in your area"
   },
-  
-  benefits: {
-    deliveryWindow: "24–48 hr delivery window",
-    heavyHandling: "Heavy item handling", 
-    noWaste: "No packaging waste",
-    localSupport: "Local support"
-  },
-  
-  actions: {
-    checkZip: "Check your ZIP",
-    addToCart: "Add to Cart",
-    unavailable: "Not available in your area"
-  },
-  
-  aria: {
-    fulfillmentBadge: "Fulfillment method",
-    deliveryBanner: "Delivery eligibility information",
-    zipChecker: "Enter ZIP code to check delivery availability"
+  microCopy: {
+    localEta: "Local delivery ETA 24–48 hours after purchase.",
   }
-} as const;
+};
 
-export type FulfillmentCopy = typeof fulfillmentCopy;
 export default fulfillmentCopy;

@@ -77,8 +77,30 @@ export const FULFILLMENT_MODES = {
   LOCAL_AND_SHIPPING: 'LOCAL_AND_SHIPPING' as const,
 } as const;
 
+export function getFulfillmentModeFromProduct(product: {
+  isLocalDeliveryAvailable?: boolean;
+  isShippingAvailable?: boolean;
+}): FulfillmentMode {
+  const { isLocalDeliveryAvailable = false, isShippingAvailable = false } = product;
+  
+  if (isLocalDeliveryAvailable && isShippingAvailable) {
+    return FULFILLMENT_MODES.LOCAL_AND_SHIPPING;
+  } else if (isLocalDeliveryAvailable && !isShippingAvailable) {
+    return FULFILLMENT_MODES.LOCAL_ONLY;
+  } else {
+    // Default to LOCAL_AND_SHIPPING if unclear - never support "shipping only"
+    return FULFILLMENT_MODES.LOCAL_AND_SHIPPING;
+  }
+}
+
+export function isLocalOnlyBlocked(fulfillmentMode: FulfillmentMode, isLocal: boolean | undefined): boolean {
+  return fulfillmentMode === 'LOCAL_ONLY' && isLocal === false;
+}
+
 export default {
   modeFromProduct,
+  getFulfillmentModeFromProduct,
+  isLocalOnlyBlocked,
   getFulfillmentLabel,
   isValidFulfillmentMode,
   modeToFlags,

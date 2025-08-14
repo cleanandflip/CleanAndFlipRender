@@ -370,8 +370,15 @@ export default function ProductDetail() {
 
             <Separator className="bg-glass-border" />
 
-            {/* Delivery Availability */}
-            <ProductAvailabilityChips product={product} />
+            {/* Delivery Availability - Position under price per spec */}
+            <ProductAvailabilityChips product={product} size="lg" />
+            
+            {/* Local delivery micro-copy for LOCAL_ONLY items */}
+            {product.isLocalDeliveryAvailable && !product.isShippingAvailable && (
+              <p className="text-foreground/70 text-xs mt-2">
+                Local delivery ETA 24–48 hours after purchase.
+              </p>
+            )}
 
             <Separator className="bg-glass-border" />
 

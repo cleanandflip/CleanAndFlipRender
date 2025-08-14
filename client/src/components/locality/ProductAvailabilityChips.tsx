@@ -1,27 +1,39 @@
 import React from 'react';
 import { FulfillmentBadge } from '@/components/fulfillment/FulfillmentBadge';
-import { modeFromProduct } from '@shared/fulfillment';
+import { getFulfillmentModeFromProduct } from '@shared/fulfillment';
 import type { FulfillmentMode } from '@shared/fulfillment';
 
 interface ProductAvailabilityChipsProps {
-  product: any;
+  product: {
+    isLocalDeliveryAvailable?: boolean;
+    isShippingAvailable?: boolean;
+  };
+  size?: 'sm' | 'md' | 'lg';
+  stacked?: boolean;
   className?: string;
-  subtle?: boolean;
 }
 
-export function ProductAvailabilityChips({ product, className = '', subtle = false }: ProductAvailabilityChipsProps) {
-  const mode = modeFromProduct(product) as FulfillmentMode;
+export function ProductAvailabilityChips({ 
+  product, 
+  size = 'md',
+  stacked = false,
+  className = '' 
+}: ProductAvailabilityChipsProps) {
+  const mode = getFulfillmentModeFromProduct(product) as FulfillmentMode;
   
   if (!mode || (mode !== 'LOCAL_ONLY' && mode !== 'LOCAL_AND_SHIPPING')) {
     return null;
   }
 
   return (
-    <FulfillmentBadge 
-      mode={mode} 
-      subtle={subtle}
-      className={className}
-    />
+    <div className={`flex flex-wrap items-center gap-2 mt-1 ${className}`}>
+      <FulfillmentBadge 
+        mode={mode} 
+        size={size}
+        stacked={stacked}
+        showTooltips={true}
+      />
+    </div>
   );
 }
 

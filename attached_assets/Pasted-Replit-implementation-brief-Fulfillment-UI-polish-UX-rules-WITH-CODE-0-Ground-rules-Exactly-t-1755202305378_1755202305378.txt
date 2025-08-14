@@ -1,0 +1,448 @@
+Replit implementation brief — Fulfillment UI polish + UX rules (WITH CODE)
+0) Ground rules
+Exactly two fulfillment modes:
+
+LOCAL_ONLY
+
+LOCAL_AND_SHIPPING
+
+Never show or support “Shipping only”.
+
+Non-local users cannot add LOCAL_ONLY items to cart.
+
+For LOCAL_ONLY in checkout: remove shipping methods/costs, display ETA 24–48h local delivery.
+
+1) Product card layout (grid pages)
+Goal: Balanced, consistent cards at all breakpoints.
+
+Layout order
+
+pgsql
+Copy
+Edit
+<Image />        ⟶ fixed aspect, rounded-xl
+Title + brand    ⟶ single line; clamp
+Price
+BadgeRow         ⟶ fulfillment pills live here
+CTA row          ⟶ pinned to bottom
+Key classes
+
+Card: flex flex-col rounded-2xl bg-card/60 ring-1 ring-border/40 hover:ring-border transition p-3 gap-2 min-h-[22rem]
+
+Image box: aspect-[4/3] overflow-hidden rounded-xl
+
+Content: flex flex-1 flex-col gap-2
+
+BadgeRow: flex flex-wrap items-center gap-2 mt-1
+
+CTA: mt-auto
+
+Use CSS grid on the list container so cards are equal height: grid auto-rows-fr gap-4.
+
+2) Badge positioning & style (single source)
+Use the component below (draft provided). Keep badges below price everywhere.
+
+LOCAL_ONLY pill (primary emphasis)
+bg-emerald-600 text-emerald-50 ring-1 ring-emerald-400/25
+Label: Local delivery only
+
+LOCAL_AND_SHIPPING shows two pills on one line:
+
+Local pill (emerald)
+
+Shipping pill (neutral): bg-muted text-foreground/80 ring-1 ring-border/60
+
+A11y: role="status", aria-live="polite", title tooltips.
+
+3) Product detail page
+Place BadgeRow under price.
+
+If LOCAL_ONLY and user not local:
+
+Disable Add-to-Cart (aria-disabled, tooltip “Not available in your area”).
+
+Show inline ZipCheck to re-verify.
+
+Offer “Request shipping quote” (contact form), not add-to-cart.
+
+If local: micro-copy under badges:
+“Local delivery ETA 24–48 hours after purchase.” (text-foreground/70 text-xs)
+
+4) Site-wide eligibility banner (tighten copy)
+Show under top nav on /products and product detail:
+
+Local detected: “✅ You’re in our FREE DELIVERY zone. Most orders delivered in 24–48h.”
+
+Not local: “🚚 Local delivery is limited to {areasShort}. Enter ZIP to check.”
+
+One line on lg+, two lines on md.
+
+5) Cart & checkout rules (enforcement + UI)
+If any LOCAL_ONLY in cart:
+
+Force Local fulfillment.
+
+Hide shipping selector + shipping costs.
+
+Show “Local delivery — $0” (or configured fee).
+
+Checkout banner: “Local order — delivery ETA 24–48h.”
+
+Mixed carts (local-eligible + ship-eligible):
+
+Compute shipping for ship-eligible items only; locals show $0 local line.
+
+On ZIP change to non-local, block LOCAL_ONLY items (modal + inline error).
+
+6) Live updates (no stale state)
+WebSocket message shape:
+
+json
+Copy
+Edit
+{ "type": "product:update", "payload": { "id": "uuid", "fulfillmentMode": "LOCAL_ONLY", "stock": 3, "price": 19999 } }
+Subscribe in grid, detail, and cart; on switch to LOCAL_ONLY, re-render badges and invalidate/remove illegal cart items with a toast.
+
+7) Visual tokens
+rounded-2xl (cards), full-pill badges
+
+Subtle depth on pills: shadow-[inset_0_1px_0_0_rgba(255,255,255,.06)]
+
+Spacing: gap-1.5 for badges
+
+8) Server-side guard rails
+POST /api/cart/items must reject when mode=LOCAL_ONLY && !isLocal(zip).
+
+PUT /api/cart re-checks on every mutation and session restore.
+
+9) QA / Acceptance
+Cards align cleanly with badges below price and CTAs bottom-aligned (xl:3-col, md:2-col, sm:1-col).
+
+Non-local users cannot add LOCAL_ONLY from grid or detail.
+
+Checkout for LOCAL_ONLY = no shipping methods, ETA banner present.
+
+ZIP switch local→non-local removes LOCAL_ONLY items with toast + analytics event.
+
+WS fulfillment flip live-updates badges and invalidates cart.
+
+10) Files to create/update (with code)
+A) client/src/components/fulfillment/FulfillmentBadge.tsx
+tsx
+Copy
+Edit
+import * as React from "react";
+import { Truck, Package } from "lucide-react";
+
+type FulfillmentMode = "LOCAL_ONLY" | "LOCAL_AND_SHIPPING";
+
+type Size = "sm" | "md" | "lg";
+
+export type FulfillmentBadgeProps = {
+  mode: FulfillmentMode;
+  size?: Size;            // default: md
+  stacked?: boolean;      // for narrow spaces; default: false (side-by-side)
+  className?: string;
+  showTooltips?: boolean; // default: true
+};
+
+const sizeMap: Record<Size, string> = {
+  sm: "text-[11px] px-2 py-1 gap-1",
+  md: "text-xs px-2.5 py-1.5 gap-1.5",
+  lg: "text-sm px-3 py-2 gap-2",
+};
+
+function pillBase(extra = "") {
+  return [
+    "inline-flex items-center rounded-full",
+    "ring-1 shadow-[inset_0_1px_0_0_rgba(255,255,255,.06)]",
+    "whitespace-nowrap select-none",
+    extra,
+  ].join(" ");
+}
+
+function LocalPill({ size, title }: { size: Size; title?: string }) {
+  return (
+    <span
+      role="status"
+      aria-live="polite"
+      className={pillBase(
+        `bg-emerald-600 text-emerald-50 ring-emerald-400/25 ${sizeMap[size]}`
+      )}
+      title={title}
+    >
+      <Truck className="h-[1.05em] w-[1.05em]" aria-hidden />
+      <span>Local delivery</span>
+    </span>
+  );
+}
+
+function LocalOnlyPill({ size, title }: { size: Size; title?: string }) {
+  return (
+    <span
+      role="status"
+      aria-live="polite"
+      className={pillBase(
+        `bg-emerald-600 text-emerald-50 ring-emerald-400/25 ${sizeMap[size]}`
+      )}
+      title={title}
+    >
+      <Truck className="h-[1.05em] w-[1.05em]" aria-hidden />
+      <span>Local delivery only</span>
+    </span>
+  );
+}
+
+function ShippingPill({ size, title }: { size: Size; title?: string }) {
+  return (
+    <span
+      role="status"
+      aria-live="polite"
+      className={pillBase(
+        `bg-muted text-foreground/80 ring-border/60 ${sizeMap[size]}`
+      )}
+      title={title}
+    >
+      <Package className="h-[1.05em] w-[1.05em]" aria-hidden />
+      <span>Shipping</span>
+    </span>
+  );
+}
+
+export function FulfillmentBadge({
+  mode,
+  size = "md",
+  stacked = false,
+  className,
+  showTooltips = true,
+}: FulfillmentBadgeProps) {
+  const localTitle = showTooltips
+    ? "Delivered by C&F within 24–48h in the local zone."
+    : undefined;
+  const shippingTitle = showTooltips
+    ? "Ships via carrier; rates shown at checkout."
+    : undefined;
+
+  if (mode === "LOCAL_ONLY") {
+    return (
+      <div className={["flex items-center", className].filter(Boolean).join(" ")}>
+        <LocalOnlyPill size={size} title={localTitle} />
+      </div>
+    );
+  }
+
+  // LOCAL_AND_SHIPPING
+  return (
+    <div
+      className={[
+        stacked ? "flex flex-col gap-2" : "flex flex-row items-center gap-2",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <LocalPill size={size} title={localTitle} />
+      <ShippingPill size={size} title={shippingTitle} />
+    </div>
+  );
+}
+
+export default FulfillmentBadge;
+B) client/src/components/product/ProductCard.tsx
+tsx
+Copy
+Edit
+import * as React from "react";
+import { Link } from "react-router-dom"; // or next/link; adapt to your router
+import FulfillmentBadge from "@/components/fulfillment/FulfillmentBadge";
+import { useLocality } from "@/hooks/useLocality";
+import { cn, formatPrice } from "@/lib/ui"; // or local helpers
+
+type FulfillmentMode = "LOCAL_ONLY" | "LOCAL_AND_SHIPPING";
+
+export type ProductCardProduct = {
+  id: string;
+  slug?: string;           // if slugs exist
+  name: string;
+  brand?: string;
+  price: number;           // cents or dollars (use your format util)
+  imageUrl: string;
+  fulfillmentMode: FulfillmentMode;
+};
+
+type Props = {
+  product: ProductCardProduct;
+  onAdd?: (id: string) => Promise<void> | void;
+};
+
+export function ProductCard({ product, onAdd }: Props) {
+  const { isLocal } = useLocality(); // assumes memoized locality result
+  const blocked =
+    product.fulfillmentMode === "LOCAL_ONLY" && (isLocal === false);
+
+  const href = product.slug
+    ? `/products/${product.slug}`
+    : `/products/${product.id}`;
+
+  async function handleAdd() {
+    if (blocked) return;
+    await onAdd?.(product.id);
+  }
+
+  return (
+    <article
+      className={cn(
+        "flex flex-col rounded-2xl bg-card/60 ring-1 ring-border/40",
+        "hover:ring-border transition p-3 gap-2 min-h-[22rem]"
+      )}
+      data-testid="product-card"
+    >
+      <a href={href} className="aspect-[4/3] overflow-hidden rounded-xl block">
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      </a>
+
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex items-baseline gap-2">
+          <h3 className="text-base font-semibold tracking-[-0.01em] line-clamp-1">
+            <a href={href} className="hover:underline">
+              {product.name}
+            </a>
+          </h3>
+          {product.brand && (
+            <span className="text-foreground/60 text-xs line-clamp-1">
+              {product.brand}
+            </span>
+          )}
+        </div>
+
+        <div className="text-lg font-bold tracking-tight">
+          {formatPrice ? formatPrice(product.price) : `$${product.price}`}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 mt-1">
+          <FulfillmentBadge mode={product.fulfillmentMode} size="md" />
+        </div>
+
+        <div className="mt-auto">
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={blocked}
+            aria-disabled={blocked}
+            title={
+              blocked ? "Not available in your area" : "Add to cart"
+            }
+            className={cn(
+              "w-full inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-medium",
+              blocked
+                ? "bg-muted text-foreground/40 cursor-not-allowed"
+                : "bg-primary text-primary-foreground hover:opacity-95"
+            )}
+            data-testid={blocked ? "add-disabled" : "add-enabled"}
+          >
+            {blocked ? "Not available in your area" : "Add to Cart"}
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export default ProductCard;
+C) Server cart guard (patch)
+ts
+Copy
+Edit
+// server/routes/cart.ts
+router.post("/api/cart/items", async (req, res) => {
+  const { productId, quantity, zip } = req.body;
+  const product = await db.products.getById(productId);
+  if (!product) return res.status(404).json({ error: "Not found" });
+
+  if (product.fulfillment_mode === "LOCAL_ONLY") {
+    const isLocal = await localityService.isLocal(zip ?? req.session.zip);
+    if (!isLocal) {
+      return res.status(409).json({
+        error: "LOCAL_ONLY_NOT_ELIGIBLE",
+        message: "This product is only available for local delivery.",
+      });
+    }
+  }
+
+  // proceed…
+});
+D) Checkout enforcement (high level)
+If cart has any LOCAL_ONLY line item:
+
+Hide shipping section; set fulfillment summary to “Local delivery — ETA 24–48h”.
+
+Don’t compute carrier rates; ensure totals exclude shipping.
+
+E) WebSocket publish shape (server)
+ts
+Copy
+Edit
+// ws/publish.ts
+export function publishProductUpdate(p) {
+  broadcast({
+    type: "product:update",
+    payload: {
+      id: p.id,
+      fulfillmentMode: p.fulfillment_mode, // "LOCAL_ONLY" | "LOCAL_AND_SHIPPING"
+      stock: p.stock,
+      price: p.price,
+    },
+  });
+}
+F) i18n copy (snippets)
+ts
+Copy
+Edit
+export const fulfillmentCopy = {
+  badge: {
+    localOnly: "Local delivery only",
+    local: "Local delivery",
+    shipping: "Shipping",
+  },
+  banner: {
+    local: "You’re in our FREE DELIVERY zone. Most orders delivered in 24–48h.",
+    nonLocal: "Local delivery is limited to {areas}. Enter ZIP to check.",
+  },
+  checkout: {
+    localEta: "Local order — delivery ETA 24–48 hours",
+  },
+  blocked: "Not available in your area",
+};
+G) Tests to add (Playwright)
+local-only-guard.spec.ts — non-local user can’t add local-only.
+
+badges-position.spec.ts — badges under price on card & detail.
+
+checkout-local-eta.spec.ts — shipping hidden; ETA banner present.
+
+ws-live-update.spec.ts — badge updates & cart invalidation on fulfillment flip.
+
+11) Pages/places to wire the badges (use the same component)
+Product grid (cards): FulfillmentBadge mode={product.fulfillmentMode} size="md".
+
+Product detail (under price): size="lg".
+
+Cart and Checkout line items: size="sm" (quiet).
+
+Dashboard/featured carousels: size="sm" stacked on narrow cards if needed.
+
+12) Copy to use verbatim
+LOCAL_ONLY: Local delivery only
+
+LOCAL_AND_SHIPPING: Local delivery • Shipping
+
+Disabled tooltip: Not available in your area
+
+Checkout banner: Local order — delivery ETA 24–48 hours
+
+Hand this to the codebase, wire the two components, and remove any leftover “Shipping only” paths. This will finalize the professional, consistent fulfillment UI and the business-logic guard rails end-to-end.
