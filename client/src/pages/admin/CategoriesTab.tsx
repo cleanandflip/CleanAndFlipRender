@@ -6,7 +6,7 @@ import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { EnhancedCategoryModal } from '@/components/admin/modals/EnhancedCategoryModal';
 import { useWebSocketState } from "@/hooks/useWebSocketState";
-import { useWebSocketState } from '@/hooks/useWebSocketState';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 

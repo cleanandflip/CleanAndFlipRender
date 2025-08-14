@@ -1,0 +1,98 @@
+You're right—that “Local delivery” + “Local delivery only” double-badge is confusing. Here’s a small, surgical fix that makes it one clear chip per state and also cleans the duplicate useWebSocketState imports showing in your logs.
+
+1) Show exactly one local chip (no duplicates)
+File: client/src/components/locality/ProductAvailabilityChips.tsx
+Replace the render logic with this mutually exclusive matrix:
+
+tsx
+Copy
+Edit
+import { getFulfillment } from "@/lib/products/fulfillment";
+
+export default function ProductAvailabilityChips({ product }: { product: any }) {
+  const { local, shipping } = getFulfillment(product);
+
+  // nothing available → render nothing
+  if (!local && !shipping) return null;
+
+  // LOCAL-ONLY → show one chip, clearly labeled
+  if (local && !shipping) {
+    return (
+      <div className="mt-2">
+        <span className="inline-flex items-center rounded-full bg-amber-600/15 text-amber-200 text-xs px-2 py-1">
+          🚚 Local delivery only
+        </span>
+      </div>
+    );
+  }
+
+  // BOTH or SHIPPING-ONLY
+  return (
+    <div className="flex flex-wrap gap-2 mt-2">
+      {local && (
+        <span className="inline-flex items-center rounded-full bg-emerald-600/15 text-emerald-200 text-xs px-2 py-1">
+          🚚 Local delivery
+        </span>
+      )}
+      {shipping && (
+        <span className="inline-flex items-center rounded-full bg-blue-600/15 text-blue-200 text-xs px-2 py-1">
+          📦 Nationwide shipping
+        </span>
+      )}
+    </div>
+  );
+}
+Local and Shipping → two chips (“Local delivery”, “Nationwide shipping”).
+
+Local-only → one chip (“Local delivery only”).
+
+Shipping-only → one chip (“Nationwide shipping”).
+
+Neither → no chips.
+
+This immediately fixes cards on /products and the product detail page (they both use this component).
+
+Note: Keep your top-of-page “Free Local Delivery” banner—this change only affects the per-product chips, not the global banner.
+
+2) Clean the duplicate WebSocket imports that are breaking Vite
+Your logs show:
+
+client/src/pages/admin/StripeTab.tsx
+
+client/src/pages/admin/CategoriesTab.tsx
+
+both import useWebSocketState twice.
+
+Quick fix (safe one-liners that keep the first import and remove any later duplicates):
+
+bash
+Copy
+Edit
+# StripeTab: keep the first 'useWebSocketState' import, drop later duplicates
+sed -i '0,/import { useWebSocketState } from.*$/! s/import { useWebSocketState } from.*$//g' client/src/pages/admin/StripeTab.tsx
+
+# CategoriesTab: same cleanup
+sed -i '0,/import { useWebSocketState } from.*$/! s/import { useWebSocketState } from.*$//g' client/src/pages/admin/CategoriesTab.tsx
+(If you’d rather edit manually: just delete the second identical import line in each file.)
+
+3) Optional polish (keeps labels consistent everywhere)
+If you also want the button to reflect the clearer wording, keep this in AddToCartButton.tsx:
+
+tsx
+Copy
+Edit
+const localOnly = local && !shipping;
+const blocked = localOnly && !locality?.isLocal;
+
+<Button
+  disabled={blocked || props.disabled}
+  title={blocked ? "Local delivery only — you’re outside our zone" : undefined}
+>
+  {blocked ? "Local delivery only (out of zone)" : "Add to Cart"}
+</Button>
+Quick QA
+Open /products: Local-only items now show one chip: “Local delivery only”.
+
+Toggle shipping flags in Admin → cards update and never show both “Local delivery” and “Local delivery only” together.
+
+Vite no longer throws “Identifier 'useWebSocketState' has already been declared.”

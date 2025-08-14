@@ -9,7 +9,7 @@ import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedSubmissionModal } from '@/components/admin/modals/EnhancedSubmissionModal';
 import { useWebSocketState } from "@/hooks/useWebSocketState";
-import { useWebSocketState } from '@/hooks/useWebSocketState';
+
 
 interface Submission {
   id: string;
