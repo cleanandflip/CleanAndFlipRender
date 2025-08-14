@@ -3,7 +3,7 @@ import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { clientErrorLogger } from "./lib/errorLogger";
 import { FrontendErrorCatcher } from "./services/globalErrorCatcher";
-import { SocketProvider } from "./hooks/useSingletonSocket.tsx";
+// Remove socket provider as it's now handled in useWebSocketState
 import "./index.css";
 
 // Initialize client-side error logging
@@ -17,9 +17,7 @@ import { installGlobalErrorHandlers } from "./lib/errorTracking";
 installGlobalErrorHandlers();
 
 createRoot(document.getElementById("root")!).render(
-  <SocketProvider>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </SocketProvider>
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>
 );

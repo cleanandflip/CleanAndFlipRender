@@ -10,7 +10,7 @@ import ProductCard from "@/components/products/product-card";
 import { DollarSign, Dumbbell, TrendingUp, Users, Clock, CheckCircle } from "lucide-react";
 import CategoryGrid from "@/components/categories/category-grid";
 import { productEvents } from "@/lib/queryClient";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketState } from "@/hooks/useWebSocketState";
 import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import { searchService } from "@/lib/searchService";
 import ProductsResults from "@/components/products/ProductsResults";
@@ -23,7 +23,7 @@ import type { Product } from "@shared/schema";
 
 function HomeSections() {
   const queryClient = useQueryClient();
-  const { lastMessage, isConnected } = useWebSocket();
+  const { lastMessage, ready } = useWebSocketState();
   const { data: locality } = useLocality();
   const { user } = useAuth();
   
@@ -511,13 +511,13 @@ function HomeSections() {
               {/* Live Sync Status */}
               <div className="flex items-center gap-2 mb-4">
                 <div 
-                  className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                  className={`w-2 h-2 rounded-full ${ready ? 'bg-green-500' : 'bg-red-500'}`}
                 ></div>
                 <span 
                   className="text-xs"
                   style={{ color: theme.colors.text.muted }}
                 >
-                  {isConnected ? 'Live Updates Active' : 'Connecting...'}
+                  {ready ? 'Live Updates Active' : 'Connecting...'}
                 </span>
               </div>
 
