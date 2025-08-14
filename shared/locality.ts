@@ -1,83 +1,72 @@
-// Single Source of Truth for Locality - Server/Client Isomorphic
+// shared/locality.ts - Single Source of Truth for Locality
+export type LocalitySource = 'DEFAULT_ADDRESS' | 'ZIP_OVERRIDE' | 'IP' | 'NONE';
+export type LocalityReason =
+  | 'IN_LOCAL_AREA'
+  | 'NO_DEFAULT_ADDRESS'
+  | 'ZIP_NOT_LOCAL'
+  | 'FALLBACK_NON_LOCAL';
+
 export type LocalityStatus = {
-  eligible: boolean;              // in local zone?
-  zone: 'LOCAL' | 'NON_LOCAL';
-  zip?: string;
-  reason?: string;                // e.g., 'outside-zone', 'no-default-address', etc.
-  source: 'DEFAULT_ADDRESS' | 'ZIP' | 'IP';
+  eligible: boolean;
+  source: LocalitySource;
+  reason: LocalityReason;
+  zipUsed?: string | null;
+  city?: string | null;
+  state?: string | null;
 };
 
-export interface User {
-  id: string;
-  defaultAddressId?: string;
+const LOCAL_ZIPS = new Set(['28801','28803','28804','28805','28806','28808']);
+
+export function normalizeZip(input?: string | null) {
+  if (!input) return null;
+  const match = String(input).match(/\d{5}/);
+  return match ? match[0] : null;
 }
 
-export interface Address {
-  id: string;
-  postalCode: string;
-  isDefault?: boolean;
+export function isLocalZip(zip?: string | null) {
+  const z = normalizeZip(zip);
+  return !!(z && LOCAL_ZIPS.has(z));
 }
 
-// Local ZIP codes for Asheville, NC area
-const LOCAL_ZIPS = new Set([
-  '28801', '28803', '28804', '28805', '28806', '28808'
-]);
+type EvaluateArgs = {
+  defaultAddressZip?: string | null; // from user default address
+  zipOverride?: string | null;       // from ?zip= or UI checker
+  ipZipFallback?: string | null;     // optional geolocate
+};
 
-export function isLocalZip(zip: string | undefined): boolean {
-  if (!zip) return false;
-  const cleanZip = zip.split('-')[0].trim();
-  return LOCAL_ZIPS.has(cleanZip);
-}
-
-// Core locality evaluation logic (isomorphic)
-export async function evaluateLocality({
-  user,
+export function evaluateLocality({
+  defaultAddressZip,
   zipOverride,
-  ip,
-  getDefaultAddress, // function to fetch default address
-}: {
-  user?: User;
-  zipOverride?: string;
-  ip?: string;
-  getDefaultAddress?: (userId: string) => Promise<Address | null>;
-}): Promise<LocalityStatus> {
-  
-  // Priority 1: User has default address
-  if (user?.defaultAddressId && getDefaultAddress) {
-    try {
-      const defaultAddr = await getDefaultAddress(user.id);
-      if (defaultAddr?.postalCode) {
-        const eligible = isLocalZip(defaultAddr.postalCode);
-        return {
-          eligible,
-          zone: eligible ? 'LOCAL' : 'NON_LOCAL',
-          zip: defaultAddr.postalCode,
-          reason: eligible ? 'default-address' : 'outside-zone',
-          source: 'DEFAULT_ADDRESS'
-        };
-      }
-    } catch (error) {
-      console.warn('Failed to fetch default address:', error);
-    }
-  }
-  
-  // Priority 2: ZIP override from user input
-  if (zipOverride) {
-    const eligible = isLocalZip(zipOverride);
+  ipZipFallback
+}: EvaluateArgs): LocalityStatus {
+  // 1) Default address
+  if (defaultAddressZip) {
+    const ok = isLocalZip(defaultAddressZip);
     return {
-      eligible,
-      zone: eligible ? 'LOCAL' : 'NON_LOCAL',
-      zip: zipOverride,
-      reason: eligible ? 'zip-override' : 'outside-zone',
-      source: 'ZIP'
+      eligible: ok,
+      source: 'DEFAULT_ADDRESS',
+      reason: ok ? 'IN_LOCAL_AREA' : 'ZIP_NOT_LOCAL',
+      zipUsed: normalizeZip(defaultAddressZip)
     };
   }
-  
-  // Priority 3: IP fallback (best effort, assume non-local for safety)
+
+  // 2) Explicit override
+  if (zipOverride) {
+    const ok = isLocalZip(zipOverride);
+    return {
+      eligible: ok,
+      source: 'ZIP_OVERRIDE',
+      reason: ok ? 'IN_LOCAL_AREA' : 'ZIP_NOT_LOCAL',
+      zipUsed: normalizeZip(zipOverride)
+    };
+  }
+
+  // 3) IP fallback (safe non-local if absent)
+  const ok = isLocalZip(ipZipFallback);
   return {
-    eligible: false,
-    zone: 'NON_LOCAL',
-    reason: 'no-default-address',
-    source: 'IP'
+    eligible: ok,
+    source: ipZipFallback ? 'IP' : 'NONE',
+    reason: ok ? 'IN_LOCAL_AREA' : 'FALLBACK_NON_LOCAL',
+    zipUsed: normalizeZip(ipZipFallback)
   };
 }

@@ -49,8 +49,10 @@ import { db } from "./db";
 import { cartItems } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import observability from "./routes/observability";
-import { localityService } from "./services/locality";
-import { evaluateLocality } from "@shared/locality";
+import { getLocalityStatus } from "./locality/locality.controller";
+import { requireLocalCustomer } from "./middleware/requireLocalCustomer";
+import { modeFromProduct } from "../shared/fulfillment";
+import { evaluateLocality, normalizeZip } from "@shared/locality";
 
 // WebSocket Manager for broadcasting updates
 let wsManager: any = null;
@@ -251,8 +253,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/checkout', checkoutRoutes);
   
   // Locality routes for unified local delivery detection (with caching)
-  const { addCacheHeaders } = await import('./middleware/performanceOptimization');
-  app.use('/api/locality', addCacheHeaders(300), localityRoutes);
+  // Replace old locality routes with unified endpoint
+  // app.use('/api/locality', addCacheHeaders(300), localityRoutes);
   
   // Cart validation route
   const cartValidationRoutes = await import('./routes/cart-validation');
@@ -277,6 +279,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Initialize search indexes
   await initializeSearchIndexes();
+  
+  // UNIFIED Locality Status Endpoint - Single Source of Truth
+  app.get("/api/locality/status", apiLimiter, getLocalityStatus);
   
   // Health check endpoints
   app.get('/health', healthLive);

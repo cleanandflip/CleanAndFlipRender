@@ -279,11 +279,11 @@ export default function Navigation() {
                         {/* Unified Locality Status Badge */}
                         <div className="mt-2 flex justify-center">
                           <div className={`text-xs px-2 py-1 rounded-full ${
-                            locality?.eligible 
+                            locality.eligible 
                               ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                               : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                           }`}>
-                            {locality?.eligible ? "✅ Local delivery eligible" : "❌ Outside local delivery zone"}
+                            {locality.eligible ? "✅ Local delivery eligible" : "❌ Outside local delivery zone"}
                           </div>
                         </div>
                       </div>
