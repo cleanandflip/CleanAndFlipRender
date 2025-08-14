@@ -279,9 +279,14 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         sku: formData.sku || null,
         images: formData.images,
 
+        // Send canonical mode string as well for backend alignment
+        fulfillmentMode: mode,
+        fulfillment_mode: mode,
+
         // booleans (server expects snake_case — send both for safety)
         is_featured: !!formData.featured,
         isFeatured: !!formData.featured,
+        featured: !!formData.featured,
 
         // Use the currently selected mode (authoritative)
         is_local_delivery_available: !!fulfillment.isLocalDeliveryAvailable,

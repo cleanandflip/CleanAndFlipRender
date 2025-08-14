@@ -1,0 +1,130 @@
+Root cause
+Your modal now sends the chosen mode as booleans, but the admin update route is not persisting (or returning) those fields to the public product APIs. That’s why you see 200s and Stripe sync messages, but the website keeps showing the old availability.
+
+Concretely:
+
+The modal payload includes:
+
+is_local_delivery_available, is_shipping_available (snake)
+
+isLocalDeliveryAvailable, isShippingAvailable (camel)
+
+The admin PUT route is almost certainly whitelisting allowed fields (or validating with Zod/Yup) and dropping these keys.
+Result: DB doesn’t change, public /api/products and /api/products/featured return the old values.
+
+On the frontend, many components import src/lib/products/fulfillment.ts. That code likely reads a canonical fulfillmentMode or specific DB columns. Your modal never sends fulfillmentMode, so even if the server saved the booleans, views that rely on fulfillmentMode would still be stale.
+
+What Replit needs to fix (backend)
+Please apply all four of these, otherwise the website will never reflect the selection:
+
+Update the DTO / whitelist for product update
+
+In the admin update handler (e.g. src/server/routes/admin/products.ts or similar), include the new fields in the allowed list / Zod schema:
+
+ts
+Copy
+Edit
+// add to your update schema
+is_local_delivery_available: z.boolean().optional(),
+is_shipping_available: z.boolean().optional(),
+isLocalDeliveryAvailable: z.boolean().optional(),
+isShippingAvailable: z.boolean().optional(),
+fulfillment_mode: z.enum(['local_only','shipping_only','both']).optional(),
+fulfillmentMode: z.enum(['local_only','shipping_only','both']).optional(),
+is_featured: z.boolean().optional(),
+isFeatured: z.boolean().optional(),
+images: z.array(z.string()).optional(),
+category_id: z.string().optional(),
+categoryId: z.string().optional(),
+Persist to the DB (Prisma/SQL)
+Map both camel & snake to your DB columns:
+
+ts
+Copy
+Edit
+const body = req.validatedBody ?? req.body;
+
+const isLocal = (body.is_local_delivery_available ?? body.isLocalDeliveryAvailable);
+const isShip  = (body.is_shipping_available       ?? body.isShippingAvailable);
+const mode    = (body.fulfillment_mode            ?? body.fulfillmentMode)
+             ?? (isLocal && isShip ? 'both' : isLocal ? 'local_only' : 'shipping_only');
+
+await prisma.product.update({
+  where: { id },
+  data: {
+    // existing fields...
+    images: body.images,
+    categoryId: body.category_id ?? body.categoryId,
+    isLocalDeliveryAvailable: isLocal,
+    isShippingAvailable: isShip,
+    fulfillmentMode: mode,
+    isFeatured: body.is_featured ?? body.isFeatured,
+  }
+});
+Return these fields on public GETs
+If you use a serializer or select, include:
+
+isLocalDeliveryAvailable
+
+isShippingAvailable
+
+fulfillmentMode
+
+isFeatured
+
+images
+
+categoryId
+The products shown on the website are coming from /api/products and /api/products/featured. Right now those responses omit (or override) the fulfillment fields, which is why the UI never changes even after successful PUTs.
+
+DB columns / migration (if missing)
+Ensure these exist:
+
+sql
+Copy
+Edit
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS is_local_delivery_available boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS is_shipping_available       boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS fulfillment_mode            text DEFAULT 'shipping_only'
+    CHECK (fulfillment_mode IN ('local_only','shipping_only','both'));
+And make sure your Prisma model mirrors them (camelCase fields that map to these columns).
+
+Small but important frontend tweak
+Send the canonical mode string as well, so both worlds are always aligned:
+
+diff
+Copy
+Edit
+const submitData = {
+  // ...
++ fulfillmentMode: mode,
++ fulfillment_mode: mode,
+  // booleans derived from the selected mode (authoritative)
+  is_local_delivery_available: !!fulfillment.isLocalDeliveryAvailable,
+  isLocalDeliveryAvailable:    !!fulfillment.isLocalDeliveryAvailable,
+  is_shipping_available:       !!fulfillment.isShippingAvailable,
+  isShippingAvailable:         !!fulfillment.isShippingAvailable,
+};
+(You already fixed the buttons to use changeMode, so the UI state is correct; we just need the server to accept and return it.)
+
+Why this will finally sync
+Admin modal → sends mode + booleans.
+
+Admin PUT → persists those fields instead of dropping them.
+
+Public GETs → include those fields, so product-grid, ProductAvailabilityChips, and FreeDeliveryPill read the updated values.
+
+Featured products also update because isFeatured is saved and returned.
+
+One-liners for other issues you hit
+CategoriesTab subscribe is not defined: import & destructure from useWebSocketState() or remove the unused subscribe. E.g.:
+
+ts
+Copy
+Edit
+const { subscribe } = useWebSocketState(); // make sure this hook actually returns subscribe
+// or delete the reference if not needed
+useScrollLock.tsx default export error: you’re using a named import ({ useScrollLock }). Ensure the hook file exports it named, not default. If it is default, switch to import useScrollLock from '@/hooks/useScrollLock'.
+
+If Replit implements the backend schema/whitelist + public serializer fixes above, your Delivery & Fulfillment selection will persist and show up everywhere (admin table, product grid, product detail, and featured).

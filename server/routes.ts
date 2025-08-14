@@ -1865,6 +1865,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: products.createdAt,
           updatedAt: products.updatedAt,
           categoryId: products.categoryId,
+          featured: products.featured,
+          isLocalDeliveryAvailable: products.isLocalDeliveryAvailable,
+          isShippingAvailable: products.isShippingAvailable,
           category: {
             id: categories.id,
             name: categories.name
@@ -1944,7 +1947,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updatedAt: product.updatedAt,
           category: product.category?.name || 'Uncategorized',
           categoryId: product.categoryId,
-          status: (product.stockQuantity || 0) > 0 ? 'active' : 'inactive'
+          status: (product.stockQuantity || 0) > 0 ? 'active' : 'inactive',
+          featured: product.featured,
+          isLocalDeliveryAvailable: product.isLocalDeliveryAvailable,
+          isShippingAvailable: product.isShippingAvailable
         })),
         pagination: {
           page: parseInt(page as string),
@@ -2737,9 +2743,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       
       // accept both shapes from client
-      const featuredBool = req.body.isFeatured ?? req.body.is_featured ?? false;
+      const featuredBool = req.body.isFeatured ?? req.body.is_featured ?? req.body.featured ?? false;
       const localBool    = req.body.isLocalDeliveryAvailable ?? req.body.is_local_delivery_available ?? false;
       const shipBool     = req.body.isShippingAvailable ?? req.body.is_shipping_available ?? false;
+      const fulfillmentMode = req.body.fulfillmentMode ?? req.body.fulfillment_mode ?? (localBool && shipBool ? 'both' : localBool ? 'local_only' : 'shipping_only');
 
       const numeric = (v: any, def = 0) => (isNaN(parseFloat(v)) ? def : parseFloat(v));
       const intNum  = (v: any, def = 0) => (isNaN(parseInt(v)) ? def : parseInt(v));
@@ -2747,20 +2754,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseData = {
         name: req.body.name,
         description: req.body.description,
-        categoryId: req.body.categoryId,
+        categoryId: req.body.categoryId ?? req.body.category_id,
         brand: req.body.brand ?? null,
         price: numeric(req.body.price),
         compare_at_price: req.body.compareAtPrice != null ? numeric(req.body.compareAtPrice) : null,
         cost: req.body.cost != null ? numeric(req.body.cost) : null,
         stockQuantity: intNum(req.body.stockQuantity ?? req.body.stock, 0),
-        status: req.body.status ?? "Active",
+        status: req.body.status ?? "active",
         weight: numeric(req.body.weight, 0),
         sku: req.body.sku ?? null,
+        images: req.body.images ?? [],
 
-        // canonical DB fields
+        // canonical DB fields (all the different field names)
+        featured: !!featuredBool,
         is_featured: !!featuredBool,
+        isLocalDeliveryAvailable: !!localBool,
         is_local_delivery_available: !!localBool,
+        isShippingAvailable: !!shipBool,
         is_shipping_available: !!shipBool,
+        fulfillmentMode: fulfillmentMode,
       };
 
       Logger.debug(`Updating product with data: ${JSON.stringify(baseData)}`);
