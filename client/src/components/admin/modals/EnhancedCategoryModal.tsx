@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Upload, Trash2, Loader2, Plus, Check, AlertCircle, Tag } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { useWebSocketState } from '@/hooks/useWebSocketState';
+import { useSocket } from '@/hooks/useSingletonSocket.tsx';
 import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface CategoryModalProps {
@@ -16,7 +16,7 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { ready } = useWebSocketState();
+  const { send } = useSocket();
   
   // Lock body scroll while modal is open
   useScrollLock(true);

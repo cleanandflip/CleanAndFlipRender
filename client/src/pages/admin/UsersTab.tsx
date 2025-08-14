@@ -8,7 +8,9 @@ import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedUserModal } from '@/components/admin/modals/EnhancedUserModal';
-import { useWebSocketState } from '@/hooks/useWebSocketState';
+import { useSocket } from '@/hooks/useSingletonSocket.tsx';
+import { useWebSocketReady } from '@/hooks/useWebSocketState';
+import useWebSocketState from '@/hooks/useWebSocketState';
 
 interface User {
   id: string;
@@ -27,7 +29,9 @@ export function UsersTab() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { lastMessage, subscribe, ready } = useWebSocketState();
+  const { subscribe } = useSocket();
+  const ready = useWebSocketReady();
+  const { lastMessage } = useWebSocketState();
 
   const { data: usersData, isLoading, refetch } = useQuery({
     queryKey: ['admin-users', searchQuery],

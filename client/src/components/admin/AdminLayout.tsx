@@ -6,7 +6,7 @@ import {
   Users, Settings, CreditCard, ChevronRight, Wifi, WifiOff, AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useWebSocketState } from '@/hooks/useWebSocketState';
+import { useSocket } from '@/hooks/useSingletonSocket.tsx';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -27,7 +27,7 @@ const ADMIN_TABS = [
 export function AdminLayout({ children, currentTab }: AdminLayoutProps) {
   const [location, navigate] = useLocation();
   const activeTab = currentTab || location.split('/').pop() || 'products';
-  const { ready } = useWebSocketState();
+  const { ready } = useSocket();
 
   return (
     <div className="min-h-screen bg-[#0f172a]">

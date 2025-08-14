@@ -38,21 +38,3 @@ export function useWebSocketReady() {
 
   return ready;
 }
-
-// Main hook that provides all WebSocket functionality
-export function useWebSocketState() {
-  const [lastMessage, setLastMessage] = useState<any>(null);
-  const ready = useWebSocketReady();
-  
-  // Mock subscribe function for compatibility
-  const subscribe = (callback: (message: any) => void) => {
-    // This would integrate with actual WebSocket message handling
-    return () => {}; // Unsubscribe function
-  };
-  
-  return {
-    lastMessage,
-    ready,
-    subscribe
-  };
-}

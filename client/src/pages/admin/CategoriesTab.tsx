@@ -5,7 +5,8 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { EnhancedCategoryModal } from '@/components/admin/modals/EnhancedCategoryModal';
-import { useWebSocketState } from '@/hooks/useWebSocketState';
+import { useSocket } from '@/hooks/useSingletonSocket.tsx';
+import { useWebSocketReady } from '@/hooks/useWebSocketState';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 
@@ -26,7 +27,8 @@ export function CategoriesTab() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { subscribe, ready } = useWebSocketState();
+  const { subscribe } = useSocket();
+  const ready = useWebSocketReady();
   const queryClient = useQueryClient();
 
   // Fetch categories with React Query
