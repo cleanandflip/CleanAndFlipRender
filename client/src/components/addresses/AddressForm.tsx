@@ -119,12 +119,9 @@ export function AddressForm({
 
   // Handle address selection from autocomplete
   const handleAddressSelect = (addressData: any) => {
-    // Store for locality detection (create a mock geoapify object for compatibility)
-    setSelectedGeoapify({
-      properties: {
-        distance_km: 0 // Will be calculated by backend
-      }
-    });
+    // Clear geoapify data since we don't have coordinates from the simple autocomplete
+    // Local delivery detection will happen on the backend when the address is saved
+    setSelectedGeoapify(null);
     
     // Map the AddressData fields to form fields
     if (addressData) {
