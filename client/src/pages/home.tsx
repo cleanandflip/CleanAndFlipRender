@@ -44,6 +44,7 @@ function HomeSections() {
   useEffect(() => {
     const unsubscribe = subscribe("product:update", (payload: any) => {
       console.log('🏠 Home page received product update:', payload);
+      console.log('🏠 Triggering featured products refetch...');
       // Force refetch of featured products immediately
       refetch();
     });
