@@ -2781,10 +2781,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isLocal = safeBool(b.isLocalDeliveryAvailable ?? b.is_local_delivery_available ?? b.local_delivery, false);
       const isShip = safeBool(b.isShippingAvailable ?? b.is_shipping_available ?? b.shipping_available, true);
       
-      // Determine fulfillment mode
-      let fulfillmentMode = "LOCAL_OR_SHIP";
+      // Determine fulfillment mode using new two-value system
+      let fulfillmentMode = "LOCAL_AND_SHIPPING";
       if (isLocal && !isShip) fulfillmentMode = "LOCAL_ONLY";
-      else if (!isLocal && isShip) fulfillmentMode = "SHIP_ONLY";
 
       const baseData = {
         name: b.name,

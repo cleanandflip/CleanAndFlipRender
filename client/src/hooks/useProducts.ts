@@ -77,17 +77,20 @@ export function useProducts(args?: { q: string; category: string; sort: string; 
       });
     }
 
-    // Filter by fulfillment options
+    // Filter by fulfillment options - updated for two-value system
     const fulfillmentFilter = query.fulfillment;
     if (fulfillmentFilter) {
       list = list.filter((product) => {
+        const mode = (product as any).fulfillment_mode || ((product as any).isLocalDeliveryAvailable && !(product as any).isShippingAvailable ? 'LOCAL_ONLY' : 'LOCAL_AND_SHIPPING');
         switch (fulfillmentFilter) {
+          case 'local_only':
+            return mode === 'LOCAL_ONLY';
+          case 'local_and_shipping':
+            return mode === 'LOCAL_AND_SHIPPING';
           case 'local_delivery':
-            return product.isLocalDeliveryAvailable === true;
+            return mode === 'LOCAL_ONLY' || mode === 'LOCAL_AND_SHIPPING';
           case 'shipping':
-            return product.isShippingAvailable === true;
-          case 'pickup':
-            return true; // All products support pickup
+            return mode === 'LOCAL_AND_SHIPPING';
           default:
             return true;
         }

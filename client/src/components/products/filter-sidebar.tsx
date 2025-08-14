@@ -75,11 +75,10 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
     { value: "needs_repair", label: "Needs Repair", color: "bg-red-500" },
   ];
 
-  // Fulfillment options
+  // Fulfillment options - Updated for two-value system
   const fulfillmentOptions = [
-    { value: "local_delivery", label: "Local Delivery", icon: "🚚" },
-    { value: "shipping", label: "Shipping", icon: "📦" },
-    { value: "pickup", label: "Pickup", icon: "🏪" },
+    { value: "local_only", label: "Local delivery only", description: "Heavy/bulky items" },
+    { value: "local_and_shipping", label: "Local delivery & Shipping", description: "Available nationwide" },
   ];
 
   // Use actual brands from database, fallback to popular brands if not loaded
@@ -336,7 +335,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
 
         {/* Fulfillment Options */}
         <div>
-          <h4 className="font-semibold mb-3">Delivery & Fulfillment</h4>
+          <h4 className="font-semibold mb-3">Fulfillment</h4>
           <div className="space-y-2">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -347,7 +346,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                 onChange={() => handleFilterChange('fulfillment', undefined)}
                 className="w-4 h-4 text-accent-blue bg-transparent border-gray-600 focus:ring-accent-blue"
               />
-              <span className="text-sm">All Options</span>
+              <span className="text-sm">All products</span>
             </label>
             {fulfillmentOptions.map((option) => (
               <label key={option.value} className="flex items-center gap-2 cursor-pointer">
@@ -359,8 +358,10 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                   onChange={(e) => handleFilterChange('fulfillment', e.target.value)}
                   className="w-4 h-4 text-accent-blue bg-transparent border-gray-600 focus:ring-accent-blue"
                 />
-                <span className="mr-1">{option.icon}</span>
-                <span className="text-sm">{option.label}</span>
+                <div className="flex flex-col">
+                  <span className="text-sm">{option.label}</span>
+                  <span className="text-xs text-gray-500">{option.description}</span>
+                </div>
               </label>
             ))}
           </div>
@@ -399,6 +400,8 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
           </div>
         </div>
       </div>
+
+
 
       {/* Active Filters Summary */}
       {activeFilterCount > 0 && (

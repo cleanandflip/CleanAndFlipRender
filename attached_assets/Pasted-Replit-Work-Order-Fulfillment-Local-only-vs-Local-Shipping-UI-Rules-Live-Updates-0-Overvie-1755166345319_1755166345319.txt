@@ -1,0 +1,229 @@
+Replit Work Order — Fulfillment (Local-only vs Local+Shipping), UI + Rules + Live Updates
+0) Overview / Why
+We need to emphasize fulfillment on every product surface and enforce rules end-to-end:
+
+Non-local users cannot add Local-only items to cart.
+
+Checkout must not charge shipping on carts that are 100% Local-only, and must show “Delivery ETA: 24–48 hours”.
+
+Mixed carts: charge shipping only for the items that are eligible for shipping.
+
+Admin changes to fulfillment must live update product cards and pages.
+
+1) Data model (restrict to the two allowed values)
+Migration
+sql
+Copy
+Edit
+-- 20250814_fulfillment_mode_two_values.sql
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS fulfillment_mode TEXT NOT NULL DEFAULT 'LOCAL_AND_SHIPPING';
+
+ALTER TABLE products
+  ADD CONSTRAINT chk_fulfillment_mode_two_values
+  CHECK (fulfillment_mode IN ('LOCAL_ONLY','LOCAL_AND_SHIPPING'));
+
+CREATE INDEX IF NOT EXISTS idx_products_fulfillment_mode
+  ON products(fulfillment_mode);
+Shared types / helpers
+ts
+Copy
+Edit
+// src/lib/products/fulfillment.ts
+export type FulfillmentMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
+
+export const FULFILLMENT = {
+  LOCAL_ONLY: 'LOCAL_ONLY',
+  BOTH: 'LOCAL_AND_SHIPPING',
+} as const;
+
+export const isLocalOnly   = (m: FulfillmentMode) => m === 'LOCAL_ONLY';
+export const isShippable   = (m: FulfillmentMode) => m === 'LOCAL_AND_SHIPPING';
+export const labelFor = (m: FulfillmentMode) =>
+  m === 'LOCAL_ONLY' ? 'Local delivery only' : 'Local delivery + Shipping';
+Use these helpers everywhere (server + client). Remove any vestigial “Shipping only” code paths/strings/tests.
+
+2) Admin UI (Products → Delivery & Fulfillment)
+Replace the 3-button group with two options:
+
+Local delivery only (help text: “Heavy/bulky items. Only purchasable by local customers.”)
+
+Local delivery & Shipping (help text: “Available for both local delivery and nationwide shipping.”)
+
+Persist to fulfillment_mode via PUT /api/admin/products/:id.
+
+After successful save, publish WS event (see §5).
+
+3) Customer UI — Emphasis everywhere
+3.1 Product card/list
+Show a pill under the price:
+
+Local delivery only (green)
+
+Local delivery + Shipping (green + small truck icon)
+
+If user is not local and product is Local-only:
+
+Disable “Add to cart” button.
+
+Tooltip/inline note: “This item is available for local delivery only.”
+
+3.2 Product detail page
+Show the same pill(s) near title/price (as in your screenshot).
+
+If not local + Local-only: show a non-dismissible info alert above the CTA explaining unavailability.
+
+4) Locality source of truth
+Continue using GET /api/locality/status and standardize it to:
+
+json
+Copy
+Edit
+{ "isLocal": true|false, "zip": "string|null", "serviceRadiusMiles": number }
+Client hook:
+
+ts
+Copy
+Edit
+// src/lib/locality.ts
+import useSWR from 'swr';
+export function useLocality() {
+  return useSWR('/api/locality/status', fetcher, { revalidateOnFocus: false });
+}
+5) WebSocket events (fix format + live updates)
+Use one format everywhere: { type, payload }.
+
+Server publish on product edit:
+
+ts
+Copy
+Edit
+publish({
+  type: 'product.updated',
+  payload: {
+    id: product.id,
+    fulfillment_mode: product.fulfillment_mode,
+    price: product.price,
+    stock: product.stock,
+    updated_at: product.updated_at
+  }
+});
+Client listener: switch on msg.type === 'product.updated'; update React Query/SWR caches for product detail, lists, and featured. This must refresh pills and CTA enabled/disabled state without a page reload.
+
+Sweep the repo and replace any topic: usages with type:; remove legacy topic handlers.
+
+6) Server enforcement (hard stop)
+6.1 Cart add
+In POST /api/cart/items:
+
+ts
+Copy
+Edit
+const product = await db.getProduct(productId);
+const { isLocal } = await getLocality(req);
+
+if (product.fulfillment_mode === 'LOCAL_ONLY' && !isLocal) {
+  return res.status(403).json({
+    code: 'LOCAL_ONLY_RESTRICTED',
+    message: 'This item is available for local delivery only.'
+  });
+}
+6.2 Checkout/order creation
+Re-validate the same rule on:
+
+POST /api/checkout/summarize
+
+POST /api/orders
+If any invalid item is present, respond 409 with the same code and the offending product IDs (client should surface a banner and remove/disable them).
+
+6.3 Auto-heal on product updates
+If a product currently in a cart flips to LOCAL_ONLY and the viewer is not local, remove it from that cart on next cart fetch and return a removedItems array so the client can show a toast.
+
+7) Pricing logic (shipping math)
+7.1 Summary calculation
+If all items are LOCAL_ONLY:
+
+shippingTotal = 0
+
+Show line: Delivery ETA: 24–48 hours
+
+If mixed:
+
+Charge shipping only for items with LOCAL_AND_SHIPPING.
+
+UI line reads: Shipping (eligible items only)
+
+Taxes remain unchanged.
+
+7.2 Checkout UI states
+When cart is 100% Local-only:
+
+Hide shipping method selector and any carrier rates.
+
+Replace with a “Local delivery” info box: “We’ll deliver within 24–48 hours of ordering.”
+
+When mixed:
+
+Keep shipping selector but lock the description to “applies to shipping-eligible items only”.
+
+8) Client guards (UX before server says no)
+Product detail CTA:
+
+ts
+Copy
+Edit
+const { data: locality } = useLocality();
+const disabled = isLocalOnly(product.fulfillment_mode) && locality && !locality.isLocal;
+Add to cart button becomes disabled with tooltip + inline helper text.
+
+In lists, clicking a disabled card CTA opens the helper instead of attempting a POST.
+
+9) Mixed cart edge cases
+If user becomes non-local (zip changes / status flips) while cart has Local-only items:
+
+On next cart fetch, server removes the Local-only items and returns removedItems.
+
+Client shows a banner: “Some items are local-delivery only and were removed.”
+
+10) Tests (minimum)
+Unit: shipping total calculator (all-local ⇒ 0; mixed ⇒ only eligible lines counted).
+
+API:
+
+Add to cart blocked for non-local + Local-only (403).
+
+Checkout summary hides shipping for all-local.
+
+Mixed summary charges only eligible lines.
+
+E2E (Playwright):
+
+Admin toggles fulfillment → product page pill & CTA update live (WS).
+
+Non-local user cannot add Local-only; sees correct messaging.
+
+Checkout page shows 24–48h banner and no shipping cost for all-local.
+
+11) Cleanup
+Remove any “Shipping only” code paths, enums, copy, tests, and UI fragments.
+
+Delete stale client logic that assumes three modes.
+
+Ensure no stale cached data: invalidate SWR/React-Query keys on WS product.updated.
+
+12) Acceptance criteria (must all pass)
+Only two fulfillment modes exist in code, DB, and UI.
+
+Non-local users cannot add Local-only items (client disabled + server 403).
+
+Checkout:
+
+All-local cart → no shipping line and shows “Delivery ETA: 24–48 hours.”
+
+Mixed cart → shipping charged only for shipping-eligible items; label clarifies this.
+
+Admin update to fulfillment instantly updates customer UI via WS without reload.
+
+No page refresh loops on checkout (audit effects; no redirect-to-self loops).
+
+All tests above are added and green.

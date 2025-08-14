@@ -63,13 +63,14 @@ router.post('/', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    guardCartItemAgainstLocality({
-      userIsLocal: isLocal,
-      product: {
-        is_local_delivery_available: !!(product as any).isLocalDeliveryAvailable,
-        is_shipping_available: !!(product as any).isShippingAvailable,
-      },
-    });
+    // New fulfillment enforcement for two-value system
+    const { fulfillment_mode } = product;
+    if (fulfillment_mode === 'LOCAL_ONLY' && !isLocal) {
+      return res.status(403).json({
+        code: 'LOCAL_ONLY_RESTRICTED',
+        message: 'This item is available for local delivery only.'
+      });
+    }
     
     const cart = await storage.addToCartLegacy(userId, data.productId, data.quantity);
     

@@ -6,20 +6,7 @@ import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-type FulfillmentMode = "local_only" | "shipping_only" | "both";
-
-const modeFromProduct = (p: any): FulfillmentMode => {
-  const local = p?.is_local_delivery_available ?? p?.isLocalDeliveryAvailable ?? false;
-  const ship  = p?.is_shipping_available ?? p?.isShippingAvailable ?? false;
-  if (local && ship) return "both";
-  if (local) return "local_only";
-  return "shipping_only";
-};
-
-const booleansFromMode = (m: FulfillmentMode) => ({
-  isLocalDeliveryAvailable: m !== "shipping_only",
-  isShippingAvailable: m !== "local_only",
-});
+import { FulfillmentMode, modeFromProduct, booleansFromMode, FULFILLMENT, getFulfillmentDescription } from '@shared/fulfillment';
 
 interface ProductModalProps {
   product?: any;
@@ -49,7 +36,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   useScrollLock(true);
   
   // Add fulfillment mode state
-  const [mode, setMode] = useState<FulfillmentMode>(product ? modeFromProduct(product) : "shipping_only");
+  const [mode, setMode] = useState<FulfillmentMode>(product ? modeFromProduct(product) : FULFILLMENT.BOTH);
 
   // Keep the form booleans and mode in sync when the user switches
   const changeMode = (m: FulfillmentMode) => {
@@ -626,50 +613,53 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
               
               <div className="space-y-3">
                 <label className="text-sm font-medium text-gray-400">Fulfillment</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-3">
                   <button
                     type="button"
-                    onClick={() => changeMode("local_only")}
-                    className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
-                      mode === "local_only" 
-                        ? "border-amber-400 bg-amber-500/10 text-amber-200" 
+                    onClick={() => changeMode(FULFILLMENT.LOCAL_ONLY)}
+                    className={`w-full p-4 rounded-lg border text-left transition-all ${
+                      mode === FULFILLMENT.LOCAL_ONLY
+                        ? "border-green-400 bg-green-500/10 text-green-200" 
                         : "border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300"
                     }`}
                   >
-                    Local only
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">Local delivery only</h4>
+                        <p className="text-xs mt-1 opacity-75">Heavy/bulky items. Only purchasable by local customers.</p>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full border-2 ${
+                        mode === FULFILLMENT.LOCAL_ONLY 
+                          ? "border-green-400 bg-green-400" 
+                          : "border-gray-500"
+                      }`} />
+                    </div>
                   </button>
+                  
                   <button
                     type="button"
-                    onClick={() => changeMode("shipping_only")}
-                    className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
-                      mode === "shipping_only" 
-                        ? "border-blue-400 bg-blue-500/10 text-blue-200" 
-                        : "border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300"
-                    }`}
-                  >
-                    Shipping only
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => changeMode("both")}
-                    className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
-                      mode === "both" 
+                    onClick={() => changeMode(FULFILLMENT.BOTH)}
+                    className={`w-full p-4 rounded-lg border text-left transition-all ${
+                      mode === FULFILLMENT.BOTH
                         ? "border-emerald-400 bg-emerald-500/10 text-emerald-200" 
                         : "border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300"
                     }`}
                   >
-                    Local + Shipping
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">Local delivery & Shipping</h4>
+                        <p className="text-xs mt-1 opacity-75">Available for both local delivery and nationwide shipping.</p>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full border-2 ${
+                        mode === FULFILLMENT.BOTH
+                          ? "border-emerald-400 bg-emerald-400" 
+                          : "border-gray-500"
+                      }`} />
+                    </div>
                   </button>
                 </div>
                 
-                {/* Description based on selected mode */}
-                <div className="mt-4 p-3 rounded-lg bg-gray-800/50 border border-gray-700">
-                  <p className="text-xs text-gray-400">
-                    {mode === "local_only" && "This product will only be available for free local delivery within 50 miles of Asheville, NC."}
-                    {mode === "shipping_only" && "This product will only be available for nationwide shipping."}
-                    {mode === "both" && "This product will be available for both local delivery (free within 50 miles) and nationwide shipping."}
-                  </p>
-                </div>
+
               </div>
             </div>
           </div>
