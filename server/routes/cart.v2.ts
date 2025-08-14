@@ -14,11 +14,18 @@ cartRouterV2.post('/items', async (req, res, next) => {
 
     const userId = getUserIdFromReq(req); // may be null (guest)
     const { storage } = await import('../storage');
-    const product = await storage.getProductById(productId);
+    const product = await storage.getProduct(productId); // FIXED: Use correct API
     
     if (!product) return res.status(404).json({ message: 'Product not found' });
 
-    const mode = modeFromProduct(product);
+    // Ensure booleans exist for modeFromProduct
+    const safeProduct = {
+      ...product,
+      isLocalDeliveryAvailable: !!product.isLocalDeliveryAvailable,
+      isShippingAvailable: !!product.isShippingAvailable,
+    };
+
+    const mode = modeFromProduct(safeProduct);
     const locality = await getLocalityForRequest(req); // unified evaluator
 
     console.log('[CART ENFORCE V2]', {
@@ -30,6 +37,7 @@ cartRouterV2.post('/items', async (req, res, next) => {
       zip: locality.zipUsed || 'none',
     });
 
+    // Business rule enforcement - return 403, never throw
     if (mode === 'LOCAL_ONLY' && !locality.eligible) {
       return res.status(403).json({
         code: 'LOCAL_ONLY_NOT_ELIGIBLE',
@@ -38,8 +46,15 @@ cartRouterV2.post('/items', async (req, res, next) => {
       });
     }
 
-    // Add item to cart using storage layer
-    const item = await storage.addToCart(userId || req.sessionID, productId, quantity);
+    // Add item to cart using correct storage API
+    const cartItemData = {
+      productId,
+      quantity: Number(quantity) || 1,
+      userId,
+      sessionId: req.sessionID,
+    };
+
+    const item = await storage.addToCart(cartItemData);
     return res.status(200).json(item);
   } catch (e) { 
     console.error('[CART ENFORCE V2] Error:', e);
@@ -52,7 +67,22 @@ cartRouterV2.get('/', async (req, res, next) => {
   try {
     const userId = getUserIdFromReq(req);
     const { storage } = await import('../storage');
-    const cart = await storage.getCart(userId || req.sessionID);
+    
+    const cartItems = await storage.getCartItems(
+      userId || undefined,
+      req.sessionID
+    );
+    
+    const items = Array.isArray(cartItems) ? cartItems : [];
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    const cart = { 
+      id: `cart-${userId || req.sessionID}`, 
+      items: items, 
+      subtotal: subtotal, 
+      total: subtotal
+    };
+    
     res.json({ ok: true, data: cart });
   } catch (e) {
     next(e);
@@ -64,7 +94,7 @@ cartRouterV2.delete('/items/:itemId', async (req, res, next) => {
   try {
     const userId = getUserIdFromReq(req);
     const { storage } = await import('../storage');
-    await storage.removeFromCart(userId || req.sessionID, req.params.itemId);
+    await storage.removeCartItem(req.params.itemId);
     res.json({ ok: true });
   } catch (e) {
     next(e);
