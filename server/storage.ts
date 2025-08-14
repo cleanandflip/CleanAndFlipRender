@@ -488,12 +488,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFeaturedProducts(limit: number = 6): Promise<Product[]> {
-    return await db
-      .select()
-      .from(products)
-      .where(eq(products.featured, true))
-      .orderBy(desc(products.createdAt))
-      .limit(limit);
+    try {
+      return await db
+        .select({
+          id: products.id,
+          name: products.name,
+          price: products.price,
+          sku: products.sku,
+          description: products.description,
+          images: products.images,
+          status: products.status,
+          featured: products.featured,
+          isLocalDeliveryAvailable: products.isLocalDeliveryAvailable,
+          isShippingAvailable: products.isShippingAvailable,
+          availableLocal: products.availableLocal,
+          availableShipping: products.availableShipping,
+          categoryId: products.categoryId,
+          brand: products.brand,
+          condition: products.condition,
+          stockQuantity: products.stockQuantity,
+          views: products.views,
+          updatedAt: products.updatedAt,
+          createdAt: products.createdAt
+        })
+        .from(products)
+        .where(
+          and(
+            eq(products.status, 'active'),
+            eq(products.featured, true)
+          )
+        )
+        .orderBy(desc(products.updatedAt))
+        .limit(limit);
+    } catch (error: any) {
+      Logger.error('Error getting featured products:', error.message);
+      throw error;
+    }
   }
 
   // Cart operations - Always fetch fresh product data

@@ -1,0 +1,380 @@
+same two problems you called out in the logs/UI:
+
+Featured endpoint returns [] (200 with Content-Length: 2) ⇒ your route/query is filtering too tightly or not persisting featured on save.
+
+Fulfillment (local/shipping) not saving from the Product modal ⇒ your server updateProduct validation is dropping those fields (schema didn’t include them), so the DB never changes. UI shows the pills, but they’re fed by stale values.
+
+Below is a tight, copy-paste instruction set for Replit to fix featured, fulfillment save, cart gating, and WS real-time (broadcast + “Connecting…”). It also keeps Stripe sync/webhooks in step.
+
+👉 Paste this to Replit
+“Replit, apply the following diffs end-to-end and then run the verification checklist at the bottom.”
+
+0) DB: fulfillment + featured columns (safe idempotent migration)
+File: server/migrations/20250814_add_fulfillment_columns.sql
+
+sql
+Copy
+Edit
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS available_local boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS available_shipping boolean NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS featured boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active' CHECK (status IN ('draft','active','archived'));
+
+-- optional convenience index
+CREATE INDEX IF NOT EXISTS idx_products_featured_active ON products (featured) WHERE status = 'active';
+Run migration.
+
+1) Route: fix FEATURED products to return data
+File: server/routes.ts
+
+ts
+Copy
+Edit
+// map DB row → API shape
+function mapProductRow(r:any){
+  return {
+    id: r.id,
+    name: r.name,
+    price: Number(r.price),
+    sku: r.sku,
+    description: r.description,
+    images: r.images ?? [],
+    status: r.status,
+    featured: r.featured,
+    availableLocal: r.available_local,
+    availableShipping: r.available_shipping,
+    categoryId: r.category_id,
+    updatedAt: r.updated_at
+  };
+}
+
+// GET /api/products/featured  — ensure we actually return rows
+router.get('/api/products/featured', async (req, res) => {
+  const rows = await db.sql`
+    SELECT * FROM products
+    WHERE status = 'active' AND featured = true
+    ORDER BY updated_at DESC
+    LIMIT 12
+  `;
+  return res.json(rows.map(mapProductRow));
+});
+This removes hidden filters (e.g., stock > 0 or featured_at IS NOT NULL) that were producing an empty array.
+
+2) Server validation: persist fulfillment + featured
+Your earlier zod schema didn’t include these, so they were silently dropped.
+
+File: server/routes.ts (update schema used by POST/PUT /api/admin/products)
+
+ts
+Copy
+Edit
+import { z } from "zod";
+
+const productBaseSchema = z.object({
+  name: z.string().min(1),
+  price: z.number().nonnegative(),
+  sku: z.string().min(1),
+  description: z.string().optional(),
+  images: z.array(z.string().url()).default([]),
+  status: z.enum(["draft","active","archived"]).default("active"),
+  featured: z.boolean().default(false),
+
+  // FULFILLMENT FLAGS (the key fix)
+  availableLocal: z.boolean().default(false),
+  availableShipping: z.boolean().default(true),
+
+  categoryId: z.string().uuid()
+});
+
+const createProductSchema = productBaseSchema;
+const updateProductSchema = productBaseSchema.partial().extend({
+  // id stays in params; still allow updating any subset, but we DO NOT drop unknowns anymore.
+});
+File: server/storage.ts (ensure both create/update write the columns)
+
+ts
+Copy
+Edit
+async createProduct(payload: /* type matching schema */) {
+  const p = payload;
+  const rows = await this.sql`
+    INSERT INTO products
+      (name, price, sku, description, images, status, featured, available_local, available_shipping, category_id)
+    VALUES
+      (${p.name}, ${p.price}, ${p.sku}, ${p.description ?? null}, ${this.sql.array(p.images ?? [], 'text')},
+       ${p.status ?? 'active'}, ${!!p.featured}, ${!!p.availableLocal}, ${!!p.availableShipping}, ${p.categoryId})
+    RETURNING *`;
+  return rows[0];
+}
+
+async updateProduct(id: string, patch: any) {
+  // Build dynamic set to avoid overwriting with undefined
+  const sets:any[] = [];
+  if (patch.name !== undefined) sets.push(this.sql`name = ${patch.name}`);
+  if (patch.price !== undefined) sets.push(this.sql`price = ${patch.price}`);
+  if (patch.sku !== undefined) sets.push(this.sql`sku = ${patch.sku}`);
+  if (patch.description !== undefined) sets.push(this.sql`description = ${patch.description}`);
+  if (patch.images !== undefined) sets.push(this.sql`images = ${this.sql.array(patch.images, 'text')}`);
+  if (patch.status !== undefined) sets.push(this.sql`status = ${patch.status}`);
+  if (patch.featured !== undefined) sets.push(this.sql`featured = ${!!patch.featured}`);
+  if (patch.availableLocal !== undefined) sets.push(this.sql`available_local = ${!!patch.availableLocal}`);
+  if (patch.availableShipping !== undefined) sets.push(this.sql`available_shipping = ${!!patch.availableShipping}`);
+  if (patch.categoryId !== undefined) sets.push(this.sql`category_id = ${patch.categoryId}`);
+
+  if (!sets.length) return;
+  await this.sql`UPDATE products SET ${this.sql.join(sets, this.sql`, `)} WHERE id = ${id}`;
+}
+This guarantees the checkboxes/toggles in the modal save through to the DB.
+
+3) Admin modal: wire the exact field names
+File: src/components/admin/modals/EnhancedProductModal.tsx
+
+tsx
+Copy
+Edit
+// Build initial form state from product
+const [form, setForm] = useState({
+  name: product?.name ?? "",
+  price: product?.price ?? 0,
+  sku: product?.sku ?? "",
+  description: product?.description ?? "",
+  images: product?.images ?? [],
+  status: product?.status ?? "active",
+  featured: !!product?.featured,
+
+  // the two toggles:
+  availableLocal: !!product?.availableLocal,
+  availableShipping: product?.availableShipping ?? true,
+
+  categoryId: product?.categoryId ?? null
+});
+
+// Checkboxes
+<Checkbox
+  checked={form.availableLocal}
+  onCheckedChange={(v) => setForm(f => ({...f, availableLocal: !!v}))}
+  id="availableLocal"
+/>
+<label htmlFor="availableLocal">Local Delivery</label>
+
+<Checkbox
+  checked={form.availableShipping}
+  onCheckedChange={(v) => setForm(f => ({...f, availableShipping: !!v}))}
+  id="availableShipping"
+/>
+<label htmlFor="availableShipping">Shipping</label>
+
+// Featured toggle
+<Checkbox
+  checked={form.featured}
+  onCheckedChange={(v) => setForm(f => ({...f, featured: !!v}))}
+  id="featured"
+/>
+<label htmlFor="featured">Featured</label>
+
+// Submit → send the SAME keys
+await api.put(`/api/admin/products/${product.id}`, form);
+4) Product availability chips (UI always shows one of the three)
+File: src/components/locality/ProductAvailabilityChips.tsx
+
+tsx
+Copy
+Edit
+type Props = { product: { availableLocal:boolean; availableShipping:boolean } };
+
+export default function ProductAvailabilityChips({ product }: Props){
+  const onlyLocal = product.availableLocal && !product.availableShipping;
+  const onlyShip = product.availableShipping && !product.availableLocal;
+
+  return (
+    <div className="flex items-center gap-2">
+      {onlyLocal && <span className="rounded-full px-2 py-1 text-xs bg-muted/30">Local Delivery Only</span>}
+      {onlyShip  && <span className="rounded-full px-2 py-1 text-xs bg-muted/30">Shipping Only</span>}
+      {!onlyLocal && !onlyShip && (
+        <span className="rounded-full px-2 py-1 text-xs bg-muted/30">Local + Shipping</span>
+      )}
+    </div>
+  );
+}
+5) Add-to-cart gating (server + client)
+Server: enforce rules so the UI can’t bypass them.
+
+File: server/routes.ts (inside POST /api/cart/items)
+
+ts
+Copy
+Edit
+// Fetch product flags
+const [prod] = await db.sql`SELECT available_local, available_shipping FROM products WHERE id = ${productId} LIMIT 1`;
+if (!prod) return res.status(404).json({ error: "Product not found" });
+
+// Determine locality (however you store it; using your existing locality service)
+const isLocal = !!req.locality?.isLocal; // populate this from middleware that reads / session/GeoIP
+
+if (!prod.available_shipping && !prod.available_local) {
+  return res.status(400).json({ error: "Product is not available for purchase." });
+}
+if (prod.available_local && !prod.available_shipping && !isLocal) {
+  return res.status(403).json({ error: "Local delivery only for this product." });
+}
+
+// ok → proceed to add to cart
+Client: disable button with helpful tooltip.
+
+File: src/components/AddToCartButton.tsx
+
+tsx
+Copy
+Edit
+const { isLocal } = useLocality(); // already exists
+const onlyLocal = product.availableLocal && !product.availableShipping;
+
+const blocked = onlyLocal && !isLocal;
+const label = blocked ? "Local delivery only" : "Add to Cart";
+
+<Button
+  disabled={blocked}
+  title={blocked ? "This item is only available for local customers." : undefined}
+  onClick={() => !blocked && onAddToCart(product.id)}
+>
+  {label}
+</Button>
+6) Stripe sync + webhook: carry fulfillment + featured
+File: server/stripe/sync.ts
+
+ts
+Copy
+Edit
+await stripe.products.update(stripeProductId, {
+  name: payload.name,
+  description: payload.description ?? undefined,
+  metadata: {
+    status: payload.status,
+    featured: String(!!payload.featured),
+    available_local: String(!!payload.availableLocal),
+    available_shipping: String(!!payload.availableShipping),
+    category_id: payload.categoryId
+  }
+});
+Webhook handler (if you mirror from Stripe → DB):
+
+ts
+Copy
+Edit
+// on product.updated
+const m = event.data.object.metadata;
+await db.updateProduct(appProductId, {
+  featured: m?.featured === 'true',
+  availableLocal: m?.available_local === 'true',
+  availableShipping: m?.available_shipping === 'true',
+  status: (m?.status as any) ?? undefined
+});
+7) Real-time updates + “Connecting…” indicator
+Some pages still import useWebSocket.ts/useWebSocketState.tsx (logs show both). Keep the alias shim and ensure URL/handshake is correct.
+
+File: src/hooks/useWebSocket.ts (compat shim)
+
+ts
+Copy
+Edit
+export { useSingletonSocket as default } from "./useSingletonSocket";
+File: src/hooks/useSingletonSocket.tsx
+
+ts
+Copy
+Edit
+const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
+const [status, setStatus] = useState<'connecting'|'open'|'closed'>('connecting');
+
+useEffect(() => {
+  const s = new WebSocket(url);
+  s.onopen = () => setStatus('open');
+  s.onclose = () => setStatus('closed');
+  s.onerror = () => setStatus('closed');
+  s.onmessage = (e) => { /* dispatch messages */ };
+  return () => s.close();
+}, [url]);
+
+return { status /* ... */, send /* ... */ };
+File: src/components/ui/welcome-banner.tsx (or wherever that red dot lives)
+
+tsx
+Copy
+Edit
+const { status } = useSingletonSocket();
+const dot = status === 'open' ? 'bg-green-500' : status === 'connecting' ? 'bg-yellow-500' : 'bg-red-500';
+<span className={`inline-block h-2 w-2 rounded-full ${dot}`} />
+<span>{status === 'open' ? 'Connected' : status === 'connecting' ? 'Connecting…' : 'Offline'}</span>
+Server broadcast on product change (after successful update & Stripe sync):
+
+ts
+Copy
+Edit
+// server/routes.ts in the PUT handler after DB commit
+wsManager.broadcast({ type: "product.updated", ts: Date.now(), data: { id } });
+Client React Query invalidation on WS message
+File: src/lib/queryClient.ts (or a ws effect)
+
+ts
+Copy
+Edit
+socket.onMessage((msg) => {
+  if (msg.type === 'product.updated') {
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: ['featuredProducts'] });
+  }
+});
+8) Locality API consistency
+Ensure /api/locality/status encodes at least { isLocal: boolean } and that a middleware attaches req.locality to cart routes.
+
+File: server/routes.ts
+
+ts
+Copy
+Edit
+router.get('/api/locality/status', (req,res) => {
+  res.json({ isLocal: !!req.locality?.isLocal, zone: req.locality?.zone ?? null });
+});
+✅ Verification checklist
+Featured
+
+Toggle “Featured” on a product in Admin → Save.
+
+GET /api/products/featured returns non-empty JSON (array of products).
+
+Home page shows the featured carousel/cards.
+
+Fulfillment save
+
+In Admin modal, toggle Local Delivery and Shipping various ways → Save.
+
+GET /api/products/:id (or the admin list) reflects changes.
+
+Product cards show the correct chip: “Local Delivery Only”, “Shipping Only”, or “Local + Shipping”.
+
+Cart gating
+
+As a non-local session:
+
+Try to add a local-only item → blocked in UI, and server returns 403 if forced.
+
+Add a shipping item → allowed.
+
+As a local session:
+
+Add local-only and shipping items → allowed.
+
+WebSocket
+
+Red “Connecting…” changes to Connected.
+
+Edit a product in Admin → product grid updates without refresh (React Query invalidated via WS).
+
+Stripe sync
+
+After update, logs show “Updated Stripe product …”.
+
+Stripe dashboard shows metadata keys: available_local, available_shipping, featured, status, category_id.
+
+If anything still doesn’t stick after this, the remaining culprit would be a stale form → payload mapping (misnamed prop) or a client cache not being invalidated—both covered above by (3) and (7).
