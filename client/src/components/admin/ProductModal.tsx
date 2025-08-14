@@ -45,7 +45,11 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
     tags: [] as string[],
     seoTitle: '',
     seoDescription: '',
-    slug: ''
+    slug: '',
+    // Delivery Options
+    isLocalDeliveryAvailable: true,
+    isShippingAvailable: true,
+    isLocalPickup: true
   });
 
   useEffect(() => {
@@ -69,7 +73,11 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
         tags: product.tags || [],
         seoTitle: product.seoTitle || '',
         seoDescription: product.seoDescription || '',
-        slug: product.slug || ''
+        slug: product.slug || '',
+        // Delivery Options
+        isLocalDeliveryAvailable: product.isLocalDeliveryAvailable ?? true,
+        isShippingAvailable: product.isShippingAvailable ?? true,
+        isLocalPickup: product.isLocalPickup ?? true
       });
     } else {
       // Reset form for new product
@@ -92,7 +100,11 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
         tags: [],
         seoTitle: '',
         seoDescription: '',
-        slug: ''
+        slug: '',
+        // Delivery Options
+        isLocalDeliveryAvailable: true,
+        isShippingAvailable: true,
+        isLocalPickup: true
       });
     }
   }, [product, isOpen]);
@@ -370,6 +382,77 @@ export function ProductModal({ isOpen, onClose, product, categories, onSave }: P
                   onCheckedChange={(checked) => setFormData(prev => ({ ...prev, featured: checked }))}
                 />
                 <Label htmlFor="featured" style={{ color: theme.colors.text.secondary }}>Featured</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Delivery & Fulfillment Options */}
+          <div className="space-y-4">
+            <h3 style={{ color: theme.colors.text.primary }} className="text-lg font-semibold">Delivery & Fulfillment Options</h3>
+            <p style={{ color: theme.colors.text.secondary }} className="text-sm">Choose how customers can receive this product. Select at least one option.</p>
+            
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id="localDelivery"
+                  checked={formData.isLocalDeliveryAvailable}
+                  onChange={(e) => setFormData({ ...formData, isLocalDeliveryAvailable: e.target.checked })}
+                  className="w-4 h-4 mt-1 rounded"
+                  style={{
+                    accentColor: theme.colors.accent.blue
+                  }}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="localDelivery" style={{ color: theme.colors.text.primary }}>
+                    Local Delivery
+                  </Label>
+                  <p style={{ color: theme.colors.text.muted }} className="text-xs mt-1">
+                    Free delivery within 50 miles of Asheville, NC warehouse
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id="shipping"
+                  checked={formData.isShippingAvailable}
+                  onChange={(e) => setFormData({ ...formData, isShippingAvailable: e.target.checked })}
+                  className="w-4 h-4 mt-1 rounded"
+                  style={{
+                    accentColor: theme.colors.accent.blue
+                  }}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="shipping" style={{ color: theme.colors.text.primary }}>
+                    Nationwide Shipping
+                  </Label>
+                  <p style={{ color: theme.colors.text.muted }} className="text-xs mt-1">
+                    Ship to customers anywhere in the United States
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id="pickup"
+                  checked={formData.isLocalPickup}
+                  onChange={(e) => setFormData({ ...formData, isLocalPickup: e.target.checked })}
+                  className="w-4 h-4 mt-1 rounded"
+                  style={{
+                    accentColor: theme.colors.accent.blue
+                  }}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="pickup" style={{ color: theme.colors.text.primary }}>
+                    Local Pickup
+                  </Label>
+                  <p style={{ color: theme.colors.text.muted }} className="text-xs mt-1">
+                    Customers can pick up at warehouse location
+                  </p>
+                </div>
               </div>
             </div>
           </div>

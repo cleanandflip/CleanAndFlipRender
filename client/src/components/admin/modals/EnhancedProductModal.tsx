@@ -46,7 +46,11 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
     trackQuantity: true,
     continueSellingWhenOutOfStock: false,
     requiresShipping: true,
-    location: 'warehouse'
+    location: 'warehouse',
+    // Delivery Options
+    isLocalDeliveryAvailable: true,
+    isShippingAvailable: true,
+    isLocalPickup: true
   });
 
   // TRACK INITIAL DATA
@@ -79,7 +83,11 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         trackQuantity: product.trackQuantity !== false,
         continueSellingWhenOutOfStock: product.continueSellingWhenOutOfStock || false,
         requiresShipping: product.requiresShipping !== false,
-        location: product.location || 'warehouse'
+        location: product.location || 'warehouse',
+        // Delivery Options
+        isLocalDeliveryAvailable: product.isLocalDeliveryAvailable ?? true,
+        isShippingAvailable: product.isShippingAvailable ?? true,
+        isLocalPickup: product.isLocalPickup ?? true
       };
       setFormData(data);
       setInitialData(data);
@@ -207,6 +215,17 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields (name, price, category)",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Validate delivery options - at least one must be selected
+    if (!formData.isLocalDeliveryAvailable && !formData.isShippingAvailable && !formData.isLocalPickup) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one delivery option",
         variant: "destructive",
       });
       setLoading(false);
@@ -553,6 +572,65 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
                   <span className="text-sm text-gray-400 group-hover:text-white transition-colors">
                     Continue selling when out of stock
                   </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Delivery & Fulfillment Options */}
+            <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
+              <h3 className="text-lg font-semibold text-white mb-4">Delivery & Fulfillment Options</h3>
+              <p className="text-sm text-gray-400 mb-6">Choose how customers can receive this product. Select at least one option.</p>
+              
+              <div className="space-y-4">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={formData.isLocalDeliveryAvailable}
+                    onChange={(e) => setFormData({ ...formData, isLocalDeliveryAvailable: e.target.checked })}
+                    className="w-4 h-4 mt-1 rounded border-gray-700 bg-transparent text-blue-500 focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">
+                      Local Delivery
+                    </span>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Free delivery within 50 miles of Asheville, NC warehouse
+                    </p>
+                  </div>
+                </label>
+                
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={formData.isShippingAvailable}
+                    onChange={(e) => setFormData({ ...formData, isShippingAvailable: e.target.checked })}
+                    className="w-4 h-4 mt-1 rounded border-gray-700 bg-transparent text-blue-500 focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">
+                      Nationwide Shipping
+                    </span>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Ship to customers anywhere in the United States
+                    </p>
+                  </div>
+                </label>
+                
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={formData.isLocalPickup}
+                    onChange={(e) => setFormData({ ...formData, isLocalPickup: e.target.checked })}
+                    className="w-4 h-4 mt-1 rounded border-gray-700 bg-transparent text-blue-500 focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">
+                      Local Pickup
+                    </span>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Customers can pick up at warehouse location
+                    </p>
+                  </div>
                 </label>
               </div>
             </div>
