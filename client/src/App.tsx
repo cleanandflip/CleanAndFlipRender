@@ -154,7 +154,7 @@ function Router() {
               <Route path="/privacy-policy" component={LegalPrivacyPolicy} />
               
               {/* 404 */}
-              <Route path="*" component={NotFound} />
+              <Route path="*" component={() => <NotFound />} />
             </Switch>
           </Suspense>
         </main>
@@ -180,9 +180,16 @@ function App() {
       return originalAddEventListener.call(this, type, listener, options);
     };
 
+    // Global window focus invalidation - eliminate stale data on tab focus
+    const onFocus = () => {
+      queryClient.invalidateQueries({ predicate: () => true });
+    };
+    window.addEventListener('focus', onFocus);
+
     // Clean up on unmount
     return () => {
       window.onbeforeunload = null;
+      window.removeEventListener('focus', onFocus);
     };
   }, []);
 

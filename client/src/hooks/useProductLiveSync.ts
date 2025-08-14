@@ -15,10 +15,23 @@ export function useProductLiveSync({ queryKey, productId }: Opts) {
       
       if (!productId || payload?.id === productId || payload?.productId === productId) {
         console.log('🔥 INVALIDATING QUERIES due to product update');
+        
+        // Force invalidate ALL product-related queries with zero tolerance for stale data
+        queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+        queryClient.invalidateQueries({ queryKey: ["products:featured"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/products/featured"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/products"] });
         queryClient.invalidateQueries({ queryKey });
         
-        // ALWAYS invalidate featured products on any product update
-        queryClient.invalidateQueries({ queryKey: ['/api/products/featured'] });
+        // If specific product ID, invalidate that too
+        if (payload?.id) {
+          queryClient.invalidateQueries({ queryKey: ["product", payload.id] });
+          queryClient.invalidateQueries({ queryKey: ["/api/products", payload.id] });
+        }
+        
+        // Force immediate refetch for critical queries
         queryClient.refetchQueries({ queryKey: ['/api/products/featured'] });
       }
     });

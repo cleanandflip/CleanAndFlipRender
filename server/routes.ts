@@ -195,6 +195,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // CORS configuration
   app.use(cors(corsOptions));
+
+  // Kill HTTP/API caching for dynamic routes - no stale data allowed
+  app.use((req, res, next) => {
+    if (req.url.startsWith('/api/')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+    }
+    next();
+  });
   
   // Global security middleware
   // app.use(requestLogging); // DISABLED - Using main logger system instead to prevent duplicate logs
@@ -775,19 +786,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Featured products with LRU caching
+  // Featured products WITHOUT caching - real-time updates required
   app.get("/api/products/featured", apiLimiter, async (req, res) => {
     try {
       const limit = req.query.limit ? Number(req.query.limit) : 8;
-      const key = `products:featured:${limit}`;
-      const hit = apiCache.get(key);
-      
-      if (hit) {
-        return res.json(hit);
-      }
-
+      // NO CACHING - Always fetch fresh data for real-time admin updates
       const products = await storage.getFeaturedProducts(limit);
-      apiCache.set(key, products);
       res.json(products);
     } catch (error) {
       Logger.error("Error fetching featured products", error);
@@ -2090,6 +2094,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       await storage.deleteProduct(id);
       
+      // CRITICAL: Clear all caches to eliminate stale data
+      try {
+        const { clearProductCache } = await import('./config/cache');
+        await clearProductCache(id);
+        Logger.info('Cache cleared successfully for deleted product:', id);
+      } catch (error) {
+        Logger.warn('Cache clearing failed (non-critical):', error);
+      }
+      
       // Broadcast update via WebSocket using new typed system
       try {
         if (wsManager?.publish) {
@@ -2718,6 +2731,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Logger.debug(`Creating product with data: ${JSON.stringify(productData)}`);
       const newProduct = await storage.createProduct(productData);
       
+      // CRITICAL: Clear all caches to eliminate stale data
+      try {
+        const { clearProductCache } = await import('./config/cache');
+        await clearProductCache();
+        Logger.info('Cache cleared successfully for new product:', newProduct.id);
+      } catch (error) {
+        Logger.warn('Cache clearing failed (non-critical):', error);
+      }
+      
       // Broadcast update via WebSocket using new typed system
       try {
         if (wsManager?.publish) {
@@ -2793,6 +2815,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedProduct = await storage.updateProduct(id, baseData);
       
+      // CRITICAL: Clear all caches to eliminate stale data
+      try {
+        const { clearProductCache } = await import('./config/cache');
+        await clearProductCache(id);
+        Logger.info('Cache cleared successfully for product:', id);
+      } catch (error) {
+        Logger.warn('Cache clearing failed (non-critical):', error);
+      }
+      
       // Broadcast to all clients with enhanced debugging
       try {
         if (wsManager?.publishMessage) {
@@ -2841,6 +2872,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { status } = req.body;
       await storage.updateProductStock(req.params.id, status);
+      
+      // CRITICAL: Clear all caches to eliminate stale data
+      try {
+        const { clearProductCache } = await import('./config/cache');
+        await clearProductCache(req.params.id);
+        Logger.info('Cache cleared successfully for stock update:', req.params.id);
+      } catch (error) {
+        Logger.warn('Cache clearing failed (non-critical):', error);
+      }
       
       // Broadcast update via WebSocket using new typed system
       try {
