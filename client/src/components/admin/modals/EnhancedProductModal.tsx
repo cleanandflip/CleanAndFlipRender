@@ -39,7 +39,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   const { data: categories = [] } = useQuery({
     queryKey: ['/api/categories'],
     queryFn: async () => {
-      const res = await fetch('/api/categories?active=true');
+      const res = await fetch('/api/categories?active=true', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch categories');
       return res.json();
     }
@@ -93,6 +93,8 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
 
   useEffect(() => {
     if (product) {
+      const initialMode = modeFromProduct(product);
+      const flags = booleansFromMode(initialMode);
       const data = {
         name: product.name || '',
         description: product.description || '',
@@ -105,7 +107,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         barcode: product.barcode || '',
         status: product.status || 'active',
         images: product.images || [],
-        featured: product.featured || false,
+        featured: (product.isFeatured ?? product.is_featured ?? product.featured) || false,
         condition: product.condition || 'new',
         brand: product.brand || '',
         weight: product.weight?.toString() || '',
@@ -119,13 +121,13 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         continueSellingWhenOutOfStock: product.continueSellingWhenOutOfStock || false,
         requiresShipping: product.requiresShipping !== false,
         location: product.location || 'warehouse',
-        // Delivery Options
-        isLocalDeliveryAvailable: product.isLocalDeliveryAvailable ?? true,
-        isShippingAvailable: product.isShippingAvailable ?? true
+        // Delivery Options (derive from mode; handles snake/camel automatically)
+        isLocalDeliveryAvailable: flags.isLocalDeliveryAvailable,
+        isShippingAvailable: flags.isShippingAvailable,
       };
       setFormData(data);
       setInitialData(data);
-      setMode(modeFromProduct(product));
+      setMode(initialMode);
     } else {
       setInitialData(formData);
     }
@@ -265,7 +267,8 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
       const submitData = {
         name: formData.name,
         description: formData.description,
-        categoryId: formData.categoryId,
+        categoryId: formData.categoryId,       // camel
+        category_id: formData.categoryId,      // snake (compat)
         brand: formData.brand,
         price: parseFloat(String(formData.price)) || 0,
         compareAtPrice: formData.compareAtPrice ? parseFloat(String(formData.compareAtPrice)) : null,
@@ -274,16 +277,17 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         status: formData.status,
         weight: formData.weight ? parseFloat(String(formData.weight)) : 0,
         sku: formData.sku || null,
+        images: formData.images,
 
         // booleans (server expects snake_case — send both for safety)
         is_featured: !!formData.featured,
         isFeatured: !!formData.featured,
 
-        is_local_delivery_available: !!formData.isLocalDeliveryAvailable,
-        isLocalDeliveryAvailable: !!formData.isLocalDeliveryAvailable,
-
-        is_shipping_available: !!formData.isShippingAvailable,
-        isShippingAvailable: !!formData.isShippingAvailable,
+        // Use the currently selected mode (authoritative)
+        is_local_delivery_available: !!fulfillment.isLocalDeliveryAvailable,
+        isLocalDeliveryAvailable:    !!fulfillment.isLocalDeliveryAvailable,
+        is_shipping_available:       !!fulfillment.isShippingAvailable,
+        isShippingAvailable:         !!fulfillment.isShippingAvailable,
       };
 
       const url = product ? `/api/admin/products/${product.id}` : `/api/admin/products`;
@@ -304,8 +308,9 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["adminProducts"] }),
-        queryClient.invalidateQueries({ queryKey: ["products"] }),
-        queryClient.invalidateQueries({ queryKey: ["products:featured"] }),
+        queryClient.invalidateQueries({ predicate: (q) =>
+          Array.isArray(q.queryKey) && q.queryKey.some(k => String(k).includes('products'))
+        }),
         product?.id ? queryClient.invalidateQueries({ queryKey: ["product", product.id] }) : Promise.resolve(),
       ]);
 
@@ -615,7 +620,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setMode("local_only")}
+                    onClick={() => changeMode("local_only")}
                     className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
                       mode === "local_only" 
                         ? "border-amber-400 bg-amber-500/10 text-amber-200" 
@@ -626,7 +631,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
                   </button>
                   <button
                     type="button"
-                    onClick={() => setMode("shipping_only")}
+                    onClick={() => changeMode("shipping_only")}
                     className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
                       mode === "shipping_only" 
                         ? "border-blue-400 bg-blue-500/10 text-blue-200" 
@@ -637,7 +642,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
                   </button>
                   <button
                     type="button"
-                    onClick={() => setMode("both")}
+                    onClick={() => changeMode("both")}
                     className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
                       mode === "both" 
                         ? "border-emerald-400 bg-emerald-500/10 text-emerald-200" 

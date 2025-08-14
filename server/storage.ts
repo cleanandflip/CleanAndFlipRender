@@ -495,7 +495,7 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(products.status, 'active'),
-            eq(products.is_featured, true)
+            eq(products.featured, true)
           )
         )
         .orderBy(desc(products.updatedAt))
