@@ -1,3 +1,4 @@
+import { useWebSocketState } from "@/hooks/useWebSocketState";
 import * as React from "react";
 import { Search as SearchIcon, X } from "lucide-react";
 import { searchService } from "@/lib/searchService";
@@ -34,8 +35,9 @@ export default function SearchBar({
   // Trigger re-render when busy changes for spinner
   const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
   React.useEffect(() => {
-    return searchService.subscribeBusy(() => forceUpdate({}));
-  }, []);
+    const unsubscribe = searchService.subscribeBusy(() => forceUpdate());
+    return unsubscribe;
+  }, [forceUpdate]);
 
   const commit = React.useCallback((searchValue: string) => {
     const current = searchService.getQuery();

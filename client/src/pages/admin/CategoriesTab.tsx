@@ -27,7 +27,6 @@ export function CategoriesTab() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { subscribe } = useWebSocketState();
   const ready = useWebSocketReady();
   const queryClient = useQueryClient();
 

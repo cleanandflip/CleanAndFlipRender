@@ -1,3 +1,4 @@
+import { useWebSocketState } from "@/hooks/useWebSocketState";
 import * as React from "react";
 import ProductsResults from "@/components/products/ProductsResults";
 import { useProducts } from '@/hooks/useProducts';

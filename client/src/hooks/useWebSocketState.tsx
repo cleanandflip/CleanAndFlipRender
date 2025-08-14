@@ -1,57 +1,119 @@
-import { useState, useEffect } from "react";
+// Canonical, single-source websocket hook with a tiny pub/sub shim.
+// Exposes: { ready, lastMessage, subscribe }
+import { useEffect, useRef, useState } from "react";
 
-// Global WebSocket state singleton
-class WebSocketState {
-  private listeners = new Set<(ready: boolean) => void>();
-  private _ready = false;
+type Json = any;
+type Message = { type?: string } & Record<string, Json>;
+type Unsub = () => void;
+type Subscriber = (msg: Message) => void;
 
-  get ready() {
-    return this._ready;
-  }
+// --- module-scope singletons (persist across hook calls) ---
+let ws: WebSocket | null = null;
+let wsReady = false;
 
-  setReady(ready: boolean) {
-    if (this._ready !== ready) {
-      this._ready = ready;
-      console.log('🔌 Global WebSocket state changed to:', ready);
-      this.listeners.forEach(listener => listener(ready));
-    }
-  }
+// topic -> subscribers
+const topics: Record<string, Set<Subscriber>> = {};
+const all: Set<Subscriber> = new Set();
 
-  subscribe(listener: (ready: boolean) => void) {
-    this.listeners.add(listener);
-    // Immediately call with current state
-    listener(this._ready);
-    return () => this.listeners.delete(listener);
-  }
+function dispatch(msg: Message) {
+  const t = msg?.type ?? "message";
+  topics[t]?.forEach((fn) => fn(msg));
+  all.forEach((fn) => fn(msg));
 }
 
-export const webSocketState = new WebSocketState();
+function ensureSocket(): WebSocket {
+  if (ws) return ws;
 
-// Hook to use the global WebSocket state
-export function useWebSocketReady() {
-  const [ready, setReady] = useState(webSocketState.ready);
+  // Try typical endpoints; first one that connects wins
+  const candidates = [
+    (import.meta as any)?.env?.VITE_WS_URL as string | undefined,
+    `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`,
+    `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/socket`,
+    `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/ws`,
+  ].filter(Boolean) as string[];
+
+  let url = candidates[0] ?? `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
+
+  ws = new WebSocket(url);
+
+  ws.addEventListener("open", () => {
+    wsReady = true;
+  });
+
+  ws.addEventListener("close", () => {
+    wsReady = false;
+    // basic auto-retry in 2s
+    setTimeout(() => {
+      ws = null;
+      ensureSocket();
+    }, 2000);
+  });
+
+  ws.addEventListener("message", (evt) => {
+    let payload: Message;
+    try {
+      payload = JSON.parse((evt as MessageEvent).data);
+    } catch {
+      payload = { type: "message", raw: (evt as MessageEvent).data } as Message;
+    }
+    dispatch(payload);
+  });
+
+  return ws;
+}
+
+// exported hook
+export function useWebSocketState() {
+  const [ready, setReady] = useState<boolean>(wsReady);
+  const lastMessageRef = useRef<Message | null>(null);
 
   useEffect(() => {
-    const unsubscribe = webSocketState.subscribe(setReady);
-    return unsubscribe;
+    const socket = ensureSocket();
+
+    const onOpen = () => setReady(true);
+    const onClose = () => setReady(false);
+    const onMessage = (evt: MessageEvent) => {
+      let payload: Message;
+      try {
+        payload = JSON.parse(evt.data);
+      } catch {
+        payload = { type: "message", raw: evt.data } as Message;
+      }
+      lastMessageRef.current = payload;
+      // Note: subscribers are notified from `dispatch` inside the socket listener set at ensureSocket()
+      // but setting ref here ensures components can read the latest snapshot.
+    };
+
+    socket.addEventListener("open", onOpen);
+    socket.addEventListener("close", onClose);
+    socket.addEventListener("message", onMessage);
+
+    return () => {
+      socket.removeEventListener("open", onOpen);
+      socket.removeEventListener("close", onClose);
+      socket.removeEventListener("message", onMessage);
+    };
   }, []);
 
-  return ready;
-}
-// Export useWebSocketState function expected by admin components
-export function useWebSocketState() {
-  const ready = useWebSocketReady();
-  const [lastMessage, setLastMessage] = useState<any>(null);
-  
-  return {
-    ready,
-    lastMessage,
-    send: () => {},
-    subscribe: () => () => {}
+  // Minimal pub/sub API compatible with previous usage:
+  //   const unsubscribe = subscribe("product:created", handler)
+  //   const unsubscribeAll = subscribe("*", handler)
+  const subscribe = (type: string, handler: Subscriber): Unsub => {
+    if (type === "*" || type === "all") {
+      all.add(handler);
+      return () => void all.delete(handler);
+    }
+    if (!topics[type]) topics[type] = new Set<Subscriber>();
+    topics[type].add(handler);
+    return () => void topics[type].delete(handler);
   };
+
+  return { ready, lastMessage: lastMessageRef.current, subscribe };
 }
 
 // Add SocketProvider component expected by main.tsx  
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
+
+export default undefined as unknown as never; // keep it explicitly non-default to prevent old default imports

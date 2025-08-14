@@ -21,7 +21,6 @@ export function StripeTab() {
     avgTransaction: 0
   });
   
-  const { subscribe } = useWebSocketState();
   const ready = useWebSocketReady();
   
   // Fetch real Stripe transactions

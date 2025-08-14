@@ -1,3 +1,4 @@
+import { useWebSocketState } from "@/hooks/useWebSocketState";
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { CATEGORY_LABELS, CategoryLabel, fromSlug, toSlug } from "@/lib/categories";
 import { searchService } from '@/lib/searchService';

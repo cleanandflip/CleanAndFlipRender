@@ -1,3 +1,4 @@
+import { useWebSocketState } from "@/hooks/useWebSocketState";
 import * as React from "react";
 import { searchService } from "@/lib/searchService";
 import ProductGrid from "./product-grid";

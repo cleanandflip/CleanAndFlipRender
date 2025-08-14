@@ -29,7 +29,7 @@ export function ProductsTab() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { ready } = useWebSocketState();
+  const { ready, subscribe } = useWebSocketState();
   const queryClient = useQueryClient();
 
   // Fetch products with React Query

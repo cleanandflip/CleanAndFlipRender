@@ -28,7 +28,6 @@ export function SubmissionsTab() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const { toast } = useToast();
-  const { subscribe } = useWebSocketState();
   const ready = useWebSocketReady();
 
   const { data: submissionsData, isLoading, refetch } = useQuery({
