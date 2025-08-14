@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Upload, Trash2, Loader2, Plus, Check, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useQuery } from '@tanstack/react-query';
 
@@ -17,7 +17,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { send } = useWebSocketState();
+  const { ready, subscribe, lastMessage, send } = useWebSocketState();
 
   // Fetch categories for dropdown
   const { data: categories = [] } = useQuery({

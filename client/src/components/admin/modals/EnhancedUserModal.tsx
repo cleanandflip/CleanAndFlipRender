@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Loader2, Check, AlertCircle, User, Mail, Lock, MapPin, Shield } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useScrollLock } from '@/hooks/useScrollLock';
 
@@ -17,7 +17,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { send } = useWebSocketState();
+  const { ready, subscribe, lastMessage, send } = useWebSocketState();
   
   // Lock body scroll while modal is open
   useScrollLock(true);

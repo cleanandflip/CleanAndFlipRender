@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Loader2, Check, AlertCircle, Package, User, Calendar, MapPin, DollarSign, MessageSquare } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface SubmissionModalProps {
@@ -15,7 +15,7 @@ export function EnhancedSubmissionModal({ submission, onClose, onSave }: Submiss
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { sendMessage } = useWebSocketState();
+  const { ready, subscribe, lastMessage, send } = useWebSocketState();
   
   // Lock body scroll while modal is open
   useScrollLock(true);
