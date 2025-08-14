@@ -490,27 +490,7 @@ export class DatabaseStorage implements IStorage {
   async getFeaturedProducts(limit: number = 6): Promise<Product[]> {
     try {
       return await db
-        .select({
-          id: products.id,
-          name: products.name,
-          price: products.price,
-          sku: products.sku,
-          description: products.description,
-          images: products.images,
-          status: products.status,
-          featured: products.featured,
-          isLocalDeliveryAvailable: products.isLocalDeliveryAvailable,
-          isShippingAvailable: products.isShippingAvailable,
-          availableLocal: products.availableLocal,
-          availableShipping: products.availableShipping,
-          categoryId: products.categoryId,
-          brand: products.brand,
-          condition: products.condition,
-          stockQuantity: products.stockQuantity,
-          views: products.views,
-          updatedAt: products.updatedAt,
-          createdAt: products.createdAt
-        })
+        .select()
         .from(products)
         .where(
           and(

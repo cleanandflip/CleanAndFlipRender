@@ -216,6 +216,9 @@ export const products = pgTable("products", {
   // Delivery options - Active columns
   isLocalDeliveryAvailable: boolean("is_local_delivery_available").default(true),
   isShippingAvailable: boolean("is_shipping_available").default(true),
+  // Legacy compatibility columns
+  availableLocal: boolean("available_local").default(true),
+  availableShipping: boolean("available_shipping").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [

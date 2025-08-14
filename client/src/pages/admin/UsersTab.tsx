@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EnhancedUserModal } from '@/components/admin/modals/EnhancedUserModal';
 import { useSocket } from '@/hooks/useSingletonSocket.tsx';
 import { useWebSocketReady } from '@/hooks/useWebSocketState';
+import useWebSocketState from '@/hooks/useWebSocketState';
 
 interface User {
   id: string;
@@ -30,6 +31,7 @@ export function UsersTab() {
   const queryClient = useQueryClient();
   const { subscribe } = useSocket();
   const ready = useWebSocketReady();
+  const { lastMessage } = useWebSocketState();
 
   const { data: usersData, isLoading, refetch } = useQuery({
     queryKey: ['admin-users', searchQuery],
@@ -50,7 +52,7 @@ export function UsersTab() {
 
   // Handle live sync updates
   useEffect(() => {
-    if (lastMessage?.type === 'user_update') {
+    if (lastMessage && lastMessage?.type === 'user_update') {
       // Invalidate and refetch users data
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       
