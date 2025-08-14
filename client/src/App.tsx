@@ -180,16 +180,12 @@ function App() {
       return originalAddEventListener.call(this, type, listener, options);
     };
 
-    // Global window focus invalidation - eliminate stale data on tab focus
-    const onFocus = () => {
-      queryClient.invalidateQueries({ predicate: () => true });
-    };
-    window.addEventListener('focus', onFocus);
+    // Removed global window focus invalidation - was causing reload loops in Replit environment
+    // Individual components now handle their own focus refreshing as needed
 
     // Clean up on unmount
     return () => {
       window.onbeforeunload = null;
-      window.removeEventListener('focus', onFocus);
     };
   }, []);
 

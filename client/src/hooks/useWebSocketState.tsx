@@ -48,7 +48,17 @@ export function useWebSocketState() {
 
   useEffect(() => {
     socketRef.current = ensureSocket();
-    const id = setInterval(() => force((n) => n + 1), 500); // shallow reactivity for connected flag
+    
+    // Only force re-render on actual connection state changes, not every 500ms
+    const checkConnection = () => {
+      const currentlyConnected = socketRef.current?.readyState === WebSocket.OPEN;
+      if (currentlyConnected !== _connected) {
+        _connected = currentlyConnected;
+        force((n) => n + 1); // Only update when connection state actually changes
+      }
+    };
+    
+    const id = setInterval(checkConnection, 2000); // Check every 2 seconds instead of 500ms
     return () => clearInterval(id);
   }, []);
 
