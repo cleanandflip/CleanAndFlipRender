@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +12,14 @@ import { MapPin, Plus, Check } from "lucide-react";
 import { LocalBadge } from "@/components/locality/LocalBadge";
 import { useLocality } from "@/hooks/useLocality";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 
 export default function Checkout() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const { data: locality } = useLocality();
+  const [, setLocation] = useLocation();
+  const didRedirect = useRef(false);
   
   // FIXED: Fetch addresses with correct API structure
   const { data: addressesResponse, isLoading: addressLoading } = useQuery({
@@ -93,9 +96,14 @@ export default function Checkout() {
     mutationFn: async (addressData: any) => {
       return await apiRequest('POST', '/api/addresses', addressData);
     },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['addresses'] });
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+    onSuccess: async (data: any) => {
+      // FIXED: Use query invalidation instead of hard reload
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['addresses'] }),
+        queryClient.invalidateQueries({ queryKey: ['cart'] }),
+        queryClient.invalidateQueries({ queryKey: ['user'] }),
+        queryClient.invalidateQueries({ queryKey: ['locality'] })
+      ]);
       setSelectedAddressId(data?.id);
       setShowNewAddressForm(false);
       toast({
@@ -112,9 +120,16 @@ export default function Checkout() {
     }
   });
 
-  // Redirect unauthenticated users to login
+  // Redirect unauthenticated users to login - NO HARD RELOAD
+  useEffect(() => {
+    if (!isAuthenticated && !user && !didRedirect.current) {
+      didRedirect.current = true;
+      setLocation('/auth');
+    }
+  }, [isAuthenticated, user, setLocation]);
+
+  // Show loading if redirecting or not yet authenticated
   if (!isAuthenticated && !user) {
-    window.location.href = '/api/auth/login';
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -416,7 +431,7 @@ export default function Checkout() {
               {!hasItems ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground mb-4">Your cart is empty</p>
-                  <Button onClick={() => window.location.href = "/products"}>
+                  <Button onClick={() => setLocation("/products")}>
                     Continue Shopping
                   </Button>
                 </div>

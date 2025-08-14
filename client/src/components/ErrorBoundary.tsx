@@ -2,6 +2,7 @@ import React from "react";
 import { reportClientError } from "@/lib/errorTracking";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { queryClient } from "@/lib/queryClient";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -87,7 +88,11 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  // FIXED: Use query invalidation instead of hard reload
+                  queryClient.invalidateQueries();
+                  this.setState({ hasError: false, error: null });
+                }}
                 className="glass border-border"
               >
                 Reload Page
