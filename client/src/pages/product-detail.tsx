@@ -67,15 +67,8 @@ export default function ProductDetail() {
   
   // Smart back navigation handler with state management
   const handleBackClick = () => {
-    // Update previous path to indicate we're coming from product detail
-    NavigationStateManager.updatePreviousPath(location);
-    
-    // Check if we came from a previous page
-    if (window.history.length > 1) {
-      navigate(-1 as any); // Go back
-    } else {
-      navigate('/products'); // Fallback to products page
-    }
+    // Simply navigate to products page to avoid 401 redirect issues
+    navigate('/products');
   };
 
   // Track this page as a product detail page
