@@ -208,17 +208,19 @@ export default function CartPageV2() {
                         </p>
                       )}
                       
-                      {/* Fulfillment badges - "Local & Shipping Available" badge first, then LocalBadge */}
-                      <div className="flex items-center gap-2 mb-2">
-                        {item.product?.is_local_delivery_available && item.product?.is_shipping_available && (
-                          <Badge variant="outline" className="text-xs">Local & Shipping Available</Badge>
-                        )}
-                        {item.product?.is_local_delivery_available && !item.product?.is_shipping_available && (
-                          <Badge variant="outline" className="text-xs text-blue-700">Local Only</Badge>
-                        )}
-                        {!item.product?.is_local_delivery_available && item.product?.is_shipping_available && (
-                          <Badge variant="outline" className="text-xs">Shipping Only</Badge>
-                        )}
+                      {/* Fulfillment badges - "Local & Shipping Available" badge first, then LocalBadge directly below */}
+                      <div className="flex flex-col gap-1 mb-2">
+                        <div className="flex items-center gap-2">
+                          {item.product?.is_local_delivery_available && item.product?.is_shipping_available && (
+                            <Badge variant="outline" className="text-xs">Local & Shipping Available</Badge>
+                          )}
+                          {item.product?.is_local_delivery_available && !item.product?.is_shipping_available && (
+                            <Badge variant="outline" className="text-xs text-blue-700">Local Only</Badge>
+                          )}
+                          {!item.product?.is_local_delivery_available && item.product?.is_shipping_available && (
+                            <Badge variant="outline" className="text-xs">Shipping Only</Badge>
+                          )}
+                        </div>
                         <LocalBadge isLocal={locality?.eligible ?? false} />
                       </div>
                       
