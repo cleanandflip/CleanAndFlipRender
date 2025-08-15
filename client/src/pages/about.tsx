@@ -624,7 +624,7 @@ export default function About() {
                   style={{ color: theme.colors.text.secondary }}
                 >
                   Email: support@cleanandflip.com<br />
-                  Phone: (828) 555-0123
+                  Phone: (828) 338-9682
                 </p>
               </div>
               <div 

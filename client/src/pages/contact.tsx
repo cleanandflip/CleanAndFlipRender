@@ -333,7 +333,7 @@ export default function Contact() {
                   <Phone className="h-5 w-5 text-success" />
                   <div>
                     <p className="font-medium">Phone</p>
-                    <p className="text-sm text-text-muted">(828) 555-LIFT</p>
+                    <p className="text-sm text-text-muted">(828) 338-9682</p>
                   </div>
                 </div>
                 

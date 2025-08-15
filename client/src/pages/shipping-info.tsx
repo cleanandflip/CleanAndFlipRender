@@ -308,7 +308,7 @@ export default function ShippingInfo() {
                   Phone Support
                 </h4>
                 <p style={{ color: theme.colors.text.secondary }}>
-                  <strong>(828) 555-0123</strong><br />
+                  <strong>(828) 338-9682</strong><br />
                   Mon-Sat 9AM-5PM EST
                 </p>
               </div>
@@ -333,7 +333,7 @@ export default function ShippingInfo() {
                 </h4>
                 <p style={{ color: theme.colors.text.secondary }}>
                   For urgent delivery issues:<br />
-                  <strong>(828) 555-0124</strong>
+                  <strong>(828) 338-9682</strong>
                 </p>
               </div>
             </div>
@@ -446,10 +446,10 @@ export default function ShippingInfo() {
               <Button 
                 size="lg" 
                 className="bg-accent-blue hover:bg-blue-600"
-                onClick={() => window.location.href = 'tel:+18285550123'}
+                onClick={() => window.location.href = 'tel:+18283389682'}
               >
                 <Phone className="mr-2" size={20} />
-                Call (828) 555-0123
+                Call (828) 338-9682
               </Button>
               <Link href="/contact">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">
