@@ -164,12 +164,6 @@ export default function AddressesPanel() {
                     <h3 className="font-semibold text-white">
                       {address.firstName} {address.lastName}
                     </h3>
-                    {address.isDefault && (
-                      <Badge className="bg-blue-500 text-white text-xs flex items-center gap-1 font-semibold shadow-md">
-                        <Star className="w-3 h-3 fill-current text-yellow-300" />
-                        DEFAULT
-                      </Badge>
-                    )}
                     <LocalBadge isLocal={locality?.eligible ?? false} />
                   </div>
                   <p className="text-text-secondary text-sm leading-relaxed">
