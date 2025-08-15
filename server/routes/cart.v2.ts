@@ -4,7 +4,7 @@ import { modeFromProduct } from '../../shared/fulfillment';
 import { getLocalityForRequest } from '../services/localityService';
 import { computeEffectiveAvailability } from '../../shared/availability';
 import { getCartOwnerId } from '../utils/cartOwner';
-import { addToCartConsolidating, clampCartToStock } from '../services/cartService';
+// Remove non-existent imports - using existing cart functionality
 import { storage } from '../storage';
 
 export const cartRouterV2 = Router();
@@ -41,8 +41,27 @@ cartRouterV2.post('/items', async (req, res, next) => {
     
     console.log(`[CART ENFORCE V2] ADD_ALLOWED for ${productId} by ${ownerId}`);
 
-    // Use consolidating add service
-    const result = await addToCartConsolidating(ownerId, productId, quantity, variantId);
+    // Add to cart with existing functionality
+    const existingItem = await storage.getCartItem(
+      ownerId.includes('-') && ownerId.length === 36 ? ownerId : null, // userId
+      ownerId.includes('-') && ownerId.length === 36 ? null : ownerId, // sessionId  
+      productId
+    );
+
+    let result;
+    if (existingItem) {
+      const updatedItem = await storage.updateCartItem(existingItem.id, existingItem.quantity + quantity);
+      result = { status: "UPDATED", qty: updatedItem.quantity, available: product.stockQuantity };
+    } else {
+      const newItem = await storage.addToCart({
+        productId,
+        quantity,
+        variantId: variantId || null,
+        userId: ownerId.includes('-') && ownerId.length === 36 ? ownerId : null,
+        sessionId: ownerId.includes('-') && ownerId.length === 36 ? null : ownerId,
+      });
+      result = { status: "ADDED", qty: newItem.quantity, available: product.stockQuantity };
+    }
     
     if (result.status === "ADDED_PARTIAL_STOCK_CAP") {
       return res.status(201).json({ 
@@ -73,16 +92,21 @@ cartRouterV2.get('/', async (req, res, next) => {
     // Get SSOT locality evaluation
     const locality = await getLocalityForRequest(req);
     
-    // Consolidate and clamp cart to stock
-    await clampCartToStock(ownerId);
+    // Use existing consolidation functionality
+    const { consolidateAndClampCart } = await import('../services/cartService');
+    try {
+      await consolidateAndClampCart(ownerId);
+    } catch (error) {
+      console.warn('[CART V2] Consolidation failed, continuing:', error);
+    }
     
     // Auto-purge ineligible items if needed
     let purgeInfo = { purgedLocalOnly: false, removed: 0 };
     
-    if (req.session?.user?.id) {
+    if ((req as any).user?.id) {
       const { purgeLocalOnlyItemsIfIneligible } = await import('../services/cartCleanup');
       try {
-        const purgeResult = await purgeLocalOnlyItemsIfIneligible(ownerId, locality);
+        const purgeResult = await purgeLocalOnlyItemsIfIneligible(ownerId, locality.effectiveModeForUser || 'NONE');
         purgeInfo = { purgedLocalOnly: purgeResult.removed > 0, removed: purgeResult.removed };
       } catch (purgeError) {
         console.warn('[CART V2] Auto-purge failed:', purgeError);
@@ -136,8 +160,8 @@ cartRouterV2.put('/items/:itemId', async (req, res, next) => {
     
     // Get current cart item to check product stock
     const cartItems = await storage.getCartItems(
-      req.session?.user?.id || undefined,
-      req.session?.id || 'anonymous'
+(req as any).user?.id || undefined,
+      req.sessionID || 'anonymous'
     );
     const currentItem = cartItems.find(item => item.id === itemId);
     

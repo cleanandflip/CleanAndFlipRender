@@ -105,6 +105,13 @@ export interface IStorage {
   // NEW: additive wrapper for compound key removal
   removeFromCartByUserAndProduct(userId: string, productId: string): Promise<number>;
   
+  // V2 Cart Service required methods
+  getCartItemsByOwner(ownerId: string): Promise<{ id: string; ownerId: string; productId: string; variantId: string | null; quantity: number; }[]>;
+  getCartByOwner(ownerId: string): Promise<{ items: any[]; totals: { subtotal: number; total: number; }; }>;
+  updateCartItemQuantity(id: string, quantity: number): Promise<void>;
+  updateCartItemOwner(id: string, newOwnerId: string): Promise<void>;
+  removeCartItem(id: string): Promise<void>;
+  
   // Order operations
   getUserOrders(userId: string): Promise<Order[]>;
   getOrder(id: string): Promise<Order | undefined>;
@@ -834,6 +841,71 @@ export class DatabaseStorage implements IStorage {
         sessionId: !newOwnerId.includes('@') ? newOwnerId : null 
       })
       .where(eq(cartItems.id, id));
+  }
+
+  // V2 Cart Service methods (required by new cart service)
+  async getCartItemsByOwner(ownerId: string): Promise<{ id: string; ownerId: string; productId: string; variantId: string | null; quantity: number; }[]> {
+    const items = await db.select({
+      id: cartItems.id,
+      ownerId: sql<string>`COALESCE(${cartItems.userId}, ${cartItems.sessionId})`.as('ownerId'),
+      productId: cartItems.productId,
+      variantId: cartItems.variantId,
+      quantity: cartItems.quantity
+    })
+    .from(cartItems)
+    .where(or(
+      eq(cartItems.userId, ownerId),
+      eq(cartItems.sessionId, ownerId)
+    ));
+
+    return items.map(item => ({
+      id: item.id,
+      ownerId: item.ownerId!,
+      productId: item.productId!,
+      variantId: item.variantId,
+      quantity: item.quantity
+    }));
+  }
+
+  async getCartByOwner(ownerId: string): Promise<{ items: any[]; totals: { subtotal: number; total: number; }; }> {
+    const items = await this.getCartItems(
+      ownerId.includes('-') && ownerId.length === 36 ? ownerId : undefined, // userId if UUID format
+      ownerId.includes('-') && ownerId.length === 36 ? undefined : ownerId  // sessionId otherwise
+    );
+
+    const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.product.price), 0);
+    
+    return {
+      items,
+      totals: {
+        subtotal,
+        total: subtotal
+      }
+    };
+  }
+
+  async updateCartItemQuantity(id: string, quantity: number): Promise<void> {
+    await db.update(cartItems)
+      .set({ quantity, updatedAt: new Date() })
+      .where(eq(cartItems.id, id));
+  }
+
+  async updateCartItemOwner(id: string, newOwnerId: string): Promise<void> {
+    const isUserId = newOwnerId.includes('-') && newOwnerId.length === 36; // UUID format check
+    
+    if (isUserId) {
+      await db.update(cartItems)
+        .set({ userId: newOwnerId, sessionId: null, updatedAt: new Date() })
+        .where(eq(cartItems.id, id));
+    } else {
+      await db.update(cartItems)
+        .set({ sessionId: newOwnerId, userId: null, updatedAt: new Date() })
+        .where(eq(cartItems.id, id));
+    }
+  }
+
+  async removeCartItem(id: string): Promise<void> {
+    await db.delete(cartItems).where(eq(cartItems.id, id));
   }
 
   // Set cart shipping address

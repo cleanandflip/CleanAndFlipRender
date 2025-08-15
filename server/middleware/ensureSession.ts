@@ -1,10 +1,6 @@
-import type { Request, Response, NextFunction } from 'express';
-
-// server/middleware/ensureSession.ts
-export function ensureSession(req: Request, _res: Response, next: NextFunction) {
+export default function ensureSession(req: any, _res: any, next: any) {
   if (!req.session) return next(new Error("Session not initialized"));
-  // Do NOT create or set any custom cookie. NEVER rotate IDs here.
-  // Normalize an alias for legacy code that expects req.sessionId:
-  (req as any).sessionId = req.sessionID; // mirror of express-session ID
+  // Provide an alias only; DO NOT set custom cookies or random IDs
+  (req as any).sessionId = req.sessionID; // alias for code that expects sessionId
   return next();
 }

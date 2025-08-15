@@ -237,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Import V2 SSOT cart routes with session middleware and migration
   const { cartRouterV2 } = await import('./routes/cart.v2');
-  const { ensureSession } = await import('./middleware/ensureSession');
+  const ensureSession = (await import('./middleware/ensureSession')).default;
   const { migrateLegacySidCartIfPresent } = await import('./services/cartMigrate');
   
   app.use('/api/cart', ensureSession);

@@ -1,85 +1,57 @@
 import { storage } from "../storage";
-import { getAvailableStock } from "./stockService";
 
-type CartItem = {
-  id: string;
-  ownerId: string;
-  productId: string;
-  variantId?: string | null;
-  quantity: number;
-};
+type Item = { id: string; ownerId: string; productId: string; variantId: string | null; quantity: number; };
 
-function keyOf(i: CartItem) {
-  return `${i.productId}::${i.variantId ?? "NOVAR"}`;
-}
+const key = (i: Item) => `${i.productId}::${i.variantId ?? "NOVAR"}`;
 
-// Merge duplicates and clamp by stock
 export async function consolidateAndClampCart(ownerId: string) {
-  const items: CartItem[] = await storage.getCartItemsByOwner(ownerId);
-
-  // Group by (productId, variantId)
-  const byKey = new Map<string, CartItem>();
+  const items: Item[] = await storage.getCartItemsByOwner(ownerId);
+  const byKey = new Map<string, Item>();
+  
   for (const it of items) {
-    const k = keyOf(it);
-    if (!byKey.has(k)) byKey.set(k, { ...it });
-    else byKey.get(k)!.quantity += it.quantity;
+    const k = key(it);
+    if (!byKey.has(k)) {
+      byKey.set(k, { ...it });
+    } else {
+      byKey.get(k)!.quantity += it.quantity;
+    }
   }
-
-  // Clamp by stock and apply writes
+  
   for (const [k, merged] of byKey) {
-    const stock = await getAvailableStock(merged.productId);
+    const product = await storage.getProduct(merged.productId);
+    const stock = product?.stock ?? 0;
     const clampedQty = Math.max(0, Math.min(merged.quantity, stock));
-
-    // Remove all duplicates for this key
-    const dupes = items.filter((i) => keyOf(i) === k);
-    for (let idx = 0; idx < dupes.length; idx++) {
-      const d = dupes[idx];
-      if (idx === 0) {
-        // First one becomes the canonical row
-        await storage.updateCartItemQty(d.id, clampedQty);
-      } else {
-        await storage.removeCartItemById(d.id);
-      }
+    
+    const dupes = items.filter(i => key(i) === k);
+    
+    // First row is canonical
+    if (dupes[0]) {
+      await storage.updateCartItemQuantity(dupes[0].id, clampedQty);
     }
-
-    // If clamped to 0, remove canonical too
-    if (clampedQty === 0) {
-      const canonical = dupes[0];
-      if (canonical) await storage.removeCartItemById(canonical.id);
+    
+    // Remove duplicates
+    for (let i = 1; i < dupes.length; i++) {
+      await storage.removeCartItem(dupes[i].id);
+    }
+    
+    // Remove if quantity is 0
+    if (!clampedQty && dupes[0]) {
+      await storage.removeCartItem(dupes[0].id);
     }
   }
 }
 
-// Add or increase, consolidating and validating stock
-export async function addToCartConsolidating(ownerId: string, productId: string, qty: number, variantId?: string | null) {
-  if (qty <= 0) throw new Error("Quantity must be positive");
+export async function mergeSessionCartIntoUser(sessionOwner: string, userId: string) {
+  if (!sessionOwner || !userId || sessionOwner === userId) return;
+  
+  const items: Item[] = await storage.getCartItemsByOwner(sessionOwner);
+  if (!items.length) return;
 
-  const stock = await getAvailableStock(productId);
-
-  // Find existing canonical item (first match)
-  // Pass undefined instead of null to avoid SQL issues
-  const items: CartItem[] = await storage.findCartItems(ownerId, productId, variantId || undefined);
-  const existing = items[0];
-
-  const newQty = Math.min(stock, (existing?.quantity ?? 0) + qty);
-  if (newQty <= 0) {
-    if (existing) await storage.removeCartItemById(existing.id);
-    return { status: "REMOVED_EMPTY_OR_OUT_OF_STOCK", qty: 0, available: stock };
+  // Re-key to userId
+  for (const it of items) {
+    await storage.updateCartItemOwner(it.id, userId);
   }
 
-  if (existing) {
-    await storage.updateCartItemQty(existing.id, newQty);
-    // Remove any extras beyond the first one (duplicates)
-    for (let i = 1; i < items.length; i++) await storage.removeCartItemById(items[i].id);
-  } else {
-    await storage.createCartItem({ ownerId, productId, variantId: variantId ?? null, quantity: newQty });
-  }
-
-  const capped = newQty < ((existing?.quantity ?? 0) + qty);
-  return { status: capped ? "ADDED_PARTIAL_STOCK_CAP" : "ADDED", qty: newQty, available: stock };
-}
-
-// Clamp cart on demand (e.g., GET /* SSOT-FORBIDDEN /api/cart(?!\.v2) */ /api/cart)
-export async function clampCartToStock(ownerId: string) {
-  await consolidateAndClampCart(ownerId);
+  // De-dupe + clamp at user
+  await consolidateAndClampCart(userId);
 }
