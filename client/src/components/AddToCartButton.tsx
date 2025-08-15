@@ -59,9 +59,12 @@ export default function AddToCartButton({
   const effectiveness = productMode ? computeEffectiveAvailability(productMode, userMode) : 'ADD_ALLOWED';
   const isBlocked = effectiveness === 'BLOCKED';
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    console.log('🔵 AddToCart clicked!', { productId, isBlocked, locality });
+    
     if (isBlocked) {
       const reasons = locality?.reasons || ["This item is local delivery only"];
+      console.log('🔴 Blocked by locality:', reasons);
       toast({
         title: "Not available in your area",
         description: reasons[0] || "Set a local default address or enter a local ZIP to order.",
@@ -70,14 +73,42 @@ export default function AddToCartButton({
       return;
     }
     
-    // Cart works for both guests and authenticated users now
-    addToCart({ productId, qty: 1 }); // V2 API - uses qty field
+    try {
+      console.log('🟢 Adding to cart...', { productId, qty: 1 });
+      await addToCart({ productId, qty: 1 }); // V2 API - uses qty field
+      console.log('✅ Successfully added to cart');
+      toast({
+        title: "Added to cart",
+        description: `${product?.name || 'Item'} has been added to your cart.`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('🔴 AddToCart error:', error);
+      toast({
+        title: "Failed to add to cart",
+        description: "Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleRemoveFromCart = () => {
-    // Cart works for both guests and authenticated users now
-    if (productId) {
-      removeByProduct(productId);
+  const handleRemoveFromCart = async () => {
+    console.log('🔵 RemoveFromCart clicked!', { productId });
+    try {
+      await removeByProduct(productId);
+      console.log('✅ Successfully removed from cart');
+      toast({
+        title: "Removed from cart",
+        description: `${product?.name || 'Item'} has been removed from your cart.`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('🔴 RemoveFromCart error:', error);
+      toast({
+        title: "Failed to remove from cart",
+        description: "Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
