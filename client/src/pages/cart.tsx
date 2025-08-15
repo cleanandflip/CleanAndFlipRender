@@ -53,6 +53,11 @@ export default function CartPageV2() {
   const total = (cart as any)?.total || 0;
 
   const handleQuantityChange = async (productId: string, newQuantity: number, maxStock?: number) => {
+    // Don't allow negative quantities
+    if (newQuantity < 0) {
+      return;
+    }
+    
     if (newQuantity === 0) {
       await removeByProduct(productId);
     } else {
