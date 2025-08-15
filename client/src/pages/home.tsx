@@ -119,29 +119,29 @@ function HomeSections() {
       )}
 
       {/* Hero Section - Compact */}
-      <section className="flex items-center justify-center py-12 px-6">
-        <div className="max-w-6xl mx-auto text-center">
+      <section className="flex items-center justify-center py-16 md:py-24 px-4 md:px-6">
+        <div className="max-w-5xl mx-auto text-center">
           {/* Main Heading */}
           <motion.div 
-            className="mb-12"
+            className="mb-10 md:mb-12"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.08] max-w-3xl mx-auto">
               Local Weights, Fair Prices
             </h1>
 
-            <p className="mt-3 text-lg md:text-xl text-muted-foreground">
+            <p className="mt-4 text-base md:text-lg text-muted-foreground">
               Buy & sell with fast pickup & delivery
             </p>
 
-            <p className="mt-2 text-xs md:text-sm text-muted-foreground tracking-wide">
+            <p className="mt-3 text-xs md:text-sm text-muted-foreground tracking-wide">
               Based in Asheville, NC
             </p>
             
             <p 
-              className="text-xl md:text-2xl max-w-3xl mx-auto mt-6 md:mt-8 font-semibold"
+              className="text-lg md:text-xl max-w-3xl mx-auto mt-8 md:mt-10 font-semibold"
               style={{ color: theme.colors.brand.blue }}
             >
               Dumbbells • Kettlebells • Plates • Barbells • More
@@ -150,17 +150,17 @@ function HomeSections() {
 
           {/* Two Paths - Enhanced Design */}
           <motion.div 
-            className="grid md:grid-cols-2 gap-8 mb-16"
+            className="grid md:grid-cols-2 gap-6 md:gap-8 mt-8 md:mt-10 mb-12 md:mb-16"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             {/* Selling Path */}
-            <Card interactive glow className="p-10 text-center">
+            <Card interactive glow className="p-6 md:p-8 text-center">
               <div className="mb-8">
                 <DollarSign 
                   className="mb-6 mx-auto" 
-                  size={64} 
+                  size={48} 
                   style={{ color: theme.colors.brand.green }}
                 />
                 <h2 
@@ -184,11 +184,11 @@ function HomeSections() {
             </Card>
 
             {/* Buying Path */}
-            <Card interactive glow className="p-10 text-center">
+            <Card interactive glow className="p-6 md:p-8 text-center">
               <div className="mb-8">
                 <Dumbbell 
                   className="mb-6 mx-auto" 
-                  size={64} 
+                  size={48} 
                   style={{ color: theme.colors.brand.blue }}
                 />
                 <h2 
@@ -214,7 +214,7 @@ function HomeSections() {
 
           {/* Trust Bar - Enhanced */}
           <motion.div 
-            className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto"
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mt-4 md:mt-6 max-w-4xl mx-auto"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
@@ -300,12 +300,12 @@ function HomeSections() {
       </section>
 
       {/* How It Works Section - Full Screen */}
-      <section className="min-h-screen flex items-center py-12 px-6">
+      <section className="py-16 md:py-24 px-4 md:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 md:gap-16 items-center">
             {/* Left Side - Simple Process */}
             <motion.div 
-              className="space-y-12"
+              className="space-y-8 md:space-y-10"
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
@@ -552,10 +552,10 @@ function HomeSections() {
       </section>
 
       {/* Categories Section */}
-      <section className="py-24 px-6 spacing-section">
+      <section className="py-20 md:py-24 px-4 md:px-6 spacing-section">
         <div className="max-w-6xl mx-auto">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12 md:mb-16"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
