@@ -1,0 +1,402 @@
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:11:    3) shared/availability.ts     // computeEffectiveAvailability(productMode, userMode)
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:59:    "\\bLOCAL_ONLY\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:60:    "\\bLOCAL_AND_SHIPPING\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:82:# Places that use badges/chips/eligibility without computeEffectiveAvailability:
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:83:rg -n --no-heading -g '!node_modules' -e "Availability|Badge|Chip|ZipCheck|AddToCartButton|product-card|product-detail|product-grid" > audit/locality-ui-touchpoints.rg.txt
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:118:      "message": "Locality checks must route through computeEffectiveAvailability + getLocalityForRequest."
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:175:        sf.insertText(ce.getStart(), "/* TODO(SSOT): replace with computeEffectiveAvailability(productMode, userMode). */ ");
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:209:   - const eff = computeEffectiveAvailability(productMode, loc.effectiveModeForUser)
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:212:2) Replace any direct LOCAL_ONLY / LOCAL_AND_SHIPPING checks in UI with the shared `computeEffectiveAvailability`.
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:253:- computeEffectiveAvailability(productMode, userMode) -> 'ADD_ALLOWED'|'PICKUP_ONLY'|'SHIPPING_ONLY'|'BLOCKED'
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:257:- computeEffectiveAvailability()
+ULTIMATE_COMPREHENSIVE_CODEBASE_DOCUMENTATION.md:1458:// Location: client/src/components/products/product-card.tsx
+ULTIMATE_COMPREHENSIVE_CODEBASE_DOCUMENTATION.md:3020:        'Availability and pickup preferences'
+ULTIMATE_COMPREHENSIVE_CODEBASE_DOCUMENTATION.md:4464:      feedback: 'Availability indicator'
+audit/locality-fetch-bypass.rg.txt:3:client/src/components/fulfillment/ZipCheck.tsx:28:      const response = await fetch(`/api/locality/status?zip=${encodeURIComponent(zip.trim())}`);
+COMPLETE_CODEBASE_DOCUMENTATION.md:461:#### ProductCard (`client/src/components/products/product-card.tsx`)
+COMPLETE_CODEBASE_DOCUMENTATION.md:488:#### ProductGrid (`client/src/components/products/product-grid.tsx`)
+COMPLETE_CODEBASE_DOCUMENTATION.md:2290:.product-card {
+COMPLETE_CODEBASE_DOCUMENTATION.md:2310:.product-card:hover {
+COMPLETE_CODEBASE_DOCUMENTATION.md:2317:.product-card-image {
+COMPLETE_CODEBASE_DOCUMENTATION.md:2330:.product-card-image img {
+COMPLETE_CODEBASE_DOCUMENTATION.md:2337:.product-card:hover .product-card-image img {
+COMPLETE_CODEBASE_DOCUMENTATION.md:2341:.product-card-content {
+COMPLETE_CODEBASE_DOCUMENTATION.md:2349:.product-card-title {
+COMPLETE_CODEBASE_DOCUMENTATION.md:2366:.product-card-price {
+COMPLETE_CODEBASE_DOCUMENTATION.md:2376:.product-card-badge {
+COMPLETE_CODEBASE_DOCUMENTATION.md:3503:  import("@/components/products/product-grid").then(module => ({
+COMPLETE_CODEBASE_DOCUMENTATION.md:5079:product-detail.tsx
+COMPLETE_CODEBASE_DOCUMENTATION.md:5130:// client/src/components/products/product-card.tsx
+COMPLETE_CODEBASE_DOCUMENTATION.md:5135:import './product-card.css';
+COMPLETE_CODEBASE_DOCUMENTATION.md:5167:    <div className={`product-card ${className}`}>
+audit/locality-ssot-allowlist.json:20:    "\\bLOCAL_ONLY\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+audit/locality-ssot-allowlist.json:21:    "\\bLOCAL_AND_SHIPPING\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:93:✅ KEEP server/routes/cart.v2.ts, client/src/hooks/useCart.ts, server/services/cartCleanup.ts, server/services/cartGuard.ts, client/src/lib/cartKeys.ts, client/src/components/AddToCartButton.tsx.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:103:➕ ADD shared/availability.ts → computeEffectiveAvailability(productMode, locality) to centralize intersection logic.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:105:✅ KEEP UI badges/banners/ZipCheck but refactor to always use useLocality() + computeEffectiveAvailability.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:109:✅ KEEP server/routes/checkout.ts, server/routes/shipping.ts, client/src/pages/checkout.tsx, etc., but ensure they reuse getLocalityForRequest() and computeEffectiveAvailability() for final enforcement.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:148:export function computeEffectiveAvailability(
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:180:POST /api/cart body { productId, qty } → server checks computeEffectiveAvailability before add.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:210:5.3 AddToCartButton
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:212:Calls useLocality + modeFromProduct + computeEffectiveAvailability.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:220:Never compute “isLocal” locally—always rely on useLocality() + computeEffectiveAvailability().
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:229:const eff = computeEffectiveAvailability(productMode, loc.effectiveModeForUser);
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:263:Step 3 – Availability SSOT
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:265:Add shared/availability.ts with computeEffectiveAvailability.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:267:Update AddToCartButton, ProductAvailabilityChips, badges, banners to use it.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:279:Make checkout.ts and shipping.ts call getLocalityForRequest() and computeEffectiveAvailability().
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:303:Replace any isLocal(...) custom checks → computeEffectiveAvailability(...).
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:340:  - Export computeEffectiveAvailability(productMode, userMode) returning 'ADD_ALLOWED'|'PICKUP_ONLY'|'SHIPPING_ONLY'|'BLOCKED' exactly as defined above.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:351:  - Ensure server/routes/cart.v2.ts uses getCartOwnerId(req) and computeEffectiveAvailability() for every mutation.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:361:  - In ProductAvailabilityChips, FulfillmentBadge, DeliveryEligibilityBanner, ZipCheck, AddToCartButton:
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:362:    - Use useLocality() + modeFromProduct(product) + computeEffectiveAvailability().
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:367:  - Make server/routes/checkout.ts and server/routes/shipping.ts call getLocalityForRequest(req) and computeEffectiveAvailability() to re-validate line items before payment. If blocked, return 422 with structured reasons.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:378:  - Add unit tests for computeEffectiveAvailability() covering the full matrix.
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:38:- `client/src/components/products/product-card.tsx`
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:39:- `client/src/components/AddToCartButton.tsx`
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:230:product-card.tsx and AddToCartButton.tsx: if product is LOCAL_ONLY and !locality.eligible, disable the Add button and show a chip “Local delivery only” + tooltip: “Add a local address to continue.”
+PERFORMANCE_OPTIMIZATION_COMPLETE.md:28:- **Product Queries**: client/src/pages/product-detail.tsx + client/src/hooks/useProducts.ts
+PERFORMANCE_OPTIMIZATION_COMPLETE.md:48:✅ client/src/pages/product-detail.tsx - Reduced product polling  
+scripts/denylist-check.js:23:  'client/src/components/AddToCartButton.tsx'
+client/src/App.tsx:25:import ProductDetail from "@/pages/product-detail";
+attached_assets/Pasted--PROJECT-UPGRADE-REQUEST-ADD-ONLY-NO-BREAKING-CHANGES-TOP-LINE-GOALS-Local-users-must-be-able--1755229470092_1755229470093.txt:28:Client: client/src/hooks/useLocality.ts, client/src/components/layout/navigation.tsx, client/src/components/fulfillment/DeliveryEligibilityBanner.tsx, client/src/pages/sell-to-us.tsx, client/src/components/AddToCartButton.tsx, client/src/lib/apiJson.ts (or equivalent).
+attached_assets/Pasted-same-two-problems-you-called-out-in-the-logs-UI-Featured-endpoint-returns-200-with-Content-Len-1755149145908_1755149145908.txt:179:File: src/components/locality/ProductAvailabilityChips.tsx
+attached_assets/Pasted-same-two-problems-you-called-out-in-the-logs-UI-Featured-endpoint-returns-200-with-Content-Len-1755149145908_1755149145908.txt:186:export default function ProductAvailabilityChips({ product }: Props){
+attached_assets/Pasted-same-two-problems-you-called-out-in-the-logs-UI-Featured-endpoint-returns-200-with-Content-Len-1755149145908_1755149145908.txt:225:File: src/components/AddToCartButton.tsx
+attached_assets/Pasted-Got-it-the-cart-works-now-but-the-Navigation-crash-is-a-null-safety-bug-it-tries-to-read-localit-1755206267108_1755206267108.txt:96:If line ~321 did something like locality.eligible && <Badge/>, change to local.eligible && <Badge/>.
+attached_assets/Pasted-Got-it-the-cart-works-now-but-the-Navigation-crash-is-a-null-safety-bug-it-tries-to-read-localit-1755206267108_1755206267108.txt:109:File: client/src/components/locality/ProductAvailabilityChips.tsx
+attached_assets/Pasted-Got-it-the-cart-works-now-but-the-Navigation-crash-is-a-null-safety-bug-it-tries-to-read-localit-1755206267108_1755206267108.txt:117:File: client/src/components/fulfillment/FulfillmentBadge.tsx
+attached_assets/Pasted-Got-it-the-cart-works-now-but-the-Navigation-crash-is-a-null-safety-bug-it-tries-to-read-localit-1755206267108_1755206267108.txt:124:function FulfillmentBadge({ locality }: { locality?: LocalityStatus }) {
+client/src/index.css:771:  .product-card {
+client/src/index.css:775:  .product-card img {
+client/src/index.css:779:  .product-card:hover img {
+client/src/index.css:1025:.product-card,
+client/src/index.css:1029:.product-grid {
+attached_assets/Pasted-logs-make-the-root-cause-pretty-clear-You-are-local-eligible-true-source-DEFAULT-ADDRESS-zip-28806-1755205817700_1755205817701.txt:114:client/src/components/AddToCartButton.tsx
+attached_assets/Pasted-logs-make-the-root-cause-pretty-clear-You-are-local-eligible-true-source-DEFAULT-ADDRESS-zip-28806-1755205817700_1755205817701.txt:176:Delete client/src/components/locality/LocalBadge.tsx and any imports.
+attached_assets/Pasted-logs-make-the-root-cause-pretty-clear-You-are-local-eligible-true-source-DEFAULT-ADDRESS-zip-28806-1755205817700_1755205817701.txt:178:Ensure cards/banners use FulfillmentBadge, ProductAvailabilityChips, DeliveryEligibilityBanner only.
+attached_assets/Pasted-What-the-logs-say-symptoms-Cart-add-is-being-403-d-even-when-you-re-local-Evidence-eligible-true-1755204354298_1755204354299.txt:21:GET /src/components/locality/LocalBadge.tsx shows the old component still ships. Keep the look, but remove dead imports to avoid mixed sources.
+attached_assets/Pasted-What-the-logs-say-symptoms-Cart-add-is-being-403-d-even-when-you-re-local-Evidence-eligible-true-1755204354298_1755204354299.txt:209:LocalBadge.tsx (legacy)
+attached_assets/Pasted-What-the-logs-say-symptoms-Cart-add-is-being-403-d-even-when-you-re-local-Evidence-eligible-true-1755204354298_1755204354299.txt:215:Ensure product cards, banners, and badges use the new FulfillmentBadge, ProductAvailabilityChips, and DeliveryEligibilityBanner.
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:276:3.3 AddToCartButton – client guard (keeps UI)
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:277:Ensure client/src/components/AddToCartButton.tsx checks mode + locality (do not change styling):
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:285:export function AddToCartButton({ product, ...rest }: { product: Product } & ButtonProps) {
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:358:Grep for: Shipping Only, LocalBadge (old), isLocalZipCode(, and older /api/locality/* endpoints → delete or rewrite to proxy /api/locality/status shape.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:61:Else if the user entered a ZIP override (ZipCheck), use it.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:71:Remove/replace all older helpers: LocalBadge, any old useZip, legacy isLocalUser utilities, etc. The only public client API should be useLocality() returning the server’s LocalityStatus.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:112:Client AddToCartButton: for LOCAL_ONLY products, disable unless locality.eligible === true.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:137:client/src/components/locality/LocalBadge.tsx
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:139:any old ProductAvailabilityChips that don’t use FulfillmentBadge
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:210:In empty/error states for non-local users on product detail, add the ZipCheck inline control so users can self-qualify quickly.
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:70:In AddToCartButton (or the mutation hook), treat 409 specially:
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:26:BadgeRow         ⟶ fulfillment pills live here
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:36:BadgeRow: flex flex-wrap items-center gap-2 mt-1
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:42:2) Badge positioning & style (single source)
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:58:Place BadgeRow under price.
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:64:Show inline ZipCheck to re-verify.
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:130:A) client/src/components/fulfillment/FulfillmentBadge.tsx
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:141:export type FulfillmentBadgeProps = {
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:212:export function FulfillmentBadge({
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:218:}: FulfillmentBadgeProps) {
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:250:export default FulfillmentBadge;
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:257:import FulfillmentBadge from "@/components/fulfillment/FulfillmentBadge";
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:298:      data-testid="product-card"
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:328:          <FulfillmentBadge mode={product.fulfillmentMode} size="md" />
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:431:Product grid (cards): FulfillmentBadge mode={product.fulfillmentMode} size="md".
+attached_assets/Pasted--do-everything-prove-it-prompt-you-can-give-Replit-to-verify-all-changes-end-to-end-It-s-task-d-1755127153251_1755127153251.txt:114:4) Product Availability & Guardrails
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:14:A. Badges (compact, for lists/cards/PDP/Cart)
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:15:Create <FulfillmentBadge mode />:
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:38:Include a ZIP checker inline (<ZipCheck/>) to re-evaluate eligibility.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:92:Show <FulfillmentBadge/> under price.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:137:export function FulfillmentBadge({ mode, subtle = false }:{
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:143:export function ZipCheck({
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:159:Badges
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:184:Badges and banners must meet AA contrast (verify against both themes).
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:252:Badges/banners/cards are consistent and accessible site-wide.
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:103:### **Locality Badge**
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:106:<LocalBadge isLocal={true} />  // "Local Delivery Area" (green)
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:107:<LocalBadge isLocal={false} /> // "Shipping Area" (gray)
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:110:### **Product Availability Chips**
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:113:<ProductAvailabilityChips local={true} ship={true} />   // "Local Delivery & Shipping"
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:114:<ProductAvailabilityChips local={true} ship={false} />  // "Local Delivery Only"
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:115:<ProductAvailabilityChips local={false} ship={true} />  // "Shipping Only"
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:119:**File: `client/src/components/AddToCartButtonUnified.tsx`**
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:188:- ✅ **Locality Badges:** Display correctly in header, product cards, checkout
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:197:1. **Badge Shows:** "Local Delivery Area" (green) in header
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:203:1. **Badge Shows:** "Shipping Area" (gray) in header  
+UNIFIED_LOCAL_DELIVERY_SYSTEM.md:246:| **Frontend Components** | ✅ Complete | Badges, chips, unified add-to-cart button |
+attached_assets/Pasted-wire-up-the-Delivery-Fulfillment-UI-across-the-whole-app-TASK-Add-Delivery-Fulfillment-UI-to--1755165263091_1755165263092.txt:107:src/components/products/product-card.tsx
+attached_assets/Pasted-wire-up-the-Delivery-Fulfillment-UI-across-the-whole-app-TASK-Add-Delivery-Fulfillment-UI-to--1755165263091_1755165263092.txt:109:src/components/locality/ProductAvailabilityChips.tsx (or create)
+attached_assets/Pasted-wire-up-the-Delivery-Fulfillment-UI-across-the-whole-app-TASK-Add-Delivery-Fulfillment-UI-to--1755165263091_1755165263092.txt:113:src/pages/product-detail.tsx
+attached_assets/Pasted-The-PUTs-are-200-and-Stripe-syncs-so-the-blocker-is-fulfillment-booleans-not-truly-persisting-not-1755154023678_1755154023678.txt:112:File: client/src/components/locality/ProductAvailabilityChips.tsx
+attached_assets/Pasted-The-PUTs-are-200-and-Stripe-syncs-so-the-blocker-is-fulfillment-booleans-not-truly-persisting-not-1755154023678_1755154023678.txt:121:export default function ProductAvailabilityChips({ product }: { product: any }) {
+attached_assets/Pasted-Root-cause-Your-modal-now-sends-the-chosen-mode-as-booleans-but-the-admin-update-route-is-not-persi-1755162300366_1755162300366.txt:116:Public GETs → include those fields, so product-grid, ProductAvailabilityChips, and FreeDeliveryPill read the updated values.
+attached_assets/Pasted-1-One-clean-fulfillment-chip-no-emojis-File-client-src-components-locality-ProductAvailabilityCh-1755153585218_1755153585219.txt:2:File: client/src/components/locality/ProductAvailabilityChips.tsx
+attached_assets/Pasted-1-One-clean-fulfillment-chip-no-emojis-File-client-src-components-locality-ProductAvailabilityCh-1755153585218_1755153585219.txt:9:export default function ProductAvailabilityChips({ product }: { product: any }) {
+attached_assets/Pasted-end-to-end-fix-for-the-three-problems-you-re-seeing-Only-one-Local-delivery-only-Shipping-onl-1755154405365_1755154405365.txt:12:client/src/components/locality/ProductAvailabilityChips.tsx
+attached_assets/Pasted-end-to-end-fix-for-the-three-problems-you-re-seeing-Only-one-Local-delivery-only-Shipping-onl-1755154405365_1755154405365.txt:28:export default function ProductAvailabilityChips(props: Props) {
+attached_assets/Pasted-You-re-right-that-Local-delivery-Local-delivery-only-double-badge-is-confusing-Here-s-a-small-1755153292892_1755153292893.txt:4:File: client/src/components/locality/ProductAvailabilityChips.tsx
+attached_assets/Pasted-You-re-right-that-Local-delivery-Local-delivery-only-double-badge-is-confusing-Here-s-a-small-1755153292892_1755153292893.txt:12:export default function ProductAvailabilityChips({ product }: { product: any }) {
+attached_assets/Pasted-You-re-right-that-Local-delivery-Local-delivery-only-double-badge-is-confusing-Here-s-a-small-1755153292892_1755153292893.txt:79:If you also want the button to reflect the clearer wording, keep this in AddToCartButton.tsx:
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:130:File: client/src/components/locality/ProductAvailabilityChips.tsx
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:138:export default function ProductAvailabilityChips({ product }: { product: any }) {
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:164:File: client/src/components/products/product-card.tsx
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:171:import ProductAvailabilityChips from "@/components/locality/ProductAvailabilityChips";
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:177:<ProductAvailabilityChips product={product} />
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:181:File: client/src/pages/product-detail.tsx
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:188:import ProductAvailabilityChips from "@/components/locality/ProductAvailabilityChips";
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:195:<ProductAvailabilityChips product={product} />
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:259:File: client/src/components/AddToCartButton.tsx
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:268:export function AddToCartButton({ product, ...props }: { product: any } & any) {
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:326:client/src/pages/product-detail.tsx
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:378:Chips appear under the title.
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:389:ProductList → keep using product-grid.tsx everywhere. If any file still imports ProductList, re-point to product-grid.
+client/src/pages/home.tsx:10:import ProductCard from "@/components/products/product-card";
+client/src/pages/home.tsx:22:import { LocalBadge } from "@/components/locality/LocalBadge";
+client/src/pages/home.tsx:98:              <LocalBadge isLocal={true} />
+client/src/pages/home.tsx:105:              <LocalBadge isLocal={false} />
+client/src/pages/home.tsx:112:              <LocalBadge isLocal={false} />
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:124:3) Chips shown everywhere
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:125:Update: client/src/components/locality/ProductAvailabilityChips.tsx
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:133:export default function ProductAvailabilityChips({ product, compact }: Props) {
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:144:Update: client/src/components/products/product-card.tsx
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:150:<ProductAvailabilityChips product={product} compact={compact} />
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:151:Update: client/src/pages/product-detail.tsx
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:157:import ProductAvailabilityChips from "@/components/locality/ProductAvailabilityChips";
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:161:  <ProductAvailabilityChips product={product} />
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:164:Edit: client/src/components/AddToCartButton.tsx
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:172: export default function AddToCartButton({ product, ...props }) {
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:267:Product detail (client/src/pages/product-detail.tsx):
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:278:Edit/Replace: client/src/components/products/product-grid.tsx
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:283:import ProductCard from "./product-card";
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:307:export { default } from "./product-grid";
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:313:find client/src -type f -name '*.ts*' -exec sed -i 's#@/components/products/ProductList#@/components/products/product-grid#g' {} +
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:416:grep -RIn --include="product-card.tsx" 'ProductAvailabilityChips' client/src/components/products && echo "✅ Chips in ProductCard"
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:439:ProductList.tsx → re-export of product-grid.
+client/src/pages/cart.tsx:8:import { LocalBadge } from "@/components/locality/LocalBadge";
+client/src/pages/cart.tsx:10:import { Badge } from "@/components/ui/badge";
+client/src/pages/cart.tsx:114:          <LocalBadge isLocal={locality?.isLocal ?? false} />
+client/src/pages/cart.tsx:121:              <LocalBadge isLocal={true} />
+client/src/pages/cart.tsx:155:                        <Badge variant="outline" className="text-xs">Both</Badge>
+client/src/pages/cart.tsx:158:                        <Badge variant="outline" className="text-xs text-blue-700">Local Only</Badge>
+client/src/pages/cart.tsx:161:                        <Badge variant="outline" className="text-xs">Shipping Only</Badge>
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:97:You already have ProductAvailabilityChips.tsx and FreeDeliveryPill.tsx. Let’s standardize the props they read:
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:113:2) ProductAvailabilityChips (one source of truth)
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:114:File: client/src/components/locality/ProductAvailabilityChips.tsx
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:121:export default function ProductAvailabilityChips({ product }: Props) {
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:135:client/src/components/products/product-card.tsx — under price:
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:140:+ <ProductAvailabilityChips product={product} />
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:150:1) Frontend guard in AddToCartButton
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:151:File: client/src/components/AddToCartButton.tsx
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:159:export default function AddToCartButton({ product, ...props }) {
+client/src/pages/product-detail.tsx:4:import ProductAvailabilityChips from "@/components/locality/ProductAvailabilityChips";
+client/src/pages/product-detail.tsx:12:import { Badge } from "@/components/ui/badge";
+client/src/pages/product-detail.tsx:17:import AddToCartButton from "@/components/AddToCartButton";
+client/src/pages/product-detail.tsx:65:  const { restoreState } = useNavigationState('product-detail');
+client/src/pages/product-detail.tsx:319:                  <Badge variant="outline" className="glass border-border">
+client/src/pages/product-detail.tsx:321:                  </Badge>
+client/src/pages/product-detail.tsx:333:                <Badge className={`${getConditionColor(product.condition)} text-white`}>
+client/src/pages/product-detail.tsx:335:                </Badge>
+client/src/pages/product-detail.tsx:373:            {/* Delivery Availability - Position under price per spec */}
+client/src/pages/product-detail.tsx:374:            <ProductAvailabilityChips product={product} size="lg" />
+client/src/pages/product-detail.tsx:411:                <AddToCartButton
+client/src/pages/checkout.tsx:12:import { LocalBadge } from "@/components/locality/LocalBadge";
+client/src/pages/checkout.tsx:172:        <LocalBadge isLocal={locality?.isLocal ?? false} />
+client/src/pages/products.tsx:9:import { LocalBadge } from "@/components/locality/LocalBadge";
+client/src/pages/track-submission.tsx:6:import { Badge } from '@/components/ui/badge';
+client/src/pages/track-submission.tsx:182:                      <Badge className={statusConfig[(submission as any).status as keyof typeof statusConfig].color}>
+client/src/pages/track-submission.tsx:184:                      </Badge>
+client/src/pages/dashboard.tsx:6:import { Badge } from "@/components/ui/badge";
+client/src/pages/dashboard.tsx:284:                  <Badge className={`ml-2 ${activeTab === 'submissions' ? 'bg-blue-400 text-blue-100' : 'bg-blue-500 text-white'}`} variant="secondary">
+client/src/pages/dashboard.tsx:286:                  </Badge>
+client/src/pages/dashboard.tsx:374:                            <Badge className={`${getStatusColor(order.status || 'pending')} text-white`}>
+client/src/pages/dashboard.tsx:376:                            </Badge>
+client/src/pages/dashboard.tsx:462:                              <Badge className={`${getSubmissionStatusColor(submission.status || 'pending')} text-white`}>
+client/src/pages/dashboard.tsx:465:                              </Badge>
+client/src/pages/observability.tsx:8:import { Badge } from "@/components/ui/badge";
+client/src/pages/observability.tsx:181:  const getLevelBadgeColor = (lvl: string) =>
+client/src/pages/observability.tsx:283:                      <Badge variant={getLevelBadgeColor(issue.level)}>{issue.level}</Badge>
+client/src/pages/observability.tsx:306:                  <div>Level: <Badge variant={getLevelBadgeColor(issueDetails.issue.level)}>{issueDetails.issue.level}</Badge></div>
+client/src/pages/orders.tsx:4:import { Badge } from "@/components/ui/badge";
+client/src/pages/orders.tsx:223:                    <Badge className={`${getStatusColor(order.status || 'pending')} text-white mt-1`}>
+client/src/pages/orders.tsx:225:                    </Badge>
+client/src/pages/admin/SubmissionsManager.tsx:6:import { Badge } from '@/components/ui/badge';
+server/routes/cart.v2.ts:5:import { computeEffectiveAvailability } from '../../shared/availability';
+server/routes/cart.v2.ts:24:    const effectiveness = computeEffectiveAvailability(productMode, locality.effectiveModeForUser);
+client/src/pages/admin/SystemManager.tsx:5:import { Badge } from '@/components/ui/badge';
+client/src/pages/admin/SystemManager.tsx:72:  const getStatusBadge = (status: string) => {
+client/src/pages/admin/SystemManager.tsx:74:      case 'healthy': return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Healthy</Badge>;
+client/src/pages/admin/SystemManager.tsx:75:      case 'warning': return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Warning</Badge>;
+client/src/pages/admin/SystemManager.tsx:76:      case 'error': return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Error</Badge>;
+client/src/pages/admin/SystemManager.tsx:77:      default: return <Badge variant="secondary">Unknown</Badge>;
+client/src/pages/admin/SystemManager.tsx:132:                    {getStatusBadge(systemHealth?.database?.status || 'unknown')}
+client/src/pages/admin/SystemManager.tsx:145:                    {getStatusBadge(systemHealth?.redis?.status || 'warning')}
+client/src/pages/admin/SystemManager.tsx:158:                    {getStatusBadge(systemHealth?.storage?.status || 'unknown')}
+client/src/pages/admin/SystemManager.tsx:171:                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Online</Badge>
+client/src/pages/admin/SystemManager.tsx:252:                    {getStatusBadge(systemHealth?.database?.status || 'unknown')}
+client/src/pages/admin/SystemManager.tsx:260:                    <Badge variant="outline">Development</Badge>
+client/src/pages/admin/SystemDashboard.tsx:6:import { Badge } from '@/components/ui/badge';
+client/src/pages/admin/SystemDashboard.tsx:297:                        <Badge variant="outline" className="mr-2">
+client/src/pages/admin/SystemDashboard.tsx:299:                        </Badge>
+client/src/pages/admin/UserManager.tsx:6:import { Badge } from "@/components/ui/badge";
+client/src/pages/admin/UserManager.tsx:144:                    <Badge className={getRoleColor(user.role || 'user')}>
+client/src/pages/admin/UserManager.tsx:146:                    </Badge>
+client/src/pages/admin/CategoryManager.tsx:7:import { Badge } from "@/components/ui/badge";
+client/src/pages/admin/CategoryManager.tsx:178:                    <Badge variant={category.isActive ? 'default' : 'secondary'}>
+client/src/pages/admin/CategoryManager.tsx:180:                    </Badge>
+client/src/pages/admin/CategoryManager.tsx:183:                    <Badge variant="outline">
+client/src/pages/admin/CategoryManager.tsx:185:                    </Badge>
+client/src/pages/admin/StripeManager.tsx:5:import { Badge } from '@/components/ui/badge';
+client/src/pages/admin/StripeManager.tsx:110:  const getStatusBadge = (status?: string) => {
+client/src/pages/admin/StripeManager.tsx:113:        return <Badge variant="secondary">Syncing...</Badge>;
+client/src/pages/admin/StripeManager.tsx:115:        return <Badge variant="default" className="bg-green-500">Complete</Badge>;
+client/src/pages/admin/StripeManager.tsx:117:        return <Badge variant="destructive">Failed</Badge>;
+client/src/pages/admin/StripeManager.tsx:119:        return <Badge variant="outline">Ready</Badge>;
+client/src/pages/admin/StripeManager.tsx:150:              {getStatusBadge(syncStatus.all)}
+client/src/pages/admin/StripeManager.tsx:201:              {getStatusBadge(syncStatus.test)}
+client/src/pages/admin/StripeManager.tsx:241:              <Badge variant="default" className="bg-green-500">Active</Badge>
+client/src/pages/admin/StripeManager.tsx:245:              <Badge variant="outline">Available</Badge>
+client/src/pages/admin/StripeManager.tsx:249:              <Badge variant="default" className="bg-green-500">Enabled</Badge>
+client/src/components/AddToCartButton.tsx:13:interface AddToCartButtonProps {
+client/src/components/AddToCartButton.tsx:29:export default function AddToCartButton({ 
+client/src/components/AddToCartButton.tsx:35:}: AddToCartButtonProps) {
+client/src/components/checkout/AddressBlock.tsx:5:import { Badge } from "@/components/ui/badge";
+client/src/components/checkout/AddressBlock.tsx:47:              <Badge variant="secondary">Default</Badge>
+client/src/components/checkout/AddressBlock.tsx:83:                  {addr.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
+client/src/components/fulfillment/DeliveryEligibilityBanner.tsx:4:import { ZipCheck } from './ZipCheck';
+client/src/components/fulfillment/DeliveryEligibilityBanner.tsx:44:          <ZipCheck onResolved={(isLocal) => {
+client/src/components/products/product-card.tsx:4:import { Badge } from "@/components/ui/badge";
+client/src/components/products/product-card.tsx:23:import AddToCartButton from "@/components/AddToCartButton";
+client/src/components/products/product-card.tsx:24:import ProductAvailabilityChips from "@/components/locality/ProductAvailabilityChips";
+client/src/components/products/product-card.tsx:63:            <ProductAvailabilityChips product={product} />
+client/src/components/products/product-card.tsx:106:                    <Badge variant="outline" className="bg-card border-bg-card-border text-xs">
+client/src/components/products/product-card.tsx:108:                    </Badge>
+client/src/components/products/product-card.tsx:110:                  <Badge variant="outline" className="bg-card border-bg-card-border text-xs">
+client/src/components/products/product-card.tsx:112:                  </Badge>
+client/src/components/products/product-card.tsx:134:                  <ProductAvailabilityChips product={product} />
+client/src/components/products/product-card.tsx:138:                  <AddToCartButton
+client/src/components/products/product-card.tsx:228:      {/* Availability chips and add to cart */}
+client/src/components/products/product-card.tsx:230:        <ProductAvailabilityChips product={product} />
+client/src/components/products/product-card.tsx:234:        <AddToCartButton
+client/src/components/locality/ProductAvailabilityChips.tsx:2:import { FulfillmentBadge } from '@/components/fulfillment/FulfillmentBadge';
+client/src/components/locality/ProductAvailabilityChips.tsx:6:interface ProductAvailabilityChipsProps {
+client/src/components/locality/ProductAvailabilityChips.tsx:16:export function ProductAvailabilityChips({ 
+client/src/components/locality/ProductAvailabilityChips.tsx:21:}: ProductAvailabilityChipsProps) {
+client/src/components/locality/ProductAvailabilityChips.tsx:30:      <FulfillmentBadge 
+client/src/components/locality/ProductAvailabilityChips.tsx:40:export default ProductAvailabilityChips;
+client/src/components/fulfillment/FulfillmentBadge.tsx:8:export type FulfillmentBadgeProps = {
+client/src/components/fulfillment/FulfillmentBadge.tsx:79:export function FulfillmentBadge({
+client/src/components/fulfillment/FulfillmentBadge.tsx:85:}: FulfillmentBadgeProps) {
+client/src/components/fulfillment/FulfillmentBadge.tsx:117:export default FulfillmentBadge;
+client/src/components/products/ProductCard.tsx:3:import FulfillmentBadge from "@/components/fulfillment/FulfillmentBadge";
+client/src/components/products/ProductCard.tsx:53:      data-testid="product-card"
+client/src/components/products/ProductCard.tsx:86:          <FulfillmentBadge mode={fulfillmentMode} size="md" />
+client/src/components/locality/LocalBadge.tsx:1:import { Badge } from "@/components/ui/badge";
+client/src/components/locality/LocalBadge.tsx:4:interface LocalBadgeProps {
+client/src/components/locality/LocalBadge.tsx:8:export function LocalBadge({ isLocal }: LocalBadgeProps) {
+client/src/components/locality/LocalBadge.tsx:11:      <Badge 
+client/src/components/locality/LocalBadge.tsx:19:      </Badge>
+client/src/components/locality/LocalBadge.tsx:24:    <Badge 
+client/src/components/locality/LocalBadge.tsx:32:    </Badge>
+client/src/components/products/filter-sidebar.tsx:7:import { Badge } from "@/components/ui/badge";
+client/src/components/products/filter-sidebar.tsx:179:            <Badge variant="secondary" className="bg-secondary border-bg-secondary-border">
+client/src/components/products/filter-sidebar.tsx:181:            </Badge>
+client/src/components/products/filter-sidebar.tsx:414:                <Badge variant="secondary" className="bg-secondary border-bg-secondary-border">
+client/src/components/products/filter-sidebar.tsx:424:                </Badge>
+client/src/components/products/filter-sidebar.tsx:428:                <Badge variant="secondary" className="bg-secondary border-bg-secondary-border">
+client/src/components/products/filter-sidebar.tsx:438:                </Badge>
+client/src/components/products/filter-sidebar.tsx:442:                <Badge variant="secondary" className="bg-secondary border-bg-secondary-border">
+client/src/components/products/filter-sidebar.tsx:452:                </Badge>
+client/src/components/products/filter-sidebar.tsx:456:                <Badge variant="secondary" className="bg-secondary border-bg-secondary-border">
+client/src/components/products/filter-sidebar.tsx:470:                </Badge>
+client/src/components/fulfillment/ZipCheck.tsx:7:interface ZipCheckProps {
+client/src/components/fulfillment/ZipCheck.tsx:11:export function ZipCheck({ onResolved }: ZipCheckProps) {
+client/src/components/fulfillment/ZipCheck.tsx:91:export default ZipCheck;
+client/src/components/products/product-grid.tsx:1:import ProductCard from "./product-card";
+client/src/components/search/EnhancedSearch.tsx:6:import { Badge } from "@/components/ui/badge";
+client/src/components/search/EnhancedSearch.tsx:177:                        <Badge variant="secondary" className="text-xs">
+client/src/components/search/EnhancedSearch.tsx:179:                        </Badge>
+client/src/components/locality/FreeDeliveryPill.tsx:1:import { Badge } from "@/components/ui/badge";
+client/src/components/locality/FreeDeliveryPill.tsx:6:    <Badge 
+client/src/components/locality/FreeDeliveryPill.tsx:12:    </Badge>
+client/src/components/products/ProductList.tsx:2:export { default } from "./product-grid";
+client/src/components/AddToCartButtonUnified.tsx:10:interface AddToCartButtonUnifiedProps {
+client/src/components/AddToCartButtonUnified.tsx:21:export default function AddToCartButtonUnified({ 
+client/src/components/AddToCartButtonUnified.tsx:27:}: AddToCartButtonUnifiedProps) {
+client/src/components/shared/AnimatedComponents.tsx:245:// Badge Component
+client/src/components/shared/AnimatedComponents.tsx:246:interface BadgeProps {
+client/src/components/shared/AnimatedComponents.tsx:252:export const Badge: React.FC<BadgeProps> = ({
+client/src/components/products/ProductsResults.tsx:4:import ProductGrid from "./product-grid";
+client/src/components/dashboard/AddressesPanel.tsx:7:import { Badge } from "@/components/ui/badge";
+client/src/components/dashboard/AddressesPanel.tsx:165:                      <Badge className="bg-blue-500 text-white text-xs flex items-center gap-1 font-semibold shadow-md">
+client/src/components/dashboard/AddressesPanel.tsx:168:                      </Badge>
+client/src/components/dashboard/AddressesPanel.tsx:171:                      <Badge className="bg-green-600 text-white text-xs flex items-center gap-1">
+client/src/components/dashboard/AddressesPanel.tsx:174:                      </Badge>
+client/src/components/products/filter-chip.tsx:1:import { Badge } from "@/components/ui/badge";
+client/src/components/products/filter-chip.tsx:4:interface FilterChipProps {
+client/src/components/products/filter-chip.tsx:9:export default function FilterChip({ label, onRemove }: FilterChipProps) {
+client/src/components/products/filter-chip.tsx:11:    <Badge 
+client/src/components/products/filter-chip.tsx:22:    </Badge>
+client/src/components/admin/SubmissionsList.tsx:2:import { Badge } from '@/components/ui/badge';
+client/src/components/admin/SubmissionsList.tsx:93:                <Badge variant="secondary" className="text-xs mt-1">New</Badge>
+client/src/components/admin/SubmissionsList.tsx:117:              <Badge variant={getStatusVariant(submission.status)}>
+client/src/components/admin/SubmissionsList.tsx:119:              </Badge>
+client/src/components/admin/category-filter-config.tsx:7:import { Badge } from "@/components/ui/badge";
+client/src/components/admin/category-filter-config.tsx:104:          <Badge variant="secondary" className="bg-accent-blue/20 text-accent-blue border-accent-blue/30">
+client/src/components/admin/category-filter-config.tsx:106:          </Badge>
+client/src/components/admin/category-filter-config.tsx:196:                <Badge key={tag} variant="secondary" className="bg-accent-blue/20 text-accent-blue border-accent-blue/30">
+client/src/components/admin/category-filter-config.tsx:204:                </Badge>
+client/src/components/layout/navigation.tsx:14:import { LocalBadge } from "@/components/locality/LocalBadge";
+client/src/components/layout/navigation.tsx:281:                        {/* Unified Locality Status Badge */}
+client/src/components/admin/category-management.tsx:9:import { Badge } from "@/components/ui/badge";
+client/src/components/admin/category-management.tsx:437:                  <Badge variant="secondary">
+client/src/components/admin/category-management.tsx:439:                  </Badge>
+client/src/components/admin/category-management.tsx:442:                  <Badge variant={category.isActive ? "default" : "destructive"}>
+client/src/components/admin/category-management.tsx:444:                  </Badge>
+client/src/components/addresses/AddressList.tsx:10:import { Badge } from '@/components/ui/badge';
+client/src/components/addresses/AddressList.tsx:142:                  <Badge variant="secondary" className="flex items-center gap-1">
+client/src/components/addresses/AddressList.tsx:145:                  </Badge>
+client/src/components/addresses/AddressList.tsx:148:                  <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-300">
+client/src/components/addresses/AddressList.tsx:151:                  </Badge>
+client/src/components/addresses/AddressList.tsx:218:                  <Badge className="bg-blue-100 text-blue-800">
+client/src/components/addresses/AddressList.tsx:220:                  </Badge>
+client/src/components/admin/SubmissionsGrid.tsx:1:import { Badge } from '@/components/ui/badge';
+client/src/components/admin/SubmissionsGrid.tsx:54:            <Badge variant={getStatusVariant(submission.status)}>
+client/src/components/admin/SubmissionsGrid.tsx:56:            </Badge>
+client/src/components/ui/LocalDeliveryBadge.tsx:2: * Local Delivery Badge Component
+client/src/components/ui/LocalDeliveryBadge.tsx:6:import { Badge } from '@/components/ui/badge';
+client/src/components/ui/LocalDeliveryBadge.tsx:11:interface LocalDeliveryBadgeProps {
+client/src/components/ui/LocalDeliveryBadge.tsx:17:export function LocalDeliveryBadge({ 
+client/src/components/ui/LocalDeliveryBadge.tsx:21:}: LocalDeliveryBadgeProps) {
+client/src/components/ui/LocalDeliveryBadge.tsx:28:      <Badge 
+client/src/components/ui/LocalDeliveryBadge.tsx:34:      </Badge>
+client/src/components/ui/LocalDeliveryBadge.tsx:41:      <Badge 
+client/src/components/ui/LocalDeliveryBadge.tsx:47:      </Badge>
+client/src/components/ui/LocalDeliveryBadge.tsx:54:      <Badge 
+client/src/components/ui/LocalDeliveryBadge.tsx:60:      </Badge>
+client/src/components/ui/LocalDeliveryBadge.tsx:68:        <Badge 
+client/src/components/ui/LocalDeliveryBadge.tsx:74:        </Badge>
+client/src/components/ui/LocalDeliveryBadge.tsx:75:        <Badge 
+client/src/components/ui/LocalDeliveryBadge.tsx:81:        </Badge>
+client/src/components/ui/LocalDeliveryBadge.tsx:89:export default LocalDeliveryBadge;
+client/src/components/orders/OrderTracking.tsx:3:import { Badge } from "@/components/ui/badge";
+client/src/components/orders/OrderTracking.tsx:95:        <Badge variant="outline" className="text-sm">
+client/src/components/orders/OrderTracking.tsx:97:        </Badge>
+client/src/components/ui/badge.tsx:26:export interface BadgeProps
+client/src/components/ui/badge.tsx:30:function Badge({ className, variant, ...props }: BadgeProps) {
+client/src/components/ui/badge.tsx:36:export { Badge, badgeVariants }
+client/src/components/auth/security-notice.tsx:17:      {/* Security Badges */}
+shared/availability.ts:6:export type EffectiveAvailability = 'ADD_ALLOWED' | 'PICKUP_ONLY' | 'SHIPPING_ONLY' | 'BLOCKED';
+shared/availability.ts:20:export function computeEffectiveAvailability(
+shared/availability.ts:23:): EffectiveAvailability {
+shared/availability.ts:58:export function getAvailabilityReason(
+shared/availability.ts:61:  availability: EffectiveAvailability
+shared/availability.ts:83:      return 'Availability unknown';
+shared/availability.ts:94:  const availability = computeEffectiveAvailability(productMode, userMode);
+shared/availability.ts:105:  const availability = computeEffectiveAvailability(productMode, userMode);
+shared/availability.ts:116:  const availability = computeEffectiveAvailability(productMode, userMode);
+client/src/components/ui/sidebar.tsx:634:const SidebarMenuBadge = React.forwardRef<
+client/src/components/ui/sidebar.tsx:653:SidebarMenuBadge.displayName = "SidebarMenuBadge"
+client/src/components/ui/sidebar.tsx:759:  SidebarMenuBadge,
+client/src/components/ui/index.ts:3:// AddToCartButton imported directly from component file
+client/src/components/ui/index.ts:12:export { Badge } from './badge';

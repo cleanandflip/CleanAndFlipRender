@@ -197,14 +197,33 @@ export function useCart() {
     }
   });
 
+  // Update cart item mutation
+  const updateCartItemMutation = useMutation({
+    mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
+      apiJson(`/api/cart/items`, {
+        method: "PATCH",
+        body: JSON.stringify({ productId, quantity })
+      }),
+    onSuccess: () => {
+      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
+      queryClient.invalidateQueries({ queryKey: cartQueryKey });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update cart", description: error.message || "Please try again", variant: "destructive" });
+    }
+  });
+
   return {
-    cart: cartQuery.data,
+    data: cartQuery.data, // SSOT pattern
+    cart: cartQuery, // Full query object for compatibility 
     isLoading: cartQuery.isLoading,
     error: cartQuery.error,
     addToCart: addToCartMutation.mutate,
+    updateCartItem: updateCartItemMutation.mutate, // Added method
     removeFromCart: removeFromCartMutation.mutate,
-    removeByProduct: removeByProductMutation.mutate, // ADDITIVE: compound key removal
+    removeByProduct: removeByProductMutation.mutate,
     isAddingToCart: addToCartMutation.isPending,
+    isUpdatingCartItem: updateCartItemMutation.isPending, // Added loading state
     isRemovingFromCart: removeFromCartMutation.isPending,
     isRemovingByProduct: removeByProductMutation.isPending
   };

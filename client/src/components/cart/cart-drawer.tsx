@@ -3,7 +3,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useCart, useUpdateCartItem, useRemoveFromCart, Cart, CartItem } from "@/hooks/use-cart";
+import { useCart } from "@/hooks/useCart";
+import type { Cart, CartItem } from "@/hooks/useCart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, X } from "lucide-react";
 import { ROUTES, routes } from "@/config/routes";
 
@@ -15,8 +16,7 @@ interface CartDrawerProps {
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const { data: cart, isLoading } = useCart();
-  const updateCartMutation = useUpdateCartItem();
-  const removeCartMutation = useRemoveFromCart();
+  const { updateCartItem, removeFromCart } = useCart();
   
   // Safe access to cart data with proper typing
   const cartData = cart as Cart;

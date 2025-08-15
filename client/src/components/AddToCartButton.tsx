@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/useCart";
 import { useLocality } from "@/hooks/useLocality";
 import { modeFromProduct } from "@shared/fulfillment";
+import { computeEffectiveAvailability } from "@shared/availability";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "wouter";
 
@@ -49,10 +50,11 @@ export default function AddToCartButton({
 
   const isInCart = cart?.data?.items?.some((item: any) => item.productId === productId) || false;
   
-  // Check if this is LOCAL_ONLY product using SSOT system
-  const fulfillmentMode = modeFromProduct(product || {});
-  const isLocalOnly = fulfillmentMode === 'LOCAL_ONLY';
-  const isBlocked = isLocalOnly && locality && !locality.eligible;
+  // Use SSOT computeEffectiveAvailability instead of direct checks
+  const productMode = modeFromProduct(product || {});
+  const userMode = locality?.effectiveModeForUser || 'NONE';
+  const effectiveness = productMode ? computeEffectiveAvailability(productMode, userMode) : 'ADD_ALLOWED';
+  const isBlocked = effectiveness === 'BLOCKED';
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {

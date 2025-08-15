@@ -1,0 +1,30 @@
+{
+  "allowed": [
+    "shared/locality.ts",
+    "shared/geo.ts", 
+    "shared/availability.ts",
+    "server/services/localityService.ts",
+    "client/src/hooks/useLocality.ts"
+  ],
+  "bannedModules": [
+    "server/lib/locality",
+    "server/lib/localityChecker", 
+    "server/locality/getLocalityForRequest",
+    "server/lib/geo",
+    "client/src/hooks/use-cart",
+    "server/routes/cart(\\.ts)?$"
+  ],
+  "bannedPatterns": [
+    "\\bisLocal\\(",
+    "\\bisLocalMiles\\(",
+    "\\bLOCAL_ONLY\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+    "\\bLOCAL_AND_SHIPPING\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+    "/api/cart(?!\\.v2)",
+    "from\\s+['\"]server/lib/locality",
+    "from\\s+['\"]server/lib/localityChecker",
+    "from\\s+['\"]server/locality/getLocalityForRequest",
+    "from\\s+['\"]client/src/hooks/use-cart",
+    "from\\s+['\"]server/routes/cart['\"]",
+    "require\\(['\"]server/routes/cart['\"]\\)"
+  ]
+}

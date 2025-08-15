@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { ShoppingCart, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocality } from '@/hooks/useLocality';
-import { useAddToCart } from '@/hooks/use-cart';
+import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
 import { modeFromProduct } from '@shared/fulfillment';
 import type { FulfillmentMode } from '@shared/fulfillment';
+import { computeEffectiveAvailability } from '@shared/availability';
 import fulfillmentCopy from '@/i18n/fulfillment';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Link } from 'wouter';
@@ -25,13 +26,16 @@ export function AddToCartEnhanced({
   size = 'default' 
 }: AddToCartEnhancedProps) {
   const { user } = useAuth();
-  const { isLocal, isLoading: localityLoading } = useLocality();
-  const addToCart = useAddToCart();
+  const { data: locality, isLoading: localityLoading } = useLocality(); // SSOT pattern
+  const { addToCart } = useCart(); // Use SSOT V2 cart
   const { toast } = useToast();
 
-  const mode = modeFromProduct(product) as FulfillmentMode;
-  const isBlocked = mode === 'LOCAL_ONLY' && !isLocal;
-  const isLoading = addToCart.isPending || localityLoading;
+  // Use SSOT computeEffectiveAvailability instead of direct LOCAL_ONLY check
+  const productMode = modeFromProduct(product) as FulfillmentMode;
+  const userMode = locality?.effectiveModeForUser || 'NONE';
+  const effectiveness = productMode ? computeEffectiveAvailability(productMode, userMode) : 'ADD_ALLOWED';
+  const isBlocked = effectiveness === 'BLOCKED';
+  const isLoading = localityLoading;
 
   const handleAddToCart = async () => {
     if (!user) {
@@ -53,7 +57,7 @@ export function AddToCartEnhanced({
     }
 
     try {
-      await addToCart.mutateAsync({
+      await addToCart({
         productId: product.id,
         quantity: 1,
       });

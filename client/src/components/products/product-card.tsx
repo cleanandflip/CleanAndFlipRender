@@ -4,7 +4,7 @@ import { SmartLink } from "@/components/ui/smart-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useCart } from "@/hooks/use-cart";
+import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";

@@ -2,7 +2,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCart, useUpdateCartItem, useRemoveFromCart, Cart, CartItem } from "@/hooks/use-cart";
+import { useCart } from "@/hooks/useCart";
+import type { Cart, CartItem } from "@/hooks/useCart";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { LocalBadge } from "@/components/locality/LocalBadge";
@@ -12,8 +13,7 @@ import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryElig
 
 export default function CartPage() {
   const { data: cart, isLoading, isError } = useCart();
-  const updateMutation = useUpdateCartItem();
-  const removeMutation = useRemoveFromCart();
+  const { updateCartItem, removeFromCart } = useCart();
   const { data: locality } = useLocality();
   
   // Safe access to cart data with proper typing
@@ -25,14 +25,14 @@ export default function CartPage() {
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity === 0) {
-      removeMutation.mutate(productId);
+      removeFromCart(productId);
     } else {
-      updateMutation.mutate({ productId, quantity: newQuantity });
+      updateCartItem({ productId, quantity: newQuantity });
     }
   };
 
   const handleRemove = (productId: string) => {
-    removeMutation.mutate(productId);
+    removeFromCart(productId);
   };
 
   // FIXED: Get first image URL from product.images with proper fallback

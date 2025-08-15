@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../auth';
 import { storage } from '../storage';
-import { isLocalMiles } from '../lib/locality';
+import { getLocalityForRequest } from '../services/localityService';
 import { guardCartItemAgainstLocality } from '../services/cartGuard';
 
 const router = Router();

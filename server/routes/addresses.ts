@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
 import { isAuthenticated } from '../middleware/auth';
-import { isLocalMiles } from '../lib/locality';
+import { getLocalityForRequest } from '../services/localityService';
 
 const router = Router();
 

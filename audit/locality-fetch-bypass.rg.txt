@@ -1,0 +1,3 @@
+src/lib/locality.ts:14:      const response = await fetch('/api/locality/status', { credentials: 'include' });
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:241:      const res = await fetch(`/api/locality/status?${params.toString()}`, { credentials: 'include' });
+client/src/components/fulfillment/ZipCheck.tsx:28:      const response = await fetch(`/api/locality/status?zip=${encodeURIComponent(zip.trim())}`);

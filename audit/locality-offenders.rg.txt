@@ -1,0 +1,302 @@
+audit/locality-ui-touchpoints.rg.txt:48:attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:303:Replace any isLocal(...) custom checks → computeEffectiveAvailability(...).
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:135:- Add file-level TODO comments when logic needs human review (e.g., replacing isLocal(...) is non-trivial).
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:303:Replace any isLocal(...) custom checks → computeEffectiveAvailability(...).
+server/lib/geo.ts:12:export function isLocal({ lat, lng }: Coordinates): boolean {
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:59:  const isLocal = await localityService.isLocal(zip ?? req.session.zip);
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:114:POST /api/cart/items must reject when mode=LOCAL_ONLY && !isLocal(zip).
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:368:    const isLocal = await localityService.isLocal(zip ?? req.session.zip);
+server/services/localService.ts:21:export async function isLocal(address: Address): Promise<boolean> {
+audit/locality-ui-touchpoints.rg.txt:2:attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:59:    "\\bLOCAL_ONLY\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+audit/locality-ui-touchpoints.rg.txt:9:attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:212:2) Replace any direct LOCAL_ONLY / LOCAL_AND_SHIPPING checks in UI with the shared `computeEffectiveAvailability`.
+audit/locality-ui-touchpoints.rg.txt:32:audit/locality-ssot-allowlist.json:20:    "\\bLOCAL_ONLY\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+audit/locality-ui-touchpoints.rg.txt:57:attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:230:product-card.tsx and AddToCartButton.tsx: if product is LOCAL_ONLY and !locality.eligible, disable the Add button and show a chip “Local delivery only” + tooltip: “Add a local address to continue.”
+audit/locality-ui-touchpoints.rg.txt:87:attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:112:Client AddToCartButton: for LOCAL_ONLY products, disable unless locality.eligible === true.
+scripts/fulfillment_migration.sql:2:-- Migrate to two-value fulfillment system: LOCAL_ONLY and LOCAL_AND_SHIPPING
+scripts/fulfillment_migration.sql:11:  CHECK (fulfillment_mode IN ('LOCAL_ONLY','LOCAL_AND_SHIPPING'));
+scripts/fulfillment_migration.sql:20:  WHEN is_local_delivery_available = true AND is_shipping_available = false THEN 'LOCAL_ONLY'
+audit/locality-ssot-allowlist.json:20:    "\\bLOCAL_ONLY\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+server/routes.ts:910:      // CRITICAL FIX: Block LOCAL_ONLY items using unified locality system
+server/routes.ts:912:        // This is LOCAL_ONLY - check eligibility using unified evaluation
+server/routes.ts:931:            code: "LOCAL_ONLY_NOT_ELIGIBLE",
+server/routes.ts:2843:      if (isLocal && !isShip) fulfillmentMode = "LOCAL_ONLY";
+shared/availability.ts:5:export type ProductMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
+shared/availability.ts:13: * User Mode         | Product LOCAL_ONLY | Product LOCAL_AND_SHIPPING
+shared/availability.ts:15: * LOCAL_ONLY       | ADD_ALLOWED       | PICKUP_ONLY
+shared/availability.ts:29:  // LOCAL_ONLY products
+shared/availability.ts:30:  if (productMode === 'LOCAL_ONLY') {
+shared/availability.ts:31:    // Only LOCAL_ONLY and LOCAL_AND_SHIPPING users can get LOCAL_ONLY items
+shared/availability.ts:32:    return (userMode === 'LOCAL_ONLY' || userMode === 'LOCAL_AND_SHIPPING') 
+shared/availability.ts:40:      case 'LOCAL_ONLY':
+shared/availability.ts:77:      if (productMode === 'LOCAL_ONLY' && userMode === 'SHIPPING_ONLY') {
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:59:    "\\bLOCAL_ONLY\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:77:rg -n --no-heading -g '!node_modules' -e "from ['\"]server/lib/locality" -e "from ['\"]server/lib/localityChecker" -e "from ['\"]server/locality/getLocalityForRequest" -e "from ['\"]client/src/hooks/use-cart" -e "/api/cart(?!\\.v2)" -e "from ['\"]server/routes/cart['\"]" -e "require\\(['\"]server/routes/cart['\"]\\)" -e "\\bisLocal\\(" -e "\\bisLocalMiles\\(" -e "\\bLOCAL_ONLY\\b" -e "\\bLOCAL_AND_SHIPPING\\b" > audit/locality-offenders.rg.txt
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:89:  - Find Identifier usage of LOCAL_ONLY / LOCAL_AND_SHIPPING outside shared/fulfillment.ts and shared/availability.ts.
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:212:2) Replace any direct LOCAL_ONLY / LOCAL_AND_SHIPPING checks in UI with the shared `computeEffectiveAvailability`.
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:246:  effectiveModeForUser: 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+shared/schema.ts:109:  "LOCAL_ONLY",
+shared/locality.ts:6:export type UserMode = 'LOCAL_AND_SHIPPING' | 'LOCAL_ONLY' | 'SHIPPING_ONLY' | 'NONE';
+shared/fulfillment.ts:3:export type FulfillmentMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
+shared/fulfillment.ts:26:    return 'LOCAL_ONLY';
+shared/fulfillment.ts:36:    case 'LOCAL_ONLY':
+shared/fulfillment.ts:47:  return mode === 'LOCAL_ONLY' || mode === 'LOCAL_AND_SHIPPING';
+shared/fulfillment.ts:56:    case 'LOCAL_ONLY':
+shared/fulfillment.ts:76:  LOCAL_ONLY: 'LOCAL_ONLY' as const,
+shared/fulfillment.ts:89:    return FULFILLMENT_MODES.LOCAL_ONLY;
+shared/fulfillment.ts:97:  return fulfillmentMode === 'LOCAL_ONLY' && isLocal === false;
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:72:  effectiveModeForUser: 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:137:  effectiveModeForUser: 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:145:export type ProductMode = 'LOCAL_ONLY'|'LOCAL_AND_SHIPPING';
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:146:export type UserMode = 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:154:  if (productMode === 'LOCAL_ONLY') {
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:155:    return (userMode === 'LOCAL_ONLY' || userMode === 'LOCAL_AND_SHIPPING')
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:160:  if (userMode === 'LOCAL_ONLY') return 'PICKUP_ONLY';
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:240:Add a CHECK or application-level guard to prevent LOCAL_ONLY items from persisting for owners whose last known effectiveModeForUser was SHIPPING_ONLY.
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:296:rg -n "isLocal|LOCAL_ONLY|LOCAL_AND_SHIPPING" client/src | rg -v "availability|fulfillment"
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:309:User Mode	Product LOCAL_ONLY	Product LOCAL_AND_SHIPPING
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:310:LOCAL_ONLY	ADD_ALLOWED	PICKUP_ONLY
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:5:1) Authenticated **local** users can **add & remove** `LOCAL_ONLY` products from the cart.
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:6:2) If a user **changes default address** to a **non-local ZIP**, all `LOCAL_ONLY` items are **auto-purged** from their cart (server-side). The client shows a toast explaining why.
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:92:If product is LOCAL_ONLY and user not eligible: return 403 JSON:
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:100:GET /api/cart: if user is ineligible and cart contains LOCAL_ONLY, call the purge service (below), then return the cleaned cart plus flags:
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:131:  // 2) Filter by modeFromProduct(item.product) === 'LOCAL_ONLY'
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:230:product-card.tsx and AddToCartButton.tsx: if product is LOCAL_ONLY and !locality.eligible, disable the Add button and show a chip “Local delivery only” + tooltip: “Add a local address to continue.”
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:308:  -d '{"productId":"<LOCAL_ONLY_PRODUCT_ID>","quantity":1}' \
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:318:  -X DELETE http://localhost:5000/api/cart/product/<LOCAL_ONLY_PRODUCT_ID>
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:328:  -d '{"productId":"<LOCAL_ONLY_PRODUCT_ID>","quantity":1}' \
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:358:Local user (ZIP 28806) can add a LOCAL_ONLY product: 200.
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:366:Non-local or guest adding LOCAL_ONLY → 403 JSON (code=LOCALITY_BLOCKED), no HTML.
+attached_assets/Pasted-CLEAN-FLIP-LOCALITY-SAFE-CART-UI-GATING-ADD-ONLY-DO-NOT-STOP-UNTIL-ALL-ACCEPTANCE-TESTS-P-1755229714018_1755229714018.txt:372:With LOCAL_ONLY items, change default address to non-local → cart purged server-side.
+attached_assets/Pasted--PROJECT-UPGRADE-REQUEST-ADD-ONLY-NO-BREAKING-CHANGES-TOP-LINE-GOALS-Local-users-must-be-able--1755229470092_1755229470093.txt:4:Local users must be able to add and remove LOCAL_ONLY products from the cart.
+attached_assets/Pasted--PROJECT-UPGRADE-REQUEST-ADD-ONLY-NO-BREAKING-CHANGES-TOP-LINE-GOALS-Local-users-must-be-able--1755229470092_1755229470093.txt:6:If a user changes their default address to a non-local ZIP, automatically purge any LOCAL_ONLY items from their cart (server-side) and reflect this in the UI with a toast.
+attached_assets/Pasted--PROJECT-UPGRADE-REQUEST-ADD-ONLY-NO-BREAKING-CHANGES-TOP-LINE-GOALS-Local-users-must-be-able--1755229470092_1755229470093.txt:55:All cart POST/DELETE handlers must call a shared getLocalityForRequest(req) (or equivalent) before mutating cart. If LOCAL_ONLY and user is not eligible: return 403 with JSON:
+attached_assets/Pasted--PROJECT-UPGRADE-REQUEST-ADD-ONLY-NO-BREAKING-CHANGES-TOP-LINE-GOALS-Local-users-must-be-able--1755229470092_1755229470093.txt:63:C. Auto-purge LOCAL_ONLY items when locality flips to ineligible
+attached_assets/Pasted--PROJECT-UPGRADE-REQUEST-ADD-ONLY-NO-BREAKING-CHANGES-TOP-LINE-GOALS-Local-users-must-be-able--1755229470092_1755229470093.txt:70:Implementation: fetch all cart items for user, filter by modeFromProduct(product) === 'LOCAL_ONLY', remove by existing removeFromCart(...) or the new compound method. Log with [CART CLEANUP] removed=<n>.
+attached_assets/Pasted--PROJECT-UPGRADE-REQUEST-ADD-ONLY-NO-BREAKING-CHANGES-TOP-LINE-GOALS-Local-users-must-be-able--1755229470092_1755229470093.txt:78:On login and on GET /api/cart if we detect locality ineligible and cart contains LOCAL_ONLY (purge then return the cleaned cart).
+attached_assets/Pasted--PROJECT-UPGRADE-REQUEST-ADD-ONLY-NO-BREAKING-CHANGES-TOP-LINE-GOALS-Local-users-must-be-able--1755229470092_1755229470093.txt:173:User with default ZIP 28806 adds a LOCAL_ONLY item → 200, item appears in cart, logs show eligible true.
+attached_assets/Pasted--PROJECT-UPGRADE-REQUEST-ADD-ONLY-NO-BREAKING-CHANGES-TOP-LINE-GOALS-Local-users-must-be-able--1755229470092_1755229470093.txt:179:Guest or user with non-local default tries to add LOCAL_ONLY → 403 JSON with code=LOCALITY_BLOCKED (no HTML).
+attached_assets/Pasted--PROJECT-UPGRADE-REQUEST-ADD-ONLY-NO-BREAKING-CHANGES-TOP-LINE-GOALS-Local-users-must-be-able--1755229470092_1755229470093.txt:183:User has LOCAL_ONLY items; change default address to non-local.
+attached_assets/Pasted-PROMPT-FOR-REPLIT-Objective-Finish-locality-safe-cart-operations-and-UI-gating-without-deleting-or--1755207164994_1755207164994.txt:21:A) Local users can add & remove LOCAL_ONLY items normally.
+attached_assets/Pasted-PROMPT-FOR-REPLIT-Objective-Finish-locality-safe-cart-operations-and-UI-gating-without-deleting-or--1755207164994_1755207164994.txt:22:B) When a user changes their default address from local → non-local, automatically remove all LOCAL_ONLY items from their cart and return how many were removed.
+attached_assets/Pasted-PROMPT-FOR-REPLIT-Objective-Finish-locality-safe-cart-operations-and-UI-gating-without-deleting-or--1755207164994_1755207164994.txt:66:2) Auto-purge LOCAL_ONLY items when user becomes non-local
+attached_assets/Pasted-PROMPT-FOR-REPLIT-Objective-Finish-locality-safe-cart-operations-and-UI-gating-without-deleting-or--1755207164994_1755207164994.txt:71:filters products whose mode is LOCAL_ONLY (use modeFromProduct from shared/fulfillment or the existing equivalent),
+attached_assets/Pasted-PROMPT-FOR-REPLIT-Objective-Finish-locality-safe-cart-operations-and-UI-gating-without-deleting-or--1755207164994_1755207164994.txt:88:      .filter(i => i.product && modeFromProduct(i.product) === 'LOCAL_ONLY')
+attached_assets/Pasted-PROMPT-FOR-REPLIT-Objective-Finish-locality-safe-cart-operations-and-UI-gating-without-deleting-or--1755207164994_1755207164994.txt:120:if product is LOCAL_ONLY and locality.eligible !== true → 403 JSON { ok:false, code:'LOCAL_ONLY_NOT_ELIGIBLE', ... }.
+attached_assets/Pasted-PROMPT-FOR-REPLIT-Objective-Finish-locality-safe-cart-operations-and-UI-gating-without-deleting-or--1755207164994_1755207164994.txt:178:Add a LOCAL_ONLY product → 200.
+attached_assets/Pasted-PROMPT-FOR-REPLIT-Objective-Finish-locality-safe-cart-operations-and-UI-gating-without-deleting-or--1755207164994_1755207164994.txt:184:With a LOCAL_ONLY item in cart, change default address to a non-local ZIP.
+attached_assets/Pasted-PROMPT-FOR-REPLIT-Objective-Finish-locality-safe-cart-operations-and-UI-gating-without-deleting-or--1755207164994_1755207164994.txt:194:For any rejected request (e.g., add LOCAL_ONLY as non-local), the response is valid JSON; the client does not throw “Unexpected token <”.
+attached_assets/Pasted-three-separate-problems-in-your-latest-run-and-they-re-all-fixable-with-small-unified-patches-Wh-1755206619529_1755206619530.txt:126:    // locality enforcement for LOCAL_ONLY
+attached_assets/Pasted-three-separate-problems-in-your-latest-run-and-they-re-all-fixable-with-small-unified-patches-Wh-1755206619529_1755206619530.txt:129:    if (mode === 'LOCAL_ONLY' && !status.eligible) {
+attached_assets/Pasted-three-separate-problems-in-your-latest-run-and-they-re-all-fixable-with-small-unified-patches-Wh-1755206619529_1755206619530.txt:132:        code: 'LOCAL_ONLY_NOT_ELIGIBLE',
+server/routes/cart.ts:68:    if (fulfillment_mode === 'LOCAL_ONLY' && !isLocal) {
+server/routes/cart.ts:70:        code: 'LOCAL_ONLY_RESTRICTED',
+attached_assets/Pasted-You-re-local-and-the-v2-handler-is-being-hit-but-it-s-crashing-swift-Copy-Edit-CART-ENFORCE-V2--1755206082063_1755206082063.txt:77:if (mode === 'LOCAL_ONLY' && !locality.eligible) {
+attached_assets/Pasted-You-re-local-and-the-v2-handler-is-being-hit-but-it-s-crashing-swift-Copy-Edit-CART-ENFORCE-V2--1755206082063_1755206082063.txt:79:    code: 'LOCAL_ONLY_NOT_ELIGIBLE',
+attached_assets/Pasted-You-re-local-and-the-v2-handler-is-being-hit-but-it-s-crashing-swift-Copy-Edit-CART-ENFORCE-V2--1755206082063_1755206082063.txt:111:  if (e?.status === 403 && e?.body?.code === 'LOCAL_ONLY_NOT_ELIGIBLE') {
+attached_assets/Pasted-You-re-local-and-the-v2-handler-is-being-hit-but-it-s-crashing-swift-Copy-Edit-CART-ENFORCE-V2--1755206082063_1755206082063.txt:124:When adding a LOCAL_ONLY product:
+attached_assets/Pasted-You-re-local-and-the-v2-handler-is-being-hit-but-it-s-crashing-swift-Copy-Edit-CART-ENFORCE-V2--1755206082063_1755206082063.txt:129:[CART ENFORCE V2] { user: '...', productId: '...', mode: 'LOCAL_ONLY', eligible: true, ... }
+attached_assets/Pasted-logs-make-the-root-cause-pretty-clear-You-are-local-eligible-true-source-DEFAULT-ADDRESS-zip-28806-1755205817700_1755205817701.txt:72:    if (mode === 'LOCAL_ONLY' && !locality.eligible) {
+attached_assets/Pasted-logs-make-the-root-cause-pretty-clear-You-are-local-eligible-true-source-DEFAULT-ADDRESS-zip-28806-1755205817700_1755205817701.txt:74:        code: 'LOCAL_ONLY_NOT_ELIGIBLE',
+attached_assets/Pasted-logs-make-the-root-cause-pretty-clear-You-are-local-eligible-true-source-DEFAULT-ADDRESS-zip-28806-1755205817700_1755205817701.txt:127:  if (e?.status === 403 && e?.body?.code === 'LOCAL_ONLY_NOT_ELIGIBLE') {
+attached_assets/Pasted-logs-make-the-root-cause-pretty-clear-You-are-local-eligible-true-source-DEFAULT-ADDRESS-zip-28806-1755205817700_1755205817701.txt:210:[CART ENFORCE V2] { user: '40d4c8e0…', mode: 'LOCAL_ONLY', eligible: true, … }
+attached_assets/Pasted-logs-make-the-root-cause-pretty-clear-You-are-local-eligible-true-source-DEFAULT-ADDRESS-zip-28806-1755205817700_1755205817701.txt:219:If you purposely switch to a non-local default address, add for LOCAL_ONLY is correctly 403 with the structured error.
+attached_assets/Pasted-logs-make-the-root-cause-pretty-clear-You-are-local-eligible-true-source-DEFAULT-ADDRESS-zip-28806-1755205817700_1755205817701.txt:226:Add a LOCAL_ONLY item → expect 200 and drawer updates.
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:227:    const err: any = new Error("LOCAL_ONLY_PRODUCT_OUTSIDE_ZONE");
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:229:    err.code = "LOCAL_ONLY";
+attached_assets/Pasted-DO-EXACTLY-THIS-REPLIT-0-Fix-the-two-concrete-build-runtime-errors-shown-in-the-logs-A-Duplicate-1755152873624_1755152873624.txt:384:Try POST /api/cart/items with a Local-only product while non-local: receives 400 LOCAL_ONLY.
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:217:+    return res.status(400).json({ error: 'LOCAL_ONLY', message: 'Local delivery only.' });
+attached_assets/Pasted-REPLIT-INSTRUCTIONS-MERGE-HARDEN-PRODUCTS-UI-LIVE-SYNC-Goal-Use-one-WebSocket-hook-useWebSo-1755152289364_1755152289364.txt:428:For local-only items, non-local users see “Local only” disabled button + tooltip; server returns LOCAL_ONLY if called.
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:208:+     error: 'LOCAL_ONLY',
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:242:  if (e?.response?.data?.error === "LOCAL_ONLY") {
+attached_assets/Pasted-Your-PUTs-are-succeeding-200-Stripe-sync-but-the-modal-shows-Save-failed-send-is-not-a-functio-1755151708335_1755151708335.txt:261:Attempting an add via API returns 400 LOCAL_ONLY.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:7:LOCAL_ONLY (heavy/oversized; no shipping option)
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:11:Store this as Product.fulfillmentMode: 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING' and make the UI/logic across the site read only from this field.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:17:LOCAL_ONLY → pill style, green background, icon Truck → label: “Local delivery only”
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:59:LOCAL_ONLY: Add to Cart disabled with tooltip “Only available for local delivery.” Show ZIP checker CTA.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:65:LOCAL_ONLY: normal add; fulfillment auto-set to “Local Delivery”.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:70:If cart contains any LOCAL_ONLY item:
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:74:Totals: no shipping cost for LOCAL_ONLY lines; shipping fees apply only to items marked LOCAL_AND_SHIPPING and chosen as “Ship”.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:76:If user is outside zone and tries to add LOCAL_ONLY (via deep link): block with modal and suggest ZIP checker.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:79:LOCAL_ONLY order (all items):
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:94:If LOCAL_ONLY:
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:113:{ "type": "product:update", "payload": { "id": "...uuid...", "fulfillmentMode": "LOCAL_ONLY" | "LOCAL_AND_SHIPPING" } }
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:135:export type FulfillmentMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:161:LOCAL_ONLY: Local delivery only
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:169:PDP note (LOCAL_ONLY): This heavy item is local delivery only. Delivered within 24–48 hrs in our area.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:193:Locality unknown → show neutral banner + ZIP checker; block LOCAL_ONLY add-to-cart until resolved.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:197:If becomes LOCAL_ONLY: auto-switch that line to LOCAL and reprice; notify toast.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:211:Integration: add-to-cart disabled when !isLocal && LOCAL_ONLY.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:213:Checkout: shipping methods hidden for LOCAL_ONLY; totals exclude shipping for those lines; ETA text present.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:217:Outside zone cannot add LOCAL_ONLY (modal + tooltip).
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:219:Inside zone can complete LOCAL_ONLY order; order confirmation shows 24–48 hr ETA.
+attached_assets/Pasted--do-everything-prove-it-prompt-you-can-give-Replit-to-verify-all-changes-end-to-end-It-s-task-d-1755127153251_1755127153251.txt:145:API returns 403 with clear error { code:"LOCAL_ONLY", ... }.
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:24:  CHECK (fulfillment_mode IN ('LOCAL_ONLY','LOCAL_AND_SHIPPING'));
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:33:export type FulfillmentMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:36:  LOCAL_ONLY: 'LOCAL_ONLY',
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:40:export const isLocalOnly   = (m: FulfillmentMode) => m === 'LOCAL_ONLY';
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:43:  m === 'LOCAL_ONLY' ? 'Local delivery only' : 'Local delivery + Shipping';
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:125:if (product.fulfillment_mode === 'LOCAL_ONLY' && !isLocal) {
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:127:    code: 'LOCAL_ONLY_RESTRICTED',
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:140:If a product currently in a cart flips to LOCAL_ONLY and the viewer is not local, remove it from that cart on next cart fetch and return a removedItems array so the client can show a toast.
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:144:If all items are LOCAL_ONLY:
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:22:LOCAL_ONLY
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:27:For LOCAL_ONLY products:
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:112:Client AddToCartButton: for LOCAL_ONLY products, disable unless locality.eligible === true.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:117:If product is LOCAL_ONLY and evaluateLocality(...) says not eligible → 403 with a structured error:
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:122:{ "code": "LOCAL_ONLY_NOT_ELIGIBLE", "message": "This item is only available for local delivery.", "resolution": "Set a local default address or enter a local ZIP." }
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:126:If any cart item is LOCAL_ONLY → hide shipping methods entirely and fees → surface “Local Delivery ETA: 24–48 hrs” summary row.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:130:If user becomes non-local during checkout (address change/ZIP) and cart contains LOCAL_ONLY:
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:174:Server: /api/cart/items rejects non-eligible user on LOCAL_ONLY.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:178:LOCAL_ONLY product → enabled Add to Cart, success → checkout no shipping methods, shows “Local Delivery ETA: 24–48 hrs”.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:182:LOCAL_ONLY product → disabled Add to Cart w/ tooltip + CTA to set address/ZIP.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:190:Set default address (local ZIP), add LOCAL_ONLY item → checkout shows Local Delivery only and ETA banner.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:192:Clear default address, set non-local ZIP → Add to Cart disabled for LOCAL_ONLY.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:206:Replace any lingering “shipping” pill on LOCAL_ONLY cards; ensure cards show one or both pills strictly from fulfillmentMode.
+attached_assets/Pasted-What-the-logs-say-symptoms-Cart-add-is-being-403-d-even-when-you-re-local-Evidence-eligible-true-1755204354298_1755204354299.txt:81:  if (e?.status === 403 && e?.body?.code === 'LOCAL_ONLY_NOT_ELIGIBLE') {
+attached_assets/Pasted-What-the-logs-say-symptoms-Cart-add-is-being-403-d-even-when-you-re-local-Evidence-eligible-true-1755204354298_1755204354299.txt:176:    if (mode === 'LOCAL_ONLY' && !status.eligible) {
+attached_assets/Pasted-What-the-logs-say-symptoms-Cart-add-is-being-403-d-even-when-you-re-local-Evidence-eligible-true-1755204354298_1755204354299.txt:178:        code: 'LOCAL_ONLY_NOT_ELIGIBLE',
+attached_assets/Pasted-What-the-logs-say-symptoms-Cart-add-is-being-403-d-even-when-you-re-local-Evidence-eligible-true-1755204354298_1755204354299.txt:238:Add LOCAL_ONLY product → 200; verify cart contains it.
+attached_assets/Pasted-What-the-logs-say-symptoms-Cart-add-is-being-403-d-even-when-you-re-local-Evidence-eligible-true-1755204354298_1755204354299.txt:242:Try to add as guest (no login) → non-local by default; 403 for LOCAL_ONLY.
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:183:// CART: Block LOCAL_ONLY for non-local
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:203:    if (mode === 'LOCAL_ONLY' && !status.eligible) {
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:205:        code: 'LOCAL_ONLY_NOT_ELIGIBLE',
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:289:  const blocked = mode === 'LOCAL_ONLY' && !eligible;
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:301:3.4 Checkout – remove shipping & show ETA for LOCAL_ONLY
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:309:const hasLocalOnly = cart.items.some(i => modeFromProduct(i.product) === 'LOCAL_ONLY');
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:363:LOCAL_ONLY
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:46:2) Cart add/remove flapping for LOCAL_ONLY items
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:58:if (product.fulfillment_mode === "LOCAL_ONLY") {
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:62:      error: "LOCAL_ONLY_NOT_ELIGIBLE",
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:77:      err?.response?.data?.error === "LOCAL_ONLY_NOT_ELIGIBLE") {
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:161:Make sure totals never include shipping when any line is LOCAL_ONLY.
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:168:const hasLocalOnly = cart.items.some(i => i.fulfillment_mode === "LOCAL_ONLY");
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:193:LOCAL_ONLY
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:5:LOCAL_ONLY
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:11:Non-local users cannot add LOCAL_ONLY items to cart.
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:13:For LOCAL_ONLY in checkout: remove shipping methods/costs, display ETA 24–48h local delivery.
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:45:LOCAL_ONLY pill (primary emphasis)
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:60:If LOCAL_ONLY and user not local:
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:81:If any LOCAL_ONLY in cart:
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:95:On ZIP change to non-local, block LOCAL_ONLY items (modal + inline error).
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:103:{ "type": "product:update", "payload": { "id": "uuid", "fulfillmentMode": "LOCAL_ONLY", "stock": 3, "price": 19999 } }
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:104:Subscribe in grid, detail, and cart; on switch to LOCAL_ONLY, re-render badges and invalidate/remove illegal cart items with a toast.
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:114:POST /api/cart/items must reject when mode=LOCAL_ONLY && !isLocal(zip).
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:121:Non-local users cannot add LOCAL_ONLY from grid or detail.
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:123:Checkout for LOCAL_ONLY = no shipping methods, ETA banner present.
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:125:ZIP switch local→non-local removes LOCAL_ONLY items with toast + analytics event.
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:137:type FulfillmentMode = "LOCAL_ONLY" | "LOCAL_AND_SHIPPING";
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:226:  if (mode === "LOCAL_ONLY") {
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:261:type FulfillmentMode = "LOCAL_ONLY" | "LOCAL_AND_SHIPPING";
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:281:    product.fulfillmentMode === "LOCAL_ONLY" && (isLocal === false);
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:367:  if (product.fulfillment_mode === "LOCAL_ONLY") {
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:371:        error: "LOCAL_ONLY_NOT_ELIGIBLE",
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:380:If cart has any LOCAL_ONLY line item:
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:396:      fulfillmentMode: p.fulfillment_mode, // "LOCAL_ONLY" | "LOCAL_AND_SHIPPING"
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:440:LOCAL_ONLY: Local delivery only
+server/middleware/cartLocalityEnforcement.ts:2:// Blocks LOCAL_ONLY items for non-local customers with structured 403 responses
+server/middleware/cartLocalityEnforcement.ts:38:    // Block LOCAL_ONLY items for non-local customers
+server/middleware/cartLocalityEnforcement.ts:39:    if (mode === 'LOCAL_ONLY' && !status.eligible) {
+server/middleware/cartLocalityEnforcement.ts:41:        code: 'LOCAL_ONLY_NOT_ELIGIBLE',
+server/services/cartCleanup.ts:14:    // 2) Filter LOCAL_ONLY items
+server/services/cartCleanup.ts:18:      return mode === 'LOCAL_ONLY';
+server/services/cartCleanup.ts:21:    console.log(`[CART CLEANUP] Found ${localOnlyItems.length} LOCAL_ONLY items for user=${userId}`);
+server/services/cartCleanup.ts:23:    // 3) Remove each LOCAL_ONLY item
+server/services/locality.ts:1:// Simple locality service for LOCAL_ONLY fulfillment validation
+server/utils/fulfillment.ts:25:    const err: any = new Error("LOCAL_ONLY_PRODUCT_OUTSIDE_ZONE");
+server/utils/fulfillment.ts:27:    err.code = "LOCAL_ONLY";
+client/src/pages/product-detail.tsx:376:            {/* Local delivery micro-copy for LOCAL_ONLY items */}
+client/src/components/AddToCartButton.tsx:52:  // Check if this is LOCAL_ONLY product using SSOT system
+client/src/components/AddToCartButton.tsx:54:  const isLocalOnly = fulfillmentMode === 'LOCAL_ONLY';
+client/src/components/fulfillment/FulfillmentBadge.tsx:4:type FulfillmentMode = "LOCAL_ONLY" | "LOCAL_AND_SHIPPING";
+client/src/components/fulfillment/FulfillmentBadge.tsx:93:  if (mode === "LOCAL_ONLY") {
+client/src/components/fulfillment/AddToCartEnhanced.tsx:33:  const isBlocked = mode === 'LOCAL_ONLY' && !isLocal;
+client/src/components/locality/ProductAvailabilityChips.tsx:24:  if (!mode || (mode !== 'LOCAL_ONLY' && mode !== 'LOCAL_AND_SHIPPING')) {
+client/src/components/products/ProductCard.tsx:9:type FulfillmentMode = "LOCAL_ONLY" | "LOCAL_AND_SHIPPING";
+client/src/hooks/useProducts.ts:84:        const mode = (product as any).fulfillment_mode || ((product as any).isLocalDeliveryAvailable && !(product as any).isShippingAvailable ? 'LOCAL_ONLY' : 'LOCAL_AND_SHIPPING');
+client/src/hooks/useProducts.ts:87:            return mode === 'LOCAL_ONLY';
+client/src/hooks/useProducts.ts:91:            return mode === 'LOCAL_ONLY' || mode === 'LOCAL_AND_SHIPPING';
+client/src/components/admin/modals/EnhancedProductModal.tsx:619:                    onClick={() => changeMode(FULFILLMENT.LOCAL_ONLY)}
+client/src/components/admin/modals/EnhancedProductModal.tsx:621:                      mode === FULFILLMENT.LOCAL_ONLY
+client/src/components/admin/modals/EnhancedProductModal.tsx:632:                        mode === FULFILLMENT.LOCAL_ONLY 
+scripts/fulfillment_migration.sql:2:-- Migrate to two-value fulfillment system: LOCAL_ONLY and LOCAL_AND_SHIPPING
+scripts/fulfillment_migration.sql:6:  ADD COLUMN IF NOT EXISTS fulfillment_mode TEXT NOT NULL DEFAULT 'LOCAL_AND_SHIPPING';
+scripts/fulfillment_migration.sql:11:  CHECK (fulfillment_mode IN ('LOCAL_ONLY','LOCAL_AND_SHIPPING'));
+scripts/fulfillment_migration.sql:21:  WHEN is_local_delivery_available = true AND is_shipping_available = true THEN 'LOCAL_AND_SHIPPING'
+scripts/fulfillment_migration.sql:22:  ELSE 'LOCAL_AND_SHIPPING' -- Default fallback
+audit/locality-ui-touchpoints.rg.txt:3:attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:60:    "\\bLOCAL_AND_SHIPPING\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+audit/locality-ui-touchpoints.rg.txt:9:attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:212:2) Replace any direct LOCAL_ONLY / LOCAL_AND_SHIPPING checks in UI with the shared `computeEffectiveAvailability`.
+audit/locality-ui-touchpoints.rg.txt:33:audit/locality-ssot-allowlist.json:21:    "\\bLOCAL_AND_SHIPPING\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:60:    "\\bLOCAL_AND_SHIPPING\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:77:rg -n --no-heading -g '!node_modules' -e "from ['\"]server/lib/locality" -e "from ['\"]server/lib/localityChecker" -e "from ['\"]server/locality/getLocalityForRequest" -e "from ['\"]client/src/hooks/use-cart" -e "/api/cart(?!\\.v2)" -e "from ['\"]server/routes/cart['\"]" -e "require\\(['\"]server/routes/cart['\"]\\)" -e "\\bisLocal\\(" -e "\\bisLocalMiles\\(" -e "\\bLOCAL_ONLY\\b" -e "\\bLOCAL_AND_SHIPPING\\b" > audit/locality-offenders.rg.txt
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:89:  - Find Identifier usage of LOCAL_ONLY / LOCAL_AND_SHIPPING outside shared/fulfillment.ts and shared/availability.ts.
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:212:2) Replace any direct LOCAL_ONLY / LOCAL_AND_SHIPPING checks in UI with the shared `computeEffectiveAvailability`.
+attached_assets/Pasted-copy-paste-do-not-stop-prompt-for-Replit-that-will-1-audit-the-entire-codebase-for-anything-not-u-1755272364958_1755272364959.txt:246:  effectiveModeForUser: 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+audit/locality-ssot-allowlist.json:21:    "\\bLOCAL_AND_SHIPPING\\b(?![\\s\\S]*modeFromProduct|computeEffectiveAvailability)",
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:72:  effectiveModeForUser: 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:137:  effectiveModeForUser: 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:145:export type ProductMode = 'LOCAL_ONLY'|'LOCAL_AND_SHIPPING';
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:146:export type UserMode = 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:155:    return (userMode === 'LOCAL_ONLY' || userMode === 'LOCAL_AND_SHIPPING')
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:296:rg -n "isLocal|LOCAL_ONLY|LOCAL_AND_SHIPPING" client/src | rg -v "availability|fulfillment"
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:309:User Mode	Product LOCAL_ONLY	Product LOCAL_AND_SHIPPING
+attached_assets/Pasted-Below-is-a-surgical-end-to-end-plan-to-get-your-Locality-Fulfillment-Cart-Checkout-pipeline-t-1755270565928_1755270565929.txt:312:LOCAL_AND_SHIPPING	ADD_ALLOWED	ADD_ALLOWED
+server/routes.ts:2842:      let fulfillmentMode = "LOCAL_AND_SHIPPING";
+attached_assets/Pasted--Complete-Locality-Fulfillment-Fixes-keep-current-UI-fix-wiring-WHAT-TO-DELIVER-Single-source-of-1755203749380_1755203749380.txt:369:LOCAL_AND_SHIPPING
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:24:LOCAL_AND_SHIPPING
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:128:If cart is mixed (LOCAL_AND_SHIPPING + eligible local user), allow shipping only for ship-eligible items but default to Local Delivery and clearly indicate “Ships Items: $X / Local Delivery: FREE”.
+attached_assets/Pasted-Fix-Local-Only-Cart-Gating-Purge-Stale-Fulfillment-Locality-Code-Single-Source-of-Truth-What-I-m-1755203118734_1755203118735.txt:194:Mixed cart: add LOCAL_AND_SHIPPING item; with local user, shipping row appears only for ship-eligible items.
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:171:  : await shippingService.quote(cart.items.filter(i => i.fulfillment_mode === "LOCAL_AND_SHIPPING"));
+attached_assets/Pasted-Fixes-Replit-should-make-now-1-Build-crash-in-AddressForm-tsx-top-level-await-Log-css-Copy-Edit--1755202693221_1755202693221.txt:195:LOCAL_AND_SHIPPING
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:7:LOCAL_AND_SHIPPING
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:49:LOCAL_AND_SHIPPING shows two pills on one line:
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:137:type FulfillmentMode = "LOCAL_ONLY" | "LOCAL_AND_SHIPPING";
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:234:  // LOCAL_AND_SHIPPING
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:261:type FulfillmentMode = "LOCAL_ONLY" | "LOCAL_AND_SHIPPING";
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:396:      fulfillmentMode: p.fulfillment_mode, // "LOCAL_ONLY" | "LOCAL_AND_SHIPPING"
+attached_assets/Pasted-Replit-implementation-brief-Fulfillment-UI-polish-UX-rules-WITH-CODE-0-Ground-rules-Exactly-t-1755202305378_1755202305378.txt:442:LOCAL_AND_SHIPPING: Local delivery • Shipping
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:9:LOCAL_AND_SHIPPING (local delivery plus carrier shipping)
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:11:Store this as Product.fulfillmentMode: 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING' and make the UI/logic across the site read only from this field.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:19:LOCAL_AND_SHIPPING → dual pill: green Truck + gray Package → label: “Local delivery & shipping”
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:61:LOCAL_AND_SHIPPING: allow add; default shipping later.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:67:LOCAL_AND_SHIPPING: add allowed; user chooses at checkout between Local Delivery vs Shipping.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:74:Totals: no shipping cost for LOCAL_ONLY lines; shipping fees apply only to items marked LOCAL_AND_SHIPPING and chosen as “Ship”.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:87:Render a per-line fulfillment selector for LOCAL_AND_SHIPPING items (“Deliver locally” vs “Ship”), default to Local if in zone.
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:105:Ensure all price/total endpoints accept a cart with per-line fulfillmentSelection: 'LOCAL' | 'SHIP' (for LOCAL_AND_SHIPPING items).
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:113:{ "type": "product:update", "payload": { "id": "...uuid...", "fulfillmentMode": "LOCAL_ONLY" | "LOCAL_AND_SHIPPING" } }
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:135:export type FulfillmentMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:163:LOCAL_AND_SHIPPING: Local delivery & shipping
+attached_assets/Pasted-clear-north-star-and-covers-UI-UX-logic-a11y-copy-realtime-analytics-tests-and-rollout-REP-1755201490589_1755201490590.txt:199:If becomes LOCAL_AND_SHIPPING: keep current selection.
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:20:  ADD COLUMN IF NOT EXISTS fulfillment_mode TEXT NOT NULL DEFAULT 'LOCAL_AND_SHIPPING';
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:24:  CHECK (fulfillment_mode IN ('LOCAL_ONLY','LOCAL_AND_SHIPPING'));
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:33:export type FulfillmentMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:37:  BOTH: 'LOCAL_AND_SHIPPING',
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:41:export const isShippable   = (m: FulfillmentMode) => m === 'LOCAL_AND_SHIPPING';
+attached_assets/Pasted-Replit-Work-Order-Fulfillment-Local-only-vs-Local-Shipping-UI-Rules-Live-Updates-0-Overvie-1755166345319_1755166345319.txt:152:Charge shipping only for items with LOCAL_AND_SHIPPING.
+client/src/hooks/useProducts.ts:84:        const mode = (product as any).fulfillment_mode || ((product as any).isLocalDeliveryAvailable && !(product as any).isShippingAvailable ? 'LOCAL_ONLY' : 'LOCAL_AND_SHIPPING');
+client/src/hooks/useProducts.ts:89:            return mode === 'LOCAL_AND_SHIPPING';
+client/src/hooks/useProducts.ts:91:            return mode === 'LOCAL_ONLY' || mode === 'LOCAL_AND_SHIPPING';
+client/src/hooks/useProducts.ts:93:            return mode === 'LOCAL_AND_SHIPPING';
+shared/availability.ts:5:export type ProductMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
+shared/availability.ts:13: * User Mode         | Product LOCAL_ONLY | Product LOCAL_AND_SHIPPING
+shared/availability.ts:17: * LOCAL_AND_SHIPPING| ADD_ALLOWED      | ADD_ALLOWED
+shared/availability.ts:31:    // Only LOCAL_ONLY and LOCAL_AND_SHIPPING users can get LOCAL_ONLY items
+shared/availability.ts:32:    return (userMode === 'LOCAL_ONLY' || userMode === 'LOCAL_AND_SHIPPING') 
+shared/availability.ts:37:  // LOCAL_AND_SHIPPING products
+shared/availability.ts:38:  if (productMode === 'LOCAL_AND_SHIPPING') {
+shared/availability.ts:44:      case 'LOCAL_AND_SHIPPING':
+shared/locality.ts:6:export type UserMode = 'LOCAL_AND_SHIPPING' | 'LOCAL_ONLY' | 'SHIPPING_ONLY' | 'NONE';
+shared/fulfillment.ts:3:export type FulfillmentMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
+shared/fulfillment.ts:24:    return 'LOCAL_AND_SHIPPING';
+shared/fulfillment.ts:29:    return 'LOCAL_AND_SHIPPING';
+shared/fulfillment.ts:38:    case 'LOCAL_AND_SHIPPING':
+shared/fulfillment.ts:47:  return mode === 'LOCAL_ONLY' || mode === 'LOCAL_AND_SHIPPING';
+shared/fulfillment.ts:61:    case 'LOCAL_AND_SHIPPING':
+shared/fulfillment.ts:77:  LOCAL_AND_SHIPPING: 'LOCAL_AND_SHIPPING' as const,
+shared/fulfillment.ts:87:    return FULFILLMENT_MODES.LOCAL_AND_SHIPPING;
+shared/fulfillment.ts:91:    // Default to LOCAL_AND_SHIPPING if unclear - never support "shipping only"
+shared/fulfillment.ts:92:    return FULFILLMENT_MODES.LOCAL_AND_SHIPPING;
+client/src/components/fulfillment/FulfillmentBadge.tsx:4:type FulfillmentMode = "LOCAL_ONLY" | "LOCAL_AND_SHIPPING";
+client/src/components/fulfillment/FulfillmentBadge.tsx:101:  // LOCAL_AND_SHIPPING
+server/services/localityService.ts:61:      return 'LOCAL_AND_SHIPPING'; // Local users can do both
+client/src/components/locality/ProductAvailabilityChips.tsx:24:  if (!mode || (mode !== 'LOCAL_ONLY' && mode !== 'LOCAL_AND_SHIPPING')) {
+server/middleware/cartLocalityEnforcement.ts:49:    // Allow LOCAL_AND_SHIPPING items for everyone
+client/src/components/products/ProductCard.tsx:9:type FulfillmentMode = "LOCAL_ONLY" | "LOCAL_AND_SHIPPING";
