@@ -1,0 +1,396 @@
+Below is a surgical, end-to-end plan to get your Locality → Fulfillment → Cart → Checkout pipeline truly single-source-of-truth (SSOT), kill the legacy paths, and fix the “not pulling info properly” behavior. I’ve broken it into: (1) root-cause diagnosis, (2) target architecture, (3) file-by-file keep/merge/delete map, (4) exact API contracts, (5) frontend state model, (6) server enforcement & data model, (7) rollout & codemods, (8) QA matrix, and (9) a copy-paste prompt for Replit to execute everything.
+
+1) What’s actually going wrong (likely causes)
+
+Two+ sources of truth for locality.
+
+You have shared/locality.ts, server/lib/localityChecker.ts, and server/locality/getLocalityForRequest.ts. These can drift and return subtly different results (zip vs. lat/long vs. default fallbacks), which cascades into cart/checkout.
+
+Live cache isn’t invalidated on locality change.
+
+React Query keys likely don’t include a locality version or owner scope (userId/sessionId). So the cart, product lists, and badges don’t refresh when ZIP/address changes.
+
+Legacy cart code still active.
+
+server/routes/cart.ts + client/src/hooks/use-cart.tsx + UI using old hook = inconsistent add/remove behavior, “can’t remove item”, and pre-V2 assumptions.
+
+Eligibility computed in multiple places.
+
+modeFromProduct (product-level) + various “isLocal” helpers scattered around → different logic paths. You want one “effective availability” function.
+
+User identity / cart owner not unified.
+
+If cart “owner” oscillates between userId, sessionId, or cookie without a consistent abstraction, DELETE by productId can no-op.
+
+Checkout/shipping using locality differently than cart.
+
+If checkout recalculates differently (address canonicalization or distance rounding differs), it rejects carts that looked valid during add.
+
+2) Target architecture (golden path)
+
+Single SSOT module for locality math + types in shared/ used by both client & server.
+
+Single locality evaluator (server service) that:
+
+canonicalizes the input (address/zip/ip),
+
+computes LocalityContext,
+
+returns a typed LocalityResult (stable JSON shape),
+
+memoizes per-request and is injected everywhere.
+
+Single “effective availability” function that intersects product.mode with LocalityContext for every cart mutation, PDP button, chips, and checkout.
+
+One cart API (V2) only. All UI uses one hook (useCart.ts), one query key model, one owner model.
+
+React Query invalidation on locality change (version bump) and owner change (login/logout).
+
+Observability: log every discrepancy (if a client thinks eligible but server rejects), so we can pinpoint gaps.
+
+3) File-by-file plan (keep / merge / delete)
+
+Locality & Address (SSOT)
+
+✅ KEEP shared/locality.ts as SSOT for types/constants/validators.
+
+➡️ NEW (move) create shared/geo.ts with Haversine + distance helpers (so both client/server can import).
+
+🗑️ DELETE server/lib/locality.ts (duplicate of SSOT). Move any unique bits into shared/geo.ts.
+
+🔁 MERGE server/lib/localityChecker.ts and server/locality/getLocalityForRequest.ts → server/services/localityService.ts with one exported:
+
+// server/services/localityService.ts
+export async function getLocalityForRequest(req): Promise<LocalityResult> { ... }
+export type LocalityResult = {
+  status: 'LOCAL'|'OUT_OF_AREA'|'UNKNOWN';
+  source: 'address'|'zip'|'ip'|'default';
+  zip?: string;
+  lat?: number; lon?: number;
+  distanceMiles?: number; // to nearest service hub / polygon
+  eligible: boolean; // true if LOCAL or in delivery polygon
+  effectiveModeForUser: 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+  reasons: string[]; // explainers for UI/debug
+  ssotVersion: string; // bumps when rules change
+  asOfISO: string;
+}
+
+
+✅ KEEP server/lib/geo.ts only if it holds server-only logic; otherwise fold into shared/geo.ts.
+
+✅ KEEP server/services/localService.ts if it loads service-zone data from DB; have localityService depend on it.
+
+✅ KEEP server/utils/fulfillment.ts but refactor to call SSOT instead of doing its own checks.
+
+Addresses
+
+✅ KEEP server/lib/addressCanonicalizer.ts and ensure all locality eval flows through it.
+
+✅ KEEP client address components/hooks; ensure they refetch locality on save/select.
+
+Cart
+
+✅ KEEP server/routes/cart.v2.ts, client/src/hooks/useCart.ts, server/services/cartCleanup.ts, server/services/cartGuard.ts, client/src/lib/cartKeys.ts, client/src/components/AddToCartButton.tsx.
+
+🛑 HARD-DEPRECATE (delete after rollout) server/routes/cart.ts, client/src/hooks/use-cart.tsx.
+
+✅ KEEP client/src/components/cart/cart-drawer.tsx + client/src/pages/cart.tsx but migrate to V2 hook/keys only.
+
+Fulfillment
+
+✅ KEEP shared/fulfillment.ts (types + modeFromProduct).
+
+➕ ADD shared/availability.ts → computeEffectiveAvailability(productMode, locality) to centralize intersection logic.
+
+✅ KEEP UI badges/banners/ZipCheck but refactor to always use useLocality() + computeEffectiveAvailability.
+
+Checkout & Shipping
+
+✅ KEEP server/routes/checkout.ts, server/routes/shipping.ts, client/src/pages/checkout.tsx, etc., but ensure they reuse getLocalityForRequest() and computeEffectiveAvailability() for final enforcement.
+
+Auth & Middleware
+
+✅ KEEP server/middleware/requireLocalCustomer.ts but make it call getLocalityForRequest() internally.
+
+✅ KEEP client/src/hooks/use-auth.tsx and trigger cart owner re-scope on auth changes.
+
+API infra & DB
+
+✅ KEEP client/src/lib/api.ts—ensure credentials & error shapes match.
+
+✅ KEEP server/storage.ts, shared/schema.ts, server/db/index.ts.
+
+➕ ADD a CartOwner helper: (userId ?? sessionId) normalization.
+
+4) Canonical contracts (copy these)
+4.1 Locality status API (GET /api/locality/status)
+
+Always return this shape—client can trust it everywhere.
+
+type LocalityStatusResponse = {
+  status: 'LOCAL'|'OUT_OF_AREA'|'UNKNOWN';
+  source: 'address'|'zip'|'ip'|'default';
+  eligible: boolean;
+  zip?: string;
+  lat?: number; lon?: number;
+  distanceMiles?: number;
+  effectiveModeForUser: 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+  reasons: string[];
+  ssotVersion: string;
+  asOfISO: string;
+};
+
+4.2 Effective availability (shared)
+// shared/availability.ts
+export type ProductMode = 'LOCAL_ONLY'|'LOCAL_AND_SHIPPING';
+export type UserMode = 'LOCAL_AND_SHIPPING'|'LOCAL_ONLY'|'SHIPPING_ONLY'|'NONE';
+
+export function computeEffectiveAvailability(
+  productMode: ProductMode,
+  userMode: UserMode
+): 'ADD_ALLOWED'|'PICKUP_ONLY'|'SHIPPING_ONLY'|'BLOCKED' {
+  // single place to encode business policy:
+  if (userMode === 'NONE') return 'BLOCKED';
+  if (productMode === 'LOCAL_ONLY') {
+    return (userMode === 'LOCAL_ONLY' || userMode === 'LOCAL_AND_SHIPPING')
+      ? 'ADD_ALLOWED'
+      : 'BLOCKED';
+  }
+  // product allows both local and shipping
+  if (userMode === 'LOCAL_ONLY') return 'PICKUP_ONLY';
+  if (userMode === 'SHIPPING_ONLY') return 'SHIPPING_ONLY';
+  return 'ADD_ALLOWED';
+}
+
+4.3 Cart owner model (server + client)
+// server/utils/cartOwner.ts
+export function getCartOwnerId(req): string {
+  // Prefer userId; else stable anonymous sessionId cookie.
+  // Ensure middleware sets req.sessionId if not authenticated.
+  return req.user?.id ?? req.sessionId;
+}
+
+
+Use only this in all cart routes.
+
+4.4 Cart V2 routes (final)
+
+GET /api/cart → { items: CartItem[], totals, ownerId, locality: LocalityStatusResponse }
+
+POST /api/cart body { productId, qty } → server checks computeEffectiveAvailability before add.
+
+DELETE /api/cart/product/:productId → remove by (ownerId, productId) compound.
+
+(Optional) PATCH /api/cart/item/:id for qty updates with enforcement.
+
+Important: Every mutation returns the current LocalityStatusResponse so the client can instantly correct UI.
+
+5) Frontend: state model & invalidation
+5.1 useLocality() (SSOT on client)
+
+Reads from GET /api/locality/status.
+
+Stores {data, ssotVersion}.
+
+Exposes events: onLocalityChange() that bumps a version number in a central atom (or context).
+
+5.2 Query keys (React Query)
+// client/src/lib/cartKeys.ts
+export const cartKeys = {
+  all: ['cart'] as const,
+  scoped: (ownerId: string, localityVersion: string) =>
+    [...cartKeys.all, ownerId, localityVersion] as const,
+};
+
+
+useCart() must use cartKeys.scoped(ownerId, localityVersion).
+
+When ZIP/address changes, useLocality() emits localityVersion++ → invalidates cart + product lists.
+
+5.3 AddToCartButton
+
+Calls useLocality + modeFromProduct + computeEffectiveAvailability.
+
+Disables button & shows exact reason from LocalityStatusResponse.reasons if blocked.
+
+On click, server is source of truth; if server rejects, surface its reasons.
+
+5.4 Product chips/badges & checkout
+
+Never compute “isLocal” locally—always rely on useLocality() + computeEffectiveAvailability().
+
+6) Server: enforcement, cleanup, and DB guardrails
+6.1 Central enforcement
+
+In every cart mutation and at checkout:
+
+const loc = await getLocalityForRequest(req);
+const productMode = modeFromProduct(product);
+const eff = computeEffectiveAvailability(productMode, loc.effectiveModeForUser);
+if (eff === 'BLOCKED') return res.status(422).json({ error: 'INELIGIBLE', reasons: loc.reasons });
+
+6.2 Auto-purge and preflight
+
+On GET /api/cart, run cartCleanup.purgeLocalOnlyItemsIfIneligible(ownerId, loc) and return clean cart.
+
+On POST /api/cart, extra preflight: if changing ZIP makes cart illegal, respond with a structured error that the client can render (“Some items removed due to your area”).
+
+6.3 DB invariants (light but useful)
+
+Add a CHECK or application-level guard to prevent LOCAL_ONLY items from persisting for owners whose last known effectiveModeForUser was SHIPPING_ONLY.
+(If you don’t want DB coupling, keep it application-level + telemetry.)
+
+7) Rollout plan + codemods
+
+Step 0 – Feature flag
+
+Gate new flow under FF_LOCALITY_V2. Default: ON in dev, OFF in prod until verified.
+
+Step 1 – Consolidate locality
+
+Create shared/geo.ts, move Haversine there.
+
+Merge locality evaluators into server/services/localityService.ts.
+
+Delete server/lib/locality.ts.
+
+Step 2 – API & client hook
+
+Implement exact /api/locality/status contract.
+
+Refactor client/src/hooks/useLocality.ts to only call that API and publish localityVersion.
+
+Step 3 – Availability SSOT
+
+Add shared/availability.ts with computeEffectiveAvailability.
+
+Update AddToCartButton, ProductAvailabilityChips, badges, banners to use it.
+
+Step 4 – Cart V2 only
+
+Update useCart.ts to use cartKeys.scoped(ownerId, localityVersion).
+
+Migrate drawer/page to useCart.ts (no legacy hook).
+
+Deprecate server/routes/cart.ts by returning 410 Gone + log if hit.
+
+Step 5 – Checkout
+
+Make checkout.ts and shipping.ts call getLocalityForRequest() and computeEffectiveAvailability().
+
+Step 6 – Observability
+
+Log a CART_ELIGIBILITY_REJECT with {productId, ownerId, loc, productMode, eff}.
+
+Add a counter for “client thought OK, server blocked”.
+
+Step 7 – Delete dead code
+
+Remove client/src/hooks/use-cart.tsx.
+
+Remove helpers that duplicate SSOT logic.
+
+Helpful ripgrep
+
+rg -n "from ['\"]server/lib/locality|localityChecker|getLocalityForRequest|use-cart|/api/cart(?!\.v2)" .
+rg -n "isLocal|LOCAL_ONLY|LOCAL_AND_SHIPPING" client/src | rg -v "availability|fulfillment"
+
+
+Optional ts-morph codemod
+
+Replace imports of server/lib/locality → shared/geo or shared/locality.
+
+Replace any isLocal(...) custom checks → computeEffectiveAvailability(...).
+
+8) QA / test matrix (copy into Playwright/Vitest)
+
+Locality modes (user) × product modes
+
+User Mode	Product LOCAL_ONLY	Product LOCAL_AND_SHIPPING
+LOCAL_ONLY	ADD_ALLOWED	PICKUP_ONLY
+SHIPPING_ONLY	BLOCKED	SHIPPING_ONLY
+LOCAL_AND_SHIPPING	ADD_ALLOWED	ADD_ALLOWED
+NONE	BLOCKED	BLOCKED
+
+Scenarios
+
+Change ZIP from local → out-of-area: cart auto-purges ineligible items; UI shows toast with reasons.
+
+Anonymous → login: cart re-scopes owner; items preserved or merged; keys invalidate.
+
+PDP, Grid, Cart Drawer, Checkout all reflect same availability.
+
+/api/locality/status changes bump ssotVersion; client invalidates product list + cart.
+
+9) Copy-paste prompt for Replit (do this exactly, sequentially)
+You are refactoring the Locality → Fulfillment → Cart system to a single source of truth and removing legacy paths. Follow these steps precisely and do not stop until all checks pass.
+
+1) Create shared SSOT modules:
+  - Make shared/geo.ts and move Haversine + geo helpers from server/lib/geo.ts (export on both client/server).
+  - Ensure shared/locality.ts exports: types for LocalityResult, ZIP validation, constants, and a version string SSOT_VERSION.
+
+2) Create server/services/localityService.ts:
+  - Merge logic from server/lib/localityChecker.ts and server/locality/getLocalityForRequest.ts.
+  - Export async function getLocalityForRequest(req): LocalityResult with exact shape:
+    { status, source, eligible, zip?, lat?, lon?, distanceMiles?, effectiveModeForUser, reasons[], ssotVersion, asOfISO }
+  - Use server/lib/addressCanonicalizer.ts and server/services/localService.ts to derive lat/lon and service polygon/distance.
+  - Delete server/lib/locality.ts after tests pass.
+
+3) Add shared/availability.ts:
+  - Export computeEffectiveAvailability(productMode, userMode) returning 'ADD_ALLOWED'|'PICKUP_ONLY'|'SHIPPING_ONLY'|'BLOCKED' exactly as defined above.
+
+4) Implement GET /api/locality/status in server/routes/locality.ts:
+  - Call getLocalityForRequest(req) and return the LocalityResult unchanged.
+
+5) Refactor client/src/hooks/useLocality.ts:
+  - Fetch /api/locality/status.
+  - Store and expose { data, ssotVersion } and a localityVersion counter that increments whenever status or zip changes.
+  - Provide a setter for ZIP/address that triggers a refetch and version bump.
+
+6) Refactor cart to V2 only:
+  - Ensure server/routes/cart.v2.ts uses getCartOwnerId(req) and computeEffectiveAvailability() for every mutation.
+  - Ensure DELETE /api/cart/product/:productId removes by (ownerId, productId) compound key.
+  - In server/routes.ts, change server/routes/cart.ts to return 410 Gone and log a metric if hit.
+
+7) Update client cart:
+  - Ensure client/src/hooks/useCart.ts uses cartKeys.scoped(ownerId, localityVersion).
+  - Update cart drawer + cart page to import useCart.ts (remove any import of use-cart.tsx).
+  - Verify Cart cleanup: on GET /api/cart, server/services/cartCleanup.ts purges ineligible items and returns final cart + LocalityResult.
+
+8) Update fulfillment UI:
+  - In ProductAvailabilityChips, FulfillmentBadge, DeliveryEligibilityBanner, ZipCheck, AddToCartButton:
+    - Use useLocality() + modeFromProduct(product) + computeEffectiveAvailability().
+    - Do not call any ad-hoc isLocalX helpers.
+    - If server rejects an add, surface reasons[] in UI.
+
+9) Checkout and Shipping:
+  - Make server/routes/checkout.ts and server/routes/shipping.ts call getLocalityForRequest(req) and computeEffectiveAvailability() to re-validate line items before payment. If blocked, return 422 with structured reasons.
+
+10) Observability:
+  - Add logs for CART_ELIGIBILITY_REJECT {productId, ownerId, userMode, productMode, reasons}.
+  - Add a counter for hits on legacy cart route (should be zero after migration).
+
+11) Clean up:
+  - Remove client/src/hooks/use-cart.tsx and server/routes/cart.ts after tests pass.
+  - Remove server/lib/locality.ts.
+
+12) Tests:
+  - Add unit tests for computeEffectiveAvailability() covering the full matrix.
+  - Add API tests for /api/locality/status to ensure shape stability and ssotVersion presence.
+  - Add e2e tests: ZIP switch (local→shipping-only) auto-purges cart and shows UI message.
+
+Run build and test. If any references to old locality or cart hooks remain, replace them to use the new SSOT functions. Do not leave duplicate helpers in codebase.
+
+Quick “why this will fix it”
+
+One evaluator (getLocalityForRequest) means server + client agree on user’s locality.
+
+One availability function means PDP/add/cart/checkout all gate on the same rule.
+
+Scoped query keys + localityVersion ensure stale views (cart, products) refetch on ZIP/address change.
+
+Legacy cart removal eliminates double behavior.
+
+Structured API responses + reasons[] end the “feels random” blocks.
+
+Telemetry makes any future drift obvious.

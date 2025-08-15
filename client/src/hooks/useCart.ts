@@ -1,18 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiJson } from "@/lib/api"; // CRITICAL: Use authenticated API wrapper
+import { apiJson } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useLocality } from "./useLocality";
+import { cartKeys } from "@/lib/cartKeys";
 
 export function useCart() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-
-  // Centralized cart query with authentication
+  
+  // SSOT locality-aware cart query
+  const { data: locality, localityVersion } = useLocality();
+  const ownerId = 'current-user'; // Simplified for now - could be enhanced with auth context
+  
+  // Use scoped query keys for cache invalidation on locality changes
   const cartQuery = useQuery({
-    queryKey: ["cart"],
-    queryFn: () => apiJson("/api/cart")
+    queryKey: cartKeys.scoped(ownerId, localityVersion.toString()),
+    queryFn: () => apiJson("/api/cart"),
+    staleTime: 30_000 // 30 seconds
   });
 
-  // Add to cart mutation with authenticated requests
+  // Add to cart mutation with SSOT V2 endpoints
   const addToCartMutation = useMutation({
     mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
       apiJson("/api/cart/items", {
@@ -20,12 +27,13 @@ export function useCart() {
         body: JSON.stringify({ productId, quantity })
       }),
     onMutate: async ({ productId, quantity }) => {
-      // Optimistic update for instant UI feedback
-      await queryClient.cancelQueries({ queryKey: ["cart"] });
-      const previousCart = queryClient.getQueryData(["cart"]);
+      // Optimistic update for instant UI feedback using scoped keys
+      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
+      await queryClient.cancelQueries({ queryKey: cartQueryKey });
+      const previousCart = queryClient.getQueryData(cartQueryKey);
       
       // Optimistically add item to cache
-      queryClient.setQueryData(["cart"], (old: any) => {
+      queryClient.setQueryData(cartQueryKey, (old: any) => {
         if (!old?.data?.items) return old;
         const existingItem = old.data.items.find((item: any) => item.productId === productId);
         if (existingItem) {
@@ -55,14 +63,16 @@ export function useCart() {
       return { previousCart };
     },
     onError: (error: any, variables, context) => {
-      // Rollback on error
-      queryClient.setQueryData(["cart"], context?.previousCart);
+      // Rollback on error using scoped key
+      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
+      queryClient.setQueryData(cartQueryKey, context?.previousCart);
       
-      // Handle LOCALITY_BLOCKED specially (updated server error format)
-      if (error.status === 403 && error.body?.code === 'LOCALITY_BLOCKED') {
+      // Handle SSOT INELIGIBLE specially (new V2 error format)
+      if (error.status === 422 && error.body?.error === 'INELIGIBLE') {
+        const reasons = error.body?.reasons || ['Item not available in your area'];
         toast({
-          title: "Not available in your area",
-          description: "This item is local delivery only. Add a local address to continue.",
+          title: "Not available in your area", 
+          description: reasons[0] || 'This item cannot be added to your cart.',
           variant: "destructive"
         });
         return;
@@ -75,8 +85,8 @@ export function useCart() {
       });
     },
     onSettled: () => {
-      // Refetch to get accurate server state
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      // Refetch to get accurate server state using scoped keys
+      queryClient.invalidateQueries({ queryKey: cartKeys.root });
     },
     onSuccess: () => {
       toast({
@@ -93,11 +103,12 @@ export function useCart() {
         method: "DELETE"
       }),
     onMutate: async (itemId) => {
-      await queryClient.cancelQueries({ queryKey: ["cart"] });
-      const previousCart = queryClient.getQueryData(["cart"]);
+      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
+      await queryClient.cancelQueries({ queryKey: cartQueryKey });
+      const previousCart = queryClient.getQueryData(cartQueryKey);
       
       // Optimistically remove item
-      queryClient.setQueryData(["cart"], (old: any) => {
+      queryClient.setQueryData(cartQueryKey, (old: any) => {
         if (!old?.data?.items) return old;
         return {
           ...old,
@@ -111,7 +122,8 @@ export function useCart() {
       return { previousCart };
     },
     onError: (error, variables, context) => {
-      queryClient.setQueryData(["cart"], context?.previousCart);
+      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
+      queryClient.setQueryData(cartQueryKey, context?.previousCart);
       toast({
         title: "Error",
         description: "Failed to remove item from cart",
@@ -119,7 +131,7 @@ export function useCart() {
       });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: cartKeys.root });
     }
   });
 
@@ -128,11 +140,12 @@ export function useCart() {
     mutationFn: (productId: string) => 
       apiJson(`/api/cart/product/${productId}`, { method: "DELETE" }),
     onMutate: async (productId) => {
-      await queryClient.cancelQueries({ queryKey: ["cart"] });
-      const previousCart = queryClient.getQueryData(["cart"]);
+      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
+      await queryClient.cancelQueries({ queryKey: cartQueryKey });
+      const previousCart = queryClient.getQueryData(cartQueryKey);
       
       // Optimistically remove by productId
-      queryClient.setQueryData(["cart"], (old: any) => {
+      queryClient.setQueryData(cartQueryKey, (old: any) => {
         if (!old?.data?.items) return old;
         return {
           ...old,
@@ -146,7 +159,7 @@ export function useCart() {
       return { previousCart };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: cartKeys.root });
       
       // Show purge notification if items were auto-removed
       if (data?.purgedLocalOnly && data?.removed > 0) {
@@ -163,7 +176,8 @@ export function useCart() {
       }
     },
     onError: (error: any, productId, context) => {
-      queryClient.setQueryData(["cart"], context?.previousCart);
+      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
+      queryClient.setQueryData(cartQueryKey, context?.previousCart);
       
       // Handle AUTH_REQUIRED specially
       if (error.status === 401) {

@@ -1,70 +1,106 @@
-import { useQuery } from '@tanstack/react-query';
-import { DEFAULT_LOCALITY, LocalityStatus } from '../../../shared/locality';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { LocalityResult, LocalityStatusLegacy, DEFAULT_LOCALITY, SSOT_VERSION } from '../../../shared/locality';
 import { apiJson } from '../lib/api';
 
-// ADDITIVE: Export safe default constant
-export const DEFAULT_LOCALITY_SAFE = { 
-  eligible: false, 
-  zip: 'none', 
-  source: 'NONE', 
-  loading: true 
-} as const;
-
-// Keep existing export for compatibility
-export { DEFAULT_LOCALITY };
-
-function buildLocalityUrl(zip?: string) {
-  const base = '/api/locality/status';
-  return zip ? `${base}?zip=${encodeURIComponent(zip)}` : base; // no stray '?'
-}
-
-async function fetchLocality(zip?: string): Promise<LocalityStatus> {
-  const res = await fetch(buildLocalityUrl(zip), { credentials: 'include' });
-  if (!res.ok) throw new Error(`Locality request failed: ${res.status}`);
-  const data = (await res.json()) as LocalityStatus;
-  // harden the shape to avoid undefined in the UI
-  return {
-    eligible: !!data.eligible,
-    source: data.source ?? 'NONE',
-    reason: data.reason ?? 'FALLBACK_NON_LOCAL',
-    zipUsed: data.zipUsed ?? null,
-    city: data.city ?? null,
-    state: data.state ?? null,
-    zip: data.zip ?? data.zipUsed ?? 'none',
-    user: data.user ?? null,
-  };
-}
-
-// ADDITIVE: Single source of truth locality hook
+// SSOT useLocality hook - fetches from /api/locality/status
 export function useLocality(zipOverride?: string) {
-  const q = useQuery({
-    queryKey: ['locality', 'status', zipOverride ?? null], // unified key
-    queryFn: () => apiJson('/api/locality/status'), // use authenticated wrapper
-    placeholderData: DEFAULT_LOCALITY, // shows immediately
+  const [localityVersion, setLocalityVersion] = useState(0);
+  const queryClient = useQueryClient();
+  
+  // Scoped query key includes locality version for cache invalidation
+  const queryKey = ['locality', 'status', zipOverride ?? null, localityVersion];
+  
+  const query = useQuery<LocalityResult>({
+    queryKey,
+    queryFn: async () => {
+      const url = zipOverride 
+        ? `/api/locality/status?zip=${encodeURIComponent(zipOverride)}`
+        : '/api/locality/status';
+      
+      const result = await apiJson(url) as LocalityResult;
+      
+      // Validate the response has required SSOT fields
+      if (!result.ssotVersion || !result.asOfISO) {
+        console.warn('[LOCALITY] Response missing SSOT fields, falling back');
+        throw new Error('Invalid locality response structure');
+      }
+      
+      return result;
+    },
     staleTime: 30_000, // 30 seconds
-    gcTime: 30 * 60 * 1000,
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
-
-  // ALWAYS return a safe object
-  const body = q.data ?? DEFAULT_LOCALITY;
-  return { 
-    ...body, 
-    loading: q.isLoading || q.isFetching 
+  
+  // Function to trigger locality change (ZIP/address updates)
+  const onLocalityChange = useCallback(() => {
+    setLocalityVersion(v => v + 1);
+    // Invalidate all locality-related queries
+    queryClient.invalidateQueries({ queryKey: ['locality'] });
+    queryClient.invalidateQueries({ queryKey: ['cart'] }); // Cart depends on locality
+    queryClient.invalidateQueries({ queryKey: ['products'] }); // Product lists too
+  }, [queryClient]);
+  
+  // Safe fallback for error states
+  const safeData: LocalityResult = query.data ?? {
+    status: 'UNKNOWN',
+    source: 'default',
+    eligible: false,
+    effectiveModeForUser: 'NONE',
+    reasons: ['Loading locality data...'],
+    ssotVersion: SSOT_VERSION,
+    asOfISO: new Date().toISOString()
+  };
+  
+  return {
+    data: safeData,
+    ssotVersion: safeData.ssotVersion,
+    localityVersion,
+    onLocalityChange,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    error: query.error,
   };
 }
 
-// ADDITIVE: Keep existing function for compatibility
+// Legacy compatibility hook
 export function useLocalityLegacy(zipOverride?: string) {
-  const q = useQuery({
-    queryKey: ['locality', zipOverride ?? null],
-    queryFn: () => fetchLocality(zipOverride),
+  const query = useQuery<LocalityStatusLegacy>({
+    queryKey: ['locality', 'legacy', zipOverride ?? null],
+    queryFn: async () => {
+      const url = zipOverride 
+        ? `/api/locality/status?zip=${encodeURIComponent(zipOverride)}`
+        : '/api/locality/status';
+      
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error(`Locality request failed: ${res.status}`);
+      
+      const newData = (await res.json()) as LocalityResult;
+      
+      // Convert new format to legacy format
+      return {
+        eligible: newData.eligible,
+        source: newData.source === 'address' ? 'DEFAULT_ADDRESS' as const :
+                newData.source === 'zip' ? 'ZIP_OVERRIDE' as const :
+                newData.source === 'ip' ? 'IP' as const : 'NONE' as const,
+        reason: newData.eligible ? 'IN_LOCAL_AREA' as const : 'FALLBACK_NON_LOCAL' as const,
+        zipUsed: newData.zip ?? null,
+        city: null,
+        state: null,
+        zip: newData.zip ?? 'none',
+        user: null,
+      };
+    },
     placeholderData: DEFAULT_LOCALITY,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 
   return {
-    ...q,
-    data: (q.data ?? DEFAULT_LOCALITY) as LocalityStatus,
+    ...query,
+    data: (query.data ?? DEFAULT_LOCALITY) as LocalityStatusLegacy,
   };
 }
+
+// Keep existing export for backward compatibility
+export { DEFAULT_LOCALITY };

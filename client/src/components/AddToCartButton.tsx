@@ -45,14 +45,14 @@ export default function AddToCartButton({
     isAddingToCart, 
     isRemovingByProduct 
   } = useCart();
-  const locality = useLocality(); // unified single source of truth
+  const { data: locality, isLoading: localityLoading } = useLocality(); // unified SSOT
 
   const isInCart = cart?.data?.items?.some((item: any) => item.productId === productId) || false;
   
-  // Check if this is LOCAL_ONLY product using unified system
+  // Check if this is LOCAL_ONLY product using SSOT system
   const fulfillmentMode = modeFromProduct(product || {});
   const isLocalOnly = fulfillmentMode === 'LOCAL_ONLY';
-  const isBlocked = isLocalOnly && !locality.eligible;
+  const isBlocked = isLocalOnly && locality && !locality.eligible;
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
@@ -65,9 +65,10 @@ export default function AddToCartButton({
     }
     
     if (isBlocked) {
+      const reasons = locality?.reasons || ["This item is local delivery only"];
       toast({
         title: "Not available in your area",
-        description: "This item is local delivery only. Set a local default address or enter a local ZIP to order.",
+        description: reasons[0] || "Set a local default address or enter a local ZIP to order.",
         variant: "destructive"
       });
       return;

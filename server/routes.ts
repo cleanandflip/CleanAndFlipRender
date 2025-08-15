@@ -235,10 +235,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const addressRoutes = await import('./routes/addresses');
   app.use('/api/addresses', addressRoutes.default);
   
-  // Import bulletproof cart routes with session middleware
-  const cartRoutes = await import('./routes/cart');
+  // Import V2 SSOT cart routes with session middleware
+  const { cartRouterV2 } = await import('./routes/cart.v2');
   const { ensureSession } = await import('./middleware/ensureSession');
-  app.use('/api/cart', ensureSession, cartRoutes.default);
+  app.use('/api/cart', ensureSession, cartRouterV2);
+  
+  // DEPRECATED: Legacy cart route - log usage and return 410 Gone
+  const legacyCartRoutes = await import('./routes/cart');
+  app.use('/api/cart-legacy', (req, res, next) => {
+    console.log(`[DEPRECATED] Legacy cart route hit: ${req.method} ${req.url} - should be migrated to V2`);
+    res.status(410).json({
+      error: 'DEPRECATED_ROUTE',
+      message: 'This cart API version has been deprecated. Please use the current API.',
+      migrationGuide: 'Contact support for migration assistance'
+    });
+  });
   
   // Shipping quotes API
   const shippingRoutes = await import('./routes/shipping');
@@ -252,9 +263,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.use('/api/checkout', checkoutRoutes);
   
-  // Locality routes for unified local delivery detection (with caching)
-  // Replace old locality routes with unified endpoint
-  // app.use('/api/locality', addCacheHeaders(300), localityRoutes);
+  // SSOT Locality routes
+  app.use('/api/locality', localityRoutes);
   
   // Cart validation route
   const cartValidationRoutes = await import('./routes/cart-validation');
@@ -283,9 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // UNIFIED Locality Status Endpoint - Single Source of Truth
   app.get("/api/locality/status", apiLimiter, getLocalityStatus);
   
-  // V2 Cart Router - Single Source with Unified Locality Enforcement
-  const { cartRouterV2 } = await import('./routes/cart.v2');
-  app.use('/api/cart', cartRouterV2);
+
   
   // Diagnostic routes for debugging
   const { addDiagnosticRoutes } = await import('./utils/_diagnostic');
