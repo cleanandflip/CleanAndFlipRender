@@ -49,8 +49,24 @@ export default function CartPageV2() {
   // V2 cart data structure with safe access
   const items = (cart as any)?.items || [];
   const hasItems = items.length > 0;
-  const subtotal = (cart as any)?.subtotal || 0;
-  const total = (cart as any)?.total || 0;
+  
+  // Calculate totals from items if API doesn't provide them correctly
+  const calculatedSubtotal = items.reduce((sum: number, item: CartItem) => {
+    const itemPrice = parseFloat(item.product?.price || '0');
+    return sum + (itemPrice * item.qty);
+  }, 0);
+  
+  const subtotal = calculatedSubtotal; // Use calculated subtotal for reliability
+  const total = calculatedSubtotal; // Use calculated total for reliability
+  
+  // Debug logging
+  console.log('Cart Debug:', { 
+    cart, 
+    items: items.length, 
+    calculatedSubtotal, 
+    apiSubtotal: (cart as any)?.subtotal,
+    apiTotal: (cart as any)?.total 
+  });
 
   const handleQuantityChange = async (productId: string, newQuantity: number, maxStock?: number) => {
     // Don't allow negative quantities
@@ -280,7 +296,7 @@ export default function CartPageV2() {
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
-                <CardTitle className="tracking-tight font-bebas text-2xl font-light py-2 px-0 my-1">ORDER SUMMARY</CardTitle>
+                <CardTitle className="font-bebas text-3xl font-normal py-3 px-1 my-2 tracking-wide">ORDER SUMMARY</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
