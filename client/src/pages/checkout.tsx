@@ -52,19 +52,9 @@ export default function Checkout() {
   const cart = cartResponse?.data || cartResponse || { items: [], subtotal: 0, total: 0 };
 
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
-  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
-  const [newAddress, setNewAddress] = useState({
-    firstName: "",
-    lastName: "",
-    street1: "",
-    street2: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    isDefault: false
-  });
+  // Removed inline address form - users redirect to profile for address management
 
-  // Auto-select address: DEFAULT first, then FIRST available, then show form
+  // Auto-select address: DEFAULT first, then FIRST available
   useEffect(() => {
     if (!addressLoading && addresses.length > 0 && !selectedAddressId) {
       console.log('Checkout: Checking addresses for auto-selection', addresses);
@@ -84,37 +74,9 @@ export default function Checkout() {
         return;
       }
     }
-    
-    // Priority 3: If NO addresses exist, show form
-    if (!addressLoading && addresses.length === 0 && !showNewAddressForm) {
-      console.log('Checkout: No addresses found, showing new address form');
-      setShowNewAddressForm(true);
-    }
-  }, [addresses, addressLoading, selectedAddressId, showNewAddressForm]);
+  }, [addresses, addressLoading, selectedAddressId]);
 
-  // Mutation to create new address
-  const createAddressMutation = useMutation({
-    mutationFn: async (addressData: any) => {
-      return await apiRequest('POST', '/api/addresses', addressData);
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['addresses'] });
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      setSelectedAddressId(data?.id);
-      setShowNewAddressForm(false);
-      toast({
-        title: "Address saved",
-        description: "Your address has been saved successfully"
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to save address",
-        variant: "destructive"
-      });
-    }
-  });
+  // Address management handled in profile - no mutations needed here
 
   // Redirect unauthenticated users to login
   if (!isAuthenticated && !user) {
@@ -149,22 +111,7 @@ export default function Checkout() {
   
   console.log(`[CHECKOUT TOTALS] Cart has ${cartItems.length} items, Subtotal: $${subtotal.toFixed(2)}`);
 
-  const handleSaveNewAddress = () => {
-    if (!newAddress.firstName || !newAddress.lastName || !newAddress.street1 || !newAddress.city || !newAddress.state || !newAddress.postalCode) {
-      toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    createAddressMutation.mutate({
-      ...newAddress,
-      // If this is the first address, make it default
-      isDefault: addresses.length === 0 ? true : newAddress.isDefault
-    });
-  };
+  // Address creation handled in profile page
 
   const selectedAddress = addresses.find((addr: any) => addr.id === selectedAddressId);
 
@@ -209,175 +156,62 @@ export default function Checkout() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!showNewAddressForm ? (
-                <>
-                  {/* Existing addresses */}
-                  {addresses.length > 0 && (
-                    <div className="space-y-3">
-                      {addresses.map((address: any) => (
-                        <div 
-                          key={address.id}
-                          className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                            selectedAddressId === address.id 
-                              ? 'border-blue-500 bg-blue-50' 
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                          onClick={() => setSelectedAddressId(address.id)}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="font-medium">
-                                {address.firstName} {address.lastName}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {address.street1}
-                                {address.street2 && `, ${address.street2}`}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {address.city}, {address.state} {address.postalCode}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                {address.isDefault && (
-                                  <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                                    Default
-                                  </span>
-                                )}
-                                <LocalBadge isLocal={isLocalZip(address.postalCode)} />
-                              </div>
-                            </div>
-                            {selectedAddressId === address.id && (
-                              <Check className="w-5 h-5 text-blue-600" />
+              {/* Existing addresses */}
+              {addresses.length > 0 ? (
+                <div className="space-y-3">
+                  {addresses.map((address: any) => (
+                    <div 
+                      key={address.id}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        selectedAddressId === address.id 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setSelectedAddressId(address.id)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium">
+                            {address.firstName} {address.lastName}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {address.street1}
+                            {address.street2 && `, ${address.street2}`}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {address.city}, {address.state} {address.postalCode}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {address.isDefault && (
+                              <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                Default
+                              </span>
                             )}
+                            <LocalBadge isLocal={isLocalZip(address.postalCode)} />
                           </div>
                         </div>
-                      ))}
+                        {selectedAddressId === address.id && (
+                          <Check className="w-5 h-5 text-blue-600" />
+                        )}
+                      </div>
                     </div>
-                  )}
-
-                  <Button 
-                    variant="outline"
-                    onClick={() => setShowNewAddressForm(true)}
-                    className="w-full flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add New Address
-                  </Button>
-                </>
+                  ))}
+                </div>
               ) : (
-                /* New Address Form */
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name *</Label>
-                      <Input
-                        id="firstName"
-                        value={newAddress.firstName}
-                        onChange={(e) => setNewAddress(prev => ({ ...prev, firstName: e.target.value }))}
-                        placeholder="First name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name *</Label>
-                      <Input
-                        id="lastName"
-                        value={newAddress.lastName}
-                        onChange={(e) => setNewAddress(prev => ({ ...prev, lastName: e.target.value }))}
-                        placeholder="Last name"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="street1">Street Address *</Label>
-                    <Input
-                      id="street1"
-                      value={newAddress.street1}
-                      onChange={(e) => setNewAddress(prev => ({ ...prev, street1: e.target.value }))}
-                      placeholder="123 Main St"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="street2">Apartment, Suite, Unit (Optional)</Label>
-                    <Input
-                      id="street2"
-                      value={newAddress.street2}
-                      onChange={(e) => setNewAddress(prev => ({ ...prev, street2: e.target.value }))}
-                      placeholder="Apt 2B"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="city">City *</Label>
-                      <Input
-                        id="city"
-                        value={newAddress.city}
-                        onChange={(e) => setNewAddress(prev => ({ ...prev, city: e.target.value }))}
-                        placeholder="City"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="state">State *</Label>
-                      <Input
-                        id="state"
-                        value={newAddress.state}
-                        onChange={(e) => setNewAddress(prev => ({ ...prev, state: e.target.value }))}
-                        placeholder="CA"
-                        maxLength={2}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="postalCode">ZIP Code *</Label>
-                      <Input
-                        id="postalCode"
-                        value={newAddress.postalCode}
-                        onChange={(e) => setNewAddress(prev => ({ ...prev, postalCode: e.target.value }))}
-                        placeholder="90210"
-                        maxLength={10}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="isDefault"
-                      checked={newAddress.isDefault}
-                      onCheckedChange={(checked) => setNewAddress(prev => ({ ...prev, isDefault: !!checked }))}
-                    />
-                    <Label htmlFor="isDefault">Set as default address</Label>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={handleSaveNewAddress}
-                      disabled={createAddressMutation.isPending}
-                      className="flex-1"
-                    >
-                      {createAddressMutation.isPending ? "Saving..." : "Save Address"}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setShowNewAddressForm(false);
-                        // Reset form
-                        setNewAddress({
-                          firstName: "",
-                          lastName: "",
-                          street1: "",
-                          street2: "",
-                          city: "",
-                          state: "",
-                          postalCode: "",
-                          isDefault: false
-                        });
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">No addresses found</p>
+                  <p className="text-sm text-muted-foreground mb-4">You need to add an address to continue with checkout</p>
                 </div>
               )}
+
+              <Button 
+                variant="outline"
+                onClick={() => window.location.href = '/dashboard?tab=addresses'}
+                className="w-full flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {addresses.length > 0 ? 'Manage Addresses' : 'Add Your First Address'}
+              </Button>
             </CardContent>
           </Card>
           
