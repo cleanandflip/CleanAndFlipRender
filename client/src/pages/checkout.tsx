@@ -413,7 +413,7 @@ export default function Checkout() {
                               <p className="font-medium text-green-800">FREE Local Delivery</p>
                               <p className="text-sm text-green-600">
                                 {hasLocalAndShippingItems 
-                                  ? "Your LOCAL_AND_SHIPPING items will be delivered locally • Most orders arrive in 24–48 hrs"
+                                  ? "Your items will be delivered locally • Most orders arrive in 24–48 hrs"
                                   : "Most orders arrive in 24–48 hrs"
                                 }
                               </p>
@@ -445,7 +445,7 @@ export default function Checkout() {
                               <p className="font-medium">Standard Shipping</p>
                               <p className="text-sm text-gray-600">
                                 {hasLocalAndShippingItems 
-                                  ? "Your LOCAL_AND_SHIPPING items will be shipped • 5-7 business days"
+                                  ? "Your items will be shipped • 5-7 business days"
                                   : "5-7 business days"
                                 }
                               </p>
