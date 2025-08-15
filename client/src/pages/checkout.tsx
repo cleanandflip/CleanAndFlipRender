@@ -170,7 +170,7 @@ export default function Checkout() {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bebas">CHECKOUT</h1>
-        <LocalBadge isLocal={locality?.isLocal ?? false} />
+        <LocalBadge isLocal={locality?.eligible ?? false} />
       </div>
 
       {/* Locality Banner for Checkout */}
@@ -184,9 +184,9 @@ export default function Checkout() {
           <div className="inline-flex items-center gap-2.5 bg-gradient-to-r from-slate-800/30 to-slate-700/30 border border-slate-600/40 rounded-2xl px-4 py-2 backdrop-blur-sm shadow-lg">
             <MapPin className="w-4 h-4 text-blue-400 flex-shrink-0" />
             <span className="text-sm font-medium text-slate-100">
-              {locality.isLocal ? (
+              {locality.eligible ? (
                 "You are in our FREE DELIVERY zone!"
-              ) : locality.hasAddress ? (
+              ) : selectedAddress ? (
                 "You're outside our Local Delivery area. Shipping costs will be calculated for your items."
               ) : (
                 "Please add your address to determine delivery options and costs."
@@ -407,7 +407,7 @@ export default function Checkout() {
                           <div className="flex justify-between items-center">
                             <div>
                               <p className="font-medium text-green-800">FREE Local Delivery</p>
-                              <p className="text-sm text-green-600">Most orders arrive in 2–4 hrs</p>
+                              <p className="text-sm text-green-600">Most orders arrive in 24–48 hrs</p>
                             </div>
                             <p className="font-medium text-green-800">FREE</p>
                           </div>
