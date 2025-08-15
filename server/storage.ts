@@ -789,11 +789,12 @@ export class DatabaseStorage implements IStorage {
   async createCartItem(data: {ownerId: string, productId: string, variantId: string | null, quantity: number}) {
     console.log(`[STORAGE] Creating cart item:`, data);
     const itemToInsert = {
+      ownerId: data.ownerId,
       productId: data.productId,
       quantity: data.quantity,
-      variantId: data.variantId,
-      userId: data.ownerId.includes('@') ? data.ownerId : null, // assume email format
-      sessionId: !data.ownerId.includes('@') ? data.ownerId : null
+      // Keep legacy columns for now during migration
+      userId: data.ownerId.includes('-') && data.ownerId.length === 36 ? data.ownerId : null,
+      sessionId: !(data.ownerId.includes('-') && data.ownerId.length === 36) ? data.ownerId : null
     };
     
     const [newItem] = await db.insert(cartItems).values(itemToInsert).returning();
@@ -844,27 +845,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   // V2 Cart Service methods (required by new cart service)
-  async getCartItemsByOwner(ownerId: string): Promise<{ id: string; ownerId: string; productId: string; variantId: string | null; quantity: number; }[]> {
+  async getCartItemsByOwner(ownerId: string): Promise<{ id: string; ownerId: string; productId: string; quantity: number; }[]> {
     try {
       const items = await db.select({
         id: cartItems.id,
-        userId: cartItems.userId,
-        sessionId: cartItems.sessionId,
+        ownerId: cartItems.ownerId,
         productId: cartItems.productId,
-        variantId: cartItems.variantId,
         quantity: cartItems.quantity
       })
       .from(cartItems)
-      .where(or(
-        eq(cartItems.userId, ownerId),
-        eq(cartItems.sessionId, ownerId)
-      ));
+      .where(eq(cartItems.ownerId, ownerId));
 
       return items.map(item => ({
-        id: item.id,
-        ownerId: item.userId || item.sessionId || 'unknown',
+        id: item.id!,
+        ownerId: item.ownerId!,
         productId: item.productId!,
-        variantId: item.variantId,
         quantity: item.quantity
       }));
     } catch (error) {
@@ -875,23 +870,32 @@ export class DatabaseStorage implements IStorage {
 
   async getCartByOwner(ownerId: string): Promise<{ items: any[]; totals: { subtotal: number; total: number; }; }> {
     try {
-      // Use the existing getCartItems method which works correctly
-      let items;
-      
-      if (ownerId.includes('-') && ownerId.length === 36) {
-        // It's a UUID (user ID) - get items for both user and session
-        const userItems = await this.getCartItems(ownerId, undefined);
-        const sessionItems = await this.getCartItems(undefined, ownerId);
-        items = [...userItems, ...sessionItems];
-      } else {
-        // It's a session ID
-        items = await this.getCartItems(undefined, ownerId);
-      }
+      // Use the new owner_id column for unified queries
+      const items = await db
+        .select({
+          id: cartItems.id,
+          ownerId: cartItems.ownerId,
+          productId: cartItems.productId,
+          quantity: cartItems.quantity,
+          createdAt: cartItems.createdAt,
+          product: {
+            id: products.id,
+            name: products.name,
+            price: products.price,
+            mode: products.mode
+          }
+        })
+        .from(cartItems)
+        .leftJoin(products, eq(products.id, cartItems.productId))
+        .where(eq(cartItems.ownerId, ownerId));
 
-      const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.product.price), 0);
+      const subtotal = items.reduce((sum, item) => sum + (item.quantity * (item.product?.price || 0)), 0);
       
       return {
-        items,
+        items: items.map(item => ({
+          ...item,
+          product: item.product || { id: item.productId, name: 'Unknown Product', price: 0, mode: 'LOCAL_AND_SHIPPING' }
+        })),
         totals: {
           subtotal,
           total: subtotal
@@ -915,15 +919,14 @@ export class DatabaseStorage implements IStorage {
   async updateCartItemOwner(id: string, newOwnerId: string): Promise<void> {
     const isUserId = newOwnerId.includes('-') && newOwnerId.length === 36; // UUID format check
     
-    if (isUserId) {
-      await db.update(cartItems)
-        .set({ userId: newOwnerId, sessionId: null, updatedAt: new Date() })
-        .where(eq(cartItems.id, id));
-    } else {
-      await db.update(cartItems)
-        .set({ sessionId: newOwnerId, userId: null, updatedAt: new Date() })
-        .where(eq(cartItems.id, id));
-    }
+    await db.update(cartItems)
+      .set({ 
+        ownerId: newOwnerId,
+        userId: isUserId ? newOwnerId : null,
+        sessionId: !isUserId ? newOwnerId : null,
+        updatedAt: new Date() 
+      })
+      .where(eq(cartItems.id, id));
   }
 
   async removeCartItem(id: string): Promise<void> {

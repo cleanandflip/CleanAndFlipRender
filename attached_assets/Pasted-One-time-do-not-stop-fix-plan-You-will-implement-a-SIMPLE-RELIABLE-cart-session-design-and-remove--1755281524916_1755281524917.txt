@@ -1,0 +1,402 @@
+One-time, do-not-stop fix plan
+You will implement a SIMPLE, RELIABLE cart/session design and remove all conflicting code.
+Complete every step in order. Stop only when all verification checks pass.
+
+GOALS
+- Single owner model: ownerId = user.id (if logged in) else ownerId = req.sessionID.
+- Only ONE cookie: express-session’s connect.sid. No custom “sid”.
+- Cart reads/writes use ONLY ownerId. No mixed user_id/session_id logic.
+- V2 endpoints only. Legacy /api/cart/items is removed or 410.
+- No accidental purges by cleanup. Only BLOCKED items are removed.
+- Drizzle storage no longer references undefined selection objects.
+
+===============================================================================
+STEP 0 — Branch & safety
+===============================================================================
+git checkout -b fix/cart-session-unify
+mkdir -p audit
+
+===============================================================================
+STEP 1 — Server bootstrap: session/CORS order + single cookie
+===============================================================================
+Open server/app.ts (or bootstrap) and ensure EXACT order:
+
+import express from "express";
+import cookieParser from "cookie-parser";
+import session from "express-session";
+import cors from "cors";
+import helmet from "helmet";
+import passport from "passport";
+
+const app = express();
+app.set("trust proxy", 1);
+app.use(helmet());
+app.use(express.json());
+app.use(cookieParser());
+
+const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
+app.use(session({
+  secret: process.env.SESSION_SECRET || "dev_secret_change_me",
+  resave: false,
+  saveUninitialized: true,              // guests get a stable session
+  name: "connect.sid",
+  cookie: {
+    httpOnly: true,
+    sameSite: process.env.CORS_ORIGIN ? "none" : "lax",
+    secure: !!process.env.CORS_ORIGIN || process.env.NODE_ENV === "production",
+    maxAge: ONE_MONTH
+  }
+}));
+
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || true, // e.g. http://localhost:5173
+  credentials: true
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+import ensureSession from "./middleware/ensureSession";
+app.use(ensureSession);                 // do NOT set or rotate cookies here
+
+export default app;
+
+===============================================================================
+STEP 2 — ensureSession: no custom cookies, no ID rotation
+===============================================================================
+Replace server/middleware/ensureSession.ts with:
+
+export default function ensureSession(req: any, _res: any, next: any) {
+  if (!req.session) return next(new Error("Session not initialized"));
+  (req as any).sessionId = req.sessionID; // alias only
+  next();
+}
+
+Search & remove any custom “sid” cookie writers or random guest IDs:
+rg -n --no-heading -g '!node_modules' -e "res\\.cookie\\(['\"]sid" -e "document\\.cookie\\s*=\\s*['\"]sid" -e "guest-" > audit/custom-sid-usages.txt
+# For every hit: delete the code that sets a "sid" cookie or crafts a guest-* id.
+
+===============================================================================
+STEP 3 — Schema: collapse user_id/session_id → owner_id (one source of truth)
+===============================================================================
+Create a Drizzle migration (adjust names to your table/columns):
+
+-- 1) Add owner_id text and backfill
+ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS owner_id text;
+
+UPDATE cart_items
+SET owner_id = COALESCE(user_id::text, session_id::text)
+WHERE owner_id IS NULL;
+
+-- 2) Enforce not null and uniqueness (one row per product/variant per owner)
+ALTER TABLE cart_items ALTER COLUMN owner_id SET NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS cart_items_owner_prod_var_uidx
+ON cart_items (owner_id, product_id, COALESCE(variant_id, ''));
+
+-- 3) Guards
+ALTER TABLE cart_items
+  ADD CONSTRAINT cart_qty_positive CHECK (qty > 0);
+
+-- 4) Optional: drop legacy cols AFTER code is updated and verified
+-- ALTER TABLE cart_items DROP COLUMN session_id;
+-- ALTER TABLE cart_items DROP COLUMN user_id;
+
+Re-generate Drizzle types.
+
+===============================================================================
+STEP 4 — Server owner helper (use it EVERYWHERE)
+===============================================================================
+Create/replace server/utils/cartOwner.ts:
+
+export function getCartOwnerId(req: any): string {
+  return req.user?.id ?? req.sessionID; // user > guest
+}
+
+Search/replace legacy owner logic:
+rg -n --no-heading -g '!node_modules' "getUserIdFromReq|session\\.cartOwnerId|\\bsession_id\\b|\\buser_id\\b" > audit/owner-usages.txt
+# Patch each file: import { getCartOwnerId } and use ownerId everywhere (queries, logs).
+
+===============================================================================
+STEP 5 — Storage fixes (Drizzle): NO cartItemSelectionFields, no mixed keys
+===============================================================================
+Open server/storage.ts and implement **only ownerId** queries.
+Remove any `cartItemSelectionFields` references. Use explicit selects.
+
+Example Drizzle implementations (adapt names/types to your schema):
+
+import { db } from "./db";
+import { cartItems, products } from "../shared/schema";
+import { eq, and, isNull, sql } from "drizzle-orm";
+
+export async function getCartItemsByOwner(ownerId: string) {
+  return db.select({
+      id: cartItems.id,
+      ownerId: cartItems.ownerId,
+      productId: cartItems.productId,
+      variantId: cartItems.variantId,
+      qty: cartItems.qty,
+      createdAt: cartItems.createdAt,
+      product: {
+        id: products.id,
+        title: products.title,
+        price: products.price,
+        mode: products.mode // LOCAL_ONLY | LOCAL_AND_SHIPPING, etc.
+      }
+    })
+    .from(cartItems)
+    .leftJoin(products, eq(products.id, cartItems.productId))
+    .where(eq(cartItems.ownerId, ownerId));
+}
+
+export async function getCartByOwner(ownerId: string) {
+  const items = await getCartItemsByOwner(ownerId);
+  const totals = items.reduce((acc, it) => {
+    const p = it.product?.price ?? 0;
+    acc.subtotal += p * it.qty;
+    return acc;
+  }, { subtotal: 0 });
+  return { ownerId, items, totals };
+}
+
+export async function addOrUpdateCartItem(ownerId: string, productId: string, variantId: string|null, qty: number) {
+  // clamp qty > 0 here if needed
+  const keyVariant = variantId ?? null;
+
+  // Upsert by unique constraint (owner, product, variant)
+  await db.insert(cartItems).values({
+    ownerId, productId, variantId: keyVariant, qty
+  }).onConflictDoUpdate({
+    target: [cartItems.ownerId, cartItems.productId, sql`coalesce(${cartItems.variantId}, '')`],
+    set: { qty: sql`${cartItems.qty} + ${qty}` }
+  });
+
+  // Return current row (optionally clamp to stock here or in service)
+  const rows = await getCartItemsByOwner(ownerId);
+  const current = rows.find(r => r.productId === productId && (r.variantId ?? null) === keyVariant) || null;
+  return { item: current };
+}
+
+export async function updateCartItemQty(id: string, qty: number) {
+  return db.update(cartItems).set({ qty }).where(eq(cartItems.id, id));
+}
+export async function removeCartItemById(id: string) {
+  return db.delete(cartItems).where(eq(cartItems.id, id));
+}
+export async function removeCartItemsByProduct(ownerId: string, productId: string) {
+  return db.delete(cartItems)
+           .where(and(eq(cartItems.ownerId, ownerId), eq(cartItems.productId, productId)));
+}
+export async function rekeyCartItemOwner(id: string, newOwnerId: string) {
+  return db.update(cartItems).set({ ownerId: newOwnerId }).where(eq(cartItems.id, id));
+}
+
+**IMPORTANT:** Delete any code paths that read `session_id` or `user_id` from DB. All reads/writes must use `owner_id`.
+
+===============================================================================
+STEP 6 — Consolidation + clamp + login merge (no duplicates)
+===============================================================================
+Create/replace server/services/cartService.ts:
+
+import * as storage from "../storage";
+
+type Item = { id:string; ownerId:string; productId:string; variantId:string|null; qty:number };
+const k = (i:Item)=> `${i.productId}::${i.variantId ?? "NOVAR"}`;
+
+export async function getAvailableStock(productId: string) {
+  // TODO: read from your inventory table or default to a safe cap
+  return Number.MAX_SAFE_INTEGER;
+}
+
+export async function consolidateAndClampCart(ownerId: string) {
+  const items = await storage.getCartItemsByOwner(ownerId) as Item[];
+  const map = new Map<string, Item>();
+
+  for (const it of items) {
+    const key = k(it);
+    if (!map.has(key)) map.set(key, { ...it });
+    else map.get(key)!.qty += it.qty;
+  }
+
+  for (const [key, merged] of map) {
+    const stock = await getAvailableStock(merged.productId);
+    const clamped = Math.max(0, Math.min(merged.qty, stock));
+    const dupes = items.filter(i => k(i) === key);
+
+    if (dupes[0]) await storage.updateCartItemQty(dupes[0].id, clamped);
+    for (let i=1;i<dupes.length;i++) await storage.removeCartItemById(dupes[i].id);
+    if (!clamped && dupes[0]) await storage.removeCartItemById(dupes[0].id);
+  }
+}
+
+export async function mergeSessionCartIntoUser(sessionOwner: string, userId: string) {
+  if (!sessionOwner || !userId || sessionOwner === userId) return;
+  const sessionItems = await storage.getCartItemsByOwner(sessionOwner) as Item[];
+  if (!sessionItems.length) return;
+  for (const it of sessionItems) await storage.rekeyCartItemOwner(it.id, userId);
+  await consolidateAndClampCart(userId);
+}
+
+Create server/middleware/mergeCartOnAuth.ts:
+
+import { mergeSessionCartIntoUser } from "../services/cartService";
+export default async function mergeCartOnAuth(req:any,_res:any,next:any){
+  try {
+    if (req.user && req.session && !req.session.__cartMerged) {
+      await mergeSessionCartIntoUser(req.sessionID, req.user.id);
+      req.session.__cartMerged = true;
+    }
+    next();
+  } catch(e){ next(e); }
+}
+
+Mount right after passport.session():
+
+app.use(mergeCartOnAuth);
+
+===============================================================================
+STEP 7 — Routes: V2 only, consolidate on GET, remove legacy adds
+===============================================================================
+Open server/routes/cart.v2.ts and ensure:
+
+import { getCartOwnerId } from "../utils/cartOwner";
+import { consolidateAndClampCart } from "../services/cartService";
+import * as storage from "../storage";
+
+router.get("/api/cart", async (req,res,next)=>{
+  try {
+    const ownerId = getCartOwnerId(req);
+    await consolidateAndClampCart(ownerId);
+    const cart = await storage.getCartByOwner(ownerId);
+    return res.json(cart);
+  } catch(e){ next(e); }
+});
+
+router.post("/api/cart", async (req,res,next)=>{
+  try {
+    const ownerId = getCartOwnerId(req);
+    const { productId, qty, variantId } = req.body || {};
+    if (!productId || typeof qty !== "number") return res.status(400).json({ error:"INVALID_BODY" });
+    const result = await storage.addOrUpdateCartItem(ownerId, productId, variantId ?? null, qty);
+    return res.status(201).json({ ok:true, item: result.item });
+  } catch(e){ next(e); }
+});
+
+router.delete("/api/cart/product/:productId", async (req,res,next)=>{
+  try {
+    const ownerId = getCartOwnerId(req);
+    await storage.removeCartItemsByProduct(ownerId, req.params.productId);
+    return res.json({ ok:true });
+  } catch(e){ next(e); }
+});
+
+**Kill legacy POST /api/cart/items**:
+- Remove any router that mounts `/api/cart/items`.
+- If you need a transition period: respond `410 Gone` and instruct client to use `/api/cart`.
+
+===============================================================================
+STEP 8 — Fix cleanup policy (stop deleting valid LOCAL_ONLY items)
+===============================================================================
+Open server/services/cartCleanup.ts (or similar) and **only purge when blocked**:
+
+// Before doing any delete:
+if (effectiveness !== "BLOCKED") return { removed: 0 };
+// Do NOT remove items for "ADD_ALLOWED", "LOCAL_AND_SHIPPING", "PICKUP_ONLY", etc.
+
+Search log message “reason=LOCAL_AND_SHIPPING” and remove that path:
+rg -n --no-heading -g '!node_modules' "LOCAL_AND_SHIPPING" server/services/cartCleanup.ts
+# Replace any delete calls tied to LOCAL_AND_SHIPPING with NO-OP.
+
+===============================================================================
+STEP 9 — Client: send cookies, use V2, invalidate queries
+===============================================================================
+Open client/src/lib/api.ts:
+
+export async function apiJson<T>(path:string, init:RequestInit = {}): Promise<T> {
+  const res = await fetch(path, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...(init.headers||{}) },
+    credentials: "include"  // REQUIRED
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(()=> ({}));
+    const err:any = new Error(body?.error || `HTTP ${res.status}`);
+    err.status = res.status; err.body = body; throw err;
+  }
+  return res.json();
+}
+
+Open client/src/lib/cartApi.ts:
+
+import { apiJson } from "@/lib/api";
+export const addToCartApi = (p:{productId:string; qty:number; variantId?:string|null}) =>
+  apiJson("/api/cart",{ method:"POST", body: JSON.stringify({ ...p, variantId: p.variantId ?? null })});
+export const deleteByProduct = (productId:string) =>
+  apiJson(`/api/cart/product/${productId}`, { method:"DELETE" });
+
+Open client/src/hooks/useCart.ts and ensure it queries **/api/cart**, not legacy, and invalidates on success.
+
+If dev is cross-origin, ensure server SameSite:'none'/secure:true and client uses `credentials:'include'`. Prefer Vite proxy so calls are relative (same-origin).
+
+===============================================================================
+STEP 10 — Purge old/conflicting code
+===============================================================================
+rm -f server/routes/cart.ts \
+      server/lib/locality \
+      server/lib/localityChecker \
+      server/locality/getLocalityForRequest \
+      client/src/hooks/use-cart.tsx \
+      src/lib/locality.ts || true
+
+Add ESLint guard (no-restricted-imports) to block reintroduction of the above.
+
+===============================================================================
+STEP 11 — Verification (must ALL pass)
+===============================================================================
+# A) Schema & data sanity
+#   - Ensure cart_items contains ONLY owner_id (no code reading session_id/user_id)
+#   - Ensure unique index exists (owner, product, variant)
+
+# B) CURL same cookie jar
+rm -f /tmp/c.sess
+echo "=== Add #1 ===" && curl -i -c /tmp/c.sess -b /tmp/c.sess -H "Content-Type: application/json" \
+  -X POST http://localhost:5000/api/cart --data '{"productId":"TEST-1","qty":1}'
+echo "=== Add #2 ===" && curl -i -c /tmp/c.sess -b /tmp/c.sess -H "Content-Type: application/json" \
+  -X POST http://localhost:5000/api/cart --data '{"productId":"TEST-1","qty":1}'
+echo "=== GET cart (expect qty=2) ===" && curl -s -c /tmp/c.sess -b /tmp/c.sess http://localhost:5000/api/cart | head -200
+
+# Expect:
+# - Only one Set-Cookie: connect.sid
+# - Same connect.sid reused
+# - GET shows TEST-1 with qty 2
+
+# C) Auth merge
+# 1) As guest, add TEST-2 twice.
+# 2) Log in (same tab/session).
+# 3) GET /api/cart -> TEST-2 is present under user ownerId; no duplicate rows.
+
+# D) Cleanup safety
+# - Add a LOCAL_ONLY item while userMode = LOCAL_AND_SHIPPING → should NOT be deleted.
+# - Only items with effectiveness === BLOCKED are purged.
+
+===============================================================================
+STEP 12 — Commit
+===============================================================================
+git add .
+git commit -m "fix(cart/session): single owner_id; V2 only; no legacy cookies; Drizzle selections explicit; safe cleanup; client credentials; import guards"
+
+What this fixes from your logs
+
+Fragmentation: You had rows with both session_id and user_id. We collapse to owner_id only and update all queries. No more split carts.
+
+New session every request: Client now always sends cookies; server uses only connect.sid (no custom sid), so the same owner is used by product page and cart page.
+
+Legacy adds: /api/cart/items caused mismatched behavior. We remove it and use V2 /api/cart only.
+
+Drizzle error (“undefined selection fields”): storage now uses explicit selects from schema; no undefined constants.
+
+Cleanup loop deleting valid items: cleanup now only deletes when effectiveness === 'BLOCKED', not for LOCAL_AND_SHIPPING or any allowed state.
+
+Dupes & stock: upsert + unique index + consolidateAndClampCart ensure one row per (owner, product, variant) and clamp to available stock.
+
+Run the verification curl. If anything fails, check audit/custom-sid-usages.txt and audit/owner-usages.txt for leftovers, and make sure the client isn’t calling /api/cart/items anywhere.
