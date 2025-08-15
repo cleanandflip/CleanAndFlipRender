@@ -409,18 +409,18 @@ export default function Checkout() {
                     // LOCAL USER = Always prioritize LOCAL DELIVERY for LOCAL_AND_SHIPPING items
                     if (isUserLocal) {
                       return (
-                        <div className="mt-4 p-3 border rounded bg-green-50 border-green-200">
+                        <div className="mt-4 p-3 border rounded bg-green-900/20 border-green-700/30">
                           <div className="flex justify-between items-center">
                             <div>
-                              <p className="font-medium text-green-800">FREE Local Delivery</p>
-                              <p className="text-sm text-green-600">
+                              <p className="font-medium text-green-300">FREE Local Delivery</p>
+                              <p className="text-sm text-green-400">
                                 {hasLocalAndShippingItems 
                                   ? "Your items will be delivered locally • Most orders arrive in 24–48 hrs"
                                   : "Most orders arrive in 24–48 hrs"
                                 }
                               </p>
                             </div>
-                            <p className="font-medium text-green-800">FREE</p>
+                            <p className="font-medium text-green-300">FREE</p>
                           </div>
                         </div>
                       );
@@ -429,10 +429,10 @@ export default function Checkout() {
                     // NON-LOCAL USER with LOCAL-ONLY items = BLOCKED
                     if (!isUserLocal && hasLocalOnlyItems && !hasShippingItems) {
                       return (
-                        <div className="mt-4 p-3 border rounded bg-red-50 border-red-200">
+                        <div className="mt-4 p-3 border rounded bg-red-900/20 border-red-700/30">
                           <div className="text-center">
-                            <p className="font-medium text-red-800 mb-1">Local Delivery Only Items</p>
-                            <p className="text-sm text-red-600">These items are not available for shipping to your area</p>
+                            <p className="font-medium text-red-300 mb-1">Local Delivery Only Items</p>
+                            <p className="text-sm text-red-400">These items are not available for shipping to your area</p>
                           </div>
                         </div>
                       );
@@ -441,18 +441,18 @@ export default function Checkout() {
                     // NON-LOCAL USER with SHIPPING-AVAILABLE items (including LOCAL_AND_SHIPPING)
                     if (!isUserLocal && hasShippingItems) {
                       return (
-                        <div className="mt-4 p-3 border rounded bg-white">
+                        <div className="mt-4 p-3 border rounded bg-[#2a3441] border-gray-600/30">
                           <div className="flex justify-between items-center">
                             <div>
-                              <p className="font-medium">Standard Shipping</p>
-                              <p className="text-sm text-gray-600">
+                              <p className="font-medium text-gray-200">Standard Shipping</p>
+                              <p className="text-sm text-gray-400">
                                 {hasLocalAndShippingItems 
                                   ? "Your items will be shipped • 5-7 business days"
                                   : "5-7 business days"
                                 }
                               </p>
                             </div>
-                            <p className="font-medium">$9.99</p>
+                            <p className="font-medium text-gray-200">$9.99</p>
                           </div>
                         </div>
                       );
@@ -460,9 +460,9 @@ export default function Checkout() {
 
                     // DEFAULT FALLBACK
                     return (
-                      <div className="mt-4 p-3 border rounded bg-white">
+                      <div className="mt-4 p-3 border rounded bg-[#2a3441] border-gray-600/30">
                         <div className="text-center">
-                          <p className="text-sm text-gray-600">Delivery options will be calculated based on your items</p>
+                          <p className="text-sm text-gray-400">Delivery options will be calculated based on your items</p>
                         </div>
                       </div>
                     );
