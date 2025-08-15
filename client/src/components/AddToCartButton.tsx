@@ -87,6 +87,7 @@ export default function AddToCartButton({
   if (itemInCart) {
     return (
       <button
+        type="button"
         className={cn(
           "w-full px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 border-0 text-white flex items-center justify-center disabled:opacity-50",
           isHovering 
@@ -94,7 +95,11 @@ export default function AddToCartButton({
             : "!bg-green-600 hover:!bg-green-600",
           className
         )}
-        onClick={handleRemoveFromCart}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleRemoveFromCart();
+        }}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         disabled={isRemovingByProduct}
@@ -118,6 +123,7 @@ export default function AddToCartButton({
   if (isBlocked) {
     return (
       <Button
+        type="button"
         size={size}
         className={cn("w-full bg-gray-400 text-gray-600 cursor-not-allowed", className)}
         disabled={true}
@@ -131,9 +137,14 @@ export default function AddToCartButton({
 
   return (
     <Button
+      type="button"
       size={size}
       className={cn("w-full bg-blue-600 hover:bg-blue-700 text-white border-0", className)}
-      onClick={handleAddToCart}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleAddToCart();
+      }}
       disabled={isAddingToCart}
       data-testid={`button-add-to-cart-${productId}`}
     >

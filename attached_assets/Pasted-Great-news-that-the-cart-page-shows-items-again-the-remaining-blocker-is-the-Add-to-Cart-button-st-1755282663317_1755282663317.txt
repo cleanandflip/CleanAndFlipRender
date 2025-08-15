@@ -1,0 +1,195 @@
+Great news that the cart page shows items again — the remaining blocker is the Add to Cart button still not firing correctly. Your logs give it away:
+
+I’m seeing POST /api/cart 200 and also POST / 200 right after you click.
+
+That / POST indicates the button is behaving like a form submit (default browser behavior), which cancels your React handler and navigates.
+
+I also see subtotal: NaN in the server logs: that’s a price type bug (string/undefined being summed).
+
+Below is a tight, copy-paste set of fixes for Replit to apply across the app. They’ll (1) stop the accidental form submission, (2) ensure the hook shape matches the button, and (3) fix the server subtotal NaN.
+
+✅ Do these changes exactly
+1) Make ALL buttons non-submitting + stop bubbling
+
+A. AddToCartButton.tsx (both render paths)
+
+For the green “In Cart” button (your plain <button>): add an explicit type="button" and prevent default.
+
+For the blue “Add to Cart” <Button>: pass type="button" and prevent default + stopPropagation too (cards/links often wrap this button).
+
+// In-cart state (plain <button>)
+<button
+  type="button"                             // <-- important
+  className={cn(/* ... */)}
+  onClick={(e) => {                         // <-- prevent accidental form submit + bubbling
+    e.preventDefault();
+    e.stopPropagation();
+    handleRemoveFromCart();
+  }}
+  onMouseEnter={() => setIsHovering(true)}
+  onMouseLeave={() => setIsHovering(false)}
+  disabled={isRemovingByProduct}
+  data-testid={`button-remove-from-cart-${productId}`}
+>
+  {/* ... */}
+</button>
+
+// Not-in-cart state (<Button> from your UI lib)
+<Button
+  type="button"                             // <-- important
+  size={size}
+  className={cn("w-full bg-blue-600 hover:bg-blue-700 text-white border-0", className)}
+  onClick={(e) => {                         // <-- prevent accidental form submit + bubbling
+    e.preventDefault();
+    e.stopPropagation();
+    handleAddToCart();
+  }}
+  disabled={isAddingToCart}
+  data-testid={`button-add-to-cart-${productId}`}
+>
+  {/* ... */}
+</Button>
+
+
+B. Ensure your design system Button defaults to type="button"
+
+Open client/src/components/ui/button.tsx (or wherever it lives). Make the default prop type="button" so every usage is safe unless explicitly set to submit.
+
+// button.tsx
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & { /* variants... */ };
+
+export const Button = React.forwardRef<HTMLButtonElement, Props>(
+  ({ type = "button", className, ...rest }, ref) => (
+    <button ref={ref} type={type} className={cn("...base-styles", className)} {...rest} />
+  )
+);
+
+
+Why: Your logs show POST / immediately after clicking the button — that’s the browser submitting a surrounding <form> because the button lacked type="button". This change prevents that everywhere.
+
+2) Make the hook API match the button’s expectations
+
+Your AddToCartButton.tsx expects useCart() to expose:
+{ data, addToCart, removeByProduct, isAddingToCart, isRemovingByProduct, isInCart, getItemQuantity }.
+
+Open client/src/hooks/useCart.ts and ensure this exact shape:
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiJson } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocality } from "@/hooks/useLocality";
+
+const getCart = () => apiJson("/api/cart");
+
+const addToCartApi = (p:{ productId: string; qty: number; variantId?: string | null }) =>
+  apiJson("/api/cart", { method: "POST", body: JSON.stringify({ ...p, variantId: p.variantId ?? null }) });
+
+const removeByProductApi = (productId: string) =>
+  apiJson(`/api/cart/product/${productId}`, { method: "DELETE" });
+
+export function useCart() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const { data: locality } = useLocality();
+  const key = ["cart", user?.id ?? "guest", locality?.localityVersion ?? "0"] as const;
+
+  const cartQuery = useQuery({ queryKey: key, queryFn: getCart, staleTime: 0 });
+
+  const addToCartMut = useMutation({
+    mutationFn: addToCartApi,
+    onSuccess: () => qc.invalidateQueries({ queryKey: key })
+  });
+
+  const removeByProductMut = useMutation({
+    mutationFn: removeByProductApi,
+    onSuccess: () => qc.invalidateQueries({ queryKey: key })
+  });
+
+  const isInCart = (productId: string) =>
+    !!cartQuery.data?.items?.some((i: any) => i.productId === productId);
+
+  const getItemQuantity = (productId: string) =>
+    cartQuery.data?.items?.find((i: any) => i.productId === productId)?.qty ?? 0;
+
+  return {
+    data: cartQuery.data,
+    isLoading: cartQuery.isLoading,
+    isError: cartQuery.isError,
+
+    // expected by AddToCartButton.tsx:
+    addToCart: (p: { productId: string; qty: number; variantId?: string | null }) => addToCartMut.mutateAsync(p),
+    removeByProduct: (productId: string) => removeByProductMut.mutateAsync(productId),
+    isAddingToCart: addToCartMut.isPending,
+    isRemovingByProduct: removeByProductMut.isPending,
+
+    isInCart,
+    getItemQuantity,
+  };
+}
+
+
+Also sweep for any legacy calls still sending { quantity: 1 } instead of { qty: 1 }:
+
+rg -n --no-heading -g '!node_modules' -e "quantity\\s*:"
+
+
+Replace with qty.
+
+3) Fix server subtotal NaN and respond with the proper status
+
+A. Guard price as a number in your storage/cart builder
+
+Open server/storage.ts (or wherever getCartByOwner computes totals):
+
+export async function getCartByOwner(ownerId: string) {
+  const items = await getCartItemsByOwner(ownerId);
+
+  const totals = items.reduce((acc: any, it: any) => {
+    // Coerce to number; many schemas store price as string/decimal
+    const unit = Number(it?.product?.price ?? 0);
+    const price = Number.isFinite(unit) ? unit : 0;
+    acc.subtotal += price * Number(it.qty ?? 0);
+    return acc;
+  }, { subtotal: 0 });
+
+  return { ownerId, items, totals };
+}
+
+
+B. On POST /api/cart return 201 (your logs show 200 for POST)
+
+Open server/routes/cart.v2.ts:
+
+router.post("/api/cart", async (req, res, next) => {
+  try {
+    // ...
+    const result = await storage.addOrUpdateCartItem(ownerId, productId, variantId ?? null, qty);
+    return res.status(201).json({ ok: true, item: result.item });
+  } catch (e) { next(e); }
+});
+
+4) Quick sanity checks (must pass)
+
+Click Add to Cart on a product card. You should not see POST / in logs anymore, only POST /api/cart 201.
+
+Open the cart; the item is present. Change page and back; still present.
+
+Server logs should show subtotal: <number> (no NaN).
+
+If you’re on a page wrapped in a <form>, confirm all interactive buttons inside it are type="button".
+
+Optional extra: add a one-liner guard so you’ll never regress:
+
+# Fail CI if any Button lacks type
+rg -n --no-heading -g 'client/src/**/*.tsx' "<Button(?![^>]*type=)['\"][^>]*>" > audit/buttons-without-type.txt
+test ! -s audit/buttons-without-type.txt
+
+Why this works
+
+The form submit default was hijacking your click, causing POST / and canceling your fetch — now every button is explicitly non-submitting and stops bubbling.
+
+The hook contract now exactly matches what AddToCartButton.tsx expects, so isInCart/getItemQuantity resolve from the cached cart data.
+
+The server totals coerce price to a number, eliminating the NaN you’re logging and any subtle client rendering issues tied to it.
+
+If anything still acts weird after this, paste the new server log lines after a click; specifically I’ll want to see whether POST / still appears (it shouldn’t) and that POST /api/cart returns 201.

@@ -59,7 +59,7 @@ export default function AddToCartButtonUnified({
       return;
     }
     
-    addToCart({ productId, quantity: 1 });
+    addToCart({ productId, qty: 1 });
   };
 
   const handleRemoveFromCart = () => {

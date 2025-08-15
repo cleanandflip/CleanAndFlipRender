@@ -944,7 +944,12 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(products, eq(products.id, cartItems.productId))
         .where(eq(cartItems.ownerId, ownerId));
 
-      const subtotal = items.reduce((sum, item) => sum + (item.qty * (item.product?.price || 0)), 0);
+      const subtotal = items.reduce((sum, item) => {
+        const unit = Number(item.product?.price ?? 0);
+        const price = Number.isFinite(unit) ? unit : 0;
+        const quantity = Number(item.qty ?? 0);
+        return sum + (price * quantity);
+      }, 0);
       
       return {
         ownerId,

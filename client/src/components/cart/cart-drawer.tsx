@@ -168,7 +168,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                     if (newQuantity <= 0) {
                                       removeFromCart(item.productId);
                                     } else {
-                                      updateCartItem({ productId: item.productId, quantity: newQuantity });
+                                      updateCartItem({ productId: item.productId, qty: newQuantity });
                                     }
                                   }}
                                   className="p-1 hover:bg-white/10 transition-colors"
@@ -182,7 +182,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                 <button
                                   onClick={() => {
                                     const newQuantity = (item?.quantity || 0) + 1;
-                                    updateCartItem({ productId: item.productId, quantity: newQuantity });
+                                    updateCartItem({ productId: item.productId, qty: newQuantity });
                                   }}
                                   className="p-1 hover:bg-white/10 transition-colors"
                                   disabled={!!(item?.product?.stockQuantity && (item?.quantity || 0) >= item.product.stockQuantity)}
