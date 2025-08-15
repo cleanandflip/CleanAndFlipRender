@@ -493,19 +493,19 @@ export default function About() {
                 Ready to turn your unused equipment into cash or find quality gear for your home gym? 
                 We're here to help make it happen.
               </p>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <Link href="/sell-to-us">
-                  <Button variant="primary" size="lg" className="w-full">
+                  <Button variant="primary" size="lg" className="w-full py-4">
                     Sell Your Equipment
                   </Button>
                 </Link>
                 <Link href="/products">
-                  <Button variant="primary" size="lg" className="w-full">
+                  <Button variant="primary" size="lg" className="w-full py-4">
                     Shop Equipment
                   </Button>
                 </Link>
                 <Link href="/contact">
-                  <Button variant="secondary" size="lg" className="w-full">
+                  <Button variant="secondary" size="lg" className="w-full py-4">
                     Contact Us
                   </Button>
                 </Link>
