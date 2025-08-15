@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryEligibilityBanner';
+
 import { LocalBadge } from '@/components/locality/LocalBadge';
 
 // Create a simple checkout button for now
@@ -152,10 +152,7 @@ export default function CartPageV2() {
   return (
     <div className="min-h-screen pt-32 px-6">
       <div className="max-w-6xl mx-auto">
-        {/* Delivery Eligibility Banner */}
-        <div className="mb-6">
-          <DeliveryEligibilityBanner />
-        </div>
+
         
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bebas">SHOPPING CART</h1>
