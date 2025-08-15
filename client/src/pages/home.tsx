@@ -119,7 +119,7 @@ function HomeSections() {
       )}
 
       {/* Hero Section - Compact */}
-      <section className="flex items-center justify-center py-16 md:py-24 px-4 md:px-6">
+      <section className="flex items-center justify-center py-20 md:py-28 px-4 md:px-6">
         <div className="max-w-5xl mx-auto text-center">
           {/* Main Heading */}
           <motion.div 
@@ -128,23 +128,18 @@ function HomeSections() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.08] max-w-3xl mx-auto">
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.05] max-w-3xl mx-auto">
               Local Weights, Fair Prices
             </h1>
 
-            <p className="mt-4 text-base md:text-lg text-muted-foreground">
+            <p className="mt-4 text-base md:text-lg leading-relaxed text-white/80">
               Buy & sell with fast pickup & delivery
             </p>
 
-            <p className="mt-3 text-xs md:text-sm text-muted-foreground tracking-wide">
-              Based in Asheville, NC
-            </p>
-            
-            <p 
-              className="text-lg md:text-xl max-w-3xl mx-auto mt-8 md:mt-10 font-semibold"
-              style={{ color: theme.colors.brand.blue }}
-            >
-              Dumbbells • Kettlebells • Plates • Barbells • More
+            <p className="mt-5">
+              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs md:text-sm text-white/70 tracking-wide">
+                Based in Asheville, NC
+              </span>
             </p>
           </motion.div>
 

@@ -1,0 +1,71 @@
+File to edit
+
+client/src/pages/home.tsx (your hero is in this file)
+
+1) Remove the categories line
+
+Find the paragraph that renders:
+
+Dumbbells • Kettlebells • Plates • Barbells • More
+
+
+It likely looks like:
+
+<p className="text-lg md:text-xl max-w-3xl mx-auto mt-8 md:mt-10 font-semibold">
+  Dumbbells • Kettlebells • Plates • Barbells • More
+</p>
+
+
+Delete that entire <p> block (or comment it out).
+
+2) Make the small text look premium (spacing + micro-typography only)
+
+Find the three-line hero block (H1, subhead, location) and replace ONLY the classNames (keep text exactly):
+
+<h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.05] max-w-3xl mx-auto">
+  Local Weights, Fair Prices
+</h1>
+
+<p className="mt-4 text-base md:text-lg leading-relaxed text-white/80">
+  Buy & sell with fast pickup & delivery
+</p>
+
+<p className="mt-5">
+  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs md:text-sm text-white/70 tracking-wide">
+    Based in Asheville, NC
+  </span>
+</p>
+
+
+What changed (why it looks better):
+
+Subhead uses leading-relaxed and text-white/80 for softer contrast and easier scan.
+
+Location line becomes a subtle pill (tiny border + soft background) so it reads as metadata, not body copy.
+
+Spacing nudged to mt-4 (H1 → subhead) and mt-5 (subhead → location) for breathable rhythm.
+
+H1 keeps impact but with slightly tighter line-height leading-[1.05] and a safe max-w-3xl.
+
+3) (Optional) Give the hero a touch more breathing room
+
+If your hero <section> wrapper still feels tight, bump its padding only (no layout change):
+
+Find:
+
+<section className="flex items-center justify-center py-16 md:py-24 px-4 md:px-6">
+
+
+Ensure it uses at least:
+
+<section className="flex items-center justify-center py-20 md:py-28 px-4 md:px-6">
+
+Quick acceptance checklist
+
+The category line is gone.
+
+Subhead is easier to read (softer color, better line-height).
+
+“Based in Asheville, NC” appears as a small rounded pill, not a third headline.
+
+Overall spacing around the hero text feels airy, not cramped.
