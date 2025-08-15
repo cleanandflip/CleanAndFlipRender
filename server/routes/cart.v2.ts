@@ -1,19 +1,22 @@
 // V2 Cart Router - SSOT Locality Enforcement
 import { Router } from 'express';
 import { modeFromProduct } from '../../shared/fulfillment';
-import { getLocalityForRequest, getCartOwnerId } from '../services/localityService';
+import { getLocalityForRequest } from '../services/localityService';
 import { computeEffectiveAvailability } from '../../shared/availability';
+import { getCartOwnerId } from '../utils/cartOwner';
+import { addToCartConsolidating, clampCartToStock } from '../services/cartService';
+import { storage } from '../storage';
 
 export const cartRouterV2 = Router();
 
-// Unified cart add with SSOT locality enforcement
+// Unified cart add with SSOT locality enforcement and consolidation
 cartRouterV2.post('/items', async (req, res, next) => {
   try {
-    const { productId, quantity = 1 } = req.body ?? {};
+    const { productId, quantity = 1, variantId } = req.body ?? {};
     if (!productId) return res.status(400).json({ message: 'productId required' });
+    if (typeof quantity !== 'number') return res.status(400).json({ error: 'INVALID_BODY' });
 
     const ownerId = getCartOwnerId(req);
-    const { storage } = await import('../storage');
     const product = await storage.getProduct(productId);
     
     if (!product) return res.status(404).json({ message: 'Product not found' });
@@ -38,44 +41,21 @@ cartRouterV2.post('/items', async (req, res, next) => {
     
     console.log(`[CART ENFORCE V2] ADD_ALLOWED for ${productId} by ${ownerId}`);
 
-    // Check if item already exists in cart
-    const existingItem = await storage.getCartItem(
-      req.session?.user?.id || null,
-      req.session?.id || 'anonymous',
-      productId
-    );
-
-    const requestedQuantity = Number(quantity) || 1;
-    const finalQuantity = existingItem ? existingItem.quantity + requestedQuantity : requestedQuantity;
-
-    // Stock validation - prevent adding more than available
-    if (product.stockQuantity !== null && finalQuantity > product.stockQuantity) {
-      return res.status(422).json({
-        error: 'INSUFFICIENT_STOCK',
-        available: product.stockQuantity,
-        requested: finalQuantity,
-        message: `Only ${product.stockQuantity} item(s) available in stock`
+    // Use consolidating add service
+    const result = await addToCartConsolidating(ownerId, productId, quantity, variantId);
+    
+    if (result.status === "ADDED_PARTIAL_STOCK_CAP") {
+      return res.status(201).json({ 
+        ok: true, 
+        ...result, 
+        warning: "Requested quantity capped by stock",
+        locality: locality
       });
     }
-
-    let item;
-    if (existingItem) {
-      // Update existing cart item quantity
-      item = await storage.updateCartItem(existingItem.id, finalQuantity);
-    } else {
-      // Add new item to cart
-      const cartItemData = {
-        productId,
-        quantity: requestedQuantity,
-        userId: req.session?.user?.id || null,
-        sessionId: req.session?.id || 'anonymous',
-      };
-      item = await storage.addToCart(cartItemData);
-    }
     
-    // Return item with current locality context for client cache update
-    return res.status(200).json({
-      ...item,
+    return res.status(201).json({ 
+      ok: true, 
+      ...result,
       locality: locality
     });
     
@@ -85,14 +65,16 @@ cartRouterV2.post('/items', async (req, res, next) => {
   }
 });
 
-// Get cart with SSOT auto-purge
+// Get cart with SSOT auto-purge and consolidation
 cartRouterV2.get('/', async (req, res, next) => {
   try {
     const ownerId = getCartOwnerId(req);
-    const { storage } = await import('../storage');
     
     // Get SSOT locality evaluation
     const locality = await getLocalityForRequest(req);
+    
+    // Consolidate and clamp cart to stock
+    await clampCartToStock(ownerId);
     
     // Auto-purge ineligible items if needed
     let purgeInfo = { purgedLocalOnly: false, removed: 0 };
@@ -107,38 +89,36 @@ cartRouterV2.get('/', async (req, res, next) => {
       }
     }
     
-    const cartItems = await storage.getCartItems(
-      req.session?.user?.id || undefined,
-      req.session?.id || 'anonymous'
-    );
-    
-    const items = Array.isArray(cartItems) ? cartItems : [];
-    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const cart = await storage.getCartByOwner(ownerId);
     
     // Return cart with locality context for client
-    const cart = { 
-      items: items, 
-      totals: { subtotal, total: subtotal },
+    const cartWithContext = { 
+      ...cart,
       ownerId: ownerId,
       locality: locality,
       ...purgeInfo
     };
     
-    res.json(cart);
+    res.json(cartWithContext);
   } catch (e) {
     console.error('[CART V2] Error in GET:', e);
     next(e);
   }
 });
 
-// Remove from cart
-cartRouterV2.delete('/items/:itemId', async (req, res, next) => {
+// Legacy DELETE by item id (back-compat) but scope by owner
+cartRouterV2.delete('/items/:id', async (req, res, next) => {
   try {
-    const userId = getUserIdFromReq(req);
-    const { storage } = await import('../storage');
-    await storage.removeFromCart(req.params.itemId);
-    res.json({ ok: true });
+    const ownerId = getCartOwnerId(req);
+    const { id } = req.params;
+    const item = await storage.getCartItemById(id);
+    if (!item || item.ownerId !== ownerId) {
+      return res.status(404).json({ error: "NOT_FOUND" });
+    }
+    await storage.removeCartItemById(id);
+    return res.json({ ok: true });
   } catch (e) {
+    console.error('[CART V2] DELETE by id error:', e);
     next(e);
   }
 });
@@ -189,42 +169,18 @@ cartRouterV2.put('/items/:itemId', async (req, res, next) => {
   }
 });
 
-// DELETE by compound key (ownerId, productId)
+// Preferred DELETE by product id (removes all rows of that product for the owner)
 cartRouterV2.delete('/product/:productId', async (req, res, next) => {
   try {
     const ownerId = getCartOwnerId(req);
     const { productId } = req.params;
-    const { storage } = await import('../storage');
-
-    // Use compound DELETE by (ownerId, productId) - authenticated users only
-    if (!req.session?.user?.id) {
-      return res.status(401).json({ 
-        error: 'AUTH_REQUIRED', 
-        message: 'Sign in required for compound DELETE' 
-      });
-    }
-
-    // Try to remove by user + product compound key
-    let removed = 0;
-    try {
-      const result = await storage.removeFromCartByUserAndProduct(req.session.user.id, productId);
-      removed = result?.rowCount || 0;
-    } catch (error) {
-      console.warn('[CART V2] Compound DELETE error, falling back to basic delete:', error);
-      // Fallback: find item and delete by ID
-      const cartItems = await storage.getCartItems(req.session.user.id);
-      const targetItem = cartItems.find(item => item.productId === productId);
-      if (targetItem) {
-        await storage.removeFromCart(targetItem.id);
-        removed = 1;
-      }
-    }
-
+    
+    const removed = await storage.removeCartItemsByProduct(ownerId, productId);
     console.log(`[CART ENFORCE V2] compound DELETE { ownerId:'${ownerId}', productId:'${productId}', removed:${removed} }`);
     return res.json({ ok: true, removed });
     
   } catch (err) { 
-    console.error('[CART V2] DELETE error:', err);
+    console.error('[CART V2] DELETE by product error:', err);
     next(err); 
   }
 });

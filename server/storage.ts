@@ -684,6 +684,129 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
+  // NEW: Cart service helper functions
+  async getCartItemsByOwner(ownerId: string): Promise<any[]> {
+    console.log(`[STORAGE] Fetching cart items by owner: ${ownerId}`);
+    const items = await db
+      .select()
+      .from(cartItems)
+      .where(or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)));
+    
+    return items.map(item => ({
+      id: item.id,
+      ownerId: item.userId || item.sessionId,
+      productId: item.productId,
+      variantId: item.variantId || null,
+      quantity: item.quantity
+    }));
+  }
+
+  async getCartByOwner(ownerId: string): Promise<any> {
+    console.log(`[STORAGE] Fetching cart by owner: ${ownerId}`);
+    const items = await this.getCartItems(
+      ownerId.includes('@') ? ownerId : undefined, // assume email format for userId
+      !ownerId.includes('@') ? ownerId : undefined  // else it's sessionId
+    );
+    
+    const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.product.price) * item.quantity), 0);
+    return {
+      items,
+      totals: { subtotal, total: subtotal }
+    };
+  }
+
+  async getCartItemById(id: string): Promise<any | null> {
+    console.log(`[STORAGE] Fetching cart item by id: ${id}`);
+    const items = await db
+      .select()
+      .from(cartItems)
+      .where(eq(cartItems.id, id))
+      .limit(1);
+    
+    if (items.length === 0) return null;
+    const item = items[0];
+    return {
+      id: item.id,
+      ownerId: item.userId || item.sessionId,
+      productId: item.productId,
+      variantId: item.variantId || null,
+      quantity: item.quantity
+    };
+  }
+
+  async findCartItems(ownerId: string, productId: string, variantId: string | null): Promise<any[]> {
+    console.log(`[STORAGE] Finding cart items by owner/product: ${ownerId}/${productId}`);
+    let whereCondition = and(
+      or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
+      eq(cartItems.productId, productId)
+    );
+    
+    if (variantId) {
+      whereCondition = and(whereCondition, eq(cartItems.variantId, variantId));
+    } else {
+      whereCondition = and(whereCondition, isNull(cartItems.variantId));
+    }
+    
+    const items = await db
+      .select()
+      .from(cartItems)
+      .where(whereCondition);
+    
+    return items.map(item => ({
+      id: item.id,
+      ownerId: item.userId || item.sessionId,
+      productId: item.productId,
+      variantId: item.variantId || null,
+      quantity: item.quantity
+    }));
+  }
+
+  async createCartItem(data: {ownerId: string, productId: string, variantId: string | null, quantity: number}) {
+    console.log(`[STORAGE] Creating cart item:`, data);
+    const itemToInsert = {
+      productId: data.productId,
+      quantity: data.quantity,
+      variantId: data.variantId,
+      userId: data.ownerId.includes('@') ? data.ownerId : null, // assume email format
+      sessionId: !data.ownerId.includes('@') ? data.ownerId : null
+    };
+    
+    const [newItem] = await db.insert(cartItems).values(itemToInsert).returning();
+    return newItem;
+  }
+
+  async updateCartItemQty(id: string, qty: number) {
+    console.log(`[STORAGE] Updating cart item ${id} to quantity ${qty}`);
+    const [updatedItem] = await db
+      .update(cartItems)
+      .set({ quantity: qty })
+      .where(eq(cartItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+
+  async removeCartItemById(id: string) {
+    console.log(`[STORAGE] Removing cart item by id: ${id}`);
+    const result = await db.delete(cartItems).where(eq(cartItems.id, id));
+    return result.rowCount > 0;
+  }
+
+  async removeCartItemsByProduct(ownerId: string, productId: string) {
+    console.log(`[STORAGE] Removing cart items by owner/product: ${ownerId}/${productId}`);
+    const result = await db
+      .delete(cartItems)
+      .where(and(
+        or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
+        eq(cartItems.productId, productId)
+      ));
+    return result.rowCount || 0;
+  }
+
+  async getProductStock(productId: string): Promise<number> {
+    const product = await this.getProduct(productId);
+    return product?.stockQuantity ?? Number.MAX_SAFE_INTEGER;
+  }
+
   // Set cart shipping address
   async setCartShippingAddress(userId: string, addressId: string): Promise<void> {
     // For now, we can store this as a session or user preference
