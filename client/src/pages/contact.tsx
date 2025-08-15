@@ -348,7 +348,7 @@ export default function Contact() {
                   <Clock className="h-5 w-5 text-text-muted" />
                   <div>
                     <p className="font-medium">Hours</p>
-                    <p className="text-sm text-text-muted">Mon-Fri 9AM-6PM</p>
+                    <p className="text-sm text-text-muted">Mon-Sat 9AM-5PM</p>
                   </div>
                 </div>
               </div>
