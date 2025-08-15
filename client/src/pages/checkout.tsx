@@ -385,7 +385,7 @@ export default function Checkout() {
             <CardHeader>
               <CardTitle>Shipping Method</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6 pt-0 bg-[#1e232a]">
               {selectedAddress ? (
                 <div className="p-4 rounded-lg bg-[#212938]">
                   <p className="text-sm text-gray-600 mb-2">Shipping to:</p>
