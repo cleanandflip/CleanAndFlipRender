@@ -41,7 +41,7 @@ export default function CartPageV2() {
     data: cart, 
     isLoading, 
     isError, 
-    addToCart,
+    updateCartItem,
     removeByProduct 
   } = useCart();
   const { data: locality } = useLocality();
@@ -56,8 +56,8 @@ export default function CartPageV2() {
     if (newQuantity === 0) {
       await removeByProduct(productId);
     } else {
-      // For quantity updates, use the addToCart API which handles upserts
-      await addToCart({ productId, qty: newQuantity });
+      // Use updateCartItem to set absolute quantity (not additive)
+      await updateCartItem({ productId, qty: newQuantity });
     }
   };
 
