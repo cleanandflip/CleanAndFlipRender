@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -426,9 +427,18 @@ export default function Checkout() {
                   {cartItems.map((item: any) => (
                     <div key={item.id} className="flex justify-between items-center">
                       <div>
-                        <div className="font-medium">{item.product?.name}</div>
+                        <Link href={`/products/${item.productId}`}>
+                          <div className="font-medium cursor-pointer hover:text-blue-600 transition-colors">
+                            {item.product?.name}
+                          </div>
+                        </Link>
                         <div className="text-sm text-muted-foreground">
                           Qty: {item.qty}
+                          {item.product?.stockQuantity && item.product.stockQuantity > 0 && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              (Stock: {item.product.stockQuantity})
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="font-semibold">

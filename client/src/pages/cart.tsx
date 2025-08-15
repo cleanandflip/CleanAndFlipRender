@@ -52,10 +52,14 @@ export default function CartPageV2() {
   const subtotal = (cart as any)?.subtotal || 0;
   const total = (cart as any)?.total || 0;
 
-  const handleQuantityChange = async (productId: string, newQuantity: number) => {
+  const handleQuantityChange = async (productId: string, newQuantity: number, maxStock?: number) => {
     if (newQuantity === 0) {
       await removeByProduct(productId);
     } else {
+      // Check stock limit if provided (no limit means unlimited stock)
+      if (maxStock && maxStock > 0 && newQuantity > maxStock) {
+        return; // Don't allow exceeding stock
+      }
       // Use updateCartItem to set absolute quantity (not additive)
       await updateCartItem({ productId, qty: newQuantity });
     }
@@ -168,23 +172,35 @@ export default function CartPageV2() {
               <Card key={item.id} className="overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex gap-4">
-                    {/* Product Image */}
-                    <div className="w-24 h-24 flex-shrink-0">
+                    {/* Product Image - Clickable */}
+                    <Link href={`/products/${item.productId}`} className="w-24 h-24 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity">
                       <img
                         src={getImageUrl(item)}
                         alt={item.product?.name || 'Product'}
                         className="w-full h-full object-cover rounded-md"
                         loading="lazy"
                       />
-                    </div>
+                    </Link>
                     
                     {/* Product Details */}
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-1">
-                        {item.product?.name || 'Unknown Product'}
-                      </h3>
+                      <Link href={`/products/${item.productId}`}>
+                        <h3 className="font-semibold text-lg mb-1 cursor-pointer hover:text-blue-600 transition-colors">
+                          {item.product?.name || 'Unknown Product'}
+                        </h3>
+                      </Link>
                       {item.product?.brand && (
                         <p className="text-gray-600 text-sm mb-2">{item.product.brand}</p>
+                      )}
+                      
+                      {/* Stock indicator */}
+                      {item.product?.stockQuantity && item.product.stockQuantity > 0 && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          Stock: {item.product.stockQuantity} available
+                          {item.qty >= item.product.stockQuantity && (
+                            <span className="ml-2 text-amber-600 font-medium">Max quantity reached</span>
+                          )}
+                        </p>
                       )}
                       
                       {/* Fulfillment badges */}
@@ -211,7 +227,7 @@ export default function CartPageV2() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleQuantityChange(item.productId, item.qty - 1)}
+                          onClick={() => handleQuantityChange(item.productId, item.qty - 1, item.product?.stockQuantity)}
                           className="w-8 h-8 p-0"
                           data-testid={`button-decrease-qty-${item.productId}`}
                         >
@@ -223,8 +239,9 @@ export default function CartPageV2() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleQuantityChange(item.productId, item.qty + 1)}
+                          onClick={() => handleQuantityChange(item.productId, item.qty + 1, item.product?.stockQuantity)}
                           className="w-8 h-8 p-0"
+                          disabled={item.product?.stockQuantity && item.product.stockQuantity > 0 && item.qty >= item.product.stockQuantity}
                           data-testid={`button-increase-qty-${item.productId}`}
                         >
                           <Plus className="w-4 h-4" />
