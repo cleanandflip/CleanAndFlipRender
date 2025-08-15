@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { Button, Card } from "@/components/shared/AnimatedComponents";
@@ -10,8 +11,171 @@ import {
   Star, 
   CheckCircle,
   Truck,
-  DollarSign 
+  DollarSign,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
+
+// Testimonials data with 35 unique reviews
+const testimonials = [
+  { id: 1, stars: 5, text: "Clean & Flip made selling my home gym equipment incredibly easy. Fair price, quick pickup, and professional service throughout.", author: "Sarah M." },
+  { id: 2, stars: 5, text: "Bought a complete Olympic set for half the retail price. Quality was exactly as described and delivery was perfect.", author: "Mike R." },
+  { id: 3, stars: 5, text: "Local business that actually cares about quality. They stand behind every sale and their inspection process is thorough.", author: "Jennifer L." },
+  { id: 4, stars: 4.5, text: "Great experience selling my old treadmill. The team was professional and the process was smooth from start to finish.", author: "David K." },
+  { id: 5, stars: 5, text: "Found an amazing power rack at 60% off retail. The quality inspection was spot-on and delivery was lightning fast.", author: "Amanda C." },
+  { id: 6, stars: 4.5, text: "Excellent customer service when I had questions about a barbell set. They know their equipment inside and out.", author: "Robert F." },
+  { id: 7, stars: 5, text: "Sold my entire home gym to them when I moved. Fair pricing, easy pickup, and they handled all the heavy lifting.", author: "Lisa T." },
+  { id: 8, stars: 5, text: "The condition reports are incredibly detailed. What they described as 'good' was actually excellent condition.", author: "James W." },
+  { id: 9, stars: 4.5, text: "Quick response time and honest pricing. They didn't try to lowball me like other places I contacted.", author: "Maria G." },
+  { id: 10, stars: 5, text: "Bought dumbbells, bench, and plates all in one transaction. Everything was exactly as advertised.", author: "Kevin S." },
+  { id: 11, stars: 5, text: "Their quality guarantee gave me confidence to buy. The 30-day return policy shows they stand behind their products.", author: "Rachel H." },
+  { id: 12, stars: 4.5, text: "Fast local delivery in Asheville. Had my equipment set up in my garage the same day I purchased.", author: "Thomas B." },
+  { id: 13, stars: 5, text: "Sold them my rowing machine and elliptical. The pickup was scheduled quickly and they were punctual.", author: "Nicole P." },
+  { id: 14, stars: 5, text: "Great selection of cardio equipment. Found the exact model I wanted at an unbeatable price.", author: "Brian A." },
+  { id: 15, stars: 4.5, text: "The team knows fitness equipment better than anyone. They helped me choose the right weight set for my goals.", author: "Stephanie M." },
+  { id: 16, stars: 5, text: "Transparent pricing with no hidden fees. The quote they gave me was exactly what I received at pickup.", author: "Daniel R." },
+  { id: 17, stars: 5, text: "Professional inspection process that caught issues I didn't even notice. Their expertise really shows.", author: "Karen J." },
+  { id: 18, stars: 4.5, text: "Local pickup and delivery made the whole process convenient. No need to rent a truck or find help moving.", author: "Michael D." },
+  { id: 19, stars: 5, text: "Bought a complete home gym setup for less than the cost of one new machine. Quality was exceptional.", author: "Jessica V." },
+  { id: 20, stars: 5, text: "They handled the sale of my commercial-grade equipment with expertise. Fair pricing for high-end gear.", author: "Christopher L." },
+  { id: 21, stars: 4.5, text: "Great communication throughout the process. They kept me updated from initial quote to final pickup.", author: "Ashley N." },
+  { id: 22, stars: 5, text: "The condition grading system is accurate and fair. 'Good' condition was better than I expected.", author: "Ryan E." },
+  { id: 23, stars: 5, text: "Local business that treats customers right. They've earned a customer for life with their service.", author: "Lauren B." },
+  { id: 24, stars: 4.5, text: "Quick turnaround from inquiry to cash in hand. The whole process took less than 48 hours.", author: "Steven C." },
+  { id: 25, stars: 5, text: "Helped me upgrade my home gym by buying my old equipment and selling me newer models. Win-win.", author: "Michelle K." },
+  { id: 26, stars: 5, text: "Their online listings are accurate with detailed photos. What you see is exactly what you get.", author: "Gregory H." },
+  { id: 27, stars: 4.5, text: "Fair market pricing based on actual research, not arbitrary numbers. They know the fitness equipment market.", author: "Samantha W." },
+  { id: 28, stars: 5, text: "Zero pressure sales approach. They let the quality and pricing speak for themselves.", author: "Jonathan M." },
+  { id: 29, stars: 5, text: "Excellent selection of strength training equipment. Found everything I needed in one place.", author: "Catherine R." },
+  { id: 30, stars: 4.5, text: "The pickup team was careful with my floors and walls. They know how to move heavy equipment safely.", author: "Alexander P." },
+  { id: 31, stars: 5, text: "Competitive pricing that beats online marketplaces once you factor in shipping and quality guarantees.", author: "Diana S." },
+  { id: 32, stars: 5, text: "Local expertise you can't get from big box stores. They understand the Asheville fitness community.", author: "Timothy F." },
+  { id: 33, stars: 4.5, text: "Smooth transaction from start to finish. Professional, courteous, and efficient throughout.", author: "Melissa G." },
+  { id: 34, stars: 5, text: "They made selling my gym equipment stress-free. Handled everything so I could focus on my move.", author: "Brandon L." },
+  { id: 35, stars: 5, text: "Outstanding customer service and quality products. This is how all fitness equipment sales should be handled.", author: "Rebecca T." }
+];
+
+function TestimonialsCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const reviewsPerPage = 3;
+  const totalPages = Math.ceil(testimonials.length / reviewsPerPage);
+
+  const goToPrevious = () => {
+    setCurrentIndex((prev) => (prev === 0 ? totalPages - 1 : prev - 1));
+  };
+
+  const goToNext = () => {
+    setCurrentIndex((prev) => (prev === totalPages - 1 ? 0 : prev + 1));
+  };
+
+  const getCurrentReviews = () => {
+    const startIndex = currentIndex * reviewsPerPage;
+    return testimonials.slice(startIndex, startIndex + reviewsPerPage);
+  };
+
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    return (
+      <div className="flex justify-center mb-3">
+        {Array.from({ length: fullStars }).map((_, i) => (
+          <Star 
+            key={i} 
+            className="fill-current" 
+            size={16} 
+            style={{ color: theme.colors.status.warning }}
+          />
+        ))}
+        {hasHalfStar && (
+          <div className="relative">
+            <Star 
+              className="fill-current" 
+              size={16} 
+              style={{ color: '#e5e7eb' }}
+            />
+            <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
+              <Star 
+                className="fill-current" 
+                size={16} 
+                style={{ color: theme.colors.status.warning }}
+              />
+            </div>
+          </div>
+        )}
+        {Array.from({ length: 5 - Math.ceil(rating) }).map((_, i) => (
+          <Star 
+            key={`empty-${i}`} 
+            className="fill-current" 
+            size={16} 
+            style={{ color: '#e5e7eb' }}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="relative">
+      <div className="flex items-center justify-between mb-8">
+        <button
+          onClick={goToPrevious}
+          className="p-2 rounded-full transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
+          style={{ color: theme.colors.text.primary }}
+          data-testid="testimonials-prev"
+        >
+          <ChevronLeft size={24} />
+        </button>
+        
+        <div className="flex-1 mx-8">
+          <div className="grid md:grid-cols-3 gap-8">
+            {getCurrentReviews().map((testimonial) => (
+              <Card key={testimonial.id} className="p-6">
+                {renderStars(testimonial.stars)}
+                <blockquote 
+                  className="mb-4"
+                  style={{ color: theme.colors.text.secondary }}
+                >
+                  "{testimonial.text}"
+                </blockquote>
+                <cite 
+                  className="font-semibold"
+                  style={{ color: theme.colors.text.primary }}
+                >
+                  - {testimonial.author}
+                </cite>
+              </Card>
+            ))}
+          </div>
+        </div>
+        
+        <button
+          onClick={goToNext}
+          className="p-2 rounded-full transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
+          style={{ color: theme.colors.text.primary }}
+          data-testid="testimonials-next"
+        >
+          <ChevronRight size={24} />
+        </button>
+      </div>
+      
+      <div className="flex justify-center space-x-2">
+        {Array.from({ length: totalPages }).map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentIndex(index)}
+            className={`w-2 h-2 rounded-full transition-colors ${
+              index === currentIndex 
+                ? 'bg-blue-500' 
+                : 'bg-gray-300 hover:bg-gray-400'
+            }`}
+            data-testid={`testimonials-dot-${index}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function About() {
   return (
@@ -527,85 +691,7 @@ export default function About() {
           >
             WHAT OUR CUSTOMERS SAY
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-6">
-              <div className="flex justify-center mb-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star 
-                    key={i} 
-                    className="fill-current" 
-                    size={16} 
-                    style={{ color: theme.colors.status.warning }}
-                  />
-                ))}
-              </div>
-              <blockquote 
-                className="mb-4"
-                style={{ color: theme.colors.text.secondary }}
-              >
-                "Clean & Flip made selling my home gym equipment incredibly easy. Fair price, 
-                quick pickup, and professional service throughout."
-              </blockquote>
-              <cite 
-                className="font-semibold"
-                style={{ color: theme.colors.text.primary }}
-              >
-                - Sarah M.
-              </cite>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex justify-center mb-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star 
-                    key={i} 
-                    className="fill-current" 
-                    size={16} 
-                    style={{ color: theme.colors.status.warning }}
-                  />
-                ))}
-              </div>
-              <blockquote 
-                className="mb-4"
-                style={{ color: theme.colors.text.secondary }}
-              >
-                "Bought a complete Olympic set for half the retail price. Quality was exactly 
-                as described and delivery was perfect."
-              </blockquote>
-              <cite 
-                className="font-semibold"
-                style={{ color: theme.colors.text.primary }}
-              >
-                - Mike R.
-              </cite>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex justify-center mb-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star 
-                    key={i} 
-                    className="fill-current" 
-                    size={16} 
-                    style={{ color: theme.colors.status.warning }}
-                  />
-                ))}
-              </div>
-              <blockquote 
-                className="mb-4"
-                style={{ color: theme.colors.text.secondary }}
-              >
-                "Local business that actually cares about quality. They stand behind every 
-                sale and their inspection process is thorough."
-              </blockquote>
-              <cite 
-                className="font-semibold"
-                style={{ color: theme.colors.text.primary }}
-              >
-                - Jennifer L.
-              </cite>
-            </Card>
-          </div>
+          <TestimonialsCarousel />
         </motion.div>
       </div>
     </motion.div>
