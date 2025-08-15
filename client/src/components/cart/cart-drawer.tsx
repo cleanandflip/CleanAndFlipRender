@@ -4,7 +4,26 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart } from "@/hooks/useCart";
-import type { Cart, CartItem } from "@/hooks/useCart";
+// Define local types for cart data
+type CartItem = {
+  id: string;
+  productId: string;
+  quantity: number;
+  product: {
+    id: string;
+    name: string;
+    price: string;
+    images: string[];
+    brand?: string;
+    stockQuantity?: number;
+  };
+};
+
+type Cart = {
+  items: CartItem[];
+  subtotal: number;
+  total?: number;
+};
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, X } from "lucide-react";
 import { ROUTES, routes } from "@/config/routes";
 
@@ -133,9 +152,8 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                 )}
                               </div>
                               <button
-                                onClick={() => removeCartMutation.mutate(item.productId)}
+                                onClick={() => removeFromCart(item.productId)}
                                 className="text-gray-400 hover:text-red-400 transition-colors p-1 ml-2"
-                                disabled={removeCartMutation.isPending}
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -148,13 +166,13 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                   onClick={() => {
                                     const newQuantity = (item?.quantity || 1) - 1;
                                     if (newQuantity <= 0) {
-                                      removeCartMutation.mutate(item.productId);
+                                      removeFromCart(item.productId);
                                     } else {
-                                      updateCartMutation.mutate({ productId: item.productId, quantity: newQuantity });
+                                      updateCartItem({ productId: item.productId, quantity: newQuantity });
                                     }
                                   }}
                                   className="p-1 hover:bg-white/10 transition-colors"
-                                  disabled={(item?.quantity || 0) <= 1 || updateCartMutation.isPending}
+                                  disabled={(item?.quantity || 0) <= 1}
                                 >
                                   <Minus size={12} />
                                 </button>
@@ -164,10 +182,10 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                 <button
                                   onClick={() => {
                                     const newQuantity = (item?.quantity || 0) + 1;
-                                    updateCartMutation.mutate({ productId: item.productId, quantity: newQuantity });
+                                    updateCartItem({ productId: item.productId, quantity: newQuantity });
                                   }}
                                   className="p-1 hover:bg-white/10 transition-colors"
-                                  disabled={!!(item?.product?.stockQuantity && (item?.quantity || 0) >= item.product.stockQuantity) || updateCartMutation.isPending}
+                                  disabled={!!(item?.product?.stockQuantity && (item?.quantity || 0) >= item.product.stockQuantity)}
                                 >
                                   <Plus size={12} />
                                 </button>

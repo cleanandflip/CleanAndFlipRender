@@ -123,7 +123,7 @@ offenders.forEach(offender => {
   report.offendersByType[offender.offenderType]++;
 });
 
-fs.writeFileSync('audit/locality-ssot-report.json', JSON.stringify(report, null, 2));
+fs.writeFileSync('../audit/locality-ssot-report.json', JSON.stringify(report, null, 2));
 
 console.log(`\n🔍 SSOT Locality Audit Complete`);
 console.log(`Found ${offenders.length} violations:`);

@@ -132,7 +132,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 
                 <div className="space-y-2">
                   <ProductAvailabilityChips product={product} />
-                  {locality?.isLocal && product.is_local_delivery_available && (
+                  {locality?.eligible && product.is_local_delivery_available && (
                     <FreeDeliveryPill />
                   )}
                   <AddToCartButton

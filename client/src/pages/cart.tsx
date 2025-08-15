@@ -3,7 +3,26 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCart } from "@/hooks/useCart";
-import type { Cart, CartItem } from "@/hooks/useCart";
+// Define local types for cart data  
+type CartItem = {
+  id: string;
+  productId: string;
+  quantity: number;
+  product: {
+    id: string;
+    name: string;
+    price: string;
+    images: string[];
+    brand?: string;
+    stockQuantity?: number;
+  };
+};
+
+type Cart = {
+  items: CartItem[];
+  subtotal: number;
+  total?: number;
+};
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { LocalBadge } from "@/components/locality/LocalBadge";
