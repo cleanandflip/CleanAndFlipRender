@@ -128,18 +128,20 @@ function HomeSections() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <h1 className="font-bebas text-6xl md:text-8xl mb-6 tracking-wider leading-tight">
-              <span style={{ color: theme.colors.text.primary }}>FITNESS EQUIPMENT</span><br />
-              <span style={{ color: theme.colors.brand.blue }}>THAT FITS YOUR HOME</span>
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
+              Local Weights, Fair Prices
             </h1>
-            <p 
-              className="text-lg md:text-xl max-w-3xl mx-auto mb-4"
-              style={{ color: theme.colors.text.secondary }}
-            >
-              We specialize in space-saving strength training equipment
+
+            <p className="mt-3 text-lg md:text-xl text-muted-foreground">
+              Buy & sell with fast pickup & delivery
             </p>
+
+            <p className="mt-2 text-xs md:text-sm text-muted-foreground tracking-wide">
+              Based in Asheville, NC
+            </p>
+            
             <p 
-              className="text-xl md:text-2xl max-w-3xl mx-auto mb-12 font-semibold"
+              className="text-xl md:text-2xl max-w-3xl mx-auto mt-6 md:mt-8 font-semibold"
               style={{ color: theme.colors.brand.blue }}
             >
               Dumbbells • Kettlebells • Plates • Barbells • More
