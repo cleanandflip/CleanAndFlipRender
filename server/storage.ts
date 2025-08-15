@@ -976,19 +976,30 @@ export class DatabaseStorage implements IStorage {
         const unit = Number(item.product?.price ?? 0);
         const price = Number.isFinite(unit) ? unit : 0;
         const quantity = Number(item.qty ?? 0);
+        console.log(`[STORAGE DEBUG] Item: ${item.product?.name}, Price: ${item.product?.price}, Unit: ${unit}, Quantity: ${quantity}, Subtotal contribution: ${price * quantity}`);
         return sum + (price * quantity);
       }, 0);
       
+      const finalItems = items.map(item => ({
+        ...item,
+        ownerId: item.userId || item.sessionId, // Map to logical ownerId
+        product: item.product || { 
+          id: item.productId, 
+          name: 'Unknown Product', 
+          price: '0.00', 
+          images: [],
+          brand: '',
+          stockQuantity: 0,
+          is_local_delivery_available: false,
+          is_shipping_available: false
+        }
+      }));
+
+      console.log(`[STORAGE DEBUG] Final subtotal: ${subtotal}, Items count: ${finalItems.length}`);
       return {
         ownerId,
-        items: items.map(item => ({
-          ...item,
-          product: item.product || { id: item.productId, name: 'Unknown Product', price: 0, mode: 'LOCAL_AND_SHIPPING' }
-        })),
-        totals: {
-          subtotal,
-          total: subtotal
-        }
+        items: finalItems,
+        totals: { subtotal, total: subtotal }
       };
     } catch (error) {
       console.error('[STORAGE] getCartByOwner error:', error);

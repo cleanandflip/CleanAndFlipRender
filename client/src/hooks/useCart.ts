@@ -11,6 +11,13 @@ const addToCartApi = (p: { productId: string; qty: number; variantId?: string | 
 const removeByProductApi = (productId: string) =>
   apiJson(`/api/cart/product/${productId}`, { method: "DELETE" });
 
+// Add updateCartItem API for quantity changes
+const updateCartItemApi = (p: { productId: string; qty: number }) =>
+  apiJson(`/api/cart/product/${p.productId}`, { 
+    method: "PATCH", 
+    body: JSON.stringify({ qty: p.qty }) 
+  });
+
 export function useCart() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -29,6 +36,11 @@ export function useCart() {
     onSuccess: () => qc.invalidateQueries({ queryKey: key })
   });
 
+  const updateCartItemMut = useMutation({
+    mutationFn: updateCartItemApi,
+    onSuccess: () => qc.invalidateQueries({ queryKey: key })
+  });
+
   const isInCart = (productId: string) =>
     !!cartQuery.data?.items?.some((i: any) => i.productId === productId);
 
@@ -40,11 +52,13 @@ export function useCart() {
     isLoading: cartQuery.isLoading,
     isError: cartQuery.isError,
 
-    // expected by AddToCartButton.tsx:
+    // expected by AddToCartButton.tsx and CartPage:
     addToCart: (p: { productId: string; qty: number; variantId?: string | null }) => addToCartMut.mutateAsync(p),
     removeByProduct: (productId: string) => removeByProductMut.mutateAsync(productId),
+    updateCartItem: (p: { productId: string; qty: number }) => updateCartItemMut.mutateAsync(p),
     isAddingToCart: addToCartMut.isPending,
     isRemovingByProduct: removeByProductMut.isPending,
+    isUpdatingCartItem: updateCartItemMut.isPending,
 
     isInCart,
     getItemQuantity,
