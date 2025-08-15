@@ -74,10 +74,11 @@ export function setupAuth(app: Express) {
   console.log('[SESSION] Using database:', dbConfig.name);
   console.log('[SESSION] Environment:', dbConfig.environment);
   
+  const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
+    secret: process.env.SESSION_SECRET || "dev_secret_change_me",
     resave: false,
-    saveUninitialized: true, // CRITICAL: Save uninitialized sessions for guest carts
+    saveUninitialized: true, // guests get a stable session
     store: new PostgresSessionStore({
       conString: dbConfig.url,
       createTableIfMissing: false, // Don't create table - already exists
@@ -91,25 +92,16 @@ export function setupAuth(app: Express) {
       }
     }),
     cookie: {
-      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      sameSite: 'lax', // CRITICAL: Allow cross-origin cookies  
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/' // CRITICAL: Ensure cookie available for all paths
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === "production",
+      maxAge: ONE_MONTH,
     },
     rolling: true, // CRITICAL: Reset expiry on activity
   };
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
-  
-  // Ensure sessionId is available for guest cart functionality
-  app.use((req: any, res, next) => {
-    if (req.session && !req.sessionId) {
-      req.sessionId = req.session.id || `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    }
-    next();
-  });
   app.use(passport.initialize());
   app.use(passport.session());
 

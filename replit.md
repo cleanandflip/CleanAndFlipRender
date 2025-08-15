@@ -44,6 +44,8 @@ A comprehensive multi-layered security approach with Google OAuth integration an
 - **Google Sign-In**: Fully integrated Google OAuth with automatic user creation/linking and mandatory profile completion.
 - **Password Security**: bcrypt with 12 salt rounds for local accounts.
 - **Role Management**: Simplified two-role system (user/developer) with middleware-enforced permissions.
+- **Session Management**: **FIXED** - Unified session/cart ownership using ONLY express-session connect.sid cookie. Eliminated custom "sid" cookies and session ID rotation issues.
+- **Cart Persistence**: **OPERATIONAL** - Guest carts now persist correctly across requests using stable express-session IDs with automatic legacy cart migration.
 - **Security Practices**: Implements security headers, input sanitization (DOMPurify), SQL injection prevention, tiered rate limiting, and secure session management.
 - **Enterprise-Grade Features**: Comprehensive .gitignore protection, strict CSP headers, React ErrorBoundary components, SEO meta tags, PWA manifest, and legal compliance pages (Privacy Policy, Terms of Service).
 

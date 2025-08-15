@@ -825,6 +825,17 @@ export class DatabaseStorage implements IStorage {
     return product?.stockQuantity ?? Number.MAX_SAFE_INTEGER;
   }
 
+  async rekeyCartItemOwner(id: string, newOwnerId: string): Promise<void> {
+    console.log(`[STORAGE] Re-keying cart item ${id} to new owner: ${newOwnerId}`);
+    await db
+      .update(cartItems)
+      .set({ 
+        userId: newOwnerId.includes('@') ? newOwnerId : null,
+        sessionId: !newOwnerId.includes('@') ? newOwnerId : null 
+      })
+      .where(eq(cartItems.id, id));
+  }
+
   // Set cart shipping address
   async setCartShippingAddress(userId: string, addressId: string): Promise<void> {
     // For now, we can store this as a session or user preference

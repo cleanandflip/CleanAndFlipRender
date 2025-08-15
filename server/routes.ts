@@ -235,10 +235,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const addressRoutes = await import('./routes/addresses');
   app.use('/api/addresses', addressRoutes.default);
   
-  // Import V2 SSOT cart routes with session middleware
+  // Import V2 SSOT cart routes with session middleware and migration
   const { cartRouterV2 } = await import('./routes/cart.v2');
   const { ensureSession } = await import('./middleware/ensureSession');
-  app.use('/api/cart', ensureSession, cartRouterV2);
+  const { migrateLegacySidCartIfPresent } = await import('./services/cartMigrate');
+  
+  app.use('/api/cart', ensureSession);
+  app.use('/api/cart', async (req, _res, next) => {
+    try { 
+      await migrateLegacySidCartIfPresent(req); 
+      next(); 
+    } catch (e) { 
+      next(e); 
+    }
+  });
+  app.use('/api/cart', cartRouterV2);
   
   // DEPRECATED: Legacy cart route - log usage and return 410 Gone
   const legacyCartRoutes = await import('./routes/cart');
