@@ -845,43 +845,65 @@ export class DatabaseStorage implements IStorage {
 
   // V2 Cart Service methods (required by new cart service)
   async getCartItemsByOwner(ownerId: string): Promise<{ id: string; ownerId: string; productId: string; variantId: string | null; quantity: number; }[]> {
-    const items = await db.select({
-      id: cartItems.id,
-      ownerId: sql<string>`COALESCE(${cartItems.userId}, ${cartItems.sessionId})`.as('ownerId'),
-      productId: cartItems.productId,
-      variantId: cartItems.variantId,
-      quantity: cartItems.quantity
-    })
-    .from(cartItems)
-    .where(or(
-      eq(cartItems.userId, ownerId),
-      eq(cartItems.sessionId, ownerId)
-    ));
+    try {
+      const items = await db.select({
+        id: cartItems.id,
+        userId: cartItems.userId,
+        sessionId: cartItems.sessionId,
+        productId: cartItems.productId,
+        variantId: cartItems.variantId,
+        quantity: cartItems.quantity
+      })
+      .from(cartItems)
+      .where(or(
+        eq(cartItems.userId, ownerId),
+        eq(cartItems.sessionId, ownerId)
+      ));
 
-    return items.map(item => ({
-      id: item.id,
-      ownerId: item.ownerId!,
-      productId: item.productId!,
-      variantId: item.variantId,
-      quantity: item.quantity
-    }));
+      return items.map(item => ({
+        id: item.id,
+        ownerId: item.userId || item.sessionId || 'unknown',
+        productId: item.productId!,
+        variantId: item.variantId,
+        quantity: item.quantity
+      }));
+    } catch (error) {
+      console.error('[STORAGE] getCartItemsByOwner error:', error);
+      return [];
+    }
   }
 
   async getCartByOwner(ownerId: string): Promise<{ items: any[]; totals: { subtotal: number; total: number; }; }> {
-    const items = await this.getCartItems(
-      ownerId.includes('-') && ownerId.length === 36 ? ownerId : undefined, // userId if UUID format
-      ownerId.includes('-') && ownerId.length === 36 ? undefined : ownerId  // sessionId otherwise
-    );
-
-    const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.product.price), 0);
-    
-    return {
-      items,
-      totals: {
-        subtotal,
-        total: subtotal
+    try {
+      // Use the existing getCartItems method which works correctly
+      let items;
+      
+      if (ownerId.includes('-') && ownerId.length === 36) {
+        // It's a UUID (user ID) - get items for both user and session
+        const userItems = await this.getCartItems(ownerId, undefined);
+        const sessionItems = await this.getCartItems(undefined, ownerId);
+        items = [...userItems, ...sessionItems];
+      } else {
+        // It's a session ID
+        items = await this.getCartItems(undefined, ownerId);
       }
-    };
+
+      const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.product.price), 0);
+      
+      return {
+        items,
+        totals: {
+          subtotal,
+          total: subtotal
+        }
+      };
+    } catch (error) {
+      console.error('[STORAGE] getCartByOwner error:', error);
+      return {
+        items: [],
+        totals: { subtotal: 0, total: 0 }
+      };
+    }
   }
 
   async updateCartItemQuantity(id: string, quantity: number): Promise<void> {

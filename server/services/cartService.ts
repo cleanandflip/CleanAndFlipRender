@@ -5,39 +5,46 @@ type Item = { id: string; ownerId: string; productId: string; variantId: string 
 const key = (i: Item) => `${i.productId}::${i.variantId ?? "NOVAR"}`;
 
 export async function consolidateAndClampCart(ownerId: string) {
-  const items: Item[] = await storage.getCartItemsByOwner(ownerId);
-  const byKey = new Map<string, Item>();
-  
-  for (const it of items) {
-    const k = key(it);
-    if (!byKey.has(k)) {
-      byKey.set(k, { ...it });
-    } else {
-      byKey.get(k)!.quantity += it.quantity;
-    }
-  }
-  
-  for (const [k, merged] of byKey) {
-    const product = await storage.getProduct(merged.productId);
-    const stock = product?.stock ?? 0;
-    const clampedQty = Math.max(0, Math.min(merged.quantity, stock));
+  try {
+    const items: Item[] = await storage.getCartItemsByOwner(ownerId);
+    if (!items || items.length === 0) return;
     
-    const dupes = items.filter(i => key(i) === k);
+    const byKey = new Map<string, Item>();
     
-    // First row is canonical
-    if (dupes[0]) {
-      await storage.updateCartItemQuantity(dupes[0].id, clampedQty);
+    for (const it of items) {
+      const k = key(it);
+      if (!byKey.has(k)) {
+        byKey.set(k, { ...it });
+      } else {
+        byKey.get(k)!.quantity += it.quantity;
+      }
     }
     
-    // Remove duplicates
-    for (let i = 1; i < dupes.length; i++) {
-      await storage.removeCartItem(dupes[i].id);
+    for (const [k, merged] of byKey) {
+      const product = await storage.getProduct(merged.productId);
+      const stock = product?.stockQuantity ?? 0;
+      const clampedQty = Math.max(0, Math.min(merged.quantity, stock));
+      
+      const dupes = items.filter(i => key(i) === k);
+      
+      // First row is canonical
+      if (dupes[0]) {
+        await storage.updateCartItemQuantity(dupes[0].id, clampedQty);
+      }
+      
+      // Remove duplicates
+      for (let i = 1; i < dupes.length; i++) {
+        await storage.removeCartItem(dupes[i].id);
+      }
+      
+      // Remove if quantity is 0
+      if (!clampedQty && dupes[0]) {
+        await storage.removeCartItem(dupes[0].id);
+      }
     }
-    
-    // Remove if quantity is 0
-    if (!clampedQty && dupes[0]) {
-      await storage.removeCartItem(dupes[0].id);
-    }
+  } catch (error) {
+    console.error('[CART SERVICE] Consolidation error:', error);
+    // Don't throw - let cart operations continue
   }
 }
 

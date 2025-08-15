@@ -238,17 +238,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import V2 SSOT cart routes with session middleware and migration
   const { cartRouterV2 } = await import('./routes/cart.v2');
   const ensureSession = (await import('./middleware/ensureSession')).default;
-  const { migrateLegacySidCartIfPresent } = await import('./services/cartMigrate');
+  const mergeCartOnAuth = (await import('./middleware/mergeCartOnAuth')).default;
   
   app.use('/api/cart', ensureSession);
-  app.use('/api/cart', async (req, _res, next) => {
-    try { 
-      await migrateLegacySidCartIfPresent(req); 
-      next(); 
-    } catch (e) { 
-      next(e); 
-    }
-  });
+  app.use('/api/cart', mergeCartOnAuth); // Merge guest cart to user on authentication
   app.use('/api/cart', cartRouterV2);
   
   // DEPRECATED: Legacy cart route has been removed - fully migrated to cart.v2
