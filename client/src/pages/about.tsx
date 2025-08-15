@@ -302,7 +302,7 @@ export default function About() {
                   className="text-3xl font-bold mb-2"
                   style={{ color: theme.colors.status.warning }}
                 >
-                  48hrs
+                  3hrs
                 </div>
                 <div 
                   className="text-sm"
