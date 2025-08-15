@@ -39,15 +39,15 @@ import {
 } from "./middleware/monitoring";
 import { ErrorLogger } from "./services/errorLogger";
 import { autoSyncProducts } from "./middleware/product-sync";
-import { runPenetrationTests } from "./security/penetration-tests";
+// import { runPenetrationTests } from "./security/penetration-tests"; // Removed unused import
 import { setupCompression } from "./config/compression";
 import { healthLive, healthReady } from "./config/health";
 // Removed old WebSocket import - using new enhanced WebSocket system
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import { Logger, LogLevel } from "./utils/logger";
 import { db } from "./db";
-import { cartItems } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { cartItems, products } from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
 import observability from "./routes/observability";
 import { getLocalityStatus } from "./locality/locality.controller";
 import { requireLocalCustomer } from "./middleware/requireLocalCustomer";
