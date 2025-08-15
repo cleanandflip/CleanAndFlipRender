@@ -57,7 +57,8 @@ export async function addToCartConsolidating(ownerId: string, productId: string,
   const stock = await getAvailableStock(productId);
 
   // Find existing canonical item (first match)
-  const items: CartItem[] = await storage.findCartItems(ownerId, productId, variantId ?? null);
+  // Pass undefined instead of null to avoid SQL issues
+  const items: CartItem[] = await storage.findCartItems(ownerId, productId, variantId || undefined);
   const existing = items[0];
 
   const newQty = Math.min(stock, (existing?.quantity ?? 0) + qty);

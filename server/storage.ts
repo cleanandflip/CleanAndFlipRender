@@ -734,35 +734,41 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async findCartItems(ownerId: string, productId: string, variantId: string | null): Promise<any[]> {
-    console.log(`[STORAGE] Finding cart items by owner/product: ${ownerId}/${productId}`);
+  async findCartItems(ownerId: string, productId: string, variantId?: string | null | undefined): Promise<any[]> {
+    console.log(`[STORAGE] Finding cart items by owner/product: ${ownerId}/${productId} (variantId: ${variantId})`);
     
-    // Build base condition
-    const baseCondition = and(
-      or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
-      eq(cartItems.productId, productId)
-    );
-    
-    // Handle variantId condition - must handle null properly
-    let whereCondition;
-    if (variantId && variantId !== 'null') {
-      whereCondition = and(baseCondition, eq(cartItems.variantId, variantId));
-    } else {
-      whereCondition = and(baseCondition, isNull(cartItems.variantId));
+    try {
+      // Build base condition for owner and product
+      let whereCondition = and(
+        or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
+        eq(cartItems.productId, productId)
+      );
+      
+      // Add variant condition only if we have a truthy variant value
+      if (variantId && variantId !== null && variantId !== 'null' && variantId !== 'undefined') {
+        whereCondition = and(whereCondition, eq(cartItems.variantId, variantId));
+      }
+      // Note: We don't filter by IS NULL for variantId since most products won't have variants
+      
+      console.log(`[STORAGE] SQL WHERE condition built, executing query...`);
+      const items = await db
+        .select()
+        .from(cartItems)
+        .where(whereCondition);
+      
+      console.log(`[STORAGE] Found ${items.length} matching cart items`);
+      
+      return items.map(item => ({
+        id: item.id,
+        ownerId: item.userId || item.sessionId,
+        productId: item.productId,
+        variantId: item.variantId || null,
+        quantity: item.quantity
+      }));
+    } catch (error) {
+      console.error(`[STORAGE] Error finding cart items:`, error);
+      throw error;
     }
-    
-    const items = await db
-      .select()
-      .from(cartItems)
-      .where(whereCondition);
-    
-    return items.map(item => ({
-      id: item.id,
-      ownerId: item.userId || item.sessionId,
-      productId: item.productId,
-      variantId: item.variantId || null,
-      quantity: item.quantity
-    }));
   }
 
   async createCartItem(data: {ownerId: string, productId: string, variantId: string | null, quantity: number}) {
