@@ -38,11 +38,19 @@ const ProductForm = lazy(() => import("@/pages/admin/ProductForm").then(module =
 const Orders = lazy(() => import("@/pages/orders"));
 const About = lazy(() => import("@/pages/about"));
 const Contact = lazy(() => import("@/pages/contact"));
-const ShippingInfo = lazy(() => import("@/pages/shipping-info"));
+const ShippingInfo = lazy(() => import("@/pages/shipping"));
 const LegalPrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
 const LegalTermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
 const ObservabilityPage = lazy(() => import("@/pages/observability"));
 const AuthPage = lazy(() => import("@/pages/auth"));
+const FAQ = lazy(() => import("@/pages/faq"));
+const Reviews = lazy(() => import("@/pages/reviews"));
+const Blog = lazy(() => import("@/pages/blog"));
+const Terms = lazy(() => import("@/pages/terms"));
+const Privacy = lazy(() => import("@/pages/privacy"));
+const Returns = lazy(() => import("@/pages/returns"));
+const Warranty = lazy(() => import("@/pages/warranty"));
+const Inspection = lazy(() => import("@/pages/inspection"));
 const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
 const AddressesPage = lazy(() => import("@/pages/addresses").then(module => ({ default: module.AddressesPage })));
@@ -114,9 +122,17 @@ function Router() {
               <Route path={ROUTES.PRODUCT_DETAIL} component={ProductDetail} />
               <Route path={ROUTES.ABOUT} component={About} />
               <Route path={ROUTES.CONTACT} component={Contact} />
-              <Route path="/shipping-info" component={ShippingInfo} />
+              <Route path="/shipping" component={ShippingInfo} />
               <Route path="/privacy-policy" component={LegalPrivacyPolicy} />
               <Route path="/terms-of-service" component={LegalTermsOfService} />
+              <Route path="/faq" component={FAQ} />
+              <Route path="/reviews" component={Reviews} />
+              <Route path="/blog" component={Blog} />
+              <Route path="/terms" component={Terms} />
+              <Route path="/privacy" component={Privacy} />
+              <Route path="/returns" component={Returns} />
+              <Route path="/warranty" component={Warranty} />
+              <Route path="/inspection" component={Inspection} />
               
               {/* Shopping Routes - Profile completion required */}
               <Route path={ROUTES.CART} component={() => (
