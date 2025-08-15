@@ -58,15 +58,6 @@ export default function CartPageV2() {
   
   const subtotal = calculatedSubtotal; // Use calculated subtotal for reliability
   const total = calculatedSubtotal; // Use calculated total for reliability
-  
-  // Debug logging
-  console.log('Cart Debug:', { 
-    cart, 
-    items: items.length, 
-    calculatedSubtotal, 
-    apiSubtotal: (cart as any)?.subtotal,
-    apiTotal: (cart as any)?.total 
-  });
 
   const handleQuantityChange = async (productId: string, newQuantity: number, maxStock?: number) => {
     // Don't allow negative quantities

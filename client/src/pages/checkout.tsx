@@ -389,19 +389,72 @@ export default function Checkout() {
                   <p className="font-medium">
                     {selectedAddress.street1}, {selectedAddress.city}, {selectedAddress.state} {selectedAddress.postalCode}
                   </p>
-                  <div className="mt-4 p-3 border rounded bg-white">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium">Standard Shipping</p>
-                        <p className="text-sm text-gray-600">5-7 business days</p>
+                  
+                  {/* Dynamic shipping based on locality and product fulfillment */}
+                  {(() => {
+                    const isUserLocal = locality?.eligible || false;
+                    const hasLocalOnlyItems = cartItems.some((item: any) => 
+                      item.product?.is_local_delivery_available && !item.product?.is_shipping_available
+                    );
+                    const hasShippingItems = cartItems.some((item: any) => 
+                      item.product?.is_shipping_available
+                    );
+
+                    // LOCAL USER with LOCAL-ONLY items = FREE LOCAL DELIVERY
+                    if (isUserLocal && hasLocalOnlyItems) {
+                      return (
+                        <div className="mt-4 p-3 border rounded bg-green-50 border-green-200">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-medium text-green-800">FREE Local Delivery</p>
+                              <p className="text-sm text-green-600">Most orders arrive in 2–4 hrs</p>
+                            </div>
+                            <p className="font-medium text-green-800">FREE</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    // NON-LOCAL USER with LOCAL-ONLY items = BLOCKED
+                    if (!isUserLocal && hasLocalOnlyItems && !hasShippingItems) {
+                      return (
+                        <div className="mt-4 p-3 border rounded bg-red-50 border-red-200">
+                          <div className="text-center">
+                            <p className="font-medium text-red-800 mb-1">Local Delivery Only Items</p>
+                            <p className="text-sm text-red-600">These items are not available for shipping to your area</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    // MIXED CART or SHIPPING-AVAILABLE items
+                    if (hasShippingItems) {
+                      return (
+                        <div className="mt-4 p-3 border rounded bg-white">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-medium">Standard Shipping</p>
+                              <p className="text-sm text-gray-600">5-7 business days</p>
+                            </div>
+                            <p className="font-medium">$9.99</p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // DEFAULT FALLBACK
+                    return (
+                      <div className="mt-4 p-3 border rounded bg-white">
+                        <div className="text-center">
+                          <p className="text-sm text-gray-600">Delivery options will be calculated based on your items</p>
+                        </div>
                       </div>
-                      <p className="font-medium">$9.99</p>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="p-4 text-center text-muted-foreground">
-                  Select address to see shipping options
+                  Select address to see delivery options
                 </div>
               )}
             </CardContent>
