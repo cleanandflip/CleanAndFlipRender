@@ -77,7 +77,7 @@ export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true, // CRITICAL: Save uninitialized sessions for guest carts
     store: new PostgresSessionStore({
       conString: dbConfig.url,
       createTableIfMissing: false, // Don't create table - already exists
@@ -102,6 +102,14 @@ export function setupAuth(app: Express) {
 
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
+  
+  // Ensure sessionId is available for guest cart functionality
+  app.use((req: any, res, next) => {
+    if (req.session && !req.sessionId) {
+      req.sessionId = req.session.id || `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+    next();
+  });
   app.use(passport.initialize());
   app.use(passport.session());
 

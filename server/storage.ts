@@ -703,12 +703,20 @@ export class DatabaseStorage implements IStorage {
 
   async getCartByOwner(ownerId: string): Promise<any> {
     console.log(`[STORAGE] Fetching cart by owner: ${ownerId}`);
+    
+    // Use the new getCartItems method that includes product data
     const items = await this.getCartItems(
       ownerId.includes('@') ? ownerId : undefined, // assume email format for userId
       !ownerId.includes('@') ? ownerId : undefined  // else it's sessionId
     );
     
-    const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.product.price) * item.quantity), 0);
+    console.log(`[STORAGE] Found ${items.length} cart items for owner: ${ownerId}`);
+    
+    const subtotal = items.reduce((sum, item) => {
+      const price = item.product ? parseFloat(item.product.price) : 0;
+      return sum + (price * item.quantity);
+    }, 0);
+    
     return {
       items,
       totals: { subtotal, total: subtotal }
