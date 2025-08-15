@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { MapPin, Plus, Check } from "lucide-react";
 import { LocalBadge } from "@/components/locality/LocalBadge";
 import { useLocality } from "@/hooks/useLocality";
@@ -19,6 +19,7 @@ export default function Checkout() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const { data: locality } = useLocality();
+  const queryClient = useQueryClient();
   
   // FIXED: Fetch addresses with correct API structure
   const { data: addressesResponse, isLoading: addressLoading } = useQuery({
