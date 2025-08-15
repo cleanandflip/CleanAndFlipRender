@@ -77,9 +77,21 @@ export default function AddToCartButton({
       console.log('🟢 Adding to cart...', { productId, qty: 1 });
       await addToCart({ productId, qty: 1 }); // V2 API - uses qty field
       console.log('✅ Successfully added to cart');
+      
+      // Smart shipping method feedback for LOCAL_AND_SHIPPING products
+      const isLocal = locality?.eligible || false;
+      const isLocalAndShipping = productMode === 'LOCAL_AND_SHIPPING';
+      
+      let description = `${product?.name || 'Item'} has been added to your cart.`;
+      if (isLocalAndShipping && isLocal) {
+        description += " Local delivery will be selected automatically at checkout.";
+      } else if (isLocalAndShipping && !isLocal) {
+        description += " Shipping will be calculated at checkout.";
+      }
+      
       toast({
         title: "Added to cart",
-        description: `${product?.name || 'Item'} has been added to your cart.`,
+        description,
         variant: "default"
       });
     } catch (error) {

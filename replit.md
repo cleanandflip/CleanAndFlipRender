@@ -8,6 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Major Updates
 
+### Smart Shipping Method Selection for LOCAL_AND_SHIPPING Products (August 15, 2025)
+- **Automatic Local Delivery Priority**: Local customers adding LOCAL_AND_SHIPPING products are automatically set for local delivery
+- **Enhanced Checkout Logic**: Simplified checkout flow automatically prioritizes free local delivery for all local customers
+- **Smart AddToCart Feedback**: Toast messages now inform users about automatic shipping method selection based on locality
+- **Business Rule Enforcement**: Shipping methods only apply to shipping-only products or customers outside delivery zones
+- **UI Polish**: Updated location pill with transparent background and refined messaging throughout the fulfillment system
+
 ### Complete V2 Cart System Migration (August 15, 2025)
 - **Legacy System Deprecation**: Successfully migrated from dual legacy/V2 cart system to unified V2-only implementation
 - **Data Shape Resolution**: Eliminated all quantity vs qty conflicts by standardizing on V2 qty field across entire system

@@ -400,15 +400,23 @@ export default function Checkout() {
                     const hasShippingItems = cartItems.some((item: any) => 
                       item.product?.is_shipping_available
                     );
+                    const hasLocalAndShippingItems = cartItems.some((item: any) => 
+                      item.product?.is_local_delivery_available && item.product?.is_shipping_available
+                    );
 
-                    // LOCAL USER with LOCAL-ONLY items = FREE LOCAL DELIVERY
-                    if (isUserLocal && hasLocalOnlyItems) {
+                    // LOCAL USER = Always prioritize LOCAL DELIVERY for LOCAL_AND_SHIPPING items
+                    if (isUserLocal) {
                       return (
                         <div className="mt-4 p-3 border rounded bg-green-50 border-green-200">
                           <div className="flex justify-between items-center">
                             <div>
                               <p className="font-medium text-green-800">FREE Local Delivery</p>
-                              <p className="text-sm text-green-600">Most orders arrive in 24–48 hrs</p>
+                              <p className="text-sm text-green-600">
+                                {hasLocalAndShippingItems 
+                                  ? "Your LOCAL_AND_SHIPPING items will be delivered locally • Most orders arrive in 24–48 hrs"
+                                  : "Most orders arrive in 24–48 hrs"
+                                }
+                              </p>
                             </div>
                             <p className="font-medium text-green-800">FREE</p>
                           </div>
@@ -428,14 +436,19 @@ export default function Checkout() {
                       );
                     }
                     
-                    // MIXED CART or SHIPPING-AVAILABLE items
-                    if (hasShippingItems) {
+                    // NON-LOCAL USER with SHIPPING-AVAILABLE items (including LOCAL_AND_SHIPPING)
+                    if (!isUserLocal && hasShippingItems) {
                       return (
                         <div className="mt-4 p-3 border rounded bg-white">
                           <div className="flex justify-between items-center">
                             <div>
                               <p className="font-medium">Standard Shipping</p>
-                              <p className="text-sm text-gray-600">5-7 business days</p>
+                              <p className="text-sm text-gray-600">
+                                {hasLocalAndShippingItems 
+                                  ? "Your LOCAL_AND_SHIPPING items will be shipped • 5-7 business days"
+                                  : "5-7 business days"
+                                }
+                              </p>
                             </div>
                             <p className="font-medium">$9.99</p>
                           </div>

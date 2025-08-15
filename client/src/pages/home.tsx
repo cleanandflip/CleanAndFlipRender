@@ -133,7 +133,7 @@ function HomeSections() {
             </h1>
 
             <p className="mt-5">
-              <span className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs md:text-sm tracking-wide text-[#e6e6e8] font-bold pt-[3px] pb-[3px] pl-[30px] pr-[30px] bg-[#2a2c3700]">
+              <span className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs md:text-sm tracking-wide text-[#e6e6e8] font-bold pt-[3px] pb-[3px] ml-[0px] mr-[0px] mt-[0px] mb-[0px] bg-[#2a2c3700] pl-[30px] pr-[30px]">
                 Based in Asheville, NC
               </span>
             </p>
