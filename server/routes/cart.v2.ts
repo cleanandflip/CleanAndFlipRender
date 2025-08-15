@@ -25,7 +25,7 @@ cartRouterV2.post('/items', async (req, res, next) => {
 
     console.log(`[CART ENFORCE V2] SSOT evaluation: { ownerId:'${ownerId}', productId:'${productId}', productMode:'${productMode}', userMode:'${locality.effectiveModeForUser}', effectiveness:'${effectiveness}' }`);
 
-    // Enforce business rules
+    // Enforce business rules - only block if completely BLOCKED, allow SHIPPING_ONLY for guests
     if (effectiveness === 'BLOCKED') {
       console.log(`[CART ELIGIBILITY_REJECT] { productId:'${productId}', ownerId:'${ownerId}', userMode:'${locality.effectiveModeForUser}', productMode:'${productMode}', reasons:${JSON.stringify(locality.reasons)} }`);
       
@@ -38,15 +38,40 @@ cartRouterV2.post('/items', async (req, res, next) => {
     
     console.log(`[CART ENFORCE V2] ADD_ALLOWED for ${productId} by ${ownerId}`);
 
-    // Add item to cart
-    const cartItemData = {
-      productId,
-      quantity: Number(quantity) || 1,
-      userId: req.session?.user?.id || null,
-      sessionId: req.session?.id || 'anonymous',
-    };
+    // Check if item already exists in cart
+    const existingItem = await storage.getCartItem(
+      req.session?.user?.id || null,
+      req.session?.id || 'anonymous',
+      productId
+    );
 
-    const item = await storage.addToCart(cartItemData);
+    const requestedQuantity = Number(quantity) || 1;
+    const finalQuantity = existingItem ? existingItem.quantity + requestedQuantity : requestedQuantity;
+
+    // Stock validation - prevent adding more than available
+    if (product.stockQuantity !== null && finalQuantity > product.stockQuantity) {
+      return res.status(422).json({
+        error: 'INSUFFICIENT_STOCK',
+        available: product.stockQuantity,
+        requested: finalQuantity,
+        message: `Only ${product.stockQuantity} item(s) available in stock`
+      });
+    }
+
+    let item;
+    if (existingItem) {
+      // Update existing cart item quantity
+      item = await storage.updateCartItem(existingItem.id, finalQuantity);
+    } else {
+      // Add new item to cart
+      const cartItemData = {
+        productId,
+        quantity: requestedQuantity,
+        userId: req.session?.user?.id || null,
+        sessionId: req.session?.id || 'anonymous',
+      };
+      item = await storage.addToCart(cartItemData);
+    }
     
     // Return item with current locality context for client cache update
     return res.status(200).json({
@@ -114,6 +139,52 @@ cartRouterV2.delete('/items/:itemId', async (req, res, next) => {
     await storage.removeFromCart(req.params.itemId);
     res.json({ ok: true });
   } catch (e) {
+    next(e);
+  }
+});
+
+// Update cart item quantity with stock validation
+cartRouterV2.put('/items/:itemId', async (req, res, next) => {
+  try {
+    const { quantity } = req.body;
+    const itemId = req.params.itemId;
+    const { storage } = await import('../storage');
+    
+    if (!quantity || quantity < 0) {
+      return res.status(400).json({ error: 'Invalid quantity' });
+    }
+    
+    // Get current cart item to check product stock
+    const cartItems = await storage.getCartItems(
+      req.session?.user?.id || undefined,
+      req.session?.id || 'anonymous'
+    );
+    const currentItem = cartItems.find(item => item.id === itemId);
+    
+    if (!currentItem) {
+      return res.status(404).json({ error: 'Cart item not found' });
+    }
+    
+    // Get product for stock validation
+    const product = await storage.getProduct(currentItem.productId);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Stock validation
+    if (product.stockQuantity !== null && quantity > product.stockQuantity) {
+      return res.status(422).json({
+        error: 'INSUFFICIENT_STOCK',
+        available: product.stockQuantity,
+        requested: quantity,
+        message: `Only ${product.stockQuantity} item(s) available in stock`
+      });
+    }
+    
+    const updatedItem = await storage.updateCartItem(itemId, quantity);
+    res.json(updatedItem);
+  } catch (e) {
+    console.error('[CART V2] Update error:', e);
     next(e);
   }
 });

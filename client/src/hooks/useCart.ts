@@ -77,6 +77,16 @@ export function useCart() {
         });
         return;
       }
+
+      // Handle stock validation errors
+      if (error.status === 422 && error.body?.error === 'INSUFFICIENT_STOCK') {
+        toast({
+          title: "Not enough stock",
+          description: error.body?.message || 'Item has limited availability.',
+          variant: "destructive"
+        });
+        return;
+      }
       
       toast({
         title: "Error",

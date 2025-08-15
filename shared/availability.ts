@@ -21,7 +21,12 @@ export function computeEffectiveAvailability(
   productMode: ProductMode,
   userMode: UserMode
 ): EffectiveAvailability {
-  // Block everything for NONE users
+  // CRITICAL FIX: Allow LOCAL_AND_SHIPPING items for NONE users (guests with shipping)
+  if (userMode === 'NONE' && productMode === 'LOCAL_AND_SHIPPING') {
+    return 'SHIPPING_ONLY';  // Guest can ship but not pickup
+  }
+  
+  // Block LOCAL_ONLY for NONE users
   if (userMode === 'NONE') {
     return 'BLOCKED';
   }
