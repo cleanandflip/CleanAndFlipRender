@@ -63,6 +63,7 @@ export function useCart() {
   // Clean up local-only items when user becomes ineligible for local delivery
   useEffect(() => {
     const wasEligible = prevEligibleRef.current;
+    console.log('🔄 Locality change detected:', { wasEligible, isEligible, hasCartData: !!(cartQuery.data as any)?.items });
     
     // If user switched from eligible to ineligible, remove local-only items
     const cartItems = (cartQuery.data as any)?.items;
@@ -70,6 +71,8 @@ export function useCart() {
       const localOnlyItems = cartItems.filter((item: any) => 
         item.product?.is_local_delivery_available && !item.product?.is_shipping_available
       );
+      
+      console.log('🔍 Found local-only items to remove:', localOnlyItems);
       
       if (localOnlyItems.length > 0) {
         console.log('🚨 User locality changed to ineligible, removing local-only items:', localOnlyItems);
@@ -84,9 +87,13 @@ export function useCart() {
         
         // Remove each local-only item
         localOnlyItems.forEach((item: any) => {
+          console.log('🗑️ Removing item:', item.productId);
           removeByProductMut.mutate(item.productId, {
             onSuccess: () => {
               console.log(`✅ Removed local-only item: ${item.product?.name}`);
+            },
+            onError: (error) => {
+              console.error(`❌ Failed to remove item: ${item.product?.name}`, error);
             }
           });
         });
