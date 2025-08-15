@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { theme } from "@/styles/design-system/theme";
+import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 

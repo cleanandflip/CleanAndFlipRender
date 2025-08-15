@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { theme } from "@/styles/design-system/theme";
+import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import { Shield, Clock, Wrench, CheckCircle, AlertTriangle, Phone, FileText } from "lucide-react";
 
 export default function Warranty() {

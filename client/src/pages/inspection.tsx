@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
-import { theme } from "@/styles/design-system/theme";
+import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import { Search, CheckCircle, Award, Camera, Scale, Wrench, Star, Shield } from "lucide-react";
 
 export default function InspectionProcess() {

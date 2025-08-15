@@ -45,7 +45,7 @@ const ObservabilityPage = lazy(() => import("@/pages/observability"));
 const AuthPage = lazy(() => import("@/pages/auth"));
 const FAQ = lazy(() => import("@/pages/faq"));
 const Reviews = lazy(() => import("@/pages/reviews"));
-const Blog = lazy(() => import("@/pages/blog"));
+
 const Terms = lazy(() => import("@/pages/terms"));
 const Privacy = lazy(() => import("@/pages/privacy"));
 const Returns = lazy(() => import("@/pages/returns"));
@@ -112,7 +112,7 @@ function Router() {
               <Route path="/terms-of-service" component={LegalTermsOfService} />
               <Route path="/faq" component={FAQ} />
               <Route path="/reviews" component={Reviews} />
-              <Route path="/blog" component={Blog} />
+
               <Route path="/terms" component={Terms} />
               <Route path="/privacy" component={Privacy} />
               <Route path="/returns" component={Returns} />

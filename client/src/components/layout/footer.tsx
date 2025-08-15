@@ -23,7 +23,6 @@ export default function Footer() {
     { name: "Contact", href: ROUTES.CONTACT },
     { name: "FAQ", href: "/faq" },
     { name: "Reviews", href: "/reviews" },
-    { name: "Blog", href: "/blog" },
   ];
 
   const policyLinks = [
