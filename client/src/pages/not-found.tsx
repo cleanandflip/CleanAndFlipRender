@@ -2,5 +2,5 @@
 import { ErrorPage } from "@/components/ErrorBoundary";
 
 export default function NotFound() {
-  
+  return <ErrorPage />;
 }

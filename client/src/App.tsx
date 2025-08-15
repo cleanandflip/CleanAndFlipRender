@@ -19,13 +19,12 @@ import { PWAInstaller } from "@/components/PWAInstaller";
 import { useWebSocketState } from "@/hooks/useWebSocketState";
 
 
-// Import critical pages directly to avoid lazy loading issues with routing
-import Home from "@/pages/home";
-import Products from "@/pages/products";
-import ProductDetail from "@/pages/product-detail";
-import CartPage from "@/pages/cart";
-
-import NotFound from "@/pages/not-found";
+// Lazy load ALL pages for optimal performance
+const Home = lazy(() => import("@/pages/home"));
+const Products = lazy(() => import("@/pages/products"));
+const ProductDetail = lazy(() => import("@/pages/product-detail"));
+const CartPage = lazy(() => import("@/pages/cart"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Lazy load less critical pages for better code splitting
 const Checkout = lazy(() => import("@/pages/checkout"));

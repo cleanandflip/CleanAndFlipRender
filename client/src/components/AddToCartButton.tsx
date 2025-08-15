@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,17 @@ import { modeFromProduct } from "@shared/fulfillment";
 import { computeEffectiveAvailability } from "@shared/availability";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "wouter";
+
+// Lazy load cart navigation components
+const LazyCartLink = ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
+  <Suspense fallback={<div className={className}>Loading...</div>}>
+    <Link href={href}>
+      <div className={className}>
+        {children}
+      </div>
+    </Link>
+  </Suspense>
+);
 
 interface AddToCartButtonProps {
   productId: string;

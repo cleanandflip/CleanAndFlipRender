@@ -11,13 +11,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { LocalBadge } from '@/components/locality/LocalBadge';
 
-// Create a simple checkout button for now
-const CheckoutButton = () => (
-  <Link href="/checkout">
-    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-      PROCEED TO CHECKOUT
-    </Button>
-  </Link>
+// Lazy load checkout navigation
+const LazyCheckoutButton = ({ disabled, className, children }: { disabled?: boolean; className?: string; children: React.ReactNode }) => (
+  <Suspense fallback={<Button disabled={true} className={className || "w-full"}>Loading...</Button>}>
+    <Link href="/checkout">
+      <Button disabled={disabled} className={className}>
+        {children}
+      </Button>
+    </Link>
+  </Suspense>
 );
 
 // V2 Cart types - uses qty field consistently
@@ -304,7 +306,9 @@ export default function CartPageV2() {
                 </div>
                 
                 <div className="space-y-3 pt-4">
-                  <CheckoutButton />
+                  <LazyCheckoutButton className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                    PROCEED TO CHECKOUT
+                  </LazyCheckoutButton>
                   
                   <Link href="/products">
                     <Button variant="outline" className="w-full gap-2">

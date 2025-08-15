@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -26,6 +26,17 @@ type Cart = {
 };
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, X } from "lucide-react";
 import { ROUTES, routes } from "@/config/routes";
+
+// Lazy load checkout navigation
+const LazyCheckoutButton = ({ disabled, className, children }: { disabled?: boolean; className?: string; children: React.ReactNode }) => (
+  <Suspense fallback={<Button disabled={true} className={className || "w-full"}>Loading...</Button>}>
+    <Link href="/checkout">
+      <Button disabled={disabled} className={className}>
+        {children}
+      </Button>
+    </Link>
+  </Suspense>
+);
 
 interface CartDrawerProps {
   isOpen?: boolean;
@@ -268,15 +279,12 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       </Button>
                     </Link>
                     
-                    <Link href={ROUTES.CHECKOUT}>
-                      <Button 
-                        className="w-full bg-accent-blue hover:bg-blue-500 text-primary"
-                        onClick={() => handleOpenChange(false)}
-                      >
-                        Checkout
-                        <ArrowRight className="ml-2" size={16} />
-                      </Button>
-                    </Link>
+                    <LazyCheckoutButton 
+                      className="w-full bg-accent-blue hover:bg-blue-500 text-primary"
+                    >
+                      Checkout
+                      <ArrowRight className="ml-2" size={16} />
+                    </LazyCheckoutButton>
                   </div>
 
                   {/* Security Notice */}

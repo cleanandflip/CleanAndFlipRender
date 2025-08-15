@@ -1,7 +1,20 @@
 import { Link } from "wouter";
+import { lazy, Suspense } from "react";
 import Logo from "@/components/common/logo";
 import { Facebook, Instagram, Youtube, Mail, Phone, MapPin, Clock } from "lucide-react";
 import { ROUTES } from "@/config/routes";
+
+// Lazy load footer link components for better performance
+const LazyFooterLink = ({ href, children, onClick }: { href: string; children: React.ReactNode; onClick: () => void }) => (
+  <Link href={href}>
+    <span 
+      className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer"
+      onClick={onClick}
+    >
+      {children}
+    </span>
+  </Link>
+);
 
 export default function Footer() {
   // Function to scroll to top when clicking footer links
@@ -44,14 +57,9 @@ export default function Footer() {
             <h4 className="font-bebas text-xl mb-4 text-slate-300">SHOP</h4>
             <div className="space-y-2">
               {shopLinks.map((link) => (
-                <Link key={link.name} href={link.href}>
-                  <span 
-                    className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer"
-                    onClick={handleLinkClick}
-                  >
-                    {link.name}
-                  </span>
-                </Link>
+                <LazyFooterLink key={link.name} href={link.href} onClick={handleLinkClick}>
+                  {link.name}
+                </LazyFooterLink>
               ))}
             </div>
           </div>
@@ -61,14 +69,9 @@ export default function Footer() {
             <h4 className="font-bebas text-xl mb-4 text-slate-300">COMPANY</h4>
             <div className="space-y-2">
               {companyLinks.map((link) => (
-                <Link key={link.name} href={link.href}>
-                  <span 
-                    className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer"
-                    onClick={handleLinkClick}
-                  >
-                    {link.name}
-                  </span>
-                </Link>
+                <LazyFooterLink key={link.name} href={link.href} onClick={handleLinkClick}>
+                  {link.name}
+                </LazyFooterLink>
               ))}
             </div>
           </div>
@@ -78,14 +81,9 @@ export default function Footer() {
             <h4 className="font-bebas text-xl mb-4 text-slate-300">POLICIES</h4>
             <div className="space-y-2">
               {policyLinks.map((link) => (
-                <Link key={link.name} href={link.href}>
-                  <span 
-                    className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer"
-                    onClick={handleLinkClick}
-                  >
-                    {link.name}
-                  </span>
-                </Link>
+                <LazyFooterLink key={link.name} href={link.href} onClick={handleLinkClick}>
+                  {link.name}
+                </LazyFooterLink>
               ))}
             </div>
           </div>
