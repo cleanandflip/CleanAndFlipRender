@@ -8,12 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/shared/AnimatedComponents";
 import { AlertCircle, MapPin, Edit, CheckCircle, Truck, Trash2, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { LocalBadge } from "@/components/locality/LocalBadge";
+import { useLocality } from "@/hooks/useLocality";
 
 export default function AddressesPanel() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<null | any>(null);
   const { toast } = useToast();
+  const { data: locality } = useLocality();
 
   const { data: addresses = [], isLoading, isError, error } = useQuery({
     queryKey: ["/api/addresses"],
@@ -167,22 +170,12 @@ export default function AddressesPanel() {
                         DEFAULT
                       </Badge>
                     )}
-                    {address.isLocal && (
-                      <Badge className="bg-green-600 text-white text-xs flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" />
-                        Local Delivery
-                      </Badge>
-                    )}
+                    <LocalBadge isLocal={locality?.eligible ?? false} />
                   </div>
                   <p className="text-text-secondary text-sm leading-relaxed">
                     {address.street1}<br />
                     {address.city}, {address.state} {address.postalCode}
                   </p>
-                  {address.isLocal && (
-                    <p className="text-green-400 text-sm mt-2">
-                      ✓ Free local delivery to your doorstep in Asheville area
-                    </p>
-                  )}
                 </div>
                 <div className="flex gap-2 ml-4">
                   <Button 
