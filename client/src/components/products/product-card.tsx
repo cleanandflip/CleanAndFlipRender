@@ -23,7 +23,6 @@ import { ProductPrice } from "@/components/ui/ProductPrice";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductAvailabilityChips from "@/components/locality/ProductAvailabilityChips";
 import { FreeDeliveryPill } from "@/components/locality/FreeDeliveryPill";
-import { ProductFulfillmentChip } from "@/components/fulfillment/ProductFulfillmentChip";
 import { useLocality } from "@/hooks/useLocality";
 
 interface ProductCardProps {
@@ -132,10 +131,10 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 />
                 
                 <div className="space-y-2">
-                  <div className="flex gap-2 flex-wrap justify-end">
-                    <ProductFulfillmentChip product={product} size="sm" />
-                    <FreeDeliveryPill locality={locality} />
-                  </div>
+                  <ProductAvailabilityChips product={product} />
+                  {locality?.isLocal && product.is_local_delivery_available && (
+                    <FreeDeliveryPill />
+                  )}
                   <AddToCartButton
                     productId={product.id}
                     product={product}
@@ -226,12 +225,12 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
         </div>
       </SmartLink>
       
-      {/* Fulfillment chips and add to cart */}
+      {/* Availability chips and add to cart */}
       <div className="px-4 pb-4 space-y-2" onClick={(e) => e.stopPropagation()}>
-        <div className="flex gap-2 flex-wrap">
-          <ProductFulfillmentChip product={product} size="sm" />
-          <FreeDeliveryPill locality={locality} />
-        </div>
+        <ProductAvailabilityChips product={product} />
+        {locality?.isLocal && product.is_local_delivery_available && (
+          <FreeDeliveryPill />
+        )}
         <AddToCartButton
           productId={product.id}
           product={product}
