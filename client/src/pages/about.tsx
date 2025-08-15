@@ -97,7 +97,7 @@ export default function About() {
             </div>
           </div>
           
-          <Card className="p-8">
+          <Card className="bg-[#232937] backdrop-blur-sm border border-[rgba(255,255,255,0.08)] rounded-lg transition-all duration-300 card-hover p-8 pt-[32px] pb-[32px] mt-[115px] mb-[115px] ml-[0px] mr-[0px] pl-[20px] pr-[20px]">
             <h3 
               className="font-bebas text-2xl mb-6"
               style={{ color: theme.colors.text.primary }}
