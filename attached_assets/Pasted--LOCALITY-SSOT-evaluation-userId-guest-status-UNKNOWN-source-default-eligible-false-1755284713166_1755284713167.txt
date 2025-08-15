@@ -1,0 +1,194 @@
+[LOCALITY] SSOT evaluation: {"userId":"guest","status":"UNKNOWN","source":"default","eligible":false,"zip":null,"effectiveModeForUser":"NONE"}
+[INFO] [CART] Get cart - userId: null, sessionId: lg7f7c2nFlgm2Wy2idLfZinfFDbJks9h, isAuthenticated: false 
+[INFO] API POST / 200 155ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 155,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:47 PM POST    /api/cart                                200 166ms
+[INFO] API POST /api/track-activity 202 89ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36',
+  ip: '127.0.0.1',
+  userId: undefined,
+  duration: 89,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 89ms 
+[INFO] API GET /status 200 88ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36',
+  ip: '127.0.0.1',
+  userId: undefined,
+  duration: 88,
+  statusCode: 200,
+  contentLength: 229
+}
+[INFO] GET /status 200 88ms 
+7:04:47 PM GET     /api/locality/status                     200 88ms
+[INFO] API GET /api/categories?active=true 200 84ms {
+  method: 'GET',
+  url: '/api/categories?active=true',
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36',
+  ip: '127.0.0.1',
+  userId: undefined,
+  duration: 84,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:47 PM POST    /api/track-activity                      202 93ms
+7:04:47 PM GET     /api/categories?active=true              200 88ms
+[INFO] [CART] Returning cart with 0 items, subtotal: 0 
+[WARN] API GET /api/user 401 87ms {
+  method: 'GET',
+  url: '/api/user',
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36',
+  ip: '127.0.0.1',
+  userId: undefined,
+  duration: 87,
+  statusCode: 401,
+  contentLength: 29
+}
+7:04:47 PM GET     /api/user                                401 89ms
+[INFO] API GET /api/cart 200 135ms {
+  method: 'GET',
+  url: '/api/cart',
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36',
+  ip: '127.0.0.1',
+  userId: undefined,
+  duration: 135,
+  statusCode: 200,
+  contentLength: 105
+}
+7:04:47 PM GET     /api/cart                                200 136ms
+[INFO] API GET /api/products/featured 200 135ms {
+  method: 'GET',
+  url: '/api/products/featured',
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36',
+  ip: '127.0.0.1',
+  userId: undefined,
+  duration: 135,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:47 PM GET     /api/products/featured                   200 144ms
+[LOCALITY] SSOT evaluation: {"userId":"guest","status":"UNKNOWN","source":"default","eligible":false,"zip":null,"effectiveModeForUser":"NONE"}
+[INFO] API GET /status 200 92ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36',
+  ip: '127.0.0.1',
+  userId: undefined,
+  duration: 92,
+  statusCode: 200,
+  contentLength: 229
+}
+[INFO] GET /status 200 92ms 
+7:04:47 PM GET     /api/locality/status                     200 93ms
+[INFO] API POST / 200 140ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 140,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:48 PM POST    /api/cart                                200 142ms
+[INFO] API POST / 200 140ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 140,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:49 PM POST    /api/cart                                200 142ms
+[INFO] API POST / 200 138ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 138,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:49 PM POST    /api/cart                                200 141ms
+[INFO] API POST / 200 141ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 141,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:49 PM POST    /api/cart                                200 143ms
+[INFO] API POST / 200 137ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 137,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:50 PM POST    /api/cart                                200 139ms
+[INFO] API POST / 200 138ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.111',
+  userId: undefined,
+  duration: 138,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:50 PM POST    /api/cart                                200 140ms
+[INFO] API POST / 200 158ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 158,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:51 PM POST    /api/cart                                200 160ms
+[INFO] API POST / 200 144ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 144,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:51 PM POST    /api/cart                                200 146ms
+[INFO] API POST / 200 137ms {
+  method: 'POST',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 137,
+  statusCode: 200,
+  contentLength: undefined
+}
+7:04:51 PM POST    /api/cart                                200 140ms

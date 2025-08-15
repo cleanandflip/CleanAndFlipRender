@@ -1,17 +1,17 @@
 import express from "express";
 import { getCartOwnerId } from "../utils/cartOwner";
 import { db } from "../db";
+import { storage } from "../storage";
 
 const router = express.Router();
 
 // GET /api/cart - Get cart for current owner
-router.get("/api/cart", async (req, res, next) => {
+router.get("/", async (req, res, next) => {
   try {
     const ownerId = getCartOwnerId(req);
     console.log(`[CART V2] GET cart for owner: ${ownerId}`);
     
-    // Use global storage instance
-    const storage = global.storage;
+    // Use imported storage instance
     if (storage.consolidateAndClampCart) {
       await storage.consolidateAndClampCart(ownerId);
     }
@@ -25,7 +25,7 @@ router.get("/api/cart", async (req, res, next) => {
 });
 
 // POST /api/cart - Add/update cart item
-router.post("/api/cart", async (req, res, next) => {
+router.post("/", async (req, res, next) => {
   try {
     const ownerId = getCartOwnerId(req);
     const { productId, qty, variantId } = req.body || {};
@@ -36,8 +36,7 @@ router.post("/api/cart", async (req, res, next) => {
     
     console.log(`[CART V2] POST add item:`, { ownerId, productId, qty });
     
-    // Use global storage instance
-    const storage = global.storage;
+    // Use imported storage instance
     const result = await storage.addOrUpdateCartItem(ownerId, productId, variantId ?? null, qty);
     return res.status(201).json({ 
       ok: true, 
@@ -51,7 +50,7 @@ router.post("/api/cart", async (req, res, next) => {
 });
 
 // PATCH /api/cart/product/:productId - Set absolute quantity
-router.patch("/api/cart/product/:productId", async (req, res, next) => {
+router.patch("/product/:productId", async (req, res, next) => {
   try {
     const ownerId = getCartOwnerId(req);
     const { productId } = req.params;
@@ -63,8 +62,7 @@ router.patch("/api/cart/product/:productId", async (req, res, next) => {
     
     console.log(`[CART V2] PATCH set qty:`, { ownerId, productId, qty });
     
-    // Use global storage instance
-    const storage = global.storage;
+    // Use imported storage instance
     const result = await storage.setCartItemQty(ownerId, productId, null, qty);
     return res.json({ ok: true, qty: result.qty || 0 });
   } catch (error) {
@@ -74,15 +72,14 @@ router.patch("/api/cart/product/:productId", async (req, res, next) => {
 });
 
 // DELETE /api/cart/product/:productId - Remove product from cart
-router.delete("/api/cart/product/:productId", async (req, res, next) => {
+router.delete("/product/:productId", async (req, res, next) => {
   try {
     const ownerId = getCartOwnerId(req);
     const { productId } = req.params;
     
     console.log(`[CART V2] DELETE product:`, { ownerId, productId });
     
-    // Use global storage instance
-    const storage = global.storage;
+    // Use imported storage instance
     const result = await storage.removeCartItemsByProduct(ownerId, productId);
     return res.json({ ok: true, removed: result.removed });
   } catch (error) {

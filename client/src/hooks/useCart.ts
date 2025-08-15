@@ -5,8 +5,14 @@ import { useLocality } from "@/hooks/useLocality";
 
 const getCart = () => apiJson("/api/cart");
 
-const addToCartApi = (p: { productId: string; qty: number; variantId?: string | null }) =>
-  apiJson("/api/cart", { method: "POST", body: JSON.stringify({ ...p, variantId: p.variantId ?? null }) });
+const addToCartApi = (p: { productId: string; qty: number; variantId?: string | null }) => {
+  console.log('🔧 API Call: POST /api/cart with:', { ...p, variantId: p.variantId ?? null });
+  return apiJson("/api/cart", { 
+    method: "POST", 
+    body: JSON.stringify({ ...p, variantId: p.variantId ?? null }),
+    headers: { 'Content-Type': 'application/json' }
+  });
+};
 
 const removeByProductApi = (productId: string) =>
   apiJson(`/api/cart/product/${productId}`, { method: "DELETE" });
