@@ -1,0 +1,258 @@
+the repo is still mixing legacy cart and V2 cart paths and data shapes, which is why you’re seeing “added” on product pages but an empty/mismatched cart elsewhere. Below is a do-not-stop, copy-paste plan for Replit that:
+
+kills the legacy /api/cart/items flow,
+
+unifies the owner model,
+
+fixes the Drizzle selection bug,
+
+makes the client use V2 only with a single qty field end-to-end,
+
+and patches the two UI files you shared so they call the right hook/APIs and don’t re-create duplicates.
+
+✅ Tell Replit to do this exactly
+You will remove all legacy cart usage, enforce cart.v2 everywhere, and fix duplicates/shape mismatches.
+Follow these steps EXACTLY and do not stop until verification passes.
+
+===============================================================================
+PHASE 1 — Purge legacy cart & hard-block regressions
+===============================================================================
+# 1) Kill legacy routes & any mounts of /api/cart/items
+rg -n --no-heading -g '!node_modules' -e "/api/cart/items" -e "server/routes/cart\\.ts" > audit/legacy-cart-usages.txt
+# For each hit:
+#  - Delete server/routes/cart.ts
+#  - Remove any router.use(...) that mounts it
+#  - Replace any handler that calls /api/cart/items with V2 (/api/cart) equivalents
+
+# 2) ESLint “no-restricted-imports” (prevent reintroduction)
+# Add to your ESLint config rules:
+# "no-restricted-imports": ["error", {
+#   "paths": [
+#     {"name":"server/routes/cart","message":"Legacy cart forbidden. Use server/routes/cart.v2.ts"},
+#     {"name":"client/src/hooks/use-cart","message":"Use client/src/hooks/useCart.ts (V2 only)"}
+#   ]
+# }]
+
+===============================================================================
+PHASE 2 — Server: cart.v2 API contract (owner-only, no user_id/session_id)
+===============================================================================
+# 1) Owner helper (single source of truth)
+# server/utils/cartOwner.ts
+export function getCartOwnerId(req: any): string {
+  return req.user?.id ?? req.sessionID;
+}
+
+# 2) cart.v2 routes (ensure these handlers exist)
+# server/routes/cart.v2.ts
+# - GET /api/cart               → returns { ownerId, items:[{ id, productId, variantId|null, qty, product:{...} }], totals }
+# - POST /api/cart              → body { productId, qty, variantId? }, upsert + qty+=
+# - PATCH /api/cart/product/:id → body { qty }, set absolute qty (0 deletes)
+# - DELETE /api/cart/product/:id → remove all rows for that product
+
+# 3) Storage (Drizzle) — explicit selects only (NO cartItemSelectionFields), owner_id only
+# server/storage.ts must export:
+#   getCartItemsByOwner(ownerId)
+#   getCartByOwner(ownerId)
+#   addOrUpdateCartItem(ownerId, productId, variantId|null, qty)
+#   setCartItemQty(ownerId, productId, variantId|null, qty)  // qty=0 → delete
+#   removeCartItemsByProduct(ownerId, productId)
+#   rekeyCartItemOwner(id, newOwnerId)
+#   getProductStock(productId)
+# All queries must filter by owner_id ONLY (no session_id / user_id columns)
+
+# 4) DB invariants (migration)
+# - Column owner_id text NOT NULL
+# - UNIQUE(owner_id, product_id, COALESCE(variant_id, ''))
+# - CHECK(qty > 0)
+# Drop session_id/user_id columns AFTER code confirms working.
+
+# 5) Drizzle crash fix
+# Remove any reference to undefined `cartItemSelectionFields` or similar.
+# Use explicit selects from schema for items + joined product fields.
+
+===============================================================================
+PHASE 3 — Server: consolidation & cleanup (do not delete allowed items)
+===============================================================================
+# 1) consolidateAndClampCart(ownerId) — de-dupe by (productId, variantId), clamp to stock
+# 2) On GET /api/cart, call consolidateAndClampCart(ownerId) before returning items
+# 3) Cleanup (cartCleanup.ts): delete ONLY when SSOT effectiveness === 'BLOCKED'
+#    Do NOT delete for LOCAL_AND_SHIPPING or other allowed states.
+
+===============================================================================
+PHASE 4 — Client: one hook, one contract, one data shape (qty)
+===============================================================================
+# 1) API wrapper must send cookies
+# client/src/lib/api.ts
+export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(path, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...(init.headers||{}) },
+    credentials: "include"
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(()=> ({}));
+    const err:any = new Error(body?.error || `HTTP ${res.status}`); err.status=res.status; err.body=body; throw err;
+  }
+  return res.json();
+}
+
+# 2) Cart API client (V2 only)
+# client/src/lib/cartApi.ts
+import { apiJson } from "@/lib/api";
+export const getCart = () => apiJson("/api/cart");
+export const addToCartApi = (p:{ productId:string; qty:number; variantId?:string|null }) =>
+  apiJson("/api/cart", { method:"POST", body: JSON.stringify({ ...p, variantId: p.variantId ?? null }) });
+export const setQtyByProduct = (productId:string, qty:number) =>
+  apiJson(`/api/cart/product/${productId}`, { method:"PATCH", body: JSON.stringify({ qty }) });
+export const removeByProduct = (productId:string) =>
+  apiJson(`/api/cart/product/${productId}`, { method:"DELETE" });
+
+# 3) Canonical hook
+# client/src/hooks/useCart.ts
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getCart, addToCartApi, setQtyByProduct, removeByProduct } from "@/lib/cartApi";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocality } from "@/hooks/useLocality";
+
+export function useCart() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const { data: locality } = useLocality();
+  const qk = ["cart", user?.id ?? "guest", locality?.localityVersion ?? "0"] as const;
+
+  const cart = useQuery({ queryKey: qk, queryFn: getCart, staleTime: 0 });
+
+  const addToCart = useMutation({
+    mutationFn: addToCartApi,
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk })
+  });
+
+  const updateCartItem = useMutation({
+    mutationFn: async ({ productId, qty }: { productId: string; qty: number }) => setQtyByProduct(productId, qty),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk })
+  });
+
+  const removeByProductMut = useMutation({
+    mutationFn: removeByProduct,
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk })
+  });
+
+  return {
+    data: cart.data,
+    isLoading: cart.isLoading,
+    isError: cart.isError,
+    addToCart: (p:{productId:string; qty:number; variantId?:string|null}) => addToCart.mutateAsync(p),
+    updateCartItem: (p:{productId:string; qty:number}) => updateCartItem.mutateAsync(p),
+    removeByProduct: (productId:string) => removeByProductMut.mutateAsync(productId),
+    isAddingToCart: addToCart.isPending,
+    isUpdating: updateCartItem.isPending,
+    isRemovingByProduct: removeByProductMut.isPending
+  };
+}
+
+===============================================================================
+PHASE 5 — Patch the two UI files you showed (align to V2, stop dupes)
+===============================================================================
+# A) client/src/components/AddToCartButton.tsx
+# - Use qty (not quantity)
+# - Use one hook instance and remove legacy functions
+
+# Change this (currently calling addToCart({ productId, quantity: 1 }))
+# TO:
+addToCart({ productId, qty: 1 });
+
+# Also ensure "isInCart" reads item.qty if you display counts anywhere.
+# If it only checks existence by productId, that's fine.
+
+# B) client/src/pages/cart.tsx (your CartPage)
+# - Do NOT call useCart() twice (you currently call it twice).
+# - Use returned functions from the single hook instance.
+# - Use qty instead of quantity everywhere.
+
+# Replace top of component with:
+const {
+  data: cart,
+  isLoading,
+  isError,
+  updateCartItem,
+  removeByProduct
+} = useCart();
+
+# Everywhere you reference item.quantity → change to item.qty
+# Handler changes:
+const handleQuantityChange = (productId: string, newQty: number) => {
+  if (newQty <= 0) {
+    removeByProduct(productId);
+  } else {
+    updateCartItem({ productId, qty: newQty });
+  }
+};
+
+const handleRemove = (productId: string) => {
+  removeByProduct(productId);
+};
+
+# If subtotal/total come from cart.totals, switch to:
+const subtotal = cart?.totals?.subtotal ?? 0;
+const total = cart?.totals?.total ?? cart?.totals?.subtotal ?? 0;
+
+# IMPORTANT: search the whole client for “quantity:” payloads and change to “qty:”
+rg -n --no-heading -g '!node_modules' -e "quantity\\s*:" -e "updateCartItem\\(\\{\\s*productId\\s*," > audit/client-qty-mismatches.txt
+# Patch each to use qty consistently.
+
+===============================================================================
+PHASE 6 — Block legacy endpoints from the client
+===============================================================================
+# Find any reference to /api/cart/items and remove:
+rg -n --no-heading -g '!node_modules' "/api/cart/items" > audit/client-legacy-items.txt
+# For each hit, switch to:
+#   POST   /api/cart               body { productId, qty, variantId? }
+#   PATCH  /api/cart/product/:id   body { qty }
+#   DELETE /api/cart/product/:id
+
+===============================================================================
+PHASE 7 — Verification (must pass)
+===============================================================================
+# 1) With a cookie jar (guest)
+rm -f /tmp/c.sess
+echo "=== Add x2 ===" && \
+curl -i -c /tmp/c.sess -b /tmp/c.sess -H "Content-Type: application/json" \
+  -X POST http://localhost:5000/api/cart --data '{"productId":"TEST-1","qty":1}' && \
+curl -i -c /tmp/c.sess -b /tmp/c.sess -H "Content-Type: application/json" \
+  -X POST http://localhost:5000/api/cart --data '{"productId":"TEST-1","qty":1}'
+
+echo "=== Set qty=3 ===" && \
+curl -i -c /tmp/c.sess -b /tmp/c.sess -H "Content-Type: application/json" \
+  -X PATCH http://localhost:5000/api/cart/product/TEST-1 --data '{"qty":3}'
+
+echo "=== GET cart (expect qty=3) ===" && \
+curl -s -c /tmp/c.sess -b /tmp/c.sess http://localhost:5000/api/cart | head -200
+
+# Expect a single connect.sid cookie, consistent ownerId, and item TEST-1 with qty:3.
+
+# 2) UI smoke
+# - Product page: clicking “Add to Cart” increments count; cart page shows the same item.
+# - Changing quantity in cart page uses setQty endpoint and reflects immediately.
+# - Removing uses removeByProduct and both product & cart views reflect it.
+
+# 3) No deletes for allowed locality
+# - Add a LOCAL_ONLY product with userMode LOCAL_AND_SHIPPING → NO cleanup deletion.
+# - Only BLOCKED items are culled.
+
+===============================================================================
+PHASE 8 — Commit
+===============================================================================
+git add .
+git commit -m "fix(cart): remove legacy /api/cart/items; enforce cart.v2 with qty; single hook; Drizzle explicit selects; cleanup only when BLOCKED"
+
+Why this solves the duplicate/empty cart
+
+You had two different shapes in play: legacy used quantity + /api/cart/items; V2 uses qty + /api/cart. That mismatch silently created duplicate rows and empty reads.
+
+The server now exposes one contract (V2) and consolidates/clamps on read; DB uniqueness prevents dupes.
+
+The client uses one hook and V2-only calls (with qty), so both the product page and cart page are reading/writing the same rows for the same ownerId.
+
+The Drizzle crash is eliminated by using explicit selects only (no undefined selection objects).
+
+Cleanup no longer deletes valid items for allowed locality modes.

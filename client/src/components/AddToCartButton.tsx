@@ -38,17 +38,20 @@ export default function AddToCartButton({
   const { toast } = useToast();
   const [isHovering, setIsHovering] = useState(false);
 
-  // Use the unified cart hooks and locality
+  // Use the V2 cart hooks and locality
   const { 
-    cart, 
+    data: cart, 
     addToCart, 
-    removeByProduct, // compound key removal for authenticated users
+    removeByProduct,
     isAddingToCart, 
-    isRemovingByProduct 
+    isRemovingByProduct,
+    isInCart,
+    getItemQuantity
   } = useCart();
-  const { data: locality, isLoading: localityLoading } = useLocality(); // unified SSOT
+  const { data: locality, isLoading: localityLoading } = useLocality();
 
-  const isInCart = cart.data?.items?.some((item: any) => item.productId === productId) || false;
+  const itemInCart = isInCart(productId);
+  const currentQuantity = getItemQuantity(productId);
   
   // Use SSOT computeEffectiveAvailability instead of direct checks
   const productMode = modeFromProduct(product || {});
@@ -68,7 +71,7 @@ export default function AddToCartButton({
     }
     
     // Cart works for both guests and authenticated users now
-    addToCart({ productId, quantity: 1 });
+    addToCart({ productId, qty: 1 }); // V2 API - uses qty field
   };
 
   const handleRemoveFromCart = () => {
@@ -81,7 +84,7 @@ export default function AddToCartButton({
   // Remove the authentication check - cart works for all users
 
   // In cart - show green button that turns red on hover with remove functionality
-  if (isInCart) {
+  if (itemInCart) {
     return (
       <button
         className={cn(

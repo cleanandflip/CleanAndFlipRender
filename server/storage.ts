@@ -786,19 +786,72 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createCartItem(data: {ownerId: string, productId: string, variantId: string | null, quantity: number}) {
-    console.log(`[STORAGE] Creating cart item:`, data);
-    const itemToInsert = {
-      ownerId: data.ownerId,
-      productId: data.productId,
-      quantity: data.quantity,
-      // Keep legacy columns for now during migration
-      userId: data.ownerId.includes('-') && data.ownerId.length === 36 ? data.ownerId : null,
-      sessionId: !(data.ownerId.includes('-') && data.ownerId.length === 36) ? data.ownerId : null
-    };
+  // V2 Cart Service Methods - owner_id only, qty consistency
+  async addOrUpdateCartItem(ownerId: string, productId: string, variantId: string | null, qty: number) {
+    console.log(`[STORAGE] V2 addOrUpdate cart item:`, { ownerId, productId, qty });
     
-    const [newItem] = await db.insert(cartItems).values(itemToInsert).returning();
-    return newItem;
+    // Try to find existing item
+    const existing = await db.select()
+      .from(cartItems)
+      .where(and(
+        eq(cartItems.ownerId, ownerId),
+        eq(cartItems.productId, productId)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Update existing - add to current quantity
+      const newQty = existing[0].quantity + qty;
+      await db.update(cartItems)
+        .set({ 
+          quantity: newQty,
+          updatedAt: new Date()
+        })
+        .where(eq(cartItems.id, existing[0].id));
+      
+      return { item: { ...existing[0], qty: newQty }, upserted: 'updated' };
+    } else {
+      // Insert new
+      const itemToInsert = {
+        ownerId,
+        productId,
+        quantity: qty,
+        // Keep legacy columns for migration compatibility
+        userId: ownerId.includes('-') && ownerId.length === 36 ? ownerId : null,
+        sessionId: !(ownerId.includes('-') && ownerId.length === 36) ? ownerId : null
+      };
+      
+      const [newItem] = await db.insert(cartItems).values(itemToInsert).returning();
+      return { item: { ...newItem, qty: newItem.quantity }, upserted: 'inserted' };
+    }
+  }
+
+  async setCartItemQty(ownerId: string, productId: string, variantId: string | null, qty: number) {
+    if (qty <= 0) {
+      return this.removeCartItemsByProduct(ownerId, productId);
+    }
+    
+    await db.update(cartItems)
+      .set({ 
+        quantity: qty,
+        updatedAt: new Date() 
+      })
+      .where(and(
+        eq(cartItems.ownerId, ownerId),
+        eq(cartItems.productId, productId)
+      ));
+    
+    return { success: true, qty };
+  }
+
+  async removeCartItemsByProduct(ownerId: string, productId: string) {
+    const result = await db.delete(cartItems)
+      .where(and(
+        eq(cartItems.ownerId, ownerId),
+        eq(cartItems.productId, productId)
+      ));
+    
+    return { removed: result.rowCount || 0 };
   }
 
   async updateCartItemQty(id: string, qty: number) {
@@ -845,7 +898,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // V2 Cart Service methods (required by new cart service)
-  async getCartItemsByOwner(ownerId: string): Promise<{ id: string; ownerId: string; productId: string; quantity: number; }[]> {
+  async getCartItemsByOwner(ownerId: string): Promise<{ id: string; ownerId: string; productId: string; qty: number; variantId: string | null; }[]> {
     try {
       const items = await db.select({
         id: cartItems.id,
@@ -860,7 +913,8 @@ export class DatabaseStorage implements IStorage {
         id: item.id!,
         ownerId: item.ownerId!,
         productId: item.productId!,
-        quantity: item.quantity
+        qty: item.quantity, // V2 consistency
+        variantId: null // No variants yet
       }));
     } catch (error) {
       console.error('[STORAGE] getCartItemsByOwner error:', error);
@@ -868,30 +922,32 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCartByOwner(ownerId: string): Promise<{ items: any[]; totals: { subtotal: number; total: number; }; }> {
+  async getCartByOwner(ownerId: string): Promise<{ ownerId: string; items: any[]; totals: { subtotal: number; total: number; }; }> {
     try {
-      // Use the new owner_id column for unified queries
+      // Explicit select with proper schema fields - NO cartItemSelectionFields
       const items = await db
         .select({
           id: cartItems.id,
           ownerId: cartItems.ownerId,
           productId: cartItems.productId,
-          quantity: cartItems.quantity,
+          qty: cartItems.quantity, // Map to qty for V2 consistency
+          variantId: sql<string | null>`null`, // No variant support yet
           createdAt: cartItems.createdAt,
           product: {
             id: products.id,
             name: products.name,
             price: products.price,
-            mode: products.mode
+            mode: sql<string>`COALESCE(${products.mode}, 'LOCAL_AND_SHIPPING')`
           }
         })
         .from(cartItems)
         .leftJoin(products, eq(products.id, cartItems.productId))
         .where(eq(cartItems.ownerId, ownerId));
 
-      const subtotal = items.reduce((sum, item) => sum + (item.quantity * (item.product?.price || 0)), 0);
+      const subtotal = items.reduce((sum, item) => sum + (item.qty * (item.product?.price || 0)), 0);
       
       return {
+        ownerId,
         items: items.map(item => ({
           ...item,
           product: item.product || { id: item.productId, name: 'Unknown Product', price: 0, mode: 'LOCAL_AND_SHIPPING' }
@@ -904,6 +960,7 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('[STORAGE] getCartByOwner error:', error);
       return {
+        ownerId,
         items: [],
         totals: { subtotal: 0, total: 0 }
       };

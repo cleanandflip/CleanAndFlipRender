@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCart } from "@/hooks/useCart";
-// Define local types for cart data  
+// V2 Cart types - uses qty field
 type CartItem = {
   id: string;
   productId: string;
-  quantity: number;
+  qty: number; // V2 field name
   product: {
     id: string;
     name: string;
@@ -17,12 +17,6 @@ type CartItem = {
     stockQuantity?: number;
   };
 };
-
-type Cart = {
-  items: CartItem[];
-  subtotal: number;
-  total?: number;
-};
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
 import ImageWithFallback from "@/components/ImageWithFallback";
 import { LocalBadge } from "@/components/locality/LocalBadge";
@@ -31,27 +25,31 @@ import { Badge } from "@/components/ui/badge";
 import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryEligibilityBanner';
 
 export default function CartPage() {
-  const { data: cart, isLoading, isError } = useCart();
-  const { updateCartItem, removeFromCart } = useCart();
+  const { 
+    data: cart, 
+    isLoading, 
+    isError, 
+    updateCartItem, 
+    removeByProduct 
+  } = useCart();
   const { data: locality } = useLocality();
   
-  // Safe access to cart data with proper typing
-  const cartData = cart as Cart;
-  const items = cartData?.items || [];
+  // Safe access to cart data with proper V2 typing
+  const items = cart?.items || [];
   const hasItems = items.length > 0;
-  const subtotal = cartData?.subtotal || 0;
-  const total = cartData?.total || 0;
+  const subtotal = cart?.subtotal || 0;
+  const total = cart?.total || 0;
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity === 0) {
-      removeFromCart(productId);
+      removeByProduct(productId); // V2 API - remove by productId
     } else {
-      updateCartItem({ productId, quantity: newQuantity });
+      updateCartItem({ productId, qty: newQuantity }); // V2 API - uses qty field
     }
   };
 
   const handleRemove = (productId: string) => {
-    removeFromCart(productId);
+    removeByProduct(productId); // V2 API
   };
 
   // FIXED: Get first image URL from product.images with proper fallback
@@ -191,18 +189,18 @@ export default function CartPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
+                        onClick={() => handleQuantityChange(item.productId, item.qty - 1)}
                         className="w-8 h-8 p-0"
                       >
                         <Minus className="w-4 h-4" />
                       </Button>
                       <span className="w-8 text-center text-sm font-medium">
-                        {item.quantity}
+                        {item.qty}
                       </span>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
+                        onClick={() => handleQuantityChange(item.productId, item.qty + 1)}
                         className="w-8 h-8 p-0"
                       >
                         <Plus className="w-4 h-4" />
@@ -223,7 +221,7 @@ export default function CartPage() {
                 {/* Item Total */}
                 <div className="mt-4 text-right">
                   <p className="text-lg font-semibold">
-                    ${(parseFloat(item.product?.price || '0') * item.quantity).toFixed(2)}
+                    ${(parseFloat(item.product?.price || '0') * item.qty).toFixed(2)}
                   </p>
                 </div>
               </Card>

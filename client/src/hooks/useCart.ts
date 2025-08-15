@@ -1,209 +1,96 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiJson } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
-import { useLocality } from "./useLocality";
-import { cartKeys } from "@/lib/cartKeys";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocality } from "@/hooks/useLocality";
+import { getCart, addToCartApi, setQtyByProduct, removeByProduct } from "@/lib/cartApi";
 
+// V2 Cart Hook - unified qty field, single endpoint pattern
 export function useCart() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
-  // SSOT locality-aware cart query
-  const { data: locality, localityVersion } = useLocality();
-  const ownerId = 'session'; // Cart works with session IDs for both guests and authenticated users
-  
-  // Use scoped query keys for cache invalidation on locality changes
+  const { user } = useAuth();
+  const { data: locality } = useLocality();
+
+  // Create query key that includes user and locality state for proper invalidation
+  const queryKey = ["cart", user?.id ?? "guest", locality?.localityVersion ?? "0"] as const;
+
+  // Main cart query using V2 API
   const cartQuery = useQuery({
-    queryKey: cartKeys.scoped(ownerId, localityVersion.toString()),
-    queryFn: () => apiJson("/api/cart"),
-    staleTime: 30_000 // 30 seconds
+    queryKey,
+    queryFn: getCart,
+    staleTime: 0, // Always refetch to ensure fresh cart state
   });
 
-  // Add to cart mutation with SSOT V2 endpoints
+  // Add to cart mutation (V2 - uses qty field)
   const addToCartMutation = useMutation({
-    mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
-      apiJson("/api/cart/items", {
-        method: "POST",
-        body: JSON.stringify({ productId, quantity })
-      }),
-    onMutate: async ({ productId, quantity }) => {
-      // Optimistic update for instant UI feedback using scoped keys
-      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
-      await queryClient.cancelQueries({ queryKey: cartQueryKey });
-      const previousCart = queryClient.getQueryData(cartQueryKey);
-      
-      // Optimistically add item to cache
-      queryClient.setQueryData(cartQueryKey, (old: any) => {
-        if (!old?.items) return old;
-        const existingItem = old.items.find((item: any) => item.productId === productId);
-        if (existingItem) {
-          return {
-            ...old,
-            items: old.items.map((item: any) =>
-              item.productId === productId
-                ? { ...item, quantity: item.quantity + quantity }
-                : item
-            )
-          };
-        } else {
-          // Add new item (simplified - real product data will come from server)
-          return {
-            ...old,
-            items: [...old.items, { productId, quantity, product: { id: productId } }]
-          };
-        }
-      });
-      
-      return { previousCart };
-    },
-    onError: (error: any, variables, context) => {
-      // Rollback on error using scoped key
-      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
-      queryClient.setQueryData(cartQueryKey, context?.previousCart);
-      
-      // Handle SSOT INELIGIBLE specially (new V2 error format)
-      if (error.status === 422 && error.body?.error === 'INELIGIBLE') {
-        const reasons = error.body?.reasons || ['Item not available in your area'];
-        toast({
-          title: "Not available in your area", 
-          description: reasons[0] || 'This item cannot be added to your cart.',
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      toast({
-        title: "Error adding to cart",
-        description: error.message || "Please try again",
-        variant: "destructive"
-      });
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: cartKeys.all });
-      
-      // Show custom success message based on response
-      if (data?.stock_status === 'ADDED_PARTIAL_STOCK_CAP') {
-        toast({
-          title: "Added to cart",
-          description: `Added ${data.qty || 1} items (max stock reached)`
-        });
-      } else {
-        toast({
-          title: "Added to cart",
-          description: "Item successfully added to your cart"
-        });
-      }
-    }
-  });
-
-  // Remove item by ID mutation for legacy compatibility
-  const removeItemMutation = useMutation({
-    mutationFn: (itemId: string) => 
-      apiJson(`/api/cart/items/${itemId}`, { method: "DELETE" }),
-    onMutate: async (itemId) => {
-      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
-      await queryClient.cancelQueries({ queryKey: cartQueryKey });
-      const previousCart = queryClient.getQueryData(cartQueryKey);
-      
-      // Optimistically remove item
-      queryClient.setQueryData(cartQueryKey, (old: any) => {
-        if (!old?.items) return old;
-        return {
-          ...old,
-          items: old.items.filter((item: any) => item.id !== itemId)
-        };
-      });
-      
-      return { previousCart };
-    },
-    onError: (error, variables, context) => {
-      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
-      queryClient.setQueryData(cartQueryKey, context?.previousCart);
-      toast({
-        title: "Error",
-        description: "Failed to remove item from cart",
-        variant: "destructive"
-      });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: cartKeys.all });
-    }
-  });
-
-  // Remove by productId (compound key) for all users
-  const removeByProductMutation = useMutation({
-    mutationFn: (productId: string) => 
-      apiJson(`/api/cart/product/${productId}`, { method: "DELETE" }),
-    onMutate: async (productId) => {
-      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
-      await queryClient.cancelQueries({ queryKey: cartQueryKey });
-      const previousCart = queryClient.getQueryData(cartQueryKey);
-      
-      // Optimistically remove by productId
-      queryClient.setQueryData(cartQueryKey, (old: any) => {
-        if (!old?.items) return old;
-        return {
-          ...old,
-          items: old.items.filter((item: any) => item.productId !== productId)
-        };
-      });
-      
-      return { previousCart };
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: cartKeys.all });
-      
-      // Show purge notification if items were auto-removed
-      if (data?.purgedLocalOnly && data?.removed > 0) {
-        toast({
-          title: "Items auto-removed",
-          description: `${data.removed} local-only item(s) were removed because your address is outside our local delivery area.`,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Item removed",
-          description: "Item has been removed from your cart"
-        });
-      }
-    },
-    onError: (error: any, productId, context) => {
-      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
-      queryClient.setQueryData(cartQueryKey, context?.previousCart);
-      
-      toast({
-        title: "Error",
-        description: error.message || "Failed to remove item",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Update cart item mutation
-  const updateCartItemMutation = useMutation({
-    mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
-      apiJson(`/api/cart/items`, {
-        method: "PATCH",
-        body: JSON.stringify({ productId, quantity })
-      }),
+    mutationFn: addToCartApi,
     onSuccess: () => {
-      const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
-      queryClient.invalidateQueries({ queryKey: cartQueryKey });
-    },
-    onError: (error: any) => {
-      toast({ title: "Failed to update cart", description: error.message || "Please try again", variant: "destructive" });
+      queryClient.invalidateQueries({ queryKey });
     }
   });
+
+  // Update cart item quantity (V2 - absolute qty setter)
+  const updateCartItemMutation = useMutation({
+    mutationFn: async ({ productId, qty }: { productId: string; qty: number }) => setQtyByProduct(productId, qty),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    }
+  });
+
+  // Remove product from cart (V2 - by productId)
+  const removeByProductMutation = useMutation({
+    mutationFn: removeByProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    }
+  });
+
+  // Helper functions
+  const isInCart = (productId: string) => {
+    return cartQuery.data?.items?.some((item: any) => item.productId === productId) || false;
+  };
+
+  const getItemQuantity = (productId: string) => {
+    const item = cartQuery.data?.items?.find((item: any) => item.productId === productId);
+    return item?.qty || 0; // V2 uses qty field
+  };
+
+  const getTotalItems = () => {
+    return cartQuery.data?.items?.reduce((total: number, item: any) => total + item.qty, 0) || 0;
+  };
+
+  const getCartTotal = () => {
+    return cartQuery.data?.totals?.total || 0;
+  };
 
   return {
-    cart: cartQuery,
-    addToCart: addToCartMutation.mutate,
-    removeItem: removeItemMutation.mutate,
-    removeByProduct: removeByProductMutation.mutate,
-    updateItem: updateCartItemMutation.mutate,
+    // Data (V2 format)
+    data: cartQuery.data,
+    items: cartQuery.data?.items || [],
+    totals: cartQuery.data?.totals || { subtotal: 0, total: 0 },
+    ownerId: cartQuery.data?.ownerId,
+    
+    // State
+    isLoading: cartQuery.isLoading,
+    isError: cartQuery.isError,
+    error: cartQuery.error,
+    
+    // V2 Mutations - simplified API
+    addToCart: (p: {productId: string; qty: number; variantId?: string | null}) => addToCartMutation.mutateAsync(p),
+    updateCartItem: (p: {productId: string; qty: number}) => updateCartItemMutation.mutateAsync(p),
+    removeByProduct: (productId: string) => removeByProductMutation.mutateAsync(productId),
+    
+    // Mutation states
     isAddingToCart: addToCartMutation.isPending,
-    isRemovingItem: removeItemMutation.isPending,
+    isUpdating: updateCartItemMutation.isPending,
     isRemovingByProduct: removeByProductMutation.isPending,
-    isUpdatingItem: updateCartItemMutation.isPending,
+    
+    // Helper functions (V2 compatible)
+    isInCart,
+    getItemQuantity,
+    getTotalItems,
+    getCartTotal,
+    
+    // Meta
+    queryKey,
+    refetch: cartQuery.refetch,
   };
 }
