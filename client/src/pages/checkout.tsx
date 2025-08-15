@@ -174,28 +174,28 @@ export default function Checkout() {
         <h1 className="text-4xl font-bebas">CHECKOUT</h1>
       </div>
 
-      {/* Locality Banner for Checkout */}
-      {locality && (
-        <motion.div 
-          className="mb-6 flex justify-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <div className="inline-flex items-center gap-2.5 bg-gradient-to-r from-slate-800/30 to-slate-700/30 border border-slate-600/40 rounded-2xl px-4 py-2 backdrop-blur-sm shadow-lg">
-            <MapPin className="w-4 h-4 text-blue-400 flex-shrink-0" />
-            <span className="text-sm font-medium text-slate-100">
-              {locality.eligible ? (
-                "You are in our FREE DELIVERY zone!"
-              ) : selectedAddress ? (
-                "You're outside our Local Delivery area. Shipping costs will be calculated for your items."
+      {/* Dynamic Locality Banner for Selected Address */}
+      <motion.div 
+        className="mb-6 flex justify-center"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="inline-flex items-center gap-2.5 bg-gradient-to-r from-slate-800/30 to-slate-700/30 border border-slate-600/40 rounded-2xl px-4 py-2 backdrop-blur-sm shadow-lg">
+          <MapPin className="w-4 h-4 text-blue-400 flex-shrink-0" />
+          <span className="text-sm font-medium text-slate-100">
+            {selectedAddress ? (
+              isLocalZip(selectedAddress.postalCode) ? (
+                "Selected address is in our FREE DELIVERY zone!"
               ) : (
-                "Please add your address to determine delivery options and costs."
-              )}
-            </span>
-          </div>
-        </motion.div>
-      )}
+                "Selected address is outside our Local Delivery area. Shipping costs will be calculated for your items."
+              )
+            ) : (
+              "Please add your address to determine delivery options and costs."
+            )}
+          </span>
+        </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
@@ -394,9 +394,9 @@ export default function Checkout() {
                     {selectedAddress.street1}, {selectedAddress.city}, {selectedAddress.state} {selectedAddress.postalCode}
                   </p>
                   
-                  {/* Dynamic shipping based on locality and product fulfillment */}
+                  {/* Dynamic shipping based on SELECTED ADDRESS locality and product fulfillment */}
                   {(() => {
-                    const isUserLocal = locality?.eligible || false;
+                    const isSelectedAddressLocal = isLocalZip(selectedAddress.postalCode);
                     const hasLocalOnlyItems = cartItems.some((item: any) => 
                       item.product?.is_local_delivery_available && !item.product?.is_shipping_available
                     );
@@ -407,8 +407,8 @@ export default function Checkout() {
                       item.product?.is_local_delivery_available && item.product?.is_shipping_available
                     );
 
-                    // LOCAL USER = Always prioritize LOCAL DELIVERY for LOCAL_AND_SHIPPING items
-                    if (isUserLocal) {
+                    // SELECTED LOCAL ADDRESS = Always prioritize LOCAL DELIVERY for LOCAL_AND_SHIPPING items
+                    if (isSelectedAddressLocal) {
                       return (
                         <div className="mt-4 p-3 border rounded bg-green-900/20 border-green-700/30">
                           <div className="flex justify-between items-center">
@@ -427,8 +427,8 @@ export default function Checkout() {
                       );
                     }
                     
-                    // NON-LOCAL USER with LOCAL-ONLY items = BLOCKED
-                    if (!isUserLocal && hasLocalOnlyItems && !hasShippingItems) {
+                    // SELECTED NON-LOCAL ADDRESS with LOCAL-ONLY items = BLOCKED
+                    if (!isSelectedAddressLocal && hasLocalOnlyItems && !hasShippingItems) {
                       return (
                         <div className="mt-4 p-3 border rounded bg-red-900/20 border-red-700/30">
                           <div className="text-center">
@@ -439,8 +439,8 @@ export default function Checkout() {
                       );
                     }
                     
-                    // NON-LOCAL USER with SHIPPING-AVAILABLE items (including LOCAL_AND_SHIPPING)
-                    if (!isUserLocal && hasShippingItems) {
+                    // SELECTED NON-LOCAL ADDRESS with SHIPPING-AVAILABLE items (including LOCAL_AND_SHIPPING)
+                    if (!isSelectedAddressLocal && hasShippingItems) {
                       return (
                         <div className="mt-4 p-3 border rounded bg-[#2a3441] border-gray-600/30">
                           <div className="flex justify-between items-center">
