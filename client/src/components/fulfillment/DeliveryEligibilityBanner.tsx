@@ -1,7 +1,6 @@
 import React from 'react';
 import { CheckCircle, Info } from 'lucide-react';
 import { useLocality } from '@/hooks/useLocality';
-import { ZipCheck } from './ZipCheck';
 import { Card } from '@/components/ui/card';
 
 export function DeliveryEligibilityBanner() {
@@ -35,18 +34,11 @@ export function DeliveryEligibilityBanner() {
 
   return (
     <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-      <div className="flex items-start gap-3">
-        <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
-        <div className="flex-1">
-          <p className="text-blue-800 dark:text-blue-200 font-medium mb-3">
-            You're outside our local delivery area. Local-only items can't be added.
-          </p>
-          <ZipCheck onResolved={(isLocal) => {
-            if (isLocal) {
-              window.location.reload(); // Refresh to update locality state
-            }
-          }} />
-        </div>
+      <div className="flex items-center gap-3">
+        <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" aria-hidden="true" />
+        <p className="text-blue-800 dark:text-blue-200 font-medium">
+          You're outside our local delivery area. Local-only items can't be added.
+        </p>
       </div>
     </Card>
   );
