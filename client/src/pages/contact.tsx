@@ -219,7 +219,6 @@ export default function Contact() {
                             <FormItem>
                               <FormControl>
                                 <Dropdown
-                                  fullWidth
                                   value={field.value || ""}
                                   onChange={(v) => field.onChange(v)}
                                   options={TOPIC_OPTIONS}
@@ -325,7 +324,7 @@ export default function Contact() {
                   <Mail className="h-5 w-5 text-accent-blue" />
                   <div>
                     <p className="font-medium">Email</p>
-                    <p className="text-sm text-text-muted">contact@cleanandflip.com</p>
+                    <p className="text-sm text-text-muted">support@cleanandflip.com</p>
                   </div>
                 </div>
                 

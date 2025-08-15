@@ -1,5 +1,10 @@
 import { sql } from 'drizzle-orm';
 import { users } from '../../shared/schema';
+import { Resend } from 'resend';
+import { Logger } from './logger';
+
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Normalize email to lowercase and trim whitespace
@@ -72,12 +77,12 @@ export interface SubmissionEmailData {
   };
 }
 
-// [MERGED FROM] /home/runner/workspace/server/services/email.ts
-emailService = {
+// Email service using support@cleanandflip.com for all communications
+export const emailService = {
   async sendOrderConfirmation(order: OrderEmailData) {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <orders@cleanandflip.com>',
+        from: 'Clean & Flip <support@cleanandflip.com>',
         to: order.user.email,
         subject: `Order Confirmed #${order.orderNumber}`,
         html: `
@@ -141,7 +146,7 @@ emailService = {
     
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <orders@cleanandflip.com>',
+        from: 'Clean & Flip <support@cleanandflip.com>',
         to: order.user.email,
         subject: `Your Order Has Shipped! #${order.orderNumber}`,
         html: `
@@ -199,7 +204,7 @@ emailService = {
     
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <offers@cleanandflip.com>',
+        from: 'Clean & Flip <support@cleanandflip.com>',
         to: submission.user.email,
         subject: `Equipment Offer for Your ${submission.brand ? submission.brand + ' ' : ''}${submission.name}`,
         html: `
@@ -240,6 +245,59 @@ emailService = {
       
     } catch (error: any) {
       Logger.error('Failed to send equipment offer email:', error);
+      throw error;
+    }
+  },
+  
+  async sendContactEmail(contactData: {
+    name: string;
+    email: string;
+    topic: string;
+    subject: string;
+    message: string;
+  }) {
+    try {
+      const { data, error } = await resend.emails.send({
+        from: 'Clean & Flip Contact Form <support@cleanandflip.com>',
+        to: 'support@cleanandflip.com',
+        reply_to: contactData.email,
+        subject: `Contact Form: ${contactData.subject}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+              <h1 style="color: #333; margin-bottom: 20px;">New Contact Form Submission</h1>
+              
+              <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>From:</strong> ${contactData.name}</p>
+                <p><strong>Email:</strong> ${contactData.email}</p>
+                <p><strong>Topic:</strong> ${contactData.topic}</p>
+                <p><strong>Subject:</strong> ${contactData.subject}</p>
+                
+                <h3 style="margin-top: 20px;">Message:</h3>
+                <p style="background: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; margin: 10px 0;">
+                  ${contactData.message.replace(/\n/g, '<br>')}
+                </p>
+              </div>
+              
+              <p style="color: #666; font-size: 14px;">
+                This message was sent from the Clean & Flip contact form.
+                You can reply directly to this email to respond to ${contactData.name}.
+              </p>
+            </div>
+          </div>
+        `
+      });
+      
+      if (error) {
+        Logger.error('Contact form email error:', error);
+        throw error;
+      }
+      
+      Logger.info(`Contact form email sent from ${contactData.email}`);
+      return data;
+      
+    } catch (error: any) {
+      Logger.error('Failed to send contact form email:', error);
       throw error;
     }
   }

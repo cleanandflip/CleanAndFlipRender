@@ -1284,6 +1284,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Contact form endpoint - sends email to support@cleanandflip.com
+  app.post("/api/contact", apiLimiter, async (req, res) => {
+    try {
+      const { emailService } = await import('./utils/email');
+      const { name, email, topic, subject, message } = req.body;
+      
+      // Validate required fields
+      if (!name || !email || !topic || !subject || !message) {
+        return res.status(400).json({ 
+          error: "Missing required fields",
+          message: "All fields are required" 
+        });
+      }
+      
+      // Send contact email to support
+      await emailService.sendContactEmail({
+        name,
+        email,
+        topic,
+        subject,
+        message
+      });
+      
+      Logger.info(`Contact form submission from ${email} with subject "${subject}"`);
+      res.status(200).json({ 
+        success: true,
+        message: "Message sent successfully. We'll get back to you within 24 hours." 
+      });
+      
+    } catch (error) {
+      Logger.error("Error processing contact form", error);
+      res.status(500).json({ 
+        error: "Failed to send message",
+        message: "Please try again or contact us directly at support@cleanandflip.com" 
+      });
+    }
+  });
+
   app.get("/api/submissions/:id", async (req, res) => {
     try {
       const submission = await storage.getSubmission(req.params.id);

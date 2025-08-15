@@ -1,4 +1,4 @@
-import { emailService } from '../services/email';
+import { emailService } from './email';
 import { storage } from '../storage';
 import { Logger } from './logger';
 
