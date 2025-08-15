@@ -14,6 +14,8 @@ import { addressApi, addressQueryKeys, addressUtils, type Address } from '@/api/
 import { toast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { LocalBadge } from '@/components/locality/LocalBadge';
+import { useLocality } from '@/hooks/useLocality';
 
 interface AddressListProps {
   onAddressSelect?: (address: Address) => void;
@@ -28,6 +30,7 @@ export function AddressList({
 }: AddressListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { data: locality } = useLocality();
 
   // Fetch addresses
   const { data: addresses, isLoading, error } = useQuery({
@@ -144,12 +147,7 @@ export function AddressList({
                     Default
                   </Badge>
                 )}
-                {address.isLocal && (
-                  <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-300">
-                    <Truck className="w-3 h-3" />
-                    Free Local Delivery
-                  </Badge>
-                )}
+                <LocalBadge isLocal={locality?.eligible ?? false} />
               </div>
             </div>
           </CardHeader>
