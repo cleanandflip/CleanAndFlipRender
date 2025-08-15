@@ -30,6 +30,8 @@ Preferred communication style: Simple, everyday language.
 - **Code Splitting Optimization**: Created lazy loading utilities and components for cart/checkout buttons and footer links to reduce initial bundle size
 - **Smooth Navigation UX**: Enhanced "Manage Addresses" button with loading states, visual feedback, and React router navigation for seamless transitions
 - **Bundle Performance**: Significant improvement in initial load times through strategic code splitting and on-demand component loading
+- **Address Management Enhancement**: Implemented 2-address maximum limit with comprehensive UI feedback, disabled states, and clear messaging when limit is reached
+- **Email Configuration Fix**: Resolved Resend email delivery failures by correcting sender domain from default onboarding@resend.dev to verified mail.cleanandflip.com domain
 
 ### Comprehensive Codebase Audit & Consolidation (August 2025)
 - **Professional audit infrastructure**: Installed ts-morph, jscpd, knip, and other enterprise-grade code analysis tools
