@@ -16,7 +16,9 @@ export default function AddressesPanel() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<null | any>(null);
   const { toast } = useToast();
-  // Each address should show its own locality status, not the global default
+  
+  // Maximum address limit
+  const MAX_ADDRESSES = 2;
 
   const { data: addresses = [], isLoading, isError, error } = useQuery({
     queryKey: ["/api/addresses"],
@@ -25,6 +27,16 @@ export default function AddressesPanel() {
 
   const handleCreateOrUpdate = async (payload: any) => {
     try {
+      // Check address limit for new addresses
+      if (!editing?.id && addresses.length >= MAX_ADDRESSES) {
+        toast({
+          title: "Address limit reached",
+          description: `You can only have ${MAX_ADDRESSES} addresses. Delete an existing address to add a new one.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (editing?.id) {
         await apiRequest("PUT", `/api/addresses/${editing.id}`, payload);
       } else {
@@ -121,24 +133,59 @@ export default function AddressesPanel() {
     );
   }
 
+  const isAtMaxLimit = addresses.length >= MAX_ADDRESSES;
+
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-bebas text-2xl">SAVED ADDRESSES</h2>
-        <Button onClick={() => {
-          setEditing(null);
-          setOpen(true);
-        }} data-testid="button-add-address">
+        <div>
+          <h2 className="font-bebas text-2xl">SAVED ADDRESSES</h2>
+          {isAtMaxLimit && (
+            <p className="text-sm text-amber-400 mt-1">
+              Maximum addresses limit reached ({addresses.length}/{MAX_ADDRESSES})
+            </p>
+          )}
+        </div>
+        <Button 
+          onClick={() => {
+            if (isAtMaxLimit) {
+              toast({
+                title: "Address limit reached",
+                description: `You can only have ${MAX_ADDRESSES} addresses. Delete an existing address to add a new one.`,
+                variant: "destructive",
+              });
+              return;
+            }
+            setEditing(null);
+            setOpen(true);
+          }} 
+          disabled={isAtMaxLimit}
+          className={isAtMaxLimit ? "opacity-50 cursor-not-allowed" : ""}
+          data-testid="button-add-address"
+        >
           Add New Address
         </Button>
       </div>
+
+      {/* Address limit warning */}
+      {isAtMaxLimit && (
+        <Alert className="mb-6 border-amber-500 bg-amber-500/10 text-amber-200">
+          <AlertCircle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-amber-200">
+            You have reached the maximum of {MAX_ADDRESSES} saved addresses. To add a new address, please delete an existing one first.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {addresses.length === 0 ? (
         <div className="text-center py-12">
           <MapPin className="mx-auto mb-4 text-gray-400" size={48} />
           <h3 className="text-xl font-semibold mb-2">No addresses yet</h3>
-          <p className="text-text-secondary mb-6">
+          <p className="text-text-secondary mb-4">
             Add addresses to make checkout faster.
+          </p>
+          <p className="text-xs text-gray-500 mb-6">
+            You can save up to {MAX_ADDRESSES} addresses.
           </p>
           <Button onClick={() => {
             setEditing(null);
@@ -149,6 +196,9 @@ export default function AddressesPanel() {
         </div>
       ) : (
         <div className="space-y-4">
+          <div className="flex justify-between items-center text-sm text-gray-500 mb-2">
+            <span>{addresses.length} of {MAX_ADDRESSES} addresses used</span>
+          </div>
           {addresses.map((address: any) => (
             <div key={address.id} className={`p-4 glass rounded-lg transition-all relative ${
               address.isDefault 
