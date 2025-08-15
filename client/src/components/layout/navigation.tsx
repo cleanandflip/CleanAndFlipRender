@@ -30,7 +30,7 @@ export default function Navigation() {
   const cartCount = cart?.items?.length || 0;
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
-  const locality = useLocality(); // single source of truth
+  const { data: locality } = useLocality(); // SSOT single source of truth
   const local = locality || DEFAULT_LOCALITY; // Never undefined
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);

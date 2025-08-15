@@ -5,10 +5,9 @@ import { ZipCheck } from './ZipCheck';
 import { Card } from '@/components/ui/card';
 
 export function DeliveryEligibilityBanner() {
-  // ADDITIVE: Use unified locality hook for consistency
-  const locality = useLocality();
-  const isLoading = locality.loading;
-  const isLocal = locality.eligible;
+  // SSOT: Use unified locality hook for consistency
+  const { data: locality, isLoading } = useLocality();
+  const isLocal = locality?.eligible || false;
 
   if (isLoading) {
     return (
