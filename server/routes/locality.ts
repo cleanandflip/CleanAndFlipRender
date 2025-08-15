@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getLocalityForRequest } from '../services/localityService';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
-// GET /api/locality/status - SSOT locality evaluation
-router.get('/status', async (req, res) => {
+// GET /api/locality/status - SSOT locality evaluation with optional auth
+router.get('/status', authMiddleware.optionalAuth, async (req, res) => {
   try {
     // Use SSOT service with optional ZIP override
     const zipOverride = req.query.zip as string | undefined;

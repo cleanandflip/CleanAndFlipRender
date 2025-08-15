@@ -290,8 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize search indexes
   await initializeSearchIndexes();
   
-  // UNIFIED Locality Status Endpoint - Single Source of Truth
-  app.get("/api/locality/status", apiLimiter, getLocalityStatus);
+  // UNIFIED Locality Status Endpoint handled by locality router above
   
 
   
