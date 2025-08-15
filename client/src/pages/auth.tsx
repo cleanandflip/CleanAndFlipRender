@@ -127,31 +127,32 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
-        <div className="w-full max-w-xl" ref={formContainerRef}>
+    <main className="mx-auto max-w-6xl px-4 md:px-6 py-12 md:py-20">
+      <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-center lg:gap-12 min-h-[calc(100vh-72px)]">
+        {/* Left Side - Form */}
+        <section className="lg:col-span-5 mx-auto w-full max-w-md">
+          <div className="w-full" ref={formContainerRef}>
           {/* Just the logo - no redundant text */}
-          <Logo size="lg" textOnly={true} className="mb-8" />
+            <Logo size="lg" textOnly={true} className="mb-6" />
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8 glass h-14 text-lg">
+            <TabsList className="grid w-full grid-cols-2 mb-6 glass h-10 md:h-12 text-base">
               <TabsTrigger 
                 value="login" 
-                className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200 text-lg"
+                className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200"
               >
                 Sign In
               </TabsTrigger>
               <TabsTrigger 
                 value="register" 
-                className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200 text-lg"
+                className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200"
               >
                 Sign Up
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="transition-all duration-300 ease-in-out">
-              <Card className="p-8">
+              <Card className="p-6 md:p-8">
                 <div className="mb-8">
                   <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">WELCOME BACK</h2>
                   <p className="text-white">
@@ -160,25 +161,25 @@ export default function AuthPage() {
                 </div>
                 <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-4">
-                    <Label htmlFor="email" className="text-white font-medium text-xl">Email</Label>
+                    <Label htmlFor="email" className="text-white font-medium text-xs">Email</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
                       required
-                      className="field h-20 text-2xl px-8"
+                      className="field h-11 text-sm px-3"
                       placeholder="Enter your email"
                       onFocus={scrollToForm}
                     />
                   </div>
                   <div className="space-y-4">
-                    <Label htmlFor="password" className="text-white font-medium text-xl">Password</Label>
+                    <Label htmlFor="password" className="text-white font-medium text-xs">Password</Label>
                     <Input
                       id="password"
                       name="password"
                       type="password"
                       required
-                      className="field h-20 text-2xl px-8"
+                      className="field h-11 text-sm px-3"
                       placeholder="Enter your password"
                       onFocus={scrollToForm}
                     />
@@ -194,7 +195,7 @@ export default function AuthPage() {
                     type="submit"
                     variant="primary"
                     size="lg"
-                    className="w-full h-16 text-xl"
+                    className="w-full h-11 text-sm"
                     loading={loginMutation.isPending}
                     disabled={loginMutation.isPending}
                   >
@@ -202,8 +203,8 @@ export default function AuthPage() {
                   </Button>
                 </form>
                 
-                <div className="mt-6">
-                  <div className="text-center text-sm text-gray-400 mb-3">
+                <div className="mt-5">
+                  <div className="text-center text-sm text-gray-400 mb-2">
                     Or continue with
                   </div>
                   <hr className="border-gray-600 mb-4" />
@@ -213,7 +214,7 @@ export default function AuthPage() {
             </TabsContent>
 
             <TabsContent value="register" className="transition-all duration-300 ease-in-out">
-              <Card className="p-8">
+              <Card className="p-6 md:p-8">
                 <div className="mb-6">
                   <h2 className="font-bebas text-3xl text-white tracking-wider mb-2">CREATE ACCOUNT</h2>
                   <p className="text-white">
@@ -229,7 +230,7 @@ export default function AuthPage() {
                       name="firstName"
                       type="text"
                       required
-                      className="field h-12 px-4"
+                      className="field h-11 px-3"
                       placeholder="First Name"
                       onFocus={scrollToForm}
                     />
@@ -238,7 +239,7 @@ export default function AuthPage() {
                       name="lastName"
                       type="text"
                       required
-                      className="field h-12 px-4"
+                      className="field h-11 px-3"
                       placeholder="Last Name"
                       onFocus={scrollToForm}
                     />
@@ -250,7 +251,7 @@ export default function AuthPage() {
                     name="email"
                     type="email"
                     required
-                    className="field h-12 px-4"
+                    className="field h-11 px-3"
                     placeholder="Email Address"
                     onFocus={scrollToForm}
                   />
@@ -259,7 +260,7 @@ export default function AuthPage() {
                     id="phone"
                     name="phone"
                     type="tel"
-                    className="field h-12 px-4"
+                    className="field h-11 px-3"
                     placeholder="Phone Number (Optional)"
                     onFocus={scrollToForm}
                   />
@@ -274,7 +275,7 @@ export default function AuthPage() {
                         name="password"
                         placeholder="Password"
                         required
-                        className={`h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white ${
+                        className={`h-11 px-3 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white ${
                           password && !isPasswordValid(password) ? 'border-red-500/50' : 
                           password && isPasswordValid(password) ? 'border-green-500/50' : ''
                         }`}
@@ -303,7 +304,7 @@ export default function AuthPage() {
                       name="confirmPassword"
                       placeholder="Confirm Password"
                       required
-                      className={`h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white ${
+                      className={`h-11 px-3 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white ${
                         !passwordsMatch && confirmPassword ? 'border-red-500/50' : 
                         passwordsMatch && confirmPassword && password ? 'border-green-500/50' : ''
                       }`}
@@ -320,7 +321,7 @@ export default function AuthPage() {
                     type="submit"
                     variant="primary"
                     size="lg"
-                    className="w-full h-12 text-lg mt-6"
+                    className="w-full h-11 text-sm mt-5"
                     loading={registerMutation.isPending}
                     disabled={registerMutation.isPending || !passwordsMatch || (!!password && !isPasswordValid(password))}
                   >
@@ -328,8 +329,8 @@ export default function AuthPage() {
                   </Button>
                 </form>
                 
-                <div className="mt-6">
-                  <div className="text-center text-sm text-gray-400 mb-3">
+                <div className="mt-5">
+                  <div className="text-center text-sm text-gray-400 mb-2">
                     Or continue with
                   </div>
                   <hr className="border-gray-600 mb-4" />
@@ -337,7 +338,7 @@ export default function AuthPage() {
                 </div>
 
                 {/* Security info as subtle footer */}
-                <div className="mt-6 pt-4 border-t border-border/50">
+                <div className="mt-5 pt-4 border-t border-border/50">
                   <button
                     type="button"
                     onClick={() => setShowSecurityInfo(!showSecurityInfo)}
@@ -368,14 +369,14 @@ export default function AuthPage() {
               </Card>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
+          </div>
+        </section>
 
-      {/* Right Side - Hero Section */}
-      <div className="hidden lg:flex flex-1 items-center justify-center p-12">
+        {/* Right Side - Hero Section */}
+        <aside className="hidden lg:flex lg:col-span-7 items-center justify-center">
         <div className="max-w-xl">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full glass mb-8 transition-all duration-300 hover:scale-110">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full glass mb-6 transition-all duration-300 hover:scale-110">
               <Dumbbell className="h-12 w-12 text-accent-blue" />
             </div>
             <h2 className="font-bebas text-6xl text-white tracking-wider mb-6">TRUSTED MARKETPLACE</h2>
@@ -384,45 +385,46 @@ export default function AuthPage() {
             </p>
           </div>
 
-          <div className="space-y-8">
-            <Card className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
-              <div className="flex items-start space-x-6">
-                <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="space-y-6">
+            <Card className="p-6 md:p-7 glass-hover transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-start space-x-5">
+                <div className="w-14 h-14 bg-success rounded-full flex items-center justify-center flex-shrink-0">
                   <CheckCircle className="h-8 w-8 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">VERIFIED QUALITY</h3>
-                  <p className="text-text-secondary text-lg">All equipment professionally inspected and guaranteed before sale</p>
+                  <p className="text-text-secondary text-base">All equipment professionally inspected and guaranteed before sale</p>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
-              <div className="flex items-start space-x-6">
-                <div className="w-16 h-16 bg-accent-blue rounded-full flex items-center justify-center flex-shrink-0">
+            <Card className="p-6 md:p-7 glass-hover transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-start space-x-5">
+                <div className="w-14 h-14 bg-accent-blue rounded-full flex items-center justify-center flex-shrink-0">
                   <Shield className="h-8 w-8 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">EXPERT KNOWLEDGE</h3>
-                  <p className="text-text-secondary text-lg">Weightlifting specialists with years of experience in quality equipment</p>
+                  <p className="text-text-secondary text-base">Weightlifting specialists with years of experience in quality equipment</p>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
-              <div className="flex items-start space-x-6">
-                <div className="w-16 h-16 bg-warning rounded-full flex items-center justify-center flex-shrink-0">
+            <Card className="p-6 md:p-7 glass-hover transition-all duration-300 hover:scale-[1.02]">
+              <div className="flex items-start space-x-5">
+                <div className="w-14 h-14 bg-warning rounded-full flex items-center justify-center flex-shrink-0">
                   <TrendingUp className="h-8 w-8 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">FAIR PRICING</h3>
-                  <p className="text-text-secondary text-lg">Best market value for both buyers and sellers in the fitness community</p>
+                  <p className="text-text-secondary text-base">Best market value for both buyers and sellers in the fitness community</p>
                 </div>
               </div>
             </Card>
           </div>
         </div>
+        </aside>
       </div>
-    </div>
+    </main>
   );
 }
