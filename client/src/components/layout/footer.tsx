@@ -9,12 +9,13 @@ export default function Footer() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const shopLinks = [
-    { name: "All Equipment", href: ROUTES.PRODUCTS },
-    { name: "Barbells", href: `${ROUTES.PRODUCTS}?category=barbells` },
-    { name: "Plates", href: `${ROUTES.PRODUCTS}?category=plates` },
-    { name: "Racks", href: `${ROUTES.PRODUCTS}?category=racks` },
-    { name: "Dumbbells", href: `${ROUTES.PRODUCTS}?category=dumbbells` },
-    { name: "Accessories", href: `${ROUTES.PRODUCTS}?category=accessories` },
+    { name: "All Equipment", href: `${ROUTES.PRODUCTS}?page=1` },
+    { name: "Barbells", href: `${ROUTES.PRODUCTS}?category=barbells&page=1` },
+    { name: "Plates", href: `${ROUTES.PRODUCTS}?category=weight-plates&page=1` },
+    { name: "Racks", href: `${ROUTES.PRODUCTS}?category=racks&page=1` },
+    { name: "Dumbbells", href: `${ROUTES.PRODUCTS}?category=dumbbells&page=1` },
+    { name: "Kettlebells", href: `${ROUTES.PRODUCTS}?category=kettlebells&page=1` },
+    { name: "Accessories", href: `${ROUTES.PRODUCTS}?category=mats-accessories&page=1` },
   ];
 
   const companyLinks = [
