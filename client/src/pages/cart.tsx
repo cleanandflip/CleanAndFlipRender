@@ -246,7 +246,7 @@ export default function CartPageV2() {
                           size="sm"
                           onClick={() => handleQuantityChange(item.productId, item.qty + 1, item.product?.stockQuantity)}
                           className="w-8 h-8 p-0"
-                          disabled={item.product?.stockQuantity && item.product.stockQuantity > 0 && item.qty >= item.product.stockQuantity}
+                          disabled={!!(item.product?.stockQuantity && item.product.stockQuantity > 0 && item.qty >= item.product.stockQuantity)}
                           data-testid={`button-increase-qty-${item.productId}`}
                         >
                           <Plus className="w-4 h-4" />
