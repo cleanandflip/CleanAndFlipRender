@@ -208,11 +208,10 @@ export default function CartPageV2() {
                         </p>
                       )}
                       
-                      {/* Fulfillment badges */}
+                      {/* Fulfillment badges - "Local & Shipping Available" badge first, then LocalBadge */}
                       <div className="flex items-center gap-2 mb-2">
-                        <LocalBadge isLocal={locality?.eligible ?? false} />
                         {item.product?.is_local_delivery_available && item.product?.is_shipping_available && (
-                          <Badge variant="outline" className="text-xs">Both</Badge>
+                          <Badge variant="outline" className="text-xs">Local & Shipping Available</Badge>
                         )}
                         {item.product?.is_local_delivery_available && !item.product?.is_shipping_available && (
                           <Badge variant="outline" className="text-xs text-blue-700">Local Only</Badge>
@@ -220,6 +219,7 @@ export default function CartPageV2() {
                         {!item.product?.is_local_delivery_available && item.product?.is_shipping_available && (
                           <Badge variant="outline" className="text-xs">Shipping Only</Badge>
                         )}
+                        <LocalBadge isLocal={locality?.eligible ?? false} />
                       </div>
                       
                       <p className="text-2xl font-bebas">
