@@ -93,14 +93,14 @@ function HomeSections() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {locality.isLocal ? (
+          {locality.eligible ? (
             <div className="inline-flex items-center gap-3 bg-gradient-to-r from-green-50/90 to-emerald-50/90 border border-green-300/60 rounded-2xl px-4 py-2 backdrop-blur-sm shadow-md">
               <LocalBadge isLocal={true} />
               <span className="text-green-800 font-medium text-sm">
                 You are in our FREE DELIVERY zone!
               </span>
             </div>
-          ) : !locality.hasAddress ? (
+          ) : locality.source === 'default' ? (
             <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-50/90 to-indigo-50/90 border border-blue-300/60 rounded-2xl px-4 py-2 backdrop-blur-sm shadow-md">
               <LocalBadge isLocal={false} />
               <span className="text-blue-800 font-medium text-sm">
