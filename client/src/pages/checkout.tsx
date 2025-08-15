@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { MapPin, Plus, Check } from "lucide-react";
+import { MapPin, Plus, Check, ArrowRight } from "lucide-react";
 import { useLocality } from "@/hooks/useLocality";
 import { LocalBadge } from "@/components/locality/LocalBadge";
 import { isLocalZip } from "@shared/locality";
@@ -21,6 +21,8 @@ export default function Checkout() {
   const { toast } = useToast();
   const { data: locality } = useLocality();
   const queryClient = useQueryClient();
+  const [_, setLocation] = useLocation();
+  const [isNavigating, setIsNavigating] = useState(false);
   
   // FIXED: Fetch addresses with correct API structure
   const { data: addressesResponse, isLoading: addressLoading } = useQuery({
@@ -206,11 +208,38 @@ export default function Checkout() {
 
               <Button 
                 variant="outline"
-                onClick={() => window.location.href = '/dashboard?tab=addresses'}
-                className="w-full flex items-center gap-2"
+                onClick={async () => {
+                  setIsNavigating(true);
+                  try {
+                    // Small delay for visual feedback
+                    await new Promise(resolve => setTimeout(resolve, 150));
+                    // Use React router navigation for smoother transition
+                    setLocation('/dashboard?tab=addresses');
+                  } catch (error) {
+                    console.error('Navigation error:', error);
+                    // Fallback to window.location
+                    window.location.href = '/dashboard?tab=addresses';
+                  } finally {
+                    setIsNavigating(false);
+                  }
+                }}
+                disabled={isNavigating}
+                className="w-full flex items-center justify-between gap-2 transition-all duration-200 hover:bg-gray-50 hover:border-blue-300 disabled:opacity-60"
+                data-testid="button-manage-addresses"
               >
-                <Plus className="w-4 h-4" />
-                {addresses.length > 0 ? 'Manage Addresses' : 'Add Your First Address'}
+                <div className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  {isNavigating 
+                    ? 'Opening addresses...' 
+                    : addresses.length > 0 
+                      ? 'Manage Addresses' 
+                      : 'Add Your First Address'
+                  }
+                </div>
+                {!isNavigating && <ArrowRight className="w-4 h-4 opacity-60" />}
+                {isNavigating && (
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+                )}
               </Button>
             </CardContent>
           </Card>
