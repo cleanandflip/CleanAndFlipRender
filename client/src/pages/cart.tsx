@@ -192,7 +192,6 @@ export default function CartPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
-                        disabled={updateMutation.isPending}
                         className="w-8 h-8 p-0"
                       >
                         <Minus className="w-4 h-4" />
@@ -204,7 +203,6 @@ export default function CartPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
-                        disabled={updateMutation.isPending}
                         className="w-8 h-8 p-0"
                       >
                         <Plus className="w-4 h-4" />
@@ -215,7 +213,6 @@ export default function CartPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemove(item.productId)}
-                      disabled={removeMutation.isPending}
                       className="text-red-500 hover:text-red-700"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -247,7 +244,7 @@ export default function CartPage() {
                 
                 <div className="flex justify-between">
                   <span>Delivery:</span>
-                  <span>{locality?.isLocal ? "FREE Local Delivery" : "Calculated at checkout"}</span>
+                  <span>{locality?.eligible ? "FREE Local Delivery" : "Calculated at checkout"}</span>
                 </div>
                 
                 <Separator />
