@@ -280,7 +280,7 @@ export default function CartPageV2() {
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
-                <CardTitle className="font-bebas text-xl">ORDER SUMMARY</CardTitle>
+                <CardTitle className="tracking-tight font-bebas text-2xl font-light py-2 px-0 my-1">ORDER SUMMARY</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
