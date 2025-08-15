@@ -39,12 +39,16 @@ cartRouterV2.post('/items', async (req, res, next) => {
 
     // Business rule enforcement - return 403, never throw
     if (mode === 'LOCAL_ONLY' && !locality.eligible) {
+      console.log(`[CART ENFORCE V2] add { userId:'${userId || 'guest'}', productId:'${productId}', eligible:${locality.eligible}, decision:'BLOCK' }`);
       return res.status(403).json({
-        code: 'LOCAL_ONLY_NOT_ELIGIBLE',
-        message: 'This item is local delivery only and not available in your area.',
-        resolution: 'Set a default local address in Asheville ZIPs (28801, 28803, 28804, 28805, 28806, 28808) or enter a local ZIP.',
+        ok: false,
+        code: 'LOCALITY_BLOCKED',
+        message: 'This item is local delivery only.',
+        resolution: 'Add a local address to continue.'
       });
     }
+    
+    console.log(`[CART ENFORCE V2] add { userId:'${userId || 'guest'}', productId:'${productId}', eligible:${locality.eligible}, decision:'ALLOW' }`);
 
     // Add item to cart using correct storage API
     const cartItemData = {
@@ -68,6 +72,28 @@ cartRouterV2.get('/', async (req, res, next) => {
     const userId = getUserIdFromReq(req);
     const { storage } = await import('../storage');
     
+    // ADDITIVE: Check if we need to auto-purge LOCAL_ONLY items for authenticated users
+    let purgeInfo = { purgedLocalOnly: false, removed: 0 };
+    
+    if (userId) {
+      const locality = await getLocalityForRequest(req);
+      if (!locality.eligible) {
+        // Check if user has LOCAL_ONLY items and purge them
+        const items = await storage.getCartItemsWithProducts(userId);
+        const hasLocalOnly = items.some(item => {
+          if (!item.product) return false;
+          const mode = modeFromProduct(item.product);
+          return mode === 'LOCAL_ONLY';
+        });
+        
+        if (hasLocalOnly) {
+          const { purgeLocalOnlyItemsIfIneligible } = await import('../services/cartCleanup');
+          const purgeResult = await purgeLocalOnlyItemsIfIneligible(userId, 'cart_get');
+          purgeInfo = { purgedLocalOnly: true, removed: purgeResult.removed };
+        }
+      }
+    }
+    
     const cartItems = await storage.getCartItems(
       userId || undefined,
       req.sessionID
@@ -76,11 +102,13 @@ cartRouterV2.get('/', async (req, res, next) => {
     const items = Array.isArray(cartItems) ? cartItems : [];
     const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
+    // Build the cart response with purge info
     const cart = { 
       id: `cart-${userId || req.sessionID}`, 
       items: items, 
       subtotal: subtotal, 
-      total: subtotal
+      total: subtotal,
+      ...purgeInfo
     };
     
     res.json({ ok: true, data: cart });
@@ -111,8 +139,9 @@ cartRouterV2.delete('/product/:productId', async (req, res, next) => {
     const { storage } = await import('../storage');
 
     // Use existing storage API with new compound-key helper
-    const removed = await storage.removeFromCartByUserAndProduct(userId, productId);
-    console.log(`[CART] delete by user+product with userId: ${userId} & productId: ${productId}`);
+    const result = await storage.removeFromCartByUserAndProduct(userId, productId);
+    const removed = result.rowCount;
+    console.log(`[CART ENFORCE V2] delete by product { userId:'${userId}', productId:'${productId}', removed:${removed} }`);
     return res.json({ ok:true, removed });
   } catch (err) { next(err); }
 });

@@ -1,0 +1,439 @@
+CLEAN & FLIP — LOCALITY-SAFE CART + UI GATING (ADD-ONLY)
+# DO NOT STOP UNTIL ALL ACCEPTANCE TESTS PASS AND LOG ARTIFACTS ARE ATTACHED
+
+## OBJECTIVE (WHAT MUST BE TRUE WHEN YOU’RE DONE)
+1) Authenticated **local** users can **add & remove** `LOCAL_ONLY` products from the cart.
+2) If a user **changes default address** to a **non-local ZIP**, all `LOCAL_ONLY` items are **auto-purged** from their cart (server-side). The client shows a toast explaining why.
+3) **Non-local users** see a clear, friendly **gate** on **Sell-to-Us** (form hidden) with actions to **Check ZIP** and **Add Address**.
+4) **Locality state is consistent everywhere**: Navigation badge, top banner, product cards, cart drawer, and checkout **all agree**. No “Shipping Only” banner while profile says “Local delivery eligible”.
+5) **No deletions or renames** of existing functions/routes/types. All changes are **additive** wrappers/aliases/guards.
+6) **All API errors are JSON** (never HTML). Client uses an **authenticated fetch wrapper** (`credentials: 'include'`) for cart/locality/auth.
+
+---
+
+## NON-NEGOTIABLE RULES
+- **ADD-ONLY.** Do **not** delete or rename any existing module, export, function, route, or DB table/column.
+- **Preserve legacy routes.** If you supersede behavior, **early-return** with a JSON note; do not remove handlers.
+- Keep **V2 cart router** at `/api/cart`. Do not move or rename.
+- **Final middleware** must be a JSON error handler so front-end never receives HTML.
+- **Every** cart/locality/auth request goes through the authenticated API wrapper with `credentials: 'include'`.
+- Maintain and extend logging prefixes: `[LOCALITY]`, `[CART ENFORCE V2]`, `[STORAGE]`. Add `[CART CLEANUP]`.
+- TypeScript: no `any` unless unavoidable; prefer narrow types and discriminated unions.
+
+---
+
+## REPO REALITY (ASSUME THESE PATHS EXIST; IF NAMES DIFFER, ADAPT, BUT DO NOT DELETE ANYTHING)
+Server:
+- `server/routes/cart.v2.ts`
+- `server/services/cartCleanup.ts` (create/extend)
+- `server/storage` (PG storage abstraction)
+- `shared/locality.ts`, `shared/fulfillment.ts` (contains `modeFromProduct` or equivalent)
+- `server/middleware/jsonErrorHandler.ts` (or add if missing)
+
+Client:
+- `client/src/lib/apiJson.ts` (or `services/api.ts`) – the authenticated fetch wrapper
+- `client/src/hooks/useLocality.ts`
+- `client/src/components/layout/navigation.tsx`
+- `client/src/components/fulfillment/DeliveryEligibilityBanner.tsx`
+- `client/src/components/products/product-card.tsx`
+- `client/src/components/AddToCartButton.tsx`
+- `client/src/components/cart/cart-drawer.tsx`
+- `client/src/pages/sell-to-us.tsx`
+- Optional: `client/src/lib/parseJsonSafe.ts` small helper
+
+---
+
+## SERVER CHANGES (ADD-ONLY)
+
+### 1) Storage API — add a compound-key delete (userId + productId)
+**File:** `server/storage/*` (where cart functions live)
+
+Add the following method (do not remove or rename anything existing):
+```ts
+// ADDITIVE: remove cart row by userId + productId (idempotent)
+export async function removeFromCartByUserAndProduct(userId: string, productId: string): Promise<{ rowCount: number }> {
+  // Use existing DB client util
+  // Example PG SQL (adapt to your layer names):
+  // DELETE FROM cart_items WHERE user_id = $1 AND product_id = $2 LIMIT 1;
+}
+Also ensure we have a getter that returns cart items with products joined (needed by cleanup):
+
+ts
+Copy
+Edit
+export async function getCartItemsWithProducts(userId: string): Promise<Array<{
+  id: string; productId: string; quantity: number; product: any;
+}>> { /* ADDITIVE implementation that JOINs product */ }
+If a method already exists (e.g., getCartItems(userId, includeProduct=true)), call it—do NOT remove/rename. If nothing exists, add a small wrapper that composes existing calls.
+
+2) V2 Cart routes — keep old, add new, enforce locality
+File: server/routes/cart.v2.ts
+
+Keep the legacy DELETE /api/cart/items/:itemId. Do not alter semantics.
+
+Add a new route on the V2 router:
+
+swift
+Copy
+Edit
+DELETE /api/cart/product/:productId
+Behavior:
+
+Require auth. Derive userId from session.
+
+Call removeFromCartByUserAndProduct(userId, productId).
+
+Always return 200 { ok: true, removed: <0|1> } (idempotent).
+
+Log: [CART ENFORCE V2] delete by product { userId, productId, removed }.
+
+POST /api/cart/items (existing): ensure it calls a shared locality checker before mutating.
+
+If product is LOCAL_ONLY and user not eligible: return 403 JSON:
+
+json
+Copy
+Edit
+{ "ok": false, "code": "LOCALITY_BLOCKED", "message": "This item is local delivery only.", "resolution": "Add a local address to continue." }
+Log context: [CART ENFORCE V2] add { userId, productId, eligible, decision: "ALLOW"|"BLOCK" }.
+
+GET /api/cart: if user is ineligible and cart contains LOCAL_ONLY, call the purge service (below), then return the cleaned cart plus flags:
+
+json
+Copy
+Edit
+{ "ok": true, "data": { ...cart }, "purgedLocalOnly": true, "removed": <n> }
+3) Locality checker (single source of truth)
+Use a single helper (existing or add) e.g. getLocalityForRequest(req) returning:
+
+ts
+Copy
+Edit
+type LocalityInfo = { eligible: boolean; zip: string; source: 'DEFAULT_ADDRESS'|'USER_CHECK'|'NONE'|string; userId?: string }
+All cart routes call this helper and log:
+
+bash
+Copy
+Edit
+[LOCALITY] /status { eligible, source, zip, user: <id|guest> }
+4) Auto-purge service & triggers
+File: server/services/cartCleanup.ts
+
+Implement (or keep and complete) this exported function:
+
+ts
+Copy
+Edit
+import { modeFromProduct } from '../../shared/fulfillment';
+
+export async function purgeLocalOnlyItemsIfIneligible(userId: string): Promise<{ removed: number }> {
+  // 1) Read items with product joined
+  // 2) Filter by modeFromProduct(item.product) === 'LOCAL_ONLY'
+  // 3) Remove each by id or by (userId, productId)
+  // 4) Log: [CART CLEANUP] user=<id> removed=<n> reason=<reason>
+}
+Invoke purge under these conditions (additive hooks only; do not alter existing return shapes):
+
+After address create/update/makeDefault handlers complete; if locality now ineligible, call purge with reason='address_changed'.
+
+On login (if you have a login completion hook) and on GET /api/cart if we detect ineligible + local items; log reason='login' or reason='cart_get'.
+
+If purge happened, include { purgedLocalOnly: true, removed: n } in whatever JSON you’re already returning (don’t remove existing fields).
+
+5) JSON errors only
+Ensure a final middleware exists and is last:
+
+ts
+Copy
+Edit
+app.use(jsonErrorHandler); // ADDITIVE if missing
+This handler must:
+
+Set res.type('application/json')
+
+Return { ok:false, code, message } (no HTML)
+
+Log the stack at server side.
+
+6) Diagnostics (keep additive)
+Keep (or add) small endpoints /api/_whoami and /api/_route-health to help QA.
+
+Do not remove any existing diagnostics.
+
+CLIENT CHANGES (ADD-ONLY)
+1) Authenticated fetch wrapper
+Ensure every cart/locality/auth call uses the same wrapper:
+
+ts
+Copy
+Edit
+// client/src/lib/apiJson.ts (or existing)
+// MUST ALWAYS set credentials: 'include'
+export async function apiJson(input: RequestInfo, init: RequestInit = {}) {
+  const res = await fetch(input, { credentials: 'include', headers: { 'Content-Type':'application/json', ...(init.headers||{}) }, ...init });
+  // Use parseJsonSafe below to avoid "Unexpected token <"
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw Object.assign(new Error(data?.message || res.statusText), { ...data, status: res.status });
+  return data;
+}
+Add a tiny helper:
+
+ts
+Copy
+Edit
+// client/src/lib/parseJsonSafe.ts
+export async function parseJsonSafe(res: Response) {
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return { ok:false, code:'BAD_JSON', raw:text }; }
+}
+2) Locality hook (single source of truth)
+File: client/src/hooks/useLocality.ts
+
+Export a constant:
+
+ts
+Copy
+Edit
+export const DEFAULT_LOCALITY = { eligible: false, zip: 'none', source: 'NONE', loading: true } as const;
+Implement a React Query hook using a single global key:
+
+ts
+Copy
+Edit
+// Query key: ['locality','status']
+// GET /api/locality/status -> { eligible:boolean, source:string, zip:string }
+export function useLocality() {
+  const q = useQuery({
+    queryKey: ['locality','status'],
+    queryFn: () => apiJson('/api/locality/status'),
+    staleTime: 30_000,
+  });
+  const body = q.data ?? DEFAULT_LOCALITY;
+  return { ...body, loading: q.isLoading || q.isFetching };
+}
+Invalidate/refetch this query whenever:
+
+Auth state changes (login/logout)
+
+Default address changes
+
+Checkout address selection changes
+
+ZIP “Check” action completes
+Use queryClient.invalidateQueries({ queryKey:['locality','status'] }) from those mutations.
+
+3) Make UI components consume the same hook
+navigation.tsx: replace direct state reads with const locality = useLocality(). Use optional chaining and DEFAULT_LOCALITY (no undefined.eligible crashes). Show a loading shimmer while locality.loading is true.
+
+DeliveryEligibilityBanner.tsx: also consume useLocality() (no custom fetches, no separate store). If previously different, remove that divergence by switching to the hook (add-only change).
+
+product-card.tsx and AddToCartButton.tsx: if product is LOCAL_ONLY and !locality.eligible, disable the Add button and show a chip “Local delivery only” + tooltip: “Add a local address to continue.”
+
+cart-drawer.tsx: when user clicks remove on an item, call:
+
+swift
+Copy
+Edit
+DELETE /api/cart/product/:productId
+Use optimistic update on the React Query cart cache. If response contains { purgedLocalOnly: true }, show toast:
+
+“We removed local-only items because your address is outside our local delivery area.”
+
+4) Sell-to-Us gating (non-local)
+File: client/src/pages/sell-to-us.tsx
+
+At top: const locality = useLocality();
+
+If !locality.eligible → do not render the form; render a friendly gate component:
+
+Title: “Unavailable in Your Area”
+
+Body: “Sell-to-Us is only available for local pickup. Add a local address or check a ZIP to see if you qualify.”
+
+Buttons:
+
+Add Address → link to /dashboard?tab=addresses
+
+Check ZIP → focus the ZIP checker (or route to /products with the checker anchored)
+
+Keep the original form code under the if (locality.eligible) branch (additive). No deletes.
+
+5) Cart fetch after address change
+After address create/update/makeDefault mutations:
+
+await queryClient.invalidateQueries(['locality','status'])
+
+await queryClient.invalidateQueries(['cart'])
+
+If the GET /api/cart response includes { purgedLocalOnly: true, removed: n }, show a toast:
+
+“Removed n local-only item(s) after your address changed.”
+
+LOG LINES YOU MUST EMIT (DON’T RENAME)
+Locality status:
+
+bash
+Copy
+Edit
+[LOCALITY] /status { eligible: <bool>, source: '<SOURCE>', zip: '<ZIP>', user: '<id|guest>' }
+Cart enforcement:
+
+csharp
+Copy
+Edit
+[CART ENFORCE V2] add { userId:'...', productId:'...', eligible:true|false, decision:'ALLOW'|'BLOCK' }
+[CART ENFORCE V2] delete by product { userId:'...', productId:'...', removed:<0|1> }
+Storage:
+
+pgsql
+Copy
+Edit
+[STORAGE] Deleting cart item by user+product { userId:'...', productId:'...', rowCount:<n> }
+Cleanup:
+
+ini
+Copy
+Edit
+[CART CLEANUP] user=<id> removed=<n> reason=<address_changed|login|cart_get>
+CURL QA SCRIPT (RUN AND PASTE OUTPUT IN SUMMARY)
+(Replace cookie with a valid session cookie for the local user.)
+
+Add local-only (local user)
+
+rust
+Copy
+Edit
+curl -i -H "Cookie: cf.sid=<COOKIE>" \
+  -H "Content-Type: application/json" \
+  -d '{"productId":"<LOCAL_ONLY_PRODUCT_ID>","quantity":1}' \
+  http://localhost:5000/api/cart/items
+Expect 200 and item appears in subsequent GET /api/cart.
+
+Remove by product
+
+bash
+Copy
+Edit
+curl -i -H "Cookie: cf.sid=<COOKIE>" \
+  -X DELETE http://localhost:5000/api/cart/product/<LOCAL_ONLY_PRODUCT_ID>
+Expect 200 {"ok":true,"removed":0|1}.
+
+Block non-local add
+
+rust
+Copy
+Edit
+curl -i -H "Cookie: cf.sid=<NON_LOCAL_COOKIE>" \
+  -H "Content-Type: application/json" \
+  -d '{"productId":"<LOCAL_ONLY_PRODUCT_ID>","quantity":1}' \
+  http://localhost:5000/api/cart/items
+Expect 403 JSON with "code":"LOCALITY_BLOCKED" (no HTML).
+
+Auto-purge after address change
+
+With local user and local-only item in cart, switch default address to a non-local ZIP via UI or API.
+
+Call:
+
+bash
+Copy
+Edit
+curl -i -H "Cookie: cf.sid=<COOKIE>" http://localhost:5000/api/cart
+Expect 200 with "purgedLocalOnly": true, "removed": <n>.
+
+VISUAL QA (UI MUST MATCH)
+Nav dropdown: shows “Local delivery eligible” when eligible; otherwise not.
+
+Top banner: shows Shipping Only ONLY when ineligible. It must match the nav badge after reload.
+
+Products list: local-only items show “In Cart” for local user with item in cart; non-local user sees disabled Add to Cart with chip.
+
+Sell-to-Us: non-local → friendly gate; local → full form.
+
+Cart drawer/page: removing an item calls /api/cart/product/:productId and updates immediately.
+
+ACCEPTANCE TESTS (MUST ALL PASS; INCLUDE LOG SNIPPETS)
+Local add/remove
+
+Local user (ZIP 28806) can add a LOCAL_ONLY product: 200.
+
+Remove via /api/cart/product/:productId: 200 { ok:true }.
+
+Logs show [CART ENFORCE V2] with decision:"ALLOW" and delete by product with removed:1.
+
+Non-local blocked
+
+Non-local or guest adding LOCAL_ONLY → 403 JSON (code=LOCALITY_BLOCKED), no HTML.
+
+Logs show decision:"BLOCK".
+
+Auto-purge
+
+With LOCAL_ONLY items, change default address to non-local → cart purged server-side.
+
+Next GET /api/cart returns { purgedLocalOnly:true, removed:n }.
+
+UI shows toast “Removed n local-only item(s) after your address changed).”
+
+Logs show [CART CLEANUP] reason=address_changed removed=n.
+
+Consistency
+
+Navigation badge, top banner, product cards, and checkout all show the same locality status before and after reload.
+
+No TypeError: Cannot read properties of undefined (reading 'eligible') anywhere.
+
+Errors are JSON
+
+Force a server error (bad product id). Client receives JSON (no Unexpected token <).
+
+jsonErrorHandler is last in stack.
+
+No removals
+
+Confirm no existing function/route/type was deleted/renamed. Legacy routes still respond (or early-return with JSON).
+
+CHECKPOINTS & COMMIT NOTES (REQUIRED)
+CP-1: Add removeFromCartByUserAndProduct() + getCartItemsWithProducts() (storage). “ADDITIVE: storage compound delete + joined getter”
+
+CP-2: Add DELETE /api/cart/product/:productId (V2), logging, idempotent JSON. “ADDITIVE: V2 delete by product + logs”
+
+CP-3: Ensure POST/DELETE use locality checker + JSON 403 with LOCALITY_BLOCKED. “ADDITIVE: unified locality enforcement”
+
+CP-4: Implement/finish purgeLocalOnlyItemsIfIneligible() + hooks (address change, login, GET /api/cart). “ADDITIVE: cart cleanup service + triggers”
+
+CP-5: Client useLocality() with DEFAULT_LOCALITY, single query key, invalidations. “ADDITIVE: single-source locality hook”
+
+CP-6: UI wiring (Navigation, Banner, ProductCard, AddToCart, CartDrawer) + Sell-to-Us gate. “ADDITIVE: UI gating + null-safety”
+
+CP-7: QA: run curl + screenshot flows; paste logs showing all acceptance tests green. “QA: all acceptance tests passing”
+
+DEFINITION OF DONE
+All acceptance tests above pass.
+
+You’ve pasted: curl outputs, relevant server logs with the exact prefixes, and 4+ screenshots (Nav, Products, Cart, Sell-to-Us gate).
+
+No 500s, no HTML error responses, no undefined.eligible crashes.
+
+Locality indicators are consistent across app after reload.
+
+No existing code deleted or renamed.
+
+Do not stop until the Definition of Done is met and proof (logs + screenshots) is attached.
+
+yaml
+Copy
+Edit
+
+--- 
+
+If you want, I can also craft the exact SQL for `removeFromCartByUserAndProduct` based on your cart table names.
+
+
+
+
+
+
+
+Ask ChatGPT
+

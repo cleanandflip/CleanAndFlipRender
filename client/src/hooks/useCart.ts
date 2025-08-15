@@ -58,12 +58,11 @@ export function useCart() {
       // Rollback on error
       queryClient.setQueryData(["cart"], context?.previousCart);
       
-      // Handle LOCAL_ONLY_NOT_ELIGIBLE specially (server returns 403 with structured error)
-      // CRITICAL FIX: Don't rollback on 403 - this was causing the bogus 404 deletes
-      if (error.status === 403 && error.body?.code === 'LOCAL_ONLY_NOT_ELIGIBLE') {
+      // Handle LOCALITY_BLOCKED specially (updated server error format)
+      if (error.status === 403 && error.body?.code === 'LOCALITY_BLOCKED') {
         toast({
           title: "Not available in your area",
-          description: "This item is local delivery only. Set a local default address to order.",
+          description: "This item is local delivery only. Add a local address to continue.",
           variant: "destructive"
         });
         return;
@@ -124,13 +123,75 @@ export function useCart() {
     }
   });
 
+  // ADDITIVE: Remove by productId (compound key) for authenticated users
+  const removeByProductMutation = useMutation({
+    mutationFn: (productId: string) => 
+      apiJson(`/api/cart/product/${productId}`, { method: "DELETE" }),
+    onMutate: async (productId) => {
+      await queryClient.cancelQueries({ queryKey: ["cart"] });
+      const previousCart = queryClient.getQueryData(["cart"]);
+      
+      // Optimistically remove by productId
+      queryClient.setQueryData(["cart"], (old: any) => {
+        if (!old?.data?.items) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            items: old.data.items.filter((item: any) => item.productId !== productId)
+          }
+        };
+      });
+      
+      return { previousCart };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      
+      // Show purge notification if items were auto-removed
+      if (data?.purgedLocalOnly && data?.removed > 0) {
+        toast({
+          title: "Items auto-removed",
+          description: `${data.removed} local-only item(s) were removed because your address is outside our local delivery area.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Item removed",
+          description: "Item has been removed from your cart"
+        });
+      }
+    },
+    onError: (error: any, productId, context) => {
+      queryClient.setQueryData(["cart"], context?.previousCart);
+      
+      // Handle AUTH_REQUIRED specially
+      if (error.status === 401) {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to manage your cart",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove item",
+        variant: "destructive"
+      });
+    }
+  });
+
   return {
     cart: cartQuery.data,
     isLoading: cartQuery.isLoading,
     error: cartQuery.error,
     addToCart: addToCartMutation.mutate,
     removeFromCart: removeFromCartMutation.mutate,
+    removeByProduct: removeByProductMutation.mutate, // ADDITIVE: compound key removal
     isAddingToCart: addToCartMutation.isPending,
-    isRemovingFromCart: removeFromCartMutation.isPending
+    isRemovingFromCart: removeFromCartMutation.isPending,
+    isRemovingByProduct: removeByProductMutation.isPending
   };
 }

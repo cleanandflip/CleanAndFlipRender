@@ -4,7 +4,7 @@ import { ShoppingCart, Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useCart, useAddToCart, useRemoveFromCart } from "@/hooks/use-cart";
+import { useCart } from "@/hooks/useCart";
 import { useLocality } from "@/hooks/useLocality";
 import { modeFromProduct } from "@shared/fulfillment";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -38,12 +38,16 @@ export default function AddToCartButton({
   const [isHovering, setIsHovering] = useState(false);
 
   // Use the unified cart hooks and locality
-  const { data: cart } = useCart();
-  const addToCartMutation = useAddToCart();
-  const removeFromCartMutation = useRemoveFromCart();
-  const locality = useLocality();
+  const { 
+    cart, 
+    addToCart, 
+    removeByProduct, // compound key removal for authenticated users
+    isAddingToCart, 
+    isRemovingByProduct 
+  } = useCart();
+  const locality = useLocality(); // unified single source of truth
 
-  const isInCart = cart?.items?.some((item: any) => item.productId === productId) || false;
+  const isInCart = cart?.data?.items?.some((item: any) => item.productId === productId) || false;
   
   // Check if this is LOCAL_ONLY product using unified system
   const fulfillmentMode = modeFromProduct(product || {});
@@ -69,23 +73,20 @@ export default function AddToCartButton({
       return;
     }
     
-    addToCartMutation.mutate({ 
-      productId, 
-      quantity: 1, 
-      productData: {
-        id: productId,
-        name: product?.name || 'Product',
-        price: product?.price || '0',
-        images: product?.images ?? [],
-        brand: product?.brand,
-        stockQuantity: product?.stockQuantity || 0
-      }
-    });
+    addToCart({ productId, quantity: 1 });
   };
 
   const handleRemoveFromCart = () => {
-    if (!isAuthenticated) return;
-    removeFromCartMutation.mutate(productId);
+    if (isAuthenticated && productId) {
+      // Use compound key removal for authenticated users
+      removeByProduct(productId);
+    } else {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to manage your cart",
+        variant: "destructive"
+      });
+    }
   };
 
   // Not signed in - show blue Add to Cart button
@@ -117,11 +118,11 @@ export default function AddToCartButton({
         onClick={handleRemoveFromCart}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
-        disabled={removeFromCartMutation.isPending}
+        disabled={isRemovingByProduct}
         data-testid={`button-remove-from-cart-${productId}`}
       >
         <div className="flex items-center justify-center">
-          {removeFromCartMutation.isPending ? (
+          {isRemovingByProduct ? (
             <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : isHovering ? (
             <Minus className="w-4 h-4 mr-2" key="minus-icon" />
@@ -154,15 +155,15 @@ export default function AddToCartButton({
       size={size}
       className={cn("w-full bg-blue-600 hover:bg-blue-700 text-white border-0", className)}
       onClick={handleAddToCart}
-      disabled={addToCartMutation.isPending}
+      disabled={isAddingToCart}
       data-testid={`button-add-to-cart-${productId}`}
     >
-      {addToCartMutation.isPending ? (
+      {isAddingToCart ? (
         <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
       ) : (
         <ShoppingCart className="w-4 h-4 mr-2" />
       )}
-      {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
+      {isAddingToCart ? "Adding..." : "Add to Cart"}
     </Button>
   );
 }

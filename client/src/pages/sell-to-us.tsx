@@ -80,7 +80,7 @@ export default function SellToUs() {
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
-  const { data: locality } = useLocality();
+  const locality = useLocality(); // single source of truth
   
   // CRITICAL FIX: Force fresh auth check when accessing sell-to-us
   useEffect(() => {
@@ -166,7 +166,7 @@ export default function SellToUs() {
   }, [isSubmitted]);
 
   // Show locality gate for non-local users (AFTER all hooks are defined)
-  if (!authLoading && user && !locality?.eligible) {
+  if (!authLoading && user && !locality.eligible) {
     return (
       <div className="min-h-screen pt-32 px-6">
         <div className="max-w-2xl mx-auto">

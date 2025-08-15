@@ -1,7 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { DEFAULT_LOCALITY, LocalityStatus } from '../../../shared/locality';
+import { apiJson } from '../lib/api';
 
-// Ensure always returns safe object
+// ADDITIVE: Export safe default constant
+export const DEFAULT_LOCALITY_SAFE = { 
+  eligible: false, 
+  zip: 'none', 
+  source: 'NONE', 
+  loading: true 
+} as const;
+
+// Keep existing export for compatibility
 export { DEFAULT_LOCALITY };
 
 function buildLocalityUrl(zip?: string) {
@@ -26,16 +35,34 @@ async function fetchLocality(zip?: string): Promise<LocalityStatus> {
   };
 }
 
+// ADDITIVE: Single source of truth locality hook
 export function useLocality(zipOverride?: string) {
+  const q = useQuery({
+    queryKey: ['locality', 'status', zipOverride ?? null], // unified key
+    queryFn: () => apiJson('/api/locality/status'), // use authenticated wrapper
+    placeholderData: DEFAULT_LOCALITY, // shows immediately
+    staleTime: 30_000, // 30 seconds
+    gcTime: 30 * 60 * 1000,
+  });
+
+  // ALWAYS return a safe object
+  const body = q.data ?? DEFAULT_LOCALITY;
+  return { 
+    ...body, 
+    loading: q.isLoading || q.isFetching 
+  };
+}
+
+// ADDITIVE: Keep existing function for compatibility
+export function useLocalityLegacy(zipOverride?: string) {
   const q = useQuery({
     queryKey: ['locality', zipOverride ?? null],
     queryFn: () => fetchLocality(zipOverride),
-    placeholderData: DEFAULT_LOCALITY, // shows immediately
+    placeholderData: DEFAULT_LOCALITY,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 
-  // ALWAYS return a concrete object
   return {
     ...q,
     data: (q.data ?? DEFAULT_LOCALITY) as LocalityStatus,

@@ -655,11 +655,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   // NEW: additive wrapper for compound key removal
-  async removeFromCartByUserAndProduct(userId: string, productId: string): Promise<number> {
+  async removeFromCartByUserAndProduct(userId: string, productId: string): Promise<{ rowCount: number }> {
+    console.log(`[STORAGE] Deleting cart item by user+product { userId:'${userId}', productId:'${productId}' }`);
     const result = await db
       .delete(cartItems)
       .where(and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)));
-    return result.rowCount || 0;
+    const rowCount = result.rowCount || 0;
+    console.log(`[STORAGE] Delete result { userId:'${userId}', productId:'${productId}', rowCount:${rowCount} }`);
+    return { rowCount };
+  }
+
+  // ADDITIVE: get cart items with products joined for cleanup service
+  async getCartItemsWithProducts(userId: string): Promise<Array<{
+    id: string; productId: string; quantity: number; product: any;
+  }>> {
+    console.log(`[STORAGE] Fetching cart items with products for user: ${userId}`);
+    const items = await db
+      .select()
+      .from(cartItems)
+      .leftJoin(products, eq(cartItems.productId, products.id))
+      .where(eq(cartItems.userId, userId));
+    
+    return items.map(item => ({
+      id: item.cart_items.id,
+      productId: item.cart_items.productId || '',
+      quantity: item.cart_items.quantity,
+      product: item.products
+    }));
   }
 
   // Set cart shipping address
