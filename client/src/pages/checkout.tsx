@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { MapPin, Plus, Check } from "lucide-react";
 import { useLocality } from "@/hooks/useLocality";
 import { LocalBadge } from "@/components/locality/LocalBadge";
+import { isLocalZip } from "@shared/locality";
 import { motion } from "framer-motion";
 import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryEligibilityBanner';
 
@@ -241,7 +242,7 @@ export default function Checkout() {
                                     Default
                                   </span>
                                 )}
-                                <LocalBadge isLocal={locality?.eligible ?? false} />
+                                <LocalBadge isLocal={isLocalZip(address.postalCode)} />
                               </div>
                             </div>
                             {selectedAddressId === address.id && (

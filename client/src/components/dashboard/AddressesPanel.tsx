@@ -9,14 +9,14 @@ import { Card } from "@/components/shared/AnimatedComponents";
 import { AlertCircle, MapPin, Edit, CheckCircle, Truck, Trash2, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LocalBadge } from "@/components/locality/LocalBadge";
-import { useLocality } from "@/hooks/useLocality";
+import { isLocalZip } from "@shared/locality";
 
 export default function AddressesPanel() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<null | any>(null);
   const { toast } = useToast();
-  const { data: locality } = useLocality();
+  // Each address should show its own locality status, not the global default
 
   const { data: addresses = [], isLoading, isError, error } = useQuery({
     queryKey: ["/api/addresses"],
@@ -164,7 +164,7 @@ export default function AddressesPanel() {
                     <h3 className="font-semibold text-white">
                       {address.firstName} {address.lastName}
                     </h3>
-                    <LocalBadge isLocal={locality?.eligible ?? false} />
+                    <LocalBadge isLocal={isLocalZip(address.postalCode)} />
                   </div>
                   <p className="text-text-secondary text-sm leading-relaxed">
                     {address.street1}<br />

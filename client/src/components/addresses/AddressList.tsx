@@ -13,9 +13,9 @@ import { MapPin, Star, Trash2, Truck, Home } from 'lucide-react';
 import { addressApi, addressQueryKeys, addressUtils, type Address } from '@/api/addresses';
 import { toast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { EmptyState } from '@/components/ui/EmptyState';
+
 import { LocalBadge } from '@/components/locality/LocalBadge';
-import { useLocality } from '@/hooks/useLocality';
+import { isLocalZip } from '@shared/locality';
 
 interface AddressListProps {
   onAddressSelect?: (address: Address) => void;
@@ -30,7 +30,7 @@ export function AddressList({
 }: AddressListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const { data: locality } = useLocality();
+  // Each address should show its own locality status, not the global default
 
   // Fetch addresses
   const { data: addresses, isLoading, error } = useQuery({
@@ -109,11 +109,17 @@ export function AddressList({
 
   if (!addresses || addresses.length === 0) {
     return (
-      <EmptyState
-        icon={MapPin}
-        title="No addresses found"
-        description="You haven't added any addresses yet. Add your first address to get started."
-      />
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+        <div className="w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+          <MapPin className="w-8 h-8 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          No addresses found
+        </h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+          You haven't added any addresses yet. Add your first address to get started.
+        </p>
+      </div>
     );
   }
 
@@ -147,7 +153,7 @@ export function AddressList({
                     Default
                   </Badge>
                 )}
-                <LocalBadge isLocal={locality?.eligible ?? false} />
+                <LocalBadge isLocal={isLocalZip(address.postalCode)} />
               </div>
             </div>
           </CardHeader>
