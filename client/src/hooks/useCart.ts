@@ -10,7 +10,7 @@ export function useCart() {
   
   // SSOT locality-aware cart query
   const { data: locality, localityVersion } = useLocality();
-  const ownerId = 'current-user'; // Simplified for now - could be enhanced with auth context
+  const ownerId = 'session'; // Cart works with session IDs for both guests and authenticated users
   
   // Use scoped query keys for cache invalidation on locality changes
   const cartQuery = useQuery({
@@ -34,28 +34,22 @@ export function useCart() {
       
       // Optimistically add item to cache
       queryClient.setQueryData(cartQueryKey, (old: any) => {
-        if (!old?.data?.items) return old;
-        const existingItem = old.data.items.find((item: any) => item.productId === productId);
+        if (!old?.items) return old;
+        const existingItem = old.items.find((item: any) => item.productId === productId);
         if (existingItem) {
           return {
             ...old,
-            data: {
-              ...old.data,
-              items: old.data.items.map((item: any) =>
-                item.productId === productId
-                  ? { ...item, quantity: item.quantity + quantity }
-                  : item
-              )
-            }
+            items: old.items.map((item: any) =>
+              item.productId === productId
+                ? { ...item, quantity: item.quantity + quantity }
+                : item
+            )
           };
         } else {
           // Add new item (simplified - real product data will come from server)
           return {
             ...old,
-            data: {
-              ...old.data,
-              items: [...old.data.items, { productId, quantity, product: { id: productId } }]
-            }
+            items: [...old.items, { productId, quantity, product: { id: productId } }]
           };
         }
       });
@@ -77,41 +71,35 @@ export function useCart() {
         });
         return;
       }
-
-      // Handle stock validation errors
-      if (error.status === 422 && error.body?.error === 'INSUFFICIENT_STOCK') {
-        toast({
-          title: "Not enough stock",
-          description: error.body?.message || 'Item has limited availability.',
-          variant: "destructive"
-        });
-        return;
-      }
       
       toast({
-        title: "Error",
-        description: error.message || "Failed to add item to cart",
+        title: "Error adding to cart",
+        description: error.message || "Please try again",
         variant: "destructive"
       });
     },
-    onSettled: () => {
-      // Refetch to get accurate server state using scoped keys
-      queryClient.invalidateQueries({ queryKey: cartKeys.root });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Added to Cart",
-        description: "Item successfully added to your cart",
-      });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: cartKeys.all });
+      
+      // Show custom success message based on response
+      if (data?.stock_status === 'ADDED_PARTIAL_STOCK_CAP') {
+        toast({
+          title: "Added to cart",
+          description: `Added ${data.qty || 1} items (max stock reached)`
+        });
+      } else {
+        toast({
+          title: "Added to cart",
+          description: "Item successfully added to your cart"
+        });
+      }
     }
   });
 
-  // Remove from cart mutation with authentication
-  const removeFromCartMutation = useMutation({
-    mutationFn: (itemId: string) =>
-      apiJson(`/api/cart/items/${itemId}`, {
-        method: "DELETE"
-      }),
+  // Remove item by ID mutation for legacy compatibility
+  const removeItemMutation = useMutation({
+    mutationFn: (itemId: string) => 
+      apiJson(`/api/cart/items/${itemId}`, { method: "DELETE" }),
     onMutate: async (itemId) => {
       const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
       await queryClient.cancelQueries({ queryKey: cartQueryKey });
@@ -119,13 +107,10 @@ export function useCart() {
       
       // Optimistically remove item
       queryClient.setQueryData(cartQueryKey, (old: any) => {
-        if (!old?.data?.items) return old;
+        if (!old?.items) return old;
         return {
           ...old,
-          data: {
-            ...old.data,
-            items: old.data.items.filter((item: any) => item.id !== itemId)
-          }
+          items: old.items.filter((item: any) => item.id !== itemId)
         };
       });
       
@@ -141,11 +126,11 @@ export function useCart() {
       });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: cartKeys.root });
+      queryClient.invalidateQueries({ queryKey: cartKeys.all });
     }
   });
 
-  // ADDITIVE: Remove by productId (compound key) for authenticated users
+  // Remove by productId (compound key) for all users
   const removeByProductMutation = useMutation({
     mutationFn: (productId: string) => 
       apiJson(`/api/cart/product/${productId}`, { method: "DELETE" }),
@@ -156,20 +141,17 @@ export function useCart() {
       
       // Optimistically remove by productId
       queryClient.setQueryData(cartQueryKey, (old: any) => {
-        if (!old?.data?.items) return old;
+        if (!old?.items) return old;
         return {
           ...old,
-          data: {
-            ...old.data,
-            items: old.data.items.filter((item: any) => item.productId !== productId)
-          }
+          items: old.items.filter((item: any) => item.productId !== productId)
         };
       });
       
       return { previousCart };
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: cartKeys.root });
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: cartKeys.all });
       
       // Show purge notification if items were auto-removed
       if (data?.purgedLocalOnly && data?.removed > 0) {
@@ -188,16 +170,6 @@ export function useCart() {
     onError: (error: any, productId, context) => {
       const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
       queryClient.setQueryData(cartQueryKey, context?.previousCart);
-      
-      // Handle AUTH_REQUIRED specially
-      if (error.status === 401) {
-        toast({
-          title: "Sign in required",
-          description: "Please sign in to manage your cart",
-          variant: "destructive"
-        });
-        return;
-      }
       
       toast({
         title: "Error",
@@ -224,17 +196,14 @@ export function useCart() {
   });
 
   return {
-    data: cartQuery.data, // SSOT pattern
-    cart: cartQuery, // Full query object for compatibility 
-    isLoading: cartQuery.isLoading,
-    error: cartQuery.error,
+    cart: cartQuery,
     addToCart: addToCartMutation.mutate,
-    updateCartItem: updateCartItemMutation.mutate, // Added method
-    removeFromCart: removeFromCartMutation.mutate,
+    removeItem: removeItemMutation.mutate,
     removeByProduct: removeByProductMutation.mutate,
+    updateItem: updateCartItemMutation.mutate,
     isAddingToCart: addToCartMutation.isPending,
-    isUpdatingCartItem: updateCartItemMutation.isPending, // Added loading state
-    isRemovingFromCart: removeFromCartMutation.isPending,
-    isRemovingByProduct: removeByProductMutation.isPending
+    isRemovingItem: removeItemMutation.isPending,
+    isRemovingByProduct: removeByProductMutation.isPending,
+    isUpdatingItem: updateCartItemMutation.isPending,
   };
 }
