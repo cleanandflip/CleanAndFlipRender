@@ -29,7 +29,7 @@ import {
   // userOnboarding removed - simplified flow without forced onboarding
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike, isNotNull } from "drizzle-orm";
+import { eq, desc, asc, and, or, like, gte, lte, inArray, sql, ilike, isNotNull, isNull } from "drizzle-orm";
 import { normalizeEmail, normalizeSearchTerm, normalizeBrand } from "@shared/utils";
 import { Logger } from "./utils/logger";
 import { randomUUID } from "crypto";
@@ -736,15 +736,19 @@ export class DatabaseStorage implements IStorage {
 
   async findCartItems(ownerId: string, productId: string, variantId: string | null): Promise<any[]> {
     console.log(`[STORAGE] Finding cart items by owner/product: ${ownerId}/${productId}`);
-    let whereCondition = and(
+    
+    // Build base condition
+    const baseCondition = and(
       or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
       eq(cartItems.productId, productId)
     );
     
-    if (variantId) {
-      whereCondition = and(whereCondition, eq(cartItems.variantId, variantId));
+    // Handle variantId condition - must handle null properly
+    let whereCondition;
+    if (variantId && variantId !== 'null') {
+      whereCondition = and(baseCondition, eq(cartItems.variantId, variantId));
     } else {
-      whereCondition = and(whereCondition, isNull(cartItems.variantId));
+      whereCondition = and(baseCondition, isNull(cartItems.variantId));
     }
     
     const items = await db

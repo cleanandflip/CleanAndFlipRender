@@ -1,0 +1,309 @@
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.3.218',
+  userId: undefined,
+  duration: 128,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 129ms 
+4:00:51 PM POST    /api/track-activity                      202 130ms
+[INFO] API GET /api/categories?active=true 200 129ms {
+  method: 'GET',
+  url: '/api/categories?active=true',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 129,
+  statusCode: 200,
+  contentLength: undefined
+}
+4:00:51 PM GET     /api/categories?active=true              200 130ms
+[LOCALITY] SSOT evaluation: {"userId":"40d4c8e0-0d7c-41e1-a686-96daac2d7c8b","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[LOCALITY] SSOT evaluation: {"userId":"40d4c8e0-0d7c-41e1-a686-96daac2d7c8b","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[STORAGE] Fetching cart items by owner: 40d4c8e0-0d7c-41e1-a686-96daac2d7c8b
+[INFO] API GET /api/user 200 174ms {
+  method: 'GET',
+  url: '/api/user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 174,
+  statusCode: 200,
+  contentLength: 290
+}
+4:00:51 PM GET     /api/user                                200 174ms
+[INFO] API GET /api/products/featured 200 178ms {
+  method: 'GET',
+  url: '/api/products/featured',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 178,
+  statusCode: 200,
+  contentLength: undefined
+}
+4:00:51 PM GET     /api/products/featured                   200 179ms
+[INFO] API GET /status 200 203ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 203,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 203ms 
+4:00:51 PM GET     /api/locality/status                     200 204ms
+[STORAGE] Updating cart item 573e055d-aedc-4ddb-87e3-767fab76388f to quantity 1
+[STORAGE] Fetching cart by owner: 40d4c8e0-0d7c-41e1-a686-96daac2d7c8b
+[INFO] API GET / 200 381ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.23',
+  userId: undefined,
+  duration: 381,
+  statusCode: 200,
+  contentLength: 401
+}
+4:00:51 PM GET     /api/cart                                200 382ms
+[INFO] API POST /api/track-activity 202 129ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 129,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 130ms 
+4:00:51 PM POST    /api/track-activity                      202 131ms
+[INFO] API POST /api/track-activity 202 404ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 404,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 404ms 
+4:01:06 PM POST    /api/track-activity                      202 405ms
+[LOCALITY] SSOT evaluation: {"userId":"40d4c8e0-0d7c-41e1-a686-96daac2d7c8b","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[LOCALITY] SSOT evaluation: {"userId":"40d4c8e0-0d7c-41e1-a686-96daac2d7c8b","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[STORAGE] Fetching cart items by owner: 40d4c8e0-0d7c-41e1-a686-96daac2d7c8b
+[INFO] API GET /status 200 448ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.23',
+  userId: undefined,
+  duration: 448,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 449ms 
+4:01:06 PM GET     /api/locality/status                     200 449ms
+[STORAGE] Updating cart item 573e055d-aedc-4ddb-87e3-767fab76388f to quantity 1
+[STORAGE] Fetching cart by owner: 40d4c8e0-0d7c-41e1-a686-96daac2d7c8b
+[INFO] API GET / 200 637ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.3.218',
+  userId: undefined,
+  duration: 637,
+  statusCode: 200,
+  contentLength: 401
+}
+4:01:06 PM GET     /api/cart                                200 638ms
+[INFO] API POST /api/track-activity 202 132ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.3.218',
+  userId: undefined,
+  duration: 132,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 133ms 
+4:01:08 PM POST    /api/track-activity                      202 134ms
+[LOCALITY] SSOT evaluation: {"userId":"40d4c8e0-0d7c-41e1-a686-96daac2d7c8b","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[INFO] API GET / 200 180ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.23',
+  userId: undefined,
+  duration: 180,
+  statusCode: 200,
+  contentLength: 843
+}
+[INFO] GET / 200 180ms 
+4:01:08 PM GET     /api/addresses                           200 181ms
+[INFO] API GET /status 200 183ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 183,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 183ms 
+4:01:08 PM GET     /api/locality/status                     200 184ms
+[INFO] API GET /api/products 200 461ms {
+  method: 'GET',
+  url: '/api/products',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 461,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/products 200 461ms 
+4:01:08 PM GET     /api/products                            200 462ms
+[LOCALITY] SSOT evaluation: {"userId":"40d4c8e0-0d7c-41e1-a686-96daac2d7c8b","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[LOCALITY] SSOT evaluation: {"userId":"40d4c8e0-0d7c-41e1-a686-96daac2d7c8b","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[STORAGE] Fetching cart items by owner: 40d4c8e0-0d7c-41e1-a686-96daac2d7c8b
+[INFO] API GET /status 200 179ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 179,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 180ms 
+4:01:08 PM GET     /api/locality/status                     200 180ms
+[STORAGE] Updating cart item 573e055d-aedc-4ddb-87e3-767fab76388f to quantity 1
+[STORAGE] Fetching cart by owner: 40d4c8e0-0d7c-41e1-a686-96daac2d7c8b
+[INFO] API GET / 200 358ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 358,
+  statusCode: 200,
+  contentLength: 401
+}
+4:01:08 PM GET     /api/cart                                200 360ms
+[LOCALITY] SSOT evaluation: {"userId":"40d4c8e0-0d7c-41e1-a686-96daac2d7c8b","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[CART ENFORCE V2] SSOT evaluation: { ownerId:'40d4c8e0-0d7c-41e1-a686-96daac2d7c8b', productId:'9e434f75-3fc4-4514-97c4-f943538adeb3', productMode:'LOCAL_ONLY', userMode:'LOCAL_AND_SHIPPING', effectiveness:'ADD_ALLOWED' }
+[CART ENFORCE V2] ADD_ALLOWED for 9e434f75-3fc4-4514-97c4-f943538adeb3 by 40d4c8e0-0d7c-41e1-a686-96daac2d7c8b
+[STORAGE] Finding cart items by owner/product: 40d4c8e0-0d7c-41e1-a686-96daac2d7c8b/9e434f75-3fc4-4514-97c4-f943538adeb3
+[CART ENFORCE V2] Error: ReferenceError: isNull is not defined
+    at DatabaseStorage.findCartItems (/home/runner/workspace/server/storage.ts:747:28)
+    at addToCartConsolidating (/home/runner/workspace/server/services/cartService.ts:60:43)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes/cart.v2.ts:45:20)
+[ERROR] Application error: {
+  timestamp: '2025-08-15T16:01:09.709Z',
+  method: 'POST',
+  url: '/api/cart/items',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  error: {
+    name: 'ReferenceError',
+    message: 'isNull is not defined',
+    stack: 'ReferenceError: isNull is not defined\n' +
+      '    at DatabaseStorage.findCartItems (/home/runner/workspace/server/storage.ts:747:28)\n' +
+      '    at addToCartConsolidating (/home/runner/workspace/server/services/cartService.ts:60:43)\n' +
+      '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+      '    at async <anonymous> (/home/runner/workspace/server/routes/cart.v2.ts:45:20)'
+  }
+}
+[WARN] API POST /api/cart/items 500 278ms {
+  method: 'POST',
+  url: '/api/cart/items',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 278,
+  statusCode: 500,
+  contentLength: 489
+}
+[ERROR] POST /api/cart/items 500 279ms {
+  method: 'POST',
+  url: '/api/cart/items',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 279,
+  statusCode: 500,
+  contentLength: 489
+}
+4:01:09 PM POST    /api/cart/items                          500 280ms
+[LOCALITY] SSOT evaluation: {"userId":"40d4c8e0-0d7c-41e1-a686-96daac2d7c8b","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[STORAGE] Fetching cart items by owner: 40d4c8e0-0d7c-41e1-a686-96daac2d7c8b
+[INFO] API GET / 200 173ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 173,
+  statusCode: 200,
+  contentLength: 843
+}
+[INFO] GET / 200 173ms 
+4:01:09 PM GET     /api/addresses                           200 174ms
+[INFO] API GET /api/products 200 175ms {
+  method: 'GET',
+  url: '/api/products',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.10.3',
+  userId: undefined,
+  duration: 175,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/products 200 175ms 
+4:01:09 PM GET     /api/products                            200 176ms
+[INFO] API GET /api/user 200 178ms {
+  method: 'GET',
+  url: '/api/user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.157',
+  userId: undefined,
+  duration: 178,
+  statusCode: 200,
+  contentLength: 290
+}
+4:01:09 PM GET     /api/user                                200 180ms
+[STORAGE] Updating cart item 573e055d-aedc-4ddb-87e3-767fab76388f to quantity 1
+[STORAGE] Fetching cart by owner: 40d4c8e0-0d7c-41e1-a686-96daac2d7c8b
+[INFO] API GET / 200 354ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.3.218',
+  userId: undefined,
+  duration: 354,
+  statusCode: 200,
+  contentLength: 401
+}
+4:01:10 PM GET     /api/cart                                200 354ms
+[LOCALITY] SSOT evaluation: {"userId":"40d4c8e0-0d7c-41e1-a686-96daac2d7c8b","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[INFO] API GET /status 200 446ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.23',
+  userId: undefined,
+  duration: 446,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 446ms 
+4:01:10 PM GET     /api/locality/status                     200
