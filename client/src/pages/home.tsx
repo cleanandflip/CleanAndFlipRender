@@ -134,7 +134,7 @@ function HomeSections() {
 
             <p className="mt-5">
               <span className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs md:text-sm tracking-wide bg-[#2f3745] text-[#e6e6e8] font-bold pt-[3px] pb-[3px] ml-[0px] mr-[0px] mt-[0px] mb-[0px] pl-[12px] pr-[12px]">
-                Based in Asheville, NC!
+                Based in Asheville, NC
               </span>
             </p>
           </motion.div>
