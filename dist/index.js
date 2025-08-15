@@ -3905,11 +3905,29 @@ async function getLocalityForRequest(req, zipOverride) {
     };
   }
 }
+var LocalityService, localityService;
 var init_localityService = __esm({
   "server/services/localityService.ts"() {
     "use strict";
     init_locality();
     init_db();
+    LocalityService = class {
+      localZipCodes = /* @__PURE__ */ new Set([
+        "28801",
+        "28803",
+        "28804",
+        "28805",
+        "28806",
+        "28808"
+        // Asheville, NC area
+      ]);
+      async isLocalZipCode(zipCode) {
+        if (!zipCode) return false;
+        const cleanZip = zipCode.split("-")[0].trim();
+        return this.localZipCodes.has(cleanZip);
+      }
+    };
+    localityService = new LocalityService();
   }
 });
 
@@ -4511,7 +4529,10 @@ var init_addresses = __esm({
         const data = addressSchema.parse(req.body);
         const existingAddresses = await storage.getUserAddresses(userId2);
         const isDefault = data.setDefault || existingAddresses.length === 0;
-        const localityResult = isLocalMiles(data.latitude || null, data.longitude || null);
+        const localityResult = (
+          /* SSOT-FORBIDDEN \bisLocalMiles\( */
+          isLocalMiles(data.latitude || null, data.longitude || null)
+        );
         const address = await storage.createAddress(userId2, {
           firstName: data.firstName,
           lastName: data.lastName,
@@ -4552,7 +4573,10 @@ var init_addresses = __esm({
         const data = addressSchema.partial().parse(req.body);
         let updateData = { ...data };
         if (data.latitude !== void 0 || data.longitude !== void 0) {
-          const localityResult = isLocalMiles(data.latitude || null, data.longitude || null);
+          const localityResult = (
+            /* SSOT-FORBIDDEN \bisLocalMiles\( */
+            isLocalMiles(data.latitude || null, data.longitude || null)
+          );
           updateData = {
             ...updateData,
             isLocal: localityResult.isLocal
@@ -4977,7 +5001,7 @@ var init_cartMigrate = __esm({
   }
 });
 
-// src/utils/distance.ts
+// shared/geo.ts
 function haversineMiles(a, b) {
   const R = 3958.7613;
   const dLat = (b.lat - a.lat) * Math.PI / 180;
@@ -4987,8 +5011,8 @@ function haversineMiles(a, b) {
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
-var init_distance = __esm({
-  "src/utils/distance.ts"() {
+var init_geo = __esm({
+  "shared/geo.ts"() {
     "use strict";
   }
 });
@@ -5008,7 +5032,7 @@ var init_shipping = __esm({
     init_db();
     init_schema();
     init_auth2();
-    init_distance();
+    init_geo();
     ({ requireAuth: requireAuth2 } = authMiddleware);
     router9 = express3.Router();
     WAREHOUSE_COORDS = { lat: 40.7128, lon: -74.006 };
@@ -5113,7 +5137,13 @@ var init_shipping = __esm({
   }
 });
 
-// server/services/cartGuard.ts
+// server/routes/cart-validation.ts
+var cart_validation_exports = {};
+__export(cart_validation_exports, {
+  default: () => cart_validation_default,
+  guardCartItemAgainstLocality: () => guardCartItemAgainstLocality
+});
+import { Router as Router9 } from "express";
 function guardCartItemAgainstLocality({
   userIsLocal,
   product
@@ -5126,32 +5156,22 @@ function guardCartItemAgainstLocality({
     throw err;
   }
 }
-var init_cartGuard = __esm({
-  "server/services/cartGuard.ts"() {
-    "use strict";
-  }
-});
-
-// server/routes/cart-validation.ts
-var cart_validation_exports = {};
-__export(cart_validation_exports, {
-  default: () => cart_validation_default
-});
-import { Router as Router9 } from "express";
 var router10, cart_validation_default;
 var init_cart_validation = __esm({
   "server/routes/cart-validation.ts"() {
     "use strict";
     init_auth();
     init_storage();
-    init_cartGuard();
     router10 = Router9();
     router10.post("/validate", requireAuth, async (req, res) => {
       try {
         const userId2 = req.user.id;
         const addresses3 = await storage.getUserAddresses(userId2);
         const defaultAddress = addresses3.find((addr) => addr.isDefault);
-        const localityResult = defaultAddress ? isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : { isLocal: false };
+        const localityResult = defaultAddress ? (
+          /* SSOT-FORBIDDEN \bisLocalMiles\( */
+          isLocalMiles(defaultAddress.latitude, defaultAddress.longitude)
+        ) : { isLocal: false };
         const cart = await storage.getCart(userId2);
         const restrictedItems = [];
         const validItems = [];
@@ -7081,7 +7101,10 @@ router6.post("/quote", async (req, res) => {
     });
     const addresses3 = await storage.getUserAddresses(userId);
     const defaultAddress = addresses3.find((addr) => addr.isDefault);
-    const localityResult = defaultAddress ? isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : { isLocal: false, distanceMiles: null, reason: "NO_COORDS" };
+    const localityResult = defaultAddress ? (
+      /* SSOT-FORBIDDEN \bisLocalMiles\( */
+      isLocalMiles(defaultAddress.latitude, defaultAddress.longitude)
+    ) : { isLocal: false, distanceMiles: null, reason: "NO_COORDS" };
     if (localityResult.isLocal) {
       shippingOptions.push({
         id: "local",

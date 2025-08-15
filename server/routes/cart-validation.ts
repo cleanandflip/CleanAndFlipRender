@@ -6,7 +6,7 @@ import { guardCartItemAgainstLocality } from '../services/cartGuard';
 
 const router = Router();
 
-// POST /api/cart/validate - Validate entire cart against current locality
+// POST /* SSOT-FORBIDDEN /api/cart(?!\.v2) */ /api/cart/validate - Validate entire cart against current locality
 router.post('/validate', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
@@ -15,7 +15,7 @@ router.post('/validate', requireAuth, async (req, res) => {
     const addresses = await storage.getUserAddresses(userId);
     const defaultAddress = addresses.find(addr => addr.isDefault);
     const localityResult = defaultAddress ? 
-      isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : 
+      /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : 
       { isLocal: false };
     
     // Get cart items with product details
@@ -55,3 +55,19 @@ router.post('/validate', requireAuth, async (req, res) => {
 });
 
 export default router;
+// [MERGED FROM] /home/runner/workspace/server/services/cartGuard.ts
+export function guardCartItemAgainstLocality({
+  userIsLocal,
+  product
+}: {
+  userIsLocal: boolean;
+  product: { is_local_delivery_available?: boolean; is_shipping_available?: boolean };
+}) {
+  const localOnly = product.is_local_delivery_available && !product.is_shipping_available;
+  if (!userIsLocal && localOnly) {
+    const err: any = new Error("Local Delivery only. This item isn't available to ship to your address.");
+    err.code = "LOCALITY_RESTRICTED";
+    err.http = 409;
+    throw err;
+  }
+}

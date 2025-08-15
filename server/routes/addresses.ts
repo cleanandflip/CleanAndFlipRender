@@ -53,7 +53,7 @@ router.post('/', isAuthenticated, async (req, res) => {
     const isDefault = data.setDefault || existingAddresses.length === 0;
     
     // Compute isLocal from coordinates using unified locality system
-    const localityResult = isLocalMiles(data.latitude || null, data.longitude || null);
+    const localityResult = /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(data.latitude || null, data.longitude || null);
     
     const address = await storage.createAddress(userId, {
       firstName: data.firstName,
@@ -100,7 +100,7 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
     // Recompute isLocal if coordinates changed using unified locality system
     let updateData = { ...data };
     if (data.latitude !== undefined || data.longitude !== undefined) {
-      const localityResult = isLocalMiles(data.latitude || null, data.longitude || null);
+      const localityResult = /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(data.latitude || null, data.longitude || null);
       updateData = {
         ...updateData,
         isLocal: localityResult.isLocal

@@ -8,7 +8,7 @@ import { db } from '../db';
 import { addresses } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
-import { haversineMiles } from '../../src/utils/distance';
+import { haversineMiles } from '../../shared/geo';
 
 const { requireAuth } = authMiddleware;
 const router = express.Router();

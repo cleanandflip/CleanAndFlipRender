@@ -1,8 +1,3 @@
-/**
- * Local Customer Detection Service
- * Central authority for determining if an address is within service zones
- */
-
 import { db } from '../db';
 import { serviceZones } from '../../shared/schema';
 import { haversineKm } from '../lib/haversine';
@@ -18,7 +13,7 @@ export interface Address {
   country?: string;
 }
 
-export async function isLocal(address: Address): Promise<boolean> {
+export async function /* SSOT-FORBIDDEN \bisLocal\( */ isLocal(address: Address): Promise<boolean> {
   if (!address.latitude || !address.longitude) {
     return false;
   }

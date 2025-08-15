@@ -1,5 +1,3 @@
-// Shared fulfillment/delivery types and utilities for the comprehensive system
-
 export type FulfillmentMode = 'LOCAL_ONLY' | 'LOCAL_AND_SHIPPING';
 
 // Product type interface for fulfillment system
@@ -127,3 +125,29 @@ export default {
   FULFILLMENT_MODES,
   FULFILLMENT,
 };
+// [MERGED FROM] /home/runner/workspace/server/utils/fulfillment.ts
+export function /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(lat: number, lng: number, center = HQ, radius = RADIUS) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { isLocal: false, miles: Infinity };
+  const dLat = toRad(lat - center.lat);
+  const dLng = toRad(lng - center.lng);
+  const a =
+    Math.sin(dLat/2)**2 +
+    Math.cos(toRad(center.lat)) * Math.cos(toRad(lat)) * Math.sin(dLng/2)**2;
+  const miles = 2 * EARTH_R * Math.asin(Math.sqrt(a));
+  return { isLocal: miles <= radius, miles };
+}
+
+// [MERGED FROM] /home/runner/workspace/server/utils/fulfillment.ts
+export function guardCartItemAgainstLocality(opts: {
+  userIsLocal: boolean;
+  product: { is_local_delivery_available: boolean; is_shipping_available: boolean };
+}) {
+  const { userIsLocal, product } = opts;
+  const localOnly = !!product.is_local_delivery_available && !product.is_shipping_available;
+  if (localOnly && !userIsLocal) {
+    const err: any = new Error("LOCAL_ONLY_PRODUCT_OUTSIDE_ZONE");
+    err.status = 400;
+    err.code = "LOCAL_ONLY";
+    throw err;
+  }
+}

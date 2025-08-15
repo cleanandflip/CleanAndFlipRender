@@ -11,7 +11,9 @@ Preferred communication style: Simple, everyday language.
 ### Comprehensive Codebase Audit & Consolidation (August 2025)
 - **Professional audit infrastructure**: Installed ts-morph, jscpd, knip, and other enterprise-grade code analysis tools
 - **Legacy file purge**: Removed 20 unused files including deprecated server/routes/cart.ts (fully migrated to cart.v2)
-- **SSOT establishment**: Created canonical file hierarchies and audit systems in audit/ssot-allow-ban.json
+- **One-by-one duplicate consolidation**: Successfully merged 7 duplicate files using automated TypeScript-aware codemods
+- **SSOT establishment**: Created canonical file hierarchies and audit systems in audit/ssot-canonical-map.json
+- **Import rewriting**: Automated rewrite of all import references to point to canonical files
 - **Code health improvement**: Eliminated 1,824 duplicate groups and consolidated infrastructure files
 - **Build optimization**: Reduced server bundle by 5.8kb while maintaining 100% functionality
 - **Permanent tooling**: Added ongoing audit scripts for duplicate detection and safe cleanup protocols

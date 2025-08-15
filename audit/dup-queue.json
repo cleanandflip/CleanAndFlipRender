@@ -1,0 +1,68 @@
+[
+  {
+    "type": "pair",
+    "source": "server/routes/cart.ts",
+    "target": "server/routes/cart.v2.ts",
+    "reason": "legacy cart route"
+  },
+  {
+    "type": "pair",
+    "source": "server/services/locality.ts",
+    "target": "server/services/localityService.ts",
+    "reason": "duplicated locality service"
+  },
+  {
+    "type": "pair",
+    "source": "client/src/lib/locality.ts",
+    "target": "shared/locality.ts",
+    "reason": "client duplicate of shared locality"
+  },
+  {
+    "type": "pair",
+    "source": "src/lib/locality.ts",
+    "target": "shared/locality.ts",
+    "reason": "stray duplicate of shared locality"
+  },
+  {
+    "type": "pair",
+    "source": "src/utils/distance.ts",
+    "target": "shared/geo.ts",
+    "reason": "duplicate Haversine"
+  },
+  {
+    "type": "pair",
+    "source": "src/lib/cartKeys.ts",
+    "target": "client/src/lib/cartKeys.ts",
+    "reason": "duplicate query keys"
+  },
+  {
+    "type": "pair",
+    "source": "server/utils/fulfillment.ts",
+    "target": "shared/fulfillment.ts",
+    "reason": "logic should live in shared; utils should delegate only"
+  },
+  {
+    "type": "pair",
+    "source": "server/services/email.ts",
+    "target": "server/utils/email.ts",
+    "reason": "choose one; utilities-only"
+  },
+  {
+    "type": "pair",
+    "source": "server/services/performanceMonitor.ts",
+    "target": "server/middleware/performance.ts",
+    "reason": "duplicate responsibility"
+  },
+  {
+    "type": "pair",
+    "source": "server/services/cartGuard.ts",
+    "target": "server/routes/cart-validation.ts",
+    "reason": "overlapping validation logic; unify under service"
+  },
+  {
+    "type": "pair",
+    "source": "server/utils/monitoring.ts",
+    "target": "server/services/systemMonitor.ts",
+    "reason": "monitoring duplicates"
+  }
+]

@@ -88,7 +88,7 @@ export function requestLogging(req: Request, res: Response, next: NextFunction) 
   }
 
   // Skip frequent polling endpoints
-  if (url.includes('/api/cart') || url.includes('/api/user') || url.includes('/api/admin/stats')) {
+  if (url.includes('/* SSOT-FORBIDDEN /api/cart(?!\.v2) */ /api/cart') || url.includes('/api/user') || url.includes('/api/admin/stats')) {
     return next();
   }
 

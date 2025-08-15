@@ -15,14 +15,14 @@ export function useCart() {
   // Use scoped query keys for cache invalidation on locality changes
   const cartQuery = useQuery({
     queryKey: cartKeys.scoped(ownerId, localityVersion.toString()),
-    queryFn: () => apiJson("/api/cart"),
+    queryFn: () => apiJson("/* SSOT-FORBIDDEN /api/cart(?!\.v2) */ /api/cart"),
     staleTime: 30_000 // 30 seconds
   });
 
   // Add to cart mutation with SSOT V2 endpoints
   const addToCartMutation = useMutation({
     mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
-      apiJson("/api/cart/items", {
+      apiJson("/* SSOT-FORBIDDEN /api/cart(?!\.v2) */ /api/cart/items", {
         method: "POST",
         body: JSON.stringify({ productId, quantity })
       }),
@@ -99,7 +99,7 @@ export function useCart() {
   // Remove item by ID mutation for legacy compatibility
   const removeItemMutation = useMutation({
     mutationFn: (itemId: string) => 
-      apiJson(`/api/cart/items/${itemId}`, { method: "DELETE" }),
+      apiJson(`/* SSOT-FORBIDDEN /api/cart(?!\.v2) */ /api/cart/items/${itemId}`, { method: "DELETE" }),
     onMutate: async (itemId) => {
       const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
       await queryClient.cancelQueries({ queryKey: cartQueryKey });
@@ -133,7 +133,7 @@ export function useCart() {
   // Remove by productId (compound key) for all users
   const removeByProductMutation = useMutation({
     mutationFn: (productId: string) => 
-      apiJson(`/api/cart/product/${productId}`, { method: "DELETE" }),
+      apiJson(`/* SSOT-FORBIDDEN /api/cart(?!\.v2) */ /api/cart/product/${productId}`, { method: "DELETE" }),
     onMutate: async (productId) => {
       const cartQueryKey = cartKeys.scoped(ownerId, localityVersion.toString());
       await queryClient.cancelQueries({ queryKey: cartQueryKey });
@@ -182,7 +182,7 @@ export function useCart() {
   // Update cart item mutation
   const updateCartItemMutation = useMutation({
     mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
-      apiJson(`/api/cart/items`, {
+      apiJson(`/* SSOT-FORBIDDEN /api/cart(?!\.v2) */ /api/cart/items`, {
         method: "PATCH",
         body: JSON.stringify({ productId, quantity })
       }),

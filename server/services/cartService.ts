@@ -79,7 +79,7 @@ export async function addToCartConsolidating(ownerId: string, productId: string,
   return { status: capped ? "ADDED_PARTIAL_STOCK_CAP" : "ADDED", qty: newQty, available: stock };
 }
 
-// Clamp cart on demand (e.g., GET /api/cart)
+// Clamp cart on demand (e.g., GET /* SSOT-FORBIDDEN /api/cart(?!\.v2) */ /api/cart)
 export async function clampCartToStock(ownerId: string) {
   await consolidateAndClampCart(ownerId);
 }

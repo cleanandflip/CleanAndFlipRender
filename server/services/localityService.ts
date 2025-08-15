@@ -198,3 +198,21 @@ export function getCartOwnerId(req: Request): string {
   // Prefer userId; else stable anonymous sessionId
   return req.session?.user?.id || req.session?.id || 'anonymous';
 }
+// [MERGED FROM] /home/runner/workspace/server/services/locality.ts
+export class LocalityService {
+  private localZipCodes = new Set([
+    '28801', '28803', '28804', '28805', '28806', '28808'  // Asheville, NC area
+  ]);
+
+  async isLocalZipCode(zipCode: string | undefined): Promise<boolean> {
+    if (!zipCode) return false;
+    
+    // Clean zip code (remove any extensions like 28801-1234)
+    const cleanZip = zipCode.split('-')[0].trim();
+    
+    return this.localZipCodes.has(cleanZip);
+  }
+}
+
+// [MERGED FROM] /home/runner/workspace/server/services/locality.ts
+export const localityService = new LocalityService()

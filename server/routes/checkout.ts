@@ -57,7 +57,7 @@ router.post("/quote", async (req, res) => {
     const addresses = await storage.getUserAddresses(userId);
     const defaultAddress = addresses.find(addr => addr.isDefault);
     const localityResult = defaultAddress ? 
-      isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : 
+      /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : 
       { isLocal: false, distanceMiles: null, reason: "NO_COORDS" };
       
     if (localityResult.isLocal) {

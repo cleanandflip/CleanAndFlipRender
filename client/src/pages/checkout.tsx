@@ -38,7 +38,7 @@ export default function Checkout() {
   const { data: cartResponse, isLoading: cartLoading } = useQuery({
     queryKey: ['cart'],
     queryFn: async () => {
-      const response = await fetch('/api/cart', { credentials: 'include' });
+      const response = await fetch('/* SSOT-FORBIDDEN /api/cart(?!\.v2) */ /api/cart', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch cart');
       return response.json();
     },
