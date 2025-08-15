@@ -1,0 +1,89 @@
+{
+  "replaceImportsThenDelete": [
+    {
+      "file": "server/routes/cart.ts",
+      "canonical": null,
+      "reason": "legacy-banned"
+    },
+    {
+      "file": "src/lib/locality.ts",
+      "canonical": null,
+      "reason": "legacy-banned"
+    }
+  ],
+  "deleteSafe": [
+    {
+      "file": "scripts/cleanup-noisy-fingerprints.js",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "scripts/codebase-doctor.cjs",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "scripts/codebase-doctor.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "scripts/denylist-check.js",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "scripts/scan-locality-offenders.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/config/compression.d.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/data/errorStore.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/data/simpleErrorStore.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/lib/legacy-guard.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/lib/fingerprint.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/middleware/capture.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/middleware/performanceOptimization.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/middleware/rateLimiter.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/middleware/request-consolidator.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/observability/schema.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/routes/health-comprehensive.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/routes/health.ts",
+      "reason": "safe-cleanup"
+    },
+    {
+      "file": "server/routes/status.ts",
+      "reason": "safe-cleanup"
+    }
+  ],
+  "reviewManual": []
+}

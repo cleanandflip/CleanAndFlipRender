@@ -251,8 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   app.use('/api/cart', cartRouterV2);
   
-  // DEPRECATED: Legacy cart route - log usage and return 410 Gone
-  const legacyCartRoutes = await import('./routes/cart');
+  // DEPRECATED: Legacy cart route has been removed - fully migrated to cart.v2
   app.use('/api/cart-legacy', (req, res, next) => {
     console.log(`[DEPRECATED] Legacy cart route hit: ${req.method} ${req.url} - should be migrated to V2`);
     res.status(410).json({

@@ -1,0 +1,435 @@
+server/routes.ts:60 - setWebSocketManager (used in module)
+shared/availability.ts:63 - getAvailabilityReason
+shared/availability.ts:95 - canAddToCart
+shared/availability.ts:106 - supportsPickup
+shared/availability.ts:117 - supportsShipping
+shared/availability.ts:5 - ProductMode (used in module)
+shared/availability.ts:6 - EffectiveAvailability (used in module)
+shared/fulfillment.ts:34 - getFulfillmentLabel (used in module)
+shared/fulfillment.ts:46 - isValidFulfillmentMode (used in module)
+shared/fulfillment.ts:51 - modeToFlags (used in module)
+shared/fulfillment.ts:6 - ProductFulfillment
+shared/fulfillment.ts:75 - FULFILLMENT_MODES (used in module)
+shared/fulfillment.ts:118 - default
+shared/geo.ts:32 - isValidCoordinates
+shared/geo.ts:45 - normalizeCoordinates
+shared/geo.ts:68 - isWithinServiceRadius
+shared/geo.ts:3 - Coordinates (used in module)
+shared/locality.ts:4 - LocalitySource (used in module)
+shared/locality.ts:24 - LocalitySourceLegacy (used in module)
+shared/locality.ts:25 - LocalityReason (used in module)
+shared/locality.ts:56 - LOCAL_ZIPS (used in module)
+shared/utils.ts:15 - normalizeAddress
+shared/utils.ts:101 - validateState
+server/config/database.ts:5 - DatabaseConfig (used in module)
+server/config/database.ts:188 - default
+server/config/environment.ts:32 - isDevelopment (used in module)
+server/config/environment.ts:39 - isProduction (used in module)
+server/config/environment.ts:46 - isTest (used in module)
+server/config/environment.ts:53 - isReplitDeployment (used in module)
+server/config/environment.ts:60 - getEnvironmentConfig (used in module)
+server/config/environment.ts:78 - getEnvironmentSettings (used in module)
+server/config/environment.ts:113 - validateEnvironment (used in module)
+server/config/environment.ts:157 - logEnvironmentStatus (used in module)
+server/config/environment.ts:5 - Environment (used in module)
+server/config/environment.ts:177 - default
+server/config/logger.ts:132 - requestLogger (used in module)
+server/config/production-optimizations.ts:6 - setupProductionCompression
+server/config/production-optimizations.ts:31 - optimizeDatabaseConnections
+server/config/production-optimizations.ts:50 - monitorMemoryUsage
+server/config/production-optimizations.ts:75 - setupGracefulShutdown
+server/config/production-optimizations.ts:103 - createOptimizedRequestLogger
+server/config/production-optimizations.ts:146 - createProductionErrorHandler
+server/config/redis.ts:64 - getCached
+server/config/redis.ts:74 - setCache
+server/config/redis.ts:83 - clearCache
+server/config/redis.ts:60 - getCacheClient
+server/config/redis.ts:61 - isRedisEnabled
+server/config/search.ts:82 - getSearchSuggestions
+server/config/security.ts:22 - getSecurityConfig (used in module)
+server/config/security.ts:53 - validateSecurityConfig (used in module)
+server/config/security.ts:114 - generateSessionSecret (used in module)
+server/config/security.ts:122 - generateJWTSecret (used in module)
+server/config/security.ts:130 - generateEncryptionKey (used in module)
+server/config/security.ts:138 - validatePasswordStrength (used in module)
+server/config/security.ts:171 - logSecurityStatus (used in module)
+server/config/security.ts:7 - SecurityConfig (used in module)
+server/config/security.ts:196 - default
+server/config/shipping.ts:2 - getWarehouseConfig
+server/config/websocket.ts:7 - initializeWebSocket
+server/config/websocket.ts:62 - io (used in module)
+server/data/errorStore.ts:4 - ErrorStore
+server/data/simpleErrorStore.ts:5 - SimpleErrorStore
+server/db/index.ts:9 - getDatabase (used in module)
+server/db/index.ts:19 - initializeDatabase
+server/db/index.ts:35 - closeDatabase
+server/db/index.ts:44 - createDatabaseConnection (used in module)
+server/db/index.ts:44 - validateDatabaseEnvironment (used in module)
+server/lib/addressService.ts:9 - AddressService
+server/lib/distance.ts:4 - milesBetween (used in module)
+server/lib/distance.ts:13 - getWarehouseCoords
+server/lib/distance.ts:17 - isLocalMiles (used in module)
+server/lib/distance.ts:22 - isLocalAddress
+server/lib/fingerprint.ts:8 - fingerprintOf
+server/lib/legacy-guard.ts:1 - LEGACY_KILL_SWITCH
+server/lib/localityChecker.ts:11 - getLocalityForRequest
+server/lib/localityChecker.ts:4 - LocalityInfo (used in module)
+server/lib/profile.ts:6 - isProfileComplete
+server/middleware/capture.ts:13 - requestId (used in module)
+server/middleware/capture.ts:19 - captureErrors
+server/middleware/capture.ts:69 - captureSlowRequests
+server/middleware/cartLocalityEnforcement.ts:9 - enforceLocalityForCart
+server/middleware/monitoring.ts:29 - logDatabaseQuery
+server/middleware/monitoring.ts:121 - rateLimitMonitoring
+server/middleware/performanceOptimization.ts:18 - optimizedSlowRequestMonitoring
+server/middleware/performanceOptimization.ts:39 - addCacheHeaders
+server/middleware/rateLimiter.ts:3 - uploadRateLimiter
+server/middleware/rateLimiter.ts:15 - generalRateLimiter
+server/middleware/request-consolidator.ts:118 - requestConsolidator
+server/middleware/requireDefaultAddress.ts:4 - requireDefaultAddress
+server/middleware/security-enhancements.ts:7 - createEnhancedRateLimit
+server/middleware/security-enhancements.ts:99 - sanitizeInputs
+server/middleware/security-enhancements.ts:140 - preventSQLInjection
+server/middleware/security-enhancements.ts:181 - requestSizeLimit
+server/middleware/security-enhancements.ts:194 - enhanceSessionSecurity
+server/middleware/security-enhancements.ts:215 - createSecureCORS
+server/middleware/security-enhancements.ts:250 - apiVersioning
+server/middleware/security-enhancements.ts:262 - performanceMonitoring
+server/middleware/transaction.ts:8 - withTransaction (used in module)
+server/middleware/transaction.ts:17 - atomicStockUpdate (used in module)
+server/middleware/unifiedErrorHandler.ts:5 - CustomRequest (used in module)
+server/middleware/unifiedErrorHandler.ts:101 - unifiedErrorHandler
+server/middleware/validation.ts:38 - validateWithCustomErrors
+server/observability/schema.ts:3 - errorEventSchema
+server/routes/health-comprehensive.ts:145 - default
+server/routes/health.ts:79 - default
+server/routes/status.ts:15 - default
+server/routes/stripe-sync.ts:67 - stripeSync
+server/routes/track-activity.ts:19 - trackActivityRouter
+server/services/email.ts:6 - OrderEmailData (used in module)
+server/services/email.ts:29 - SubmissionEmailData (used in module)
+server/services/locality.ts:2 - LocalityService (used in module)
+server/services/locality.ts:17 - localityService
+server/services/localityService.ts:197 - getCartOwnerId
+server/services/localService.ts:21 - isLocal
+server/services/localService.ts:11 - Address (used in module)
+server/services/systemMonitor.ts:4 - SystemHealth (used in module)
+server/services/systemMonitor.ts:25 - SystemAlert (used in module)
+server/utils/email.ts:7 - normalizeEmail (used in module)
+server/utils/email.ts:17 - createEmailCondition
+server/utils/email.ts:25 - isValidEmail
+server/utils/email.ts:33 - getEmailDomain
+server/utils/exportHelpers.ts:3 - generateCSV (used in module)
+server/utils/exportHelpers.ts:44 - generatePDFData
+server/utils/input-sanitization.ts:20 - SanitizationOptions (used in module)
+server/utils/input-sanitization.ts:30 - InputSanitizer (used in module)
+server/utils/monitoring.ts:2 - monitorMemory
+server/utils/production-ready-email.ts:6 - productionEmailHelpers
+server/utils/safe-query.ts:38 - buildSafeSelect
+server/utils/safe-query.ts:62 - clearColumnsCache
+server/utils/safe-query.ts:73 - validateDatabaseSchema
+shared/schemas/address.ts:9 - AddressSchema (used in module)
+shared/schemas/address.ts:22 - AddressWithContactSchema (used in module)
+shared/schemas/address.ts:30 - CheckoutAddressSchema (used in module)
+shared/schemas/address.ts:37 - AddressData (used in module)
+shared/schemas/address.ts:38 - AddressWithContact
+shared/schemas/address.ts:39 - CheckoutAddress (used in module)
+shared/schemas/address.ts:42 - transformToCheckoutFormat
+shared/schemas/address.ts:60 - transformFromGeoapify
+shared/types/search.ts:1 - SearchResult (used in module)
+shared/types/search.ts:11 - SearchSuggestion (used in module)
+shared/types/search.ts:17 - SearchState
+shared/types/search.ts:28 - SearchFilters
+client/src/api/addresses.ts:43 - AddressFieldErrors (used in module)
+client/src/api/addresses.ts:53 - setDefaultAddress (used in module)
+client/src/api/addresses.ts:56 - deleteAddress (used in module)
+client/src/api/addresses.ts:59 - fetchAddresses
+client/src/api/addresses.ts:62 - AddressApiError
+client/src/api/addresses.ts:177 - default
+client/src/api/checkout.ts:10 - getQuote
+client/src/api/checkout.ts:3 - Quote (used in module)
+client/src/components/AddToCartButtonUnified.tsx:21 - default
+client/src/components/Analytics.tsx:219 - useAnalytics
+client/src/components/Analytics.tsx:233 - AnalyticsManager (used in module)
+client/src/components/error-boundary.tsx:143 - ErrorPage
+client/src/components/error-boundary.tsx:260 - ApiError
+client/src/components/error-boundary.tsx:17 - ErrorBoundary
+client/src/components/ErrorBoundary.tsx:121 - useErrorBoundary
+client/src/components/ProtectedRoute.tsx:10 - ProtectedRoute (used in module)
+client/src/components/SEOHead.tsx:26 - SEOHead (used in module)
+client/src/components/SEOHead.tsx:141 - HomeSEO
+client/src/components/SEOHead.tsx:151 - ProductsSEO
+client/src/components/SEOHead.tsx:161 - ProductSEO
+client/src/components/SEOHead.tsx:195 - SellSEO
+client/src/config/routes.ts:54 - routeGroups (used in module)
+client/src/config/routes.ts:87 - RoutePath
+client/src/config/routes.ts:88 - DynamicRoute
+client/src/config/routes.ts:89 - RouteGroup
+client/src/config/routes.ts:92 - routeMetadata
+client/src/constants/theme.ts:3 - CLEANFLIP_THEME
+client/src/contexts/AuthContext.tsx:14 - AuthProvider
+client/src/contexts/AuthContext.tsx:45 - useAuth
+client/src/hooks/use-addresses.ts:4 - useAddresses
+client/src/hooks/use-auth.tsx:37 - AuthContext (used in module)
+client/src/hooks/use-live-data.tsx:3 - useLiveData
+client/src/hooks/use-toast.ts:74 - reducer (used in module)
+client/src/hooks/useClickOutside.ts:3 - useClickOutside
+client/src/hooks/useDefaultAddress.ts:3 - useDefaultAddress
+client/src/hooks/useErrorReporting.ts:5 - useErrorReporting
+client/src/hooks/useFocusOnArrival.ts:8 - useFocusOnArrival
+client/src/hooks/useKeyboardNavigation.ts:12 - useKeyboardNavigation
+client/src/hooks/useLocality.ts:67 - useLocalityLegacy
+client/src/hooks/useLocality.ts:106 - DEFAULT_LOCALITY (used in module)
+client/src/hooks/useLocalStatus.ts:27 - useLocalStatus (used in module)
+client/src/hooks/useNavigation.ts:8 - useNavigation (used in module)
+client/src/hooks/useNavigation.ts:121 - navigation
+client/src/hooks/useNavigation.ts:130 - default
+client/src/hooks/useProductsState.ts:21 - useProductsState
+client/src/hooks/useSafePortal.ts:7 - useSafePortal
+client/src/hooks/useUnifiedUpload.tsx:19 - useUnifiedUpload
+client/src/hooks/useUnsavedChanges.ts:9 - useUnsavedChanges
+client/src/hooks/useWebSocketState.tsx:91 - useLegacySocket
+client/src/hooks/useWebSocketState.tsx:85 - useWebSocketReady
+client/src/i18n/fulfillment.ts:1 - fulfillmentCopy (used in module)
+client/src/lib/api.ts:4 - apiFetch (used in module)
+client/src/lib/auth-utils.ts:1 - isUnauthorizedError
+client/src/lib/cartDrawerStore.ts:14 - useCartDrawer (used in module)
+client/src/lib/cartDrawerStore.ts:20 - default
+client/src/lib/cartKeys.ts:8 - CART_QK
+client/src/lib/cartKeys.ts:9 - ADD_MUTATION_KEY
+client/src/lib/cartKeys.ts:10 - REMOVE_MUTATION_KEY
+client/src/lib/cartKeys.ts:11 - VALIDATE_MUTATION_KEY
+client/src/lib/cloudinary.ts:5 - categoryImg
+client/src/lib/dates.ts:2 - toDateSafe
+client/src/lib/dates.ts:12 - fmtDateTime
+client/src/lib/dates.ts:16 - fmtDate
+client/src/lib/dates.ts:20 - fmtTime
+client/src/lib/errorLogger.ts:2 - ClientErrorData (used in module)
+client/src/lib/parseJsonSafe.ts:2 - parseJsonSafe
+client/src/lib/queryClient.ts:51 - getQueryFn (used in module)
+client/src/lib/safeReload.ts:2 - safeReload
+client/src/lib/searchService.ts:44 - setSearchBusy (used in module)
+client/src/lib/searchService.ts:50 - isSearchBusy (used in module)
+client/src/lib/searchService.ts:54 - subscribeSearchBusy (used in module)
+client/src/lib/shipping-utils.ts:2 - getShippingMethodLabel
+client/src/lib/shipping-utils.ts:18 - getShippingMethodDescription
+client/src/lib/shipping-utils.ts:34 - isLocalDeliveryMethod
+client/src/lib/utils.ts:9 - formatCurrency
+client/src/lib/utils.ts:17 - fetchJSON
+client/src/lib/utils.ts:30 - postJSON
+client/src/lib/utils.ts:34 - patchJSON
+client/src/pages/privacy-policy.tsx:4 - default
+client/src/pages/ResetPassword.tsx:23 - ResetPassword
+client/src/pages/terms-of-service.tsx:3 - default
+client/src/services/activity.ts:4 - trackActivity
+client/src/services/errorReporter.ts:208 - default
+client/src/types/index.ts:2 - SearchFilters
+client/src/types/index.ts:15 - PaginatedResponse
+client/src/types/index.ts:23 - ApiError
+client/src/types/index.ts:29 - ViewMode
+client/src/types/index.ts:31 - ProductCondition
+client/src/types/index.ts:33 - OrderStatus
+client/src/types/index.ts:35 - SubmissionStatus
+client/src/components/addresses/AddressPicker.tsx:4 - default
+client/src/components/admin/AnimatedButton.tsx:14 - AnimatedButton
+client/src/components/admin/category-management.tsx:271 - default
+client/src/components/admin/CategoryModal.tsx:28 - CategoryModal
+client/src/components/admin/DataTable.tsx:24 - DataTable
+client/src/components/auth/middleware-check.tsx:6 - MiddlewareCheck
+client/src/components/checkout/AddressBlock.tsx:24 - AddressBlock
+client/src/components/checkout/GuestCheckout.tsx:46 - GuestCheckout
+client/src/components/checkout/ProfilePrompt.tsx:8 - ProfilePrompt
+client/src/components/common/glass-card.tsx:9 - default
+client/src/components/coupons/CouponInput.tsx:25 - CouponInput
+client/src/components/form/StandardDropdown.tsx:1 - default
+client/src/components/fulfillment/AddToCartEnhanced.tsx:22 - AddToCartEnhanced (used in module)
+client/src/components/fulfillment/AddToCartEnhanced.tsx:138 - default
+client/src/components/fulfillment/DeliveryEligibilityBanner.tsx:55 - default
+client/src/components/fulfillment/FulfillmentBadge.tsx:8 - FulfillmentBadgeProps (used in module)
+client/src/components/fulfillment/LocalBenefitsCard.tsx:10 - LocalBenefitsCard (used in module)
+client/src/components/fulfillment/LocalBenefitsCard.tsx:59 - default
+client/src/components/fulfillment/ZipCheck.tsx:91 - default
+client/src/components/locality/ProductAvailabilityChips.tsx:16 - ProductAvailabilityChips (used in module)
+client/src/components/orders/OrderTracking.tsx:61 - OrderTracking
+client/src/components/products/filter-chip.tsx:9 - default
+client/src/components/products/filter-sidebar.tsx:32 - default
+client/src/components/products/ProductCard.tsx:32 - ProductCard (used in module)
+client/src/components/products/ProductCard.tsx:11 - ProductCardProduct (used in module)
+client/src/components/products/ProductCard.tsx:112 - default
+client/src/components/products/ProductList.tsx:2 - default
+client/src/components/products/ProductsResults.tsx:8 - Product (used in module)
+client/src/components/reviews/ProductReviews.tsx:32 - ProductReviews
+client/src/components/search/EnhancedSearch.tsx:34 - EnhancedSearch
+client/src/components/shared/AnimatedComponents.tsx:84 - Input (used in module)
+client/src/components/shared/AnimatedComponents.tsx:139 - Toggle
+client/src/components/shared/AnimatedComponents.tsx:184 - Modal
+client/src/components/shared/AnimatedComponents.tsx:226 - LoadingSpinner
+client/src/components/shared/AnimatedComponents.tsx:252 - Badge
+client/src/components/shipping/ShippingCalculator.tsx:29 - ShippingCalculator
+client/src/components/ui/accordion.tsx:56 - Accordion (used in module)
+client/src/components/ui/accordion.tsx:56 - AccordionItem (used in module)
+client/src/components/ui/accordion.tsx:56 - AccordionTrigger (used in module)
+client/src/components/ui/accordion.tsx:56 - AccordionContent (used in module)
+client/src/components/ui/address-display.tsx:16 - AddressDisplay
+client/src/components/ui/alert-dialog.tsx:140 - AlertDialogPortal (used in module)
+client/src/components/ui/alert-dialog.tsx:141 - AlertDialogOverlay (used in module)
+client/src/components/ui/alert.tsx:59 - AlertTitle (used in module)
+client/src/components/ui/aspect-ratio.tsx:5 - AspectRatio (used in module)
+client/src/components/ui/avatar.tsx:50 - Avatar (used in module)
+client/src/components/ui/avatar.tsx:50 - AvatarImage (used in module)
+client/src/components/ui/avatar.tsx:50 - AvatarFallback (used in module)
+client/src/components/ui/badge.tsx:26 - BadgeProps (used in module)
+client/src/components/ui/badge.tsx:36 - badgeVariants (used in module)
+client/src/components/ui/breadcrumb.tsx:108 - Breadcrumb (used in module)
+client/src/components/ui/breadcrumb.tsx:109 - BreadcrumbList (used in module)
+client/src/components/ui/breadcrumb.tsx:110 - BreadcrumbItem (used in module)
+client/src/components/ui/breadcrumb.tsx:111 - BreadcrumbLink (used in module)
+client/src/components/ui/breadcrumb.tsx:112 - BreadcrumbPage (used in module)
+client/src/components/ui/breadcrumb.tsx:113 - BreadcrumbSeparator (used in module)
+client/src/components/ui/breadcrumb.tsx:114 - BreadcrumbEllipsis (used in module)
+client/src/components/ui/calendar.tsx:9 - CalendarProps (used in module)
+client/src/components/ui/calendar.tsx:61 - Calendar (used in module)
+client/src/components/ui/carousel.tsx:254 - CarouselApi (used in module)
+client/src/components/ui/carousel.tsx:255 - Carousel (used in module)
+client/src/components/ui/carousel.tsx:256 - CarouselContent (used in module)
+client/src/components/ui/carousel.tsx:257 - CarouselItem (used in module)
+client/src/components/ui/carousel.tsx:258 - CarouselPrevious (used in module)
+client/src/components/ui/carousel.tsx:259 - CarouselNext (used in module)
+client/src/components/ui/chart.tsx:11 - ChartConfig (used in module)
+client/src/components/ui/chart.tsx:359 - ChartContainer (used in module)
+client/src/components/ui/chart.tsx:360 - ChartTooltip (used in module)
+client/src/components/ui/chart.tsx:361 - ChartTooltipContent (used in module)
+client/src/components/ui/chart.tsx:362 - ChartLegend (used in module)
+client/src/components/ui/chart.tsx:363 - ChartLegendContent (used in module)
+client/src/components/ui/chart.tsx:364 - ChartStyle (used in module)
+client/src/components/ui/checkout-skeleton.tsx:4 - CheckoutSkeleton
+client/src/components/ui/collapsible.tsx:11 - Collapsible (used in module)
+client/src/components/ui/collapsible.tsx:11 - CollapsibleTrigger (used in module)
+client/src/components/ui/collapsible.tsx:11 - CollapsibleContent (used in module)
+client/src/components/ui/dialog.tsx:127 - DialogPortal (used in module)
+client/src/components/ui/dialog.tsx:128 - DialogOverlay (used in module)
+client/src/components/ui/dialog.tsx:129 - DialogClose (used in module)
+client/src/components/ui/drawer.tsx:109 - DrawerPortal (used in module)
+client/src/components/ui/drawer.tsx:110 - DrawerOverlay (used in module)
+client/src/components/ui/form.tsx:170 - useFormField (used in module)
+client/src/components/ui/form.tsx:175 - FormDescription (used in module)
+client/src/components/ui/FormElements.tsx:5 - Input (used in module)
+client/src/components/ui/FormElements.tsx:25 - Select (used in module)
+client/src/components/ui/FormElements.tsx:45 - Textarea (used in module)
+client/src/components/ui/FormElements.tsx:64 - FormGroup
+client/src/components/ui/FormElements.tsx:93 - FilterButton (used in module)
+client/src/components/ui/FormElements.tsx:119 - Checkbox (used in module)
+client/src/components/ui/FormElements.tsx:137 - Switch (used in module)
+client/src/components/ui/hover-card.tsx:29 - HoverCard (used in module)
+client/src/components/ui/hover-card.tsx:29 - HoverCardTrigger (used in module)
+client/src/components/ui/hover-card.tsx:29 - HoverCardContent (used in module)
+client/src/components/ui/index.ts:4 - ProductPrice
+client/src/components/ui/index.ts:5 - StockIndicator
+client/src/components/ui/index.ts:6 - LoadingSpinner
+client/src/components/ui/index.ts:7 - QuantitySelector
+client/src/components/ui/index.ts:10 - Button
+client/src/components/ui/index.ts:11 - Card
+client/src/components/ui/index.ts:11 - CardContent
+client/src/components/ui/index.ts:11 - CardDescription
+client/src/components/ui/index.ts:11 - CardFooter
+client/src/components/ui/index.ts:11 - CardHeader
+client/src/components/ui/index.ts:11 - CardTitle
+client/src/components/ui/index.ts:12 - Badge
+client/src/components/ui/index.ts:13 - Input
+client/src/components/ui/index.ts:14 - Label
+client/src/components/ui/index.ts:15 - Textarea
+client/src/components/ui/index.ts:16 - Tabs
+client/src/components/ui/index.ts:16 - TabsContent
+client/src/components/ui/index.ts:16 - TabsList
+client/src/components/ui/index.ts:16 - TabsTrigger
+client/src/components/ui/index.ts:17 - Separator
+client/src/components/ui/index.ts:18 - Dialog
+client/src/components/ui/index.ts:18 - DialogContent
+client/src/components/ui/index.ts:18 - DialogDescription
+client/src/components/ui/index.ts:18 - DialogFooter
+client/src/components/ui/index.ts:18 - DialogHeader
+client/src/components/ui/index.ts:18 - DialogTitle
+client/src/components/ui/index.ts:18 - DialogTrigger
+client/src/components/ui/index.ts:19 - Drawer
+client/src/components/ui/index.ts:19 - DrawerClose
+client/src/components/ui/index.ts:19 - DrawerContent
+client/src/components/ui/index.ts:19 - DrawerDescription
+client/src/components/ui/index.ts:19 - DrawerFooter
+client/src/components/ui/index.ts:19 - DrawerHeader
+client/src/components/ui/index.ts:19 - DrawerTitle
+client/src/components/ui/index.ts:19 - DrawerTrigger
+client/src/components/ui/index.ts:22 - Dropdown
+client/src/components/ui/index.ts:23 - DropdownOption
+client/src/components/ui/index.ts:24 - DropdownField
+client/src/components/ui/input-otp.tsx:69 - InputOTP (used in module)
+client/src/components/ui/input-otp.tsx:69 - InputOTPGroup (used in module)
+client/src/components/ui/input-otp.tsx:69 - InputOTPSlot (used in module)
+client/src/components/ui/input-otp.tsx:69 - InputOTPSeparator (used in module)
+client/src/components/ui/LocalDeliveryBadge.tsx:17 - LocalDeliveryBadge (used in module)
+client/src/components/ui/LocalDeliveryBadge.tsx:89 - default
+client/src/components/ui/page-loader.tsx:12 - default
+client/src/components/ui/pagination.tsx:110 - Pagination (used in module)
+client/src/components/ui/pagination.tsx:111 - PaginationContent (used in module)
+client/src/components/ui/pagination.tsx:112 - PaginationEllipsis (used in module)
+client/src/components/ui/pagination.tsx:113 - PaginationItem (used in module)
+client/src/components/ui/pagination.tsx:114 - PaginationLink (used in module)
+client/src/components/ui/pagination.tsx:115 - PaginationNext (used in module)
+client/src/components/ui/pagination.tsx:116 - PaginationPrevious (used in module)
+client/src/components/ui/popover.tsx:31 - Popover (used in module)
+client/src/components/ui/popover.tsx:31 - PopoverTrigger (used in module)
+client/src/components/ui/popover.tsx:31 - PopoverContent (used in module)
+client/src/components/ui/PortalErrorBoundary.tsx:65 - usePortalErrorHandler
+client/src/components/ui/PortalErrorBoundary.tsx:17 - PortalErrorBoundary
+client/src/components/ui/radio-group.tsx:42 - RadioGroup (used in module)
+client/src/components/ui/radio-group.tsx:42 - RadioGroupItem (used in module)
+client/src/components/ui/resizable.tsx:45 - ResizablePanelGroup (used in module)
+client/src/components/ui/resizable.tsx:45 - ResizablePanel (used in module)
+client/src/components/ui/resizable.tsx:45 - ResizableHandle (used in module)
+client/src/components/ui/RHFDropdown.tsx:13 - RHFDropdown
+client/src/components/ui/scroll-area.tsx:46 - ScrollArea (used in module)
+client/src/components/ui/scroll-area.tsx:46 - ScrollBar (used in module)
+client/src/components/ui/sheet.tsx:131 - SheetPortal (used in module)
+client/src/components/ui/sheet.tsx:132 - SheetOverlay (used in module)
+client/src/components/ui/sheet.tsx:134 - SheetClose (used in module)
+client/src/components/ui/sheet.tsx:137 - SheetFooter (used in module)
+client/src/components/ui/sidebar.tsx:747 - Sidebar (used in module)
+client/src/components/ui/sidebar.tsx:748 - SidebarContent (used in module)
+client/src/components/ui/sidebar.tsx:749 - SidebarFooter (used in module)
+client/src/components/ui/sidebar.tsx:750 - SidebarGroup (used in module)
+client/src/components/ui/sidebar.tsx:751 - SidebarGroupAction (used in module)
+client/src/components/ui/sidebar.tsx:752 - SidebarGroupContent (used in module)
+client/src/components/ui/sidebar.tsx:753 - SidebarGroupLabel (used in module)
+client/src/components/ui/sidebar.tsx:754 - SidebarHeader (used in module)
+client/src/components/ui/sidebar.tsx:755 - SidebarInput (used in module)
+client/src/components/ui/sidebar.tsx:756 - SidebarInset (used in module)
+client/src/components/ui/sidebar.tsx:757 - SidebarMenu (used in module)
+client/src/components/ui/sidebar.tsx:758 - SidebarMenuAction (used in module)
+client/src/components/ui/sidebar.tsx:759 - SidebarMenuBadge (used in module)
+client/src/components/ui/sidebar.tsx:760 - SidebarMenuButton (used in module)
+client/src/components/ui/sidebar.tsx:761 - SidebarMenuItem (used in module)
+client/src/components/ui/sidebar.tsx:762 - SidebarMenuSkeleton (used in module)
+client/src/components/ui/sidebar.tsx:763 - SidebarMenuSub (used in module)
+client/src/components/ui/sidebar.tsx:764 - SidebarMenuSubButton (used in module)
+client/src/components/ui/sidebar.tsx:765 - SidebarMenuSubItem (used in module)
+client/src/components/ui/sidebar.tsx:766 - SidebarProvider (used in module)
+client/src/components/ui/sidebar.tsx:767 - SidebarRail (used in module)
+client/src/components/ui/sidebar.tsx:768 - SidebarSeparator (used in module)
+client/src/components/ui/sidebar.tsx:769 - SidebarTrigger (used in module)
+client/src/components/ui/sidebar.tsx:770 - useSidebar (used in module)
+client/src/components/ui/table.tsx:112 - TableFooter (used in module)
+client/src/components/ui/table.tsx:116 - TableCaption (used in module)
+client/src/components/ui/toast.tsx:126 - ToastAction (used in module)
+client/src/components/ui/toggle-group.tsx:61 - ToggleGroup (used in module)
+client/src/components/ui/toggle-group.tsx:61 - ToggleGroupItem (used in module)
+client/src/components/ui/toggle.tsx:43 - Toggle (used in module)
+client/src/components/ui/welcome-banner.tsx:8 - ProfileNudge (used in module)
+client/src/lib/products/fulfillment.ts:3 - getFulfillment
+client/src/lib/products/fulfillment.ts:1 - AnyProduct (used in module)
+client/src/pages/admin/AnalyticsManager.tsx:43 - AnalyticsManager
+client/src/pages/admin/CategoryManager.tsx:30 - CategoryManager
+client/src/pages/admin/ProductsManager.tsx:2 - default (used in module)
+client/src/pages/admin/StripeManager.tsx:14 - default
+client/src/pages/admin/SubmissionsManager.tsx:75 - SubmissionsManager
+client/src/pages/admin/SystemDashboard.tsx:67 - default
+client/src/pages/admin/SystemManager.tsx:30 - SystemManager
+client/src/pages/admin/UserManager.tsx:28 - UserManager

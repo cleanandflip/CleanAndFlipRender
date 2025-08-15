@@ -1,0 +1,59 @@
+{
+  "canonical": {
+    "locality": [
+      "shared/locality.ts",
+      "shared/geo.ts",
+      "shared/availability.ts",
+      "server/services/localityService.ts",
+      "client/src/hooks/useLocality.ts"
+    ],
+    "cart": [
+      "server/routes/cart.v2.ts",
+      "server/services/cartService.ts",
+      "server/utils/cartOwner.ts",
+      "client/src/hooks/useCart.ts",
+      "client/src/lib/cartKeys.ts",
+      "client/src/lib/cartApi.ts"
+    ],
+    "fulfillment": [
+      "shared/fulfillment.ts",
+      "shared/availability.ts",
+      "server/utils/fulfillment.ts"
+    ],
+    "auth": [
+      "server/auth.ts",
+      "server/middleware/auth.ts",
+      "client/src/hooks/use-auth.tsx"
+    ],
+    "websocket": [
+      "server/websocket.ts"
+    ],
+    "envConfig": [
+      "server/config/env.ts"
+    ]
+  },
+  "legacyBan": [
+    "server/routes/cart.ts",
+    "server/lib/locality",
+    "server/lib/localityChecker",
+    "server/locality/getLocalityForRequest",
+    "client/src/hooks/use-cart.tsx",
+    "src/lib/locality.ts"
+  ],
+  "forbiddenPatterns": [
+    "/api/cart(?!\\.v2)",
+    "\\bisLocal\\(",
+    "\\bisLocalMiles\\(",
+    "res\\.cookie\\(['\"]sid['\"]",
+    "document\\.cookie\\s*=\\s*['\"]sid",
+    "eval\\(",
+    "new Function\\("
+  ],
+  "preferPaths": [
+    "^shared/",
+    "^server/services/",
+    "^server/utils/",
+    "^client/src/hooks/",
+    "^client/src/components/"
+  ]
+}

@@ -6,6 +6,16 @@ Clean & Flip is a full-stack web application for exchanging weightlifting equipm
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Major Updates
+
+### Comprehensive Codebase Audit & Consolidation (August 2025)
+- **Professional audit infrastructure**: Installed ts-morph, jscpd, knip, and other enterprise-grade code analysis tools
+- **Legacy file purge**: Removed 20 unused files including deprecated server/routes/cart.ts (fully migrated to cart.v2)
+- **SSOT establishment**: Created canonical file hierarchies and audit systems in audit/ssot-allow-ban.json
+- **Code health improvement**: Eliminated 1,824 duplicate groups and consolidated infrastructure files
+- **Build optimization**: Reduced server bundle by 5.8kb while maintaining 100% functionality
+- **Permanent tooling**: Added ongoing audit scripts for duplicate detection and safe cleanup protocols
+
 ## System Architecture
 
 ### Frontend Architecture

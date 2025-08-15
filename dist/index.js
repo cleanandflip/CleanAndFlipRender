@@ -279,9 +279,14 @@ var init_schema = __esm({
       stripeLastSync: timestamp("stripe_last_sync"),
       sku: varchar("sku"),
       dimensions: jsonb("dimensions").$type(),
-      // Fulfillment and local delivery (temporarily commented out until migration)
-      // fulfillment: fulfillmentTypeEnum("fulfillment").default("LOCAL_OR_SHIP"),
-      // localRadiusKm: decimal("local_radius_km", { precision: 8, scale: 3 }), // Per-product override
+      cost: decimal("cost", { precision: 10, scale: 2 }),
+      compareAtPrice: decimal("compare_at_price", { precision: 10, scale: 2 }),
+      // Delivery options - Active columns
+      isLocalDeliveryAvailable: boolean("is_local_delivery_available").default(true),
+      isShippingAvailable: boolean("is_shipping_available").default(true),
+      // Legacy compatibility columns
+      availableLocal: boolean("available_local").default(true),
+      availableShipping: boolean("available_shipping").default(true),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     }, (table) => [
@@ -1324,10 +1329,17 @@ var init_storage = __esm({
       }
       async updateProduct(id, product) {
         Logger.debug("DatabaseStorage.updateProduct - received data:", product);
-        const [updatedProduct] = await db.update(products).set({
+        const updateData = {
           ...product,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(products.id, id)).returning();
+        };
+        if (product.cost !== void 0) {
+          updateData.cost = product.cost;
+        }
+        if (product.compareAtPrice !== void 0) {
+          updateData.compare_at_price = product.compareAtPrice;
+        }
+        const [updatedProduct] = await db.update(products).set(updateData).where(eq(products.id, id)).returning();
         Logger.debug("DatabaseStorage.updateProduct - result:", updatedProduct);
         return updatedProduct;
       }
@@ -1337,7 +1349,48 @@ var init_storage = __esm({
         }).where(eq(products.id, id));
       }
       async getFeaturedProducts(limit = 6) {
-        return await db.select().from(products).where(eq(products.featured, true)).orderBy(desc(products.createdAt)).limit(limit);
+        try {
+          return await db.select({
+            id: products.id,
+            name: products.name,
+            description: products.description,
+            price: products.price,
+            categoryId: products.categoryId,
+            subcategory: products.subcategory,
+            brand: products.brand,
+            weight: products.weight,
+            condition: products.condition,
+            status: products.status,
+            images: products.images,
+            specifications: products.specifications,
+            stockQuantity: products.stockQuantity,
+            views: products.views,
+            featured: products.featured,
+            searchVector: products.searchVector,
+            stripeProductId: products.stripeProductId,
+            stripePriceId: products.stripePriceId,
+            stripeSyncStatus: products.stripeSyncStatus,
+            stripeLastSync: products.stripeLastSync,
+            sku: products.sku,
+            dimensions: products.dimensions,
+            cost: products.cost,
+            compareAtPrice: products.compareAtPrice,
+            isLocalDeliveryAvailable: products.isLocalDeliveryAvailable,
+            isShippingAvailable: products.isShippingAvailable,
+            availableLocal: products.availableLocal,
+            availableShipping: products.availableShipping,
+            createdAt: products.createdAt,
+            updatedAt: products.updatedAt
+          }).from(products).where(
+            and(
+              eq(products.status, "active"),
+              eq(products.featured, true)
+            )
+          ).orderBy(desc(products.updatedAt)).limit(limit);
+        } catch (error) {
+          Logger.error("Error getting featured products:", error.message);
+          throw error;
+        }
       }
       // Cart operations - Always fetch fresh product data
       async getCartItems(userId2, sessionId) {
@@ -1402,6 +1455,135 @@ var init_storage = __esm({
       // Merge guest cart to user cart on login
       async mergeGuestCart(sessionId, userId2) {
         await db.update(cartItems).set({ userId: userId2, sessionId: null }).where(eq(cartItems.sessionId, sessionId));
+      }
+      // NEW: additive wrapper for compound key removal
+      async removeFromCartByUserAndProduct(userId2, productId) {
+        console.log(`[STORAGE] Deleting cart item by user+product { userId:'${userId2}', productId:'${productId}' }`);
+        const result = await db.delete(cartItems).where(and(eq(cartItems.userId, userId2), eq(cartItems.productId, productId)));
+        const rowCount = result.rowCount || 0;
+        console.log(`[STORAGE] Delete result { userId:'${userId2}', productId:'${productId}', rowCount:${rowCount} }`);
+        return { rowCount };
+      }
+      // ADDITIVE: get cart items with products joined for cleanup service
+      async getCartItemsWithProducts(userId2) {
+        console.log(`[STORAGE] Fetching cart items with products for user: ${userId2}`);
+        const items = await db.select().from(cartItems).leftJoin(products, eq(cartItems.productId, products.id)).where(eq(cartItems.userId, userId2));
+        return items.map((item) => ({
+          id: item.cart_items.id,
+          productId: item.cart_items.productId || "",
+          quantity: item.cart_items.quantity,
+          product: item.products
+        }));
+      }
+      // NEW: Cart service helper functions
+      async getCartItemsByOwner(ownerId) {
+        console.log(`[STORAGE] Fetching cart items by owner: ${ownerId}`);
+        const items = await db.select().from(cartItems).where(or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)));
+        return items.map((item) => ({
+          id: item.id,
+          ownerId: item.userId || item.sessionId,
+          productId: item.productId,
+          variantId: item.variantId || null,
+          quantity: item.quantity
+        }));
+      }
+      async getCartByOwner(ownerId) {
+        console.log(`[STORAGE] Fetching cart by owner: ${ownerId}`);
+        const items = await this.getCartItems(
+          ownerId.includes("@") ? ownerId : void 0,
+          // assume email format for userId
+          !ownerId.includes("@") ? ownerId : void 0
+          // else it's sessionId
+        );
+        console.log(`[STORAGE] Found ${items.length} cart items for owner: ${ownerId}`);
+        const subtotal = items.reduce((sum2, item) => {
+          const price = item.product ? parseFloat(item.product.price) : 0;
+          return sum2 + price * item.quantity;
+        }, 0);
+        return {
+          items,
+          totals: { subtotal, total: subtotal }
+        };
+      }
+      async getCartItemById(id) {
+        console.log(`[STORAGE] Fetching cart item by id: ${id}`);
+        const items = await db.select().from(cartItems).where(eq(cartItems.id, id)).limit(1);
+        if (items.length === 0) return null;
+        const item = items[0];
+        return {
+          id: item.id,
+          ownerId: item.userId || item.sessionId,
+          productId: item.productId,
+          variantId: item.variantId || null,
+          quantity: item.quantity
+        };
+      }
+      async findCartItems(ownerId, productId, variantId) {
+        console.log(`[STORAGE] Finding cart items by owner/product: ${ownerId}/${productId} (variantId: ${variantId})`);
+        try {
+          let whereCondition = and(
+            or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
+            eq(cartItems.productId, productId)
+          );
+          if (variantId && variantId !== null && variantId !== "null" && variantId !== "undefined") {
+            whereCondition = and(whereCondition, eq(cartItems.variantId, variantId));
+          }
+          console.log(`[STORAGE] SQL WHERE condition built, executing query...`);
+          const items = await db.select().from(cartItems).where(whereCondition);
+          console.log(`[STORAGE] Found ${items.length} matching cart items`);
+          return items.map((item) => ({
+            id: item.id,
+            ownerId: item.userId || item.sessionId,
+            productId: item.productId,
+            variantId: item.variantId || null,
+            quantity: item.quantity
+          }));
+        } catch (error) {
+          console.error(`[STORAGE] Error finding cart items:`, error);
+          throw error;
+        }
+      }
+      async createCartItem(data) {
+        console.log(`[STORAGE] Creating cart item:`, data);
+        const itemToInsert = {
+          productId: data.productId,
+          quantity: data.quantity,
+          variantId: data.variantId,
+          userId: data.ownerId.includes("@") ? data.ownerId : null,
+          // assume email format
+          sessionId: !data.ownerId.includes("@") ? data.ownerId : null
+        };
+        const [newItem] = await db.insert(cartItems).values(itemToInsert).returning();
+        return newItem;
+      }
+      async updateCartItemQty(id, qty) {
+        console.log(`[STORAGE] Updating cart item ${id} to quantity ${qty}`);
+        const [updatedItem] = await db.update(cartItems).set({ quantity: qty }).where(eq(cartItems.id, id)).returning();
+        return updatedItem;
+      }
+      async removeCartItemById(id) {
+        console.log(`[STORAGE] Removing cart item by id: ${id}`);
+        const result = await db.delete(cartItems).where(eq(cartItems.id, id));
+        return result.rowCount > 0;
+      }
+      async removeCartItemsByProduct(ownerId, productId) {
+        console.log(`[STORAGE] Removing cart items by owner/product: ${ownerId}/${productId}`);
+        const result = await db.delete(cartItems).where(and(
+          or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
+          eq(cartItems.productId, productId)
+        ));
+        return result.rowCount || 0;
+      }
+      async getProductStock(productId) {
+        const product = await this.getProduct(productId);
+        return product?.stockQuantity ?? Number.MAX_SAFE_INTEGER;
+      }
+      async rekeyCartItemOwner(id, newOwnerId) {
+        console.log(`[STORAGE] Re-keying cart item ${id} to new owner: ${newOwnerId}`);
+        await db.update(cartItems).set({
+          userId: newOwnerId.includes("@") ? newOwnerId : null,
+          sessionId: !newOwnerId.includes("@") ? newOwnerId : null
+        }).where(eq(cartItems.id, id));
       }
       // Set cart shipping address
       async setCartShippingAddress(userId2, addressId) {
@@ -2005,10 +2187,12 @@ function setupAuth(app2) {
   const dbConfig2 = getDatabaseConfig();
   console.log("[SESSION] Using database:", dbConfig2.name);
   console.log("[SESSION] Environment:", dbConfig2.environment);
+  const ONE_MONTH = 30 * 24 * 60 * 60 * 1e3;
   const sessionSettings = {
-    secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
+    secret: process.env.SESSION_SECRET || "dev_secret_change_me",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
+    // guests get a stable session
     store: new PostgresSessionStore({
       conString: dbConfig2.url,
       createTableIfMissing: false,
@@ -2023,14 +2207,10 @@ function setupAuth(app2) {
       }
     }),
     cookie: {
-      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       sameSite: "lax",
-      // CRITICAL: Allow cross-origin cookies  
-      maxAge: 7 * 24 * 60 * 60 * 1e3,
-      // 7 days
-      path: "/"
-      // CRITICAL: Ensure cookie available for all paths
+      secure: process.env.NODE_ENV === "production",
+      maxAge: ONE_MONTH
     },
     rolling: true
     // CRITICAL: Reset expiry on activity
@@ -2734,6 +2914,169 @@ var init_stripe_sync = __esm({
   }
 });
 
+// server/lib/cache.ts
+function initializeCache(redisClient2) {
+  if (redisClient2 && process.env.ENABLE_REDIS === "true") {
+    cacheInstance = new RedisCache(redisClient2);
+  } else {
+    cacheInstance = new MemoryCache();
+  }
+  return cacheInstance;
+}
+function getCache() {
+  if (!cacheInstance) {
+    cacheInstance = new MemoryCache();
+  }
+  return cacheInstance;
+}
+var MemoryCache, RedisCache, cacheInstance;
+var init_cache = __esm({
+  "server/lib/cache.ts"() {
+    "use strict";
+    MemoryCache = class {
+      cache = /* @__PURE__ */ new Map();
+      async get(key) {
+        const item = this.cache.get(key);
+        if (!item) return null;
+        if (item.expires && Date.now() > item.expires) {
+          this.cache.delete(key);
+          return null;
+        }
+        return item.value;
+      }
+      async set(key, value, ttl) {
+        const expires = ttl ? Date.now() + ttl * 1e3 : void 0;
+        this.cache.set(key, { value, expires });
+        if (ttl) {
+          setTimeout(() => this.cache.delete(key), ttl * 1e3);
+        }
+      }
+      async del(key) {
+        this.cache.delete(key);
+      }
+      async clear() {
+        this.cache.clear();
+      }
+    };
+    RedisCache = class {
+      constructor(client) {
+        this.client = client;
+      }
+      async get(key) {
+        try {
+          const cached = await this.client.get(key);
+          return cached ? JSON.parse(cached) : null;
+        } catch {
+          return null;
+        }
+      }
+      async set(key, value, ttl) {
+        try {
+          if (ttl) {
+            await this.client.setEx(key, ttl, JSON.stringify(value));
+          } else {
+            await this.client.set(key, JSON.stringify(value));
+          }
+        } catch {
+        }
+      }
+      async del(key) {
+        try {
+          await this.client.del(key);
+        } catch {
+        }
+      }
+      async clear() {
+        try {
+          await this.client.flushDb();
+        } catch {
+        }
+      }
+    };
+  }
+});
+
+// server/config/cache.ts
+var cache_exports = {};
+__export(cache_exports, {
+  clearProductCache: () => clearProductCache,
+  closeRedisConnection: () => closeRedisConnection,
+  getCachedCategories: () => getCachedCategories,
+  getCachedFeaturedProducts: () => getCachedFeaturedProducts,
+  getCachedProduct: () => getCachedProduct,
+  redis: () => redis,
+  setCachedCategories: () => setCachedCategories,
+  setCachedFeaturedProducts: () => setCachedFeaturedProducts,
+  setCachedProduct: () => setCachedProduct
+});
+async function getCachedCategories() {
+  try {
+    return await cache.get("categories:active");
+  } catch (error) {
+    console.error("Cache get operation failed:", error);
+    return null;
+  }
+}
+async function setCachedCategories(categories2) {
+  try {
+    await cache.set("categories:active", categories2, 300);
+  } catch (error) {
+    console.error("Cache set operation failed:", error);
+  }
+}
+async function getCachedFeaturedProducts() {
+  try {
+    return await cache.get("products:featured");
+  } catch (error) {
+    console.error("Cache get operation failed:", error);
+    return null;
+  }
+}
+async function setCachedFeaturedProducts(products2) {
+  try {
+    await cache.set("products:featured", products2, 180);
+  } catch (error) {
+    console.error("Cache set operation failed:", error);
+  }
+}
+async function getCachedProduct(productId) {
+  try {
+    return await cache.get(`product:${productId}`);
+  } catch (error) {
+    console.error("Cache get operation failed:", error);
+    return null;
+  }
+}
+async function setCachedProduct(productId, product) {
+  try {
+    await cache.set(`product:${productId}`, product, 120);
+  } catch (error) {
+    console.error("Cache set operation failed:", error);
+  }
+}
+async function clearProductCache(productId) {
+  try {
+    if (productId) {
+      await cache.del(`product:${productId}`);
+    }
+    await cache.del("products:featured");
+    await cache.del("categories:active");
+  } catch (error) {
+    console.error("Cache clear operation failed:", error);
+  }
+}
+async function closeRedisConnection() {
+}
+var cache, redis;
+var init_cache2 = __esm({
+  "server/config/cache.ts"() {
+    "use strict";
+    init_cache();
+    cache = getCache();
+    redis = null;
+  }
+});
+
 // server/routes/observability.ts
 var observability_exports = {};
 __export(observability_exports, {
@@ -3394,51 +3737,179 @@ var init_error_management = __esm({
   }
 });
 
-// server/config/shipping.ts
-function getWarehouseConfig() {
-  return {
-    lat: Number(process.env.WH_LAT ?? 35.5951),
-    lng: Number(process.env.WH_LNG ?? -82.5515),
-    radiusMiles: Number(process.env.LOCAL_RADIUS_MILES ?? 50)
-  };
+// shared/locality.ts
+function normalizeZip(input) {
+  if (!input) return null;
+  const match = String(input).match(/\d{5}/);
+  return match ? match[0] : null;
 }
-var init_shipping = __esm({
-  "server/config/shipping.ts"() {
-    "use strict";
-  }
-});
-
-// server/lib/distance.ts
-function milesBetween(a, b) {
-  const R = 3958.7613;
-  const dLat = (b.lat - a.lat) * Math.PI / 180;
-  const dLng = (b.lng - a.lng) * Math.PI / 180;
-  const la1 = a.lat * Math.PI / 180, la2 = b.lat * Math.PI / 180;
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
+function isLocalZip2(zip) {
+  const z5 = normalizeZip(zip);
+  return !!(z5 && LOCAL_ZIPS.has(z5));
 }
-var init_distance = __esm({
-  "server/lib/distance.ts"() {
-    "use strict";
-    init_shipping();
-  }
-});
-
-// server/lib/locality.ts
-function isLocalMiles(lat, lng) {
-  const { lat: whLat, lng: whLng, radiusMiles } = getWarehouseConfig();
-  if (lat == null || lng == null) {
-    return { isLocal: false, distanceMiles: null, reason: "NO_COORDS" };
-  }
-  const miles = milesBetween({ lat, lng }, { lat: whLat, lng: whLng });
-  const isLocal = miles <= radiusMiles;
-  return { isLocal, distanceMiles: miles, reason: "RADIUS" };
-}
+var SSOT_VERSION, LOCAL_ZIPS;
 var init_locality = __esm({
-  "server/lib/locality.ts"() {
+  "shared/locality.ts"() {
     "use strict";
-    init_distance();
-    init_shipping();
+    SSOT_VERSION = "v2024.1";
+    LOCAL_ZIPS = /* @__PURE__ */ new Set(["28801", "28803", "28804", "28805", "28806", "28808"]);
+  }
+});
+
+// server/lib/addressCanonicalizer.ts
+var addressCanonicalizer_exports = {};
+__export(addressCanonicalizer_exports, {
+  canonicalizeAddress: () => canonicalizeAddress
+});
+function canonicalizeAddress(a) {
+  const clean = (s) => (s ?? "").toLowerCase().replace(/[^\p{L}\p{N} ]/gu, " ").replace(/\s+/g, " ").trim();
+  const line = [
+    clean(a.street),
+    clean(a.city),
+    clean(a.state),
+    clean(a.postal_code),
+    clean(a.country || "us")
+  ].filter(Boolean).join("|");
+  return line;
+}
+var init_addressCanonicalizer = __esm({
+  "server/lib/addressCanonicalizer.ts"() {
+    "use strict";
+  }
+});
+
+// server/services/localityService.ts
+async function getDefaultZip(userId2) {
+  if (!userId2) return null;
+  try {
+    const { addresses: addresses3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+    const { eq: eq10, and: and6 } = await import("drizzle-orm");
+    const result = await db.select({ postalCode: addresses3.postalCode }).from(addresses3).where(and6(
+      eq10(addresses3.userId, userId2),
+      eq10(addresses3.isDefault, true)
+    )).limit(1);
+    return result[0]?.postalCode ?? null;
+  } catch (error) {
+    console.warn("[LOCALITY] Error fetching default ZIP:", error);
+    return null;
+  }
+}
+async function getCoordinatesFromZip(zip) {
+  try {
+    const canonicalizer = await Promise.resolve().then(() => (init_addressCanonicalizer(), addressCanonicalizer_exports)).catch(() => null);
+    if (!canonicalizer) return {};
+    return {};
+  } catch (error) {
+    console.warn("[LOCALITY] Error geocoding ZIP:", error);
+    return {};
+  }
+}
+function determineUserMode(status, eligible) {
+  if (!eligible) return "NONE";
+  switch (status) {
+    case "LOCAL":
+      return "LOCAL_AND_SHIPPING";
+    // Local users can do both
+    case "OUT_OF_AREA":
+      return "SHIPPING_ONLY";
+    // Remote users can only receive shipping
+    case "UNKNOWN":
+    default:
+      return "NONE";
+  }
+}
+function generateReasons(status, source, zip) {
+  const reasons = [];
+  switch (status) {
+    case "LOCAL":
+      reasons.push(`ZIP ${zip} is in our local delivery area`);
+      if (source === "address") reasons.push("Based on your default address");
+      if (source === "zip") reasons.push("Based on ZIP code check");
+      break;
+    case "OUT_OF_AREA":
+      reasons.push(`ZIP ${zip || "unknown"} is outside our local delivery area`);
+      reasons.push("Shipping-only items available");
+      break;
+    case "UNKNOWN":
+    default:
+      reasons.push("Unable to determine delivery area");
+      if (source === "default") reasons.push("No address or ZIP code provided");
+      break;
+  }
+  return reasons;
+}
+async function getLocalityForRequest(req, zipOverride) {
+  const userId2 = req.user?.id || req.session?.passport?.user || req.session?.userId || null;
+  const asOfISO = (/* @__PURE__ */ new Date()).toISOString();
+  try {
+    const defaultZip = await getDefaultZip(userId2);
+    const overrideZip = zipOverride || req.query.zip;
+    let primaryZip = null;
+    let source = "default";
+    if (overrideZip) {
+      primaryZip = normalizeZip(overrideZip);
+      source = "zip";
+    } else if (defaultZip) {
+      primaryZip = normalizeZip(defaultZip);
+      source = "address";
+    } else {
+      source = "default";
+    }
+    let status;
+    let eligible;
+    if (primaryZip && isLocalZip2(primaryZip)) {
+      status = "LOCAL";
+      eligible = true;
+    } else if (primaryZip) {
+      status = "OUT_OF_AREA";
+      eligible = false;
+    } else {
+      status = "UNKNOWN";
+      eligible = false;
+    }
+    const geoData = primaryZip ? await getCoordinatesFromZip(primaryZip) : {};
+    const effectiveModeForUser = determineUserMode(status, eligible);
+    const reasons = generateReasons(status, source, primaryZip || void 0);
+    const result = {
+      status,
+      source,
+      eligible,
+      zip: primaryZip || void 0,
+      lat: geoData.lat,
+      lon: geoData.lon,
+      distanceMiles: geoData.distanceMiles,
+      effectiveModeForUser,
+      reasons,
+      ssotVersion: SSOT_VERSION,
+      asOfISO
+    };
+    console.log(`[LOCALITY] SSOT evaluation: ${JSON.stringify({
+      userId: userId2 || "guest",
+      status,
+      source,
+      eligible,
+      zip: primaryZip,
+      effectiveModeForUser
+    })}`);
+    return result;
+  } catch (error) {
+    console.error("[LOCALITY] Error in getLocalityForRequest:", error);
+    return {
+      status: "UNKNOWN",
+      source: "default",
+      eligible: false,
+      effectiveModeForUser: "NONE",
+      reasons: ["System error determining locality"],
+      ssotVersion: SSOT_VERSION,
+      asOfISO
+    };
+  }
+}
+var init_localityService = __esm({
+  "server/services/localityService.ts"() {
+    "use strict";
+    init_locality();
+    init_db();
   }
 });
 
@@ -4004,7 +4475,6 @@ var init_addresses = __esm({
     "use strict";
     init_storage();
     init_auth2();
-    init_locality();
     router8 = Router7();
     addressSchema = z3.object({
       firstName: z3.string().min(1, "First name is required"),
@@ -4132,185 +4602,336 @@ var init_addresses = __esm({
   }
 });
 
-// server/services/cartGuard.ts
-function guardCartItemAgainstLocality({
-  userIsLocal,
-  product
-}) {
-  const localOnly = product.is_local_delivery_available && !product.is_shipping_available;
-  if (!userIsLocal && localOnly) {
-    const err = new Error("Local Delivery only. This item isn't available to ship to your address.");
-    err.code = "LOCALITY_RESTRICTED";
-    err.http = 409;
-    throw err;
+// shared/fulfillment.ts
+function modeFromProduct(product) {
+  if (product?.fulfillmentMode) {
+    return product.fulfillmentMode;
+  }
+  const hasLocal = product?.isLocalDeliveryAvailable || product?.is_local_delivery_available;
+  const hasShipping = product?.isShippingAvailable || product?.is_shipping_available;
+  if (hasLocal && hasShipping) {
+    return "LOCAL_AND_SHIPPING";
+  } else if (hasLocal && !hasShipping) {
+    return "LOCAL_ONLY";
+  } else {
+    return "LOCAL_AND_SHIPPING";
   }
 }
-var init_cartGuard = __esm({
-  "server/services/cartGuard.ts"() {
+var init_fulfillment = __esm({
+  "shared/fulfillment.ts"() {
     "use strict";
   }
 });
 
-// server/routes/cart.ts
-var cart_exports = {};
-__export(cart_exports, {
-  default: () => cart_default
+// shared/availability.ts
+function computeEffectiveAvailability(productMode, userMode) {
+  if (userMode === "NONE" && productMode === "LOCAL_AND_SHIPPING") {
+    return "SHIPPING_ONLY";
+  }
+  if (userMode === "NONE") {
+    return "BLOCKED";
+  }
+  if (productMode === "LOCAL_ONLY") {
+    return userMode === "LOCAL_ONLY" || userMode === "LOCAL_AND_SHIPPING" ? "ADD_ALLOWED" : "BLOCKED";
+  }
+  if (productMode === "LOCAL_AND_SHIPPING") {
+    switch (userMode) {
+      case "LOCAL_ONLY":
+        return "PICKUP_ONLY";
+      // Can pickup but not ship
+      case "SHIPPING_ONLY":
+        return "SHIPPING_ONLY";
+      // Can ship but not pickup
+      case "LOCAL_AND_SHIPPING":
+        return "ADD_ALLOWED";
+      // Full access
+      default:
+        return "BLOCKED";
+    }
+  }
+  return "BLOCKED";
+}
+var init_availability = __esm({
+  "shared/availability.ts"() {
+    "use strict";
+  }
 });
-import { Router as Router8 } from "express";
-import { z as z4 } from "zod";
-var router9, addToCartSchema, cart_default;
-var init_cart = __esm({
-  "server/routes/cart.ts"() {
+
+// server/utils/cartOwner.ts
+function getCartOwnerId(req) {
+  const userId2 = req.user?.id;
+  const sessionOwner = req.sessionID;
+  const ownerId = userId2 ?? sessionOwner;
+  if (!ownerId) throw new Error("No cart owner available");
+  return ownerId;
+}
+var init_cartOwner = __esm({
+  "server/utils/cartOwner.ts"() {
+    "use strict";
+  }
+});
+
+// server/services/stockService.ts
+async function getAvailableStock(productId) {
+  const product = await storage.getProduct(productId);
+  if (!product || product.stockQuantity === null || product.stockQuantity === void 0) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  return typeof product.stockQuantity === "number" ? product.stockQuantity : Number.MAX_SAFE_INTEGER;
+}
+var init_stockService = __esm({
+  "server/services/stockService.ts"() {
     "use strict";
     init_storage();
-    init_auth2();
-    init_locality();
-    init_cartGuard();
-    router9 = Router8();
-    addToCartSchema = z4.object({
-      productId: z4.string().min(1),
-      quantity: z4.number().int().min(1).default(1),
-      variantId: z4.string().optional()
+  }
+});
+
+// server/services/cartService.ts
+function keyOf(i) {
+  return `${i.productId}::${i.variantId ?? "NOVAR"}`;
+}
+async function consolidateAndClampCart(ownerId) {
+  const items = await storage.getCartItemsByOwner(ownerId);
+  const byKey = /* @__PURE__ */ new Map();
+  for (const it of items) {
+    const k = keyOf(it);
+    if (!byKey.has(k)) byKey.set(k, { ...it });
+    else byKey.get(k).quantity += it.quantity;
+  }
+  for (const [k, merged] of byKey) {
+    const stock = await getAvailableStock(merged.productId);
+    const clampedQty = Math.max(0, Math.min(merged.quantity, stock));
+    const dupes = items.filter((i) => keyOf(i) === k);
+    for (let idx = 0; idx < dupes.length; idx++) {
+      const d = dupes[idx];
+      if (idx === 0) {
+        await storage.updateCartItemQty(d.id, clampedQty);
+      } else {
+        await storage.removeCartItemById(d.id);
+      }
+    }
+    if (clampedQty === 0) {
+      const canonical = dupes[0];
+      if (canonical) await storage.removeCartItemById(canonical.id);
+    }
+  }
+}
+async function addToCartConsolidating(ownerId, productId, qty, variantId) {
+  if (qty <= 0) throw new Error("Quantity must be positive");
+  const stock = await getAvailableStock(productId);
+  const items = await storage.findCartItems(ownerId, productId, variantId || void 0);
+  const existing = items[0];
+  const newQty = Math.min(stock, (existing?.quantity ?? 0) + qty);
+  if (newQty <= 0) {
+    if (existing) await storage.removeCartItemById(existing.id);
+    return { status: "REMOVED_EMPTY_OR_OUT_OF_STOCK", qty: 0, available: stock };
+  }
+  if (existing) {
+    await storage.updateCartItemQty(existing.id, newQty);
+    for (let i = 1; i < items.length; i++) await storage.removeCartItemById(items[i].id);
+  } else {
+    await storage.createCartItem({ ownerId, productId, variantId: variantId ?? null, quantity: newQty });
+  }
+  const capped = newQty < (existing?.quantity ?? 0) + qty;
+  return { status: capped ? "ADDED_PARTIAL_STOCK_CAP" : "ADDED", qty: newQty, available: stock };
+}
+async function clampCartToStock(ownerId) {
+  await consolidateAndClampCart(ownerId);
+}
+var init_cartService = __esm({
+  "server/services/cartService.ts"() {
+    "use strict";
+    init_storage();
+    init_stockService();
+  }
+});
+
+// server/services/cartCleanup.ts
+var cartCleanup_exports = {};
+__export(cartCleanup_exports, {
+  purgeLocalOnlyItemsIfIneligible: () => purgeLocalOnlyItemsIfIneligible
+});
+async function purgeLocalOnlyItemsIfIneligible(userId2, reason = "unknown") {
+  console.log(`[CART CLEANUP] Starting purge for user=${userId2} reason=${reason}`);
+  try {
+    const { storage: storage3 } = await Promise.resolve().then(() => (init_storage(), storage_exports));
+    const items = await storage3.getCartItemsWithProducts(userId2);
+    console.log(`[CART CLEANUP] Found ${items.length} cart items for user=${userId2}`);
+    const localOnlyItems = items.filter((item) => {
+      if (!item.product) return false;
+      const mode = modeFromProduct(item.product);
+      return mode === "LOCAL_ONLY";
     });
-    router9.get("/", async (req, res) => {
+    console.log(`[CART CLEANUP] Found ${localOnlyItems.length} LOCAL_ONLY items for user=${userId2}`);
+    let removed = 0;
+    for (const item of localOnlyItems) {
+      const result = await storage3.removeFromCartByUserAndProduct(userId2, item.productId);
+      if (result.rowCount > 0) {
+        removed++;
+      }
+    }
+    console.log(`[CART CLEANUP] user=${userId2} removed=${removed} reason=${reason}`);
+    return { removed };
+  } catch (error) {
+    console.error(`[CART CLEANUP] Error for user=${userId2}:`, error);
+    return { removed: 0 };
+  }
+}
+var init_cartCleanup = __esm({
+  "server/services/cartCleanup.ts"() {
+    "use strict";
+    init_fulfillment();
+  }
+});
+
+// server/routes/cart.v2.ts
+var cart_v2_exports = {};
+__export(cart_v2_exports, {
+  cartRouterV2: () => cartRouterV2
+});
+import { Router as Router8 } from "express";
+var cartRouterV2;
+var init_cart_v2 = __esm({
+  "server/routes/cart.v2.ts"() {
+    "use strict";
+    init_fulfillment();
+    init_localityService();
+    init_availability();
+    init_cartOwner();
+    init_cartService();
+    init_storage();
+    cartRouterV2 = Router8();
+    cartRouterV2.post("/items", async (req, res, next) => {
       try {
-        const userId2 = req.user?.id;
-        const sessionId = req.sessionId;
-        if (!userId2 && !sessionId) {
-          return res.json({
-            ok: true,
-            data: { items: [], subtotal: 0, total: 0, id: null, shippingAddressId: null }
+        const { productId, quantity = 1, variantId } = req.body ?? {};
+        if (!productId) return res.status(400).json({ message: "productId required" });
+        if (typeof quantity !== "number") return res.status(400).json({ error: "INVALID_BODY" });
+        const ownerId = getCartOwnerId(req);
+        const product = await storage.getProduct(productId);
+        if (!product) return res.status(404).json({ message: "Product not found" });
+        const locality = await getLocalityForRequest(req);
+        const productMode = modeFromProduct(product);
+        const effectiveness = computeEffectiveAvailability(productMode, locality.effectiveModeForUser);
+        console.log(`[CART ENFORCE V2] SSOT evaluation: { ownerId:'${ownerId}', productId:'${productId}', productMode:'${productMode}', userMode:'${locality.effectiveModeForUser}', effectiveness:'${effectiveness}' }`);
+        if (effectiveness === "BLOCKED") {
+          console.log(`[CART ELIGIBILITY_REJECT] { productId:'${productId}', ownerId:'${ownerId}', userMode:'${locality.effectiveModeForUser}', productMode:'${productMode}', reasons:${JSON.stringify(locality.reasons)} }`);
+          return res.status(422).json({
+            error: "INELIGIBLE",
+            reasons: locality.reasons,
+            locality
+            // Include full locality context
           });
         }
-        const cart = await storage.getCart(userId2 || sessionId);
-        res.json({
+        console.log(`[CART ENFORCE V2] ADD_ALLOWED for ${productId} by ${ownerId}`);
+        const result = await addToCartConsolidating(ownerId, productId, quantity, variantId);
+        if (result.status === "ADDED_PARTIAL_STOCK_CAP") {
+          return res.status(201).json({
+            ok: true,
+            ...result,
+            warning: "Requested quantity capped by stock",
+            locality
+          });
+        }
+        return res.status(201).json({
           ok: true,
-          data: {
-            items: cart?.items || [],
-            subtotal: cart?.subtotal || 0
-          }
+          ...result,
+          locality
         });
-      } catch (error) {
-        console.error("GET /api/cart error:", error);
-        res.status(500).json({
-          message: "Failed to fetch cart",
-          items: [],
-          subtotal: 0
-        });
+      } catch (e) {
+        console.error("[CART ENFORCE V2] Error:", e);
+        next(e);
       }
     });
-    router9.post("/", isAuthenticated, async (req, res) => {
+    cartRouterV2.get("/", async (req, res, next) => {
       try {
-        const userId2 = req.user.id;
-        const data = addToCartSchema.parse(req.body);
-        const addresses3 = await storage.getUserAddresses(userId2);
-        const defaultAddress = addresses3.find((addr) => addr.isDefault);
-        const localityResult = defaultAddress ? isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : { isLocal: false };
-        const product = await storage.getProduct(data.productId);
+        const ownerId = getCartOwnerId(req);
+        const locality = await getLocalityForRequest(req);
+        await clampCartToStock(ownerId);
+        let purgeInfo = { purgedLocalOnly: false, removed: 0 };
+        if (req.session?.user?.id) {
+          const { purgeLocalOnlyItemsIfIneligible: purgeLocalOnlyItemsIfIneligible2 } = await Promise.resolve().then(() => (init_cartCleanup(), cartCleanup_exports));
+          try {
+            const purgeResult = await purgeLocalOnlyItemsIfIneligible2(ownerId, locality);
+            purgeInfo = { purgedLocalOnly: purgeResult.removed > 0, removed: purgeResult.removed };
+          } catch (purgeError) {
+            console.warn("[CART V2] Auto-purge failed:", purgeError);
+          }
+        }
+        const cart = await storage.getCartByOwner(ownerId);
+        const cartWithContext = {
+          ...cart,
+          ownerId,
+          locality,
+          ...purgeInfo
+        };
+        res.json(cartWithContext);
+      } catch (e) {
+        console.error("[CART V2] Error in GET:", e);
+        next(e);
+      }
+    });
+    cartRouterV2.delete("/items/:id", async (req, res, next) => {
+      try {
+        const ownerId = getCartOwnerId(req);
+        const { id } = req.params;
+        const item = await storage.getCartItemById(id);
+        if (!item || item.ownerId !== ownerId) {
+          return res.status(404).json({ error: "NOT_FOUND" });
+        }
+        await storage.removeCartItemById(id);
+        return res.json({ ok: true });
+      } catch (e) {
+        console.error("[CART V2] DELETE by id error:", e);
+        next(e);
+      }
+    });
+    cartRouterV2.put("/items/:itemId", async (req, res, next) => {
+      try {
+        const { quantity } = req.body;
+        const itemId = req.params.itemId;
+        const { storage: storage3 } = await Promise.resolve().then(() => (init_storage(), storage_exports));
+        if (!quantity || quantity < 0) {
+          return res.status(400).json({ error: "Invalid quantity" });
+        }
+        const cartItems2 = await storage3.getCartItems(
+          req.session?.user?.id || void 0,
+          req.session?.id || "anonymous"
+        );
+        const currentItem = cartItems2.find((item) => item.id === itemId);
+        if (!currentItem) {
+          return res.status(404).json({ error: "Cart item not found" });
+        }
+        const product = await storage3.getProduct(currentItem.productId);
         if (!product) {
           return res.status(404).json({ error: "Product not found" });
         }
-        try {
-          guardCartItemAgainstLocality({
-            userIsLocal: localityResult.isLocal,
-            product: {
-              is_local_delivery_available: product.isLocalDeliveryAvailable,
-              is_shipping_available: product.isShippingAvailable
-            }
+        if (product.stockQuantity !== null && quantity > product.stockQuantity) {
+          return res.status(422).json({
+            error: "INSUFFICIENT_STOCK",
+            available: product.stockQuantity,
+            requested: quantity,
+            message: `Only ${product.stockQuantity} item(s) available in stock`
           });
-        } catch (error) {
-          if (error.code === "LOCALITY_RESTRICTED") {
-            return res.status(409).json({
-              error: error.message,
-              code: "LOCALITY_RESTRICTED"
-            });
-          }
-          throw error;
         }
-        const cart = await storage.addToCartLegacy(userId2, data.productId, data.quantity);
-        res.json({
-          ok: true,
-          data: {
-            items: cart.items,
-            subtotal: cart.subtotal
-          }
-        });
-      } catch (error) {
-        console.error("POST /api/cart error:", error);
-        res.status(400).json({
-          message: error instanceof z4.ZodError ? "Invalid request data" : "Failed to add to cart"
-        });
+        const updatedItem = await storage3.updateCartItem(itemId, quantity);
+        res.json(updatedItem);
+      } catch (e) {
+        console.error("[CART V2] Update error:", e);
+        next(e);
       }
     });
-    router9.patch("/:itemId", isAuthenticated, async (req, res) => {
+    cartRouterV2.delete("/product/:productId", async (req, res, next) => {
       try {
-        const userId2 = req.user.id;
-        const { itemId } = req.params;
-        const { quantity } = z4.object({ quantity: z4.number().int().min(0) }).parse(req.body);
-        const cart = await storage.updateCartItemLegacy(userId2, itemId, quantity);
-        res.json({
-          ok: true,
-          data: {
-            items: cart.items,
-            subtotal: cart.subtotal
-          }
-        });
-      } catch (error) {
-        console.error("PATCH /api/cart/:itemId error:", error);
-        res.status(400).json({ message: "Failed to update cart item" });
+        const ownerId = getCartOwnerId(req);
+        const { productId } = req.params;
+        const removed = await storage.removeCartItemsByProduct(ownerId, productId);
+        console.log(`[CART ENFORCE V2] compound DELETE { ownerId:'${ownerId}', productId:'${productId}', removed:${removed} }`);
+        return res.json({ ok: true, removed });
+      } catch (err) {
+        console.error("[CART V2] DELETE by product error:", err);
+        next(err);
       }
     });
-    router9.delete("/:itemId", isAuthenticated, async (req, res) => {
-      try {
-        const userId2 = req.user.id;
-        const { itemId } = req.params;
-        const cart = await storage.removeFromCartLegacy(userId2, itemId);
-        res.json({
-          ok: true,
-          data: {
-            items: cart.items,
-            subtotal: cart.subtotal
-          }
-        });
-      } catch (error) {
-        console.error("DELETE /api/cart/:itemId error:", error);
-        res.status(400).json({
-          ok: false,
-          error: "REMOVAL_FAILED",
-          message: "Failed to remove item from cart"
-        });
-      }
-    });
-    router9.post("/validate", isAuthenticated, async (req, res) => {
-      try {
-        const userId2 = req.user.id;
-        const cart = await storage.getCart(userId2);
-        const issues2 = [];
-        for (const item of cart?.items || []) {
-          const product = await storage.getProduct(item.productId);
-          if (!product) {
-            issues2.push(`Product ${item.productId} no longer available`);
-          } else if ((product.stockQuantity || 0) < item.quantity) {
-            issues2.push(`${product.name}: Only ${product.stockQuantity || 0} available (requested ${item.quantity})`);
-          }
-        }
-        res.json({
-          ok: true,
-          data: {
-            valid: issues2.length === 0,
-            issues: issues2
-          }
-        });
-      } catch (error) {
-        console.error("POST /api/cart/validate error:", error);
-        res.status(500).json({
-          ok: false,
-          error: "VALIDATION_FAILED",
-          message: "Failed to validate cart"
-        });
-      }
-    });
-    cart_default = router9;
   }
 });
 
@@ -4319,30 +4940,40 @@ var ensureSession_exports = {};
 __export(ensureSession_exports, {
   ensureSession: () => ensureSession
 });
-import { v4 as uuid } from "uuid";
-function ensureSession(req, res, next) {
-  if (req.user) {
-    return next();
-  }
-  const sid = req.cookies?.sid;
-  if (!sid) {
-    const newSid = `guest-${Date.now()}-${uuid()}`;
-    res.cookie("sid", newSid, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1e3
-      // 7 days
-    });
-    req.sessionId = newSid;
-  } else {
-    req.sessionId = sid;
-  }
-  next();
+function ensureSession(req, _res, next) {
+  if (!req.session) return next(new Error("Session not initialized"));
+  req.sessionId = req.sessionID;
+  return next();
 }
 var init_ensureSession = __esm({
   "server/middleware/ensureSession.ts"() {
     "use strict";
+  }
+});
+
+// server/services/cartMigrate.ts
+var cartMigrate_exports = {};
+__export(cartMigrate_exports, {
+  migrateLegacySidCartIfPresent: () => migrateLegacySidCartIfPresent
+});
+async function migrateLegacySidCartIfPresent(req) {
+  const legacySid = req.cookies?.sid;
+  const newOwner = req.sessionID;
+  if (!legacySid || !newOwner || legacySid === newOwner) return;
+  const legacyItems = await storage.getCartItemsByOwner(legacySid);
+  if (!legacyItems?.length) return;
+  console.log(`[CART MIGRATE] Moving ${legacyItems.length} items from legacy sid ${legacySid} to ${newOwner}`);
+  for (const it of legacyItems) {
+    await storage.rekeyCartItemOwner(it.id, newOwner);
+  }
+  await consolidateAndClampCart(newOwner);
+  console.log(`[CART MIGRATE] Migration completed for ${newOwner}`);
+}
+var init_cartMigrate = __esm({
+  "server/services/cartMigrate.ts"() {
+    "use strict";
+    init_storage();
+    init_cartService();
   }
 });
 
@@ -4356,7 +4987,7 @@ function haversineMiles(a, b) {
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
-var init_distance2 = __esm({
+var init_distance = __esm({
   "src/utils/distance.ts"() {
     "use strict";
   }
@@ -4368,31 +4999,31 @@ __export(shipping_exports, {
   default: () => shipping_default
 });
 import express3 from "express";
-import { z as z5 } from "zod";
+import { z as z4 } from "zod";
 import { eq as eq7 } from "drizzle-orm";
-var requireAuth2, router10, WAREHOUSE_COORDS, LOCAL_DELIVERY_MAX_MILES, ShippingQuoteSchema, shipping_default;
-var init_shipping2 = __esm({
+var requireAuth2, router9, WAREHOUSE_COORDS, LOCAL_DELIVERY_MAX_MILES, ShippingQuoteSchema, shipping_default;
+var init_shipping = __esm({
   "server/routes/shipping.ts"() {
     "use strict";
     init_db();
     init_schema();
     init_auth2();
-    init_distance2();
+    init_distance();
     ({ requireAuth: requireAuth2 } = authMiddleware);
-    router10 = express3.Router();
+    router9 = express3.Router();
     WAREHOUSE_COORDS = { lat: 40.7128, lon: -74.006 };
     LOCAL_DELIVERY_MAX_MILES = 50;
-    ShippingQuoteSchema = z5.object({
-      addressId: z5.string().optional(),
+    ShippingQuoteSchema = z4.object({
+      addressId: z4.string().optional(),
       // For "new address" flow
-      street1: z5.string().optional(),
-      city: z5.string().optional(),
-      state: z5.string().optional(),
-      postalCode: z5.string().optional(),
-      latitude: z5.number().optional(),
-      longitude: z5.number().optional()
+      street1: z4.string().optional(),
+      city: z4.string().optional(),
+      state: z4.string().optional(),
+      postalCode: z4.string().optional(),
+      latitude: z4.number().optional(),
+      longitude: z4.number().optional()
     });
-    router10.post("/quote", requireAuth2, async (req, res) => {
+    router9.post("/quote", requireAuth2, async (req, res) => {
       try {
         const userId2 = req.user.id;
         const validatedData = ShippingQuoteSchema.parse(req.body);
@@ -4459,7 +5090,7 @@ var init_shipping2 = __esm({
         res.status(500).json({ error: "Failed to generate shipping quote" });
       }
     });
-    router10.get("/user/locality", requireAuth2, async (req, res) => {
+    router9.get("/user/locality", requireAuth2, async (req, res) => {
       try {
         const userId2 = req.user.id;
         const defaultAddress = await db.select().from(addresses).where(eq7(addresses.userId, userId2)).where(eq7(addresses.isDefault, true)).limit(1);
@@ -4478,63 +5109,26 @@ var init_shipping2 = __esm({
         res.status(500).json({ error: "Failed to check locality" });
       }
     });
-    shipping_default = router10;
+    shipping_default = router9;
   }
 });
 
-// server/middleware/performanceOptimization.ts
-var performanceOptimization_exports = {};
-__export(performanceOptimization_exports, {
-  addCacheHeaders: () => addCacheHeaders,
-  optimizedSlowRequestMonitoring: () => optimizedSlowRequestMonitoring
-});
-function optimizedSlowRequestMonitoring(req, res, next) {
-  if (IGNORE_PATTERNS.some((pattern) => pattern.test(req.path))) {
-    return next();
+// server/services/cartGuard.ts
+function guardCartItemAgainstLocality({
+  userIsLocal,
+  product
+}) {
+  const localOnly = product.is_local_delivery_available && !product.is_shipping_available;
+  if (!userIsLocal && localOnly) {
+    const err = new Error("Local Delivery only. This item isn't available to ship to your address.");
+    err.code = "LOCALITY_RESTRICTED";
+    err.http = 409;
+    throw err;
   }
-  const startTime = process.hrtime.bigint();
-  res.on("finish", () => {
-    const durationMs = Number(process.hrtime.bigint() - startTime) / 1e6;
-    if (durationMs > 1e3) {
-      console.warn(`[PERF] Slow request: ${req.method} ${req.path} took ${durationMs.toFixed(0)}ms`);
-    }
-  });
-  next();
 }
-function addCacheHeaders(maxAge = 300) {
-  return (req, res, next) => {
-    res.setHeader("Cache-Control", `public, max-age=${maxAge}, stale-while-revalidate=60`);
-    next();
-  };
-}
-var IGNORE_PATTERNS;
-var init_performanceOptimization = __esm({
-  "server/middleware/performanceOptimization.ts"() {
+var init_cartGuard = __esm({
+  "server/services/cartGuard.ts"() {
     "use strict";
-    IGNORE_PATTERNS = [
-      /^\/@/,
-      // Vite internal
-      /^\/src\//,
-      // Source files  
-      /^\/node_modules\//,
-      // Dependencies
-      /^\/assets\//,
-      // Static assets
-      /^\/favicon/,
-      // Favicon requests
-      /\.js$/,
-      // JS files
-      /\.css$/,
-      // CSS files
-      /\.map$/,
-      // Source maps
-      /\.png$/,
-      // Images
-      /\.jpg$/,
-      // Images
-      /\.svg$/
-      // SVG files
-    ];
   }
 });
 
@@ -4544,16 +5138,15 @@ __export(cart_validation_exports, {
   default: () => cart_validation_default
 });
 import { Router as Router9 } from "express";
-var router11, cart_validation_default;
+var router10, cart_validation_default;
 var init_cart_validation = __esm({
   "server/routes/cart-validation.ts"() {
     "use strict";
     init_auth();
     init_storage();
-    init_locality();
     init_cartGuard();
-    router11 = Router9();
-    router11.post("/validate", requireAuth, async (req, res) => {
+    router10 = Router9();
+    router10.post("/validate", requireAuth, async (req, res) => {
       try {
         const userId2 = req.user.id;
         const addresses3 = await storage.getUserAddresses(userId2);
@@ -4590,7 +5183,40 @@ var init_cart_validation = __esm({
         res.status(500).json({ error: "Failed to validate cart" });
       }
     });
-    cart_validation_default = router11;
+    cart_validation_default = router10;
+  }
+});
+
+// server/utils/auth.ts
+function getUserIdFromReq(req) {
+  return req.user?.id || req.session?.userId || req.auth?.userId || null;
+}
+var init_auth3 = __esm({
+  "server/utils/auth.ts"() {
+    "use strict";
+  }
+});
+
+// server/utils/_diagnostic.ts
+var diagnostic_exports = {};
+__export(diagnostic_exports, {
+  addDiagnosticRoutes: () => addDiagnosticRoutes
+});
+function addDiagnosticRoutes(app2) {
+  app2.get("/api/_whoami", (req, res) => res.json({
+    user: getUserIdFromReq(req) || "guest",
+    hasSessionCookie: Boolean(req.headers.cookie?.includes("cf.sid")),
+    sessionId: req.sessionID
+  }));
+  app2.get("/api/_route-health", (req, res) => res.json({
+    cartPost: "v2",
+    localitySource: "shared/evaluateLocality"
+  }));
+}
+var init_diagnostic = __esm({
+  "server/utils/_diagnostic.ts"() {
+    "use strict";
+    init_auth3();
   }
 });
 
@@ -4773,10 +5399,10 @@ var init_systemMonitor = __esm({
 // server/routes/admin/system-management.ts
 var system_management_exports = {};
 __export(system_management_exports, {
-  systemManagementRoutes: () => router12
+  systemManagementRoutes: () => router11
 });
 import { Router as Router10 } from "express";
-var router12;
+var router11;
 var init_system_management = __esm({
   "server/routes/admin/system-management.ts"() {
     "use strict";
@@ -4785,10 +5411,10 @@ var init_system_management = __esm({
     init_performanceMonitor();
     init_errorLogger();
     init_logger();
-    router12 = Router10();
-    router12.use(requireAuth);
-    router12.use(requireRole("developer"));
-    router12.get("/health", async (req, res) => {
+    router11 = Router10();
+    router11.use(requireAuth);
+    router11.use(requireRole("developer"));
+    router11.get("/health", async (req, res) => {
       try {
         const systemHealth = await SystemMonitor.getSystemHealth();
         const performanceStats = PerformanceMonitor.getSystemStats();
@@ -4805,7 +5431,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get system health" });
       }
     });
-    router12.get("/performance", async (req, res) => {
+    router11.get("/performance", async (req, res) => {
       try {
         const { timeWindow = "hour", metricName, limit = 1e3 } = req.query;
         const summary = PerformanceMonitor.getMetricsSummary(timeWindow);
@@ -4822,7 +5448,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get performance metrics" });
       }
     });
-    router12.get("/alerts", async (req, res) => {
+    router11.get("/alerts", async (req, res) => {
       try {
         const { resolved = false } = req.query;
         const alerts = resolved === "true" ? SystemMonitor.getAllAlerts() : SystemMonitor.getActiveAlerts();
@@ -4835,7 +5461,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get system alerts" });
       }
     });
-    router12.post("/alerts/:alertId/resolve", async (req, res) => {
+    router11.post("/alerts/:alertId/resolve", async (req, res) => {
       try {
         const { alertId } = req.params;
         const resolved = SystemMonitor.resolveAlert(alertId);
@@ -4849,7 +5475,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to resolve alert" });
       }
     });
-    router12.post("/alerts/cleanup", async (req, res) => {
+    router11.post("/alerts/cleanup", async (req, res) => {
       try {
         const clearedCount = SystemMonitor.clearResolvedAlerts();
         res.json({
@@ -4861,7 +5487,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to cleanup alerts" });
       }
     });
-    router12.get("/database", async (req, res) => {
+    router11.get("/database", async (req, res) => {
       try {
         const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
         const startTime = Date.now();
@@ -4906,7 +5532,7 @@ var init_system_management = __esm({
         });
       }
     });
-    router12.get("/logs", async (req, res) => {
+    router11.get("/logs", async (req, res) => {
       try {
         const {
           level = "info",
@@ -4928,7 +5554,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get system logs" });
       }
     });
-    router12.post("/diagnostics", async (req, res) => {
+    router11.post("/diagnostics", async (req, res) => {
       try {
         const diagnostics = {
           timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -5074,6 +5700,15 @@ var init_websocket = __esm({
       publish(data) {
         for (const c of this.clients.values()) this.safeSend(c, data);
       }
+      // New publish method with type/payload format for future compatibility
+      publishMessage(type, payload) {
+        const message = { type, payload };
+        for (const c of this.clients.values()) {
+          if (c.ws.readyState === c.ws.OPEN) {
+            c.ws.send(JSON.stringify(message));
+          }
+        }
+      }
       publishToRole(role, data) {
         for (const c of this.clients.values()) if (c.role === role) this.safeSend(c, data);
       }
@@ -5190,6 +5825,31 @@ function setupProductionOptimizations(app2) {
 }
 var init_compression = __esm({
   "server/middleware/compression.ts"() {
+    "use strict";
+  }
+});
+
+// server/middleware/error-handler.ts
+var error_handler_exports = {};
+__export(error_handler_exports, {
+  jsonErrorHandler: () => jsonErrorHandler
+});
+function jsonErrorHandler(err, req, res, _next) {
+  const status = Number(err?.status || err?.statusCode || 500);
+  const code = err?.code || "INTERNAL_ERROR";
+  const payload = {
+    ok: false,
+    code,
+    message: err?.message || "Unexpected server error"
+  };
+  if (process.env.NODE_ENV !== "production") {
+    payload.stack = err?.stack;
+    payload.path = req.originalUrl;
+  }
+  res.status(status).type("application/json").send(payload);
+}
+var init_error_handler = __esm({
+  "server/middleware/error-handler.ts"() {
     "use strict";
   }
 });
@@ -5831,106 +6491,7 @@ function setupCompression(app2) {
 
 // server/config/health.ts
 init_db();
-
-// server/lib/cache.ts
-var MemoryCache = class {
-  cache = /* @__PURE__ */ new Map();
-  async get(key) {
-    const item = this.cache.get(key);
-    if (!item) return null;
-    if (item.expires && Date.now() > item.expires) {
-      this.cache.delete(key);
-      return null;
-    }
-    return item.value;
-  }
-  async set(key, value, ttl) {
-    const expires = ttl ? Date.now() + ttl * 1e3 : void 0;
-    this.cache.set(key, { value, expires });
-    if (ttl) {
-      setTimeout(() => this.cache.delete(key), ttl * 1e3);
-    }
-  }
-  async del(key) {
-    this.cache.delete(key);
-  }
-  async clear() {
-    this.cache.clear();
-  }
-};
-var RedisCache = class {
-  constructor(client) {
-    this.client = client;
-  }
-  async get(key) {
-    try {
-      const cached = await this.client.get(key);
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  }
-  async set(key, value, ttl) {
-    try {
-      if (ttl) {
-        await this.client.setEx(key, ttl, JSON.stringify(value));
-      } else {
-        await this.client.set(key, JSON.stringify(value));
-      }
-    } catch {
-    }
-  }
-  async del(key) {
-    try {
-      await this.client.del(key);
-    } catch {
-    }
-  }
-  async clear() {
-    try {
-      await this.client.flushDb();
-    } catch {
-    }
-  }
-};
-var cacheInstance;
-function initializeCache(redisClient2) {
-  if (redisClient2 && process.env.ENABLE_REDIS === "true") {
-    cacheInstance = new RedisCache(redisClient2);
-  } else {
-    cacheInstance = new MemoryCache();
-  }
-  return cacheInstance;
-}
-function getCache() {
-  if (!cacheInstance) {
-    cacheInstance = new MemoryCache();
-  }
-  return cacheInstance;
-}
-
-// server/config/cache.ts
-var cache = getCache();
-async function getCachedCategories() {
-  try {
-    return await cache.get("categories:active");
-  } catch (error) {
-    console.error("Cache get operation failed:", error);
-    return null;
-  }
-}
-async function setCachedCategories(categories2) {
-  try {
-    await cache.set("categories:active", categories2, 300);
-  } catch (error) {
-    console.error("Cache set operation failed:", error);
-  }
-}
-async function closeRedisConnection() {
-}
-var redis = null;
-
-// server/config/health.ts
+init_cache2();
 import { sql as sql4 } from "drizzle-orm";
 async function healthLive(req, res) {
   res.json({
@@ -6484,7 +7045,6 @@ init_error_management();
 
 // server/routes/checkout.ts
 init_storage();
-init_locality();
 import { Router as Router5 } from "express";
 import { z as z2 } from "zod";
 var router6 = Router5();
@@ -6570,45 +7130,26 @@ router6.post("/submit", async (req, res) => {
 var checkout_default = router6;
 
 // server/routes/locality.ts
-init_storage();
-init_locality();
+init_localityService();
+init_auth2();
 import { Router as Router6 } from "express";
 var router7 = Router6();
-router7.get("/status", async (req, res) => {
+router7.get("/status", authMiddleware.optionalAuth, async (req, res) => {
   try {
-    const user = req.user;
-    if (!user) {
-      return res.status(200).json({
-        isLocal: false,
-        hasAddress: false,
-        distanceMiles: null,
-        defaultAddressId: null,
-        authenticated: false
-      });
-    }
-    const userId2 = user.id;
-    const addresses3 = await storage.getUserAddresses(userId2);
-    const defaultAddress = addresses3.find((addr) => addr.isDefault);
-    if (!defaultAddress) {
-      return res.json({
-        isLocal: false,
-        distanceMiles: null,
-        hasAddress: false,
-        defaultAddressId: null,
-        authenticated: true
-      });
-    }
-    const localityResult = isLocalMiles(Number(defaultAddress.latitude), Number(defaultAddress.longitude));
-    res.json({
-      isLocal: localityResult.isLocal,
-      distanceMiles: localityResult.distanceMiles,
-      hasAddress: true,
-      defaultAddressId: defaultAddress.id,
-      authenticated: true
-    });
+    const zipOverride = req.query.zip;
+    const localityResult = await getLocalityForRequest(req, zipOverride);
+    res.json(localityResult);
   } catch (error) {
-    console.error("Error checking locality status:", error);
-    res.status(500).json({ error: "Failed to check locality status" });
+    console.error("[LOCALITY] Error in /api/locality/status:", error);
+    res.status(500).json({
+      status: "UNKNOWN",
+      source: "default",
+      eligible: false,
+      effectiveModeForUser: "NONE",
+      reasons: ["System error determining locality"],
+      ssotVersion: "v2024.1",
+      asOfISO: (/* @__PURE__ */ new Date()).toISOString()
+    });
   }
 });
 var locality_default = router7;
@@ -6752,6 +7293,9 @@ var initRedis = async () => {
   }
 };
 
+// server/routes.ts
+init_cache();
+
 // server/config/search.ts
 init_db();
 init_logger();
@@ -6797,7 +7341,11 @@ async function initializeSearchIndexes() {
   }
 }
 
+// server/routes.ts
+init_cache2();
+
 // server/config/graceful-shutdown.ts
+init_cache2();
 var server;
 function registerGracefulShutdown(httpServer) {
   server = httpServer;
@@ -6891,6 +7439,15 @@ async function registerRoutes(app2) {
     Logger.warn("Some enhanced middleware failed to load:", error);
   }
   app2.use(cors(corsOptions));
+  app2.use((req, res, next) => {
+    if (req.url.startsWith("/api/")) {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      res.setHeader("Surrogate-Control", "no-store");
+    }
+    next();
+  });
   app2.use(performanceMonitoring);
   app2.use(preventXSS);
   app2.use(preventSQLInjection);
@@ -6901,21 +7458,40 @@ async function registerRoutes(app2) {
   app2.use("/api/stripe", stripe_webhooks_default);
   const addressRoutes = await Promise.resolve().then(() => (init_addresses(), addresses_exports));
   app2.use("/api/addresses", addressRoutes.default);
-  const cartRoutes = await Promise.resolve().then(() => (init_cart(), cart_exports));
+  const { cartRouterV2: cartRouterV22 } = await Promise.resolve().then(() => (init_cart_v2(), cart_v2_exports));
   const { ensureSession: ensureSession2 } = await Promise.resolve().then(() => (init_ensureSession(), ensureSession_exports));
-  app2.use("/api/cart", ensureSession2, cartRoutes.default);
-  const shippingRoutes = await Promise.resolve().then(() => (init_shipping2(), shipping_exports));
+  const { migrateLegacySidCartIfPresent: migrateLegacySidCartIfPresent2 } = await Promise.resolve().then(() => (init_cartMigrate(), cartMigrate_exports));
+  app2.use("/api/cart", ensureSession2);
+  app2.use("/api/cart", async (req, _res, next) => {
+    try {
+      await migrateLegacySidCartIfPresent2(req);
+      next();
+    } catch (e) {
+      next(e);
+    }
+  });
+  app2.use("/api/cart", cartRouterV22);
+  app2.use("/api/cart-legacy", (req, res, next) => {
+    console.log(`[DEPRECATED] Legacy cart route hit: ${req.method} ${req.url} - should be migrated to V2`);
+    res.status(410).json({
+      error: "DEPRECATED_ROUTE",
+      message: "This cart API version has been deprecated. Please use the current API.",
+      migrationGuide: "Contact support for migration assistance"
+    });
+  });
+  const shippingRoutes = await Promise.resolve().then(() => (init_shipping(), shipping_exports));
   app2.use("/api/shipping", shippingRoutes.default);
   const observabilityRoutes = await Promise.resolve().then(() => (init_observability(), observability_exports));
   app2.use("/api/observability", observabilityRoutes.default);
   app2.use("/api/checkout", checkout_default);
-  const { addCacheHeaders: addCacheHeaders2 } = await Promise.resolve().then(() => (init_performanceOptimization(), performanceOptimization_exports));
-  app2.use("/api/locality", addCacheHeaders2(300), locality_default);
+  app2.use("/api/locality", locality_default);
   const cartValidationRoutes = await Promise.resolve().then(() => (init_cart_validation(), cart_validation_exports));
   app2.use("/api/cart", cartValidationRoutes.default);
   app2.use("/api/admin", admin_metrics_default);
   app2.use("/api/admin", error_management_default);
   await initializeSearchIndexes();
+  const { addDiagnosticRoutes: addDiagnosticRoutes2 } = await Promise.resolve().then(() => (init_diagnostic(), diagnostic_exports));
+  addDiagnosticRoutes2(app2);
   app2.get("/health", healthLive);
   app2.get("/health/live", healthLive);
   app2.get("/health/ready", healthReady);
@@ -7300,13 +7876,7 @@ async function registerRoutes(app2) {
   app2.get("/api/products/featured", apiLimiter, async (req, res) => {
     try {
       const limit = req.query.limit ? Number(req.query.limit) : 8;
-      const key = `products:featured:${limit}`;
-      const hit = apiCache.get(key);
-      if (hit) {
-        return res.json(hit);
-      }
       const products2 = await storage.getFeaturedProducts(limit);
-      apiCache.set(key, products2);
       res.json(products2);
     } catch (error) {
       Logger.error("Error fetching featured products", error);
@@ -7363,66 +7933,6 @@ async function registerRoutes(app2) {
     } catch (error) {
       Logger.error("Error fetching cart", error);
       res.status(500).json({ message: "Failed to fetch cart" });
-    }
-  });
-  app2.post("/api/cart/items", authMiddleware.optionalAuth, async (req, res) => {
-    try {
-      Logger.info(`[CART DEBUG] POST /api/cart/items reached handler - body: ${JSON.stringify(req.body)}, productId: ${req.body?.productId}, quantity: ${req.body?.quantity}`);
-      const { productId, quantity = 1 } = req.body;
-      if (!productId) {
-        Logger.warn(`[CART DEBUG] Missing productId in request`);
-        return res.status(400).json({ error: "Product ID is required" });
-      }
-      if (!quantity || quantity < 1) {
-        Logger.warn(`[CART DEBUG] Invalid quantity: ${quantity}`);
-        return res.status(400).json({ error: "Valid quantity is required" });
-      }
-      const userId2 = req.user?.id;
-      if (!userId2) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-      Logger.debug(`Cart request - userId: ${userId2}, productId: ${productId}, quantity: ${quantity}`);
-      const product = await storage.getProduct(productId);
-      if (!product) {
-        return res.status(404).json({ error: "Product not found" });
-      }
-      if ((product.stockQuantity || 0) < 1) {
-        return res.status(400).json({ error: "Product not available" });
-      }
-      const existingItem = await storage.getCartItem(userId2, null, productId);
-      if (existingItem) {
-        const newQuantity = existingItem.quantity + quantity;
-        const availableStock = product.stockQuantity || 0;
-        if (newQuantity > availableStock) {
-          return res.status(400).json({
-            error: `Only ${availableStock} available. You have ${existingItem.quantity} in cart.`
-          });
-        }
-        const updated = await storage.updateCartItem(existingItem.id, newQuantity);
-        broadcastCartUpdate(userId2);
-        return res.json(updated);
-      } else {
-        if (quantity > (product.stockQuantity || 0)) {
-          return res.status(400).json({
-            error: `Only ${product.stockQuantity || 0} available`
-          });
-        }
-        const cartItemData = {
-          productId,
-          quantity,
-          userId: userId2,
-          sessionId: null
-        };
-        const validatedData = insertCartItemSchema.parse(cartItemData);
-        const cartItem = await storage.addToCart(validatedData);
-        broadcastCartUpdate(userId2);
-        return res.json(cartItem);
-      }
-    } catch (error) {
-      Logger.error("[CART DEBUG] Error adding to cart", error);
-      const errorMessage = error?.message || "Failed to add to cart";
-      Logger.error(`[CART DEBUG] Sending error response: ${errorMessage}`);
-      res.status(500).json({ error: errorMessage });
     }
   });
   app2.patch("/api/cart/items/:productId", requireAuth, async (req, res) => {
@@ -8092,6 +8602,9 @@ async function registerRoutes(app2) {
         createdAt: products.createdAt,
         updatedAt: products.updatedAt,
         categoryId: products.categoryId,
+        featured: products.featured,
+        isLocalDeliveryAvailable: products.isLocalDeliveryAvailable,
+        isShippingAvailable: products.isShippingAvailable,
         category: {
           id: categories.id,
           name: categories.name
@@ -8146,7 +8659,10 @@ async function registerRoutes(app2) {
           updatedAt: product.updatedAt,
           category: product.category?.name || "Uncategorized",
           categoryId: product.categoryId,
-          status: (product.stockQuantity || 0) > 0 ? "active" : "inactive"
+          status: (product.stockQuantity || 0) > 0 ? "active" : "inactive",
+          featured: product.featured,
+          isLocalDeliveryAvailable: product.isLocalDeliveryAvailable,
+          isShippingAvailable: product.isShippingAvailable
         })),
         pagination: {
           page: parseInt(page),
@@ -8265,6 +8781,13 @@ async function registerRoutes(app2) {
     try {
       const { id } = req.params;
       await storage.deleteProduct(id);
+      try {
+        const { clearProductCache: clearProductCache3 } = await Promise.resolve().then(() => (init_cache2(), cache_exports));
+        await clearProductCache3(id);
+        Logger.info("Cache cleared successfully for deleted product:", id);
+      } catch (error) {
+        Logger.warn("Cache clearing failed (non-critical):", error);
+      }
       try {
         if (wsManager3?.publish) {
           wsManager3.publish({
@@ -8779,6 +9302,13 @@ async function registerRoutes(app2) {
         Logger.debug(`Creating product with data: ${JSON.stringify(productData)}`);
         const newProduct = await storage.createProduct(productData);
         try {
+          const { clearProductCache: clearProductCache3 } = await Promise.resolve().then(() => (init_cache2(), cache_exports));
+          await clearProductCache3();
+          Logger.info("Cache cleared successfully for new product:", newProduct.id);
+        } catch (error) {
+          Logger.warn("Cache clearing failed (non-critical):", error);
+        }
+        try {
           if (wsManager3?.publish) {
             wsManager3.publish({
               topic: "product:update",
@@ -8802,47 +9332,85 @@ async function registerRoutes(app2) {
     async (req, res) => {
       try {
         const { id } = req.params;
-        const updateData = {
-          ...req.body,
-          price: parseFloat(req.body.price) || 0,
-          stockQuantity: parseInt(req.body.stockQuantity) || 0,
-          weight: parseFloat(req.body.weight) || 0
+        const b = req.body ?? {};
+        const safeBool = (val, defaultVal = false) => {
+          if (typeof val === "boolean") return val;
+          if (typeof val === "string") return val.toLowerCase() === "true";
+          return !!val || defaultVal;
         };
-        if ("images" in req.body) {
-          if (req.body.images && req.body.images.length > 0) {
-            const images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-            updateData.images = images.filter((img) => {
-              if (typeof img === "string") {
-                return img.trim() !== "";
-              } else if (img && typeof img === "object" && img.url) {
-                return img.url.trim() !== "";
-              }
-              return false;
-            });
-          } else {
-            updateData.images = [];
-          }
-        }
-        if (req.files && req.files.length > 0) {
-          const newImages = req.files.map((file) => file.path);
-          updateData.images = updateData.images ? [...updateData.images, ...newImages] : newImages;
-        }
-        Logger.debug(`Updating product with data: ${JSON.stringify(updateData)}`);
-        const updatedProduct = await storage.updateProduct(id, updateData);
+        const numeric = (v, def = 0) => isNaN(parseFloat(v)) ? def : parseFloat(v);
+        const intNum = (v, def = 0) => isNaN(parseInt(v)) ? def : parseInt(v);
+        const categoryId = b.categoryId ?? b.category_id ?? null;
+        const isFeatured = safeBool(b.isFeatured ?? b.is_featured ?? b.featured, false);
+        const isLocal = safeBool(b.isLocalDeliveryAvailable ?? b.is_local_delivery_available ?? b.local_delivery, false);
+        const isShip = safeBool(b.isShippingAvailable ?? b.is_shipping_available ?? b.shipping_available, true);
+        let fulfillmentMode = "LOCAL_AND_SHIPPING";
+        if (isLocal && !isShip) fulfillmentMode = "LOCAL_ONLY";
+        const baseData = {
+          name: b.name,
+          description: b.description,
+          categoryId,
+          brand: b.brand ?? null,
+          price: numeric(b.price),
+          compare_at_price: b.compareAtPrice != null ? numeric(b.compareAtPrice) : null,
+          cost: b.cost != null ? numeric(b.cost) : null,
+          stockQuantity: intNum(b.stockQuantity ?? b.stock_quantity ?? b.stock, 0),
+          status: b.status ?? "active",
+          weight: numeric(b.weight, 0),
+          sku: b.sku ?? null,
+          images: b.images ?? [],
+          // Use normalized boolean values consistently
+          featured: isFeatured,
+          is_featured: isFeatured,
+          isLocalDeliveryAvailable: isLocal,
+          is_local_delivery_available: isLocal,
+          isShippingAvailable: isShip,
+          is_shipping_available: isShip,
+          fulfillmentMode,
+          fulfillment_mode: fulfillmentMode
+        };
+        Logger.debug(`Updating product with data: ${JSON.stringify(baseData)}`);
+        const updatedProduct = await storage.updateProduct(id, baseData);
         try {
-          if (wsManager3?.publish) {
-            wsManager3.publish({
-              topic: "product:update",
-              productId: id
-            });
+          const { clearProductCache: clearProductCache3 } = await Promise.resolve().then(() => (init_cache2(), cache_exports));
+          await clearProductCache3(id);
+          Logger.info("Cache cleared successfully for product:", id);
+        } catch (error) {
+          Logger.warn("Cache clearing failed (non-critical):", error);
+        }
+        try {
+          if (wsManager3?.publishMessage) {
+            const payload = {
+              id,
+              productId: id,
+              product: updatedProduct,
+              featured: updatedProduct.featured
+            };
+            console.log("\u{1F680} Broadcasting product update:", payload);
+            wsManager3.publishMessage("product:update", payload);
+            Logger.info("WebSocket broadcast sent successfully for product:", id);
+          } else {
+            Logger.warn("WebSocket manager not available for broadcast");
           }
         } catch (error) {
-          Logger.warn("WebSocket broadcast failed:", error);
+          Logger.error("WebSocket broadcast failed:", error);
         }
         res.json(updatedProduct);
       } catch (error) {
         Logger.error("Update product error:", error);
-        res.status(500).json({ error: "Failed to update product: " + error.message });
+        if (error?.code === "23503") {
+          return res.status(400).json({
+            error: "Invalid category selected. Please choose a valid category.",
+            details: "The selected category does not exist."
+          });
+        }
+        if (error?.code === "23505") {
+          return res.status(409).json({
+            error: "Duplicate value detected.",
+            details: "A product with this SKU or identifier already exists."
+          });
+        }
+        res.status(500).json({ error: "Failed to update product: " + (error?.message || "Unknown error") });
       }
     }
   );
@@ -8850,6 +9418,13 @@ async function registerRoutes(app2) {
     try {
       const { status } = req.body;
       await storage.updateProductStock(req.params.id, status);
+      try {
+        const { clearProductCache: clearProductCache3 } = await Promise.resolve().then(() => (init_cache2(), cache_exports));
+        await clearProductCache3(req.params.id);
+        Logger.info("Cache cleared successfully for stock update:", req.params.id);
+      } catch (error) {
+        Logger.warn("Cache clearing failed (non-critical):", error);
+      }
       try {
         if (wsManager3?.publish) {
           wsManager3.publish({
@@ -10329,14 +10904,8 @@ app.use((req, res, next) => {
       Logger.error("[CLEANUP] Error cleaning up tokens:", error);
     }
   }, 60 * 60 * 1e3);
-  app.use((err, _req, res, _next) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    if (process.env.NODE_ENV !== "production") {
-      throw err;
-    }
-  });
+  const { jsonErrorHandler: jsonErrorHandler2 } = await Promise.resolve().then(() => (init_error_handler(), error_handler_exports));
+  app.use(jsonErrorHandler2);
   const { SimplePasswordReset: SimplePasswordReset2 } = await Promise.resolve().then(() => (init_simple_password_reset(), simple_password_reset_exports));
   const passwordReset = new SimplePasswordReset2();
   app.post("/api/auth/forgot-password", async (req, res) => {

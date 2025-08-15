@@ -1,0 +1,1145 @@
+{
+  "replaceImportsThenDelete": [
+    {
+      "file": "server/routes/cart.ts",
+      "canonical": null,
+      "reason": "legacy-banned"
+    },
+    {
+      "file": "server/lib/locality",
+      "canonical": null,
+      "reason": "legacy-banned"
+    },
+    {
+      "file": "server/lib/localityChecker",
+      "canonical": null,
+      "reason": "legacy-banned"
+    },
+    {
+      "file": "server/locality/getLocalityForRequest",
+      "canonical": null,
+      "reason": "legacy-banned"
+    },
+    {
+      "file": "client/src/hooks/use-cart.tsx",
+      "canonical": null,
+      "reason": "legacy-banned"
+    },
+    {
+      "file": "src/lib/locality.ts",
+      "canonical": null,
+      "reason": "legacy-banned"
+    }
+  ],
+  "deleteSafe": [
+    {
+      "file": ".eslintrc.cjs",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "scripts/cleanup-noisy-fingerprints.js",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "scripts/codebase-doctor.cjs",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "scripts/codebase-doctor.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "scripts/denylist-check.js",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "scripts/find-duplicate-files.mjs",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "scripts/scan-locality-offenders.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/App.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/main.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/config/compression.d.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/config/environment.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/config/production-optimizations.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/config/security.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/config/shipping.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/config/websocket.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/data/errorStore.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/data/simpleErrorStore.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/db/index.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/lib/addressService.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/lib/distance.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/lib/fingerprint.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/lib/haversine.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/lib/legacy-guard.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/lib/localityChecker.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/lib/profile.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/middleware/capture.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/middleware/cartLocalityEnforcement.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/middleware/performanceOptimization.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/middleware/rateLimiter.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/middleware/request-consolidator.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/middleware/requireDefaultAddress.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/observability/schema.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/routes/health-comprehensive.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/routes/health.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/routes/status.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/routes/stripe-sync.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/routes/track-activity.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/scripts/clear-users-dev.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/services/email.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/services/localService.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/services/locality.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/utils/email.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/utils/monitoring.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/utils/production-ready-email.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "server/utils/safe-query.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "shared/schemas/address.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "shared/types/search.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "src/lib/cartKeys.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "src/lib/locality.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/api/addresses.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/api/checkout.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/api/observability.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/AddToCartButton.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/AddToCartButtonUnified.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/Analytics.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ConfirmDialog.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ErrorBoundary.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ImageWithFallback.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/PWAInstaller.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ProtectedRoute.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/SEOHead.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/error-boundary.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/config/routes.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/constants/theme.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/contexts/AuthContext.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/use-addresses.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/use-live-data.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/use-mobile.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/use-toast.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useBackButton.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useClickOutside.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useCloudinaryUpload.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useDebounce.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useDefaultAddress.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useErrorReporting.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useFocusOnArrival.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useKeyboardNavigation.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useLocalStatus.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useNavigation.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useNavigationState.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useProductLiveSync.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useProducts.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useProductsState.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useSafePortal.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useScrollLock.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useUnifiedUpload.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useUnsavedChanges.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/hooks/useWebSocketState.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/i18n/fulfillment.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/api.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/auth-utils.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/cartDrawerStore.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/categories.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/cloudinary.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/dates.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/environment.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/errorLogger.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/errorTracking.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/navigation-state.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/parseJsonSafe.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/protected-route.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/queryClient.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/safeReload.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/searchNavCoordinator.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/searchService.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/shipping-utils.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/utils.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/ResetPassword.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/about.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/addresses.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/auth.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/cart.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/checkout.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/contact.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/dashboard.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/forgot-password.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/home.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/not-found.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/observability.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/orders.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/privacy-policy.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/product-detail.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/products.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/reset-password.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/sell-to-us.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/terms-of-service.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/track-submission.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/services/activity.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/services/errorReporter.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/services/globalErrorCatcher.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/types/index.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/addresses/AddressForm.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/addresses/AddressList.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/addresses/AddressPicker.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/AdminLayout.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/AnimatedButton.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/CategoryModal.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/DashboardLayout.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/DataTable.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/MetricCard.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/Pagination.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/SubmissionAnalytics.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/SubmissionsGrid.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/SubmissionsList.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/UnifiedButton.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/UnifiedDataTable.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/UnifiedMetricCard.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/category-filter-config.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/category-management.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/auth/google-signin-button.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/auth/middleware-check.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/auth/password-input.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/auth/password-strength-meter.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/auth/security-notice.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/cart/cart-drawer.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/categories/category-grid.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/checkout/AddressBlock.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/checkout/GuestCheckout.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/checkout/ProfilePrompt.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/common/glass-card.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/common/logo.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/coupons/CouponInput.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/dashboard/AddressesPanel.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/form/DropdownField.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/form/StandardDropdown.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/fulfillment/AddToCartEnhanced.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/fulfillment/BlockedCard.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/fulfillment/DeliveryEligibilityBanner.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/fulfillment/FulfillmentBadge.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/fulfillment/LocalBenefitsCard.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/fulfillment/ZipCheck.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/layout/footer.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/layout/navigation.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/locality/FreeDeliveryPill.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/locality/LocalBadge.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/locality/ProductAvailabilityChips.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/orders/OrderTracking.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/products/CategoryTabs.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/products/ProductCard.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/products/ProductList.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/products/ProductsResults.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/products/filter-chip.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/products/filter-sidebar.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/products/product-card.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/products/product-grid.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/reviews/ProductReviews.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/search/EnhancedSearch.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/search/SearchBar.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/shared/AnimatedComponents.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/shared/ImageUploadZone.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/shipping/ShippingCalculator.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/Dropdown.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/EmptyState.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/FormElements.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/LoadingSpinner.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/LocalDeliveryBadge.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/PortalErrorBoundary.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/ProductPrice.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/QuantitySelector.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/RHFDropdown.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/StockIndicator.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/accordion.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/address-autocomplete.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/address-display.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/alert-dialog.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/alert.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/aspect-ratio.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/avatar.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/badge.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/breadcrumb.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/button.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/calendar.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/card.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/carousel.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/chart.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/checkbox.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/checkout-skeleton.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/collapsible.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/dialog.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/drawer.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/form.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/hover-card.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/index.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/input-otp.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/input.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/label.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/loading-spinner.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/page-loader.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/pagination.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/popover.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/price-input.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/progress.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/radio-group.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/resizable.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/scroll-area.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/separator.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/sheet.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/sidebar.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/skeleton.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/slider.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/smart-link.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/switch.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/table.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/tabs.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/textarea.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/toast.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/toaster.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/toggle-group.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/toggle.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/tooltip.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/ui/welcome-banner.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/lib/products/fulfillment.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/AnalyticsManager.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/AnalyticsTab.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/CategoriesTab.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/CategoryManager.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/ProductForm.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/ProductsManager.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/ProductsTab.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/StripeManager.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/StripeTab.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/SubmissionsManager.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/SubmissionsTab.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/SystemDashboard.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/SystemManager.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/SystemTab.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/UserManager.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/admin/UsersTab.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/legal/PrivacyPolicy.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/pages/legal/TermsOfService.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/styles/design-system/components.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/styles/design-system/theme.ts",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/modals/EnhancedCategoryModal.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/modals/EnhancedProductModal.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/modals/EnhancedSubmissionModal.tsx",
+      "reason": "knip-unused"
+    },
+    {
+      "file": "client/src/components/admin/modals/EnhancedUserModal.tsx",
+      "reason": "knip-unused"
+    }
+  ],
+  "reviewManual": []
+}
