@@ -48,7 +48,7 @@ function HomeSections() {
       // Force refetch of featured products immediately
       refetch();
     });
-    return () => unsubscribe();
+    return unsubscribe;
   }, [subscribe, refetch]);
 
   // Legacy event listeners for admin updates

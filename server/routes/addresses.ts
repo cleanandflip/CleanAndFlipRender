@@ -3,6 +3,7 @@ import { storage } from '../storage';
 import { z } from 'zod';
 import { isAuthenticated } from '../middleware/auth';
 import { getLocalityForRequest } from '../services/localityService';
+import { isLocalMiles } from '../lib/distance';
 
 const router = Router();
 
@@ -53,7 +54,7 @@ router.post('/', isAuthenticated, async (req, res) => {
     const isDefault = data.setDefault || existingAddresses.length === 0;
     
     // Compute isLocal from coordinates using unified locality system
-    const localityResult = /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(data.latitude || null, data.longitude || null);
+    const isLocal = isLocalMiles(data.latitude || null, data.longitude || null);
     
     const address = await storage.createAddress(userId, {
       firstName: data.firstName,
@@ -68,7 +69,7 @@ router.post('/', isAuthenticated, async (req, res) => {
       longitude: data.longitude,
       geoapifyPlaceId: data.geoapifyPlaceId,
       isDefault,
-      isLocal: localityResult.isLocal
+      isLocal
     });
     
     res.json(address); // Return plain object for consistency
@@ -100,10 +101,10 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
     // Recompute isLocal if coordinates changed using unified locality system
     let updateData = { ...data };
     if (data.latitude !== undefined || data.longitude !== undefined) {
-      const localityResult = /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(data.latitude || null, data.longitude || null);
+      const isLocal = isLocalMiles(data.latitude || null, data.longitude || null);
       updateData = {
         ...updateData,
-        isLocal: localityResult.isLocal
+        isLocal
       };
     }
     
