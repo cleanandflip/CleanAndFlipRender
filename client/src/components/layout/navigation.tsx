@@ -349,7 +349,7 @@ export default function Navigation() {
                 )}
                 
               </div>
-            ) : (
+            ) : location !== ROUTES.LOGIN && (
               <Button
                 variant="primary"
                 size="sm"

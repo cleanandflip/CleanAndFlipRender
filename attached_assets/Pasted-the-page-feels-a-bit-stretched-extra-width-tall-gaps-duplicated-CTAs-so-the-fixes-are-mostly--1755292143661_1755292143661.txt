@@ -1,0 +1,64 @@
+the page feels a bit “stretched” (extra width, tall gaps, duplicated CTAs), so the fixes are mostly spacing, sizing, and hierarchy. Here’s how to make it look tight and premium—fast.
+
+What to change (high-impact first)
+One container, narrower
+
+Use max-w-6xl (or 7xl) instead of full width.
+
+Add px-4 md:px-6 + py-12 md:py-20 for breathing room.
+
+Reason: constraining the line length and grid width instantly improves balance.
+
+Two-column grid that centers vertically
+
+grid grid-cols-1 lg:grid-cols-12 lg:items-center lg:gap-12
+
+Left: lg:col-span-5 (form), Right: lg:col-span-7 (marketing).
+
+Add min-h-[calc(100vh-72px)] (or your navbar height) so the content centers.
+
+Form card: smaller, denser
+
+Wrap with max-w-md w-full p-6 md:p-8 rounded-2xl border bg-card/60 shadow-sm backdrop-blur.
+
+Use space-y-6 inside; inputs h-11 with text-sm; labels text-xs font-medium.
+
+Tabs: make them compact (segmented control) and remove extra headline repetition.
+
+Remove the duplicate “Sign In” in the navbar on /auth
+
+Hide the header CTA on auth routes to reduce noise (or change it to “Back to shop”).
+
+Marketing (right column): compress + grid features
+
+Title: text-4xl md:text-5xl font-semibold leading-tight tracking-tight max-w-xl.
+
+Body copy: text-sm/6 md:text-base/7 text-muted-foreground max-w-md.
+
+Features: grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6
+
+Each feature: p-4 md:p-5 rounded-xl border bg-muted/30 flex gap-3
+
+Icon: size-5 shrink-0; Title text-sm font-medium; Copy text-xs text-muted-foreground.
+
+Tighten vertical rhythm
+
+Base on an 8px system: use space-y-2/3/4/6/8 only.
+
+Headings → content: mt-2 md:mt-3.
+
+Grouped controls (email/password/forgot): space-y-3.
+
+Between form sections: space-y-6.
+
+Button sizes
+
+Primary submit: h-11 text-sm px-4 md:px-5 rounded-xl.
+
+Secondary (Google): outline style; same height.
+
+Ensure every button in forms has type="button" unless it’s the real submit.
+
+Subtotal NaN (unrelated to spacing, but visible)
+
+Coerce price to Number() on the server when computing totals so any “$xx.xx” strings don’t break layouts that depend on numbers.

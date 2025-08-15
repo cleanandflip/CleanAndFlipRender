@@ -127,154 +127,144 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
-        <div className="w-full max-w-xl" ref={formContainerRef}>
-          {/* Just the logo - no redundant text */}
-          <Logo size="lg" textOnly={true} className="mb-8" />
+    <div className="min-h-screen max-w-6xl mx-auto px-4 md:px-6 py-12 md:py-20">
+      <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-center lg:gap-12 min-h-[calc(100vh-144px)]">
+        
+        {/* Left Side - Form (Narrower) */}
+        <div className="lg:col-span-5 flex items-center justify-center">
+          <div className="w-full max-w-md" ref={formContainerRef}>
+            
+            {/* Form Card */}
+            <div className="p-6 md:p-8 rounded-2xl border bg-card/60 backdrop-blur shadow-sm">
+              
+              {/* Logo */}
+              <div className="text-center mb-6">
+                <Logo size="md" textOnly={true} />
+              </div>
 
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8 glass h-14 text-lg">
-              <TabsTrigger 
-                value="login" 
-                className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200 text-lg"
-              >
-                Sign In
-              </TabsTrigger>
-              <TabsTrigger 
-                value="register" 
-                className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium transition-all duration-200 text-lg"
-              >
-                Sign Up
-              </TabsTrigger>
-            </TabsList>
+              {/* Compact Tabs */}
+              <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6 h-10 text-sm">
+                  <TabsTrigger 
+                    value="login" 
+                    className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium text-sm"
+                  >
+                    Sign In
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="register" 
+                    className="data-[state=active]:bg-accent-blue data-[state=active]:text-white font-medium text-sm"
+                  >
+                    Sign Up
+                  </TabsTrigger>
+                </TabsList>
 
-            <TabsContent value="login" className="transition-all duration-300 ease-in-out">
-              <Card className="p-8">
-                <div className="mb-8">
-                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-3">WELCOME BACK</h2>
-                  <p className="text-white">
-                    Sign in to your account to continue
-                  </p>
-                </div>
-                <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-6">
-                  <div className="space-y-4">
-                    <Label htmlFor="email" className="text-white font-medium text-xl">Email</Label>
+                <TabsContent value="login" className="space-y-6">
+                  <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-6">
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-xs font-medium text-white">Email</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          required
+                          className="field h-11 text-sm px-4"
+                          placeholder="Enter your email"
+                          onFocus={scrollToForm}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password" className="text-xs font-medium text-white">Password</Label>
+                        <Input
+                          id="password"
+                          name="password"
+                          type="password"
+                          required
+                          className="field h-11 text-sm px-4"
+                          placeholder="Enter your password"
+                          onFocus={scrollToForm}
+                        />
+                        <div className="text-right">
+                          <Link href="/forgot-password">
+                            <button type="button" className="text-accent-blue hover:text-blue-300 text-xs underline transition-colors">
+                              Forgot Password?
+                            </button>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      className="w-full h-11 text-sm px-4 md:px-5 rounded-xl"
+                      loading={loginMutation.isPending}
+                      disabled={loginMutation.isPending}
+                    >
+                      {loginMutation.isPending ? "Signing In..." : "Sign In"}
+                    </Button>
+                  </form>
+                  
+                  <div className="space-y-3">
+                    <div className="text-center text-xs text-gray-400">
+                      Or continue with
+                    </div>
+                    <GoogleSignInButton disabled={loginMutation.isPending} className="h-11" />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="register" className="space-y-6">
+                  <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-6">
+                    {/* Name fields */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        required
+                        className="field h-11 px-4 text-sm"
+                        placeholder="First Name"
+                        onFocus={scrollToForm}
+                      />
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        type="text"
+                        required
+                        className="field h-11 px-4 text-sm"
+                        placeholder="Last Name"
+                        onFocus={scrollToForm}
+                      />
+                    </div>
+                    
+                    {/* Contact */}
                     <Input
                       id="email"
                       name="email"
                       type="email"
                       required
-                      className="field h-20 text-2xl px-8"
-                      placeholder="Enter your email"
+                      className="field h-11 px-4 text-sm"
+                      placeholder="Email Address"
                       onFocus={scrollToForm}
                     />
-                  </div>
-                  <div className="space-y-4">
-                    <Label htmlFor="password" className="text-white font-medium text-xl">Password</Label>
+                    
                     <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      required
-                      className="field h-20 text-2xl px-8"
-                      placeholder="Enter your password"
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      className="field h-11 px-4 text-sm"
+                      placeholder="Phone Number (Optional)"
                       onFocus={scrollToForm}
                     />
-                    <div className="text-right">
-                      <Link href="/forgot-password">
-                        <button type="button" className="text-accent-blue hover:text-blue-300 text-sm underline transition-colors">
-                          Forgot Password?
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="lg"
-                    className="w-full h-16 text-xl"
-                    loading={loginMutation.isPending}
-                    disabled={loginMutation.isPending}
-                  >
-                    {loginMutation.isPending ? "Signing In..." : "Sign In"}
-                  </Button>
-                </form>
-                
-                <div className="mt-6">
-                  <div className="text-center text-sm text-gray-400 mb-3">
-                    Or continue with
-                  </div>
-                  <hr className="border-gray-600 mb-4" />
-                  <GoogleSignInButton disabled={loginMutation.isPending} />
-                </div>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="register" className="transition-all duration-300 ease-in-out">
-              <Card className="p-8">
-                <div className="mb-6">
-                  <h2 className="font-bebas text-3xl text-white tracking-wider mb-2">CREATE ACCOUNT</h2>
-                  <p className="text-white">
-                    Join Clean & Flip to buy and sell equipment
-                  </p>
-                </div>
-
-                <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-5">
-                  {/* Name fields */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      type="text"
-                      required
-                      className="field h-12 px-4"
-                      placeholder="First Name"
-                      onFocus={scrollToForm}
-                    />
-                    <Input
-                      id="lastName"
-                      name="lastName"
-                      type="text"
-                      required
-                      className="field h-12 px-4"
-                      placeholder="Last Name"
-                      onFocus={scrollToForm}
-                    />
-                  </div>
-                  
-                  {/* Contact */}
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    className="field h-12 px-4"
-                    placeholder="Email Address"
-                    onFocus={scrollToForm}
-                  />
-                  
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    className="field h-12 px-4"
-                    placeholder="Phone Number (Optional)"
-                    onFocus={scrollToForm}
-                  />
-                  
-                  {/* REMOVED: Address input - handled in onboarding flow */}
-                  
-                  {/* Password with inline helper */}
-                  <div className="space-y-1">
-                    <div className="relative">
+                    
+                    {/* Password with inline helper */}
+                    <div className="space-y-2">
                       <PasswordInput
                         id="password"
                         name="password"
                         placeholder="Password"
                         required
-                        className={`h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white ${
+                        className={`h-11 px-4 text-sm transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white ${
                           password && !isPasswordValid(password) ? 'border-red-500/50' : 
                           password && isPasswordValid(password) ? 'border-green-500/50' : ''
                         }`}
@@ -286,140 +276,135 @@ export default function AuthPage() {
                         }}
                         onBlur={() => setPasswordFocused(false)}
                       />
+                      <div className="text-xs text-text-muted">
+                        Min 8 characters, include numbers & symbols
+                      </div>
+                      {passwordFocused && password && !isPasswordValid(password) && (
+                        <div className="text-xs text-red-400">
+                          Need: uppercase, lowercase, number, special character
+                        </div>
+                      )}
                     </div>
-                    <div className="text-xs text-text-muted">
-                      Min 8 characters, include numbers & symbols
+                    
+                    <div className="space-y-2">
+                      <PasswordInput
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder="Confirm Password"
+                        required
+                        className={`h-11 px-4 text-sm transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white ${
+                          !passwordsMatch && confirmPassword ? 'border-red-500/50' : 
+                          passwordsMatch && confirmPassword && password ? 'border-green-500/50' : ''
+                        }`}
+                        value={confirmPassword}
+                        onChange={handleConfirmPasswordChange}
+                        onFocus={scrollToForm}
+                      />
+                      {!passwordsMatch && confirmPassword && (
+                        <div className="text-xs text-red-400">Passwords do not match</div>
+                      )}
                     </div>
-                    {passwordFocused && password && !isPasswordValid(password) && (
-                      <div className="text-xs text-red-400">
-                        Need: uppercase, lowercase, number, special character
+
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      className="w-full h-11 text-sm px-4 md:px-5 rounded-xl"
+                      loading={registerMutation.isPending}
+                      disabled={registerMutation.isPending || !passwordsMatch || (!!password && !isPasswordValid(password))}
+                    >
+                      {registerMutation.isPending ? "Creating Account..." : "Create Account"}
+                    </Button>
+                  </form>
+                  
+                  <div className="space-y-3">
+                    <div className="text-center text-xs text-gray-400">
+                      Or continue with
+                    </div>
+                    <GoogleSignInButton disabled={registerMutation.isPending} className="h-11" />
+                  </div>
+
+                  {/* Security info as subtle footer */}
+                  <div className="pt-4 border-t border-border/50">
+                    <button
+                      type="button"
+                      onClick={() => setShowSecurityInfo(!showSecurityInfo)}
+                      className="text-xs text-text-muted hover:text-text-secondary transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <Shield className="h-3 w-3" />
+                      Security & Privacy
+                      <span className={`transition-transform duration-200 ${showSecurityInfo ? 'rotate-180' : ''}`}>▼</span>
+                    </button>
+                    
+                    {showSecurityInfo && (
+                      <div className="mt-3 p-3 glass rounded border border-border text-xs text-text-secondary space-y-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-3 w-3 text-green-400" />
+                          <span>256-bit encryption protects your data</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-3 w-3 text-green-400" />
+                          <span>Passwords never stored in plain text</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-3 w-3 text-green-400" />
+                          <span>PCI compliant payment processing</span>
+                        </div>
                       </div>
                     )}
                   </div>
-                  
-                  <div className="space-y-1">
-                    <PasswordInput
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      placeholder="Confirm Password"
-                      required
-                      className={`h-12 px-4 transition-all duration-200 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 text-white ${
-                        !passwordsMatch && confirmPassword ? 'border-red-500/50' : 
-                        passwordsMatch && confirmPassword && password ? 'border-green-500/50' : ''
-                      }`}
-                      value={confirmPassword}
-                      onChange={handleConfirmPasswordChange}
-                      onFocus={scrollToForm}
-                    />
-                    {!passwordsMatch && confirmPassword && (
-                      <div className="text-xs text-red-400">Passwords do not match</div>
-                    )}
-                  </div>
-
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="lg"
-                    className="w-full h-12 text-lg mt-6"
-                    loading={registerMutation.isPending}
-                    disabled={registerMutation.isPending || !passwordsMatch || (!!password && !isPasswordValid(password))}
-                  >
-                    {registerMutation.isPending ? "Creating Account..." : "Create Account"}
-                  </Button>
-                </form>
-                
-                <div className="mt-6">
-                  <div className="text-center text-sm text-gray-400 mb-3">
-                    Or continue with
-                  </div>
-                  <hr className="border-gray-600 mb-4" />
-                  <GoogleSignInButton disabled={registerMutation.isPending} />
-                </div>
-
-                {/* Security info as subtle footer */}
-                <div className="mt-6 pt-4 border-t border-border/50">
-                  <button
-                    type="button"
-                    onClick={() => setShowSecurityInfo(!showSecurityInfo)}
-                    className="text-sm text-text-muted hover:text-text-secondary transition-colors duration-200 flex items-center gap-2"
-                  >
-                    <Shield className="h-3 w-3" />
-                    Secure Registration • Learn about our security
-                    <span className={`transition-transform duration-200 ${showSecurityInfo ? 'rotate-180' : ''}`}>▼</span>
-                  </button>
-                  
-                  {showSecurityInfo && (
-                    <div className="mt-3 p-3 glass rounded border border-border text-sm text-text-secondary space-y-2">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span>256-bit encryption protects your data</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span>Passwords never stored in plain text</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span>PCI compliant payment processing</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-
-      {/* Right Side - Hero Section */}
-      <div className="hidden lg:flex flex-1 items-center justify-center p-12">
-        <div className="max-w-xl">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full glass mb-8 transition-all duration-300 hover:scale-110">
-              <Dumbbell className="h-12 w-12 text-accent-blue" />
+                </TabsContent>
+              </Tabs>
             </div>
-            <h2 className="font-bebas text-6xl text-white tracking-wider mb-6">TRUSTED MARKETPLACE</h2>
-            <p className="text-text-secondary text-xl leading-relaxed">
+          </div>
+        </div>
+
+        {/* Right Side - Marketing (Wider) */}
+        <div className="lg:col-span-7 hidden lg:block">
+          <div className="max-w-xl">
+            {/* Title */}
+            <h1 className="text-4xl md:text-5xl font-semibold leading-tight tracking-tight max-w-xl text-white mb-3 md:mb-4">
+              Your trusted marketplace for quality fitness equipment
+            </h1>
+            
+            {/* Body copy */}
+            <p className="text-sm/6 md:text-base/7 text-muted-foreground max-w-md mb-8">
               Join hundreds of fitness enthusiasts buying and selling quality equipment with expert inspection and fair pricing.
             </p>
-          </div>
 
-          <div className="space-y-8">
-            <Card className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
-              <div className="flex items-start space-x-6">
-                <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-8 w-8 text-white" />
-                </div>
+            {/* Features Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+              <div className="p-4 md:p-5 rounded-xl border bg-muted/30 flex gap-3">
+                <CheckCircle className="size-5 shrink-0 text-green-400" />
                 <div>
-                  <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">VERIFIED QUALITY</h3>
-                  <p className="text-text-secondary text-lg">All equipment professionally inspected and guaranteed before sale</p>
+                  <div className="text-sm font-medium text-white">Verified Quality</div>
+                  <div className="text-xs text-muted-foreground">All equipment professionally inspected</div>
                 </div>
               </div>
-            </Card>
-
-            <Card className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
-              <div className="flex items-start space-x-6">
-                <div className="w-16 h-16 bg-accent-blue rounded-full flex items-center justify-center flex-shrink-0">
-                  <Shield className="h-8 w-8 text-white" />
-                </div>
+              
+              <div className="p-4 md:p-5 rounded-xl border bg-muted/30 flex gap-3">
+                <Shield className="size-5 shrink-0 text-blue-400" />
                 <div>
-                  <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">EXPERT KNOWLEDGE</h3>
-                  <p className="text-text-secondary text-lg">Weightlifting specialists with years of experience in quality equipment</p>
+                  <div className="text-sm font-medium text-white">Expert Knowledge</div>
+                  <div className="text-xs text-muted-foreground">Weightlifting specialists with years of experience</div>
                 </div>
               </div>
-            </Card>
-
-            <Card className="p-8 glass-hover transition-all duration-300 hover:scale-[1.02]">
-              <div className="flex items-start space-x-6">
-                <div className="w-16 h-16 bg-warning rounded-full flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="h-8 w-8 text-white" />
-                </div>
+              
+              <div className="p-4 md:p-5 rounded-xl border bg-muted/30 flex gap-3">
+                <TrendingUp className="size-5 shrink-0 text-yellow-400" />
                 <div>
-                  <h3 className="font-bebas text-2xl text-white tracking-wider mb-3">FAIR PRICING</h3>
-                  <p className="text-text-secondary text-lg">Best market value for both buyers and sellers in the fitness community</p>
+                  <div className="text-sm font-medium text-white">Fair Pricing</div>
+                  <div className="text-xs text-muted-foreground">Best market value for buyers and sellers</div>
                 </div>
               </div>
-            </Card>
+              
+              <div className="p-4 md:p-5 rounded-xl border bg-muted/30 flex gap-3">
+                <Users className="size-5 shrink-0 text-purple-400" />
+                <div>
+                  <div className="text-sm font-medium text-white">Community</div>
+                  <div className="text-xs text-muted-foreground">Trusted by fitness enthusiasts nationwide</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
