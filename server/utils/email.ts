@@ -258,7 +258,7 @@ export const emailService = {
   }) {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <support@mail.cleanandflip.com>',
+        from: 'Clean & Flip <onboarding@resend.dev>',
         to: 'support@cleanandflip.com',
         replyTo: contactData.email,
         subject: `Contact Form: ${contactData.subject}`,
