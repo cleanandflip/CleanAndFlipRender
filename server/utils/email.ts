@@ -82,7 +82,7 @@ export const emailService = {
   async sendOrderConfirmation(order: OrderEmailData) {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <support@cleanandflip.com>',
+        from: 'Clean & Flip <onboarding@resend.dev>',
         to: order.user.email,
         subject: `Order Confirmed #${order.orderNumber}`,
         html: `
@@ -146,7 +146,7 @@ export const emailService = {
     
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <support@cleanandflip.com>',
+        from: 'Clean & Flip <onboarding@resend.dev>',
         to: order.user.email,
         subject: `Your Order Has Shipped! #${order.orderNumber}`,
         html: `
@@ -204,7 +204,7 @@ export const emailService = {
     
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <support@cleanandflip.com>',
+        from: 'Clean & Flip <onboarding@resend.dev>',
         to: submission.user.email,
         subject: `Equipment Offer for Your ${submission.brand ? submission.brand + ' ' : ''}${submission.name}`,
         html: `
@@ -258,10 +258,10 @@ export const emailService = {
   }) {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip Contact Form <support@cleanandflip.com>',
-        to: 'support@cleanandflip.com',
-        reply_to: contactData.email,
-        subject: `Contact Form: ${contactData.subject}`,
+        from: 'myflomain@gmail.com',
+        to: 'myflomain@gmail.com',
+        replyTo: contactData.email,
+        subject: `Clean & Flip Contact: ${contactData.subject}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
