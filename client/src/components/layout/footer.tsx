@@ -128,23 +128,29 @@ export default function Footer() {
             {/* Social Links */}
             <div className="flex space-x-4 mt-6">
               <a 
-                href="#" 
+                href="https://www.facebook.com/share/g/18t56xyQHL/" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-text-muted-foreground hover:text-slate-200 transition-colors"
-                aria-label="Facebook"
+                aria-label="Follow us on Facebook"
               >
                 <Facebook size={20} />
               </a>
               <a 
-                href="#" 
+                href="https://www.instagram.com/cleanandflip/" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-text-muted-foreground hover:text-slate-200 transition-colors"
-                aria-label="Instagram"
+                aria-label="Follow us on Instagram"
               >
                 <Instagram size={20} />
               </a>
               <a 
-                href="#" 
+                href="https://www.youtube.com/@CleanAndFlip" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-text-muted-foreground hover:text-slate-200 transition-colors"
-                aria-label="YouTube"
+                aria-label="Subscribe to our YouTube channel"
               >
                 <Youtube size={20} />
               </a>
