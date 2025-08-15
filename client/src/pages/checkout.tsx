@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { MapPin, Plus, Check } from "lucide-react";
-import { LocalBadge } from "@/components/locality/LocalBadge";
 import { useLocality } from "@/hooks/useLocality";
 import { motion } from "framer-motion";
 import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryEligibilityBanner';
@@ -171,7 +170,6 @@ export default function Checkout() {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bebas">CHECKOUT</h1>
-        <LocalBadge isLocal={locality?.eligible ?? false} />
       </div>
 
       {/* Locality Banner for Checkout */}
