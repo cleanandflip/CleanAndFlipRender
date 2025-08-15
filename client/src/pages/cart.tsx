@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryEligibilityBanner';
+import { LocalBadge } from '@/components/locality/LocalBadge';
 
 // Create a simple checkout button for now
 const CheckoutButton = () => (
@@ -158,11 +159,6 @@ export default function CartPageV2() {
         
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bebas">SHOPPING CART</h1>
-          {locality?.eligible && (
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
-              Local Delivery Available
-            </Badge>
-          )}
         </div>
 
         {/* Enhanced local delivery banner */}
@@ -217,6 +213,7 @@ export default function CartPageV2() {
                       
                       {/* Fulfillment badges */}
                       <div className="flex items-center gap-2 mb-2">
+                        <LocalBadge isLocal={locality?.eligible ?? false} />
                         {item.product?.is_local_delivery_available && item.product?.is_shipping_available && (
                           <Badge variant="outline" className="text-xs">Both</Badge>
                         )}
