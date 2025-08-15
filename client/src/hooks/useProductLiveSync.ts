@@ -1,11 +1,12 @@
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocketState } from "@/hooks/useWebSocketState";
-import { queryClient } from "@/lib/queryClient";
 
 type Opts = { queryKey: any[]; productId?: string };
 
 export function useProductLiveSync({ queryKey, productId }: Opts) {
   const { subscribe } = useWebSocketState();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const offUpdate = subscribe("product:update", (payload: any) => {
@@ -46,5 +47,5 @@ export function useProductLiveSync({ queryKey, productId }: Opts) {
     return () => {
       offUpdate?.(); offCreate?.(); offDelete?.();
     };
-  }, [subscribe, JSON.stringify(queryKey), productId]);
+  }, [subscribe, JSON.stringify(queryKey), productId, queryClient]);
 }

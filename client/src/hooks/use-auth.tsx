@@ -2,10 +2,11 @@ import { createContext, ReactNode, useContext, useEffect } from "react";
 import {
   useQuery,
   useMutation,
+  useQueryClient,
   UseMutationResult,
 } from "@tanstack/react-query";
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
-import { apiRequest, queryClient } from "../lib/queryClient";
+import { apiRequest } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -38,6 +39,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const {
     data: user,
