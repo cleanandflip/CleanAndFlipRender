@@ -632,7 +632,7 @@ export default function About() {
                 style={{ color: theme.colors.text.muted }}
               >
                 <Clock size={16} />
-                <span>Mon-Fri 9AM-5PM EST</span>
+                <span>Mon-Sat 9AM-5PM EST</span>
               </div>
             </div>
           </Card>
