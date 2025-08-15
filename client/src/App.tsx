@@ -38,6 +38,7 @@ const ProductForm = lazy(() => import("@/pages/admin/ProductForm").then(module =
 const Orders = lazy(() => import("@/pages/orders"));
 const About = lazy(() => import("@/pages/about"));
 const Contact = lazy(() => import("@/pages/contact"));
+const ShippingInfo = lazy(() => import("@/pages/shipping-info"));
 const LegalPrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
 const LegalTermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
 const ObservabilityPage = lazy(() => import("@/pages/observability"));
@@ -113,6 +114,7 @@ function Router() {
               <Route path={ROUTES.PRODUCT_DETAIL} component={ProductDetail} />
               <Route path={ROUTES.ABOUT} component={About} />
               <Route path={ROUTES.CONTACT} component={Contact} />
+              <Route path="/shipping-info" component={ShippingInfo} />
               <Route path="/privacy-policy" component={LegalPrivacyPolicy} />
               <Route path="/terms-of-service" component={LegalTermsOfService} />
               

@@ -188,7 +188,7 @@ export default function SellToUs() {
               <Button 
                 variant="outline"
                 className="border-yellow-300 text-yellow-800 hover:bg-yellow-100 dark:border-yellow-700 dark:text-yellow-300"
-                onClick={() => window.location.href = '/about'}
+                onClick={() => window.location.href = '/shipping-info'}
               >
                 See service area
               </Button>
