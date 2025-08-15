@@ -10,7 +10,7 @@ export function LocalBadge({ isLocal }: LocalBadgeProps) {
     return (
       <Badge 
         variant="default" 
-        className="bg-green-100 text-green-800 hover:bg-green-200 text-xs rounded-full border-0 px-2 py-1"
+        className="bg-green-100 text-green-800 hover:bg-green-200 text-xs rounded-full border-0 px-1.5 py-0.5 h-auto"
         aria-label="Local Delivery Available"
         data-testid="badge-local-delivery"
       >
@@ -23,7 +23,7 @@ export function LocalBadge({ isLocal }: LocalBadgeProps) {
   return (
     <Badge 
       variant="secondary" 
-      className="bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs rounded-full border-0 px-2 py-1"
+      className="bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs rounded-full border-0 px-1.5 py-0.5 h-auto"
       aria-label="Shipping Only"
       data-testid="badge-shipping-only"
     >
