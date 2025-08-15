@@ -387,7 +387,7 @@ export default function Checkout() {
             </CardHeader>
             <CardContent>
               {selectedAddress ? (
-                <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 rounded-lg bg-[#212938]">
                   <p className="text-sm text-gray-600 mb-2">Shipping to:</p>
                   <p className="font-medium">
                     {selectedAddress.street1}, {selectedAddress.city}, {selectedAddress.state} {selectedAddress.postalCode}
