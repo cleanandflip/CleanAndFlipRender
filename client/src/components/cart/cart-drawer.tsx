@@ -8,7 +8,7 @@ import { useCart } from "@/hooks/useCart";
 type CartItem = {
   id: string;
   productId: string;
-  quantity: number;
+  qty: number; // V2 unified field
   product: {
     id: string;
     name: string;
@@ -41,7 +41,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const cartData = cart as Cart;
   const cartItems = cartData?.items || [];
   const cartTotal = cartData?.subtotal || 0;
-  const cartCount = cartItems.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
+  const cartCount = cartItems.reduce((sum: number, item: CartItem) => sum + item.qty, 0);
 
   const open = isOpen !== undefined ? isOpen : internalOpen;
   const handleOpenChange = (newOpen: boolean) => {
@@ -164,7 +164,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                               <div className="flex items-center bg-card rounded">
                                 <button
                                   onClick={() => {
-                                    const newQuantity = (item?.quantity || 1) - 1;
+                                    const newQuantity = (item?.qty || 1) - 1;
                                     if (newQuantity <= 0) {
                                       removeFromCart(item.productId);
                                     } else {
@@ -172,20 +172,20 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                     }
                                   }}
                                   className="p-1 hover:bg-white/10 transition-colors"
-                                  disabled={(item?.quantity || 0) <= 1}
+                                  disabled={(item?.qty || 0) <= 1}
                                 >
                                   <Minus size={12} />
                                 </button>
                                 <span className="px-2 py-1 text-sm min-w-[2rem] text-center">
-                                  {item?.quantity || 0}
+                                  {item?.qty || 0}
                                 </span>
                                 <button
                                   onClick={() => {
-                                    const newQuantity = (item?.quantity || 0) + 1;
+                                    const newQuantity = (item?.qty || 0) + 1;
                                     updateCartItem({ productId: item.productId, qty: newQuantity });
                                   }}
                                   className="p-1 hover:bg-white/10 transition-colors"
-                                  disabled={!!(item?.product?.stockQuantity && (item?.quantity || 0) >= item.product.stockQuantity)}
+                                  disabled={!!(item?.product?.stockQuantity && (item?.qty || 0) >= item.product.stockQuantity)}
                                 >
                                   <Plus size={12} />
                                 </button>
@@ -194,7 +194,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                               {/* Price */}
                               <div className="text-right">
                                 <div className="font-semibold text-sm">
-                                  ${(Number(item?.product?.price || 0) * (item?.quantity || 0)).toFixed(2)}
+                                  ${(Number(item?.product?.price || 0) * (item?.qty || 0)).toFixed(2)}
                                 </div>
                                 <div className="text-text-muted text-xs">
                                   ${item?.product?.price || '0.00'} each

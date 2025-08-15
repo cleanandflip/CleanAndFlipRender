@@ -711,20 +711,40 @@ export class DatabaseStorage implements IStorage {
   async getCartByOwner(ownerId: string): Promise<any> {
     console.log(`[STORAGE] Fetching cart by owner: ${ownerId}`);
     
-    // Use the new getCartItems method that includes product data
-    const items = await this.getCartItems(
-      ownerId.includes('@') ? ownerId : undefined, // assume email format for userId
-      !ownerId.includes('@') ? ownerId : undefined  // else it's sessionId
-    );
+    // Get cart items with joined product info
+    const items = await db
+      .select({
+        id: cartItems.id,
+        productId: cartItems.productId,
+        variantId: cartItems.variantId,
+        qty: cartItems.quantity, // Map database 'quantity' field to 'qty' for API consistency
+        product: {
+          id: products.id,
+          name: products.name,
+          price: products.price,
+          images: products.images,
+          brand: products.brand,
+          stockQuantity: products.stockQuantity,
+          is_local_delivery_available: products.is_local_delivery_available,
+          is_shipping_available: products.is_shipping_available
+        }
+      })
+      .from(cartItems)
+      .leftJoin(products, eq(cartItems.productId, products.id))
+      .where(or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)));
     
     console.log(`[STORAGE] Found ${items.length} cart items for owner: ${ownerId}`);
     
+    // Calculate totals with proper numeric conversion  
     const subtotal = items.reduce((sum, item) => {
-      const price = item.product ? parseFloat(item.product.price) : 0;
-      return sum + (price * item.quantity);
+      const unitPrice = Number(item.product?.price ?? 0);
+      const itemQty = Number(item.qty ?? 0);
+      const lineTotal = Number.isFinite(unitPrice) && Number.isFinite(itemQty) ? unitPrice * itemQty : 0;
+      return sum + lineTotal;
     }, 0);
     
     return {
+      ownerId,
       items,
       totals: { subtotal, total: subtotal }
     };
@@ -794,7 +814,7 @@ export class DatabaseStorage implements IStorage {
     const existing = await db.select()
       .from(cartItems)
       .where(and(
-        eq(cartItems.ownerId, ownerId),
+        or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
         eq(cartItems.productId, productId)
       ))
       .limit(1);
@@ -811,14 +831,16 @@ export class DatabaseStorage implements IStorage {
       
       return { item: { ...existing[0], qty: newQty }, upserted: 'updated' };
     } else {
-      // Insert new
+      // Insert new - use proper legacy column assignment
+      const isUuid = ownerId.includes('-') && ownerId.length === 36;
       const itemToInsert = {
         ownerId,
         productId,
         quantity: qty,
+        variantId: variantId,
         // Keep legacy columns for migration compatibility
-        userId: ownerId.includes('-') && ownerId.length === 36 ? ownerId : null,
-        sessionId: !(ownerId.includes('-') && ownerId.length === 36) ? ownerId : null
+        userId: isUuid ? ownerId : null,
+        sessionId: !isUuid ? ownerId : null
       };
       
       const [newItem] = await db.insert(cartItems).values(itemToInsert).returning();
@@ -837,7 +859,7 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date() 
       })
       .where(and(
-        eq(cartItems.ownerId, ownerId),
+        or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
         eq(cartItems.productId, productId)
       ));
     
@@ -847,7 +869,7 @@ export class DatabaseStorage implements IStorage {
   async removeCartItemsByProduct(ownerId: string, productId: string) {
     const result = await db.delete(cartItems)
       .where(and(
-        eq(cartItems.ownerId, ownerId),
+        or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
         eq(cartItems.productId, productId)
       ));
     
@@ -902,16 +924,17 @@ export class DatabaseStorage implements IStorage {
     try {
       const items = await db.select({
         id: cartItems.id,
-        ownerId: cartItems.ownerId,
+        userId: cartItems.userId,
+        sessionId: cartItems.sessionId,
         productId: cartItems.productId,
         quantity: cartItems.quantity
       })
       .from(cartItems)
-      .where(eq(cartItems.ownerId, ownerId));
+      .where(or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)));
 
       return items.map(item => ({
         id: item.id!,
-        ownerId: item.ownerId!,
+        ownerId: item.userId || item.sessionId!, // Map to logical ownerId
         productId: item.productId!,
         qty: item.quantity, // V2 consistency
         variantId: null // No variants yet
@@ -928,7 +951,8 @@ export class DatabaseStorage implements IStorage {
       const items = await db
         .select({
           id: cartItems.id,
-          ownerId: cartItems.ownerId,
+          userId: cartItems.userId,
+          sessionId: cartItems.sessionId,
           productId: cartItems.productId,
           qty: cartItems.quantity, // Map to qty for V2 consistency
           variantId: sql<string | null>`null`, // No variant support yet
@@ -937,12 +961,16 @@ export class DatabaseStorage implements IStorage {
             id: products.id,
             name: products.name,
             price: products.price,
-            mode: sql<string>`COALESCE(${products.mode}, 'LOCAL_AND_SHIPPING')`
+            images: products.images,
+            brand: products.brand,
+            stockQuantity: products.stockQuantity,
+            is_local_delivery_available: products.isLocalDeliveryAvailable,
+            is_shipping_available: products.isShippingAvailable
           }
         })
         .from(cartItems)
         .leftJoin(products, eq(products.id, cartItems.productId))
-        .where(eq(cartItems.ownerId, ownerId));
+        .where(or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)));
 
       const subtotal = items.reduce((sum, item) => {
         const unit = Number(item.product?.price ?? 0);

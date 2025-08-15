@@ -139,7 +139,7 @@ export default function Checkout() {
   // FIXED: Calculate subtotal properly with null/undefined checks
   const subtotal = cartItems.reduce((sum: number, item: any) => {
     const price = parseFloat(item.product?.price || '0') || 0;
-    const quantity = parseInt(item.quantity || '0') || 0;
+    const quantity = parseInt(item.qty || '0') || 0;
     console.log(`[CHECKOUT CALC] Item: ${item.product?.name}, Price: ${price}, Quantity: ${quantity}, Subtotal: ${price * quantity}`);
     return sum + (price * quantity);
   }, 0);
@@ -428,11 +428,11 @@ export default function Checkout() {
                       <div>
                         <div className="font-medium">{item.product?.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          Qty: {item.quantity}
+                          Qty: {item.qty}
                         </div>
                       </div>
                       <div className="font-semibold">
-                        ${(Number(item.product?.price || 0) * (item.quantity || 0)).toFixed(2)}
+                        ${(Number(item.product?.price || 0) * (item.qty || 0)).toFixed(2)}
                       </div>
                     </div>
                   ))}

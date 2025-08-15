@@ -23,7 +23,7 @@ import { useWebSocketState } from "@/hooks/useWebSocketState";
 import Home from "@/pages/home";
 import Products from "@/pages/products";
 import ProductDetail from "@/pages/product-detail";
-import CartPageV2 from "@/pages/cart.v2";
+import CartPage from "@/pages/cart";
 
 import NotFound from "@/pages/not-found";
 
@@ -119,7 +119,7 @@ function Router() {
               {/* Shopping Routes - Profile completion required */}
               <Route path={ROUTES.CART} component={() => (
                 <ProtectedRoute requireCompleteProfile={true}>
-                  <CartPageV2 />
+                  <CartPage />
                 </ProtectedRoute>
               )} />
               <Route path={ROUTES.CHECKOUT} component={() => (

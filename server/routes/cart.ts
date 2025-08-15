@@ -91,5 +91,5 @@ router.delete("/api/cart/product/:productId", async (req, res, next) => {
   }
 });
 
+export { router };
 export default router;
-export const cartRouterV2 = router;

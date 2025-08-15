@@ -1,0 +1,357 @@
+Target End-State (definition of “perfect”)
+
+One API + one data shape across client/server.
+
+Cart item quantity is qty (number). There is no quantity anywhere.
+
+Endpoints:
+
+GET /api/cart → { ownerId, items, totals }
+
+POST /api/cart → body { productId, qty, variantId? } → 201 on success
+
+PATCH /api/cart/product/:productId → body { qty } (0 deletes)
+
+DELETE /api/cart/product/:productId
+
+One owner identity (SSOT): ownerId = user.id if authenticated, else ownerId = req.sessionID (from express-session’s connect.sid). No custom cookies.
+
+Locality cleanup: Only removes items when SSOT returns effectiveness === 'BLOCKED'. Never deletes allowed items.
+
+Totals are numeric (no NaN), price conversion handled server-side.
+
+Only one cart UI path and one hook in the client. Button clicks never submit a form.
+
+1) Delete / Keep / Rename
+A) Delete these files (and any references/imports to them)
+
+server/routes/cart.ts (legacy)
+
+client/src/hooks/use-cart.tsx (legacy)
+
+client/src/components/AddToCartButtonUnified.tsx (duplicate)
+
+Any file exporting /api/cart/items routes (server) or calling that path (client)
+
+Any code that sets a custom "sid" cookie or generates guest-... IDs
+
+Any cart logic duplicates living in old locality modules (you already have SSOT locality)
+
+After deleting each file, remove imports/usages. If any route registration mounted server/routes/cart.ts, remove that mount.
+
+B) Rename to simplify & standardize
+
+Server routes:
+Rename server/routes/cart.v2.ts → server/routes/cart.ts.
+Update the main route registration to import ./routes/cart.
+
+Client page:
+Rename client/src/pages/cart.v2.tsx → client/src/pages/cart.tsx.
+Remove any old client/src/pages/cart.tsx if it exists (keep just one).
+
+If you have any *.v2.* cart files on client or server, rename them to their base names and update imports.
+
+2) Server Foundations (sessions, owner SSOT, CORS)
+
+Session cookie: In your Express bootstrap, ensure:
+
+Only connect.sid is used (no custom cookies).
+
+saveUninitialized: true so guests receive a stable session.
+
+sameSite/secure aligned with your front-end origin (same-origin: lax; cross-origin: none + secure: true).
+
+ensureSession middleware:
+
+Must not set cookies or rotate IDs.
+
+Only expose an alias: req.sessionId = req.sessionID and next().
+
+Owner helper in server/utils/cartOwner.ts:
+
+getCartOwnerId(req) returns req.user?.id ?? req.sessionID.
+Remove all other “owner” derivations project-wide.
+
+3) Database & Storage (single model, single interface)
+A) Schema expectations
+
+cart_items columns used by code: id, owner_id (NOT NULL), product_id, variant_id (nullable), qty (int > 0), timestamps.
+
+Indices/constraints:
+
+Unique row: (owner_id, product_id, COALESCE(variant_id, ''))
+
+Qty guard: qty > 0
+
+Do not read/write session_id or user_id columns anymore (remove them when convenient).
+
+If your DB still uses quantity instead of qty, keep the mapping only inside server/storage.ts (read/write using qty names at the app boundary).
+
+B) server/storage.ts must expose only these functions (and nothing else)
+
+getCartItemsByOwner(ownerId) → includes joined product info needed for prices/titles/thumbs.
+
+getCartByOwner(ownerId) → constructs { ownerId, items, totals }.
+Coerce product price to a number before calculations.
+
+addOrUpdateCartItem(ownerId, productId, variantId|null, qty) → upsert & increment.
+
+setCartItemQty(ownerId, productId, variantId|null, qty) → absolute set; qty ≤ 0 deletes.
+
+removeCartItemsByProduct(ownerId, productId)
+
+removeCartItemById(id) (used by consolidation)
+
+rekeyCartItemOwner(id, newOwnerId) (used by login merge)
+
+getProductStock(productId) (return a number; safe to use a high default if not tracked)
+
+Important: Do not reference any undefined “selection fields” constants (e.g., cartItemSelectionFields). Explicitly select columns from schema. Every query filters by owner_id only.
+
+4) Server Routes (the only cart API)
+
+Inside server/routes/cart.ts (renamed from v2):
+
+GET /api/cart
+
+Resolve ownerId via getCartOwnerId(req)
+
+Call consolidateAndClampCart(ownerId)
+
+Return getCartByOwner(ownerId)
+
+POST /api/cart
+Body: { productId, qty, variantId? } (validate types)
+→ addOrUpdateCartItem()
+→ Return 201 with { ok: true, item }
+
+PATCH /api/cart/product/:productId
+Body: { qty }
+→ If qty <= 0 → removeCartItemsByProduct()
+→ Else setCartItemQty()
+→ { ok: true }
+
+DELETE /api/cart/product/:productId
+→ removeCartItemsByProduct()
+→ { ok: true }
+
+Legacy suppression: If any old route for /api/cart/items still exists, remove it. If you need a bridge briefly, have it respond 410 Gone with a JSON message “Use /api/cart”.
+
+5) Business Logic (consolidation, stock, merge, cleanup)
+
+In server/services/cartService.ts:
+
+consolidateAndClampCart(ownerId)
+
+Group by (productId, variantId).
+
+Sum to a single row; clamp to getProductStock(productId).
+
+Update canonical row’s qty, delete duplicates; delete row if final qty is 0.
+
+mergeSessionCartIntoUser(sessionOwner, userId)
+
+Re-key all session rows to userId.
+
+Run consolidateAndClampCart(userId) once.
+
+Ensure it’s invoked once after login in a small middleware (set a session flag).
+
+In server/services/cartCleanup.ts (or equivalent):
+
+Only delete items when locality SSOT returns effectiveness === 'BLOCKED'.
+
+Remove any deletion paths tied to allowed modes such as LOCAL_AND_SHIPPING, PICKUP, etc.
+
+6) Frontend API Client (single source)
+
+In client/src/lib/api.ts: network requests must use credentials: "include".
+
+In client/src/lib/cartApi.ts, provide only:
+
+getCart() → GET /api/cart
+
+addToCartApi({ productId, qty, variantId? }) → POST /api/cart
+
+setQtyByProduct(productId, qty) → PATCH /api/cart/product/:productId
+
+removeByProduct(productId) → DELETE /api/cart/product/:productId
+
+Remove any other cart endpoints from this file.
+
+7) Frontend Hook (canonical, consistent)
+
+In client/src/hooks/useCart.ts (this is the only cart hook in the repo):
+
+It should return exactly:
+
+data (server payload), isLoading, isError
+
+addToCart({ productId, qty, variantId? })
+
+updateCartItem({ productId, qty })
+
+removeByProduct(productId)
+
+isAddingToCart, isUpdating, isRemovingByProduct
+
+isInCart(productId), getItemQuantity(productId)
+
+Query key should include user/locality to ensure correct cache:
+["cart", user?.id ?? "guest", locality?.localityVersion ?? "0"]
+
+Mutations must invalidate that key on success.
+
+Ensure no other hook exposes a different cart contract. If you find any, delete it.
+
+8) Frontend Components (fix the two common pitfalls)
+AddToCartButton
+
+Ensure the clickable elements are type="button" (never implicit submit).
+
+In onClick handlers, call event.preventDefault() and event.stopPropagation().
+
+Use only the canonical hook functions:
+
+Add: addToCart({ productId, qty: 1, variantId })
+
+Remove: removeByProduct(productId)
+
+If you display a count, read with getItemQuantity(productId).
+
+Cart Drawer & Cart Page
+
+Replace every item.quantity usage with item.qty.
+
+When changing qty, call updateCartItem({ productId, qty }).
+
+When removing, call removeByProduct(productId).
+
+For totals, read data?.totals?.subtotal (already numeric from server).
+
+Ensure each component calls useCart() once and reuses its values (do not instantiate multiple hooks in the same component).
+
+9) Replace legacy names & paths everywhere
+
+Perform a project-wide find/replace via Replit:
+
+Replace property access: .quantity → .qty
+Replace object keys: quantity: → qty:
+
+Replace endpoint references: /api/cart/items → /api/cart (POST) and the new PATCH/DELETE product routes.
+
+Remove references/imports of:
+
+client/src/hooks/use-cart.tsx
+
+client/src/components/AddToCartButtonUnified.tsx
+
+server/routes/cart.ts (legacy)
+
+Remove any code that sets document.cookie = "sid=..." or res.cookie("sid", ...).
+
+10) Totals & NaN fix (server)
+
+In your cart building function (getCartByOwner):
+
+When deriving prices: convert to number before math:
+
+const unit = Number(item.product?.price ?? 0);
+
+Use Number.isFinite(unit) ? unit : 0.
+
+Multiply by Number(item.qty ?? 0).
+
+Return a numeric subtotal (and total if you add shipping/tax later).
+
+11) Checkout integration sanity
+
+client/src/pages/checkout.tsx and server/routes/checkout.ts must use the same cart shape (qty).
+
+If checkout performs a final validation or quote, read directly from getCartByOwner(ownerId) to avoid drift.
+
+Keep Stripe/Resend/Cloudinary integration untouched—only ensure they read the qty-based cart.
+
+12) Guardrails to prevent regressions
+
+ESLint rule to block legacy imports:
+
+Disallow imports of server/routes/cart (legacy), client/src/hooks/use-cart (legacy), AddToCartButtonUnified.
+
+Code review checklist (team discipline):
+
+No quantity in any new code; only qty.
+
+No new endpoints except the four listed.
+
+Buttons inside forms must explicitly set type="button" unless they’re the actual submit.
+
+No custom cookies; only connect.sid.
+
+13) Manual Verification (what to check in Replit preview)
+
+Add flow (guest):
+
+Open a product, click “Add to Cart” twice.
+
+Network panel shows only POST /api/cart with a 201 status (no POST /).
+
+Cart drawer/page displays the item with qty = 2.
+
+Edit & remove:
+
+Increase/decrease quantity in the cart; you should see PATCH /api/cart/product/:id.
+
+Remove an item; you should see DELETE /api/cart/product/:id.
+
+Cart updates immediately (query invalidation).
+
+Login merge:
+
+Add as guest, then log in.
+
+Items persist under your account; no duplicates.
+
+Locality safety:
+
+Add a product that’s allowed; it remains.
+
+Try a BLOCKED item; cleanup removes it (and logs show BLOCKED).
+
+Totals:
+
+Server logs do not show NaN.
+
+UI totals match expected math.
+
+Quick file checklist (after cleanup)
+
+Server
+
+server/routes/cart.ts ✅ (renamed from v2, only cart routes)
+
+server/utils/cartOwner.ts ✅ (SSOT owner helper)
+
+server/services/cartService.ts ✅ (consolidate, clamp, merge)
+
+server/services/cartCleanup.ts ✅ (delete only on BLOCKED)
+
+server/storage.ts ✅ (owner_id + qty; explicit selects; numeric totals)
+
+(No server/routes/cart.ts legacy, no /api/cart/items anywhere)
+
+Client
+
+client/src/hooks/useCart.ts ✅ (the only cart hook)
+
+client/src/components/AddToCartButton.tsx ✅ (single button component)
+
+client/src/components/cart/cart-drawer.tsx ✅ (uses qty)
+
+client/src/pages/cart.tsx ✅ (renamed from v2; uses qty)
+
+client/src/lib/cartApi.ts, client/src/lib/cartKeys.ts, client/src/lib/api.ts ✅
+
+(No use-cart.tsx legacy, no AddToCartButtonUnified.tsx duplicate)
+
+Follow these steps exactly. This leaves you with one clean cart, one owner, one shape, and no legacy conflicts—fully aligned with your SSOT locality and session model.
