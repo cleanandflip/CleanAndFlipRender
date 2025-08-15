@@ -15,7 +15,7 @@ const router = express.Router();
 
 // Warehouse coordinates (example - adjust to your actual location)
 const WAREHOUSE_COORDS = { lat: 40.7128, lon: -74.0060 }; // NYC example
-const LOCAL_DELIVERY_MAX_MILES = 50;
+const LOCAL_DELIVERY_MAX_MILES = 30;
 
 const ShippingQuoteSchema = z.object({
   addressId: z.string().optional(),
@@ -70,7 +70,7 @@ router.post('/quote', requireAuth, async (req, res) => {
       if (distanceMiles <= LOCAL_DELIVERY_MAX_MILES) {
         methods.push({
           code: "LOCAL",
-          label: `Local delivery (≤50 miles - ${distanceMiles.toFixed(1)} miles from warehouse)`,
+          label: `Local delivery (≤30 miles - ${distanceMiles.toFixed(1)} miles from warehouse)`,
           cost: 0,
           eta: "24–48h"
         });

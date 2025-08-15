@@ -60,7 +60,7 @@ export const DEFAULT_HQ: Coordinates = {
 /**
  * Default service radius in miles
  */
-export const DEFAULT_RADIUS_MILES = 25;
+export const DEFAULT_RADIUS_MILES = 30;
 
 /**
  * Determines if coordinates are within service area from HQ

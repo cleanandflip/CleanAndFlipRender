@@ -587,7 +587,7 @@ export function ProductForm() {
                 <div className="space-y-1">
                   <Label htmlFor="localDelivery" className="flex items-center gap-2 cursor-pointer">
                     <MapPin className="w-4 h-4 text-green-500" />
-                    Local Delivery (Free within 50 miles of Asheville, NC)
+                    Local Delivery (Free within 30 miles of Asheville, NC)
                   </Label>
                   <p className="text-sm text-muted-foreground">
                     Free delivery for customers in our local service area

@@ -122,10 +122,10 @@ export default function ShippingInfo() {
                   className="font-bebas text-xl mb-2"
                   style={{ color: theme.colors.text.primary }}
                 >
-                  15-MILE RADIUS
+                  30-MILE RADIUS
                 </h4>
                 <p style={{ color: theme.colors.text.secondary }}>
-                  Free pickup and delivery within 15 miles of downtown Asheville
+                  Free pickup and delivery within 30 miles of Asheville, NC 28806
                 </p>
               </div>
             </div>
@@ -369,7 +369,7 @@ export default function ShippingInfo() {
                   LOCAL DELIVERY
                 </h4>
                 <ul className="text-sm space-y-1" style={{ color: theme.colors.text.secondary }}>
-                  <li>Within 15-mile radius</li>
+                  <li>Within 30-mile radius</li>
                   <li>No minimum order</li>
                   <li>Equipment pickup included</li>
                   <li>Professional handling</li>
@@ -390,7 +390,7 @@ export default function ShippingInfo() {
                   EXTENDED DELIVERY
                 </h4>
                 <ul className="text-sm space-y-1" style={{ color: theme.colors.text.secondary }}>
-                  <li>15-50 mile radius</li>
+                  <li>Beyond 30-mile radius</li>
                   <li>$50 minimum charge</li>
                   <li>Scheduled delivery</li>
                   <li>Call for availability</li>
@@ -411,7 +411,7 @@ export default function ShippingInfo() {
                   REGIONAL SHIPPING
                 </h4>
                 <ul className="text-sm space-y-1" style={{ color: theme.colors.text.secondary }}>
-                  <li>Beyond 50 miles</li>
+                  <li>Beyond 30 miles</li>
                   <li>Custom quote provided</li>
                   <li>Professional packaging</li>
                   <li>Freight shipping options</li>
