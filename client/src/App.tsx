@@ -78,26 +78,11 @@ function ScrollRestoration() {
       return;
     }
     
-    // Check if we have a saved position
-    const savedPosition = sessionStorage.getItem(`scroll-${location}`);
-    if (savedPosition) {
-      setTimeout(() => {
-        window.scrollTo(0, parseInt(savedPosition));
-      }, 100);
-    } else {
-      window.scrollTo(0, 0);
-    }
+    // For most navigation, scroll to top for better UX
+    window.scrollTo(0, 0);
   }, [location]);
   
-  // Save scroll position before navigation
-  useEffect(() => {
-    const handleScroll = () => {
-      sessionStorage.setItem(`scroll-${location}`, window.scrollY.toString());
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [location]);
+  // Scroll position saving removed - always scroll to top for better UX
   
   return null;
 }

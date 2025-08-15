@@ -4,6 +4,10 @@ import { Facebook, Instagram, Youtube, Mail, Phone, MapPin, Clock } from "lucide
 import { ROUTES } from "@/config/routes";
 
 export default function Footer() {
+  // Function to scroll to top when clicking footer links
+  const handleLinkClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const shopLinks = [
     { name: "All Equipment", href: ROUTES.PRODUCTS },
     { name: "Barbells", href: `${ROUTES.PRODUCTS}?category=barbells` },
@@ -41,7 +45,10 @@ export default function Footer() {
             <div className="space-y-2">
               {shopLinks.map((link) => (
                 <Link key={link.name} href={link.href}>
-                  <span className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer">
+                  <span 
+                    className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer"
+                    onClick={handleLinkClick}
+                  >
                     {link.name}
                   </span>
                 </Link>
@@ -55,7 +62,10 @@ export default function Footer() {
             <div className="space-y-2">
               {companyLinks.map((link) => (
                 <Link key={link.name} href={link.href}>
-                  <span className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer">
+                  <span 
+                    className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer"
+                    onClick={handleLinkClick}
+                  >
                     {link.name}
                   </span>
                 </Link>
@@ -69,7 +79,10 @@ export default function Footer() {
             <div className="space-y-2">
               {policyLinks.map((link) => (
                 <Link key={link.name} href={link.href}>
-                  <span className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer">
+                  <span 
+                    className="block text-text-secondary hover:text-white transition-colors text-sm cursor-pointer"
+                    onClick={handleLinkClick}
+                  >
                     {link.name}
                   </span>
                 </Link>
