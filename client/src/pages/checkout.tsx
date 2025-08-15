@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { MapPin, Plus, Check } from "lucide-react";
 import { useLocality } from "@/hooks/useLocality";
+import { LocalBadge } from "@/components/locality/LocalBadge";
 import { motion } from "framer-motion";
 import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryEligibilityBanner';
 
@@ -234,11 +235,14 @@ export default function Checkout() {
                               <p className="text-sm text-gray-600">
                                 {address.city}, {address.state} {address.postalCode}
                               </p>
-                              {address.isDefault && (
-                                <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded mt-1">
-                                  Default
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2 mt-1">
+                                {address.isDefault && (
+                                  <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                    Default
+                                  </span>
+                                )}
+                                <LocalBadge isLocal={locality?.eligible ?? false} />
+                              </div>
                             </div>
                             {selectedAddressId === address.id && (
                               <Check className="w-5 h-5 text-blue-600" />
