@@ -8,6 +8,15 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
+### Locality-Safe Cart System (COMPLETE)
+A comprehensive locality enforcement system with single source of truth for all cart operations:
+- **Server Enforcement**: V2 cart router with `[CART ENFORCE V2]` logging and locality validation
+- **Auto-Purge**: Automatic removal of LOCAL_ONLY items for non-eligible users on cart retrieval
+- **Structured Errors**: JSON responses with proper error codes (LOCALITY_BLOCKED, AUTH_REQUIRED)
+- **Compound DELETE**: Authenticated user+productId removal route for cart management
+- **UI Gating**: Complete locality checking across all components with unified messaging
+- **Single Source of Truth**: Unified locality hook with consistent status across application
+
 ### Frontend Architecture
 The client-side is built with React 18, TypeScript, and leverages modern React patterns. Key decisions include:
 - **Framework**: React with TypeScript for type safety.

@@ -9,6 +9,8 @@ import { LocalBadge } from "@/components/locality/LocalBadge";
 import { useLocality } from "@/hooks/useLocality";
 import { Badge } from "@/components/ui/badge";
 import { DeliveryEligibilityBanner } from '@/components/fulfillment/DeliveryEligibilityBanner';
+import { CartAutoCleanupNotice } from '@/components/cart/CartAutoCleanupNotice';
+import { ProductFulfillmentChip } from '@/components/fulfillment/ProductFulfillmentChip';
 
 export default function CartPage() {
   const { data: cart, isLoading, isError } = useCart();
