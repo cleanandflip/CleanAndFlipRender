@@ -1,0 +1,178 @@
+0) Decide the single sending identity (canonical “From”)
+
+✅ We will send all contact emails from: Clean & Flip <no-reply@mail.cleanandflip.com>
+(Do not use the visitor’s email in the from; use it only in reply_to.)
+
+Action: In code, ensure:
+
+from = process.env.RESEND_FROM (e.g. no-reply@mail.cleanandflip.com)
+
+to = 'support@cleanandflip.com' (or any working inbox you control)
+
+reply_to = visitorEmail
+
+A) DNS & domain alignment (the most common breakage)
+
+Goal: Your From domain must be fully verified in Resend, and your To domain must have working MX/inbox.
+
+From domain matches DNS
+
+In Resend → Domains, verify mail.cleanandflip.com (since your From uses that subdomain).
+
+Add the exact DKIM TXT record Resend gives you for mail.cleanandflip.com (often like resend._domainkey.mail → long TXT).
+
+No extra quotes, no smart quotes, no truncation. TTL ≥ 300.
+
+In Resend, wait until the domain shows Verified.
+
+Recipient domain has a mailbox (MX)
+
+Check the MX for the destination domain:
+
+dig +short MX cleanandflip.com
+
+
+If no MX or it points to an unused provider, inbound mail to support@cleanandflip.com will delay/fail.
+
+Fix: point MX to the provider actually hosting support@cleanandflip.com (Google Workspace, Titan, Zoho, etc.).
+
+Create the support@cleanandflip.com mailbox or forwarder in that provider.
+
+No duplicate / broken SPF
+
+Only one SPF record per domain. If you have multiple v=spf1 records, merge them.
+
+Keep the mailbox provider’s include (e.g., Google/Titan/Zoho). Resend relies on DKIM; SPF doesn’t need to include Resend, but SPF must be syntactically valid.
+
+DMARC (recommended)
+
+Add at least a relaxed policy to help reputation:
+
+_dmarc.cleanandflip.com  TXT  "v=DMARC1; p=none; rua=mailto:postmaster@cleanandflip.com; fo=1"
+
+
+A/AAAA fallback (rare)
+
+Some MTAs fall back to the A record if MX is missing. Ensure cleanandflip.com A/AAAA points to a host that accepts mail (most don’t). Better: have proper MX.
+
+B) App configuration (server-side only)
+
+Environment
+
+Ensure Live keys:
+
+RESEND_API_KEY=... (live key, not test)
+
+RESEND_FROM="Clean & Flip <no-reply@mail.cleanandflip.com>"
+
+SUPPORT_TO="support@cleanandflip.com"
+
+In Replit Secrets, set the above and restart the server.
+
+Server-side send (not client)
+
+The contact form should POST to your server (/api/contact); the server calls resend.emails.send().
+(Never call Resend directly from the browser.)
+
+Use reply_to, never spoof user in from
+
+from = RESEND_FROM
+
+to = SUPPORT_TO
+
+reply_to = form.email
+
+Log and bubble errors
+
+Log message.id and error.name/error.message from Resend.
+
+If resend.emails.send() resolves with an id, Resend accepted it; delivery then depends on the recipient MX/inbox.
+
+C) Quick code sanity (contact route)
+
+Verify your contact route looks like this pattern:
+
+await resend.emails.send({
+  from: process.env.RESEND_FROM!,           // no-reply@mail.cleanandflip.com
+  to: process.env.SUPPORT_TO!,              // support@cleanandflip.com
+  reply_to: form.email,                     // visitor
+  subject: `Contact Form: ${form.subject}`,
+  html: renderContactHtml(form),            // or react template
+});
+
+
+Do not set from: form.email. That fails DMARC at many receivers.
+
+D) Receiver sanity checks (why your screenshot shows “Delivery Delayed”)
+
+Run these immediately:
+
+Does the inbox exist and receive mail?
+
+From a personal Gmail, send an email to support@cleanandflip.com.
+
+If it bounces or never arrives, you’ve confirmed the issue is at the recipient domain (MX/mailbox) – fix MX and mailbox setup.
+
+Check greylisting
+
+Some providers delay first-time senders. Resend will retry automatically.
+
+Once MX is correct and inbox exists, mail typically delivers within retries.
+
+If you don’t have a working inbox yet
+
+Temporarily change SUPPORT_TO to a known working address (e.g., a Gmail you own) and test again.
+
+If that delivers, the problem is definitively the support@cleanandflip.com mailbox/MX.
+
+E) Observability (so you know exactly what’s happening)
+
+Enable Resend webhooks to /api/resend/webhook for delivered, bounced, delayed, complained.
+
+Log correlation IDs
+
+Include your contact submission ID in the email headers (headers: { 'X-CF-Contact-ID': id }) so you can match dashboard events to submissions.
+
+F) Rate-limit & validation (best practice)
+
+Add per-IP rate limit to the contact endpoint (e.g., 5/min).
+
+Validate email, subject, message and strip HTML from user inputs.
+
+Use reply_to so support can reply directly to the sender.
+
+G) One-shot “works / doesn’t” test plan
+
+Run these, in order:
+
+DNS
+
+dig +short MX cleanandflip.com
+dig +short TXT resend._domainkey.mail.cleanandflip.com
+
+
+Expect valid MX pointing to your mailbox provider.
+
+Expect a long DKIM TXT on the resend._domainkey.mail... host (or whatever selector Resend gave you).
+
+Send to external mailbox
+
+Set SUPPORT_TO to a known good mailbox (e.g., your Gmail).
+
+Submit the contact form → Confirm delivered in Resend dashboard and in the mailbox.
+
+Switch back to support@cleanandflip.com
+
+After fixing MX and creating the support@ inbox/forwarder, set SUPPORT_TO back.
+
+Submit again → Confirm delivered.
+
+Likely root cause in your case (based on the screenshot)
+
+You’re sending From mail.cleanandflip.com (good) to support@cleanandflip.com.
+
+Resend shows “Delivery Delayed – Communication Failure” → the receiving side (cleanandflip.com) is not accepting mail (missing/incorrect MX, or the mailbox doesn’t exist yet).
+
+Fix the MX + support mailbox/forwarder first; the moment inbound mail works for that address, your Resend messages will stop delaying and start delivering.
+
+If you want, paste your current MX records and the exact from/to/reply_to values you use in code, and I’ll pinpoint the one change that will unblock delivery immediately.

@@ -258,8 +258,8 @@ export const emailService = {
   }) {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <support@mail.cleanandflip.com>',
-        to: 'support@cleanandflip.com',
+        from: process.env.RESEND_FROM || 'Clean & Flip <no-reply@mail.cleanandflip.com>',
+        to: process.env.SUPPORT_TO || 'support@cleanandflip.com',
         replyTo: contactData.email,
         subject: `Contact Form: ${contactData.subject}`,
         html: `
