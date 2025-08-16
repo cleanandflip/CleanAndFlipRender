@@ -82,7 +82,7 @@ export const emailService = {
   async sendOrderConfirmation(order: OrderEmailData) {
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <orders@mail.cleanandflip.com>',
+        from: 'Clean & Flip <orders@cleanandflip.com>',
         to: order.user.email,
         subject: `Order Confirmed #${order.orderNumber}`,
         html: `
@@ -146,7 +146,7 @@ export const emailService = {
     
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <shipping@mail.cleanandflip.com>',
+        from: 'Clean & Flip <shipping@cleanandflip.com>',
         to: order.user.email,
         subject: `Your Order Has Shipped! #${order.orderNumber}`,
         html: `
@@ -204,7 +204,7 @@ export const emailService = {
     
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Clean & Flip <offers@mail.cleanandflip.com>',
+        from: 'Clean & Flip <offers@cleanandflip.com>',
         to: submission.user.email,
         subject: `Equipment Offer for Your ${submission.brand ? submission.brand + ' ' : ''}${submission.name}`,
         html: `
@@ -258,7 +258,7 @@ export const emailService = {
   }) {
     try {
       const { data, error } = await resend.emails.send({
-        from: process.env.RESEND_FROM || 'Clean & Flip <no-reply@mail.cleanandflip.com>',
+        from: process.env.RESEND_FROM || 'Clean & Flip <no-reply@cleanandflip.com>',
         to: process.env.SUPPORT_TO || 'support@cleanandflip.com',
         replyTo: contactData.email,
         subject: `Contact Form: ${contactData.subject}`,
