@@ -642,7 +642,7 @@ export class DatabaseStorage implements IStorage {
     console.log(`[STORAGE] Deleting cart item with ID: ${cartItemId}`);
     const result = await db.delete(cartItems).where(eq(cartItems.id, cartItemId));
     console.log(`[STORAGE] Delete result - rowCount:`, result.rowCount);
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async clearCart(userId?: string, sessionId?: string): Promise<void> {
@@ -663,14 +663,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // NEW: additive wrapper for compound key removal
-  async removeFromCartByUserAndProduct(userId: string, productId: string): Promise<{ rowCount: number }> {
+  async removeFromCartByUserAndProduct(userId: string, productId: string): Promise<number> {
     console.log(`[STORAGE] Deleting cart item by user+product { userId:'${userId}', productId:'${productId}' }`);
     const result = await db
       .delete(cartItems)
       .where(and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)));
     const rowCount = result.rowCount || 0;
     console.log(`[STORAGE] Delete result { userId:'${userId}', productId:'${productId}', rowCount:${rowCount} }`);
-    return { rowCount };
+    return rowCount;
   }
 
   // ADDITIVE: get cart items with products joined for cleanup service
@@ -704,7 +704,7 @@ export class DatabaseStorage implements IStorage {
       id: item.id,
       ownerId: item.userId || item.sessionId,
       productId: item.productId,
-      variantId: item.variantId || null,
+      variantId: null, // No variant support in current schema
       quantity: item.quantity
     }));
   }
@@ -723,7 +723,7 @@ export class DatabaseStorage implements IStorage {
       id: item.id,
       ownerId: item.userId || item.sessionId,
       productId: item.productId,
-      variantId: item.variantId || null,
+      variantId: null, // No variant support in current schema
       quantity: item.quantity
     };
   }
@@ -738,10 +738,7 @@ export class DatabaseStorage implements IStorage {
         eq(cartItems.productId, productId)
       );
       
-      // Add variant condition only if we have a truthy variant value
-      if (variantId && variantId !== null && variantId !== 'null' && variantId !== 'undefined') {
-        whereCondition = and(whereCondition, eq(cartItems.variantId, variantId));
-      }
+      // Note: No variant support in current schema, skipping variant condition
       // Note: We don't filter by IS NULL for variantId since most products won't have variants
       
       console.log(`[STORAGE] SQL WHERE condition built, executing query...`);
@@ -756,7 +753,7 @@ export class DatabaseStorage implements IStorage {
         id: item.id,
         ownerId: item.userId || item.sessionId,
         productId: item.productId,
-        variantId: item.variantId || null,
+        variantId: null, // No variant support in current schema
         quantity: item.quantity
       }));
     } catch (error) {
@@ -848,7 +845,7 @@ export class DatabaseStorage implements IStorage {
   async removeCartItemById(id: string) {
     console.log(`[STORAGE] Removing cart item by id: ${id}`);
     const result = await db.delete(cartItems).where(eq(cartItems.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
 
