@@ -511,39 +511,13 @@ export class DatabaseStorage implements IStorage {
 
   async getFeaturedProducts(limit: number = 6): Promise<Product[]> {
     try {
-      return await db
-        .select({
-          id: products.id,
-          name: products.name,
-          description: products.description,
-          price: products.price,
-          categoryId: products.categoryId,
-          subcategory: products.subcategory,
-          brand: products.brand,
-          weight: products.weight,
-          condition: products.condition,
-          status: products.status,
-          images: products.images,
-          specifications: products.specifications,
-          stockQuantity: products.stockQuantity,
-          views: products.views,
-          featured: products.featured,
-          searchVector: products.searchVector,
-          stripeProductId: products.stripeProductId,
-          stripePriceId: products.stripePriceId,
-          stripeSyncStatus: products.stripeSyncStatus,
-          stripeLastSync: products.stripeLastSync,
-          sku: products.sku,
-          dimensions: products.dimensions,
-          cost: products.cost,
-          compareAtPrice: products.compareAtPrice,
-          isLocalDeliveryAvailable: products.isLocalDeliveryAvailable,
-          isShippingAvailable: products.isShippingAvailable,
-          availableLocal: products.availableLocal,
-          availableShipping: products.availableShipping,
-          createdAt: products.createdAt,
-          updatedAt: products.updatedAt,
-        })
+      // PERFORMANCE: Use select() with no explicit columns for better performance
+      // ROBUSTNESS: Add fallback strategy for empty featured products
+      Logger.debug(`[STORAGE] Getting featured products (limit: ${limit})`);
+      
+      // Try featured products first
+      const featuredProducts = await db
+        .select()
         .from(products)
         .where(
           and(
@@ -553,9 +527,34 @@ export class DatabaseStorage implements IStorage {
         )
         .orderBy(desc(products.updatedAt))
         .limit(limit);
+
+      if (featuredProducts.length > 0) {
+        Logger.debug(`[STORAGE] Found ${featuredProducts.length} featured products`);
+        return featuredProducts;
+      }
+
+      // FALLBACK: If no featured products, return newest active products
+      Logger.debug('[STORAGE] No featured products found, falling back to newest active');
+      const fallbackProducts = await db
+        .select()
+        .from(products)
+        .where(eq(products.status, 'active'))
+        .orderBy(desc(products.createdAt))
+        .limit(limit);
+
+      Logger.debug(`[STORAGE] Fallback returned ${fallbackProducts.length} products`);
+      return fallbackProducts;
     } catch (error: any) {
-      Logger.error('Error getting featured products:', error.message);
-      throw error;
+      Logger.error('[STORAGE] Error getting featured products:', {
+        message: error.message,
+        code: error.code,
+        name: error.name,
+        stack: error.stack?.slice(0, 500)
+      });
+      
+      // ROBUSTNESS: Never throw - return empty array so UI doesn't crash
+      Logger.warn('[STORAGE] Returning empty array due to error');
+      return [];
     }
   }
 

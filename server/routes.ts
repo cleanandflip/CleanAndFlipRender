@@ -813,14 +813,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Featured products WITHOUT caching - real-time updates required
   app.get("/api/products/featured", apiLimiter, async (req, res) => {
+    const startTime = Date.now();
     try {
       const limit = req.query.limit ? Number(req.query.limit) : 8;
+      
+      // Validate limit parameter
+      if (isNaN(limit) || limit < 1 || limit > 50) {
+        return res.status(400).json({ 
+          error: "Invalid limit parameter",
+          message: "Limit must be a number between 1 and 50" 
+        });
+      }
+
+      Logger.debug(`[FEATURED] Fetching featured products (limit: ${limit})`);
+      
       // NO CACHING - Always fetch fresh data for real-time admin updates
       const products = await storage.getFeaturedProducts(limit);
+      
+      const duration = Date.now() - startTime;
+      Logger.debug(`[FEATURED] Successfully returned ${products.length} products in ${duration}ms`);
+      
+      // ROBUST: Always return 200 with array (even if empty) so UI doesn't crash
       res.json(products);
-    } catch (error) {
-      Logger.error("Error fetching featured products", error);
-      res.status(500).json({ message: "Failed to fetch featured products" });
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      Logger.error('[FEATURED] Fatal error:', {
+        message: error?.message,
+        code: error?.code,
+        name: error?.name,
+        duration,
+        stack: error?.stack?.slice(0, 500)
+      });
+      
+      // CRITICAL: Don't 500 the homepage; return empty array so UI can still load
+      res.status(200).json([]);
     }
   });
 

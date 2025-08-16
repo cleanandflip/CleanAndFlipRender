@@ -1,0 +1,227 @@
+0) Confirm environment & migrations (this causes most “works on one prod, not the other” bugs)
+
+Check env points to the right DB branch
+
+In Replit Secrets for prod #2, verify:
+
+DATABASE_URL points to the intended Neon project/branch.
+
+NODE_ENV=production.
+
+Run migrations on the second prod DB
+
+From the workspace connected to prod #2:
+
+npm run drizzle:status
+npm run drizzle:migrate
+
+
+If you use drizzle-kit push, run that instead of migrate (use your project’s standard).
+
+Re-run drizzle:status to ensure no pending migrations.
+
+Lock this in going forward
+
+Ensure your deploy script runs migrations on boot (or during CI) before starting the server:
+
+# example
+npm run drizzle:migrate && node dist/server.js
+
+1) Capture the real error from /api/products/featured
+
+Add a one-time error logger around the route
+
+In server/routes/products.ts (or wherever the route lives):
+
+router.get('/api/products/featured', async (req, res, next) => {
+  try {
+    const data = await storage.getFeaturedProducts();
+    return res.json(data);
+  } catch (err: any) {
+    console.error('[FEATURED] DB error', {
+      name: err?.name,
+      message: err?.message,
+      code: err?.code,
+      detail: err?.detail,
+      position: err?.position,
+      stack: err?.stack,
+    });
+    return next(err);
+  }
+});
+
+
+Redeploy and hit /api/products/featured once; read the server logs. We want the Postgres code (42703 missing column, 22P02 invalid input, 42883 function not found, etc.).
+
+If the error is “Do not know how to serialize a BigInt”, go to section 3C.
+
+2) Schema drift checks (columns used by “featured”)
+
+We’ll verify column existence used by the featured query. Run these directly against prod #2’s DB:
+
+-- Does the table exist?
+SELECT to_regclass('public.products');
+
+-- Check typical columns featured queries use:
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'products'
+  AND column_name IN ('is_featured','featured','active','published','deleted_at','price','price_cents','created_at','primary_image_id');
+
+-- If you join images/categories, verify those too:
+SELECT to_regclass('public.images');
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'images';
+
+SELECT to_regclass('public.categories');
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'categories';
+
+
+If missing:
+
+Create a migration to add what your code expects (choose ONE canonical pattern):
+
+-- Choose either boolean flag on products
+ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "is_featured" boolean DEFAULT false;
+
+-- Or a join table if your code expects curated lists
+CREATE TABLE IF NOT EXISTS "featured_products" (
+  product_id uuid PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
+  position   int NOT NULL DEFAULT 0
+);
+
+-- Common safety columns (if referenced)
+ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "active" boolean DEFAULT true;
+ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "deleted_at" timestamptz;
+
+
+Seed at least a couple of active products as featured so the query returns rows:
+
+UPDATE products SET is_featured = true WHERE id IN ('<some-product-id-1>','<some-product-id-2>');
+
+3) Fix the two most common runtime causes
+3A) Missing/renamed columns used in the query
+
+If your query references products.featured but schema has is_featured, fix the query OR rename the column.
+
+Align Drizzle schema (shared/schema.ts) with the DB names. Example:
+
+export const products = pgTable('products', {
+  id: uuid('id').primaryKey(),
+  name: varchar('name', { length: 256 }).notNull(),
+  // Use ONE canonical price field
+  priceCents: bigint('price_cents', { mode: 'number' }).notNull(), // or numeric()
+  isFeatured: boolean('is_featured').notNull().default(false),
+  active: boolean('active').notNull().default(true),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+3B) NULL-safety in joins
+
+If your getFeaturedProducts() does INNER JOINs to images/categories, switch to LEFT JOIN and coalesce where necessary. Example (Drizzle):
+
+.leftJoin(images, and(eq(images.productId, products.id), eq(images.isPrimary, true)))
+
+
+Only map fields that exist. Guard null.
+
+3C) BigInt / numeric serialization
+
+If price_cents is BIGINT or numeric, JSON can blow up.
+
+Fix Drizzle column type to return number:
+
+For int8: bigint('price_cents', { mode: 'number' })
+
+For numeric: numeric('price', { precision: 10, scale: 2 }).$type<number>()
+
+As a belt-and-suspenders on the API layer, convert BigInt before JSON:
+
+const safe = JSON.parse(JSON.stringify(rows, (_k, v) => typeof v === 'bigint' ? Number(v) : v));
+res.json(safe);
+
+
+(Prefer fixing the schema typing first.)
+
+4) Make the featured query robust (works even with no curation)
+
+Implement (or update) storage.getFeaturedProducts() to never throw due to empty data. Pseudocode that works with either flag or join table:
+
+export async function getFeaturedProducts(limit = 12) {
+  // Try curated list first (if table exists)
+  const curated = await trySelectCurated(limit); // SELECT p.* FROM featured_products fp JOIN products p ...
+  if (curated.length) return curated;
+
+  // Else fall back to is_featured flag
+  const flagged = await selectWhereIsFeatured(limit); // WHERE p.is_featured = true AND p.active = true AND p.deleted_at IS NULL
+  if (flagged.length) return flagged;
+
+  // Else fall back to newest active products
+  return await selectNewestActive(limit); // ORDER BY p.created_at DESC LIMIT ?
+}
+
+
+Add indices:
+
+CREATE INDEX IF NOT EXISTS idx_products_is_featured ON products(is_featured) WHERE active = true AND deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at);
+
+5) Error boundaries (so you don’t 500 the homepage)
+
+Wrap the route with a safe fallback:
+
+router.get('/api/products/featured', async (req, res) => {
+  try {
+    const items = await storage.getFeaturedProducts(12);
+    res.json({ items });
+  } catch (e) {
+    console.error('[FEATURED] fatal:', e);
+    // Don’t 500 the page; return empty list so UI can still load
+    res.status(200).json({ items: [] });
+  }
+});
+
+
+On the client, guard rendering when list is empty.
+
+6) Smoke tests (run exactly)
+# 1) Basic health
+curl -sSf http://<prod2>/status
+
+# 2) Featured should return 200 and JSON array (possibly empty)
+curl -s -i http://<prod2>/api/products/featured | head -20
+
+# 3) If empty, seed one product and re-test
+psql "$DATABASE_URL" -c "UPDATE products SET is_featured=true WHERE active=true AND deleted_at IS NULL LIMIT 1;"
+curl -s http://<prod2>/api/products/featured
+
+# 4) Check prices serialize (no BigInt error)
+curl -s http://<prod2>/api/products/featured | jq '.[0] // {}'
+
+7) Keep both prod deployments consistent
+
+Document which Neon branch each prod uses.
+
+Make one migration source of truth and always run it on both prods.
+
+Add a /admin/health endpoint that returns:
+
+app version/commit,
+
+db migration version,
+
+counts for products, featured_products,
+
+a probe query timing.
+
+Alert if migration version mismatches.
+
+TL;DR of likely root cause on prod #2
+
+Schema drift (missing featured column/table) or BigInt/numeric serialization in the featured query.
+
+Fix by: run migrations, align schema & Drizzle types, LEFT JOIN everything, and add a safe fallback so the route never 500s even with no featured data.
+
+If you paste the current getFeaturedProducts() function (or the Drizzle query), I’ll give you the exact patch to drop in.
