@@ -239,6 +239,7 @@ export function setupAuth(app: Express) {
     done(null, userId); // Store only the ID, not an object
   });
   
+  // PRODUCTION-SAFE: Never crash on auth failures - wrap in comprehensive try/catch
   passport.deserializeUser(async (id: string, done) => {
     try {
       Logger.debug(`[PASSPORT] Deserializing user with ID: ${id}`);

@@ -133,7 +133,7 @@ export const users = pgTable("users", {
   isEmailVerified: boolean("is_email_verified").default(false),
   profileComplete: boolean("profile_complete").default(false),
   onboardingStep: integer("onboarding_step").default(0),
-  // SSOT Profile address reference - nullable FK to addresses
+  // SSOT Profile address reference - nullable FK to addresses (VARCHAR to match existing DB)
   profileAddressId: varchar("profile_address_id").references(() => addresses.id, { onDelete: 'set null' }),
   onboardingCompletedAt: timestamp("onboarding_completed_at"),
   createdAt: timestamp("created_at").defaultNow(),

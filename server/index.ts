@@ -145,10 +145,10 @@ app.use((req, res, next) => {
   try {
     Logger.info('[MAIN] Initializing server...');
     
-    // Validate database schema on startup
+    // Validate database schema on startup for production safety
     try {
-      const { validateSchemaOnStartup } = await import('./middleware/schemaGuard.js');
-      await validateSchemaOnStartup();
+      const { assertSchemaReady } = await import('./utils/schema-guard.js');
+      await assertSchemaReady();
     } catch (schemaError) {
       Logger.warn('[MAIN] Schema validation failed - continuing with startup:', schemaError);
     }
