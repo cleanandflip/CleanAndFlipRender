@@ -144,6 +144,15 @@ app.use((req, res, next) => {
   let server;
   try {
     Logger.info('[MAIN] Initializing server...');
+    
+    // Validate database schema on startup
+    try {
+      const { validateSchemaOnStartup } = await import('./middleware/schemaGuard.js');
+      await validateSchemaOnStartup();
+    } catch (schemaError) {
+      Logger.warn('[MAIN] Schema validation failed - continuing with startup:', schemaError);
+    }
+    
     server = await registerRoutes(app);
     Logger.info('[MAIN] Server initialization completed successfully');
   } catch (error) {

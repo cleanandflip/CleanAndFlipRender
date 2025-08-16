@@ -165,6 +165,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup enhanced security headers with input sanitization
   setupSecurityHeaders(app);
   
+  // PRODUCTION SAFETY: Skip auth processing for static assets to prevent unnecessary overhead
+  app.use((req, _res, next) => {
+    const path = req.path;
+    if (path === '/sw.js' || 
+        path === '/favicon.ico' || 
+        path === '/manifest.json' ||
+        path.startsWith('/assets/') || 
+        path.startsWith('/static/')) {
+      // Mark as static asset to skip auth middleware later
+      (req as any).isStaticAsset = true;
+    }
+    return next();
+  });
+  
   // Enhanced security and performance monitoring
   try {
     const { securityHeaders, apiSecurityHeaders } = await import('./middleware/securityHeaders.js');
