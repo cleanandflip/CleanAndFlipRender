@@ -168,13 +168,14 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const normalizedEmail = normalizeEmail(email);
     try {
-      // FIXED: Only select columns that exist in current schema (no legacy address fields)
+      // FIXED: Include profile_address_id in query (column exists in DB)
       const result = await db.execute(sql`
         SELECT
           id, email, password, first_name, last_name, phone,
           stripe_customer_id, stripe_subscription_id, created_at, updated_at,
           role, google_id, profile_image_url, auth_provider, is_email_verified,
-          google_email, google_picture
+          google_email, google_picture, profile_address_id, is_local_customer,
+          profile_complete, onboarding_step, onboarding_completed_at
         FROM users
         WHERE LOWER(email) = LOWER(${normalizedEmail})
         LIMIT 1
@@ -189,7 +190,8 @@ export class DatabaseStorage implements IStorage {
             id, email, password, first_name, last_name, phone,
             stripe_customer_id, stripe_subscription_id, created_at, updated_at,
             role, google_id, profile_image_url, auth_provider, is_email_verified,
-            google_email, google_picture
+            google_email, google_picture, profile_address_id, is_local_customer,
+            profile_complete, onboarding_step, onboarding_completed_at
           FROM users
           WHERE LOWER(email) = LOWER(${normalizedEmail})
           LIMIT 1

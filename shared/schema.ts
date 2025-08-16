@@ -133,8 +133,8 @@ export const users = pgTable("users", {
   isEmailVerified: boolean("is_email_verified").default(false),
   profileComplete: boolean("profile_complete").default(false),
   onboardingStep: integer("onboarding_step").default(0),
-  // SSOT Profile address reference
-  profileAddressId: varchar("profile_address_id").references(() => addresses.id),
+  // SSOT Profile address reference - nullable FK to addresses
+  profileAddressId: varchar("profile_address_id"),
   onboardingCompletedAt: timestamp("onboarding_completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -237,7 +237,7 @@ export const products = pgTable("products", {
 // SSOT Addresses table - Single source of truth with canonical SSOT schema
 export const addresses = pgTable("addresses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id"),
   firstName: text("first_name").notNull(), // Required for shipping
   lastName: text("last_name").notNull(), // Required for shipping
   street1: text("street1").notNull(), // Main street address

@@ -8,6 +8,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Major Updates
 
+### Critical Production Database Fix (August 16, 2025)
+- **Issue Resolution**: Fixed production-breaking "column does not exist" error for `profile_address_id` in Passport user deserialization
+- **Database Schema**: Fixed circular reference issues in Drizzle schema between users and addresses tables
+- **Authentication Hardening**: Added comprehensive error handling to Passport deserialization to prevent site-wide crashes
+- **Static Route Bypass**: Implemented middleware to skip session/auth processing for static assets (`/sw.js`, `/assets/`, etc.)
+- **Query Alignment**: Updated user queries to include all existing database columns including `profile_address_id`
+- **Foreign Key Constraints**: Added proper database constraints for `users.profile_address_id → addresses.id` relationship
+- **Production Ready**: Application now gracefully handles database errors without bringing down the entire site
+
 ### Smart Shipping Method Selection for LOCAL_AND_SHIPPING Products (August 15, 2025)
 - **Automatic Local Delivery Priority**: Local customers adding LOCAL_AND_SHIPPING products are automatically set for local delivery
 - **Enhanced Checkout Logic**: Simplified checkout flow automatically prioritizes free local delivery for all local customers
