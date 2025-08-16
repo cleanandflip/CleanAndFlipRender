@@ -1431,7 +1431,7 @@ var init_storage = __esm({
         console.log(`[STORAGE] Deleting cart item with ID: ${cartItemId}`);
         const result = await db.delete(cartItems).where(eq(cartItems.id, cartItemId));
         console.log(`[STORAGE] Delete result - rowCount:`, result.rowCount);
-        return result.rowCount > 0;
+        return (result.rowCount || 0) > 0;
       }
       async clearCart(userId2, sessionId) {
         if (userId2) {
@@ -1450,7 +1450,7 @@ var init_storage = __esm({
         const result = await db.delete(cartItems).where(and(eq(cartItems.userId, userId2), eq(cartItems.productId, productId)));
         const rowCount = result.rowCount || 0;
         console.log(`[STORAGE] Delete result { userId:'${userId2}', productId:'${productId}', rowCount:${rowCount} }`);
-        return { rowCount };
+        return rowCount;
       }
       // ADDITIVE: get cart items with products joined for cleanup service
       async getCartItemsWithProducts(userId2) {
@@ -1471,7 +1471,8 @@ var init_storage = __esm({
           id: item.id,
           ownerId: item.userId || item.sessionId,
           productId: item.productId,
-          variantId: item.variantId || null,
+          variantId: null,
+          // No variant support in current schema
           quantity: item.quantity
         }));
       }
@@ -1484,7 +1485,8 @@ var init_storage = __esm({
           id: item.id,
           ownerId: item.userId || item.sessionId,
           productId: item.productId,
-          variantId: item.variantId || null,
+          variantId: null,
+          // No variant support in current schema
           quantity: item.quantity
         };
       }
@@ -1495,9 +1497,6 @@ var init_storage = __esm({
             or(eq(cartItems.userId, ownerId), eq(cartItems.sessionId, ownerId)),
             eq(cartItems.productId, productId)
           );
-          if (variantId && variantId !== null && variantId !== "null" && variantId !== "undefined") {
-            whereCondition = and(whereCondition, eq(cartItems.variantId, variantId));
-          }
           console.log(`[STORAGE] SQL WHERE condition built, executing query...`);
           const items = await db.select().from(cartItems).where(whereCondition);
           console.log(`[STORAGE] Found ${items.length} matching cart items`);
@@ -1505,7 +1504,8 @@ var init_storage = __esm({
             id: item.id,
             ownerId: item.userId || item.sessionId,
             productId: item.productId,
-            variantId: item.variantId || null,
+            variantId: null,
+            // No variant support in current schema
             quantity: item.quantity
           }));
         } catch (error) {
@@ -1570,7 +1570,7 @@ var init_storage = __esm({
       async removeCartItemById(id) {
         console.log(`[STORAGE] Removing cart item by id: ${id}`);
         const result = await db.delete(cartItems).where(eq(cartItems.id, id));
-        return result.rowCount > 0;
+        return (result.rowCount || 0) > 0;
       }
       async getProductStock(productId) {
         const product = await this.getProduct(productId);
