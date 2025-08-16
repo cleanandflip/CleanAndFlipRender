@@ -2,6 +2,10 @@ import compression from "compression";
 import path from "path";
 import express from "express";
 import type { Application } from "express";
+import { fileURLToPath } from 'url';
+
+// ES module equivalent of __dirname
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export function setupProductionOptimizations(app: Application) {
   if (process.env.NODE_ENV === "production") {

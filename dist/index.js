@@ -5797,6 +5797,7 @@ __export(compression_exports, {
 import compression2 from "compression";
 import path from "path";
 import express5 from "express";
+import { fileURLToPath } from "url";
 function setupProductionOptimizations(app2) {
   if (process.env.NODE_ENV === "production") {
     app2.use(compression2({
@@ -5830,9 +5831,11 @@ function setupProductionOptimizations(app2) {
     );
   }
 }
+var __dirname;
 var init_compression = __esm({
   "server/middleware/compression.ts"() {
     "use strict";
+    __dirname = path.dirname(fileURLToPath(import.meta.url));
   }
 });
 
