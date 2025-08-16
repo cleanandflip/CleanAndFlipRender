@@ -208,8 +208,8 @@ var init_schema = __esm({
       isEmailVerified: boolean("is_email_verified").default(false),
       profileComplete: boolean("profile_complete").default(false),
       onboardingStep: integer("onboarding_step").default(0),
-      // SSOT Profile address reference
-      profileAddressId: varchar("profile_address_id").references(() => addresses.id),
+      // SSOT Profile address reference - nullable FK to addresses
+      profileAddressId: varchar("profile_address_id").references(() => addresses.id, { onDelete: "set null" }),
       onboardingCompletedAt: timestamp("onboarding_completed_at"),
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
@@ -301,7 +301,7 @@ var init_schema = __esm({
     ]);
     addresses = pgTable("addresses", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+      userId: varchar("user_id"),
       firstName: text("first_name").notNull(),
       // Required for shipping
       lastName: text("last_name").notNull(),
@@ -1140,7 +1140,8 @@ var init_storage = __esm({
           id, email, password, first_name, last_name, phone,
           stripe_customer_id, stripe_subscription_id, created_at, updated_at,
           role, google_id, profile_image_url, auth_provider, is_email_verified,
-          google_email, google_picture
+          google_email, google_picture, profile_address_id, is_local_customer,
+          profile_complete, onboarding_step, onboarding_completed_at
         FROM users
         WHERE LOWER(email) = LOWER(${normalizedEmail})
         LIMIT 1
@@ -1154,7 +1155,8 @@ var init_storage = __esm({
             id, email, password, first_name, last_name, phone,
             stripe_customer_id, stripe_subscription_id, created_at, updated_at,
             role, google_id, profile_image_url, auth_provider, is_email_verified,
-            google_email, google_picture
+            google_email, google_picture, profile_address_id, is_local_customer,
+            profile_complete, onboarding_step, onboarding_completed_at
           FROM users
           WHERE LOWER(email) = LOWER(${normalizedEmail})
           LIMIT 1
@@ -1352,46 +1354,30 @@ var init_storage = __esm({
       }
       async getFeaturedProducts(limit = 6) {
         try {
-          return await db.select({
-            id: products.id,
-            name: products.name,
-            description: products.description,
-            price: products.price,
-            categoryId: products.categoryId,
-            subcategory: products.subcategory,
-            brand: products.brand,
-            weight: products.weight,
-            condition: products.condition,
-            status: products.status,
-            images: products.images,
-            specifications: products.specifications,
-            stockQuantity: products.stockQuantity,
-            views: products.views,
-            featured: products.featured,
-            searchVector: products.searchVector,
-            stripeProductId: products.stripeProductId,
-            stripePriceId: products.stripePriceId,
-            stripeSyncStatus: products.stripeSyncStatus,
-            stripeLastSync: products.stripeLastSync,
-            sku: products.sku,
-            dimensions: products.dimensions,
-            cost: products.cost,
-            compareAtPrice: products.compareAtPrice,
-            isLocalDeliveryAvailable: products.isLocalDeliveryAvailable,
-            isShippingAvailable: products.isShippingAvailable,
-            availableLocal: products.availableLocal,
-            availableShipping: products.availableShipping,
-            createdAt: products.createdAt,
-            updatedAt: products.updatedAt
-          }).from(products).where(
+          Logger.debug(`[STORAGE] Getting featured products (limit: ${limit})`);
+          const featuredProducts = await db.select().from(products).where(
             and(
               eq(products.status, "active"),
               eq(products.featured, true)
             )
           ).orderBy(desc(products.updatedAt)).limit(limit);
+          if (featuredProducts.length > 0) {
+            Logger.debug(`[STORAGE] Found ${featuredProducts.length} featured products`);
+            return featuredProducts;
+          }
+          Logger.debug("[STORAGE] No featured products found, falling back to newest active");
+          const fallbackProducts = await db.select().from(products).where(eq(products.status, "active")).orderBy(desc(products.createdAt)).limit(limit);
+          Logger.debug(`[STORAGE] Fallback returned ${fallbackProducts.length} products`);
+          return fallbackProducts;
         } catch (error) {
-          Logger.error("Error getting featured products:", error.message);
-          throw error;
+          Logger.error("[STORAGE] Error getting featured products:", {
+            message: error.message,
+            code: error.code,
+            name: error.name,
+            stack: error.stack?.slice(0, 500)
+          });
+          Logger.warn("[STORAGE] Returning empty array due to error");
+          return [];
         }
       }
       // Cart operations - Always fetch fresh product data
@@ -2303,6 +2289,13 @@ function setupAuth(app2) {
     // CRITICAL: Reset expiry on activity
   };
   app2.set("trust proxy", 1);
+  app2.use((req, _res, next) => {
+    const path5 = req.path;
+    if (path5 === "/sw.js" || path5 === "/favicon.ico" || path5.startsWith("/assets/") || path5.startsWith("/static/") || path5.startsWith("/vite/") || path5.startsWith("/@vite/") || path5.startsWith("/src/") || path5.startsWith("/@fs/")) {
+      return next();
+    }
+    return next();
+  });
   app2.use(session(sessionSettings));
   app2.use(passport2.initialize());
   app2.use(passport2.session());
@@ -2418,8 +2411,8 @@ function setupAuth(app2) {
       Logger.debug(`[PASSPORT] Successfully deserialized user: ${user.email}`);
       done(null, userForSession);
     } catch (error) {
-      Logger.error(`[PASSPORT] Deserialization error:`, error);
-      done(error, null);
+      Logger.error(`[PASSPORT] Deserialization suppressed:`, error);
+      return done(null, false);
     }
   });
   app2.post("/api/register", async (req, res, next) => {
@@ -5839,6 +5832,89 @@ var init_compression = __esm({
   }
 });
 
+// server/middleware/schemaGuard.ts
+var schemaGuard_exports = {};
+__export(schemaGuard_exports, {
+  ensureColumnExists: () => ensureColumnExists,
+  validateSchemaOnStartup: () => validateSchemaOnStartup
+});
+import { sql as sql10 } from "drizzle-orm";
+async function validateSchemaOnStartup() {
+  Logger.info("[SCHEMA] Validating production database schema...");
+  try {
+    const criticalColumns = [
+      { table: "users", column: "profile_address_id" },
+      { table: "products", column: "featured" },
+      { table: "cart_items", column: "owner_id" },
+      { table: "addresses", column: "is_local" }
+    ];
+    for (const { table, column } of criticalColumns) {
+      const result = await db.execute(sql10`
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = ${table} AND column_name = ${column}
+      `);
+      if (!result.rowCount || result.rowCount === 0) {
+        Logger.error(`[SCHEMA] \u274C CRITICAL: Missing column ${table}.${column} in current DATABASE_URL`);
+        Logger.error(`[SCHEMA] Migrations have NOT been applied to this database.`);
+        Logger.error(`[SCHEMA] Run: npm run drizzle:migrate`);
+      } else {
+        Logger.debug(`[SCHEMA] \u2705 ${table}.${column} exists`);
+      }
+    }
+    const criticalIndexes = [
+      "idx_products_featured_status_updated",
+      "idx_products_active_created",
+      "users_email_unique"
+    ];
+    for (const indexName of criticalIndexes) {
+      const result = await db.execute(sql10`
+        SELECT 1 FROM pg_indexes WHERE indexname = ${indexName}
+      `);
+      if (!result.rowCount || result.rowCount === 0) {
+        Logger.warn(`[SCHEMA] \u26A0\uFE0F  Missing performance index: ${indexName}`);
+      } else {
+        Logger.debug(`[SCHEMA] \u2705 Index ${indexName} exists`);
+      }
+    }
+    const versionResult = await db.execute(sql10`SELECT version()`);
+    const version = versionResult.rows[0]?.version || "Unknown";
+    if (version.includes("PostgreSQL 16")) {
+      Logger.info("[SCHEMA] \u2705 PostgreSQL 16.x detected (optimal)");
+    } else {
+      Logger.warn(`[SCHEMA] \u26A0\uFE0F  Database version: ${version} (consider PostgreSQL 16.x)`);
+    }
+    Logger.info("[SCHEMA] \u2705 Schema validation completed");
+  } catch (error) {
+    Logger.error("[SCHEMA] \u274C Schema validation failed:", {
+      message: error.message,
+      code: error.code
+    });
+    Logger.error("[SCHEMA] \u{1F6A8} PRODUCTION WARNING: Database schema validation failed");
+    Logger.error("[SCHEMA] Application may encounter runtime errors if schema is misaligned");
+  }
+}
+async function ensureColumnExists(tableName, columnName) {
+  try {
+    const result = await db.execute(sql10`
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_name = ${tableName} AND column_name = ${columnName}
+    `);
+    return (result.rowCount || 0) > 0;
+  } catch (error) {
+    Logger.error(`[SCHEMA] Failed to check column ${tableName}.${columnName}:`, error);
+    return false;
+  }
+}
+var init_schemaGuard = __esm({
+  "server/middleware/schemaGuard.ts"() {
+    "use strict";
+    init_db();
+    init_logger();
+  }
+});
+
 // server/middleware/error-handler.ts
 var error_handler_exports = {};
 __export(error_handler_exports, {
@@ -5869,7 +5945,7 @@ var simple_password_reset_exports = {};
 __export(simple_password_reset_exports, {
   SimplePasswordReset: () => SimplePasswordReset
 });
-import { sql as sql10 } from "drizzle-orm";
+import { sql as sql11 } from "drizzle-orm";
 import { Resend as Resend2 } from "resend";
 import crypto3 from "crypto";
 import bcryptjs from "bcryptjs";
@@ -5884,7 +5960,7 @@ var init_simple_password_reset = __esm({
       async findUser(email) {
         console.log(`[PasswordReset] Looking for: ${email}`);
         try {
-          const result = await db.execute(sql10`
+          const result = await db.execute(sql11`
         SELECT id, email, first_name, last_name 
         FROM users 
         WHERE LOWER(email) = LOWER(${email.trim()})
@@ -5894,9 +5970,9 @@ var init_simple_password_reset = __esm({
             console.log(`[PasswordReset] \u2705 Found user: ${result.rows[0].email}`);
             return result.rows[0];
           }
-          const countResult = await db.execute(sql10`SELECT COUNT(*) as total FROM users`);
+          const countResult = await db.execute(sql11`SELECT COUNT(*) as total FROM users`);
           console.log(`[PasswordReset] Total users in DB: ${countResult.rows[0]?.total || 0}`);
-          const debugResult = await db.execute(sql10`SELECT email FROM users LIMIT 3`);
+          const debugResult = await db.execute(sql11`SELECT email FROM users LIMIT 3`);
           console.log("[PasswordReset] Sample emails in DB:");
           debugResult.rows.forEach((r) => console.log(`  - ${r.email}`));
           console.log(`[PasswordReset] \u274C User not found: ${email}`);
@@ -5911,7 +5987,7 @@ var init_simple_password_reset = __esm({
         const token = crypto3.randomBytes(32).toString("hex");
         const expires = new Date(Date.now() + 36e5);
         try {
-          await db.execute(sql10`
+          await db.execute(sql11`
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,
           user_id UUID NOT NULL,
@@ -5921,10 +5997,10 @@ var init_simple_password_reset = __esm({
           created_at TIMESTAMP DEFAULT NOW()
         )
       `);
-          await db.execute(sql10`
+          await db.execute(sql11`
         DELETE FROM password_reset_tokens WHERE user_id = ${userId2}
       `);
-          await db.execute(sql10`
+          await db.execute(sql11`
         INSERT INTO password_reset_tokens (user_id, token, expires_at) 
         VALUES (${userId2}, ${token}, ${expires})
       `);
@@ -5992,7 +6068,7 @@ var init_simple_password_reset = __esm({
       // VALIDATE TOKEN
       async validateToken(token) {
         try {
-          const result = await db.execute(sql10`
+          const result = await db.execute(sql11`
         SELECT * FROM password_reset_tokens 
         WHERE token = ${token} AND used = FALSE AND expires_at > NOW()
       `);
@@ -6011,10 +6087,10 @@ var init_simple_password_reset = __esm({
         }
         try {
           const hashedPassword = await bcryptjs.hash(newPassword, 12);
-          await db.execute(sql10`
+          await db.execute(sql11`
         UPDATE users SET password = ${hashedPassword} WHERE id = ${tokenData.user_id}
       `);
-          await db.execute(sql10`
+          await db.execute(sql11`
         UPDATE password_reset_tokens SET used = TRUE WHERE id = ${tokenData.id}
       `);
           console.log("[PasswordReset] Password updated successfully");
@@ -7590,6 +7666,13 @@ async function registerRoutes(app2) {
   setupCompression(app2);
   app2.use(createRequestLogger());
   setupSecurityHeaders(app2);
+  app2.use((req, _res, next) => {
+    const path5 = req.path;
+    if (path5 === "/sw.js" || path5 === "/favicon.ico" || path5 === "/manifest.json" || path5.startsWith("/assets/") || path5.startsWith("/static/")) {
+      req.isStaticAsset = true;
+    }
+    return next();
+  });
   try {
     const { securityHeaders: securityHeaders2, apiSecurityHeaders: apiSecurityHeaders2 } = await Promise.resolve().then(() => (init_securityHeaders(), securityHeaders_exports));
     const { sanitizeInput: sanitizeInput3 } = await Promise.resolve().then(() => (init_inputSanitization(), inputSanitization_exports));
@@ -8040,13 +8123,30 @@ async function registerRoutes(app2) {
     }
   });
   app2.get("/api/products/featured", apiLimiter, async (req, res) => {
+    const startTime = Date.now();
     try {
       const limit = req.query.limit ? Number(req.query.limit) : 8;
+      if (isNaN(limit) || limit < 1 || limit > 50) {
+        return res.status(400).json({
+          error: "Invalid limit parameter",
+          message: "Limit must be a number between 1 and 50"
+        });
+      }
+      Logger.debug(`[FEATURED] Fetching featured products (limit: ${limit})`);
       const products2 = await storage.getFeaturedProducts(limit);
+      const duration = Date.now() - startTime;
+      Logger.debug(`[FEATURED] Successfully returned ${products2.length} products in ${duration}ms`);
       res.json(products2);
     } catch (error) {
-      Logger.error("Error fetching featured products", error);
-      res.status(500).json({ message: "Failed to fetch featured products" });
+      const duration = Date.now() - startTime;
+      Logger.error("[FEATURED] Fatal error:", {
+        message: error?.message,
+        code: error?.code,
+        name: error?.name,
+        duration,
+        stack: error?.stack?.slice(0, 500)
+      });
+      res.status(200).json([]);
     }
   });
   app2.get("/api/products/:id", apiLimiter, async (req, res) => {
@@ -10921,7 +11021,7 @@ var sanitizeRequest = (req, res, next) => {
 
 // server/index.ts
 init_db();
-import { sql as sql11 } from "drizzle-orm";
+import { sql as sql12 } from "drizzle-orm";
 import fs2 from "fs";
 import path4 from "path";
 
@@ -11082,6 +11182,12 @@ app.use((req, res, next) => {
   let server2;
   try {
     Logger.info("[MAIN] Initializing server...");
+    try {
+      const { validateSchemaOnStartup: validateSchemaOnStartup2 } = await Promise.resolve().then(() => (init_schemaGuard(), schemaGuard_exports));
+      await validateSchemaOnStartup2();
+    } catch (schemaError) {
+      Logger.warn("[MAIN] Schema validation failed - continuing with startup:", schemaError);
+    }
     server2 = await registerRoutes(app);
     Logger.info("[MAIN] Server initialization completed successfully");
   } catch (error) {
@@ -11091,7 +11197,7 @@ app.use((req, res, next) => {
   setInterval(async () => {
     try {
       const deleted = await db.execute(
-        sql11`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
+        sql12`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
       );
       if (deleted.rowCount && deleted.rowCount > 0) {
         Logger.info(`[CLEANUP] Removed ${deleted.rowCount} expired password reset tokens`);
