@@ -1,0 +1,196 @@
+Your logs show Passport’s user deserializer is running a query that selects profile_address_id, but that column does not exist in the database (code 42703). Because passport.session() runs on every request (including /sw.js), this throws for anything that hits the server.
+
+Below are the steps to (A) add the missing column safely, (B) align the Drizzle schema and queries, and (C) harden deserialization so a DB hiccup can’t 500 your site (incl. /sw.js).
+
+A) Database migration — create the column & backfill (safe, nullable)
+
+Create a new SQL migration (Drizzle/raw SQL is fine). Name like:
+
+drizzle/migrations/20250816_add_profile_address_id_to_users.sql
+
+
+Contents:
+
+-- 1) Add nullable FK column on users
+ALTER TABLE "users" ADD COLUMN "profile_address_id" uuid;
+
+-- 2) Add FK to addresses (adjust table name/PK to match your schema)
+ALTER TABLE "users"
+  ADD CONSTRAINT "users_profile_address_id_fkey"
+  FOREIGN KEY ("profile_address_id") REFERENCES "addresses"("id")
+  ON DELETE SET NULL;
+
+-- 3) Helpful index
+CREATE INDEX IF NOT EXISTS "idx_users_profile_address_id"
+  ON "users" ("profile_address_id");
+
+-- 4) Backfill from a user's default/primary address if you track it
+-- Try a boolean is_default first; otherwise fall back to most-recent
+UPDATE "users" u
+SET "profile_address_id" = a.id
+FROM "addresses" a
+WHERE a.user_id = u.id
+  AND a.is_default = TRUE
+  AND u.profile_address_id IS NULL;
+
+UPDATE "users" u
+SET "profile_address_id" = sub.id
+FROM (
+  SELECT a1.id, a1.user_id
+  FROM "addresses" a1
+  JOIN (
+    SELECT user_id, MAX(created_at) AS latest
+    FROM "addresses"
+    GROUP BY user_id
+  ) last ON last.user_id = a1.user_id AND last.latest = a1.created_at
+) sub
+WHERE sub.user_id = u.id
+  AND u.profile_address_id IS NULL;
+
+
+Apply the migration against Neon (same connection used by the app).
+
+Verify:
+
+SELECT column_name
+FROM information_schema.columns
+WHERE table_name = 'users' AND column_name = 'profile_address_id';
+
+SELECT COUNT(*) FROM users WHERE profile_address_id IS NOT NULL;
+
+B) Drizzle schema & code alignment
+
+Update the Drizzle schema shared/schema.ts (names may vary):
+
+// addresses table already exists; ensure it exports `addresses.id`
+
+export const users = pgTable('users', {
+  // ...existing columns
+  profileAddressId: uuid('profile_address_id')
+    .references(() => addresses.id, { onDelete: 'set null' })  // nullable
+    .default(null),
+});
+
+
+Rebuild types (if you generate types from schema).
+
+Fix any SELECTs that referenced a non-existent name:
+
+Search repo for legacy patterns:
+
+rg -n --no-heading -g '!node_modules' \
+   -e 'profile_address_id\b' -e 'primary_address_id\b' -e 'default_address_id\b'
+
+
+Ensure queries select users.profileAddressId and LEFT JOIN the address only if you need full address details:
+
+const row = await db.select({
+    id: users.id,
+    email: users.email,
+    profileAddressId: users.profileAddressId,
+    // …other user fields
+  })
+  .from(users)
+  .where(eq(users.id, userId))
+  .limit(1);
+
+
+If you currently join on a different column (e.g., users.address_id):
+
+Either migrate that value into profile_address_id (repeat the backfill), and remove the old column later; or
+
+Change your code to use the existing canonical column and stop selecting profile_address_id.
+Pick one SSOT and stick to it. Given your crash, using profile_address_id (new) is the fastest un-block.
+
+C) Harden Passport deserialization so it can’t 500 the site
+
+Wrap deserializer in a try/catch and fall back to anonymous
+(Your codebase path may be server/auth.ts or server/auth/index.ts):
+
+passport.deserializeUser(async (id: string, done) => {
+  try {
+    const user = await dbGetUserById(id); // uses the fixed select above
+    return done(null, user ?? false);
+  } catch (err) {
+    console.error('[PASSPORT] Deserialization suppressed:', err);
+    // Never crash the request due to a user fetch problem
+    return done(null, false);
+  }
+});
+
+
+Don’t run auth for static assets & service worker
+Mount passport.session() after a small bypass for static routes:
+
+// BEFORE passport.session():
+app.use((req, _res, next) => {
+  const p = req.path;
+  if (
+    p === '/sw.js' ||
+    p === '/favicon.ico' ||
+    p.startsWith('/assets/') ||
+    p.startsWith('/static/')
+  ) return next(); // skip to next middleware; no session/auth cost
+
+  return next();
+});
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+(If you already initialize globally, at minimum keep the try/catch above so /sw.js can’t 500.)
+
+D) Clean up any stale code paths
+
+Delete/patch any code that still assumes a different column:
+
+primary_address_id, default_address_id, raw address_id, etc.
+
+Update them to use users.profile_address_id OR stop selecting profile address entirely if it’s unused.
+
+Add a tiny invariant where you rely on it:
+
+if (!user.profileAddressId) {
+  // optional: pick a default address or allow null gracefully
+}
+
+E) Quick regression tests (run all)
+
+Column exists & is populated
+
+SELECT profile_address_id FROM users LIMIT 5;
+
+
+Hit any page that previously crashed (watch logs)
+
+/ and /sw.js should return 200, no “column does not exist”.
+
+Sign-in / session restore works
+
+Log in, refresh page(s), ensure no 500s and user data loads.
+
+Address display (if used in header/profile)
+
+Ensure joins still work when profile_address_id is NULL (LEFT JOIN or guard in code).
+
+F) (Optional) Follow-up migration to remove legacy columns
+
+Once stable for a few days:
+
+Remove old/duplicative address pointer columns from users if any.
+
+Add a trigger or app-level write to keep profile_address_id updated whenever:
+
+a user sets a new default address, or
+
+the existing default is deleted (set to NULL or swap to another).
+
+Commit message
+fix(db/auth): add users.profile_address_id + backfill, align Drizzle schema & queries, harden passport deserialization and bypass static routes to prevent 500s
+
+Why this resolves your exact errors
+
+The crash is a SQL parse error from selecting a non-existent column during deserialization.
+
+We create the column, align the ORM schema, update queries, and guard deserialization so even if a future schema slip happens, the request won’t 500 (including /sw.js).
