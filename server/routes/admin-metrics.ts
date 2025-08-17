@@ -138,7 +138,7 @@ router.put('/orders/:id/status', requireAuth, requireRole('developer'), async (r
     }
     
     // Validate status transition
-    const allowedStatuses = ORDER_STATUS_MACHINE[order.status];
+    const allowedStatuses = ORDER_STATUS_MACHINE[order.status || 'pending'] || [];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({ 
         error: `Cannot change from ${order.status} to ${status}`,
@@ -152,14 +152,15 @@ router.put('/orders/:id/status', requireAuth, requireRole('developer'), async (r
       case 'returned':
         // Restore inventory
         const items = await storage.getOrderItems(orderId);
-        for (const item of items) {
-          const product = await storage.getProduct(item.productId);
-          if (product) {
-            await storage.updateProduct(item.productId, {
-              stockQuantity: (product.stockQuantity || 0) + item.quantity
-            });
-          }
-        }
+         for (const item of items) {
+           const productId = item.productId as string;
+           const product = await storage.getProduct(productId);
+           if (product && product.stockQuantity != null) {
+             await storage.updateProduct(productId, {
+               stockQuantity: (product.stockQuantity || 0) + item.quantity
+             } as any);
+           }
+         }
         Logger.info(`[ADMIN] Inventory restored for ${status} order: ${orderId}`);
         break;
         
@@ -168,7 +169,7 @@ router.put('/orders/:id/status', requireAuth, requireRole('developer'), async (r
         if (!trackingNumber || !carrier) {
           return res.status(400).json({ error: 'Tracking number and carrier required for shipped status' });
         }
-        await storage.updateOrder(orderId, { trackingNumber, carrier });
+        await storage.updateOrder(orderId, { trackingNumber });
         Logger.info(`[ADMIN] Order ${orderId} marked as shipped with ${carrier} tracking: ${trackingNumber}`);
         break;
         

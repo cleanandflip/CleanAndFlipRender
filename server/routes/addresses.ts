@@ -104,8 +104,7 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
       const isLocal = isLocalMiles(data.latitude ?? null, data.longitude ?? null);
       updateData = {
         ...updateData,
-        isLocal
-      };
+      } as any;
     }
     
     const address = await storage.updateAddress(userId, id, { ...updateData, isLocal: undefined } as any);

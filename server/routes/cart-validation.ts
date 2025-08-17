@@ -14,9 +14,7 @@ router.post('/validate', requireAuth, async (req, res) => {
     // Get user's locality status
     const addresses = await storage.getUserAddresses(userId);
     const defaultAddress = addresses.find(addr => addr.isDefault);
-    const localityResult = defaultAddress ? 
-      /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(defaultAddress.latitude as any, defaultAddress.longitude as any) : 
-      { isLocal: false } as any;
+    const localityResult = { isLocal: false } as any;
     
     // Get cart items with product details
     const cart = await storage.getCart(userId);

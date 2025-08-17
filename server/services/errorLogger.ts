@@ -294,15 +294,15 @@ export class ErrorLogger {
       }
 
       // Apply conditions
-      let finalQuery = query;
+      let finalQuery: any = query;
       if (conditions.length > 0) {
-        finalQuery = query.where(and(...conditions));
+        finalQuery = query.where(and(...conditions)) as any;
       }
 
       const results = await finalQuery
         .orderBy(desc(errorLogs.created_at))
-        .limit(limit)
-        .offset(offset);
+        .limit(limit as number)
+        .offset(offset as number);
 
       return results;
     } catch (err) {

@@ -25,9 +25,9 @@ router.post('/webhook',
     try {
       // Verify webhook signature
       event = stripe.webhooks.constructEvent(
-        req.body, // Must be raw body
-        sig,
-        webhookSecret
+        req.body as any, // Must be raw body
+        sig as string,
+        webhookSecret as string
       );
       
       Logger.info(`[STRIPE] Webhook received: ${event.type}`, {
@@ -73,7 +73,7 @@ router.post('/webhook',
 );
 
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-  const orderId = (paymentIntent.metadata as any)?.orderId as string | undefined;
+  const orderId = ((paymentIntent.metadata as any)?.orderId ?? null) as string | null;
   
   if (!orderId) {
     Logger.error('No orderId in payment intent metadata');
@@ -83,10 +83,10 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   Logger.info(`[STRIPE] Payment succeeded for order: ${orderId}`);
   
   // Update order status to confirmed
-  await storage.updateOrderStatus(orderId, 'confirmed');
+  await storage.updateOrderStatus(orderId || '', 'confirmed');
   
   // Get order details for confirmation email
-  const order = await storage.getOrder(orderId);
+  const order = await storage.getOrder(orderId as string);
   if (order) {
     // Send order confirmation email (implement when email service is ready)
     Logger.info(`[STRIPE] Order ${orderId} confirmed, email sent to ${order.userId}`);
@@ -94,7 +94,7 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
 }
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
-  const orderId = (paymentIntent.metadata as any)?.orderId as string | undefined;
+  const orderId = ((paymentIntent.metadata as any)?.orderId ?? null) as string | null;
   
   if (!orderId) {
     Logger.error('No orderId in payment intent metadata');
@@ -104,14 +104,14 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   Logger.warn(`[STRIPE] Payment failed for order: ${orderId}`);
   
   // Update order status to payment failed
-  await storage.updateOrderStatus(orderId, 'payment_failed');
+  await storage.updateOrderStatus(orderId || '', 'payment_failed');
   
   // Restore inventory for failed payment
-  await restoreInventoryForOrder(orderId);
+  await restoreInventoryForOrder(orderId as string);
 }
 
 async function handlePaymentCanceled(paymentIntent: Stripe.PaymentIntent) {
-  const orderId = (paymentIntent.metadata as any)?.orderId as string | undefined;
+  const orderId = ((paymentIntent.metadata as any)?.orderId ?? null) as string | null;
   
   if (!orderId) {
     Logger.error('No orderId in payment intent metadata');
@@ -121,10 +121,10 @@ async function handlePaymentCanceled(paymentIntent: Stripe.PaymentIntent) {
   Logger.info(`[STRIPE] Payment canceled for order: ${orderId}`);
   
   // Update order status to cancelled
-  await storage.updateOrderStatus(orderId, 'cancelled');
+  await storage.updateOrderStatus(orderId || '', 'cancelled');
   
   // Restore inventory for cancelled payment
-  await restoreInventoryForOrder(orderId);
+  await restoreInventoryForOrder(orderId as string);
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
@@ -142,12 +142,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 async function restoreInventoryForOrder(orderId: string) {
   try {
-    const orderItems = await storage.getOrderItems(orderId);
+    const orderItems = await storage.getOrderItems(orderId as string);
     
     for (const item of orderItems) {
-      const product = await storage.getProduct(item.productId);
+      const product = await storage.getProduct(item.productId as string);
       if (product) {
-        await storage.updateProduct(item.productId, {
+        await storage.updateProduct(item.productId as string, {
           stockQuantity: (product.stockQuantity || 0) + item.quantity
         });
         Logger.debug(`[INVENTORY] Restored ${item.quantity} units for product ${item.productId}`);
