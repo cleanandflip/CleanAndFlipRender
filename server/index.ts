@@ -16,7 +16,30 @@ console.log("[BOOT]", { env: env.APP_ENV, nodeEnv: env.NODE_ENV, build: env.APP_
 // Use the appropriate database URL based on environment
 import { getDatabaseConfig } from "./config/database";
 const dbConfig = getDatabaseConfig();
-console.log("[BOOT] DB:", new URL(dbConfig.url).host);
+const dbHost = new URL(dbConfig.url).host;
+console.log("[BOOT] DB:", dbHost);
+
+// CRITICAL: Verify production is using correct database
+if (env.APP_ENV === 'production') {
+  if (dbHost.includes('lingering-flower')) {
+    console.error("[CRITICAL] ❌ PRODUCTION IS USING DEVELOPMENT DATABASE!");
+    console.error("[CRITICAL] ❌ This is a security violation - SHUTTING DOWN");
+    process.exit(1);
+  }
+  if (dbHost.includes('muddy-moon')) {
+    console.log("[PRODUCTION] ✅ CONFIRMED: Using production database (muddy-moon)");
+  } else {
+    console.error("[CRITICAL] ❌ PRODUCTION DATABASE HOST UNKNOWN:", dbHost);
+    process.exit(1);
+  }
+} else {
+  if (dbHost.includes('muddy-moon')) {
+    console.warn("[DEV] ⚠️  WARNING: Development using production database");
+  }
+  if (dbHost.includes('lingering-flower')) {
+    console.log("[DEV] ✅ Using development database (lingering-flower)");
+  }
+}
 
 // 2) Prod DB guard + migrations before routes
 assertProdDB();
