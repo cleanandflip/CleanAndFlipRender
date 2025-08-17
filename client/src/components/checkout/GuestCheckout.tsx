@@ -178,7 +178,7 @@ export function GuestCheckout({ onSubmit, isLoading = false }: GuestCheckoutProp
 
             <FormField
               control={form.control}
-              name="street"
+              name="street1"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Street Address</FormLabel>

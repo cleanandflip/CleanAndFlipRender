@@ -28,6 +28,7 @@ export const AddressWithContactSchema = AddressSchema.extend({
 
 // Checkout-specific schema
 export const CheckoutAddressSchema = AddressWithContactSchema.extend({
+  street1: z.string().min(1, 'Street address is required'),
   street2: z.string().optional(),
   isDefault: z.boolean().default(false),
   saveToProfile: z.boolean().default(true)
@@ -44,8 +45,8 @@ export const transformToCheckoutFormat = (address: any): CheckoutAddress => ({
   lastName: address.lastName || '',
   email: address.email || '',
   phone: address.phone || '',
-  street: address.street || '',
-  street2: '',
+  street1: address.street1 || address.street || '',
+  street2: address.street2 || '',
   city: address.city || '',
   state: address.state || '',
   postalCode: address.postalCode || address.zipCode || '',
@@ -58,7 +59,7 @@ export const transformToCheckoutFormat = (address: any): CheckoutAddress => ({
 });
 
 export const transformFromGeoapify = (result: any): Partial<AddressData> => ({
-  street: result.housenumber ? `${result.housenumber} ${result.street}` : result.street || result.name || result.address_line1,
+  street1: result.housenumber ? `${result.housenumber} ${result.street}` : result.street || result.name || result.address_line1,
   city: result.city || result.county,
   state: result.state_code || result.state,
   postalCode: result.postcode,

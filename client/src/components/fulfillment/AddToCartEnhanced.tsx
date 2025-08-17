@@ -59,7 +59,7 @@ export function AddToCartEnhanced({
     try {
       await addToCart({
         productId: product.id,
-        quantity: 1,
+        qty: 1,
       });
       
       toast({

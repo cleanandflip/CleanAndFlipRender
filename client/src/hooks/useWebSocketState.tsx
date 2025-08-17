@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 // ---- module-singleton so multiple hooks share one socket ----
 let _socket: WebSocket | null = null;
 let _connected = false;
+let _lastMessage: any = null;
 const _listeners = new Map<string, Set<(payload: any) => void>>();
 
 function ensureSocket() {
@@ -33,7 +34,7 @@ function ensureSocket() {
       const type = msg.type ?? msg.topic;     // tolerate old server format
       const payload = msg.payload ?? msg.data ?? msg; // tolerate variants
       if (!type) return;
-      
+      _lastMessage = { type, payload };
       const set = _listeners.get(type);
       if (set) for (const fn of set) fn(payload);
     } catch {}
@@ -65,7 +66,7 @@ export function useWebSocketState() {
   const subscribe = useCallback((type: string, handler: (payload: any) => void) => {
     if (!_listeners.has(type)) _listeners.set(type, new Set());
     _listeners.get(type)!.add(handler);
-    return () => _listeners.get(type)!.delete(handler);
+    return () => (_listeners.get(type)!.delete(handler), true);
   }, []);
 
   const publish = useCallback((type: string, payload?: any) => {
@@ -75,9 +76,13 @@ export function useWebSocketState() {
     }
   }, []);
 
+  const send = publish;
+  const ready = _connected;
+  const lastMessage = _lastMessage;
+
   return useMemo(
-    () => ({ connected: _connected, socket: socketRef.current, subscribe, publish }),
-    [_connected, socketRef.current, subscribe, publish]
+    () => ({ connected: _connected, socket: socketRef.current, subscribe, publish, send, ready, lastMessage }),
+    [_connected, socketRef.current, subscribe, publish, send, ready, lastMessage]
   );
 }
 

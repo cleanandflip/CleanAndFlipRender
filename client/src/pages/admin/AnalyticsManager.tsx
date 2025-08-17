@@ -18,7 +18,7 @@ import {
   CalendarIcon,
   Download
 } from 'lucide-react';
-import { formatCurrency } from '@/utils/submissionHelpers';
+import { formatCurrency } from '@/lib/utils';
 import { subDays } from 'date-fns';
 
 interface AnalyticsData {

@@ -87,12 +87,9 @@ export const productionSecurityHeaders = helmet({
   noSniff: true,
   xssFilter: true,
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  permissionsPolicy: {
-    camera: ['none'],
-    microphone: ['none'],
-    geolocation: ['self'],
-    payment: ['self', 'https://js.stripe.com']
-  }
+  // Feature-Policy/Permissions-Policy moved: use the new API via headers if needed
+  // @ts-expect-error - older helmet typing may not include this option
+  permissionsPolicy: false
 });
 
 // Input sanitization middleware

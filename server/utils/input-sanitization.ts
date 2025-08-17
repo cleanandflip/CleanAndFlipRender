@@ -7,13 +7,14 @@ const window = new JSDOM('').window;
 const purify = DOMPurify(window as any);
 
 // Configure DOMPurify for strict sanitization
-purify.addHook('beforeSanitizeElements', function (node) {
+purify.addHook('beforeSanitizeElements', function (node: any) {
   // Remove any suspicious attributes
-  if (node.hasAttribute && node.hasAttribute('onclick')) {
-    node.removeAttribute('onclick');
+  const el = node as Element;
+  if ((el as any).hasAttribute && (el as any).hasAttribute('onclick')) {
+    (el as any).removeAttribute('onclick');
   }
-  if (node.hasAttribute && node.hasAttribute('onload')) {
-    node.removeAttribute('onload');
+  if ((el as any).hasAttribute && (el as any).hasAttribute('onload')) {
+    (el as any).removeAttribute('onload');
   }
 });
 
@@ -65,10 +66,10 @@ export class InputSanitizer {
         sanitized = purify.sanitize(sanitized, {
           ALLOWED_TAGS: allowedTags,
           ALLOWED_ATTR: Object.keys(allowedAttributes).length > 0 ? Object.values(allowedAttributes).flat() : [],
-          FORBID_SCRIPT: true,
-          FORBID_STYLE: true,
+          // Use DOMPurify config flags compatible with the current version
+          FORBID_TAGS: ['script', 'style'],
           SAFE_FOR_TEMPLATES: true
-        });
+        } as any);
       } else {
         // Strip all HTML tags
         sanitized = purify.sanitize(sanitized, { ALLOWED_TAGS: [] });

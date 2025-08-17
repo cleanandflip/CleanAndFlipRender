@@ -36,7 +36,8 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   useScrollLock(true);
   
   // Add fulfillment mode state
-  const [mode, setMode] = useState<FulfillmentMode>(product ? modeFromProduct(product) : FULFILLMENT.BOTH);
+  const initialModeSafe = (product ? modeFromProduct(product) : FULFILLMENT.LOCAL_AND_SHIPPING) as FulfillmentMode;
+  const [mode, setMode] = useState<FulfillmentMode>(initialModeSafe);
 
   // Keep the form booleans and mode in sync when the user switches
   const changeMode = (m: FulfillmentMode) => {
@@ -80,7 +81,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
 
   useEffect(() => {
     if (product) {
-      const initialMode = modeFromProduct(product);
+      const initialMode = (modeFromProduct(product) || FULFILLMENT.LOCAL_AND_SHIPPING) as FulfillmentMode;
       const flags = booleansFromMode(initialMode);
       const data = {
         name: product.name || '',
@@ -638,9 +639,9 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
                   
                   <button
                     type="button"
-                    onClick={() => changeMode(FULFILLMENT.BOTH)}
+                    onClick={() => changeMode(FULFILLMENT.LOCAL_AND_SHIPPING)}
                     className={`w-full p-4 rounded-lg border text-left transition-all ${
-                      mode === FULFILLMENT.BOTH
+                      mode === FULFILLMENT.LOCAL_AND_SHIPPING
                         ? "border-emerald-400 bg-emerald-500/10 text-emerald-200" 
                         : "border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300"
                     }`}
@@ -651,7 +652,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
                         <p className="text-xs mt-1 opacity-75">Available for both local delivery and nationwide shipping.</p>
                       </div>
                       <div className={`w-4 h-4 rounded-full border-2 ${
-                        mode === FULFILLMENT.BOTH
+                        mode === FULFILLMENT.LOCAL_AND_SHIPPING
                           ? "border-emerald-400 bg-emerald-400" 
                           : "border-gray-500"
                       }`} />
