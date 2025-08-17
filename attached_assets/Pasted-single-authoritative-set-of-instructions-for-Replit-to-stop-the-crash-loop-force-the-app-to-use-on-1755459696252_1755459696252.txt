@@ -1,0 +1,275 @@
+single, authoritative set of instructions for Replit to stop the crash loop, force the app to use only the production database, and remove the sources of the failures you’re seeing. Follow these in order—don’t skip steps.
+
+A) Secrets & Environment — sanitize and lock to prod
+
+Open Replit → Tools → Secrets (and also Deploy → Environment Variables if your deploy has its own set).
+Delete any keys that look like alternative DB configs:
+
+PG*, POSTGRES*, NEON_*, DB_URL, DATABASE_URL_STAGING, DATABASE_URL_DEV, etc.
+
+Create only these (and nothing else DB-related):
+
+NODE_ENV = production
+
+APP_ENV = production
+
+DATABASE_URL = copy directly from Neon’s Production branch connection string (HTTP serverless driver; keep the -pooler host if shown).
+
+EXPECTED_DB_HOST = (host from the same Neon string)
+e.g. ep-muddy-moon-aeggx6le-pooler.c-2.us-east-2.aws.neon.tech
+
+SESSION_SECRET = long random string
+
+If you rotated Neon credentials recently, go to Neon → Production branch → Regenerate the connection string and paste again into DATABASE_URL.
+Your log password authentication failed for user 'neondb_owner' is a stale/wrong DATABASE_URL.
+
+B) Code-path cleanup — one entrypoint, one DB module
+
+The multiple “[MIGRATIONS] Applying…” and mixed DB hosts mean you’re starting more than one server/entrypoint and/or reading env from multiple places.
+
+Keep only one entrypoint:
+
+server/index.ts should be the only file that calls app.listen.
+
+Delete or rename any competing starters:
+
+index.ts at repo root (if it starts the server)
+
+server/app.ts (if it starts the server)
+
+any scripts/server.ts, main.ts, server/start.ts, or similar that call app.listen
+
+Do not auto-start in postinstall, prepare, or any build script.
+
+Keep only one DB module:
+
+server/db.ts should be the only module creating a Neon/Drizzle client.
+
+Delete / inline any duplicated DB files: server/db/index.ts, server/database.ts, server/lib/db.ts, etc.
+
+Remove any top-level modules that connect at import time. The DB should be created lazily from server/db.ts only.
+
+Replace direct process.env reads everywhere with a typed env loader (so nothing secretly defaults to “development”):
+
+Create server/config/env.ts using Zod and export env.
+
+Replace all process.env.DATABASE_URL, NODE_ENV, etc. with env.DATABASE_URL, env.NODE_ENV, etc.
+
+Search & patch:
+
+rg -n --no-heading -g '!node_modules' -e 'process\\.env\\.(DATABASE_URL|PG|POSTGRES|NEON_|DB_|APP_ENV|NODE_ENV)'
+
+
+Add a production host guard so prod cannot boot on the wrong DB:
+
+Create server/config/guards.ts with:
+
+import { env } from "./env";
+export function assertProdDB() {
+  if (env.APP_ENV !== "production") return;
+  const host = new URL(env.DATABASE_URL).host;
+  if (env.EXPECTED_DB_HOST && host !== env.EXPECTED_DB_HOST) {
+    throw new Error(`[BOOT] Wrong DB host for prod: got ${host}, expected ${env.EXPECTED_DB_HOST}`);
+  }
+}
+
+
+Call assertProdDB() before migrations and before routes (in server/index.ts).
+
+C) Migrations — idempotent, applied once, before routes
+
+One migration runner only:
+
+Create server/db/migrate.ts:
+
+import { drizzle } from "drizzle-orm/neon-http";
+import { migrate } from "drizzle-orm/neon-http/migrator";
+import { neon } from "@neondatabase/serverless";
+import { env } from "../config/env";
+
+export async function applyMigrations() {
+  const db = drizzle(neon(env.DATABASE_URL));
+  console.log("[MIGRATIONS] Applying…");
+  await migrate(db, { migrationsFolder: "./drizzle" });
+  console.log("[MIGRATIONS] Done.");
+}
+
+
+Ensure no other file runs migrate or runs SQL ALTERs at import time.
+
+Drop retired columns (idempotent) to stop 500s from old queries:
+
+drizzle/001_drop_retired_columns.sql
+
+ALTER TABLE "users" DROP COLUMN IF EXISTS "onboarding_completed_at";
+ALTER TABLE "users" DROP COLUMN IF EXISTS "profile_address_id";
+
+
+(Keep this in repo so deployments always self-heal if prod lags behind.)
+
+Cart integrity (optional but recommended) to end FK warnings and duplicate rows:
+
+drizzle/002_cart_integrity.sql
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_cart_items_product') THEN
+    ALTER TABLE "cart_items"
+    ADD CONSTRAINT "fk_cart_items_product"
+    FOREIGN KEY ("product_id") REFERENCES "products"("id")
+    ON DELETE CASCADE NOT VALID;
+    ALTER TABLE "cart_items" VALIDATE CONSTRAINT "fk_cart_items_product";
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_cart_items_user') THEN
+    ALTER TABLE "cart_items"
+    ADD CONSTRAINT "fk_cart_items_user"
+    FOREIGN KEY ("user_id") REFERENCES "users"("id")
+    ON DELETE SET NULL NOT VALID;
+    ALTER TABLE "cart_items" VALIDATE CONSTRAINT "fk_cart_items_user";
+  END IF;
+END$$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "uniq_cart_owner_product"
+  ON "cart_items"(COALESCE(user_id::text, session_id), product_id, COALESCE(variant_id,''));
+
+
+Run migrations before starting routes:
+
+In server/index.ts, call:
+
+assertProdDB();
+await applyMigrations().catch((e) => {
+  console.error("[MIGRATIONS] Failed:", e);
+  process.exit(1); // fail fast → no partial boots, no crash-loop noise
+});
+
+
+Only after this should you set up routes and app.listen.
+
+D) Boot shape — remove duplicate starts, clean dist
+
+Make server/index.ts your only starter. It should:
+
+Log one boot line ([BOOT] { env: env.APP_ENV, nodeEnv: env.NODE_ENV })
+(Your logs showed { env: 'development', nodeEnv: 'production' }. That means some code path still sets its own “env” string. Remove those!)
+
+Call assertProdDB()
+
+Call applyMigrations()
+
+Create the Express app, register routes once, call app.listen once.
+
+package.json scripts (simple & deterministic):
+
+{
+  "scripts": {
+    "clean": "rimraf dist .next .turbo build",
+    "build": "npm run clean && tsc -b",
+    "start": "NODE_ENV=production node dist/index.js"
+  }
+}
+
+
+Remove any postinstall, prepare, or custom scripts that start the server or touch DB.
+
+Ensure dist is not committed: add to .gitignore:
+
+dist
+.next
+build
+.turbo
+
+
+Replit Deploy → Run command (the ONLY run command):
+
+APP_ENV=production NODE_ENV=production npm run build && npm run start
+
+
+Do not chain extra “start”s in other places.
+
+If Replit has a separate “Hosting / Always On” start command, set it to the same and remove other runners.
+
+E) Verify the environment before deploying
+
+Local (Replit shell) smoke test:
+
+APP_ENV=production NODE_ENV=production npm run build
+NODE_ENV=production node dist/index.js
+
+
+Expect:
+
+[BOOT] { env: 'production', nodeEnv: 'production' }
+[MIGRATIONS] Applying…
+[MIGRATIONS] Done.
+[READY] Listening on :5000
+
+
+No password errors. No wrong host message. No duplicate “[MIGRATIONS] Applying…” lines.
+
+Hit critical endpoints:
+
+curl -i http://localhost:5000/api/user
+curl -i http://localhost:5000/api/products/featured
+curl -i http://localhost:5000/api/cart
+
+
+If any still reference removed columns, confirm the drop migration ran (Step C).
+
+F) If the production DB is polluted or you want a clean cutover (safe path)
+
+Preferred over “wipe tables”: fork from the good environment.
+
+In Neon:
+
+If your staging/dev DB has the correct schema/data, create a new branch from that healthy branch.
+
+Point DATABASE_URL (Replit Secrets) to the new branch’s connection string.
+
+Redeploy (migrations will still run but should be no-ops).
+
+Archive the old production branch after verifying.
+
+Only if necessary: wipe production tables and reseed. This is destructive—don’t do it unless you’re sure.
+
+G) Why this fixes your exact logs
+
+password authentication failed for user 'neondb_owner'
+→ Replaced with a single valid DATABASE_URL, regenerated if needed. No other DB envs exist to collide.
+
+Mixed hosts (ep-muddy-moon… vs ep-lucky-credit…)
+→ All code reads from the typed env. The prod host is enforced by EXPECTED_DB_HOST. Any mismatch throws before routes.
+
+Multiple “[MIGRATIONS] Applying…” lines & crash loop
+→ Single entrypoint, single migration runner, fail-fast on migration error (clear cause; no half-boot). No duplicate starts.
+
+Old column errors (onboarding_completed_at, profile_address_id)
+→ Idempotent migration drops them every deploy. App stops querying them once and for all.
+
+H) Final quick checklist for Replit
+
+ Secrets cleaned: only NODE_ENV=production, APP_ENV=production, DATABASE_URL, EXPECTED_DB_HOST, SESSION_SECRET
+
+ One entrypoint: server/index.ts (no other app.listen)
+
+ One DB module: server/db.ts
+
+ Env loader: server/config/env.ts; all env reads go through it
+
+ Prod DB guard: assertProdDB() used
+
+ Migrations: server/db/migrate.ts, run once before routes
+
+ Retired columns dropped in drizzle/001_drop_retired_columns.sql
+
+ Build/start scripts simplified; dist not committed
+
+ Deploy run command: APP_ENV=production NODE_ENV=production npm run build && npm run start
+
+ Local smoke test green; only then enable deploy
+
+Apply the above exactly, and the deployment will start only on production DB, with a single clean boot path and no more auth or schema drift errors.
