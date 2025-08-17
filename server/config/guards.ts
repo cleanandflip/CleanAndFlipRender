@@ -2,7 +2,14 @@ import { env } from "./env";
 
 export function assertProdDB() {
   if (env.APP_ENV !== "production") return;
-  const url = new URL(env.DATABASE_URL);
+  
+  // Use PROD_DATABASE_URL for production, fallback to DATABASE_URL
+  const dbUrl = env.PROD_DATABASE_URL || env.DATABASE_URL;
+  if (!dbUrl) {
+    throw new Error("PROD_DATABASE_URL or DATABASE_URL must be set for production environment");
+  }
+  
+  const url = new URL(dbUrl);
   
   // Extract hostname from EXPECTED_DB_HOST if it's a full URL
   let expectedHost = env.EXPECTED_DB_HOST;
@@ -19,6 +26,6 @@ export function assertProdDB() {
   }
   
   if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") {
-    throw new Error("DATABASE_URL must be postgres:// or postgresql:// in prod");
+    throw new Error("Database URL must be postgres:// or postgresql:// in prod");
   }
 }
