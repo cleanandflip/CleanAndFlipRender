@@ -85,6 +85,11 @@ export function validateEnvironmentVariables(): EnvironmentConfig {
     if (!env.PROD_DATABASE_URL) {
       throw new Error('PROD_DATABASE_URL is required in production');
     }
+  } else {
+    // In development, ensure we have DEV_DATABASE_URL
+    if (!env.DEV_DATABASE_URL) {
+      throw new Error('DEV_DATABASE_URL is required in development');
+    }
     
     // Stripe validation handled above
   }

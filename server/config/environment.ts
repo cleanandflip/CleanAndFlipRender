@@ -142,6 +142,7 @@ export function validateEnvironment(): { isValid: boolean; errors: string[] } {
     if (process.env.PROD_DATABASE_URL?.includes('lingering-flower')) {
       errors.push('CRITICAL: Cannot use development database in production');
     }
+  }
     
     if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
       errors.push('SESSION_SECRET must be at least 32 characters in production');

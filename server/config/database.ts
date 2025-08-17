@@ -32,12 +32,8 @@ export function getDatabaseConfig(): DatabaseConfig {
   const environment = getCurrentEnvironment();
   
   if (environment === 'production') {
-    // PRODUCTION: Use PROD_DATABASE_URL or fallback to DATABASE_URL during deployment migration
-    const prodUrl = env.PROD_DATABASE_URL || env.DATABASE_URL;
-    
-    if (!prodUrl) {
-      throw new Error('PROD_DATABASE_URL or DATABASE_URL must be set for production environment');
-    }
+    // PRODUCTION: ONLY use PROD_DATABASE_URL
+    const prodUrl = env.PROD_DATABASE_URL;
     
     // Security: Block development database in production
     if (prodUrl.includes('lingering-flower')) {
@@ -54,12 +50,8 @@ export function getDatabaseConfig(): DatabaseConfig {
       retryDelay: 2000
     };
   } else {
-    // DEVELOPMENT: Use DEV_DATABASE_URL or fallback to DATABASE_URL during migration
-    const devUrl = env.DEV_DATABASE_URL || env.DATABASE_URL;
-    
-    if (!devUrl) {
-      throw new Error('DEV_DATABASE_URL or DATABASE_URL must be set for development environment');
-    }
+    // DEVELOPMENT: ONLY use DEV_DATABASE_URL
+    const devUrl = env.DEV_DATABASE_URL;
     
     // Security: Warn if development is using production database
     if (devUrl.includes('muddy-moon')) {
