@@ -10,7 +10,7 @@ import connectPg from "connect-pg-simple";
 import { normalizeEmail, parseCityStateZip, isLocalZip, validateCityStateZip, normalizePhone } from "@shared/utils";
 import { authLimiter } from "./middleware/security";
 import { Logger, LogLevel } from "./utils/logger";
-import { getDatabaseConfig } from "./config/database";
+import { DATABASE_URL } from "./config/database";
 import { initializeGoogleAuth } from './auth/google-strategy';
 
 declare global {
@@ -70,9 +70,7 @@ export function setupAuth(app: Express) {
   const PostgresSessionStore = connectPg(session);
   
   // Use the unified database configuration for session storage
-  const dbConfig = getDatabaseConfig();
-  console.log('[SESSION] Using database:', dbConfig.name);
-  console.log('[SESSION] Environment:', dbConfig.environment);
+  console.log('[SESSION] Using environment-aware database');
   
   const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
   const sessionSettings: session.SessionOptions = {
@@ -80,7 +78,7 @@ export function setupAuth(app: Express) {
     resave: false,
     saveUninitialized: true, // guests get a stable session
     store: new PostgresSessionStore({
-      conString: dbConfig.url,
+      conString: DATABASE_URL,
       createTableIfMissing: false, // Don't create table - already exists
       schemaName: 'public',
       tableName: 'sessions', // Use existing sessions table

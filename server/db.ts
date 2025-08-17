@@ -1,6 +1,5 @@
 // server/db.ts
-import { env } from "./config/env";
-import { getDatabaseConfig } from "./config/database";
+import { DATABASE_URL } from "./config/database";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "../shared/schema";
@@ -9,9 +8,8 @@ let _db: ReturnType<typeof drizzle> | null = null;
 
 export function getDb() {
   if (_db) return _db;
-  // Get the correct database URL based on environment
-  const dbConfig = getDatabaseConfig();
-  const sql = neon(dbConfig.url);
+  // Use the environment-aware database URL
+  const sql = neon(DATABASE_URL);
   _db = drizzle(sql, { schema });
   return _db;
 }

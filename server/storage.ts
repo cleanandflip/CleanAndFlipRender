@@ -173,7 +173,7 @@ export class DatabaseStorage implements IStorage {
           COALESCE(auth_provider, 'local') as auth_provider,
           COALESCE(is_email_verified, false) as is_email_verified,
           google_email, google_picture,
-          profile_address_id,
+          -- REMOVED: profile_address_id - using SSOT address system
           COALESCE(is_local_customer, false) as is_local_customer,
           COALESCE(profile_complete, false) as profile_complete
         FROM users
@@ -245,9 +245,9 @@ export class DatabaseStorage implements IStorage {
           COALESCE(auth_provider, 'local') as auth_provider,
           COALESCE(is_email_verified, false) as is_email_verified,
           google_email, google_picture,
-          profile_address_id,
+          -- REMOVED: profile_address_id - using SSOT address system
           COALESCE(is_local_customer, false) as is_local_customer,
-          COALESCE(profile_complete, false) as profile_complete,
+          COALESCE(profile_complete, false) as profile_complete
         FROM users
         WHERE LOWER(email) = LOWER(${normalizedEmail})
         LIMIT 1
@@ -310,9 +310,9 @@ export class DatabaseStorage implements IStorage {
             COALESCE(auth_provider, 'local') as auth_provider,
             COALESCE(is_email_verified, false) as is_email_verified,
             google_email, google_picture,
-            profile_address_id,
+            -- REMOVED: profile_address_id - using SSOT address system
             COALESCE(is_local_customer, false) as is_local_customer,
-            COALESCE(profile_complete, false) as profile_complete,
+            COALESCE(profile_complete, false) as profile_complete
           FROM users
           WHERE LOWER(email) = LOWER(${normalizedEmail})
           LIMIT 1
