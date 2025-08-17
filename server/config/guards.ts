@@ -3,10 +3,10 @@ import { env } from "./env";
 export function assertProdDB() {
   if (env.APP_ENV !== "production") return;
   
-  // Production requires PROD_DATABASE_URL only
-  const dbUrl = env.PROD_DATABASE_URL;
+  // Production requires PROD_DATABASE_URL or DATABASE_URL during migration
+  const dbUrl = env.PROD_DATABASE_URL || env.DATABASE_URL;
   if (!dbUrl) {
-    throw new Error("PROD_DATABASE_URL must be set for production environment");
+    throw new Error("PROD_DATABASE_URL or DATABASE_URL must be set for production environment");
   }
   
   const url = new URL(dbUrl);
