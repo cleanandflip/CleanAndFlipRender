@@ -38,9 +38,10 @@ module.exports = {
   rules: {
     '@typescript-eslint/no-unused-expressions': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true }],
+    '@typescript-eslint/no-unused-vars': 'off',
     '@typescript-eslint/no-unsafe-function-type': 'off',
     '@typescript-eslint/no-require-imports': 'off',
+    '@typescript-eslint/no-namespace': 'off',
     'no-useless-escape': 'off',
     'no-case-declarations': 'off',
     'no-empty': 'off',

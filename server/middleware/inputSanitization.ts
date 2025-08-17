@@ -169,12 +169,14 @@ export function sanitizeInput(options: SanitizationOptions = {}) {
       // Improved scanning that handles arrays and only scans strings
       const FORBIDDEN = /(<|>|script:|javascript:|data:|on\w+=)/i;
       
-      function scan(val: unknown): boolean {
-        if (typeof val === "string") return FORBIDDEN.test(val);
+      const scan = (val: unknown): boolean => {
+        if (typeof val === 'string') return FORBIDDEN.test(val);
         if (Array.isArray(val)) return val.some(scan);
-        if (val && typeof val === "object") return Object.values(val as Record<string, unknown>).some(scan);
+        if (val && typeof val === 'object') {
+          return Object.values(val as Record<string, unknown>).some(scan);
+        }
         return false; // numbers/booleans/null are fine
-      }
+      };
 
       if (scan(req.body) || scan(req.query) || scan(req.params)) {
         console.log('Request blocked by sanitizer - suspicious content detected');
