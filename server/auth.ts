@@ -307,7 +307,6 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Address validation removed - using SSOT onboarding flow
 
       // Normalize email and check if user already exists (don't reveal if email exists for security)
       const normalizedEmail = normalizeEmail(email);
@@ -340,7 +339,6 @@ export function setupAuth(app: Express) {
         firstName,
         lastName,
         phone: normalizedPhone,
-        // Address fields removed - using SSOT addresses table with onboarding flow
         role,
       });
 

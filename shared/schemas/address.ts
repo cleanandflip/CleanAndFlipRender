@@ -1,6 +1,5 @@
 /**
  * Unified Address Schema - Single source of truth for all address validation
- * Used across signup, onboarding, profile, checkout, and cart
  */
 
 import { z } from 'zod';

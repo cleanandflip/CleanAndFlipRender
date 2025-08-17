@@ -76,7 +76,6 @@ export default function AuthPage() {
       return;
     }
     
-    // FIXED: Register without address - user will complete onboarding after registration
     registerMutation.mutate({
       email: formData.get("email") as string,
       password,
@@ -265,7 +264,6 @@ export default function AuthPage() {
                     onFocus={scrollToForm}
                   />
                   
-                  {/* REMOVED: Address input - handled in onboarding flow */}
                   
                   {/* Password with inline helper */}
                   <div className="space-y-1">

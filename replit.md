@@ -1,7 +1,7 @@
 # replit.md
 
 ## Overview
-Clean & Flip is a full-stack web application for exchanging weightlifting equipment. It offers features for buying and selling gym gear, including product catalog management, user authentication, a shopping cart, order processing, and administrative tools. The platform operates on a single-seller model, with admin managing inventory and processing user submissions. The project aims to provide a streamlined, user-friendly experience for fitness enthusiasts to exchange gear, with a business vision to become a leading marketplace in this niche.
+Clean & Flip is a production-hardened full-stack web application for exchanging weightlifting equipment. It offers features for buying and selling gym gear, including product catalog management, user authentication, a shopping cart, order processing, and administrative tools. The platform operates on a single-seller model, with admin managing inventory and processing user submissions. The project features enterprise-grade production hardening with automatic migrations, environment validation, complete onboarding system removal, and comprehensive data integrity constraints.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

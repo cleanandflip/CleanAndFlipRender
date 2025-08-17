@@ -92,7 +92,6 @@ router.get('/google/callback',
       ? 'https://cleanflip.replit.app'
       : '';
     
-    // Google users go directly to dashboard - no onboarding required
     const returnUrl = req.session.returnTo || '/dashboard';
     delete req.session.returnTo;
     res.redirect(`${baseUrl}${returnUrl}`);

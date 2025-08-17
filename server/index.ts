@@ -11,6 +11,11 @@ import { sql } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { GlobalErrorCatcher } from "./services/globalErrorCatcher";
+// Production hardening imports
+import { env } from "./config/env";
+import { assertProdDB } from "./config/guards";
+import { applyMigrations } from "./db/migrate";
+import { applyMigrations } from "./db/migrate";
 
 const app = express();
 
@@ -99,6 +104,26 @@ app.use((req, res, next) => {
 (async () => {
   // Enhanced startup logging with environment validation
   Logger.info(`[MAIN] Starting Clean & Flip API Server`);
+  
+  // PRODUCTION HARDENING BOOTSTRAP
+  console.log("[BOOT]", { env: env.APP_ENV, nodeEnv: env.NODE_ENV, build: env.APP_BUILD_ID });
+  console.log("[BOOT] DB:", new URL(env.DATABASE_URL).host);
+
+  // Assert production database is correct
+  try {
+    assertProdDB();
+  } catch (error: any) {
+    Logger.error("[BOOT] Production database assertion failed:", error.message);
+    process.exit(1);
+  }
+
+  // Apply migrations before routes load
+  try {
+    await applyMigrations();
+  } catch (error: any) {
+    Logger.error("[MIGRATIONS] Failed to apply migrations:", error);
+    process.exit(1); // don't start if schema is wrong
+  }
   
   try {
     // Validate environment configuration before starting

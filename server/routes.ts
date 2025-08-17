@@ -2759,13 +2759,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: userData.role,
         profileComplete: hasAnyAddress, // Profile complete if they have any address
         profileAddressId: userData.profile_address_id || userData.fallback_address_id, // Include profileAddressId for ProtectedRoute
-        onboardingStep: userData.onboarding_step || 0,
         isLocal: Boolean(userData.is_local_customer),
-        onboardingCompleted: Boolean(userData.onboarding_completed_at),
         profileAddress
       };
-      
-
 
       res.json(response);
     } catch (error) {
