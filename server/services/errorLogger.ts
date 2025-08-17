@@ -26,6 +26,12 @@ export interface ErrorContext {
 
 export class ErrorLogger {
   static async logError(error: Error, context: ErrorContext = {}): Promise<string | null> {
+    // Skip logging for routine WebSocket disconnections and other non-critical errors
+    if (this.shouldSkipLogging(error)) {
+      Logger.error(error.message, error);
+      return null;
+    }
+    
     try {
       const severity = this.determineSeverity(error, context);
       const errorData = this.extractErrorData(error, context, 'error', severity);
@@ -56,6 +62,11 @@ export class ErrorLogger {
   }
 
   static async logWarning(message: string, context: ErrorContext = {}): Promise<string | null> {
+    // Skip logging for routine warnings in development
+    if (message.includes('WebSocket') && message.includes('close')) {
+      return null;
+    }
+    
     try {
       const errorData = {
         error_type: 'warning',
@@ -93,6 +104,31 @@ export class ErrorLogger {
       Logger.error('Failed to log info:', logError);
       return null;
     }
+  }
+
+  static shouldSkipLogging(error: Error): boolean {
+    const message = error.message.toLowerCase();
+    
+    // Skip common WebSocket disconnection errors
+    if (message.includes('websocket') && (message.includes('close') || message.includes('disconnect'))) {
+      return true;
+    }
+    
+    // Skip routine connection errors in development
+    if (process.env.NODE_ENV === 'development' && message.includes('connection')) {
+      return true;
+    }
+    
+    // Skip known non-critical errors
+    const skipPatterns = [
+      'emitclose',
+      'client disconnected',
+      'socket hang up',
+      'connection reset',
+      'econnreset'
+    ];
+    
+    return skipPatterns.some(pattern => message.includes(pattern));
   }
 
   static async findSimilarError(error: Error): Promise<any | null> {

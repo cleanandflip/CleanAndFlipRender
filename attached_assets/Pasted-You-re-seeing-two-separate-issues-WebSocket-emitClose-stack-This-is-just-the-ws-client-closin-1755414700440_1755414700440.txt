@@ -1,0 +1,44 @@
+You’re seeing two separate issues:
+
+WebSocket “emitClose” stack
+This is just the ws client closing. It’s usually harmless unless it repeats rapidly.
+Action:
+Ensure the client pings and reconnects with backoff. Our WebSocketManager already sends heartbeats; on the client useWebSocketState, keep the default reconnect and ignore a single close unless it loops.
+If logs are noisy, lower log level in production: set LOG_LEVEL=WARN.
+error: relation "error_logs" does not exist (code 42P01)
+The error logging feature is trying to write to tables that haven’t been created yet.
+You have two options:
+Option A: Create the tables now (recommended)
+
+Set DATABASE_URL, then run:
+npm run db:push
+This uses drizzle.config.ts to push the schema from shared/schema.ts, including:
+
+error_logs
+error_log_instances
+and other tables
+Option B: Temporarily disable DB error logging (if you can’t migrate yet)
+
+Set an env flag before starting the server to skip DB writes in the error logger. Since we don’t have a flag yet, the quickest is to add one:
+In server/services/errorLogger.ts, short-circuit when disabled:
+
+At the start of logError, logWarning, logInfo, add:
+if (process.env.DISABLE_DB_ERROR_LOGS === 'true') {
+  Logger.error(error.message, error);
+  return null;
+}
+Do similar early returns in createInstance, findSimilarError, etc., or just rely on the early returns above (the rest won’t run).
+Then start with:
+
+DISABLE_DB_ERROR_LOGS=true npm run start
+Why it’s happening
+
+The server tries to log startup exceptions (like transient ws disconnects) to error_logs. Without the table, inserts fail with 42P01 and you get the “Failed to log error” messages.
+What I recommend
+
+Best: run the migration (Option A) so error logs are persisted. This will also enable the admin error-management pages.
+If you’re in a sandbox without DB control, use Option B to suppress DB writes for error logging.
+Optional cleanup
+
+If you don’t want the ws close message at all: drop the error log level to WARN in prod (LOG_LEVEL=WARN) or tighten the code path that logs routine ws closes.
+Tell me which path you prefer (migrate now vs. temporarily disable), and I’ll implement the exact changes or run the migration for you.
