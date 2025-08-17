@@ -76,7 +76,7 @@ function broadcastCartUpdate(userId: string, action: string = 'update', data?: a
 import googleAuthRoutes from "./routes/auth-google";
 import stripeWebhookRoutes from './routes/stripe-webhooks';
 import adminMetricsRoutes from './routes/admin-metrics';
-import errorManagementRoutes from './routes/admin/error-management';
+// ERROR MANAGEMENT COMPLETELY REMOVED
 // addressRoutes dynamically imported below
 import checkoutRoutes from './routes/checkout';
 import localityRoutes from './routes/locality';
@@ -293,7 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/admin', adminMetricsRoutes);
   
   // Error management routes  
-  app.use('/api/admin', errorManagementRoutes);
+  // ERROR MANAGEMENT ROUTES COMPLETELY REMOVED
   
   // Observability routes (local Sentry-style error tracking)
 // SSOT: Unified system
@@ -1634,8 +1634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Error Management Routes - Import and register first
   try {
-    const errorManagementModule = await import('./routes/admin/error-management.js');
-    app.use('/api/admin', errorManagementModule.default);
+    // ERROR MANAGEMENT COMPLETELY REMOVED
     Logger.info('Error management routes registered successfully');
   } catch (error) {
     Logger.error('Failed to register error management routes:', error);

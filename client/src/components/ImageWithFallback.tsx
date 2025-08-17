@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { FALLBACK_IMG } from "@/lib/cloudinary";
-import { reportClientError } from "@/lib/errorTracking"; // your local LETS client
+// ERROR TRACKING REMOVED
 
 const seen = new Set<string>(); // session dedupe
 

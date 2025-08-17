@@ -1,5 +1,5 @@
 import React from "react";
-import { reportClientError } from "@/lib/errorTracking";
+// ERROR TRACKING REMOVED
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
