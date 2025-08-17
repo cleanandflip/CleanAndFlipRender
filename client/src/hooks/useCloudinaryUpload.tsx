@@ -226,10 +226,10 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
         // Server-side upload completed
         
         // Show success/warning messages
-        if (response.errors?.length > 0) {
+        if ((response.errors?.length || 0) > 0) {
           toast({
             title: "Some uploads failed",
-            description: `${response.errors.length} files failed to upload`,
+            description: `${response.errors?.length || 0} files failed to upload`,
             variant: "destructive"
           });
         } else if (response.success) {
@@ -247,7 +247,8 @@ export const useCloudinaryUpload = ({ maxImages, folder }: UseCloudinaryUploadOp
       }
 
       // Fallback to direct Cloudinary upload
-      const signature = await apiRequest('GET', `/api/cloudinary/signature?folder=${folder}`);
+      const sigRes = await apiRequest('GET', `/api/cloudinary/signature?folder=${folder}`);
+      const signature = await sigRes.json() as { apiKey: string; timestamp: string; signature: string; folder: string; cloudName: string };
 
       // Upload all files
       const uploadPromises = processedFiles.map(async (file, index) => {

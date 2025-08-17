@@ -28,17 +28,17 @@ export default function CategoryTabs() {
 
   const select = useCallback((label: CategoryLabel) => {
     const slug = toSlug(label);
-    const current = searchService.getQuery();
-    searchService.setQuery({ ...current, category: slug, page: 1 });
+    const currentQuery = searchService.getQuery();
+    searchService.setQuery({ ...currentQuery, category: slug, page: 1 });
     
     // Analytics
     if (typeof window !== 'undefined' && (window as any).gtag) {
       (window as any).gtag('event', 'category_selected', {
         category: slug || 'all',
-        previous_category: toSlug(current) || 'all'
+        previous_category: toSlug(currentQuery.category) || 'all'
       });
     }
-  }, [current]);
+  }, []);
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {

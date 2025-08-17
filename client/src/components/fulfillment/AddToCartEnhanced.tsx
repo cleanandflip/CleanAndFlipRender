@@ -107,10 +107,10 @@ export function AddToCartEnhanced({
               size={size} 
               className={`${className} cursor-not-allowed opacity-50`}
               disabled
-              aria-description={fulfillmentCopy.cart.blockedTooltip}
+              aria-description={fulfillmentCopy.tooltip.blocked}
             >
               <MapPin className="w-4 h-4 mr-2" />
-              {fulfillmentCopy.actions.unavailable}
+              {'Unavailable in your area'}
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -130,7 +130,7 @@ export function AddToCartEnhanced({
       disabled={isLoading}
     >
       <ShoppingCart className="w-4 h-4 mr-2" />
-      {isLoading ? 'Adding...' : fulfillmentCopy.actions.addToCart}
+      {isLoading ? 'Adding...' : 'Add to cart'}
     </Button>
   );
 }

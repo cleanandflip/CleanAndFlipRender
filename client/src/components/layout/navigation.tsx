@@ -27,7 +27,7 @@ export default function Navigation() {
   const [dropdownCoords, setDropdownCoords] = useState<{ top: number; left: number; width: number } | null>(null);
   // Cart functionality with real-time updates - FIXED DATA ACCESS
   const { data: cart } = useCart();  
-  const cartCount = cart && Array.isArray(cart.items) ? cart.items.length : 0;
+  const cartCount = cart && Array.isArray((cart as any).items) ? (cart as any).items.length : 0;
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const { data: locality } = useLocality(); // SSOT single source of truth

@@ -315,6 +315,8 @@ export function ProductForm() {
     submitMutation.mutate(data);
   };
   
+  const BRAND_OPTIONS = EQUIPMENT_BRANDS.map(b => ({ value: b, label: b }));
+  
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="flex items-center gap-4">
@@ -348,14 +350,10 @@ export function ProductForm() {
               
               <div>
                 <Dropdown
-                  label="Brand"
-                  options={EQUIPMENT_BRANDS}
+                  options={BRAND_OPTIONS}
                   value={formData.brand}
                   placeholder="Search or select a brand..."
-                  onChange={(brand) => setFormData({...formData, brand: Array.isArray(brand) ? brand[0] : brand})}
-                  searchable={true}
-                  allowCustom={true}
-                  required={true}
+                  onChange={(brand) => setFormData({...formData, brand})}
                 />
               </div>
             </div>
@@ -426,21 +424,18 @@ export function ProductForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Dropdown
-                  label="Category *"
                   options={(categories as any[]).map((category: any) => ({
                     value: category.id,
                     label: category.name
                   }))}
                   value={formData.categoryId}
                   placeholder="Select category"
-                  onChange={(value) => setFormData({...formData, categoryId: Array.isArray(value) ? value[0] : value})}
-                  required={true}
+                  onChange={(value) => setFormData({...formData, categoryId: value})}
                 />
               </div>
               
               <div>
                 <Dropdown
-                  label="Condition"
                   options={[
                     { value: "new", label: "New" },
                     { value: "like_new", label: "Like New" },
@@ -450,8 +445,7 @@ export function ProductForm() {
                   ]}
                   value={formData.condition}
                   placeholder="Select condition"
-                  onChange={(condition) => setFormData({...formData, condition: Array.isArray(condition) ? condition[0] : condition})}
-                  required={true}
+                  onChange={(condition) => setFormData({...formData, condition})}
                 />
               </div>
             </div>

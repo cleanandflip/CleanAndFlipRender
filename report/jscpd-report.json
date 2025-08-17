@@ -1,6 +1,6 @@
 {
   "statistics": {
-    "detectionDate": "2025-08-17T03:15:43.195Z",
+    "detectionDate": "2025-08-17T04:15:16.999Z",
     "formats": {
       "javascript": {
         "sources": {
@@ -210,7 +210,7 @@
           },
           "/workspace/client/src/pages/admin/AnalyticsTab.tsx": {
             "lines": 191,
-            "tokens": 1975,
+            "tokens": 1987,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -846,7 +846,7 @@
           },
           "/workspace/client/src/components/ui/FormElements.tsx": {
             "lines": 137,
-            "tokens": 994,
+            "tokens": 997,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1217,8 +1217,8 @@
             "newClones": 0
           },
           "/workspace/client/src/components/checkout/AddressBlock.tsx": {
-            "lines": 74,
-            "tokens": 643,
+            "lines": 71,
+            "tokens": 621,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1986,8 +1986,8 @@
           }
         },
         "total": {
-          "lines": 17620,
-          "tokens": 143175,
+          "lines": 17617,
+          "tokens": 143168,
           "sources": 165,
           "clones": 75,
           "duplicatedLines": 2972,
@@ -2025,14 +2025,14 @@
             "newClones": 0
           },
           "/workspace/client/src/components/admin/modals/EnhancedProductModal.tsx": {
-            "lines": 709,
-            "tokens": 6091,
+            "lines": 710,
+            "tokens": 6119,
             "sources": 1,
             "clones": 3,
             "duplicatedLines": 64,
             "duplicatedTokens": 451,
-            "percentage": 9.03,
-            "percentageTokens": 7.4,
+            "percentage": 9.01,
+            "percentageTokens": 7.37,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -2218,25 +2218,25 @@
           },
           "/workspace/client/src/pages/admin/CategoriesTab.tsx": {
             "lines": 267,
-            "tokens": 2121,
+            "tokens": 2127,
             "sources": 1,
             "clones": 1,
             "duplicatedLines": 16,
             "duplicatedTokens": 170,
             "percentage": 5.99,
-            "percentageTokens": 8.02,
+            "percentageTokens": 7.99,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "/workspace/client/src/pages/admin/AnalyticsTab.tsx": {
             "lines": 291,
-            "tokens": 3065,
+            "tokens": 3081,
             "sources": 1,
             "clones": 3,
             "duplicatedLines": 39,
             "duplicatedTokens": 338,
             "percentage": 13.4,
-            "percentageTokens": 11.03,
+            "percentageTokens": 10.97,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -2926,7 +2926,7 @@
           },
           "/workspace/client/src/components/ui/FormElements.tsx": {
             "lines": 155,
-            "tokens": 1162,
+            "tokens": 1168,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -2998,7 +2998,7 @@
           },
           "/workspace/client/src/components/search/SearchBar.tsx": {
             "lines": 181,
-            "tokens": 1502,
+            "tokens": 1526,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -3273,8 +3273,8 @@
             "newClones": 0
           },
           "/workspace/client/src/components/dashboard/AddressesPanel.tsx": {
-            "lines": 292,
-            "tokens": 2570,
+            "lines": 303,
+            "tokens": 2648,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -3345,8 +3345,8 @@
             "newClones": 0
           },
           "/workspace/client/src/components/checkout/AddressBlock.tsx": {
-            "lines": 136,
-            "tokens": 1209,
+            "lines": 133,
+            "tokens": 1187,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -3501,26 +3501,26 @@
             "newClones": 0
           },
           "/workspace/client/src/components/admin/SubmissionsList.tsx": {
-            "lines": 159,
-            "tokens": 1387,
+            "lines": 161,
+            "tokens": 1468,
             "sources": 1,
             "clones": 1,
-            "duplicatedLines": 12,
-            "duplicatedTokens": 90,
-            "percentage": 7.55,
-            "percentageTokens": 6.49,
+            "duplicatedLines": 14,
+            "duplicatedTokens": 171,
+            "percentage": 8.7,
+            "percentageTokens": 11.65,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "/workspace/client/src/components/admin/SubmissionsGrid.tsx": {
-            "lines": 88,
-            "tokens": 700,
+            "lines": 90,
+            "tokens": 781,
             "sources": 1,
             "clones": 1,
-            "duplicatedLines": 12,
-            "duplicatedTokens": 90,
-            "percentage": 13.64,
-            "percentageTokens": 12.86,
+            "duplicatedLines": 14,
+            "duplicatedTokens": 171,
+            "percentage": 15.56,
+            "percentageTokens": 21.9,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -4005,8 +4005,8 @@
             "newClones": 0
           },
           "/workspace/client/src/hooks/useWebSocketState.tsx": {
-            "lines": 99,
-            "tokens": 1029,
+            "lines": 104,
+            "tokens": 1108,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -4234,14 +4234,14 @@
           }
         },
         "total": {
-          "lines": 33727,
-          "tokens": 287173,
+          "lines": 33745,
+          "tokens": 287550,
           "sources": 186,
           "clones": 41,
-          "duplicatedLines": 729,
-          "duplicatedTokens": 5621,
-          "percentage": 2.16,
-          "percentageTokens": 1.96,
+          "duplicatedLines": 731,
+          "duplicatedTokens": 5702,
+          "percentage": 2.17,
+          "percentageTokens": 1.98,
           "newDuplicatedLines": 0,
           "newClones": 0
         }
@@ -4526,7 +4526,7 @@
           },
           "/workspace/client/src/lib/api.ts": {
             "lines": 35,
-            "tokens": 412,
+            "tokens": 435,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -4849,8 +4849,8 @@
             "newClones": 0
           },
           "/workspace/shared/schemas/address.ts": {
-            "lines": 68,
-            "tokens": 784,
+            "lines": 70,
+            "tokens": 843,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -4933,8 +4933,8 @@
             "newClones": 0
           },
           "/workspace/server/utils/input-sanitization.ts": {
-            "lines": 237,
-            "tokens": 1685,
+            "lines": 238,
+            "tokens": 1743,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -5329,14 +5329,14 @@
             "newClones": 0
           },
           "/workspace/server/middleware/security-enhancements.ts": {
-            "lines": 277,
-            "tokens": 2395,
+            "lines": 274,
+            "tokens": 2360,
             "sources": 1,
             "clones": 1,
             "duplicatedLines": 18,
             "duplicatedTokens": 123,
-            "percentage": 6.5,
-            "percentageTokens": 5.14,
+            "percentage": 6.57,
+            "percentageTokens": 5.21,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -5437,8 +5437,8 @@
             "newClones": 0
           },
           "/workspace/server/middleware/compression.ts": {
-            "lines": 48,
-            "tokens": 401,
+            "lines": 46,
+            "tokens": 432,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -5845,8 +5845,8 @@
             "newClones": 0
           },
           "/workspace/shared/fulfillment.ts": {
-            "lines": 152,
-            "tokens": 1208,
+            "lines": 162,
+            "tokens": 1317,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -5990,8 +5990,8 @@
           }
         },
         "total": {
-          "lines": 15479,
-          "tokens": 135090,
+          "lines": 15487,
+          "tokens": 135335,
           "sources": 145,
           "clones": 6,
           "duplicatedLines": 110,
@@ -6201,8 +6201,8 @@
             "newClones": 0
           },
           "/workspace/package.json": {
-            "lines": 187,
-            "tokens": 1283,
+            "lines": 188,
+            "tokens": 1290,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -6226,8 +6226,8 @@
           }
         },
         "total": {
-          "lines": 923,
-          "tokens": 5301,
+          "lines": 924,
+          "tokens": 5308,
           "sources": 12,
           "clones": 1,
           "duplicatedLines": 29,
@@ -7568,14 +7568,14 @@
       }
     },
     "total": {
-      "lines": 91267,
-      "tokens": 761117,
+      "lines": 91291,
+      "tokens": 761739,
       "sources": 617,
       "clones": 130,
-      "duplicatedLines": 4639,
-      "duplicatedTokens": 37778,
+      "duplicatedLines": 4641,
+      "duplicatedTokens": 37859,
       "percentage": 5.08,
-      "percentageTokens": 4.96,
+      "percentageTokens": 4.97,
       "newDuplicatedLines": 0,
       "newClones": 0
     }
@@ -7696,17 +7696,17 @@
       "tokens": 0,
       "firstFile": {
         "name": "client/src/components/admin/modals/EnhancedProductModal.tsx",
-        "start": 340,
-        "end": 359,
+        "start": 341,
+        "end": 360,
         "startLoc": {
-          "line": 340,
+          "line": 341,
           "column": 36,
-          "position": 3275
+          "position": 3303
         },
         "endLoc": {
-          "line": 359,
+          "line": 360,
           "column": 2,
-          "position": 3402
+          "position": 3430
         }
       },
       "secondFile": {
@@ -7732,17 +7732,17 @@
       "tokens": 0,
       "firstFile": {
         "name": "client/src/components/admin/modals/EnhancedProductModal.tsx",
-        "start": 670,
-        "end": 700,
+        "start": 671,
+        "end": 701,
         "startLoc": {
-          "line": 670,
+          "line": 671,
           "column": 15,
-          "position": 5832
+          "position": 5860
         },
         "endLoc": {
-          "line": 700,
+          "line": 701,
           "column": 8,
-          "position": 6037
+          "position": 6065
         }
       },
       "secondFile": {
@@ -7855,17 +7855,17 @@
       },
       "secondFile": {
         "name": "client/src/components/admin/modals/EnhancedProductModal.tsx",
-        "start": 183,
-        "end": 198,
+        "start": 184,
+        "end": 199,
         "startLoc": {
-          "line": 183,
+          "line": 184,
           "column": 11,
-          "position": 1900
+          "position": 1928
         },
         "endLoc": {
-          "line": 198,
+          "line": 199,
           "column": 6,
-          "position": 2019
+          "position": 2047
         }
       }
     },
@@ -8241,12 +8241,12 @@
         "startLoc": {
           "line": 202,
           "column": 2,
-          "position": 1679
+          "position": 1685
         },
         "endLoc": {
           "line": 218,
           "column": 9,
-          "position": 1849
+          "position": 1855
         }
       },
       "secondFile": {
@@ -8277,12 +8277,12 @@
         "startLoc": {
           "line": 58,
           "column": 10,
-          "position": 719
+          "position": 723
         },
         "endLoc": {
           "line": 73,
           "column": 5,
-          "position": 861
+          "position": 865
         }
       },
       "secondFile": {
@@ -8313,12 +8313,12 @@
         "startLoc": {
           "line": 176,
           "column": 9,
-          "position": 1832
+          "position": 1848
         },
         "endLoc": {
           "line": 188,
           "column": 4,
-          "position": 1930
+          "position": 1946
         }
       },
       "secondFile": {
@@ -8328,12 +8328,12 @@
         "startLoc": {
           "line": 147,
           "column": 10,
-          "position": 1599
+          "position": 1615
         },
         "endLoc": {
           "line": 159,
           "column": 5,
-          "position": 1697
+          "position": 1713
         }
       }
     },
@@ -8411,37 +8411,37 @@
     },
     {
       "format": "tsx",
-      "lines": 13,
-      "fragment": "} from 'lucide-react';\nimport { formatStatus, getStatusVariant, formatCurrency } from '@/utils/submissionHelpers';\n\ninterface Submission {\n  id: string;\n  referenceNumber: string;\n  name: string;\n  brand: string;\n  condition: string;\n  askingPrice: number;\n  status: string;\n  createdAt: string;\n  images",
+      "lines": 15,
+      "fragment": "} from 'lucide-react';\nimport { formatCurrency } from '@/lib/utils';\nconst formatStatus = (status: string) => status?.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());\nconst getStatusVariant = (status: string) => (status === 'approved' ? 'secondary' : status === 'rejected' ? 'destructive' : 'default');\n\ninterface Submission {\n  id: string;\n  referenceNumber: string;\n  name: string;\n  brand: string;\n  condition: string;\n  askingPrice: number;\n  status: string;\n  createdAt: string;\n  images",
       "tokens": 0,
       "firstFile": {
         "name": "client/src/components/admin/SubmissionsGrid.tsx",
         "start": 3,
-        "end": 15,
+        "end": 17,
         "startLoc": {
           "line": 3,
           "column": 2,
           "position": 32
         },
         "endLoc": {
-          "line": 15,
+          "line": 17,
           "column": 7,
-          "position": 122
+          "position": 203
         }
       },
       "secondFile": {
         "name": "client/src/components/admin/SubmissionsList.tsx",
         "start": 5,
-        "end": 17,
+        "end": 19,
         "startLoc": {
           "line": 5,
           "column": 2,
           "position": 73
         },
         "endLoc": {
-          "line": 17,
+          "line": 19,
           "column": 12,
-          "position": 163
+          "position": 244
         }
       }
     },
@@ -11872,17 +11872,17 @@
       "tokens": 0,
       "firstFile": {
         "name": "server/middleware/security-enhancements.ts",
-        "start": 115,
-        "end": 133,
+        "start": 112,
+        "end": 130,
         "startLoc": {
-          "line": 115,
+          "line": 112,
           "column": 6,
-          "position": 922
+          "position": 887
         },
         "endLoc": {
-          "line": 133,
+          "line": 130,
           "column": 6,
-          "position": 1045
+          "position": 1010
         }
       },
       "secondFile": {

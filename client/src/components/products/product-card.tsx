@@ -26,7 +26,13 @@ import { FreeDeliveryPill } from "@/components/locality/FreeDeliveryPill";
 import { useLocality } from "@/hooks/useLocality";
 
 interface ProductCardProps {
-  product: Product;
+  product: Product & {
+    images: string[] | null;
+    isLocalDeliveryAvailable?: boolean | null;
+    isShippingAvailable?: boolean | null;
+    is_local_delivery_available?: boolean | null; // legacy
+    is_shipping_available?: boolean | null; // legacy
+  };
   viewMode?: 'grid' | 'list';
   compact?: boolean;
 
@@ -34,10 +40,13 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, viewMode = 'grid', compact = false }: ProductCardProps) {
   // Handle both string URLs and image objects with url property
-  const imageData = product.images?.[0];
-  const mainImage = typeof imageData === 'string' ? imageData : (imageData as any)?.url;
-  const hasImage = mainImage && mainImage.length > 0;
+  const imageData = product.images?.[0] as any;
+  const mainImage = typeof imageData === 'string' ? imageData : imageData?.url;
+  const hasImage = !!mainImage && mainImage.length > 0;
   const { data: locality } = useLocality();
+  const isLocalEligible = Boolean((locality as any)?.eligible);
+  const isLocalDelivery = (product.isLocalDeliveryAvailable ?? product.is_local_delivery_available) ?? false;
+  const isShipping = (product.isShippingAvailable ?? product.is_shipping_available) ?? false;
 
   if (compact) {
     return (
@@ -60,7 +69,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
           <div className="p-3">
             <h4 className="font-semibold text-sm line-clamp-2 mb-1">{product.name}</h4>
             <p className="text-accent-blue font-bold text-sm">${product.price}</p>
-            <ProductAvailabilityChips product={product} />
+            <ProductAvailabilityChips product={{ isLocalDeliveryAvailable: isLocalDelivery, isShippingAvailable: isShipping }} />
           </div>
         </Card>
       </SmartLink>
@@ -131,13 +140,21 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
                 />
                 
                 <div className="space-y-2">
-                  <ProductAvailabilityChips product={product} />
-                  {locality?.eligible && product.is_local_delivery_available && (
+                  <ProductAvailabilityChips product={{ isLocalDeliveryAvailable: isLocalDelivery, isShippingAvailable: isShipping }} />
+                  {isLocalEligible && isLocalDelivery && (
                     <FreeDeliveryPill />
                   )}
                   <AddToCartButton
                     productId={product.id}
-                    product={product}
+                    product={{
+                      is_local_delivery_available: (product.isLocalDeliveryAvailable ?? product.is_local_delivery_available) ?? undefined,
+                      is_shipping_available: (product.isShippingAvailable ?? product.is_shipping_available) ?? undefined,
+                      name: product.name,
+                      price: String(product.price),
+                      images: (Array.isArray(product.images) ? product.images : []) as any,
+                      brand: product.brand ?? undefined,
+                      stockQuantity: product.stockQuantity as any,
+                    }}
                   />
                 </div>
               </div>
@@ -219,7 +236,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             
             {/* Price */}
             <p className="text-2xl font-bold text-white mb-4 group-hover:text-slate-100 transition-colors">
-              ${product.price}
+              ${String(product.price)}
             </p>
           </div>
         </div>
@@ -227,13 +244,21 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
       
       {/* Availability chips and add to cart */}
       <div className="px-4 pb-4 space-y-2" onClick={(e) => e.stopPropagation()}>
-        <ProductAvailabilityChips product={product} />
-        {locality?.isLocal && product.is_local_delivery_available && (
+        <ProductAvailabilityChips product={{ isLocalDeliveryAvailable: isLocalDelivery, isShippingAvailable: isShipping }} />
+        {isLocalEligible && isLocalDelivery && (
           <FreeDeliveryPill />
         )}
         <AddToCartButton
           productId={product.id}
-          product={product}
+          product={{
+            is_local_delivery_available: (product.isLocalDeliveryAvailable ?? product.is_local_delivery_available) ?? undefined,
+            is_shipping_available: (product.isShippingAvailable ?? product.is_shipping_available) ?? undefined,
+            name: product.name,
+            price: String(product.price),
+            images: (Array.isArray(product.images) ? product.images : []) as any,
+            brand: product.brand ?? undefined,
+            stockQuantity: product.stockQuantity as any,
+          }}
         />
       </div>
     </div>

@@ -1,8 +1,8 @@
-import { lazy, Suspense, ComponentType } from "react";
+import React, { lazy, Suspense, ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 
 // Generic lazy loading wrapper
-export const LazyWrapper = <T extends Record<string, any>>({
+export const LazyWrapper = ({
   children,
   fallback,
   className
@@ -50,7 +50,7 @@ export function createLazyComponent<T extends Record<string, any>>(
   
   return (props: T) => (
     <Suspense fallback={fallback || <div>Loading...</div>}>
-      <LazyComponent {...props} />
+      {React.createElement(LazyComponent as any, props as any)}
     </Suspense>
   );
 }
