@@ -3971,7 +3971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         rating,
         content: comment || '',
-        verifiedPurchase: await checkUserPurchaseHistory(userId, productId),
+        helpful: 0,
         createdAt: new Date(),
         updatedAt: new Date()
       }).returning();
@@ -4008,7 +4008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const coupon = await db.select().from(coupons)
         .where(and(
           eq(coupons.code, code.toUpperCase()),
-          eq(coupons.active, true)
+          eq(coupons.isActive, true)
         ))
         .limit(1);
       
