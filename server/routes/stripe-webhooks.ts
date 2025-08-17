@@ -73,7 +73,7 @@ router.post('/webhook',
 );
 
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-  const orderId = paymentIntent.metadata.orderId;
+  const orderId = (paymentIntent.metadata as any)?.orderId as string | undefined;
   
   if (!orderId) {
     Logger.error('No orderId in payment intent metadata');
@@ -94,7 +94,7 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
 }
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
-  const orderId = paymentIntent.metadata.orderId;
+  const orderId = (paymentIntent.metadata as any)?.orderId as string | undefined;
   
   if (!orderId) {
     Logger.error('No orderId in payment intent metadata');
@@ -111,7 +111,7 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
 }
 
 async function handlePaymentCanceled(paymentIntent: Stripe.PaymentIntent) {
-  const orderId = paymentIntent.metadata.orderId;
+  const orderId = (paymentIntent.metadata as any)?.orderId as string | undefined;
   
   if (!orderId) {
     Logger.error('No orderId in payment intent metadata');

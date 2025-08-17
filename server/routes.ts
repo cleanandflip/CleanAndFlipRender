@@ -2727,8 +2727,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         state: userData.state,
         postalCode: userData.postal_code,
         country: userData.country || "US",
-        latitude: userData.latitude ? parseFloat(userData.latitude) : undefined,
-        longitude: userData.longitude ? parseFloat(userData.longitude) : undefined,
+        latitude: userData.latitude ? parseFloat(String(userData.latitude)) : undefined,
+        longitude: userData.longitude ? parseFloat(String(userData.longitude)) : undefined,
         isLocal: Boolean(userData.is_local),
         isDefault: Boolean(userData.is_default),
         createdAt: userData.address_created_at,
@@ -3273,13 +3273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         brand: submission.brand,
         condition: submission.condition,
         status: submission.status,
-        statusHistory: submission.statusHistory || [],
         createdAt: submission.createdAt,
-        scheduledPickupDate: submission.scheduledPickupDate,
-        pickupWindowStart: submission.pickupWindowStart,
-        pickupWindowEnd: submission.pickupWindowEnd,
-        offerAmount: submission.offerAmount,
-        declineReason: submission.declineReason,
       };
       
       res.json(publicData);
@@ -3360,8 +3354,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data: submissions.map(s => ({
           id: s.submission.id,
           referenceNumber: s.submission.referenceNumber || 'N/A',
-          name: s.submission.name, // Map 'name' field
-          equipmentName: s.submission.name, // Also provide as equipmentName for compatibility
+          name: s.submission.name,
+          equipmentName: s.submission.name,
           description: s.submission.description,
           brand: s.submission.brand,
           condition: s.submission.condition,
@@ -3369,14 +3363,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           askingPrice: s.submission.askingPrice,
           status: s.submission.status,
           createdAt: s.submission.createdAt,
-          phoneNumber: s.submission.phoneNumber,
-          email: s.submission.email,
-          isLocal: s.submission.isLocal,
-          distance: s.submission.distance,
-          offerAmount: s.submission.offerAmount,
           adminNotes: s.submission.adminNotes,
           images: s.submission.images || [],
-          user: s.user || { id: '', email: '', firstName: '', lastName: '' }
+          user: s.user || { name: '', email: '' }
         })),
         total: Number(totalCount),
         ...Object.fromEntries(
@@ -3606,8 +3595,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Convert to CSV format
         const csvHeaders = [
           'Reference Number', 'Name', 'Brand', 'Condition', 'Status', 
-          'Asking Price', 'Offer Amount', 'User Email', 'User Name',
-          'Location', 'Is Local', 'Created Date', 'Admin Notes'
+          'Asking Price', 'User Email', 'User Name',
+          'Created Date', 'Admin Notes'
         ];
         
         const csvRows = submissions.map(s => [
@@ -3617,11 +3606,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           s.submission.condition,
           s.submission.status,
           s.submission.askingPrice || '',
-          s.submission.offerAmount || '',
           s.user?.email || '',
           s.user?.name || '',
-          [s.submission.userCity, s.submission.userState].filter(Boolean).join(', '),
-          s.submission.isLocal ? 'Yes' : 'No',
           new Date(s.submission.createdAt!).toLocaleDateString(),
           s.submission.adminNotes || ''
         ]);
@@ -3633,11 +3619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           condition: s.submission.condition,
           status: s.submission.status,
           askingPrice: s.submission.askingPrice,
-          offerAmount: s.submission.offerAmount,
           user: s.user,
-          userCity: s.submission.userCity,
-          userState: s.submission.userState,
-          isLocal: s.submission.isLocal,
           adminNotes: s.submission.adminNotes,
           createdAt: s.submission.createdAt
         })));
@@ -3969,8 +3951,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const review = await db.insert(reviews).values({
         productId: String(productId),
         userId,
-        rating,
+        title: 'Review',
         content: comment || '',
+        rating,
         helpful: 0,
         createdAt: new Date(),
         updatedAt: new Date()

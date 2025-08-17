@@ -196,7 +196,7 @@ export async function getLocalityForRequest(req: Request, zipOverride?: string):
  */
 export function getCartOwnerId(req: Request): string {
   // Prefer userId; else stable anonymous sessionId
-  return req.session?.user?.id || req.session?.id || 'anonymous';
+  return (req as any).user?.id || (req.session as any)?.id || 'anonymous';
 }
 // [MERGED FROM] /home/runner/workspace/server/services/locality.ts
 export class LocalityService {

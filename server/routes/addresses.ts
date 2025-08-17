@@ -108,7 +108,7 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
       };
     }
     
-    const address = await storage.updateAddress(userId, id, updateData as any);
+    const address = await storage.updateAddress(userId, id, { ...updateData, isLocal: undefined } as any);
     
     res.json(address); // Return plain object for consistency
   } catch (error) {
