@@ -32,12 +32,12 @@ The server-side uses a layered REST API architecture built with Node.js:
 ### Data Storage Solutions
 PostgreSQL is the primary database, utilizing:
 - **Database**: Neon serverless PostgreSQL with strict environment-specific database URLs.
-- **Environment Configuration**: PROD_DATABASE_URL for production, DEV_DATABASE_URL for development, with no fallbacks for enhanced security.
+- **Environment Configuration**: PROD_DATABASE_URL for production, DEV_DATABASE_URL for development, with NO fallbacks or backwards compatibility for maximum security.
 - **Schema Management**: Drizzle Kit for migrations with automatic retry logic and environment-aware configuration.
 - **Search**: PostgreSQL tsvector for full-text search.
 - **Session Storage**: Database-backed session storage.
 - **Schema**: Key tables include users, products, categories, orders, cart items, and equipment submissions with proper relationships.
-- **Safety Guards**: Multi-layered production database validation with complete environment isolation prevents development database usage in production.
+- **Safety Guards**: Enterprise-grade multi-layered production database validation with complete environment isolation and zero legacy database URL dependencies prevents any development database usage in production.
 
 ### Authentication and Authorization
 A comprehensive multi-layered security approach with Google OAuth integration and simplified role-based access control:
