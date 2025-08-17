@@ -617,8 +617,7 @@ export type InsertErrorLog = typeof errorLogs.$inferInsert;
 export type ErrorLogInstance = typeof errorLogInstances.$inferSelect;
 export type InsertErrorLogInstance = typeof errorLogInstances.$inferInsert;
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type UserOnboarding = typeof userOnboarding.$inferSelect;
-export type InsertUserOnboarding = typeof userOnboarding.$inferInsert;
+// REMOVED: userOnboarding table - onboarding system eliminated
 
 // Registration specific type that includes additional fields
 export const registerDataSchema = insertUserSchema.extend({

@@ -67,28 +67,67 @@ export function setupAuth(app: Express) {
   // Initialize Google OAuth strategy
   initializeGoogleAuth();
   
+  // CRITICAL: Validate database configuration BEFORE creating session store
+  console.log('[SESSION] Validating database configuration...');
+  console.log('[SESSION] DATABASE_URL configured:', !!DATABASE_URL);
+  console.log('[SESSION] DATABASE_URL format:', DATABASE_URL?.startsWith('postgresql://') ? 'Valid PostgreSQL' : 'Invalid');
+  
+  if (!DATABASE_URL) {
+    console.error('[SESSION] CRITICAL: No DATABASE_URL found - this will cause MemoryStore fallback');
+    console.error('[SESSION] Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      APP_ENV: process.env.APP_ENV,
+      hasProdUrl: !!process.env.PROD_DATABASE_URL,
+      hasDevUrl: !!process.env.DEV_DATABASE_URL,
+      hasLegacyUrl: !!process.env.DATABASE_URL
+    });
+    throw new Error('DATABASE_URL is required for session storage - cannot proceed with MemoryStore');
+  }
+  
+  // Test database connection BEFORE setting up session store
+  console.log('[SESSION] Testing database connection...');
+  
   const PostgresSessionStore = connectPg(session);
   
-  // Use the unified database configuration for session storage
-  console.log('[SESSION] Using environment-aware database');
+  // Create session store with enhanced error handling
+  let sessionStore: any;
+  try {
+    sessionStore = new PostgresSessionStore({
+      conString: DATABASE_URL,
+      createTableIfMissing: false, // Don't create table - already exists
+      schemaName: 'public',
+      tableName: 'sessions', // Use existing sessions table
+      errorLog: (err: any) => {
+        // CRITICAL: All session store errors indicate potential MemoryStore fallback
+        console.error('[SESSION STORE] PostgreSQL store error - this may cause MemoryStore fallback:', {
+          message: err.message,
+          code: err.code,
+          sqlState: err.sqlState,
+          name: err.name,
+          stack: err.stack
+        });
+        
+        // Production should NEVER fall back to MemoryStore
+        if (process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'production') {
+          console.error('[SESSION STORE] PRODUCTION ERROR: PostgreSQL session store failed - this is a CRITICAL issue');
+          console.error('[SESSION STORE] Production database issues will cause MemoryStore fallback and session loss');
+        }
+      }
+    });
+    
+    console.log('[SESSION] PostgreSQL session store created successfully');
+  } catch (error: any) {
+    console.error('[SESSION] FAILED to create PostgreSQL session store:', error.message);
+    console.error('[SESSION] This will definitely cause MemoryStore fallback');
+    throw new Error(`Session store initialization failed: ${error.message}`);
+  }
   
   const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "dev_secret_change_me",
     resave: false,
     saveUninitialized: true, // guests get a stable session
-    store: new PostgresSessionStore({
-      conString: DATABASE_URL,
-      createTableIfMissing: false, // Don't create table - already exists
-      schemaName: 'public',
-      tableName: 'sessions', // Use existing sessions table
-      errorLog: (err: any) => {
-        // Only log actual errors, not table/index existence warnings
-        if (err && !err.message?.includes('already exists') && !err.message?.includes('IDX_session_expire')) {
-          console.log('[SESSION STORE] Connection error:', err.message);
-        }
-      }
-    }),
+    store: sessionStore, // Use the validated session store
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
@@ -118,7 +157,22 @@ export function setupAuth(app: Express) {
     return next();
   });
   
+  // Apply session middleware with validation
+  console.log('[SESSION] Applying session middleware with PostgreSQL store...');
   app.use(session(sessionSettings));
+  
+  // Verify session store is actually being used (not falling back to MemoryStore)
+  const appliedStore = (sessionSettings.store as any);
+  if (appliedStore && appliedStore.constructor.name === 'PGStore') {
+    console.log('[SESSION] ✅ PostgreSQL session store confirmed active');
+  } else {
+    console.error('[SESSION] ❌ WARNING: Session store is not PostgreSQL - MemoryStore fallback detected!');
+    console.error('[SESSION] Store type:', appliedStore?.constructor?.name || 'Unknown');
+    if (process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'production') {
+      throw new Error('Production cannot use MemoryStore for sessions');
+    }
+  }
+  
   app.use(passport.initialize());
   app.use(passport.session());
 
