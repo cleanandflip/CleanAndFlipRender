@@ -20,6 +20,6 @@ export const db = getDb();
 // Optional simple health check
 export async function ping() {
   const db = getDb();
-  const sql = neon(env.DATABASE_URL);
-  await sql`SELECT 1`;
+  // @ts-ignore drizzle neon-http allows raw sql via db.execute
+  await db.execute("select 1");
 }

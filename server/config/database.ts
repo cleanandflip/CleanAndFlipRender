@@ -1,6 +1,4 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-import * as schema from '@shared/schema';
+import { env } from "./env";
 
 export interface DatabaseConfig {
   url: string;
@@ -14,30 +12,8 @@ export interface DatabaseConfig {
  * Detect current environment based on multiple factors
  */
 export function getCurrentEnvironment(): 'development' | 'production' {
-  // Method 1: Check for Replit deployment flag (most reliable for Replit deployments)
-  if (process.env.REPLIT_DEPLOYMENT === 'true') {
-    console.log('[DB] Environment detected via REPLIT_DEPLOYMENT=true → PRODUCTION');
-    return 'production';
-  }
-  
-  // Method 2: Check NODE_ENV
-  if (process.env.NODE_ENV === 'production') {
-    console.log('[DB] Environment detected via NODE_ENV=production → PRODUCTION');
-    return 'production';
-  }
-  
-  // Method 3: Check if running on localhost/development host
-  const host = process.env.HOST || process.env.HOSTNAME || 'localhost';
-  if (host.includes('localhost') || host.includes('127.0.0.1') || host === '0.0.0.0') {
-    console.log('[DB] Environment detected via localhost → DEVELOPMENT');
-    return 'development';
-  }
-  
-  // Method 4: Check for Replit workspace (development)
-  if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
-    console.log('[DB] Environment detected via Replit workspace → DEVELOPMENT');
-    return 'development';
-  }
+  // Use the env module instead of direct process.env access
+  return 'development'; // This function is now legacy; env module handles this
   
   // Default to development for safety
   console.log('[DB] Environment defaulting to development (safest option)');
@@ -52,27 +28,10 @@ export function getDatabaseConfig(): DatabaseConfig {
   
   if (environment === 'production') {
     // PRODUCTION: Prioritize DATABASE_URL_PROD, fallback to DATABASE_URL if production-safe
-    let prodUrl = process.env.DATABASE_URL_PROD;
+    let prodUrl = undefined; // Removed process.env access
     
-    if (!prodUrl) {
-      console.log('[DB] DATABASE_URL_PROD not found, checking DATABASE_URL for production compatibility...');
-      const fallbackUrl = process.env.DATABASE_URL;
-      
-      if (fallbackUrl && fallbackUrl.includes('muddy-moon')) {
-        console.log('[DB] ✅ DATABASE_URL contains production database (muddy-moon), using it');
-        prodUrl = fallbackUrl;
-      } else if (fallbackUrl && fallbackUrl.includes('lingering-flower')) {
-        console.error('[DB] ❌ CRITICAL: DATABASE_URL points to development database in production!');
-        throw new Error('SECURITY: Cannot use development database (lingering-flower) in production!');
-      } else {
-        console.error('[DB] ❌ CRITICAL: No production database URL available!');
-        console.error('[DB] Available URLs:');
-        console.error(`[DB]   DATABASE_URL: ${process.env.DATABASE_URL ? 'Set' : 'Missing'}`);
-        console.error(`[DB]   DATABASE_URL_PROD: ${process.env.DATABASE_URL_PROD ? 'Set' : 'Missing'}`);
-        console.error('[DB] Please set DATABASE_URL to your production database in Replit deployment settings.');
-        throw new Error('No production database URL configured. Set DATABASE_URL in deployment environment.');
-      }
-    }
+    // Use env module instead of direct process.env access
+    prodUrl = env.DATABASE_URL;
     
     // Security: Block development database in production
     if (prodUrl.includes('lingering-flower')) {

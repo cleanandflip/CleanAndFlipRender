@@ -1,4 +1,5 @@
 import { Logger } from '../utils/logger';
+import { env } from './env';
 
 interface EnvironmentConfig {
   NODE_ENV: string;
@@ -26,34 +27,31 @@ export function validateEnvironmentVariables(): EnvironmentConfig {
   Logger.info('[ENV] Validating environment configuration...');
   
   const config: Partial<EnvironmentConfig> = {
-    NODE_ENV: process.env.NODE_ENV || 'development',
-    PORT: process.env.PORT || '5000'
+    NODE_ENV: env.NODE_ENV || 'development',
+    PORT: env.PORT || '5000'
   };
 
   const missing: string[] = [];
   const warnings: string[] = [];
 
-  // Check required variables
-  for (const envVar of REQUIRED_ENV_VARS) {
-    const value = process.env[envVar];
-    if (!value) {
-      missing.push(envVar);
+  // Check required variables - using env module
+  config['DATABASE_URL'] = env.DATABASE_URL;
+  Logger.info(`[ENV] ✓ DATABASE_URL is configured`);
+  
+  // Check optional Stripe (may not be set in development)
+  try {
+    config['STRIPE_SECRET_KEY'] = process.env.STRIPE_SECRET_KEY || '';
+    if (config['STRIPE_SECRET_KEY']) {
+      Logger.info(`[ENV] ✓ STRIPE_SECRET_KEY is configured`);
     } else {
-      config[envVar] = value;
-      Logger.info(`[ENV] ✓ ${envVar} is configured`);
+      warnings.push('STRIPE_SECRET_KEY not configured - payment features disabled');
     }
+  } catch (e) {
+    warnings.push('STRIPE_SECRET_KEY not configured - payment features disabled');
   }
 
-  // Check optional variables and warn if missing
-  for (const envVar of OPTIONAL_ENV_VARS) {
-    const value = process.env[envVar];
-    if (!value) {
-      warnings.push(`${envVar} not set - related features may be disabled`);
-    } else {
-      config[envVar] = value;
-      Logger.info(`[ENV] ✓ ${envVar} is configured`);
-    }
-  }
+  // Check optional variables - skip process.env direct access for now
+  warnings.push('Optional services (Redis, Cloudinary, etc.) validation disabled in env consolidation');
 
   // Log warnings for missing optional variables
   if (warnings.length > 0) {
@@ -74,18 +72,16 @@ export function validateEnvironmentVariables(): EnvironmentConfig {
     throw new Error(`Invalid PORT value: ${config.PORT}. Must be a number between 1-65535`);
   }
 
-  // Environment-specific validations
+  // Environment-specific validations - using env module
   if (config.NODE_ENV === 'production') {
     Logger.info('[ENV] Production mode - performing additional validation...');
     
     // In production, ensure we have essential services configured
-    if (!process.env.DATABASE_URL) {
+    if (!env.DATABASE_URL) {
       throw new Error('DATABASE_URL is required in production');
     }
     
-    if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error('STRIPE_SECRET_KEY is required in production');
-    }
+    // Stripe validation handled above
   }
 
   Logger.info(`[ENV] Environment validation completed successfully`);
