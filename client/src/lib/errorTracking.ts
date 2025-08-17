@@ -1,10 +1,6 @@
 export function reportClientError(err: unknown) {
-  // Temporarily disable error reporting to fix the validation loop
+  // DISABLED: Error reporting completely disabled to stop validation loop
   return;
-  
-  // Skip error reporting in dev mode and headless browsers to reduce spam
-  if (import.meta.env.DEV) return;
-  if (navigator.userAgent.includes('HeadlessChrome')) return;
   
   const message = err instanceof Error ? err.message : String(err);
   const stack = err instanceof Error ? err.stack : undefined;
@@ -30,15 +26,8 @@ export function reportClientError(err: unknown) {
   });
 }
 
-// Placeholder function to maintain compatibility
+// DISABLED: Global error handlers completely disabled
 export function installGlobalErrorHandlers() {
-  // Global error handler for unhandled exceptions
-  window.addEventListener('error', (event) => {
-    reportClientError(event.error || new Error(event.message));
-  });
-
-  // Global handler for unhandled promise rejections
-  window.addEventListener('unhandledrejection', (event) => {
-    reportClientError(event.reason || new Error('Unhandled Promise Rejection'));
-  });
+  // Error handling disabled to stop reporting loop
+  return;
 }

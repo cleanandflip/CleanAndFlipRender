@@ -25,12 +25,13 @@ export default function ImageWithFallback({ src, logKey, alt = "", ...rest }: Pr
           // Log only once per unique URL per session
           if (current && !seen.has(current)) {
             seen.add(current);
-            reportClientError({
-              level: "warn",
-              message: `Failed to load img: ${current}`,
-              type: "ResourceError",
-              extra: { logKey, kind: "img" },
-            });
+            // DISABLED: Error reporting disabled to stop validation loop
+            // reportClientError({
+            //   level: "warn",
+            //   message: `Failed to load img: ${current}`,
+            //   type: "ResourceError",
+            //   extra: { logKey, kind: "img" },
+            // });
           }
           setCurrent(FALLBACK_IMG);
         }

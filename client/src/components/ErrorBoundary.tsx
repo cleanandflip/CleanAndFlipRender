@@ -30,18 +30,9 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Report to our local error tracking system
-    reportClientError({ 
-      message: error?.message ?? "React component error", 
-      type: error?.name || "ComponentError",
-      stack: error?.stack, 
-      extra: { 
-        componentStack: errorInfo.componentStack,
-        errorBoundary: true,
-        errorId: this.state.errorId
-      } 
-    });
-
+    // DISABLED: Error reporting disabled to stop validation loop
+    // reportClientError was causing 400 error loop
+    
     // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
 
@@ -122,12 +113,12 @@ export function useErrorBoundary() {
   const [error, setError] = React.useState<Error | null>(null);
 
   const captureError = React.useCallback((error: Error) => {
-    reportClientError({
-      message: error.message,
-      type: error.name,
-      stack: error.stack,
-      extra: { source: "useErrorBoundary" }
-    });
+    // DISABLED: reportClientError({
+    //   message: error.message,
+    //   type: error.name,
+    //   stack: error.stack,
+    //   extra: { source: "useErrorBoundary" }
+    // });
     setError(error);
   }, []);
 

@@ -26,18 +26,18 @@ export class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Error boundary caught an error:', error, errorInfo);
     
-    // Report to observability system with boundary tagging
-    import("@/lib/errorTracking").then(({ reportClientError }) => {
-      reportClientError({
-        message: error?.message ?? "Render error",
-        type: error?.name ?? "Error",
-        stack: error?.stack,
-        extra: { 
-          info: errorInfo, 
-          source: "boundary" // Tag as boundary error to bypass noise filters
-        },
-      });
-    });
+    // DISABLED: Error reporting disabled to stop validation loop
+    // import("@/lib/errorTracking").then(({ reportClientError }) => {
+    //   reportClientError({
+    //     message: error?.message ?? "Render error",
+    //     type: error?.name ?? "Error",
+    //     stack: error?.stack,
+    //     extra: { 
+    //       info: errorInfo, 
+    //       source: "boundary" // Tag as boundary error to bypass noise filters
+    //     },
+    //   });
+    // });
   }
 
   private handleRetry = () => {
