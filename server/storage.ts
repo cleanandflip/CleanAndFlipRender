@@ -175,9 +175,7 @@ export class DatabaseStorage implements IStorage {
           google_email, google_picture,
           profile_address_id,
           COALESCE(is_local_customer, false) as is_local_customer,
-          COALESCE(profile_complete, false) as profile_complete,
-          COALESCE(onboarding_step, 0) as onboarding_step,
-          onboarding_completed_at
+          COALESCE(profile_complete, false) as profile_complete
         FROM users
         WHERE id = ${id}
         LIMIT 1
@@ -218,8 +216,6 @@ export class DatabaseStorage implements IStorage {
               profileAddressId: null,
               isLocalCustomer: false,
               profileComplete: false,
-              onboardingStep: 0,
-              onboardingCompletedAt: null
             } as User;
           }
         } catch (fallbackError: any) {
@@ -252,8 +248,6 @@ export class DatabaseStorage implements IStorage {
           profile_address_id,
           COALESCE(is_local_customer, false) as is_local_customer,
           COALESCE(profile_complete, false) as profile_complete,
-          COALESCE(onboarding_step, 0) as onboarding_step,
-          onboarding_completed_at
         FROM users
         WHERE LOWER(email) = LOWER(${normalizedEmail})
         LIMIT 1
@@ -294,8 +288,6 @@ export class DatabaseStorage implements IStorage {
               profileAddressId: null,
               isLocalCustomer: false,
               profileComplete: false,
-              onboardingStep: 0,
-              onboardingCompletedAt: null
             } as User;
           }
         } catch (fallbackError: any) {
@@ -321,8 +313,6 @@ export class DatabaseStorage implements IStorage {
             profile_address_id,
             COALESCE(is_local_customer, false) as is_local_customer,
             COALESCE(profile_complete, false) as profile_complete,
-            COALESCE(onboarding_step, 0) as onboarding_step,
-            onboarding_completed_at
           FROM users
           WHERE LOWER(email) = LOWER(${normalizedEmail})
           LIMIT 1

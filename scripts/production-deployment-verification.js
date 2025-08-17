@@ -82,7 +82,7 @@ async function verifyProductionDeployment() {
     console.log('  Test 1: Column accessibility...');
     try {
       await db.execute(sql`
-        SELECT profile_address_id, onboarding_completed_at 
+        SELECT profile_address_id, profile_complete 
         FROM users 
         LIMIT 1
       `);
