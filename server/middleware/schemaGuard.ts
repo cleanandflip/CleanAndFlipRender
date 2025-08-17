@@ -26,7 +26,7 @@ export async function validateSchemaOnStartup(): Promise<void> {
       `);
       
       if (!result.rowCount || result.rowCount === 0) {
-        Logger.error(`[SCHEMA] ❌ CRITICAL: Missing column ${table}.${column} in current DATABASE_URL`);
+        Logger.error(`[SCHEMA] ❌ CRITICAL: Missing column ${table}.${column} in current database`);
         Logger.error(`[SCHEMA] Migrations have NOT been applied to this database.`);
         Logger.error(`[SCHEMA] Run: npm run drizzle:migrate`);
       } else {

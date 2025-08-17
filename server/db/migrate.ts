@@ -1,10 +1,11 @@
 import { migrate } from "drizzle-orm/neon-http/migrator";
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { env } from "../config/env";
+import { getDatabaseConfig } from "../config/database";
 
 export async function applyMigrations() {
-  const sql = neon(env.DATABASE_URL);
+  const dbConfig = getDatabaseConfig();
+  const sql = neon(dbConfig.url);
   console.log("[MIGRATIONS] Applying…");
   
   // Apply SQL files directly since we don't use Drizzle Kit migrations

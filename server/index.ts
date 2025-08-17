@@ -12,7 +12,11 @@ import { setupVite, serveStatic } from "./vite";
 
 // 1) Boot logs that must appear once
 console.log("[BOOT]", { env: env.APP_ENV, nodeEnv: env.NODE_ENV, build: env.APP_BUILD_ID });
-console.log("[BOOT] DB:", new URL(env.DATABASE_URL).host);
+
+// Use the appropriate database URL based on environment
+import { getDatabaseConfig } from "./config/database";
+const dbConfig = getDatabaseConfig();
+console.log("[BOOT] DB:", new URL(dbConfig.url).host);
 
 // 2) Prod DB guard + migrations before routes
 assertProdDB();
