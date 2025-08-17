@@ -83,9 +83,9 @@ export function setupAuth(app: Express) {
       schemaName: 'public',
       tableName: 'sessions', // Use existing sessions table
       errorLog: (err: any) => {
-        // Suppress "already exists" errors for index and table
+        // Only log actual errors, not table/index existence warnings
         if (err && !err.message?.includes('already exists') && !err.message?.includes('IDX_session_expire')) {
-          Logger.error('Session store error:', err);
+          console.log('[SESSION STORE] Connection error:', err.message);
         }
       }
     }),

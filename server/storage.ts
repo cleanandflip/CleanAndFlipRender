@@ -57,7 +57,7 @@ export interface IStorage {
     authProvider: string;
   }): Promise<User>;
   updateUserStripeInfo(id: string, customerId: string, subscriptionId?: string): Promise<User>;
-  updateUserProfileAddress(id: string, profileAddressId: string): Promise<User>;
+  // REMOVED: updateUserProfileAddress - using SSOT address system
 
   // Category operations
   getCategories(): Promise<Category[]>;
@@ -213,7 +213,7 @@ export class DatabaseStorage implements IStorage {
               isEmailVerified: false,
               googleEmail: null,
               googlePicture: null,
-              profileAddressId: null,
+              // REMOVED: profileAddressId - using SSOT address system
               isLocalCustomer: false,
               profileComplete: false,
             } as User;
@@ -285,7 +285,7 @@ export class DatabaseStorage implements IStorage {
               isEmailVerified: false,
               googleEmail: null,
               googlePicture: null,
-              profileAddressId: null,
+              // REMOVED: profileAddressId - using SSOT address system
               isLocalCustomer: false,
               profileComplete: false,
             } as User;
@@ -436,17 +436,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserProfileAddress(id: string, profileAddressId: string): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({
-        profileAddressId: profileAddressId,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, id))
-      .returning();
-    return user;
-  }
+  // REMOVED: updateUserProfileAddress - using SSOT address system
 
   // Category operations
   async getCategories(): Promise<Category[]> {
