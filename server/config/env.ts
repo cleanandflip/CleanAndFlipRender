@@ -5,6 +5,8 @@ const EnvSchema = z.object({
   APP_ENV: z.enum(["production","staging","development"]).default("development"),
   DATABASE_URL: z.string().url(),
   EXPECTED_DB_HOST: z.string().optional(),
+  SESSION_SECRET: z.string().min(10),
+  PORT: z.string().optional(),
   APP_BUILD_ID: z.string().optional(),
 });
 

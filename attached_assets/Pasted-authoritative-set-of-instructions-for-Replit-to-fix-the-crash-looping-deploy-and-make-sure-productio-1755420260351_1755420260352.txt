@@ -1,0 +1,217 @@
+authoritative set of instructions for Replit to fix the crash-looping deploy and make sure production always runs against the correct production database with a clean, consistent schema.
+
+0) Pause deploys & open logs side-by-side
+
+Temporarily disable automatic deploys while you do the steps below.
+
+Keep the Replit logs open. We’ll expect to see one DB host, APP_ENV=production, and migrations applied once.
+
+1) Fix secrets: one URL, one env, one build id
+
+Goal: eliminate conflicting DB hosts and bad creds.
+
+In Replit → Tools → Secrets, leave only:
+
+DATABASE_URL → Neon production branch URL (copy the encoded connection string directly from Neon “Connection Details”; it includes the correct user, password, and sslmode=require).
+
+NODE_ENV=production
+
+APP_ENV=production
+
+SESSION_SECRET=<strong random string>
+
+EXPECTED_DB_HOST=<the host of your Neon prod branch>
+e.g. ep-muddy-moon-aeggx6le-pooler.c-2.us-east-2.aws.neon.tech
+
+Delete anything that could override or confuse DB config:
+
+DATABASE_URL_READ, DATABASE_URL_WRITE, DB_URL, PG* (PGHOST, PGUSER, PGPASSWORD, PGDATABASE), NEON_*, POSTGRES_URL, etc.
+
+If you recently rotated the Neon password, generate a fresh DATABASE_URL in Neon and paste it verbatim into Replit.
+
+The error password authentication failed for user 'neondb_owner' means the URL in Replit is stale or hand-edited. Don’t edit by hand—use Neon’s generated URL.
+
+2) Make the app use a single config path
+
+Goal: remove old code paths that log different DB hosts (your logs showed both ep-lucky-credit... and ep-muddy-moon...).
+
+Ensure you have a strict env loader (you already added this earlier; keep it):
+
+server/config/env.ts (Zod parsing for APP_ENV, NODE_ENV, DATABASE_URL, EXPECTED_DB_HOST, APP_BUILD_ID).
+
+Add/keep a DB host guard:
+
+server/config/guards.ts with assertProdDB() that compares new URL(env.DATABASE_URL).host to EXPECTED_DB_HOST and throws if they differ (in production only).
+
+Search your repo for any legacy config readers and remove/patch them to import from your env loader only:
+
+Search patterns:
+
+process.env.DATABASE_URL (outside your env loader)
+
+DATABASE_URL_, NEON_, POSTGRES_, PGHOST, PGUSER, PGPASSWORD, PGDATABASE
+
+Any custom “unified database configuration” modules
+
+Replace all of them with imports from server/config/env.ts.
+
+Search and remove duplicate boot logs so you know exactly which code path is running:
+
+Find any log like "[BOOT] DB:" or "[DB] Connecting to host:" in multiple files. Keep one in your main bootstrap only.
+
+3) Apply migrations before routes; fail fast if schema or creds are wrong
+
+Goal: stop partial boots and crash loops; if DB creds are bad, the app should exit immediately with a clear error.
+
+Keep the boot sequence at the top of your server entry (before route registration):
+
+import { env } from "./config/env";
+import { assertProdDB } from "./config/guards";
+import { applyMigrations } from "./db/migrate";
+
+console.log("[BOOT]", { env: env.APP_ENV, nodeEnv: env.NODE_ENV, build: env.APP_BUILD_ID });
+console.log("[BOOT] DB:", new URL(env.DATABASE_URL).host);
+
+assertProdDB();
+await applyMigrations().catch((e) => {
+  console.error("[MIGRATIONS] Failed to apply migrations:", e);
+  process.exit(1);
+});
+
+
+Ensure the migration driver matches your runtime (Neon serverless + drizzle-orm/neon-http migrator). Keep one driver choice everywhere.
+
+4) Clean builds only (remove stale dist that may hold old DB code)
+
+Goal: stop old compiled entrypoints from running (dist/index.js vs dist/server/index.js confusion).
+
+In package.json:
+
+{
+  "scripts": {
+    "clean": "rimraf dist .next .turbo build",
+    "build": "npm run clean && tsc -b && vite build",  // adjust if you use only tsc or only vite
+    "start": "node dist/index.js"                       // or node dist/server/index.js; pick ONE and stick to it
+  }
+}
+
+
+Ensure your server actually compiles to the path you run. If your server’s entrypoint is server/index.ts, configure your TS build to emit dist/index.js (or switch start to node dist/server/index.js). Do not have both.
+
+Add to .gitignore:
+
+dist
+.next
+build
+.turbo
+
+
+In Replit Deploy → Run command:
+
+APP_ENV=production NODE_ENV=production APP_BUILD_ID=$(git rev-parse --short HEAD) npm run build && npm run start
+
+5) Fix database schema drift cleanly
+
+Goal: have production schema exactly match code, with idempotent migrations.
+
+Keep (or add) an idempotent migration to drop retired columns—e.g., onboarding:
+
+ALTER TABLE "users" DROP COLUMN IF EXISTS "onboarding_completed_at";
+ALTER TABLE "users" DROP COLUMN IF EXISTS "profile_address_id";
+
+
+You’ve removed onboarding and moved away from profile_address_id. Dropping with IF EXISTS is safe across all envs.
+
+Keep/add cart integrity migrations (FKs + unique indexes) you previously set up. They are orthogonal to the deploy crash but important for stability.
+
+Confirm your drizzle migration folder (./drizzle) is included in the deploy image.
+
+6) Validate Neon credentials and role permissions
+
+Goal: remove the password authentication failed for user 'neondb_owner' error.
+
+In Neon:
+
+Open the production branch.
+
+Copy the psql connection string or the direct/pooled postgres:// URL.
+
+Paste that as DATABASE_URL in Replit Secrets. Don’t edit.
+
+Ensure the role in the URL (e.g. neondb_owner) has permission to run ALTER TABLE (needed for migrations).
+
+If you keep seeing auth failures:
+
+Reset password for the role in Neon, then copy the new URL again.
+
+Make sure no stray PG* env vars in Replit override credentials.
+
+7) Smoke-test before turning deploy back on
+
+Goal: catch misconfig early.
+
+Start the repl (not deploy) with:
+
+APP_ENV=production NODE_ENV=production APP_BUILD_ID=local-test npm run build
+NODE_ENV=production node dist/index.js
+
+
+Expect to see in logs (and only once):
+
+[BOOT] { env: 'production', nodeEnv: 'production', build: '...' }
+[BOOT] DB: ep-<EXPECTED_DB_HOST>
+[MIGRATIONS] Applying…
+[MIGRATIONS] Done.
+[INFO] [MAIN] Starting Clean & Flip API Server
+
+
+Hit a couple of endpoints:
+
+GET /api/user → 200 (no column-missing 500s)
+
+GET /api/products/featured → 200
+
+GET /api/cart → 200
+
+8) If production DB is badly polluted, cut over from a good env
+
+Fast, safe option if your “environment” DB is correct:
+
+In Neon, create a new branch from the known-good environment (staging/dev).
+
+Point prod DATABASE_URL to that new branch.
+
+Redeploy (migrations will run; app starts against a clean schema).
+
+After verification, archive the old prod branch.
+
+This avoids manual table wipes and guarantees code↔schema alignment.
+
+9) Prevent regressions (must-haves)
+
+Assert DB host at boot (done via assertProdDB()).
+
+Fail builds if code references retired columns:
+
+Add an ESLint rule to block literals /onboarding/i and profile_address_id.
+
+CI grep (if you use GitHub/CI):
+
+rg -n --no-heading -S '\bonboarding\b|profile_address_id' && exit 1 || true
+
+
+Single entrypoint: delete any unused server entry files so there’s no ambiguity (dist/index.js vs dist/server/index.js). There must be one start path.
+
+What you’ll see when it’s right
+
+Logs show only one DB host (the one in EXPECTED_DB_HOST).
+
+[BOOT] { env: 'production', nodeEnv: 'production', build: '<sha>' } (not development).
+
+MIGRATIONS Done. exactly once.
+
+No password authentication failed errors.
+
+No column ... does not exist errors.
+
+No crash loop; service stays healthy.
