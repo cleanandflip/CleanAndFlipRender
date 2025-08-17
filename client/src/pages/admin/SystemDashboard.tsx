@@ -280,7 +280,7 @@ export default function SystemDashboard() {
         </div>
 
         {/* Active Alerts */}
-        {alertsData?.alerts && alertsData.alerts.length > 0 && (
+        {(((alertsData as any)?.alerts) || []).length > 0 && (
           <Card className="bg-gray-900 border-gray-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
@@ -290,7 +290,7 @@ export default function SystemDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {alertsData.alerts.map((alert: SystemAlert) => (
+                {(((alertsData as any)?.alerts) || []).map((alert: any) => (
                   <Alert key={alert.id} variant={getAlertVariant(alert.level) as any}>
                     <AlertDescription className="flex justify-between items-center">
                       <div>
