@@ -11,6 +11,17 @@ import { useToast } from "@/hooks/use-toast";
 import { LocalBadge } from "@/components/locality/LocalBadge";
 import { isLocalZip } from "@shared/locality";
 
+interface Address {
+  id: string;
+  firstName: string;
+  lastName: string;
+  street1: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  isDefault: boolean;
+}
+
 export default function AddressesPanel() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -20,7 +31,7 @@ export default function AddressesPanel() {
   // Maximum address limit
   const MAX_ADDRESSES = 2;
 
-  const { data: addresses = [], isLoading, isError, error } = useQuery({
+  const { data: addresses = [], isLoading, isError, error } = useQuery<Address[]>({
     queryKey: ["/api/addresses"],
     staleTime: 5 * 60 * 1000,
   });
@@ -133,7 +144,7 @@ export default function AddressesPanel() {
     );
   }
 
-  const isAtMaxLimit = addresses.length >= MAX_ADDRESSES;
+  const isAtMaxLimit = (addresses as Address[]).length >= MAX_ADDRESSES;
 
   return (
     <Card className="p-6">
@@ -199,7 +210,7 @@ export default function AddressesPanel() {
           <div className="flex justify-between items-center text-sm text-gray-500 mb-2">
             <span>{addresses.length} of {MAX_ADDRESSES} addresses used</span>
           </div>
-          {addresses.map((address: any) => (
+          {addresses.map((address: Address) => (
             <div key={address.id} className={`p-4 glass rounded-lg transition-all relative ${
               address.isDefault 
                 ? 'border-2 border-blue-400 bg-blue-950/40 ring-1 ring-blue-400/30' 

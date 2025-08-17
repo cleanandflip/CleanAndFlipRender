@@ -29,14 +29,14 @@ export default function SearchBar({
     const unsubscribe = searchService.subscribe(() => {
       setValue(searchService.getQuery().q);
     });
-    return unsubscribe;
+    return () => { unsubscribe(); };
   }, []);
 
   // Trigger re-render when busy changes for spinner
   const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
   React.useEffect(() => {
     const unsubscribe = searchService.subscribeBusy(() => forceUpdate());
-    return unsubscribe;
+    return () => { unsubscribe(); };
   }, [forceUpdate]);
 
   const commit = React.useCallback((searchValue: string) => {
