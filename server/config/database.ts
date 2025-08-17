@@ -32,20 +32,19 @@ export function getDatabaseConfig(): DatabaseConfig {
   const environment = getCurrentEnvironment();
   
   if (environment === 'production') {
-    // PRODUCTION: Use PROD_DATABASE_URL or fallback to DATABASE_URL
-    const prodUrl = env.PROD_DATABASE_URL || env.DATABASE_URL;
+    // PRODUCTION: ONLY use PROD_DATABASE_URL
+    const prodUrl = env.PROD_DATABASE_URL;
     
     if (!prodUrl) {
-      throw new Error('PROD_DATABASE_URL or DATABASE_URL must be set for production environment');
+      throw new Error('PROD_DATABASE_URL must be set for production environment');
     }
     
-    // Security: Block development database in production (but allow muddy-moon)
+    // Security: Block development database in production
     if (prodUrl.includes('lingering-flower')) {
       throw new Error('CRITICAL: Cannot use development database (lingering-flower) in production!');
     }
     
-    const sourceLabel = env.PROD_DATABASE_URL ? 'PROD_DATABASE_URL' : 'DATABASE_URL';
-    console.log(`[DB] ✅ Using PRODUCTION database from ${sourceLabel}`);
+    console.log(`[DB] ✅ Using PRODUCTION database from PROD_DATABASE_URL`);
     
     return {
       url: prodUrl,
@@ -55,11 +54,11 @@ export function getDatabaseConfig(): DatabaseConfig {
       retryDelay: 2000
     };
   } else {
-    // DEVELOPMENT: Use DEV_DATABASE_URL or fallback to DATABASE_URL
-    const devUrl = env.DEV_DATABASE_URL || env.DATABASE_URL;
+    // DEVELOPMENT: ONLY use DEV_DATABASE_URL
+    const devUrl = env.DEV_DATABASE_URL;
     
     if (!devUrl) {
-      throw new Error('DEV_DATABASE_URL or DATABASE_URL must be set for development environment');
+      throw new Error('DEV_DATABASE_URL must be set for development environment');
     }
     
     // Security: Warn if development is using production database
@@ -68,8 +67,7 @@ export function getDatabaseConfig(): DatabaseConfig {
       console.warn('[DB] This is allowed but not recommended for safety');
     }
     
-    const sourceLabel = env.DEV_DATABASE_URL ? 'DEV_DATABASE_URL' : 'DATABASE_URL';
-    console.log(`[DB] ✅ Using DEVELOPMENT database from ${sourceLabel}`);
+    console.log(`[DB] ✅ Using DEVELOPMENT database from DEV_DATABASE_URL`);
     
     return {
       url: devUrl,
@@ -91,7 +89,6 @@ export async function createDatabaseConnection() {
   console.log(`[DB] NODE_ENV: ${env.NODE_ENV}`);
   console.log(`[DB] APP_ENV: ${env.APP_ENV}`);
   console.log(`[DB] Environment detected: ${config.environment}`);
-  console.log(`[DB] Has DATABASE_URL: ${!!env.DATABASE_URL}`);
   console.log(`[DB] Has PROD_DATABASE_URL: ${!!env.PROD_DATABASE_URL}`);
   console.log(`[DB] Has DEV_DATABASE_URL: ${!!env.DEV_DATABASE_URL}`);
   
@@ -141,7 +138,7 @@ export async function validateDatabaseEnvironment() {
   
   if (environment === 'production') {
     // Additional production validations
-    if (!env.PROD_DATABASE_URL && !env.DATABASE_URL) {
+    if (!env.PROD_DATABASE_URL) {
       console.warn('[DB] Warning: PROD_DATABASE_URL not set for production');
     }
   }

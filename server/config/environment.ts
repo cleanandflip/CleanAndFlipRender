@@ -114,17 +114,20 @@ export function validateEnvironment(): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
   const environment = detectEnvironment();
   
-  // Required environment variables
-  const requiredVars = ['DATABASE_URL'];
+  // Required environment variables based on environment
+  const requiredVars: string[] = [];
   
   if (environment === 'production') {
     requiredVars.push(
+      'PROD_DATABASE_URL',
       'STRIPE_SECRET_KEY',
       'CLOUDINARY_CLOUD_NAME',
       'CLOUDINARY_API_KEY',
       'CLOUDINARY_API_SECRET',
       'RESEND_API_KEY'
     );
+  } else {
+    requiredVars.push('DEV_DATABASE_URL');
   }
   
   // Check required variables
@@ -136,7 +139,7 @@ export function validateEnvironment(): { isValid: boolean; errors: string[] } {
   
   // Production-specific validations
   if (environment === 'production') {
-    if (process.env.DATABASE_URL?.includes('lingering-flower')) {
+    if (process.env.PROD_DATABASE_URL?.includes('lingering-flower')) {
       errors.push('CRITICAL: Cannot use development database in production');
     }
     

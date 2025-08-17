@@ -1,5 +1,6 @@
 // server/db.ts
 import { env } from "./config/env";
+import { getDatabaseConfig } from "./config/database";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "../shared/schema";
@@ -8,8 +9,9 @@ let _db: ReturnType<typeof drizzle> | null = null;
 
 export function getDb() {
   if (_db) return _db;
-  // The Neon driver automatically uses SSL and serverless pooling
-  const sql = neon(env.DATABASE_URL);
+  // Get the correct database URL based on environment
+  const dbConfig = getDatabaseConfig();
+  const sql = neon(dbConfig.url);
   _db = drizzle(sql, { schema });
   return _db;
 }

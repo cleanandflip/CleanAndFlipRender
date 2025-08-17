@@ -4,13 +4,13 @@ import { env } from './env';
 interface EnvironmentConfig {
   NODE_ENV: string;
   PORT: string;
-  DATABASE_URL: string;
+  PROD_DATABASE_URL?: string;
+  DEV_DATABASE_URL?: string;
   STRIPE_SECRET_KEY: string;
   [key: string]: string | undefined;
 }
 
 const REQUIRED_ENV_VARS = [
-  'DATABASE_URL',
   'STRIPE_SECRET_KEY'
 ] as const;
 
@@ -34,9 +34,14 @@ export function validateEnvironmentVariables(): EnvironmentConfig {
   const missing: string[] = [];
   const warnings: string[] = [];
 
-  // Check required variables - using env module
-  config['DATABASE_URL'] = env.DATABASE_URL;
-  Logger.info(`[ENV] ✓ DATABASE_URL is configured`);
+  // Check database URL based on environment
+  if (env.APP_ENV === 'production') {
+    config['PROD_DATABASE_URL'] = env.PROD_DATABASE_URL;
+    Logger.info(`[ENV] ✓ PROD_DATABASE_URL is configured`);
+  } else {
+    config['DEV_DATABASE_URL'] = env.DEV_DATABASE_URL;
+    Logger.info(`[ENV] ✓ DEV_DATABASE_URL is configured`);
+  }
   
   // Check optional Stripe (may not be set in development)
   try {
@@ -77,8 +82,8 @@ export function validateEnvironmentVariables(): EnvironmentConfig {
     Logger.info('[ENV] Production mode - performing additional validation...');
     
     // In production, ensure we have essential services configured
-    if (!env.DATABASE_URL) {
-      throw new Error('DATABASE_URL is required in production');
+    if (!env.PROD_DATABASE_URL) {
+      throw new Error('PROD_DATABASE_URL is required in production');
     }
     
     // Stripe validation handled above
