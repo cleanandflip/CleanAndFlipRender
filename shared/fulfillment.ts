@@ -71,12 +71,16 @@ export function modeToFlags(mode: FulfillmentMode): {
 
 // Constants for enum values
 export const FULFILLMENT_MODES = {
-  LOCAL_ONLY: 'LOCAL_ONLY' as const,
-  LOCAL_AND_SHIPPING: 'LOCAL_AND_SHIPPING' as const,
+	LOCAL_ONLY: 'LOCAL_ONLY' as const,
+	LOCAL_AND_SHIPPING: 'LOCAL_AND_SHIPPING' as const,
 } as const;
 
-// Alias for compatibility with EnhancedProductModal
-export const FULFILLMENT = FULFILLMENT_MODES;
+// Back-compat alias. Some components expect FULFILLMENT.BOTH
+export const FULFILLMENT = {
+	...FULFILLMENT_MODES,
+	// Map BOTH to LOCAL_AND_SHIPPING for compatibility
+	BOTH: FULFILLMENT_MODES.LOCAL_AND_SHIPPING,
+} as const;
 
 // Alias for compatibility 
 export const booleansFromMode = modeToFlags;
@@ -126,15 +130,21 @@ export default {
   FULFILLMENT,
 };
 // [MERGED FROM] /home/runner/workspace/server/utils/fulfillment.ts
+// Define geo constants/functions used by isLocalMiles
+export const EARTH_R = 3958.7613; // miles
+export const HQ = { lat: 35.5951, lng: -82.5515 };
+export const RADIUS = 30; // miles
+export const toRad = (deg: number) => (deg * Math.PI) / 180;
+
 export function /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(lat: number, lng: number, center = HQ, radius = RADIUS) {
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { isLocal: false, miles: Infinity };
-  const dLat = toRad(lat - center.lat);
-  const dLng = toRad(lng - center.lng);
-  const a =
-    Math.sin(dLat/2)**2 +
-    Math.cos(toRad(center.lat)) * Math.cos(toRad(lat)) * Math.sin(dLng/2)**2;
-  const miles = 2 * EARTH_R * Math.asin(Math.sqrt(a));
-  return { isLocal: miles <= radius, miles };
+	if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { isLocal: false, miles: Infinity };
+	const dLat = toRad(lat - center.lat);
+	const dLng = toRad(lng - center.lng);
+	const a =
+		Math.sin(dLat/2)**2 +
+		Math.cos(toRad(center.lat)) * Math.cos(toRad(lat)) * Math.sin(dLng/2)**2;
+	const miles = 2 * EARTH_R * Math.asin(Math.sqrt(a));
+	return { isLocal: miles <= radius, miles };
 }
 
 // [MERGED FROM] /home/runner/workspace/server/utils/fulfillment.ts

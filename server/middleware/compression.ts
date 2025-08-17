@@ -12,13 +12,11 @@ export function setupProductionOptimizations(app: Application) {
     // Enable compression for all routes
     app.use(compression({
       filter: (req, res) => {
-        // Don't compress responses that are already compressed
-        if (req.headers['x-no-compression']) {
-          return false;
-        }
-        return compression.filter(req, res);
+        if (req.headers['x-no-compression']) return false;
+        // Default filter: only compress if standard filter allows it
+        return (compression as unknown as { filter: (req: any, res: any) => boolean }).filter?.(req, res) ?? true;
       },
-      threshold: 0, // Compress everything
+      threshold: 0,
     }));
     
     // Serve built assets with long-term caching

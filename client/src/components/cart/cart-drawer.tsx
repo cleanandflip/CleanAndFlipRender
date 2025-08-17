@@ -46,7 +46,7 @@ interface CartDrawerProps {
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const { data: cart, isLoading } = useCart();
-  const { updateCartItem, removeFromCart } = useCart();
+  const { updateCartItem, removeByProduct } = useCart();
   
   // Safe access to cart data with proper typing
   const cartData = cart as Cart;
@@ -163,7 +163,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                 )}
                               </div>
                               <button
-                                onClick={() => removeFromCart(item.productId)}
+                                onClick={() => removeByProduct(item.productId)}
                                 className="text-gray-400 hover:text-red-400 transition-colors p-1 ml-2"
                               >
                                 <Trash2 size={14} />
@@ -177,7 +177,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                                   onClick={() => {
                                     const newQuantity = (item?.qty || 1) - 1;
                                     if (newQuantity <= 0) {
-                                      removeFromCart(item.productId);
+                                      removeByProduct(item.productId);
                                     } else {
                                       updateCartItem({ productId: item.productId, qty: newQuantity });
                                     }

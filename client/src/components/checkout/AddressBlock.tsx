@@ -109,8 +109,8 @@ export function AddressBlock({
         {mode === "new" && (
           <div className="space-y-4">
             <AddressForm
-              onSuccess={(newAddress) => {
-                onAddressResolved({ addressObj: newAddress });
+              onSuccess={() => {
+                onAddressResolved({});
                 setMode("default");
               }}
               onCancel={() => {

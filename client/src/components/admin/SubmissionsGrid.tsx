@@ -1,7 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Package } from 'lucide-react';
-import { formatStatus, getStatusVariant, formatCurrency } from '@/utils/submissionHelpers';
+import { formatCurrency } from '@/lib/utils';
+const formatStatus = (status: string) => status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+const getStatusVariant = (status: string) => (status === 'approved' ? 'secondary' : status === 'rejected' ? 'destructive' : 'default');
 
 interface Submission {
   id: string;
