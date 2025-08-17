@@ -3827,6 +3827,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
+  // Setup frontend serving AFTER creating httpServer
+  if (process.env.NODE_ENV === "production") {
+    const { serveStatic } = await import('./vite');
+    serveStatic(app);
+    Logger.info('[FRONTEND] Production static files configured');
+  } else {
+    const { setupVite } = await import('./vite');
+    await setupVite(app, httpServer);
+    Logger.info('[FRONTEND] Development Vite server configured with HMR');
+  }
+  
   // Initialize enhanced WebSocket support for live sync
   const { setupWebSocket, wsManager } = await import('./websocket');
   setupWebSocket(httpServer);

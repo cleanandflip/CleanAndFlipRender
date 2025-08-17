@@ -53,24 +53,5 @@ app.use(session({
 
 app.use(express.json());
 
-// Register API routes
+// Register API routes - they handle server startup internally  
 await registerRoutes(app);
-
-// Serve static files in production
-if (env.NODE_ENV === "production") {
-  serveStatic(app);
-} else {
-  await setupVite(app);
-}
-
-// 4) Error handler (last)
-app.use((err: any, _req: any, res: any, _next: any) => {
-  console.error("[UNCAUGHT]", err);
-  res.status(500).json({ error: "Internal Server Error" });
-});
-
-// 5) Start server
-const port = Number(env.PORT || 5000);
-app.listen(port, () => {
-  console.log(`[READY] Listening on :${port}`);
-});
