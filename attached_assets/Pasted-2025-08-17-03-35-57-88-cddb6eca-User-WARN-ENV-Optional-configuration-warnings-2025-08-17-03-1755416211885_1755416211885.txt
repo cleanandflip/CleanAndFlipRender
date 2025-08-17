@@ -1,0 +1,108 @@
+2025-08-17 03:35:57.88
+cddb6eca
+User
+[WARN] [ENV] Optional configuration warnings:
+2025-08-17 03:35:57.88
+cddb6eca
+User
+[WARN] [ENV] - REDIS_URL not set - related features may be disabled
+2025-08-17 03:35:57.88
+cddb6eca
+User
+[WARN] [ENV] - ENABLE_REDIS not set - related features may be disabled
+2025-08-17 03:35:58.60
+cddb6eca
+User
+[ERROR] Failed to initialize search indexes: NeonDbError: cannot insert multiple commands into a prepared statement
+2025-08-17 03:35:58.60
+cddb6eca
+User
+at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+2025-08-17 03:35:58.60
+cddb6eca
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-08-17 03:35:58.60
+cddb6eca
+User
+at async initializeSearchIndexes (file:///home/runner/workspace/dist/index.js:7540:5)
+2025-08-17 03:35:58.60
+cddb6eca
+User
+at async registerRoutes (file:///home/runner/workspace/dist/index.js:7700:3)
+2025-08-17 03:35:58.60
+cddb6eca
+User
+at async file:///home/runner/workspace/dist/index.js:11111:15 {
+2025-08-17 03:35:58.60
+cddb6eca
+User
+severity: 'ERROR',
+2025-08-17 03:35:58.60
+cddb6eca
+User
+code: '42601',
+2025-08-17 03:35:58.60
+cddb6eca
+User
+detail: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+hint: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+position: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+internalPosition: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+internalQuery: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+where: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+schema: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+table: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+column: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+dataType: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+constraint: undefined,
+2025-08-17 03:35:58.60
+cddb6eca
+User
+file: 'postgres.c',
+2025-08-17 03:35:58.60
+cddb6eca
+User
+line: '1480',
+2025-08-17 03:35:58.60
+cddb6eca
+User
+routine: 'exec_parse_message',
+2025-08-17 03:35:58.60
+cddb6eca
+User
+sourceError: undefined
+2025-08-17 03:35:58.60
+cddb6eca
+User
+}

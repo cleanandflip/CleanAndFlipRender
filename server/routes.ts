@@ -304,8 +304,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Client error logging is now handled at middleware level
   // No additional route needed since middleware handles it
   
-  // Initialize search indexes
-  await initializeSearchIndexes();
+  // Initialize search indexes (production-safe, non-blocking)
+  try {
+    await initializeSearchIndexes();
+  } catch (error: any) {
+    Logger.warn('Search initialization failed, continuing without advanced search:', error?.message || 'Unknown error');
+  }
   
   // UNIFIED Locality Status Endpoint handled by locality router above
   
