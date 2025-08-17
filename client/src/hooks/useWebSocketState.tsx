@@ -66,7 +66,7 @@ export function useWebSocketState() {
   const subscribe = useCallback((type: string, handler: (payload: any) => void) => {
     if (!_listeners.has(type)) _listeners.set(type, new Set());
     _listeners.get(type)!.add(handler);
-    return () => (_listeners.get(type)!.delete(handler), true);
+    return () => { _listeners.get(type)!.delete(handler); };
   }, []);
 
   const publish = useCallback((type: string, payload?: any) => {

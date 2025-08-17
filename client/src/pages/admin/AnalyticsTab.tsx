@@ -7,7 +7,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { useWebSocketState } from '@/hooks/useWebSocketState';
 
 export function AnalyticsTab() {
-  const ready = useWebSocketState();
+  const { ready } = useWebSocketState();
   const { data: analyticsData, isLoading } = useQuery({
     queryKey: ['admin-analytics'],
     queryFn: async () => {
@@ -124,14 +124,14 @@ export function AnalyticsTab() {
         <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-white mb-2">Product Views</h3>
           <p className="text-3xl font-bold text-green-400">
-            {productPerformance.reduce((sum, p) => sum + (p.views || 0), 0)}
+            {productPerformance.reduce((sum: number, p: any) => sum + (p.views || 0), 0)}
           </p>
           <p className="text-sm text-gray-400 mt-1">Total product views</p>
         </div>
         <div className="bg-[#1e293b]/50 border border-gray-800 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-white mb-2">Stock Items</h3>
           <p className="text-3xl font-bold text-purple-400">
-            {productPerformance.reduce((sum, p) => sum + (p.stockQuantity || 0), 0)}
+            {productPerformance.reduce((sum: number, p: any) => sum + (p.stockQuantity || 0), 0)}
           </p>
           <p className="text-sm text-gray-400 mt-1">Items in inventory</p>
         </div>

@@ -50,7 +50,7 @@ export function AddToCartEnhanced({
     if (isBlocked) {
       toast({
         title: "Item not available",
-        description: fulfillmentCopy.cart.blockedTooltip,
+        description: fulfillmentCopy.tooltip.blocked,
         variant: "destructive",
       });
       return;
@@ -114,7 +114,7 @@ export function AddToCartEnhanced({
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{fulfillmentCopy.cart.blockedTooltip}</p>
+            <p>{fulfillmentCopy.tooltip.blocked}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
