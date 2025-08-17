@@ -1458,8 +1458,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
-  // Health Check Endpoint
-  app.get("/health", createHealthCheck());
+  // Health endpoints (single source of truth handled above)
+  // app.get("/health", createHealthCheck());
 
   // Schema diagnostic endpoint
   app.get("/api/health/schema-check", async (req, res) => {
@@ -2964,7 +2964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Broadcast to all clients with enhanced debugging
       try {
-        if (wsManager?.publishMessage) {
+        if (wsManager?.publish) {
           const payload = {
             id: id,
             productId: id,
@@ -2972,13 +2972,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             featured: updatedProduct.featured
           };
           console.log('🚀 Broadcasting product update:', payload);
-          wsManager.publishMessage("product:update", payload);
+          wsManager.publish({ topic: "product:update", productId: id });
           Logger.info('WebSocket broadcast sent successfully for product:', id);
         } else {
           Logger.warn('WebSocket manager not available for broadcast');
         }
       } catch (error) {
-        Logger.error('WebSocket broadcast failed:', error);
+        Logger.warn('WebSocket broadcast failed:', error);
       }
       
       res.json(updatedProduct);
