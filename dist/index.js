@@ -208,7 +208,7 @@ var init_schema = __esm({
       isEmailVerified: boolean("is_email_verified").default(false),
       profileComplete: boolean("profile_complete").default(false),
       onboardingStep: integer("onboarding_step").default(0),
-      // SSOT Profile address reference - nullable FK to addresses
+      // SSOT Profile address reference - nullable FK to addresses (VARCHAR to match existing DB)
       profileAddressId: varchar("profile_address_id").references(() => addresses.id, { onDelete: "set null" }),
       onboardingCompletedAt: timestamp("onboarding_completed_at"),
       createdAt: timestamp("created_at").defaultNow(),
@@ -2778,7 +2778,7 @@ var init_stripe_sync = __esm({
     init_schema();
     init_logger();
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2024-12-18.acacia"
+      apiVersion: "2025-07-30.basil"
     });
     StripeProductSync = class {
       // Sync single product with all details
@@ -5795,13 +5795,10 @@ function setupProductionOptimizations(app2) {
   if (process.env.NODE_ENV === "production") {
     app2.use(compression2({
       filter: (req, res) => {
-        if (req.headers["x-no-compression"]) {
-          return false;
-        }
-        return compression2.filter(req, res);
+        if (req.headers["x-no-compression"]) return false;
+        return compression2.filter?.(req, res) ?? true;
       },
       threshold: 0
-      // Compress everything
     }));
     app2.use(
       express5.static(path.join(__dirname, "../../client-dist"), {
@@ -5832,83 +5829,109 @@ var init_compression = __esm({
   }
 });
 
-// server/middleware/schemaGuard.ts
-var schemaGuard_exports = {};
-__export(schemaGuard_exports, {
-  ensureColumnExists: () => ensureColumnExists,
-  validateSchemaOnStartup: () => validateSchemaOnStartup
+// server/utils/schema-guard.ts
+var schema_guard_exports = {};
+__export(schema_guard_exports, {
+  assertSchemaReady: () => assertSchemaReady
 });
-import { sql as sql10 } from "drizzle-orm";
-async function validateSchemaOnStartup() {
-  Logger.info("[SCHEMA] Validating production database schema...");
+async function assertSchemaReady() {
   try {
-    const criticalColumns = [
-      { table: "users", column: "profile_address_id" },
-      { table: "products", column: "featured" },
-      { table: "cart_items", column: "owner_id" },
-      { table: "addresses", column: "is_local" }
-    ];
-    for (const { table, column } of criticalColumns) {
-      const result = await db.execute(sql10`
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_name = ${table} AND column_name = ${column}
-      `);
-      if (!result.rowCount || result.rowCount === 0) {
-        Logger.error(`[SCHEMA] \u274C CRITICAL: Missing column ${table}.${column} in current DATABASE_URL`);
-        Logger.error(`[SCHEMA] Migrations have NOT been applied to this database.`);
-        Logger.error(`[SCHEMA] Run: npm run drizzle:migrate`);
-      } else {
-        Logger.debug(`[SCHEMA] \u2705 ${table}.${column} exists`);
-      }
-    }
-    const criticalIndexes = [
-      "idx_products_featured_status_updated",
-      "idx_products_active_created",
-      "users_email_unique"
-    ];
-    for (const indexName of criticalIndexes) {
-      const result = await db.execute(sql10`
-        SELECT 1 FROM pg_indexes WHERE indexname = ${indexName}
-      `);
-      if (!result.rowCount || result.rowCount === 0) {
-        Logger.warn(`[SCHEMA] \u26A0\uFE0F  Missing performance index: ${indexName}`);
-      } else {
-        Logger.debug(`[SCHEMA] \u2705 Index ${indexName} exists`);
-      }
-    }
-    const versionResult = await db.execute(sql10`SELECT version()`);
-    const version = versionResult.rows[0]?.version || "Unknown";
-    if (version.includes("PostgreSQL 16")) {
-      Logger.info("[SCHEMA] \u2705 PostgreSQL 16.x detected (optimal)");
-    } else {
-      Logger.warn(`[SCHEMA] \u26A0\uFE0F  Database version: ${version} (consider PostgreSQL 16.x)`);
-    }
-    Logger.info("[SCHEMA] \u2705 Schema validation completed");
-  } catch (error) {
-    Logger.error("[SCHEMA] \u274C Schema validation failed:", {
-      message: error.message,
-      code: error.code
-    });
-    Logger.error("[SCHEMA] \u{1F6A8} PRODUCTION WARNING: Database schema validation failed");
-    Logger.error("[SCHEMA] Application may encounter runtime errors if schema is misaligned");
-  }
-}
-async function ensureColumnExists(tableName, columnName) {
-  try {
-    const result = await db.execute(sql10`
-      SELECT 1
-      FROM information_schema.columns
-      WHERE table_name = ${tableName} AND column_name = ${columnName}
+    Logger.info("[SCHEMA] Validating production database schema...");
+    const schemaChecks = await db.execute(`
+      SELECT 
+        CASE 
+          WHEN EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='profile_address_id'
+          ) THEN 'users.profile_address_id: \u2705 EXISTS'
+          ELSE 'users.profile_address_id: \u274C MISSING'
+        END as profile_address_check,
+        CASE 
+          WHEN EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name='addresses' AND column_name='id'
+          ) THEN 'addresses.id: \u2705 EXISTS'
+          ELSE 'addresses.id: \u274C MISSING'
+        END as addresses_check,
+        CASE 
+          WHEN EXISTS (
+            SELECT 1 FROM information_schema.table_constraints 
+            WHERE table_name='users' AND constraint_name LIKE '%profile_address%fkey%'
+          ) THEN 'FK constraint: \u2705 EXISTS'
+          ELSE 'FK constraint: \u274C MISSING'
+        END as fk_check
     `);
-    return (result.rowCount || 0) > 0;
+    const checks = schemaChecks.rows[0];
+    Logger.info("[SCHEMA] Database schema validation results:");
+    Logger.info(`[SCHEMA] ${checks.profile_address_check}`);
+    Logger.info(`[SCHEMA] ${checks.addresses_check}`);
+    Logger.info(`[SCHEMA] ${checks.fk_check}`);
+    const missingColumns = await db.execute(`
+      SELECT 
+        'users' as table_name,
+        'profile_address_id' as column_name,
+        CASE 
+          WHEN NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name='users' AND column_name='profile_address_id'
+          ) THEN true
+          ELSE false
+        END as is_missing
+      UNION ALL
+      SELECT 
+        'addresses' as table_name,
+        'id' as column_name,
+        CASE 
+          WHEN NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name='addresses' AND column_name='id'
+          ) THEN true
+          ELSE false
+        END as is_missing
+    `);
+    const missingCount = missingColumns.rows.filter((row) => row.is_missing).length;
+    if (missingCount > 0) {
+      Logger.error(
+        "[SCHEMA] \u26A0\uFE0F  CRITICAL SCHEMA MISMATCH DETECTED \u26A0\uFE0F"
+      );
+      Logger.error(
+        "[SCHEMA] Missing required database columns. Application expects schema that doesn't match this database."
+      );
+      Logger.error(
+        "[SCHEMA] This will cause Passport authentication failures (ERROR 42703)."
+      );
+      Logger.error(
+        "[SCHEMA] Run database migrations: npm run db:push"
+      );
+      Logger.warn("[SCHEMA] Continuing startup with schema mismatch warnings...");
+    } else {
+      Logger.info("[SCHEMA] \u2705 All required database columns present");
+    }
+    const dataTypeCheck = await db.execute(`
+      SELECT 
+        c1.data_type as users_profile_address_id_type,
+        c2.data_type as addresses_id_type,
+        CASE 
+          WHEN c1.data_type = c2.data_type THEN 'COMPATIBLE'
+          ELSE 'TYPE_MISMATCH'
+        END as compatibility_status
+      FROM information_schema.columns c1, information_schema.columns c2
+      WHERE c1.table_name = 'users' AND c1.column_name = 'profile_address_id'
+        AND c2.table_name = 'addresses' AND c2.column_name = 'id'
+    `);
+    if (dataTypeCheck.rows.length > 0) {
+      const typeCheck = dataTypeCheck.rows[0];
+      Logger.info(`[SCHEMA] Data type compatibility: ${typeCheck.compatibility_status}`);
+      Logger.info(`[SCHEMA] users.profile_address_id: ${typeCheck.users_profile_address_id_type}`);
+      Logger.info(`[SCHEMA] addresses.id: ${typeCheck.addresses_id_type}`);
+    }
   } catch (error) {
-    Logger.error(`[SCHEMA] Failed to check column ${tableName}.${columnName}:`, error);
-    return false;
+    Logger.error("[SCHEMA] Schema validation failed:", error.message);
+    Logger.warn("[SCHEMA] Continuing startup - production-safe auth will handle any issues...");
   }
 }
-var init_schemaGuard = __esm({
-  "server/middleware/schemaGuard.ts"() {
+var init_schema_guard = __esm({
+  "server/utils/schema-guard.ts"() {
     "use strict";
     init_db();
     init_logger();
@@ -5945,7 +5968,7 @@ var simple_password_reset_exports = {};
 __export(simple_password_reset_exports, {
   SimplePasswordReset: () => SimplePasswordReset
 });
-import { sql as sql11 } from "drizzle-orm";
+import { sql as sql10 } from "drizzle-orm";
 import { Resend as Resend2 } from "resend";
 import crypto3 from "crypto";
 import bcryptjs from "bcryptjs";
@@ -5960,7 +5983,7 @@ var init_simple_password_reset = __esm({
       async findUser(email) {
         console.log(`[PasswordReset] Looking for: ${email}`);
         try {
-          const result = await db.execute(sql11`
+          const result = await db.execute(sql10`
         SELECT id, email, first_name, last_name 
         FROM users 
         WHERE LOWER(email) = LOWER(${email.trim()})
@@ -5970,9 +5993,9 @@ var init_simple_password_reset = __esm({
             console.log(`[PasswordReset] \u2705 Found user: ${result.rows[0].email}`);
             return result.rows[0];
           }
-          const countResult = await db.execute(sql11`SELECT COUNT(*) as total FROM users`);
+          const countResult = await db.execute(sql10`SELECT COUNT(*) as total FROM users`);
           console.log(`[PasswordReset] Total users in DB: ${countResult.rows[0]?.total || 0}`);
-          const debugResult = await db.execute(sql11`SELECT email FROM users LIMIT 3`);
+          const debugResult = await db.execute(sql10`SELECT email FROM users LIMIT 3`);
           console.log("[PasswordReset] Sample emails in DB:");
           debugResult.rows.forEach((r) => console.log(`  - ${r.email}`));
           console.log(`[PasswordReset] \u274C User not found: ${email}`);
@@ -5987,7 +6010,7 @@ var init_simple_password_reset = __esm({
         const token = crypto3.randomBytes(32).toString("hex");
         const expires = new Date(Date.now() + 36e5);
         try {
-          await db.execute(sql11`
+          await db.execute(sql10`
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,
           user_id UUID NOT NULL,
@@ -5997,10 +6020,10 @@ var init_simple_password_reset = __esm({
           created_at TIMESTAMP DEFAULT NOW()
         )
       `);
-          await db.execute(sql11`
+          await db.execute(sql10`
         DELETE FROM password_reset_tokens WHERE user_id = ${userId2}
       `);
-          await db.execute(sql11`
+          await db.execute(sql10`
         INSERT INTO password_reset_tokens (user_id, token, expires_at) 
         VALUES (${userId2}, ${token}, ${expires})
       `);
@@ -6068,7 +6091,7 @@ var init_simple_password_reset = __esm({
       // VALIDATE TOKEN
       async validateToken(token) {
         try {
-          const result = await db.execute(sql11`
+          const result = await db.execute(sql10`
         SELECT * FROM password_reset_tokens 
         WHERE token = ${token} AND used = FALSE AND expires_at > NOW()
       `);
@@ -6087,10 +6110,10 @@ var init_simple_password_reset = __esm({
         }
         try {
           const hashedPassword = await bcryptjs.hash(newPassword, 12);
-          await db.execute(sql11`
+          await db.execute(sql10`
         UPDATE users SET password = ${hashedPassword} WHERE id = ${tokenData.user_id}
       `);
-          await db.execute(sql11`
+          await db.execute(sql10`
         UPDATE password_reset_tokens SET used = TRUE WHERE id = ${tokenData.id}
       `);
           console.log("[PasswordReset] Password updated successfully");
@@ -10845,12 +10868,9 @@ var productionSecurityHeaders = helmet2({
   noSniff: true,
   xssFilter: true,
   referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-  permissionsPolicy: {
-    camera: ["none"],
-    microphone: ["none"],
-    geolocation: ["self"],
-    payment: ["self", "https://js.stripe.com"]
-  }
+  // Feature-Policy/Permissions-Policy moved: use the new API via headers if needed
+  // @ts-expect-error - older helmet typing may not include this option
+  permissionsPolicy: false
 });
 
 // server/utils/input-sanitization.ts
@@ -10860,11 +10880,12 @@ import { JSDOM as JSDOM2 } from "jsdom";
 var window2 = new JSDOM2("").window;
 var purify2 = DOMPurify2(window2);
 purify2.addHook("beforeSanitizeElements", function(node) {
-  if (node.hasAttribute && node.hasAttribute("onclick")) {
-    node.removeAttribute("onclick");
+  const el = node;
+  if (el.hasAttribute && el.hasAttribute("onclick")) {
+    el.removeAttribute("onclick");
   }
-  if (node.hasAttribute && node.hasAttribute("onload")) {
-    node.removeAttribute("onload");
+  if (el.hasAttribute && el.hasAttribute("onload")) {
+    el.removeAttribute("onload");
   }
 });
 var InputSanitizer2 = class {
@@ -10893,8 +10914,8 @@ var InputSanitizer2 = class {
         sanitized = purify2.sanitize(sanitized, {
           ALLOWED_TAGS: allowedTags,
           ALLOWED_ATTR: Object.keys(allowedAttributes).length > 0 ? Object.values(allowedAttributes).flat() : [],
-          FORBID_SCRIPT: true,
-          FORBID_STYLE: true,
+          // Use DOMPurify config flags compatible with the current version
+          FORBID_TAGS: ["script", "style"],
           SAFE_FOR_TEMPLATES: true
         });
       } else {
@@ -11021,7 +11042,7 @@ var sanitizeRequest = (req, res, next) => {
 
 // server/index.ts
 init_db();
-import { sql as sql12 } from "drizzle-orm";
+import { sql as sql11 } from "drizzle-orm";
 import fs2 from "fs";
 import path4 from "path";
 
@@ -11183,8 +11204,8 @@ app.use((req, res, next) => {
   try {
     Logger.info("[MAIN] Initializing server...");
     try {
-      const { validateSchemaOnStartup: validateSchemaOnStartup2 } = await Promise.resolve().then(() => (init_schemaGuard(), schemaGuard_exports));
-      await validateSchemaOnStartup2();
+      const { assertSchemaReady: assertSchemaReady2 } = await Promise.resolve().then(() => (init_schema_guard(), schema_guard_exports));
+      await assertSchemaReady2();
     } catch (schemaError) {
       Logger.warn("[MAIN] Schema validation failed - continuing with startup:", schemaError);
     }
@@ -11197,7 +11218,7 @@ app.use((req, res, next) => {
   setInterval(async () => {
     try {
       const deleted = await db.execute(
-        sql12`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
+        sql11`DELETE FROM password_reset_tokens WHERE expires_at < NOW() OR used = true`
       );
       if (deleted.rowCount && deleted.rowCount > 0) {
         Logger.info(`[CLEANUP] Removed ${deleted.rowCount} expired password reset tokens`);

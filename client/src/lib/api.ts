@@ -15,9 +15,9 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
   if (!res.ok) {
     const text = await res.text();
     console.error('🔧 API Error Response:', text);
-    let errBody = {};
+    let errBody: { message?: string } = {};
     try {
-      errBody = JSON.parse(text);
+      errBody = JSON.parse(text) as { message?: string };
     } catch {
       errBody = { message: text };
     }

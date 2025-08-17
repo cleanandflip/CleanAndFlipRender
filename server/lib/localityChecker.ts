@@ -4,36 +4,36 @@ import { Request } from 'express';
 export type LocalityInfo = { 
   eligible: boolean; 
   zip: string; 
-  source: 'DEFAULT_ADDRESS' | 'USER_CHECK' | 'NONE' | string; 
+  source: 'default' | 'zip' | 'address' | 'ERROR' | string; 
   userId?: string;
 };
 
 export async function getLocalityForRequest(req: Request): Promise<LocalityInfo> {
-  const userId = req.session?.user?.id;
+  const userId = (req as any).user?.id || (req.session as any)?.passport?.user || (req.session as any)?.userId || null;
   
   try {
-    // Use the existing locality logic from routes/locality.ts
-    const { getLocalityStatus } = await import('../routes/locality');
+    // Use the existing locality logic from routes/locality.controller.ts
+    const { getLocalityStatus } = await import('../locality/locality.controller');
     
     // Create a mock response object to capture the result
     let localityResult: any = { eligible: false, source: 'NONE', zip: 'none' };
     
     const mockRes = {
-      json: (data: any) => { localityResult = data; },
+      json: (data: any) => { localityResult = data; return mockRes; },
       status: () => mockRes
     } as any;
     
     // Call the existing locality route handler
-    await getLocalityStatus(req, mockRes, () => {});
+    await getLocalityStatus(req as any, mockRes);
     
     const result: LocalityInfo = {
-      eligible: localityResult.eligible || false,
+      eligible: Boolean(localityResult.eligible),
       zip: localityResult.zip || 'none',
       source: localityResult.source || 'NONE',
-      userId: userId
+      userId: userId || undefined
     };
     
-    console.log(`[LOCALITY] /status { eligible: ${result.eligible}, source: '${result.source}', zip: '${result.zip}', user: '${userId || 'guest'}' }`);
+    console.log(`[LOCALITY] /status { eligible: ${result.eligible}, source: '${result.source}', zip: '${result.zip}', user: '${result.userId || 'guest'}' }`);
     
     return result;
     
@@ -43,7 +43,7 @@ export async function getLocalityForRequest(req: Request): Promise<LocalityInfo>
       eligible: false,
       zip: 'none', 
       source: 'ERROR',
-      userId: userId
+      userId: userId || undefined
     };
     console.log(`[LOCALITY] /status (error fallback) { eligible: false, source: 'ERROR', zip: 'none', user: '${userId || 'guest'}' }`);
     return fallback;

@@ -50,7 +50,7 @@ export function AddToCartEnhanced({
     if (isBlocked) {
       toast({
         title: "Item not available",
-        description: fulfillmentCopy.cart.blockedTooltip,
+        description: fulfillmentCopy.tooltip.blocked,
         variant: "destructive",
       });
       return;
@@ -107,14 +107,14 @@ export function AddToCartEnhanced({
               size={size} 
               className={`${className} cursor-not-allowed opacity-50`}
               disabled
-              aria-description={fulfillmentCopy.cart.blockedTooltip}
+              aria-description={fulfillmentCopy.tooltip.blocked}
             >
               <MapPin className="w-4 h-4 mr-2" />
-              {fulfillmentCopy.actions.unavailable}
+              {'Unavailable in your area'}
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>{fulfillmentCopy.cart.blockedTooltip}</p>
+            <p>{fulfillmentCopy.tooltip.blocked}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -130,7 +130,7 @@ export function AddToCartEnhanced({
       disabled={isLoading}
     >
       <ShoppingCart className="w-4 h-4 mr-2" />
-      {isLoading ? 'Adding...' : fulfillmentCopy.actions.addToCart}
+      {isLoading ? 'Adding...' : 'Add to cart'}
     </Button>
   );
 }

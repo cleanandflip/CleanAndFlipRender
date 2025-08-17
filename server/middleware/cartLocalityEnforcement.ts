@@ -16,7 +16,7 @@ export async function enforceLocalityForCart(req: Request, res: Response, next: 
     
     // Get product to check fulfillment mode
     const { storage } = await import('../storage');
-    const product = await storage.getProductById(productId);
+    const product = await storage.getProduct(productId);
     
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });

@@ -118,10 +118,10 @@ export function useUnifiedUpload() {
       });
 
       // Show success/warning messages
-      if (response.errors?.length > 0) {
+      if ((response.errors?.length || 0) > 0) {
         toast({
           title: "Some uploads failed",
-          description: `${response.errors.length} files failed to upload`,
+          description: `${response.errors?.length || 0} files failed to upload`,
           variant: "destructive"
         });
       } else if (response.success) {

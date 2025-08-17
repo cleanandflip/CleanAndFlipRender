@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
-import { db } from '../db.js';
-import { products, categories } from '../../shared/schema.js';
+import { db } from '../db';
+import { products, categories } from '../../shared/schema';
 import { eq, isNull, or } from 'drizzle-orm';
 import { Logger } from '../utils/logger';
 

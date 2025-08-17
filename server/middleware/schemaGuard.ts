@@ -11,7 +11,7 @@ export async function validateSchemaOnStartup(): Promise<void> {
   
   try {
     // Check if critical columns exist
-    const criticalColumns = [
+    const criticalColumns: Array<{ table: string; column: string }> = [
       { table: 'users', column: 'profile_address_id' },
       { table: 'products', column: 'featured' },
       { table: 'cart_items', column: 'owner_id' },
@@ -35,7 +35,7 @@ export async function validateSchemaOnStartup(): Promise<void> {
     }
 
     // Check critical indexes
-    const criticalIndexes = [
+    const criticalIndexes: string[] = [
       'idx_products_featured_status_updated',
       'idx_products_active_created',
       'users_email_unique'
@@ -55,7 +55,7 @@ export async function validateSchemaOnStartup(): Promise<void> {
 
     // Check database version
     const versionResult = await db.execute(sql`SELECT version()`);
-    const version = versionResult.rows[0]?.version || 'Unknown';
+    const version: string = (versionResult.rows[0]?.version as any) || 'Unknown';
     
     if (version.includes('PostgreSQL 16')) {
       Logger.info('[SCHEMA] ✅ PostgreSQL 16.x detected (optimal)');

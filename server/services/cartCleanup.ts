@@ -23,8 +23,8 @@ export async function purgeLocalOnlyItemsIfIneligible(userId: string, reason: st
     // 3) Remove each LOCAL_ONLY item
     let removed = 0;
     for (const item of localOnlyItems) {
-      const result = await storage.removeFromCartByUserAndProduct(userId, item.productId);
-      if (result.rowCount > 0) {
+      const rowCount = await storage.removeFromCartByUserAndProduct(userId, item.productId);
+      if (rowCount > 0) {
         removed++;
       }
     }

@@ -116,11 +116,8 @@ export function AddressBlock({
               onCancel={() => {
                 if (defaultAddress || addresses.length > 0) {
                   setMode(defaultAddress ? "default" : "select");
-                } else {
-                  // Stay on new mode if no addresses exist
                 }
               }}
-              submitText="Use This Address"
             />
           </div>
         )}

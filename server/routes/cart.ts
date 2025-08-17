@@ -12,8 +12,8 @@ router.get("/", async (req, res, next) => {
     console.log(`[CART V2] GET cart for owner: ${ownerId}`);
     
     // Use imported storage instance
-    if (storage.consolidateAndClampCart) {
-      await storage.consolidateAndClampCart(ownerId);
+    if ((storage as any).consolidateAndClampCart) {
+      await (storage as any).consolidateAndClampCart(ownerId);
     }
     
     const cart = await storage.getCartByOwner(ownerId);
@@ -64,7 +64,7 @@ router.patch("/product/:productId", async (req, res, next) => {
     
     // Use imported storage instance
     const result = await storage.setCartItemQty(ownerId, productId, null, qty);
-    return res.json({ ok: true, qty: result.qty || 0 });
+    return res.json({ ok: true, qty: (result as any).qty || 0 });
   } catch (error) {
     console.error('[CART V2] PATCH error:', error);
     next(error);
@@ -81,7 +81,7 @@ router.delete("/product/:productId", async (req, res, next) => {
     
     // Use imported storage instance
     const result = await storage.removeCartItemsByProduct(ownerId, productId);
-    return res.json({ ok: true, removed: result.removed });
+    return res.json({ ok: true, removed: (result as any).removed || 0 });
   } catch (error) {
     console.error('[CART V2] DELETE error:', error);
     next(error);

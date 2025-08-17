@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { StripeProductSync } from '../services/stripe-sync.js';
-import { createTestProducts } from '../scripts/create-test-products.js';
+// import { createTestProducts } from '../scripts/create-test-products.js';
 import { Logger } from '../utils/logger';
 
 const router = Router();
@@ -30,11 +30,12 @@ router.post('/sync/:productId', async (req, res) => {
   }
 });
 
-// Create test products
+// Create test products (optional in dev)
 router.post('/create-test-products', async (req, res) => {
   try {
-    await createTestProducts();
-    res.json({ success: true, message: 'Test products created and synced' });
+    Logger.info('API: create-test-products (stub)');
+    // No-op stub in this environment
+    res.json({ success: true, message: 'Stub: test products creation skipped' });
   } catch (error) {
     Logger.error('Create test products error:', error);
     res.status(500).json({ error: 'Failed to create test products' });

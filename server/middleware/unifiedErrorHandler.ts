@@ -3,10 +3,7 @@ import { ErrorLogger } from '../services/errorLogger';
 import { Logger } from '../utils/logger';
 
 export interface CustomRequest extends Request {
-  user?: {
-    id?: string;
-    email?: string;
-  };
+  user?: Express.User;
 }
 
 export class UnifiedErrorHandler {

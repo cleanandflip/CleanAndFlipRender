@@ -190,18 +190,18 @@ export default function SystemDashboard() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-2">
-                {systemHealth?.system?.status === 'healthy' ? (
+                {((systemHealth as any)?.system?.status) === 'healthy' ? (
                   <CheckCircle className="w-5 h-5 text-green-500" />
                 ) : (
                   <AlertTriangle className="w-5 h-5 text-red-500" />
                 )}
-                <span className={`font-medium ${getStatusColor(systemHealth?.system?.status || 'unknown')}`}>
-                  {systemHealth?.system?.status?.toUpperCase() || 'UNKNOWN'}
+                <span className={`font-medium ${getStatusColor(((systemHealth as any)?.system?.status) || 'unknown')}`}>
+                  {(((systemHealth as any)?.system?.status) || 'UNKNOWN').toString().toUpperCase()}
                 </span>
               </div>
-              {systemHealth?.system?.uptime && (
+              {((systemHealth as any)?.system?.uptime) != null && (
                 <p className="text-xs text-gray-400 mt-2">
-                  Uptime: {formatUptime(systemHealth.system.uptime)}
+                  Uptime: {formatUptime(Number(((systemHealth as any)?.system?.uptime) || 0))}
                 </p>
               )}
             </CardContent>
@@ -217,14 +217,14 @@ export default function SystemDashboard() {
             <CardContent>
               <div className="space-y-2">
                 <Progress 
-                  value={systemHealth?.system?.memory?.percentage || 0} 
+                  value={Number(((systemHealth as any)?.system?.memory?.percentage) || 0)} 
                   className="h-2"
                 />
                 <p className="text-sm text-white">
-                  {systemHealth?.system?.memory?.used || 0}MB / {systemHealth?.system?.memory?.total || 0}MB
+                  {Number(((systemHealth as any)?.system?.memory?.used) || 0)}MB / {Number(((systemHealth as any)?.system?.memory?.total) || 0)}MB
                 </p>
                 <p className="text-xs text-gray-400">
-                  {systemHealth?.system?.memory?.percentage || 0}% used
+                  {Number(((systemHealth as any)?.system?.memory?.percentage) || 0)}% used
                 </p>
               </div>
             </CardContent>
@@ -240,17 +240,17 @@ export default function SystemDashboard() {
             <CardContent>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${
-                  systemHealth?.system?.database?.status === 'connected' 
+                  ((systemHealth as any)?.system?.database?.status) === 'connected' 
                     ? 'bg-green-500' 
                     : 'bg-red-500'
                 }`} />
                 <span className="text-sm text-white">
-                  {systemHealth?.system?.database?.status?.toUpperCase() || 'UNKNOWN'}
+                  {((((systemHealth as any)?.system?.database?.status) || 'UNKNOWN') as string).toUpperCase()}
                 </span>
               </div>
-              {systemHealth?.system?.database?.latency && (
+              {((systemHealth as any)?.system?.database?.latency) != null && (
                 <p className="text-xs text-gray-400 mt-2">
-                  Latency: {systemHealth.system.database.latency}ms
+                  Latency: {Number(((systemHealth as any)?.system?.database?.latency) || 0)}ms
                 </p>
               )}
             </CardContent>
@@ -266,13 +266,13 @@ export default function SystemDashboard() {
             <CardContent>
               <div className="space-y-1">
                 <p className="text-sm text-white">
-                  Avg: {systemHealth?.system?.performance?.avgResponseTime || 0}ms
+                  Avg: {Number(((systemHealth as any)?.system?.performance?.avgResponseTime) || 0)}ms
                 </p>
                 <p className="text-sm text-white">
-                  Errors: {systemHealth?.system?.performance?.errorRate || 0}%
+                  Errors: {Number(((systemHealth as any)?.system?.performance?.errorRate) || 0)}%
                 </p>
                 <p className="text-xs text-gray-400">
-                  {systemHealth?.system?.performance?.requestsPerMinute || 0} req/min
+                  {Number(((systemHealth as any)?.system?.performance?.requestsPerMinute) || 0)} req/min
                 </p>
               </div>
             </CardContent>
@@ -280,17 +280,17 @@ export default function SystemDashboard() {
         </div>
 
         {/* Active Alerts */}
-        {alertsData?.alerts && alertsData.alerts.length > 0 && (
+        {(((alertsData as any)?.alerts) || []).length > 0 && (
           <Card className="bg-gray-900 border-gray-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
                 <AlertTriangle className="w-5 h-5 mr-2 text-yellow-500" />
-                Active Alerts ({alertsData.alerts.length})
+                Active Alerts ({(((alertsData as any)?.alerts) || []).length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {alertsData.alerts.map((alert: SystemAlert) => (
+                {(((alertsData as any)?.alerts) || []).map((alert: any) => (
                   <Alert key={alert.id} variant={getAlertVariant(alert.level) as any}>
                     <AlertDescription className="flex justify-between items-center">
                       <div>
@@ -334,7 +334,7 @@ export default function SystemDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {performanceData?.slowRoutes?.slice(0, 5).map((route: any, index: number) => (
+                    {(((performanceData as any)?.slowRoutes) || []).slice(0, 5).map((route: any, index: number) => (
                       <div key={index} className="flex justify-between items-center p-3 rounded bg-gray-800">
                         <div>
                           <p className="text-sm font-medium text-white">
@@ -360,7 +360,7 @@ export default function SystemDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {performanceData?.summary && Object.entries(performanceData.summary).map(([key, stats]: [string, any]) => (
+                    {((performanceData as any)?.summary) && Object.entries((performanceData as any).summary).map(([key, stats]: [string, any]) => (
                       <div key={key} className="p-3 rounded bg-gray-800">
                         <h4 className="text-sm font-medium text-white mb-2">{key}</h4>
                         <div className="grid grid-cols-2 gap-2 text-xs">

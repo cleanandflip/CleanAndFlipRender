@@ -5,8 +5,8 @@ import type { FulfillmentMode } from '@shared/fulfillment';
 
 interface ProductAvailabilityChipsProps {
   product: {
-    isLocalDeliveryAvailable?: boolean;
-    isShippingAvailable?: boolean;
+    isLocalDeliveryAvailable?: boolean | null;
+    isShippingAvailable?: boolean | null;
   };
   size?: 'sm' | 'md' | 'lg';
   stacked?: boolean;
@@ -19,7 +19,10 @@ export function ProductAvailabilityChips({
   stacked = false,
   className = '' 
 }: ProductAvailabilityChipsProps) {
-  const mode = getFulfillmentModeFromProduct(product) as FulfillmentMode;
+  const mode = getFulfillmentModeFromProduct({
+    isLocalDeliveryAvailable: Boolean(product.isLocalDeliveryAvailable ?? false),
+    isShippingAvailable: Boolean(product.isShippingAvailable ?? false),
+  }) as FulfillmentMode;
   
   if (!mode || (mode !== 'LOCAL_ONLY' && mode !== 'LOCAL_AND_SHIPPING')) {
     return null;
