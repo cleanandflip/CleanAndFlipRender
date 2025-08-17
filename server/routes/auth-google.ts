@@ -5,7 +5,7 @@ import { storage } from '../storage';
 import { Logger } from '../utils/logger';
 import { requireAuth } from '../auth';
 import { db } from '../db';
-import { users, userOnboarding } from '@shared/schema';
+import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 // Extend session type to include returnTo
@@ -44,8 +44,7 @@ passport.use(new GoogleStrategy({
         profileImageUrl: profile.photos?.[0]?.value || '',
         isEmailVerified: true,
         authProvider: 'google',
-        profileComplete: false, // MUST complete onboarding
-        onboardingStep: 0,
+        profileComplete: true, // Google users are immediately active
         // No password field for Google users
       } as any);
     } else if (!user.googleId) {
@@ -93,60 +92,13 @@ router.get('/google/callback',
       ? 'https://cleanflip.replit.app'
       : '';
     
-    // New Google users MUST complete onboarding
-    if (!user?.profileComplete && user?.authProvider === 'google') {
-      res.redirect(`${baseUrl}/onboarding?source=google&required=true`);
-    } else {
-      const returnUrl = req.session.returnTo || '/dashboard';
-      delete req.session.returnTo;
-      res.redirect(`${baseUrl}${returnUrl}`);
-    }
+    // Google users go directly to dashboard - no onboarding required
+    const returnUrl = req.session.returnTo || '/dashboard';
+    delete req.session.returnTo;
+    res.redirect(`${baseUrl}${returnUrl}`);
   }
 );
 
-// Add onboarding completion endpoint
-router.post('/onboarding/complete', requireAuth, async (req, res) => {
-  try {
-    const { address, phone, preferences } = req.body;
-    const user = req.user as any;
-    
-    // Validate required fields for Google users
-    if (user?.authProvider === 'google') {
-      if (!address?.street || !address?.city || !address?.state || !address?.zipCode) {
-        return res.status(400).json({ error: 'Complete address required' });
-      }
-      if (!phone) {
-        return res.status(400).json({ error: 'Phone number required' });
-      }
-    }
-
-    // Update user profile
-    await storage.updateUser(user.id, {
-      street: address?.street,
-      city: address?.city,
-      state: address?.state,
-      zipCode: address?.zipCode,
-      phone: phone,
-      latitude: address?.latitude ? String(address.latitude) : undefined,
-      longitude: address?.longitude ? String(address.longitude) : undefined,
-      profileComplete: true,
-      onboardingStep: 4,
-      isLocalCustomer: address?.zipCode?.startsWith('287') || address?.zipCode?.startsWith('288'),
-      updatedAt: new Date()
-    } as any);
-
-    const returnUrl = (req.query.return as string) || '/dashboard';
-    const isLocal = address?.zipCode?.startsWith('287') || address?.zipCode?.startsWith('288');
-    
-    res.json({ 
-      success: true, 
-      redirectUrl: returnUrl,
-      isLocalCustomer: Boolean(isLocal)
-    });
-  } catch (error) {
-    console.error('Onboarding error:', error);
-    res.status(500).json({ error: 'Failed to complete onboarding' });
-  }
-});
+// REMOVED: Onboarding endpoints - no longer needed per user instructions
 
 export default router;

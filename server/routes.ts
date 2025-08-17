@@ -2699,8 +2699,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userWithAddress = await db.execute(sql`
         SELECT 
           u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
-          u.profile_complete, u.onboarding_step, u.is_local_customer,
-          u.profile_address_id, u.onboarding_completed_at,
+          u.profile_complete, u.is_local_customer,
+          u.profile_address_id,
           a.id as address_id, a.first_name as addr_first_name, 
           a.last_name as addr_last_name, a.street1, a.street2, a.city, 
           a.state, a.postal_code, a.country, a.latitude, a.longitude, 

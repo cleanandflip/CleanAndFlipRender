@@ -40,10 +40,9 @@ async function verifyProductionDeployment() {
     
     // Check critical columns that the authentication system needs
     const criticalColumns = [
-      'profile_address_id', 'onboarding_completed_at', 'phone', 'role',
+      'profile_address_id', 'phone', 'role',
       'google_id', 'profile_image_url', 'auth_provider', 'is_email_verified',
-      'google_email', 'google_picture', 'is_local_customer', 'profile_complete',
-      'onboarding_step'
+      'google_email', 'google_picture', 'is_local_customer', 'profile_complete'
     ];
     
     console.log('\n  🔍 Critical Column Verification:');
@@ -109,9 +108,7 @@ async function verifyProductionDeployment() {
           google_email, google_picture,
           profile_address_id,
           COALESCE(is_local_customer, false) as is_local_customer,
-          COALESCE(profile_complete, false) as profile_complete,
-          COALESCE(onboarding_step, 0) as onboarding_step,
-          onboarding_completed_at
+          COALESCE(profile_complete, false) as profile_complete
         FROM users
         WHERE LOWER(email) = LOWER('test@example.com')
         LIMIT 1
@@ -178,8 +175,7 @@ async function applyProductionHotfix(db) {
     sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "google_picture" text`,
     sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "is_local_customer" boolean DEFAULT false`,
     sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "profile_complete" boolean DEFAULT false`,
-    sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "onboarding_step" integer DEFAULT 0`,
-    sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "onboarding_completed_at" timestamptz`,
+    // REMOVED: Onboarding columns no longer needed
     
     // Create performance indexes
     sql`CREATE INDEX IF NOT EXISTS "idx_users_role" ON "users"("role")`,

@@ -132,26 +132,13 @@ export const users = pgTable("users", {
   authProvider: varchar("auth_provider").default("local"), // 'local', 'google'
   isEmailVerified: boolean("is_email_verified").default(false),
   profileComplete: boolean("profile_complete").default(false),
-  onboardingStep: integer("onboarding_step").default(0),
   // SSOT Profile address reference - nullable FK to addresses (VARCHAR to match existing DB)
   profileAddressId: varchar("profile_address_id").references(() => addresses.id, { onDelete: 'set null' }),
-  onboardingCompletedAt: timestamp("onboarding_completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// User onboarding tracking table
-export const userOnboarding = pgTable("user_onboarding", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
-  addressCompleted: boolean("address_completed").default(false),
-  phoneCompleted: boolean("phone_completed").default(false),
-  preferencesCompleted: boolean("preferences_completed").default(false),
-  stripeCustomerCreated: boolean("stripe_customer_created").default(false),
-  welcomeEmailSent: boolean("welcome_email_sent").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
+// REMOVED: User onboarding table - no longer needed per user instructions
 
 // Categories
 export const categories = pgTable("categories", {

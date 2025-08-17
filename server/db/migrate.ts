@@ -64,7 +64,7 @@ export async function validateSchema() {
     // Check for critical columns that the application requires
     const requiredColumns = [
       { table: 'users', column: 'profile_address_id' },
-      { table: 'users', column: 'onboarding_completed_at' },
+      // REMOVED: onboarding_completed_at column no longer exists
       { table: 'addresses', column: 'street1' },
       { table: 'addresses', column: 'street2' }
     ];

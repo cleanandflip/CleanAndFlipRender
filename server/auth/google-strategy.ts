@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { db } from '../db';
-import { users, userOnboarding } from '@shared/schema';
+import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { Logger } from '../utils/logger';
@@ -98,23 +98,12 @@ export function initializeGoogleAuth() {
             lastName,
             authProvider: 'google',
             isEmailVerified: true,
-            profileComplete: false,
-            onboardingStep: 1,
+            profileComplete: true, // Google users are immediately active
             role: 'user'
           })
           .returning();
         
-        // Create onboarding record
-        await db.insert(userOnboarding)
-          .values({
-            id: randomUUID(),
-            userId: newUserId,
-            addressCompleted: false,
-            phoneCompleted: false,
-            preferencesCompleted: false,
-            stripeCustomerCreated: false,
-            welcomeEmailSent: false
-          });
+        // REMOVED: Onboarding record creation - no longer needed
         
         Logger.debug('[AUTH] New Google user created:', email);
         return done(null, {
