@@ -244,7 +244,7 @@ export function setupAuth(app: Express) {
     try {
       Logger.debug(`[PASSPORT] Deserializing user with ID: ${id}`);
       
-      // Query database for user with error handling
+      // Query database for user with comprehensive error handling
       const user = await storage.getUser(id);
       if (!user) {
         Logger.debug(`[PASSPORT] User not found for ID: ${id}`);
@@ -260,8 +260,15 @@ export function setupAuth(app: Express) {
       
       Logger.debug(`[PASSPORT] Successfully deserialized user: ${user.email}`);
       done(null, userForSession);
-    } catch (error) {
-      Logger.error(`[PASSPORT] Deserialization suppressed:`, error);
+    } catch (error: any) {
+      Logger.error(`[PASSPORT] Deserialization error (${error.code}):`, error.message);
+      
+      // Handle specific database schema errors gracefully
+      if (error.code === '42703') {
+        Logger.error('[PASSPORT] Schema mismatch detected during user deserialization');
+        Logger.error('[PASSPORT] This indicates missing columns in production database');
+      }
+      
       // CRITICAL: Never crash the request due to a user fetch problem
       // This ensures /sw.js and other requests can continue even if DB issues occur
       return done(null, false);
