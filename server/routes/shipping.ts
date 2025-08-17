@@ -6,7 +6,7 @@ import express from 'express';
 import { z } from 'zod';
 import { db } from '../db';
 import { addresses } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth';
 import { haversineMiles } from '../../shared/geo';
 
@@ -124,8 +124,7 @@ router.get('/user/locality', requireAuth, async (req, res) => {
     const defaultAddress = await db
       .select()
       .from(addresses)
-      .where(eq(addresses.userId, userId))
-      .where(eq(addresses.isDefault, true))
+      .where(and(eq(addresses.userId, userId), eq(addresses.isDefault, true)))
       .limit(1);
 
     if (!defaultAddress.length || !defaultAddress[0].latitude || !defaultAddress[0].longitude) {

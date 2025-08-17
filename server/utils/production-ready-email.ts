@@ -11,7 +11,7 @@ export const productionEmailHelpers = {
         throw new Error('Order not found');
       }
       
-      const user = await storage.getUser(order.userId);
+      const user = await storage.getUser(order.userId!);
       if (!user) {
         throw new Error('User not found');
       }
@@ -20,8 +20,8 @@ export const productionEmailHelpers = {
       
       const emailData = {
         id: order.id,
-        orderNumber: order.orderNumber || order.id,
-        totalAmount: order.totalAmount,
+        orderNumber: order.id,
+        totalAmount: Number(order.total),
         user: {
           email: user.email!,
           firstName: user.firstName || undefined
@@ -29,14 +29,9 @@ export const productionEmailHelpers = {
         items: orderItems.map(item => ({
           name: item.product.name,
           quantity: item.quantity,
-          price: item.price
+          price: Number(item.price)
         })),
-        shippingAddress: order.shippingAddressId ? {
-          street: user.street || '',
-          city: user.city || '',
-          state: user.state || '',
-          zipCode: user.zipCode || ''
-        } : undefined
+        shippingAddress: undefined
       };
       
       await emailService.sendOrderConfirmation(emailData);
@@ -55,7 +50,7 @@ export const productionEmailHelpers = {
         throw new Error('Order not found');
       }
       
-      const user = await storage.getUser(order.userId);
+      const user = await storage.getUser(order.userId!);
       if (!user) {
         throw new Error('User not found');
       }
@@ -64,8 +59,8 @@ export const productionEmailHelpers = {
       
       const emailData = {
         id: order.id,
-        orderNumber: order.orderNumber || order.id,
-        totalAmount: order.totalAmount,
+        orderNumber: order.id,
+        totalAmount: Number(order.total),
         user: {
           email: user.email!,
           firstName: user.firstName || undefined
@@ -73,14 +68,9 @@ export const productionEmailHelpers = {
         items: orderItems.map(item => ({
           name: item.product.name,
           quantity: item.quantity,
-          price: item.price
+          price: Number(item.price)
         })),
-        shippingAddress: order.shippingAddressId ? {
-          street: user.street || '',
-          city: user.city || '',
-          state: user.state || '',
-          zipCode: user.zipCode || ''
-        } : undefined,
+        shippingAddress: undefined,
         trackingNumber,
         carrier
       };

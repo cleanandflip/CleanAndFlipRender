@@ -285,7 +285,7 @@ export default function SystemDashboard() {
             <CardHeader>
               <CardTitle className="text-white flex items-center">
                 <AlertTriangle className="w-5 h-5 mr-2 text-yellow-500" />
-                Active Alerts ({alertsData.alerts.length})
+                Active Alerts ({(((alertsData as any)?.alerts) || []).length})
               </CardTitle>
             </CardHeader>
             <CardContent>

@@ -29,7 +29,7 @@ passport.use(new GoogleStrategy({
     // Check if user exists by email
     const email = profile.emails?.[0]?.value;
     if (!email) {
-      return done(new Error('No email from Google profile'), null);
+      return done(new Error('No email from Google profile'), undefined);
     }
     
     let user = await storage.getUserByEmail(email);
@@ -47,7 +47,7 @@ passport.use(new GoogleStrategy({
         profileComplete: false, // MUST complete onboarding
         onboardingStep: 0,
         // No password field for Google users
-      });
+      } as any);
     } else if (!user.googleId) {
       // Link existing account with Google
       await storage.updateUserGoogleInfo(user.id, {
@@ -58,16 +58,16 @@ passport.use(new GoogleStrategy({
       });
     }
     
-    return done(null, user);
+    return done(null, user as any);
   } catch (error) {
-    return done(error, null);
+    return done(error as any, undefined);
   }
 }));
 
 // Initiate Google OAuth
 router.get('/google', (req, res, next) => {
   // Store return URL for after auth
-  req.session.returnTo = req.query.returnTo || req.headers.referer || '/dashboard';
+  req.session.returnTo = (req.query.returnTo as string) || req.headers.referer || '/dashboard';
   
   // Save session before redirect
   req.session.save((err) => {
@@ -94,7 +94,7 @@ router.get('/google/callback',
       : '';
     
     // New Google users MUST complete onboarding
-    if (!user.profileComplete && user.authProvider === 'google') {
+    if (!user?.profileComplete && user?.authProvider === 'google') {
       res.redirect(`${baseUrl}/onboarding?source=google&required=true`);
     } else {
       const returnUrl = req.session.returnTo || '/dashboard';
@@ -111,7 +111,7 @@ router.post('/onboarding/complete', requireAuth, async (req, res) => {
     const user = req.user as any;
     
     // Validate required fields for Google users
-    if (user.authProvider === 'google') {
+    if (user?.authProvider === 'google') {
       if (!address?.street || !address?.city || !address?.state || !address?.zipCode) {
         return res.status(400).json({ error: 'Complete address required' });
       }
@@ -122,26 +122,26 @@ router.post('/onboarding/complete', requireAuth, async (req, res) => {
 
     // Update user profile
     await storage.updateUser(user.id, {
-      street: address.street,
-      city: address.city,
-      state: address.state,
-      zipCode: address.zipCode,
+      street: address?.street,
+      city: address?.city,
+      state: address?.state,
+      zipCode: address?.zipCode,
       phone: phone,
-      latitude: address.latitude ? String(address.latitude) : undefined,
-      longitude: address.longitude ? String(address.longitude) : undefined,
+      latitude: address?.latitude ? String(address.latitude) : undefined,
+      longitude: address?.longitude ? String(address.longitude) : undefined,
       profileComplete: true,
       onboardingStep: 4,
-      isLocalCustomer: address.zipCode?.startsWith('287') || address.zipCode?.startsWith('288'),
+      isLocalCustomer: address?.zipCode?.startsWith('287') || address?.zipCode?.startsWith('288'),
       updatedAt: new Date()
-    });
+    } as any);
 
     const returnUrl = (req.query.return as string) || '/dashboard';
-    const isLocal = address.zipCode?.startsWith('287') || address.zipCode?.startsWith('288');
+    const isLocal = address?.zipCode?.startsWith('287') || address?.zipCode?.startsWith('288');
     
     res.json({ 
       success: true, 
       redirectUrl: returnUrl,
-      isLocalCustomer: isLocal
+      isLocalCustomer: Boolean(isLocal)
     });
   } catch (error) {
     console.error('Onboarding error:', error);

@@ -69,10 +69,10 @@ export class InputSanitizer {
           // Use DOMPurify config flags compatible with the current version
           FORBID_TAGS: ['script', 'style'],
           SAFE_FOR_TEMPLATES: true
-        } as any);
+        } as any) as unknown as string;
       } else {
         // Strip all HTML tags
-        sanitized = purify.sanitize(sanitized, { ALLOWED_TAGS: [] });
+        sanitized = purify.sanitize(sanitized, { ALLOWED_TAGS: [] }) as unknown as string;
       }
 
       // Remove dangerous patterns

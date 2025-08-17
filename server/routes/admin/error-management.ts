@@ -152,18 +152,12 @@ router.post('/errors/log', async (req, res) => {
       userContext 
     } = req.body;
 
-    await ErrorLogger.logError({
-      message,
-      stack,
-      component,
+    await ErrorLogger.logError(new Error(message), {
+      req: { url, userAgent, ip: req.ip },
+      user: { id: req.user?.id },
       action,
-      severity,
-      url,
-      userAgent,
-      userContext,
-      userId: req.user?.id,
-      ip: req.ip
-    });
+      metadata: { component, severity, userContext }
+    } as any);
 
     res.status(201).json({ success: true });
   } catch (error) {

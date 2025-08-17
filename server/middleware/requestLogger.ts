@@ -73,8 +73,8 @@ class RequestLogger {
       };
 
       // Override res.end to capture response data
-      const originalEnd = res.end;
-      res.end = function(...args: any[]) {
+      const originalEnd = res.end.bind(res) as Response['end'];
+      (res as any).end = function(...args: Parameters<Response['end']>) {
         const duration = Date.now() - startTime;
         const contentLength = res.get('Content-Length');
 
@@ -97,8 +97,8 @@ class RequestLogger {
         }
 
         // Call original end
-        originalEnd.apply(this, args);
-      };
+        return originalEnd(...args);
+      } as any;
 
       next();
     };
@@ -110,8 +110,8 @@ class RequestLogger {
       const { userId, ip } = RequestLogger.extractUserInfo(req);
 
       // Log API requests with more detail
-      const originalEnd = res.end;
-      res.end = function(...args: any[]) {
+      const originalEnd = res.end.bind(res) as Response['end'];
+      (res as any).end = function(...args: Parameters<Response['end']>) {
         const duration = Date.now() - startTime;
         
         const logData: RequestLogData = {
@@ -132,8 +132,8 @@ class RequestLogger {
           Logger.info(`API ${req.method} ${req.url} ${res.statusCode} ${duration}ms`, logData);
         }
 
-        originalEnd.apply(this, args);
-      };
+        return originalEnd(...args);
+      } as any;
 
       next();
     };
@@ -151,8 +151,8 @@ class RequestLogger {
         userAgent: req.get('User-Agent')
       });
 
-      const originalEnd = res.end;
-      res.end = function(...args: any[]) {
+      const originalEnd = res.end.bind(res) as Response['end'];
+      (res as any).end = function(...args: Parameters<Response['end']>) {
         const duration = Date.now() - startTime;
         
         Logger.info(`ADMIN RESPONSE: ${req.method} ${req.url} ${res.statusCode} ${duration}ms`, {
@@ -162,8 +162,8 @@ class RequestLogger {
           statusCode: res.statusCode
         });
 
-        originalEnd.apply(this, args);
-      };
+        return originalEnd(...args);
+      } as any;
 
       next();
     };

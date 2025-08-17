@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from '../storage';
-import { isAuthenticated } from '../auth';
+import { authMiddleware } from '../middleware/auth';
 import { getLocalityForRequest } from '../services/localityService';
 
 const router = Router();
@@ -20,7 +20,7 @@ const AddressSchema = z.object({
 
 // Get shipping quote
 // Shipping quote endpoint for checkout v2
-router.post("/quote", async (req, res) => {
+router.post("/quote", authMiddleware.optionalAuth, async (req, res) => {
   try {
     // Handle both addressId and address input formats for checkout v2
     const { addressId, address } = req.body;
@@ -29,9 +29,10 @@ router.post("/quote", async (req, res) => {
     
     // If using existing address, fetch it
     if (addressId && !address) {
-      // Fetch address from database (implement based on your storage)
-      // addressData = await storage.getAddress(addressId);
-      addressData = { city: "Unknown", state: "CA" }; // Fallback for now
+      const userId = (req as any).user?.id || (req.session as any)?.passport?.user || null;
+      if (!userId) return res.status(401).json({ error: 'Authentication required' });
+      const fetched = await storage.getAddress(userId, addressId);
+      addressData = fetched || null;
     }
     
     if (!addressData) {
@@ -53,14 +54,10 @@ router.post("/quote", async (req, res) => {
       eta: "5-7 business days"
     });
     
-    // Check if user is in local delivery area
-    const addresses = await storage.getUserAddresses(userId);
-    const defaultAddress = addresses.find(addr => addr.isDefault);
-    const localityResult = defaultAddress ? 
-      /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : 
-      { isLocal: false, distanceMiles: null, reason: "NO_COORDS" };
+    // Check if user is in local delivery area via SSOT service
+    const locality = await getLocalityForRequest(req);
       
-    if (localityResult.isLocal) {
+    if (locality.eligible) {
       shippingOptions.push({
         id: "local",
         service: "local",

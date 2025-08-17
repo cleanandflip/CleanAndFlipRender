@@ -199,8 +199,8 @@ export function performanceMiddleware() {
     const startTime = process.hrtime.bigint();
     
     // Override res.end to capture timing
-    const originalEnd = res.end;
-    res.end = function(...args: any[]) {
+    const originalEnd = res.end.bind(res) as Response['end'];
+    (res as any).end = function(...args: Parameters<Response['end']>) {
       const endTime = process.hrtime.bigint();
       const duration = Number(endTime - startTime) / 1000000; // Convert to milliseconds
 
@@ -222,8 +222,8 @@ export function performanceMiddleware() {
         PerformanceMonitor.recordMetric('memory_rss', memoryUsage.rss);
       }
 
-      originalEnd.apply(this, args);
-    };
+      return originalEnd(...args);
+    } as any;
 
     next();
   };

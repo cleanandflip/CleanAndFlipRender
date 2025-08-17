@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../auth';
 import { storage } from '../storage';
 import { getLocalityForRequest } from '../services/localityService';
-import { guardCartItemAgainstLocality } from '../services/cartGuard';
+// guardCartItemAgainstLocality is re-exported at bottom of this module
 
 const router = Router();
 
@@ -15,15 +15,15 @@ router.post('/validate', requireAuth, async (req, res) => {
     const addresses = await storage.getUserAddresses(userId);
     const defaultAddress = addresses.find(addr => addr.isDefault);
     const localityResult = defaultAddress ? 
-      /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(defaultAddress.latitude, defaultAddress.longitude) : 
+      /* SSOT-FORBIDDEN \bisLocalMiles\( */ isLocalMiles(defaultAddress.latitude as any, defaultAddress.longitude as any) : 
       { isLocal: false };
     
     // Get cart items with product details
     const cart = await storage.getCart(userId);
-    const restrictedItems = [];
-    const validItems = [];
+    const restrictedItems: any[] = [];
+    const validItems: any[] = [];
     
-    for (const item of cart.items) {
+    for (const item of (cart?.items || [])) {
       try {
         guardCartItemAgainstLocality({
           userIsLocal: localityResult.isLocal,

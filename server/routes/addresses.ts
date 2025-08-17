@@ -54,7 +54,7 @@ router.post('/', isAuthenticated, async (req, res) => {
     const isDefault = data.setDefault || existingAddresses.length === 0;
     
     // Compute isLocal from coordinates using unified locality system
-    const isLocal = isLocalMiles(data.latitude || null, data.longitude || null);
+    const isLocal = isLocalMiles(data.latitude ?? null, data.longitude ?? null);
     
     const address = await storage.createAddress(userId, {
       firstName: data.firstName,
@@ -65,8 +65,8 @@ router.post('/', isAuthenticated, async (req, res) => {
       state: data.state,
       postalCode: data.postalCode,
       country: data.country || 'US',
-      latitude: data.latitude,
-      longitude: data.longitude,
+      latitude: (data.latitude as any) as any,
+      longitude: (data.longitude as any) as any,
       geoapifyPlaceId: data.geoapifyPlaceId,
       isDefault,
       isLocal
@@ -101,14 +101,14 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
     // Recompute isLocal if coordinates changed using unified locality system
     let updateData = { ...data };
     if (data.latitude !== undefined || data.longitude !== undefined) {
-      const isLocal = isLocalMiles(data.latitude || null, data.longitude || null);
+      const isLocal = isLocalMiles(data.latitude ?? null, data.longitude ?? null);
       updateData = {
         ...updateData,
         isLocal
       };
     }
     
-    const address = await storage.updateAddress(userId, id, updateData);
+    const address = await storage.updateAddress(userId, id, updateData as any);
     
     res.json(address); // Return plain object for consistency
   } catch (error) {

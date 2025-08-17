@@ -13,8 +13,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 router.post('/webhook', 
   express.raw({ type: 'application/json' }), // CRITICAL: Use raw body for signature verification
   async (req, res) => {
-    const sig = req.headers['stripe-signature'] as string;
+    const sig = req.headers['stripe-signature'] as string | undefined;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+    
+    if (!sig) {
+      return res.status(400).send('Missing Stripe signature');
+    }
     
     let event: Stripe.Event;
     
@@ -42,19 +46,19 @@ router.post('/webhook',
         case 'payment_intent.succeeded':
           await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
           break;
-          
+        
         case 'payment_intent.payment_failed':
           await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
           break;
-          
+        
         case 'payment_intent.canceled':
           await handlePaymentCanceled(event.data.object as Stripe.PaymentIntent);
           break;
-          
+        
         case 'checkout.session.completed':
           await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
           break;
-          
+        
         default:
           Logger.debug(`[STRIPE] Unhandled event type: ${event.type}`);
       }

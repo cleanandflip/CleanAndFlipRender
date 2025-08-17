@@ -101,7 +101,7 @@ function generateReasons(status: LocalityStatus, source: string, zip?: string): 
  */
 export async function getLocalityForRequest(req: Request, zipOverride?: string): Promise<LocalityResult> {
   // Use standard authentication patterns from the codebase
-  const userId = req.user?.id || req.session?.passport?.user || req.session?.userId || null;
+  const userId = (req as any).user?.id || (req.session as any)?.passport?.user || (req.session as any)?.userId || null;
   const asOfISO = new Date().toISOString();
   
   try {
