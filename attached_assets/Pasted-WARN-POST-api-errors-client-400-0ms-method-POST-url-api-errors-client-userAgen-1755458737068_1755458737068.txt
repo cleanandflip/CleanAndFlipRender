@@ -1,0 +1,63 @@
+WARN] POST /api/errors/client 400 0ms {
+  method: 'POST',
+  url: '/api/errors/client',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.2.18',
+  userId: undefined,
+  duration: 0,
+  statusCode: 400,
+  contentLength: 102
+}
+7:25:04 PM POST    /api/errors/client                       400 1ms
+[WARN] API POST /api/errors/client 400 0ms {
+  method: 'POST',
+  url: '/api/errors/client',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.5',
+  userId: undefined,
+  duration: 0,
+  statusCode: 400,
+  contentLength: 102
+}
+[WARN] POST /api/errors/client 400 1ms {
+  method: 'POST',
+  url: '/api/errors/client',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.5',
+  userId: undefined,
+  duration: 1,
+  statusCode: 400,
+  contentLength: 102
+}
+7:25:04 PM POST    /api/errors/client                       400 2ms
+[WARN] API POST /api/errors/client 400 0ms {
+  method: 'POST',
+  url: '/api/errors/client',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.26',
+  userId: undefined,
+  duration: 0,
+  statusCode: 400,
+  contentLength: 102
+}
+[WARN] POST /api/errors/client 400 0ms {
+  method: 'POST',
+  url: '/api/errors/client',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.26',
+  userId: undefined,
+  duration: 0,
+  statusCode: 400,
+  contentLength: 102
+}
+7:25:04 PM POST    /api/errors/client                       400 1ms
+[WARN] API POST /api/errors/client 400 0ms {
+  method: 'POST',
+  url: '/api/errors/client',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.2.18',
+  userId: undefined,
+  duration: 0,
+  statusCode: 400,
+  contentLength: 102
+}
