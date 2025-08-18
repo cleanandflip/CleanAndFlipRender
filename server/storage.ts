@@ -627,8 +627,6 @@ export class DatabaseStorage implements IStorage {
 
   async getFeaturedProducts(limit: number = 6): Promise<Product[]> {
     try {
-      // PERFORMANCE: Use select() with no explicit columns for better performance
-      // ROBUSTNESS: Add fallback strategy for empty featured products
       Logger.debug(`[STORAGE] Getting featured products (limit: ${limit})`);
       
       // Try featured products first
