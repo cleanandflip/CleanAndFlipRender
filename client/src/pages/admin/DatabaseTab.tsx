@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 // import { ScrollArea } from '@/components/ui/scroll-area'; // Removed due to React hook issues
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Database, Play, Table, Settings, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Database, Play, Table, Settings, AlertTriangle, CheckCircle, XCircle, RotateCcw, History } from 'lucide-react';
 
 interface DatabaseInfo {
   name: string;
@@ -46,6 +46,7 @@ export function DatabaseTab() {
   const [sqlQuery, setSqlQuery] = useState<string>('SELECT * FROM users LIMIT 10;');
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [queryError, setQueryError] = useState<string>('');
+  const [showRollbackDialog, setShowRollbackDialog] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -113,6 +114,14 @@ export function DatabaseTab() {
   });
 
   const currentDb: DatabaseInfo | undefined = databases && selectedDatabase in databases ? databases[selectedDatabase] : undefined;
+
+  // Rollback functionality
+  const handleRollback = (database: 'development' | 'production') => {
+    toast({
+      title: "Database Rollback",
+      description: `Rollback feature for ${database} database would be implemented here. This requires backup/snapshot management.`,
+    });
+  };
 
   const handleExecuteQuery = () => {
     if (!sqlQuery.trim()) {
@@ -202,24 +211,41 @@ export function DatabaseTab() {
                     )}
 
                     <div>
-                      <Label className="flex items-center gap-2">
-                        <Table className="w-4 h-4" />
-                        Tables ({currentDb.tables?.length || 0})
-                      </Label>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="flex items-center gap-2">
+                          <Table className="w-4 h-4" />
+                          Tables ({currentDb.tables?.length || 0})
+                        </Label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRollback(selectedDatabase)}
+                          className="flex items-center gap-1"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          Rollback
+                        </Button>
+                      </div>
                       <div className="h-40 w-full border rounded-md mt-2 overflow-y-auto">
                         <div className="p-2">
-                          {currentDb.tables?.map((table: TableInfo) => (
-                            <button
-                              key={table.name}
-                              onClick={() => handleTableSelect(table.name)}
-                              className={`w-full text-left p-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                                selectedTable === table.name ? 'bg-blue-100 dark:bg-blue-900' : ''
-                              }`}
-                            >
-                              <div className="font-medium">{table.name}</div>
-                              <div className="text-xs text-gray-500">{table.rowCount} rows</div>
-                            </button>
-                          ))}
+                          {currentDb.tables?.length > 0 ? (
+                            currentDb.tables.map((table: TableInfo) => (
+                              <button
+                                key={table.name}
+                                onClick={() => handleTableSelect(table.name)}
+                                className={`w-full text-left p-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                                  selectedTable === table.name ? 'bg-blue-100 dark:bg-blue-900' : ''
+                                }`}
+                              >
+                                <div className="font-medium">{table.name}</div>
+                                <div className="text-xs text-gray-500">{table.rowCount} rows</div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="text-sm text-gray-500 p-2">
+                              {currentDb.connectionStatus === 'error' ? 'Connection failed - no tables available' : 'No tables found'}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -287,7 +313,7 @@ export function DatabaseTab() {
                             <span>Rows: {queryResult.rowCount}</span>
                             <span>Duration: {queryResult.duration}ms</span>
                           </div>
-                          <ScrollArea className="w-full">
+                          <div className="w-full overflow-x-auto max-h-96">
                             <div className="overflow-x-auto">
                               <table className="w-full border-collapse border border-gray-300 text-sm">
                                 <thead>
@@ -312,7 +338,7 @@ export function DatabaseTab() {
                                 </tbody>
                               </table>
                             </div>
-                          </ScrollArea>
+                          </div>
                         </div>
                       ) : null}
                     </CardContent>
