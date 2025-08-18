@@ -78,6 +78,8 @@ export const users = pgTable("users", {
   googleEmailVerified: boolean("google_email_verified"),
   googlePicture: text("google_picture"),
   lastLoginAt: timestamp("last_login_at"),
+  loginCount: integer("login_count").notNull().default(0),
+  signInProvider: varchar("sign_in_provider").notNull().default('password'),
   profileImageUrl: text("profile_image_url"),
   authProvider: varchar("auth_provider").default("local"), // 'local', 'google'
   isEmailVerified: boolean("is_email_verified").default(false),

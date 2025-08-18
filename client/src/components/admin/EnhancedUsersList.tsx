@@ -20,21 +20,17 @@ interface EnhancedUser {
   emailVerifiedAt: string | null;
   mfaEnabled: boolean;
   lastLoginAt: string | null;
-  lastIp: string;
+  lastIp: string | null;
   createdAt: string;
-  providers: string[];
-  sessionsCount: number;
-  joinedDaysAgo: number | null;
+  orderCount: number;
+  totalSpent: number;
 }
 
 interface UsersResponse {
   users: EnhancedUser[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
+  total: number;
+  page: number;
+  totalPages: number;
 }
 
 export function EnhancedUsersList() {
@@ -179,6 +175,14 @@ export function EnhancedUsersList() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
               <p className="mt-4 text-gray-600">Loading users...</p>
             </div>
+          ) : error ? (
+            <div className="p-8 text-center">
+              <p className="text-red-600">Failed to load users. Please try again.</p>
+            </div>
+          ) : !data || !data.users || data.users.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-gray-600">No users found.</p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -186,15 +190,15 @@ export function EnhancedUsersList() {
                   <TableHead>User</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Auth</TableHead>
+                  <TableHead>Provider</TableHead>
                   <TableHead>Last Login</TableHead>
-                  <TableHead>Sessions</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>Orders</TableHead>
+                  <TableHead>Total Spent</TableHead>
+                  <TableHead>Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data?.users.map((user) => (
+                {data.users.map((user) => (
                   <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
                     <TableCell>
                       <div>
@@ -213,13 +217,9 @@ export function EnhancedUsersList() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.providers.map((p) => (
-                          <Badge key={p} variant="outline" className="text-xs">
-                            {p}
-                          </Badge>
-                        ))}
-                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {user.authProvider || 'local'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
@@ -231,20 +231,18 @@ export function EnhancedUsersList() {
                     </TableCell>
                     <TableCell>
                       <div className="text-center">
-                        <span className="text-sm font-medium">{user.sessionsCount}</span>
+                        <span className="text-sm font-medium">{user.orderCount || 0}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {user.joinedDaysAgo !== null ? `${user.joinedDaysAgo}d ago` : 'Unknown'}
+                        ${(user.totalSpent || 0).toFixed(2)}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Link to={`/admin/users/${user.id}`}>
-                        <Button variant="outline" size="sm" data-testid={`button-view-${user.id}`}>
-                          View
-                        </Button>
-                      </Link>
+                      <div className="text-sm">
+                        {formatDate(user.createdAt)}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -255,12 +253,12 @@ export function EnhancedUsersList() {
       </Card>
 
       {/* Pagination */}
-      {data?.pagination && (
+      {data && data.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            Showing {((data.pagination.page - 1) * data.pagination.pageSize) + 1} to{' '}
-            {Math.min(data.pagination.page * data.pagination.pageSize, data.pagination.total)} of{' '}
-            {data.pagination.total} users
+            Showing {((data.page - 1) * pageSize) + 1} to{' '}
+            {Math.min(data.page * pageSize, data.total)} of{' '}
+            {data.total} users
           </div>
           
           <div className="flex items-center gap-2">
@@ -276,14 +274,14 @@ export function EnhancedUsersList() {
             </Button>
             
             <span className="text-sm px-3 py-2 bg-gray-100 rounded">
-              Page {data.pagination.page} of {data.pagination.totalPages}
+              Page {data.page} of {data.totalPages}
             </span>
             
             <Button
               variant="outline"
               size="sm"
               onClick={() => setPage(page + 1)}
-              disabled={page >= data.pagination.totalPages}
+              disabled={page >= data.totalPages}
               data-testid="button-next-page"
             >
               Next

@@ -1,0 +1,223 @@
+REPLIT: REQUIRED FIXES & CLEANUP
+1) Database: make DEV and PROD schemas consistent (Neon)
+
+Errors show multiple missing columns. Apply this migration to both DBs (lucky-poetry = dev, muddy-moon = prod).
+
+1.1 One safe migration script (idempotent)
+
+20250818_unify_schema.sql
+
+BEGIN;
+
+-- USERS -------------------------------------------------------
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS email_verified_at timestamptz,
+  ADD COLUMN IF NOT EXISTS last_login_at     timestamptz,
+  ADD COLUMN IF NOT EXISTS login_count       integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS sign_in_provider  text    NOT NULL DEFAULT 'password',
+  ADD COLUMN IF NOT EXISTS last_ip           inet;
+
+-- Backfill email_verified_at from a legacy boolean if present
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='users' AND column_name='email_verified'
+  ) THEN
+    UPDATE public.users
+      SET email_verified_at = COALESCE(email_verified_at, NOW())
+    WHERE email_verified = TRUE AND email_verified_at IS NULL;
+  END IF;
+END$$;
+
+CREATE INDEX IF NOT EXISTS idx_users_last_login_at    ON public.users (last_login_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_sign_in_provider ON public.users (sign_in_provider);
+-- If created_at exists (most likely):
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='users' AND column_name='created_at'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_users_created_at ON public.users (created_at DESC);
+  END IF;
+END$$;
+
+-- PRODUCTS ----------------------------------------------------
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS continue_selling_when_out_of_stock boolean NOT NULL DEFAULT FALSE;
+
+-- ADDRESSES (for geo & alias safety) -------------------------
+ALTER TABLE public.addresses
+  ADD COLUMN IF NOT EXISTS latitude  double precision,
+  ADD COLUMN IF NOT EXISTS longitude double precision;
+
+COMMIT;
+
+1.2 Run against both DBs
+# DEV (lucky-poetry)
+psql "${DEV_DATABASE_URL}"  -v ON_ERROR_STOP=1 -f 20250818_unify_schema.sql
+
+# PROD (muddy-moon)
+psql "${PROD_DATABASE_URL}" -v ON_ERROR_STOP=1 -f 20250818_unify_schema.sql
+
+
+This removes the 500s in /api/admin/users and /api/admin/analytics (missing email_verified_at) and the product flag error (continue_selling_when_out_of_stock). It also future-proofs sign-in analytics fields the dashboard expects.
+
+2) SQL alias bug (seen earlier: “a.latitude does not exist”)
+
+There’s a bad table alias in the “user with address” query. Search and fix:
+
+Find: references like SELECT a.latitude ... FROM ... users u ... JOIN addresses a ... that actually meant a.latitude but aliased the columns on u.
+
+Fix: ensure addresses is aliased as a and latitude/longitude are selected from a, not u.
+
+Result: removes that Neon 42703 “column does not exist” error.
+
+3) Admin API reliability & security
+
+Logs show userId: undefined for admin requests (while calling /api/admin/*). Lock these down and make responses robust:
+
+Enforce admin auth in the admin router (e.g., ensureAdmin middleware) before any DB call:
+
+If not admin → 403.
+
+Make queries tolerant to nulls:
+
+In SELECTs, use COALESCE(email_verified_at, NULL); don’t assume presence client-side.
+
+Return shapes consistently even when a field’s NULL (avoid runtime TS/JSON shape surprises).
+
+4) Kill legacy endpoints & duplicates
+
+Two user endpoints are live: /api/user and /user. Keep only /api/user.
+
+Remove legacy /user route (or 301 → /api/user if you must keep compatibility).
+
+Remove any legacy GET /analytics if /api/admin/analytics is the official one (the logs show both patterns used recently).
+
+Cart: you already log CART V2. Delete any Cart V1 code paths and routes so they can’t be hit accidentally.
+
+5) Health endpoint policy (previous 401s)
+
+Public liveness: GET /health → 200 {ok:true, version, uptime} (no auth, Cache-Control: no-store).
+
+Private deep health: keep /api/admin/system/health auth-guarded for DB/session/stripe checks.
+
+This stops 401 spam in monitors while keeping sensitive checks protected.
+
+6) Frontend issues spotted & quick wins
+6.1 React-Query options duplicate key
+
+You previously had:
+
+refetchOnWindowFocus: false,
+...
+refetchOnMount: true
+
+
+and a duplicate refetchOnWindowFocus. Ensure only one key exists to silence Vite/esbuild warnings.
+
+6.2 Slow HMR & CSS loads
+
+We saw multi-second loads for /@react-refresh and /src/index.css. Tune Vite/Tailwind:
+
+tailwind.config.js: restrict content scanning to the client only:
+
+content: ["./client/src/**/*.{ts,tsx,html}"]
+
+
+(Do not scan server, dist or node_modules.)
+
+vite.config.ts:
+
+Exclude server code from optimizeDeps.
+
+Enable CSS code-splitting:
+
+build: { cssCodeSplit: true, sourcemap: true }
+
+
+Ensure only one global CSS import path is used (the logs show multiple CSS query strings during HMR).
+
+7) Session/auth hardening (prevents “ghost sessions” & blank account)
+
+(You started applying this; keep it everywhere.)
+
+saveUninitialized:false, env-specific cookie names (CF_SID_DEV / CF_SID_PROD), app.set('trust proxy', 1), and logout that destroys the session and clears the cookie with exact same options.
+
+Client auth derives from {auth:true|false} in /api/user. Never treat “cookie present” as “logged in.”
+
+8) Reduce noise/overhead from track-activity
+
+You’re posting /api/track-activity frequently from multiple tabs.
+
+Debounce on the client (e.g., send at most once per 30–60s per tab, or when significant events happen).
+
+Server should accept it but do no work if the last event from the same sessionId is < 30s ago.
+
+9) Purge now-unused code & scripts
+
+Delete these to avoid regressions and confusion:
+
+Routes
+
+server/* legacy endpoints:
+
+/user → remove (use /api/user only).
+
+Any legacy /analytics outside /api/admin/analytics → remove.
+
+Any Cart V1 routes/components.
+
+Client
+
+If you migrated to @/components/ui/select.tsx, remove custom Dropdown.tsx if not used.
+
+You have both components/ProtectedRoute.tsx and lib/protected-route.tsx in logs. Keep one (the used one), delete the other.
+
+Build scripts (package.json)
+
+Remove obsolete scripts like seed:*, migrate:knex, start-legacy, build-legacy if they exist.
+
+Keep: dev, build, start, typecheck, lint, migrate (Drizzle/SQL).
+
+Config
+
+Old .env.* samples that point to retired hosts or tables.
+
+Any proxy/reverse-proxy dev helpers no longer required by Replit.
+
+After deletion, run a dead-code check (tsc noUnusedLocals/noUnusedParameters, ESLint no-unused-vars) and remove any now-orphaned imports/exports.
+
+10) Update backend queries to use the new fields
+
+Where admin needs them:
+
+Users list / analytics should select:
+
+id, email, created_at, last_login_at, login_count, sign_in_provider, email_verified_at, last_ip
+
+Filters:
+
+provider → sign_in_provider
+
+status (active/disabled) → whichever flag you maintain (e.g., is_active, deleted_at IS NULL) — keep it consistent.
+
+Make sure the client’s table expects null for unknown timestamps; don’t call .length on potentially null values in React (you hit TypeError: Cannot read properties of null (reading 'length') earlier on dashboard.tsx).
+
+11) Test plan (quick)
+
+Run migration on both DBs (dev & prod URLs provided).
+
+Hit /api/admin/users & /api/admin/analytics → expect 200.
+
+Remove /user route, confirm SPA only calls /api/user.
+
+Verify /health is 200 unauth; /api/admin/system/health requires admin.
+
+Sign in/out flow: ensure cookie clears and /api/user returns {auth:false} post-logout.
+
+Admin dashboard: Users tab loads with provider/verification/last_login columns populated; Analytics tab no longer 500s.
+
+Lighthouse/Devtools: initial CSS/HMR requests back under 500ms locally.
