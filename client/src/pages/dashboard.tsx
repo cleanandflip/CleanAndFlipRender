@@ -53,6 +53,7 @@ function DashboardContent() {
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const urlTab = urlParams.get('tab');
   const [activeTab, setActiveTab] = useState(urlTab || 'orders');
+  const [submissionTab, setSubmissionTab] = useState('open');
   const [cancellingSubmission, setCancellingSubmission] = useState<any>(null);
   
   // Update tab when URL changes
@@ -103,6 +104,26 @@ function DashboardContent() {
       });
     }
   });
+
+  // Filter submissions by status
+  const filterSubmissions = (submissions: EquipmentSubmission[], tab: string) => {
+    switch (tab) {
+      case 'open':
+        return submissions.filter(s => ['pending', 'under_review'].includes(s.status || 'pending'));
+      case 'completed':
+        return submissions.filter(s => ['accepted', 'declined'].includes(s.status || 'pending'));
+      case 'cancelled':
+        return submissions.filter(s => s.status === 'cancelled');
+      default:
+        return submissions;
+    }
+  };
+
+  const filteredSubmissions = filterSubmissions(submissions || [], submissionTab);
+
+  const canCancelSubmission = (submission: EquipmentSubmission) => {
+    return submission.status === 'pending' || submission.status === 'under_review';
+  };
 
   // Check if submission can be cancelled
   const canCancelSubmission = (submission: any) => {
@@ -410,6 +431,42 @@ function DashboardContent() {
                 </SmartLink>
               </div>
 
+              {/* Submission Status Tabs */}
+              <div className="mb-6">
+                <div className="flex space-x-1 bg-gray-800/50 rounded-lg p-1">
+                  <button
+                    onClick={() => setSubmissionTab('open')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      submissionTab === 'open'
+                        ? 'bg-white text-black'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Open ({filterSubmissions(submissions || [], 'open').length})
+                  </button>
+                  <button
+                    onClick={() => setSubmissionTab('completed')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      submissionTab === 'completed'
+                        ? 'bg-white text-black'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Completed ({filterSubmissions(submissions || [], 'completed').length})
+                  </button>
+                  <button
+                    onClick={() => setSubmissionTab('cancelled')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      submissionTab === 'cancelled'
+                        ? 'bg-white text-black'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Cancelled ({filterSubmissions(submissions || [], 'cancelled').length})
+                  </button>
+                </div>
+              </div>
+
               {submissionsLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-pulse">
@@ -418,28 +475,36 @@ function DashboardContent() {
                     <div className="h-3 w-48 bg-gray-700 rounded mx-auto"></div>
                   </div>
                 </div>
-              ) : (submissions?.length || 0) === 0 ? (
+              ) : filteredSubmissions.length === 0 ? (
                 <div className="text-center py-12">
                   <DollarSign className="mx-auto mb-4 text-gray-400" size={48} />
-                  <h3 className="text-xl font-semibold mb-2">No submissions yet</h3>
+                  <h3 className="text-xl font-semibold mb-2">
+                    {submissionTab === 'open' && 'No open submissions'}
+                    {submissionTab === 'completed' && 'No completed submissions'} 
+                    {submissionTab === 'cancelled' && 'No cancelled submissions'}
+                  </h3>
                   <p className="text-text-secondary mb-6">
-                    Have equipment to sell? Submit it for a cash offer.
+                    {submissionTab === 'open' && 'Have equipment to sell? Submit it for a cash offer.'}
+                    {submissionTab === 'completed' && 'Completed submissions will appear here.'}
+                    {submissionTab === 'cancelled' && 'Cancelled submissions will appear here.'}
                   </p>
-                  <SmartLink href="/sell-to-us">
-                    <div className="glass glass-hover rounded-lg p-1 inline-block">
-                      <Button 
-                        variant="primary"
-                        size="sm"
-                        className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        Sell Equipment
-                      </Button>
-                    </div>
-                  </SmartLink>
+                  {submissionTab === 'open' && (
+                    <SmartLink href="/sell-to-us">
+                      <div className="glass glass-hover rounded-lg p-1 inline-block">
+                        <Button 
+                          variant="primary"
+                          size="sm"
+                          className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          Sell Equipment
+                        </Button>
+                      </div>
+                    </SmartLink>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {(submissions || []).map((submission) => {
+                  {filteredSubmissions.map((submission) => {
                     console.log('🔍 Dashboard submission data:', submission);
                     const StatusIcon = getStatusIcon(submission.status || 'pending');
                     
