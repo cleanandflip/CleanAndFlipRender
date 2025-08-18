@@ -1,0 +1,156 @@
+You’re crashing on the Auth page because the UI is trying to read .isPending from a value that is undefined after your auth refactor.
+
+What the stack trace is telling us
+TypeError: Cannot read properties of undefined (reading 'isPending')
+at AuthPage (/src/pages/auth.tsx:277:40)
+
+
+auth.tsx is destructuring or accessing .isPending from a mutation (or object) that no longer exists (most likely a removed/renamed hook or a React-Query v4→v5 prop mismatch). After the unification, you kept useAuth() and useLogout(), but the Auth page is still expecting a useLogin* hook (github/google/email) that returns an object with .isPending.
+
+Below is a drop-in, safe fix that:
+
+Restores a stable interface for the Auth page,
+
+Works whether you’re on React-Query v4 (isLoading) or v5 (isPending),
+
+Prevents the crash even if a hook is missing (defensive defaults).
+
+1) Add a small compatibility hook
+
+client/src/hooks/use-auth-actions.ts
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+// Helper to normalize pending state across RQ v4/v5
+const isPending = (m?: any) => Boolean(m?.isPending ?? m?.isLoading);
+
+function oauthRedirect(provider: 'github' | 'google' | 'discord') {
+  return {
+    start: () => { window.location.assign(`/api/auth/${provider}`); },
+    // OAuth is a redirect; nothing is "pending" in-app
+    isPending: false
+  };
+}
+
+export function useAuthActions() {
+  const qc = useQueryClient();
+
+  // Email/password (or magic link) example; adjust endpoint/body as needed
+  const emailLogin = useMutation({
+    mutationFn: async (payload: { email: string; password?: string }) => {
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!r.ok) throw new Error('Login failed');
+      return r.json();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['auth'] }),
+  });
+
+  // Expose a uniform shape the Auth page can consume
+  return {
+    emailLogin,
+    github: oauthRedirect('github'),
+    google: oauthRedirect('google'),
+    // for convenience in the page:
+    isBusy: () => isPending(emailLogin)
+  };
+}
+
+2) Patch the Auth page to use the compatibility hook and guard against undefined
+
+In client/src/pages/auth.tsx, update imports and the section around line ~270–290:
+
+// import { oldHooks ... }  <-- remove any old/unused login hooks
+import { useAuthActions } from '@/hooks/use-auth-actions';
+
+export default function AuthPage() {
+  const { emailLogin, github, google, isBusy } = useAuthActions();
+
+  const busy =
+    isBusy() ||
+    Boolean(github?.isPending) ||
+    Boolean(google?.isPending);
+
+  // Example usage in buttons/submit:
+  // Email form:
+  // onSubmit={(values) => emailLogin.mutate(values)}
+
+  // Disable buttons safely:
+  // <Button disabled={busy || emailLogin?.isPending}>...</Button>
+
+  // OAuth buttons safely:
+  // <Button onClick={github.start} disabled={busy}>Continue with GitHub</Button>
+  // <Button onClick={google.start} disabled={busy}>Continue with Google</Button>
+
+  // ...rest of the component
+}
+
+
+Key point: never access .isPending (or .isLoading) without a null-check. Use the helper or ?. + Boolean(...).
+
+3) If you prefer to keep the existing page API, add tiny guards (fastest band-aid)
+
+At line ~277 (the crash line), replace direct property access with a guard:
+
+const pending = (m?: any) => Boolean(m?.isPending ?? m?.isLoading);
+const busy = pending(githubLogin) || pending(googleLogin) || pending(emailMutation) || pending(logoutMutation);
+
+
+And update every something.isPending usage to pending(something).
+
+4) Keep the app consistent with your new hooks
+
+The project now uses useAuth() (query) and useLogout() (mutation).
+
+The Auth page should not import any removed hooks (e.g., useGithubLogin, useGoogleLogin, etc.).
+
+Any remaining references to old hooks will yield undefined, causing exactly this error again.
+
+Search and remove/replace:
+
+rg -n "use(Github|Google|Discord|Email).*Login|\.isPending" client/src/pages/auth.tsx client/src
+
+5) Quick local validation checklist
+
+Load /auth
+
+Page renders with no error.
+
+Buttons are enabled (unless an email login is actually pending).
+
+Click GitHub button
+
+Browser navigates to /api/auth/github (passport flow).
+
+After callback, /api/user returns { authenticated: true, ... }.
+
+Click Sign out
+
+/api/logout 200.
+
+Refresh shows guest UI; /api/user returns { authenticated:false }.
+
+Dashboard/Orders are gated by authenticated and redirect to /auth.
+
+6) (Optional) Small server polish for the login endpoint
+
+If you use the email mutation above, make sure you have a matching server route:
+
+// POST /api/login
+// - sets req.session + passport user
+// - returns 200 { ok: true } on success (no caching)
+res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+
+Why this fixes it
+
+The Auth page will never read from undefined again.
+
+You get a stable interface (useAuthActions) regardless of whether login is OAuth (redirect) or form-based (mutation).
+
+It’s compatible with both React-Query v4 & v5 by normalizing isPending/isLoading.
+
+If you want me to write the exact diff for auth.tsx (based on the current file), say the word and I’ll output a ready-to-paste patch.
