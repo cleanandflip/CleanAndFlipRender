@@ -17,6 +17,7 @@ NeonDbError: column "is_local_delivery_available" does not exist
 ### Missing Columns Added
 The following columns were missing from both development and production databases and have been added:
 
+#### Products Table Schema Additions
 ```sql
 -- Product pricing and inventory
 cost DECIMAL(10,2)                           -- Wholesale/internal cost
@@ -33,6 +34,14 @@ is_shipping_available BOOLEAN DEFAULT true          -- Current shipping flag
 -- Legacy compatibility columns
 available_local BOOLEAN DEFAULT true                -- Legacy local delivery flag
 available_shipping BOOLEAN DEFAULT true             -- Legacy shipping flag
+```
+
+#### Cart Items Table Schema Additions
+```sql
+-- Cart ownership and variant support
+owner_id VARCHAR                             -- Unified owner identifier (user_id || session_id)
+variant_id VARCHAR                           -- Product variant identification
+total_price DECIMAL(10,2)                   -- Calculated total price for cart item
 ```
 
 ## Migration Implementation
@@ -86,6 +95,11 @@ WHERE products.is_local_delivery_available = true
 [MIGRATION] Added is_shipping_available column to products table
 [MIGRATION] Added available_local column to products table
 [MIGRATION] Added available_shipping column to products table
+[MIGRATIONS] Fixing cart_items schema...
+[MIGRATION] Added owner_id column to cart_items table
+[MIGRATION] Added variant_id column to cart_items table
+[MIGRATION] Added total_price column to cart_items table
+[MIGRATIONS] Cart schema fixes applied successfully
 [MIGRATIONS] Schema drift fixes applied successfully
 ```
 

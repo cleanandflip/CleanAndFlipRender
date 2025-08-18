@@ -152,8 +152,57 @@ async function fixProductionSchemaDrift(sql: any) {
       END $$;
     `;
 
+    // Fix cart_items table schema
+    console.log("[MIGRATIONS] Fixing cart_items schema...");
+    await fixCartItemsSchema(sql);
+
     console.log("[MIGRATIONS] Schema drift fixes applied successfully");
   } catch (error: any) {
     console.log("[MIGRATIONS] Schema drift fix error (safe to ignore if columns already exist):", error?.message);
+  }
+}
+
+// Fix cart_items table schema - add missing columns
+async function fixCartItemsSchema(sql: any) {
+  try {
+    // Add owner_id column to cart_items table
+    await sql`
+      DO $$
+      BEGIN
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                         WHERE table_name = 'cart_items' AND column_name = 'owner_id') THEN
+              ALTER TABLE cart_items ADD COLUMN owner_id VARCHAR;
+              RAISE NOTICE '[MIGRATION] Added owner_id column to cart_items table';
+          END IF;
+      END $$;
+    `;
+
+    // Add variant_id column to cart_items table
+    await sql`
+      DO $$
+      BEGIN
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                         WHERE table_name = 'cart_items' AND column_name = 'variant_id') THEN
+              ALTER TABLE cart_items ADD COLUMN variant_id VARCHAR;
+              RAISE NOTICE '[MIGRATION] Added variant_id column to cart_items table';
+          END IF;
+      END $$;
+    `;
+
+    // Add total_price column to cart_items table
+    await sql`
+      DO $$
+      BEGIN
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                         WHERE table_name = 'cart_items' AND column_name = 'total_price') THEN
+              ALTER TABLE cart_items ADD COLUMN total_price DECIMAL(10,2);
+              RAISE NOTICE '[MIGRATION] Added total_price column to cart_items table';
+          END IF;
+      END $$;
+    `;
+
+    console.log("[MIGRATIONS] Cart schema fixes applied successfully");
+  } catch (error: any) {
+    console.log("[MIGRATIONS] Cart schema fix error (safe to ignore if columns already exist):", error?.message);
   }
 }
