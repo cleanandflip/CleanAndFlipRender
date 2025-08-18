@@ -200,21 +200,19 @@ export default function SubmissionsAdmin() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="font-bebas text-4xl">SUBMISSIONS MANAGEMENT</h1>
-        <div className="glass glass-hover rounded-lg p-1 inline-block">
-          <Button
-            onClick={async () => {
-              setIsRefreshing(true);
-              await refetch();
-              setTimeout(() => setIsRefreshing(false), 500);
-            }}
-            variant="outline"
-            className="h-8 bg-white hover:bg-gray-100 text-black border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            disabled={isRefreshing}
-          >
-            <RefreshCcw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
-        </div>
+        <Button
+          onClick={async () => {
+            setIsRefreshing(true);
+            await refetch();
+            setTimeout(() => setIsRefreshing(false), 500);
+          }}
+          variant="outline"
+          className="h-8 bg-blue-600 hover:bg-blue-700 text-white border border-blue-500 hover:border-blue-400 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+          disabled={isRefreshing}
+        >
+          <RefreshCcw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
       </div>
 
       {/* Filters */}
