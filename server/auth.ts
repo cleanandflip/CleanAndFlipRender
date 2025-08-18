@@ -134,8 +134,8 @@ export function setupAuth(app: Express) {
       secure: false,                          // TESTING: Disable secure in development
       sameSite: 'lax',                        // TESTING: Always use lax
       maxAge: SEVEN_DAYS,                     // 7 days instead of 30
-      // Only set domain in production if SESSION_COOKIE_DOMAIN is provided
-      domain: isProd ? process.env.SESSION_COOKIE_DOMAIN : undefined
+      // CRITICAL: No domain restriction in development
+      domain: undefined
     },
     rolling: true, // Reset expiry on activity
   };
@@ -608,6 +608,20 @@ export function setupAuth(app: Express) {
         sessionID: req.sessionID,
         sessionData: req.session
       });
+    });
+  });
+
+  // DEBUG: Cookie debugging endpoint
+  app.get("/api/debug-cookies", (req, res) => {
+    res.json({
+      cookies: req.headers.cookie,
+      sessionID: req.sessionID,
+      session: req.session,
+      isAuthenticated: req.isAuthenticated?.() || false,
+      userAgent: req.headers['user-agent'],
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      host: req.headers.host
     });
   });
 
