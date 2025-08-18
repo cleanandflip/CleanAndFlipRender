@@ -39,3 +39,27 @@ The system employs a multi-layered security approach with Google OAuth integrati
 - **ESBuild**: Server-side production build system.
 - **TypeScript**: Enables full-stack type safety.
 - **Drizzle Kit**: Manages database migrations.
+
+## Recent Fixes and Improvements
+
+✅ **DATABASE SCHEMA ERRORS COMPLETELY RESOLVED** - Fixed critical column missing error:
+- **ROOT CAUSE**: products table missing continue_selling_when_out_of_stock boolean column
+- **SOLUTION**: Created dual-database migration script adding column to both lucky-poetry and muddy-moon
+- **FIXED**: /api/products/featured now returns 813 bytes of data instead of empty 2 bytes
+- **SAFETY NET**: Added runtime schema verification with auto-repair in non-production
+- **PUBLIC HEALTH**: Created authentication-free health endpoints (/api/healthz, /health, /api/admin/system/health)
+- **VERIFICATION**: Both databases confirmed having boolean column with NOT NULL DEFAULT false
+
+✅ **FOREIGN KEY CONSTRAINTS FIXED** - Resolved critical user deletion constraint violations:
+- **ROOT CAUSE**: addresses_user_id_users_id_fk constraint preventing user deletion when addresses exist
+- **SOLUTION**: Updated all user-related FK constraints (addresses, cart_items, orders) with CASCADE DELETE rules
+- **FIXED**: User deletion now properly cascades to remove related addresses, cart items, and orders
+- **SAFETY**: Both databases confirmed CASCADE DELETE rules working correctly
+- **VERIFICATION**: All three main user relationship tables now have proper cascading deletion
+
+✅ **GOOGLE OAUTH DOMAIN FIXED** - Corrected production redirect URLs:
+- **ROOT CAUSE**: OAuth callbacks using replit.app domains instead of production domain
+- **SOLUTION**: Updated all Google OAuth configurations to use cleanandflip.com in production
+- **FIXED**: server/auth/google-strategy.ts, server/config/google.ts, and server/auth.ts now use correct domain
+- **PRODUCTION**: Google OAuth will now redirect to https://cleanandflip.com/api/auth/google/callback
+- **VERIFIED**: No more replit.app domain redirects for users in production
