@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(normalizedCredentials),
-        credentials: "include",
+        credentials: "include", // CRITICAL: Include cookies for session
       });
 
       const result = await response.json();
@@ -88,7 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: async (user: SelectUser) => {
       // CRITICAL FIX: Wait for session to propagate before updating cache
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Clear all cached data to force fresh requests
+      queryClient.clear();
       
       // Update query cache with new user data
       queryClient.setQueryData(["/api/user"], { auth: true, user });

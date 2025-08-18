@@ -1,0 +1,200 @@
+  method: 'GET',
+  url: '/api/categories?active=true',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 71,
+  statusCode: 200,
+  contentLength: 880
+}
+8:40:06 PM GET     /api/categories?active=true              200 72ms
+[LOCALITY] SSOT evaluation: {"userId":"071cbc80-e718-4a59-96a3-94d641b8b0a6","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[INFO] API GET /api/products/featured 200 97ms {
+  method: 'GET',
+  url: '/api/products/featured',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.26',
+  userId: undefined,
+  duration: 97,
+  statusCode: 200,
+  contentLength: 813
+}
+8:40:06 PM GET     /api/products/featured                   200 97ms
+[INFO] API GET /status 200 96ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.46',
+  userId: undefined,
+  duration: 96,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 97ms 
+8:40:06 PM GET     /api/locality/status                     200 97ms
+[LOCALITY] SSOT evaluation: {"userId":"071cbc80-e718-4a59-96a3-94d641b8b0a6","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[INFO] API GET /status 200 99ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.46',
+  userId: undefined,
+  duration: 99,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 101ms 
+8:40:06 PM GET     /api/locality/status                     200 101ms
+[INFO] API POST /api/track-activity 202 83ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.46',
+  userId: undefined,
+  duration: 83,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 83ms 
+8:40:08 PM POST    /api/track-activity                      202 83ms
+[INFO] GET /src/pages/auth.tsx 304 131ms 
+[INFO] GET /src/components/ui/input.tsx 304 84ms 
+[INFO] GET /src/components/ui/label.tsx 304 82ms 
+[INFO] GET /src/components/ui/tabs.tsx 304 84ms 
+[INFO] GET /src/components/auth/google-signin-button.tsx 304 84ms 
+[INFO] GET /src/components/auth/password-input.tsx 304 88ms 
+[INFO] API POST /api/login 200 518ms {
+  method: 'POST',
+  url: '/api/login',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.5',
+  userId: undefined,
+  duration: 518,
+  statusCode: 200,
+  contentLength: 121
+}
+[INFO] POST /api/login 200 518ms 
+8:40:11 PM POST    /api/login                               200 518ms
+[STORAGE] Fetching cart items by owner: Qh6HP_H2PoZe8u-armW6GHl6cLfLUy7x
+[INFO] API POST /api/track-activity 202 70ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.46',
+  userId: undefined,
+  duration: 70,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 70ms 
+8:40:12 PM POST    /api/track-activity                      202 71ms
+[CART V2] GET cart for owner: 071cbc80-e718-4a59-96a3-94d641b8b0a6
+[INFO] API GET /api/categories?active=true 200 70ms {
+  method: 'GET',
+  url: '/api/categories?active=true',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.6.26',
+  userId: undefined,
+  duration: 70,
+  statusCode: 200,
+  contentLength: 880
+}
+8:40:12 PM GET     /api/categories?active=true              200 71ms
+[LOCALITY] SSOT evaluation: {"userId":"071cbc80-e718-4a59-96a3-94d641b8b0a6","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[STORAGE DEBUG] Final subtotal: 0, Items count: 0
+[INFO] API GET /status 200 96ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.8.21',
+  userId: undefined,
+  duration: 96,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 96ms 
+8:40:12 PM GET     /api/locality/status                     200 97ms
+[INFO] API GET / 200 115ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 115,
+  statusCode: 200,
+  contentLength: 95
+}
+8:40:12 PM GET     /api/cart                                200 115ms
+[INFO] API POST /api/track-activity 202 117ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.46',
+  userId: undefined,
+  duration: 117,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 117ms 
+8:40:12 PM POST    /api/track-activity                      202 118ms
+[INFO] API GET /api/user 200 138ms {
+  method: 'GET',
+  url: '/api/user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.5',
+  userId: undefined,
+  duration: 138,
+  statusCode: 200,
+  contentLength: 606
+}
+8:40:12 PM GET     /api/user                                200 139ms
+[INFO] API GET /api/products/featured 200 93ms {
+  method: 'GET',
+  url: '/api/products/featured',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.46',
+  userId: undefined,
+  duration: 93,
+  statusCode: 200,
+  contentLength: 813
+}
+8:40:12 PM GET     /api/products/featured                   200 94ms
+[STORAGE] Fetching cart items by owner: Qh6HP_H2PoZe8u-armW6GHl6cLfLUy7x
+[INFO] API POST /api/track-activity 202 70ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.5',
+  userId: undefined,
+  duration: 70,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 70ms 
+8:40:12 PM POST    /api/track-activity                      202 70ms
+[CART V2] GET cart for owner: 071cbc80-e718-4a59-96a3-94d641b8b0a6
+[STORAGE DEBUG] Final subtotal: 0, Items count: 0
+[INFO] API GET / 200 121ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.46',
+  userId: undefined,
+  duration: 121,
+  statusCode: 200,
+  contentLength: 95
+}
+8:40:12 PM GET     /api/cart                                200 122ms
+[LOCALITY] SSOT evaluation: {"userId":"071cbc80-e718-4a59-96a3-94d641b8b0a6","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[INFO] API GET /status 200 95ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.46',
+  userId: undefined,
+  duration: 95,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 96ms 
+8:40:12 PM GET     /api/locality/status                     200 97ms
