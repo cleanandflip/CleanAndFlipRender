@@ -5,16 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/shared/AnimatedComponents";
@@ -647,41 +638,18 @@ function DashboardContent() {
       </div>
 
       {/* Cancellation Confirmation Dialog */}
-      <AlertDialog 
-        open={!!cancellingSubmission} 
-        onOpenChange={() => setCancellingSubmission(null)}
-      >
-        <AlertDialogContent className="glass border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Cancel Equipment Submission?</AlertDialogTitle>
-            <AlertDialogDescription className="text-text-secondary">
-              Are you sure you want to cancel your submission for{' '}
-              <strong className="text-white">{cancellingSubmission?.equipmentName}</strong>?
-              <br /><br />
-              <span className="font-mono text-sm">{cancellingSubmission?.referenceNumber}</span>
-              <br /><br />
-              This action cannot be undone. You'll need to create a new submission 
-              if you want to sell this item in the future.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <div className="glass glass-hover rounded-lg p-1 inline-block">
-              <AlertDialogCancel className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                Keep Submission
-              </AlertDialogCancel>
-            </div>
-            <div className="glass glass-hover rounded-lg p-1 inline-block">
-              <AlertDialogAction
-                onClick={() => cancelSubmissionMutation.mutate(cancellingSubmission?.id)}
-                className="h-8 bg-red-600 hover:bg-red-700 text-white border border-red-600 hover:border-red-700 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                disabled={cancelSubmissionMutation.isPending}
-              >
-                {cancelSubmissionMutation.isPending ? 'Cancelling...' : 'Yes, Cancel Submission'}
-              </AlertDialogAction>
-            </div>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        isOpen={!!cancellingSubmission}
+        title="Cancel Equipment Submission?"
+        message={`Are you sure you want to cancel your submission for ${cancellingSubmission?.name}? Reference: ${cancellingSubmission?.referenceNumber}. This action cannot be undone.`}
+        onCancel={() => setCancellingSubmission(null)}
+        onDiscard={() => {
+          if (cancellingSubmission) {
+            cancelSubmissionMutation.mutate(cancellingSubmission.id);
+          }
+        }}
+        showSave={false}
+      />
     </div>
   );
 }
