@@ -42,15 +42,15 @@ export function AdminLayout({ children, currentTab }: AdminLayoutProps) {
             {/* Live Sync Status */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/50">
               {ready ? (
-                <Wifi className="w-4 h-4 text-green-500" />
+                <Wifi className="w-4 h-4 text-emerald-500 animate-pulse" />
               ) : (
                 <WifiOff className="w-4 h-4 text-red-500" />
               )}
               <span className={cn(
-                "text-xs font-medium",
-                ready ? "text-green-400" : "text-red-400"
+                "text-xs font-medium transition-colors duration-200",
+                ready ? "text-emerald-400" : "text-red-400"
               )}>
-                {ready ? "Live Sync Active" : "Offline"}
+                {ready ? "Live Sync Active" : "Connecting..."}
               </span>
             </div>
           </div>

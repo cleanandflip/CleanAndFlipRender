@@ -2,7 +2,7 @@
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface MetricCardProps {
+export interface MetricCardProps {
   title: string;
   value: string | number;
   icon: LucideIcon;
@@ -11,6 +11,9 @@ interface MetricCardProps {
     label: string;
   };
   className?: string;
+  valueClassName?: string;
+  trend?: string;
+  subtitle?: string;
 }
 
 export function UnifiedMetricCard({ 
@@ -18,7 +21,10 @@ export function UnifiedMetricCard({
   value, 
   icon: Icon, 
   change,
-  className 
+  className,
+  valueClassName,
+  trend,
+  subtitle
 }: MetricCardProps) {
   return (
     <div className={cn(
@@ -31,7 +37,10 @@ export function UnifiedMetricCard({
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-gray-400 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-white">{value}</p>
+          <p className={cn("text-3xl font-bold", valueClassName || "text-white")}>{value}</p>
+          {subtitle && (
+            <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+          )}
           {change && (
             <p className="text-sm mt-2">
               <span className={cn(

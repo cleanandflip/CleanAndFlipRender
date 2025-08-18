@@ -9,6 +9,7 @@ import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { useToast } from '@/hooks/use-toast';
 import { useWebSocketState } from '@/hooks/useWebSocketState';
+import { WebSocketDiagnostics } from '@/components/admin/WebSocketDiagnostics';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +25,7 @@ export function SystemTab() {
     queryKey: ['/api/admin/system/health'],
     refetchInterval: 5000,
     staleTime: 0,
-    cacheTime: 0
+    gcTime: 0  // Fixed: cacheTime is now gcTime in TanStack Query v5
   });
 
   // Global refresh function
@@ -56,7 +57,7 @@ export function SystemTab() {
 
   // System status determination - use backend status directly
   const getSystemStatus = () => {
-    if (!systemHealth?.system) return { status: 'unknown', color: 'gray' };
+    if (!systemHealth || !systemHealth.system) return { status: 'unknown', color: 'gray' };
     
     // Use the status from the backend system health response
     const backendStatus = systemHealth.system.status;
@@ -308,6 +309,11 @@ export function SystemTab() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* WebSocket Live Sync Diagnostics */}
+          <div className="w-full">
+            <WebSocketDiagnostics />
           </div>
 
           {/* System Actions */}

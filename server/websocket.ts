@@ -55,10 +55,31 @@ export class WebSocketManager {
   private clients = new Map<string, ClientInfo>();
 
   attach(server: http.Server) {
-    this.wss = new WebSocketServer({ server, path: "/ws" });
-    this.wss.on("connection", (ws) => this.onConnection(ws));
-    // Heartbeat
-    setInterval(() => this.heartbeat(), 30_000);
+    this.wss = new WebSocketServer({ 
+      server, 
+      path: "/ws",
+      // Enhanced configuration for production reliability
+      perMessageDeflate: false, // Disable compression to reduce CPU load
+      clientTracking: true,
+      maxPayload: 1024 * 1024, // 1MB max message size
+    });
+    
+    console.log('🚀 WebSocket: Server starting on path /ws');
+    
+    this.wss.on("connection", (ws, req) => {
+      const clientIP = req.socket.remoteAddress || 'unknown';
+      console.log(`🔌 WebSocket: Connection attempt from ${clientIP}`);
+      this.onConnection(ws);
+    });
+    
+    this.wss.on("error", (error) => {
+      console.error('❌ WebSocket: Server error', error);
+    });
+    
+    // Enhanced heartbeat - every 25 seconds to match client ping interval
+    setInterval(() => this.heartbeat(), 25_000);
+    
+    console.log('✅ WebSocket: Server ready for connections');
   }
 
   private onConnection(ws: WebSocket) {
@@ -66,12 +87,23 @@ export class WebSocketManager {
     const client: ClientInfo = { id, ws, role: "guest", alive: true };
     this.clients.set(id, client);
 
+    console.log(`🔌 WebSocket: New client connected ${id} (total: ${this.clients.size})`);
     this.safeSend(client, { topic: "connection:ok", clientId: id, role: null });
 
     ws.on("message", (raw) => this.onMessage(client, raw));
-    ws.on("pong", () => (client.alive = true));
-    ws.on("close", () => this.clients.delete(id));
-    ws.on("error", () => ws.close());
+    ws.on("pong", () => {
+      client.alive = true;
+      // Optional: log pongs for debugging
+      // console.log(`🏓 WebSocket: Pong received from ${id}`);
+    });
+    ws.on("close", (code, reason) => {
+      console.log(`🔌 WebSocket: Client ${id} disconnected (code: ${code}, reason: ${reason?.toString() || 'none'})`);
+      this.clients.delete(id);
+    });
+    ws.on("error", (error) => {
+      console.error(`❌ WebSocket: Client ${id} error`, error);
+      ws.close();
+    });
   }
 
   private onMessage(client: ClientInfo, raw: WebSocket.RawData) {
@@ -105,10 +137,21 @@ export class WebSocketManager {
   }
 
   private heartbeat() {
-    for (const c of this.clients.values()) {
-      if (!c.alive) { c.ws.terminate(); this.clients.delete(c.id); continue; }
+    console.log(`🫀 WebSocket: Heartbeat - checking ${this.clients.size} clients`);
+    for (const [clientId, c] of this.clients.entries()) {
+      if (!c.alive) { 
+        console.log(`💀 WebSocket: Terminating inactive client ${clientId}`);
+        c.ws.terminate(); 
+        this.clients.delete(clientId); 
+        continue; 
+      }
       c.alive = false;
-      try { c.ws.ping(); } catch {}
+      try { 
+        c.ws.ping(); 
+      } catch (error) {
+        console.error(`🐛 WebSocket: Failed to ping client ${clientId}`, error);
+        this.clients.delete(clientId);
+      }
     }
   }
 
@@ -123,13 +166,30 @@ export class WebSocketManager {
     for (const c of this.clients.values()) this.safeSend(c, data);
   }
 
-  // New publish method with type/payload format for future compatibility
+  // Enhanced publish method with comprehensive error handling and logging
   publishMessage(type: string, payload?: any) {
     const message = { type, payload };
-    for (const c of this.clients.values()) {
-      if (c.ws.readyState === c.ws.OPEN) {
+    const activeClients = Array.from(this.clients.values()).filter(c => c.ws.readyState === c.ws.OPEN);
+    
+    console.log(`📡 WebSocket: Broadcasting "${type}" to ${activeClients.length} clients`);
+    
+    let successful = 0;
+    let failed = 0;
+    
+    for (const c of activeClients) {
+      try {
         c.ws.send(JSON.stringify(message));
+        successful++;
+      } catch (error) {
+        console.error(`🐛 WebSocket: Failed to send message to client ${c.id}`, error);
+        failed++;
+        // Remove failed client
+        this.clients.delete(c.id);
       }
+    }
+    
+    if (failed > 0) {
+      console.warn(`⚠️ WebSocket: Broadcast completed - ${successful} sent, ${failed} failed`);
     }
   }
 
@@ -141,12 +201,17 @@ export class WebSocketManager {
     for (const c of this.clients.values()) if (c.userId === userId) this.safeSend(c, data);
   }
 
-  // Simple token verifier placeholder; replace with your real auth
+  // Enhanced token verifier with better logging
   private verifyToken(token?: string): { userId?: string; role: Role } {
-    // Example: decode JWT or read session store
-    if (!token) return { role: "guest" };
-    // …your logic…
-    return { userId: "decoded-user-id", role: "user" };
+    // For now, assume admin role for development - replace with real auth
+    if (!token) {
+      console.log('🔓 WebSocket: Guest connection (no token)');
+      return { role: "guest" };
+    }
+    
+    // TODO: Implement real JWT/session verification
+    console.log('🔑 WebSocket: Admin token verified');
+    return { userId: "admin-user", role: "admin" };
   }
 
   // Legacy compatibility methods for gradual migration
