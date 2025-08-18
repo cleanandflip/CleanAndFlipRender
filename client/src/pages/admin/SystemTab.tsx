@@ -302,7 +302,10 @@ export function SystemTab() {
                     <div className="flex justify-between">
                       <span className="text-gray-400">Database:</span>
                       <span className="text-white">
-                        {systemHealth?.system?.database?.environment === 'production' ? 'Production' : 'Development'} database ({systemHealth?.system?.database?.name || 'unknown'})
+                        {systemHealth?.system?.database?.name || 
+                         (systemHealth?.system?.database?.host?.includes('muddy-moon') ? 'Production database (muddy-moon)' :
+                          systemHealth?.system?.database?.host?.includes('lucky-poetry') ? 'Development database (lucky-poetry)' :
+                          'Unknown database')}
                       </span>
                     </div>
                   </div>

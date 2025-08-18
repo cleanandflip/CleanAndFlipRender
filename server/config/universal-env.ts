@@ -2,9 +2,38 @@ import * as process from "node:process";
 
 export type AppEnv = "development" | "production" | "preview" | "staging";
 
-export const APP_ENV: AppEnv =
-  (process.env.APP_ENV as AppEnv) ||
-  (process.env.NODE_ENV === "production" ? "production" : "development");
+// Import the smart environment detection from env.ts
+export const APP_ENV: AppEnv = (() => {
+  // Use explicit APP_ENV if set
+  if (process.env.APP_ENV) {
+    return process.env.APP_ENV as AppEnv;
+  }
+  
+  // Smart Replit deployment detection
+  const repl_url = process.env.REPL_URL || '';
+  const replit_domains = process.env.REPLIT_DOMAINS || '';
+  
+  // Check for Replit deployments (.replit.dev or .replit.app = production)
+  if (repl_url.includes('.replit.dev') || replit_domains.includes('.replit.dev') ||
+      repl_url.includes('.replit.app') || replit_domains.includes('.replit.app')) {
+    console.log('[UNIVERSAL_ENV] 🚀 REPLIT DEPLOYMENT DETECTED - PRODUCTION');
+    return "production";
+  }
+  
+  // Localhost detection - development
+  const hostname = process.env.HOSTNAME || '';
+  const isLocalhost = hostname.includes('localhost') || 
+                     hostname.includes('127.0.0.1') || 
+                     hostname.includes('0.0.0.0');
+  
+  if (isLocalhost) {
+    console.log('[UNIVERSAL_ENV] 🔍 LOCALHOST DETECTED - DEVELOPMENT');
+    return "development";
+  }
+  
+  // Fallback to NODE_ENV
+  return process.env.NODE_ENV === "production" ? "production" : "development";
+})();
 
 function must(name: string): string {
   const v = process.env[name];

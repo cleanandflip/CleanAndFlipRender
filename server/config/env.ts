@@ -42,15 +42,15 @@ export const APP_ENV: AppEnv = (() => {
   const repl_url = process.env.REPL_URL || '';
   const replit_domains = process.env.REPLIT_DOMAINS || '';
   
-  // If we have .replit.dev domains, we're in development preview
-  if (repl_url.includes('.replit.dev') || replit_domains.includes('.replit.dev')) {
-    console.log('[ENV_DETECTION] 🌐 REPLIT.DEV DOMAIN DETECTED - DEVELOPMENT');
-    return "development";
-  }
-  
   // If we have .replit.app domains, we're in production deployment
   if (repl_url.includes('.replit.app') || replit_domains.includes('.replit.app')) {
     console.log('[ENV_DETECTION] 🚀 REPLIT.APP DOMAIN DETECTED - PRODUCTION');
+    return "production";
+  }
+  
+  // If we have .replit.dev domains, we're ALSO in production deployment (not development preview)
+  if (repl_url.includes('.replit.dev') || replit_domains.includes('.replit.dev')) {
+    console.log('[ENV_DETECTION] 🚀 REPLIT.DEV DOMAIN DETECTED - PRODUCTION DEPLOYMENT');
     return "production";
   }
   

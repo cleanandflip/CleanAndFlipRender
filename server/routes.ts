@@ -2553,22 +2553,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // System health and information endpoints
+  // System health and information endpoints - UPDATED TO USE UNIVERSAL ENVIRONMENT SYSTEM
   app.get("/api/admin/system/health", requireRole('developer'), async (req, res) => {
     try {
+      // Import Universal Environment System
+      const { APP_ENV, DB_HOST, universalPool } = await import('./config/universal-env').then(m => ({
+        APP_ENV: m.APP_ENV,
+        DB_HOST: m.DB_HOST,
+        universalPool: require('./db/universal-pool').universalPool
+      }));
+      
       const startTime = process.uptime();
       const memoryUsage = process.memoryUsage();
       
-      // Test database connection
+      // Test database connection using Universal Pool
       let dbStatus = 'Connected';
       let dbLatency = 0;
+      let dbInfo = { database: 'unknown', role: 'unknown' };
       try {
         const start = Date.now();
-        await db.select({ test: sql`1` });
+        const result = await universalPool.query(`select current_database() as db, current_user as role`);
         dbLatency = Date.now() - start;
+        dbInfo = { database: result.rows[0]?.db || 'unknown', role: result.rows[0]?.role || 'unknown' };
       } catch (error) {
         dbStatus = 'Disconnected';
       }
+      
+      // Determine database name from host
+      const databaseName = DB_HOST.includes('muddy-moon') ? 'Production database (muddy-moon)' : 
+                          DB_HOST.includes('lucky-poetry') ? 'Development database (lucky-poetry)' : 
+                          `Database (${DB_HOST.split('-')[1] || 'unknown'})`;
       
       const systemHealth = {
         status: 'healthy',
@@ -2577,7 +2591,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         database: {
           status: dbStatus,
           latency: dbLatency,
-          provider: 'Neon PostgreSQL'
+          provider: 'Neon PostgreSQL',
+          name: databaseName,
+          host: DB_HOST,
+          current_database: dbInfo.database,
+          current_role: dbInfo.role
         },
         memory: {
           used: Math.round(memoryUsage.heapUsed / 1024 / 1024),
@@ -2592,7 +2610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: process.env.REDIS_URL ? 'Connected' : 'Disabled',
           provider: 'Redis'
         },
-        environment: process.env.NODE_ENV || 'development',
+        environment: APP_ENV, // Use Universal Environment System
         version: '1.0.0'
       };
 
@@ -2621,7 +2639,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         application: {
           name: 'Clean & Flip Admin',
           version: '1.0.0',
-          environment: process.env.NODE_ENV || 'development',
+          environment: require('./config/universal-env').APP_ENV,
           uptime: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m`,
           startTime: new Date(Date.now() - uptime * 1000).toISOString()
         },
@@ -2876,24 +2894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // System health endpoint
-  app.get("/api/admin/system/health", requireRole('developer'), async (req, res) => {
-    try {
-      const memUsage = process.memoryUsage();
-      const health = {
-        status: 'Healthy',
-        uptime: Math.floor(process.uptime()),
-        memoryPercent: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100),
-        memoryUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
-        memoryTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
-        timestamp: new Date().toISOString()
-      };
-      res.json(health);
-    } catch (error) {
-      Logger.error("Error fetching system health", error);
-      res.status(500).json({ message: "Failed to fetch system health" });
-    }
-  });
+  // REMOVED DUPLICATE: System health endpoint already defined above with Universal Environment System
 
 
 
