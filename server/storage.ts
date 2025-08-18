@@ -471,6 +471,14 @@ export class DatabaseStorage implements IStorage {
     sortOrder?: 'asc' | 'desc';
   }): Promise<{ products: Product[]; total: number }> {
     const conditions = [];
+    
+    // Default to active products unless otherwise specified
+    if (filters?.status) {
+      conditions.push(eq(products.status, filters.status as any));
+    } else {
+      // If no status filter provided, default to active products
+      conditions.push(eq(products.status, 'active'));
+    }
 
     // Handle category filtering - support both ID and slug
     if (filters?.categoryId && filters.categoryId !== 'null' && filters.categoryId !== 'all') {
@@ -523,9 +531,7 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`LOWER(${products.brand}) = ${normalizedBrand}`);
     }
 
-    if (filters?.status) {
-      conditions.push(eq(products.status, filters.status as any));
-    }
+    // Status condition already handled above - removing duplicate
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 

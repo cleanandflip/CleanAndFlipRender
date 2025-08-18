@@ -15,9 +15,10 @@
 |-------|--------|--------|---------|
 | Users | 3 | 3 | ✅ Complete |
 | Categories | 8 | 8 | ✅ Complete |
-| Products | 2 | 0 | ⚠️ Schema differences |
-| Cart Items | 44 | 0 | ⚠️ Dependent on products |
-| Sessions | N/A | Working | ✅ Complete |
+| Products | 2 | 2 | ✅ Complete |
+| Cart Items | 44 | 44 | ✅ Complete |
+| Addresses | 4 | 4 | ✅ Complete |
+| Sessions | 3 | 3 | ✅ Complete |
 
 ### Security Hardening
 - **Development**: LOCKED to `ep-lucky-poetry-aetqlg65-pooler.c-2.us-east-2.aws.neon.tech`
