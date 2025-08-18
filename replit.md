@@ -1,67 +1,7 @@
 # replit.md
 
 ## Overview
-Clean & Flip is a production-hardened full-stack web application for exchanging weightlifting equipment. It offers features for buying and selling gym gear, including product catalog management, user authentication, a shopping cart, order processing, and administrative tools. The platform operates on a single-seller model, with admin managing inventory and processing user submissions. The project features enterprise-grade production hardening with automatic migrations, environment validation, complete onboarding system removal, and comprehensive data integrity constraints.
-
-## Recent Changes (August 18, 2025)
-✅ **CRITICAL ENVIRONMENT DETECTION BUG FIXED** - Resolved conflicting dev vs prod environment identity:
-- **ROOT CAUSE**: Multiple environment detection systems were running simultaneously causing conflicting identities
-- **SOLUTION**: Consolidated all environment detection into single source of truth (server/config/env.ts)
-- **FIXED**: Removed localhost auto-detection that was forcing development mode during deployments
-- **UNIFIED**: All modules now import environment configuration from centralized location
-- **WEBHOOKS**: Fixed webhook prefix routing to use consistent WEBHOOK_PREFIX from single source
-- **BANNERS**: Eliminated duplicate environment logging - now single clear banner shows environment status
-- **PRODUCTION DETECTION**: Replit deployments (.replit.dev domains) now correctly detected as production
-- **DATABASE**: Production deployments now correctly connect to muddy-moon database instead of development lucky-poetry
-- **VERIFICATION**: /api/healthz endpoint now accurately reports production environment and database connection
-✅ **UNIVERSAL ENVIRONMENT SYSTEM IMPLEMENTED** - Complete production-grade environment management system:
-- Created comprehensive Universal Environment System with centralized configuration (server/config/universal-env.ts)
-- Implemented environment safety guards preventing database cross-contamination (server/config/universal-guards.ts)
-- Added singleton database connection pool with environment-aware configuration (server/db/universal-pool.ts)
-- Built environment-scoped webhook system with HMAC security (/wh/dev/* and /wh/prod/* endpoints)
-- Created universal health monitoring endpoint (/api/healthz) showing real-time environment status
-- Developed static analysis tools detecting 100+ code quality issues (scripts/universal-env-checker.ts)
-- Integrated environment-aware middleware for CORS, sessions, and debugging headers
-- System now shows clear environment banners: [ENV] app=production node=development dbHost=ep-muddy-moon...
-- **SECURITY**: Database guards prevent production data corruption - development blocked from production DB access
-✅ **COMPLETE DATABASE SYNCHRONIZATION ACHIEVED** - Both development and production databases now have identical schemas and data:
-- Created comprehensive schema synchronization scripts ensuring 100% column alignment between lucky-poetry (DEV) and muddy-moon (PROD)
-- Successfully synchronized all critical tables: 7 categories, 2 products, 5 users, 5 addresses
-- Fixed all schema mismatches including JSON column handling, address column variants, and user authentication fields
-- Implemented smart data sync with error handling for schema differences and null constraints
-- Added missing columns across all tables for full compatibility (Google auth fields, fulfillment options, address types)
-- Verified perfect data synchronization - both databases contain identical business data
-✅ **DATABASE SCHEMA ERRORS COMPLETELY RESOLVED** - Fixed critical column missing error:
-- **ROOT CAUSE**: products table missing continue_selling_when_out_of_stock boolean column
-- **SOLUTION**: Created dual-database migration script adding column to both lucky-poetry and muddy-moon
-- **FIXED**: /api/products/featured now returns 813 bytes of data instead of empty 2 bytes
-- **SAFETY NET**: Added runtime schema verification with auto-repair in non-production
-- **PUBLIC HEALTH**: Created authentication-free health endpoints (/api/healthz, /health, /api/admin/system/health)
-- **VERIFICATION**: Both databases confirmed having boolean column with NOT NULL DEFAULT false
-✅ **System Status Dashboard Fully Operational** - Fixed critical system monitoring display:
-- Resolved authentication bypass for system health API access during testing
-- Fixed frontend status interpretation to correctly display backend health status
-- System status now accurately shows "Critical" due to 96% memory usage (expected behavior)
-- All system health metrics displaying properly: database connection, memory usage, uptime, performance
-- Real-time monitoring working with 5-second refresh intervals
-- **CRITICAL FIX**: Database reporting now shows live, accurate information - Production displays "Production database (muddy-moon)" instead of hardcoded "Development database (lucky-poetry)"
-✅ **PRODUCTION ENVIRONMENT DETECTION FIXED** - Resolved critical deployment environment issue:
-- Fixed environment detection logic in server/config/env.ts to properly detect production deployments
-- Enhanced priority-based environment detection: Replit deployment > NODE_ENV > PROD_APP_ENV > fallbacks
-- Updated system health API to include actual APP_ENV environment information from backend
-- Fixed frontend SystemTab.tsx to display live environment data instead of hardcoded "Development"
-- Production deployments now correctly show "Production" environment badge (RED) and "Production database (muddy-moon)"
-- Development deployments correctly show "Development" environment badge (BLUE) and "Development database (lucky-poetry)"
-- Environment detection verified working: PROD_APP_ENV=production correctly triggers production mode
-✅ **Universal Premium Button Animation System** - Enhanced every button across the entire codebase:
-- Implemented premium hover animations with 2px lift effects and enhanced glow shadows
-- Added shimmer animation effects that sweep across buttons on hover
-- Enhanced icon scaling and subtle rotation (1.1x scale + 2deg rotation) on hover
-- Applied consistent active states with scale effects and inset shadows
-- Updated all button variants (primary, secondary, ghost, danger, success, outline, glass)
-- Enhanced UnifiedButton component with matching premium animations
-- Converted hardcoded modal buttons to use consistent Button component
-- All buttons now feature smooth cubic-bezier transitions and professional micro-interactions
+Clean & Flip is a production-hardened full-stack web application designed for the exchange of weightlifting equipment. It supports buying and selling gym gear, managing product catalogs, user authentication, shopping cart functionality, order processing, and administrative tools. The platform operates on a single-seller model, with administrators managing inventory and processing user submissions. The project emphasizes enterprise-grade production hardening through automatic migrations, environment validation, comprehensive data integrity constraints, and a streamlined onboarding process. Its vision is to create a robust and reliable marketplace for fitness enthusiasts.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -69,82 +9,33 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Frontend Architecture
-The client-side is built with React 18, TypeScript, and leverages modern React patterns. Key decisions include:
-- **Framework**: React with TypeScript.
-- **Routing**: Wouter.
-- **State Management**: TanStack Query.
-- **UI Components**: Radix UI primitives with shadcn/ui design system, emphasizing a comprehensive and unified admin dashboard theming.
-- **Styling**: Tailwind CSS with CSS variables.
-- **Build System**: Vite.
-- **Animations**: Framer Motion.
-- **UX**: Implements lazy loading, error boundaries, and responsive design.
+The client-side is built with React 18 and TypeScript. It uses Wouter for routing, TanStack Query for state management, and Radix UI primitives with shadcn/ui for UI components, focusing on a unified admin dashboard theme. Styling is handled by Tailwind CSS with CSS variables. Vite is used as the build system, and Framer Motion for animations. The architecture incorporates lazy loading, error boundaries, and responsive design for an optimized user experience.
 
 ### Backend Architecture
-The server-side uses a layered REST API architecture built with Node.js:
-- **Framework**: Express.js with TypeScript.
-- **Database ORM**: Drizzle ORM for type-safe operations.
-- **Authentication**: Passport.js for session-based authentication with bcrypt for password hashing.
-- **Security**: Comprehensive middleware including rate limiting, input validation (Zod schemas), and CORS protection.
-- **File Processing**: Multer for image uploads.
-- **Performance**: Request consolidation, caching, and database connection pooling, optimized queries with strategic indexing, bulk operations, fire-and-forget activity tracking, intelligent slow request detection thresholds, and gzip compression middleware.
-- **Monitoring**: Structured logging and a comprehensive Local Error Tracking System (LETS) for production-ready error monitoring.
+The server-side uses a layered REST API architecture built with Node.js and Express.js, leveraging TypeScript. Drizzle ORM is used for type-safe database operations. Authentication is managed via Passport.js for session-based authentication, with bcrypt for password hashing. Security middleware includes rate limiting, Zod schema-based input validation, and CORS protection. Multer handles image uploads. Performance optimizations include request consolidation, caching, database connection pooling, optimized queries with indexing, and gzip compression. Monitoring is supported by structured logging and a Local Error Tracking System (LETS). Real-time communication is handled by a typed WebSocket infrastructure with a singleton connection pattern, topic-based messaging, and role-based broadcasting, ensuring live updates across the admin dashboard.
 
 ### Data Storage Solutions
-PostgreSQL is the primary database, utilizing:
-- **Database**: Neon serverless PostgreSQL with strict environment-specific database URLs and rotated security credentials.
-- **Environment Configuration**: Environment-specific secrets system with DEV_APP_ENV/PROD_APP_ENV controlling database selection. DEV_DATABASE_URL (lucky-poetry) for development, PROD_DATABASE_URL (muddy-moon) for production.
-- **Database Lockdown**: Complete environment isolation achieved (2025-08-18). All hardcoded database references removed. Development uses lucky-poetry exclusively, production uses muddy-moon exclusively. Cross-contamination is impossible.
-- **Production Safety**: Critical safety guards implemented in server/index.ts block wrong database usage. Production deployment will fail-fast if attempting to use development database. Environment detection and database selection verified as bulletproof.
-- **Google Auth Schema**: Both databases synchronized with complete Google OAuth schema including google_sub, google_email, google_email_verified, google_picture, and last_login_at columns (2025-08-18). Development database (lucky-poetry) and production database (muddy-moon) now have identical schemas for seamless environment switching.
-- **Schema Management**: Drizzle Kit for migrations with automatic retry logic and environment-aware configuration, production-controlled migration system.
-- **Search**: PostgreSQL tsvector for full-text search.
-- **Session Storage**: Database-backed session storage with environment-aware configuration.
-- **Schema**: Key tables include users, products, categories, orders, cart items, and equipment submissions with proper relationships. Legacy columns (profile_address_id, onboarding_completed_at) have been retired.
-- **Safety Guards**: Enterprise-grade multi-layered production database validation with complete environment isolation using EXPECTED_DB_HOST validation. Environment classification prevents cross-contamination between development and production databases.
-- **Security**: Complete DATABASE_URL elimination achieved (2025-08-17) with rotated database passwords, environment-specific secrets classification (2025-08-18), and pooled connections for maximum security. All lingering-flower references purged (2025-08-18).
+PostgreSQL is the primary database, utilizing Neon serverless PostgreSQL. The system employs strict environment-specific database URLs and rotated security credentials, with `DEV_DATABASE_URL` (lucky-poetry) for development and `PROD_DATABASE_URL` (muddy-moon) for production. Environment classification prevents cross-contamination between development and production databases, with critical safety guards in place. Drizzle Kit manages schema migrations. PostgreSQL's `tsvector` is used for full-text search, and session storage is database-backed. Key tables include users, products, categories, orders, cart items, and equipment submissions.
 
 ### Authentication and Authorization
-A comprehensive multi-layered security approach with Google OAuth integration and simplified role-based access control:
-- **User Authentication**: Session-based auth via Passport.js with both local strategy and Google OAuth2.
-- **Google Sign-In**: Fully integrated Google OAuth with automatic user creation/linking and mandatory profile completion.
-- **Password Security**: bcrypt with 12 salt rounds for local accounts.
-- **Role Management**: Simplified two-role system (user/developer) with middleware-enforced permissions.
-- **Session Management**: Implemented comprehensive SSOT session system using unified cartOwner.ts with ONLY express-session connect.sid.
-- **Cart Persistence**: Cart items persist correctly across all requests with consolidated duplicate detection and stock validation. Session-to-user migration handles authentication seamlessly.
-- **Cart Consolidation**: Advanced cart service automatically merges duplicate items, validates stock limits, and maintains single owner per session with real-time cleanup.
-- **Security Practices**: Implements security headers, input sanitization (DOMPurify), SQL injection prevention, tiered rate limiting, and secure session management.
-- **Enterprise-Grade Features**: Comprehensive .gitignore protection, strict CSP headers, React ErrorBoundary components, SEO meta tags, PWA manifest, and legal compliance pages (Privacy Policy, Terms of Service).
-
-### Real-Time Communication Architecture
-The application implements a modern, typed WebSocket infrastructure for real-time updates:
-- **Single Connection Pattern**: One WebSocket connection per browser tab shared across all components via singleton pattern.
-- **Typed Message Contracts**: Comprehensive TypeScript interfaces for ServerToClient and ClientToServer messages.
-- **Topic-Based Messaging**: Standardized "topic:event" naming convention (e.g., `category:update`, `product:update`, `user:update`).
-- **Role-Based Broadcasting**: Server publishes updates to specific user rooms or global channels based on permissions.
-- **Automatic Reconnection**: Resilient connection management with exponential backoff and subscription restoration.
-- **Admin Real-Time Sync**: Live updates for all CRUD operations across admin dashboard components.
-- **Error Handling**: Comprehensive error states, connection status indicators, and graceful degradation.
-- **Client-Side**: `useSingletonSocket` hook provides global WebSocket access with TypeScript safety.
-- **Server-Side**: Enhanced WebSocket manager with `publish()` and `publishToUser()` methods for typed message broadcasting.
-- **Integration**: All admin routes (categories, products, users) automatically publish updates on data changes.
-- **Performance**: Optimized connection pooling, efficient message routing, and minimal overhead.
+The system employs a multi-layered security approach with Google OAuth integration and simplified role-based access control. Session-based authentication is provided via Passport.js, supporting both local strategy and Google OAuth2. bcrypt is used for password security. A two-role system (user/developer) is enforced through middleware. Session management is unified, and cart items persist across requests with automatic consolidation and stock validation. Security practices include security headers, input sanitization, SQL injection prevention, tiered rate limiting, and secure session management.
 
 ## External Dependencies
 
 ### Payment Processing
-- **Stripe**: Integrated for complete payment processing (Products API, Prices API, checkout sessions) with automated webhook handling.
+- **Stripe**: Integrated for payment processing, including Products API, Prices API, checkout sessions, and webhook handling.
 
 ### Cloud Services
 - **Cloudinary**: Used for image storage and transformation.
 
 ### Database and Infrastructure
-- **Neon**: Serverless PostgreSQL for the primary database.
-- **Replit Database**: Managed PostgreSQL for provisioning and environment variable integration.
+- **Neon**: Provides serverless PostgreSQL for the primary database.
+- **Replit Database**: Used for provisioning and environment variable integration.
 
 ### Email Services
-- **Resend**: Used for transactional email delivery (password resets, order confirmations).
+- **Resend**: Utilized for transactional email delivery.
 
 ### Development and Build Tools
-- **ESBuild**: Production build system for server-side code.
-- **TypeScript**: Enables full-stack type safety with shared schemas.
-- **Drizzle Kit**: Utilized for database migration management.
+- **ESBuild**: Server-side production build system.
+- **TypeScript**: Enables full-stack type safety.
+- **Drizzle Kit**: Manages database migrations.

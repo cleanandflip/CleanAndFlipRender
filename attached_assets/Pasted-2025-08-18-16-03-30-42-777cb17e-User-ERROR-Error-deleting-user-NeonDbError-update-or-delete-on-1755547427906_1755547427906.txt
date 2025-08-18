@@ -1,0 +1,168 @@
+2025-08-18 16:03:30.42
+777cb17e
+User
+[ERROR] Error deleting user NeonDbError: update or delete on table "users" violates foreign key constraint "addresses_user_id_users_id_fk" on table "addresses"
+2025-08-18 16:03:30.42
+777cb17e
+User
+at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+2025-08-18 16:03:30.42
+777cb17e
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-08-18 16:03:30.42
+777cb17e
+User
+at async file:///home/runner/workspace/dist/index.js:9783:7 {
+2025-08-18 16:03:30.42
+777cb17e
+User
+severity: 'ERROR',
+2025-08-18 16:03:30.42
+777cb17e
+User
+code: '23503',
+2025-08-18 16:03:30.42
+777cb17e
+User
+detail: 'Key (id)=(edf7a514-a0f6-4a35-8a24-a2811346285a) is still referenced from table "addresses".',
+2025-08-18 16:03:30.42
+777cb17e
+User
+hint: undefined,
+2025-08-18 16:03:30.42
+777cb17e
+User
+position: undefined,
+2025-08-18 16:03:30.42
+777cb17e
+User
+internalPosition: undefined,
+2025-08-18 16:03:30.42
+777cb17e
+User
+internalQuery: undefined,
+2025-08-18 16:03:30.42
+777cb17e
+User
+where: undefined,
+2025-08-18 16:03:30.42
+777cb17e
+User
+schema: 'public',
+2025-08-18 16:03:30.42
+777cb17e
+User
+table: 'addresses',
+2025-08-18 16:03:30.42
+777cb17e
+User
+column: undefined,
+2025-08-18 16:03:30.42
+777cb17e
+User
+dataType: undefined,
+2025-08-18 16:03:30.42
+777cb17e
+User
+constraint: 'addresses_user_id_users_id_fk',
+2025-08-18 16:03:30.42
+777cb17e
+User
+file: 'ri_triggers.c',
+2025-08-18 16:03:30.42
+777cb17e
+User
+line: '2612',
+2025-08-18 16:03:30.42
+777cb17e
+User
+routine: 'ri_ReportViolation',
+2025-08-18 16:03:30.42
+777cb17e
+User
+sourceError: undefined
+2025-08-18 16:03:30.42
+777cb17e
+User
+}
+2025-08-18 16:03:30.44
+777cb17e
+User
+[WARN] API DELETE /api/admin/users/edf7a514-a0f6-4a35-8a24-a2811346285a 500 109ms {
+2025-08-18 16:03:30.44
+777cb17e
+User
+method: 'DELETE',
+2025-08-18 16:03:30.44
+777cb17e
+User
+url: '/api/admin/users/edf7a514-a0f6-4a35-8a24-a2811346285a',
+2025-08-18 16:03:30.44
+777cb17e
+User
+userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+2025-08-18 16:03:30.44
+777cb17e
+User
+ip: '34.45.106.16',
+2025-08-18 16:03:30.44
+777cb17e
+User
+userId: undefined,
+2025-08-18 16:03:30.44
+777cb17e
+User
+duration: 109,
+2025-08-18 16:03:30.44
+777cb17e
+User
+statusCode: 500,
+2025-08-18 16:03:30.44
+777cb17e
+User
+contentLength: 170
+2025-08-18 16:03:30.44
+777cb17e
+User
+}
+2025-08-18 16:03:30.44
+777cb17e
+User
+[ERROR] DELETE /api/admin/users/edf7a514-a0f6-4a35-8a24-a2811346285a 500 109ms {
+2025-08-18 16:03:30.44
+777cb17e
+User
+method: 'DELETE',
+2025-08-18 16:03:30.44
+777cb17e
+User
+url: '/api/admin/users/edf7a514-a0f6-4a35-8a24-a2811346285a',
+2025-08-18 16:03:30.44
+777cb17e
+User
+userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+2025-08-18 16:03:30.44
+777cb17e
+User
+ip: '34.45.106.16',
+2025-08-18 16:03:30.44
+777cb17e
+User
+userId: undefined,
+2025-08-18 16:03:30.44
+777cb17e
+User
+duration: 109,
+2025-08-18 16:03:30.44
+777cb17e
+User
+statusCode: 500,
+2025-08-18 16:03:30.44
+777cb17e
+User
+contentLength: 170
+2025-08-18 16:03:30.44
+777cb17e
+User
+}
