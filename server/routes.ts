@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
 import { authMiddleware } from "./middleware/auth";
+import { authImprovements } from "./middleware/auth-improved";
 import { upload, cloudinary } from "./config/cloudinary";
 import multer from 'multer';
 import cors from "cors";
@@ -2748,21 +2749,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User endpoint (protected) - SSOT with profile address
-  app.get("/api/user", async (req, res) => {
-    Logger.debug(`[USER API] Authentication check - isAuthenticated: ${req.isAuthenticated?.()}, user: ${!!req.user}, sessionID: ${req.sessionID}`);
-    
-    // Use Passport's built-in authentication check
-    if (!req.isAuthenticated || !req.isAuthenticated()) {
-      Logger.debug('[USER API] Not authenticated - no isAuthenticated function or returns false');
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-    
-    // req.user is automatically populated by Passport deserializeUser
-    if (!req.user) {
-      Logger.debug('[USER API] Not authenticated - no user object');
-      return res.status(401).json({ error: "Not authenticated" });
-    }
+  // Add improved auth logging middleware globally
+  app.use(authImprovements.improvedAuthLogging);
+
+  // Add auth state endpoint for explicit auth checking
+  app.get("/api/auth/state", authImprovements.authState);
+
+  // User endpoint - now guest-safe with better responses
+  app.get("/api/user", authImprovements.guestSafeUser, async (req, res) => {
+    // At this point, we know the user is authenticated (guestSafeUser would have returned early for guests)
     
     try {
       Logger.debug(`[USER API] User found: ${JSON.stringify(req.user)}`);

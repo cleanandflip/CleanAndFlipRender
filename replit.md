@@ -63,3 +63,12 @@ The system employs a multi-layered security approach with Google OAuth integrati
 - **FIXED**: server/auth/google-strategy.ts, server/config/google.ts, and server/auth.ts now use correct domain
 - **PRODUCTION**: Google OAuth will now redirect to https://cleanandflip.com/api/auth/google/callback
 - **VERIFIED**: No more replit.app domain redirects for users in production
+
+✅ **AUTHENTICATION & LOGGING OPTIMIZED** - Eliminated noisy 401 logs and improved UX:
+- **ROOT CAUSE**: Guest users receiving scary 401 errors and noisy WARN logs on normal browsing
+- **SOLUTION**: Guest-safe responses, smart 401 logging, and improved retry logic
+- **FIXED**: /api/user now returns 200 {"auth":false} for guests instead of 401 errors
+- **LOGGING**: Expected guest 401s demoted to INFO level, unexpected ones logged with debug details
+- **NEW ENDPOINTS**: /api/auth/state for explicit auth checking without 401 responses
+- **FRONTEND**: Added smart retry logic and refetchOnWindowFocus prevention
+- **VERIFIED**: Clean logs, better UX, and robust authentication flow

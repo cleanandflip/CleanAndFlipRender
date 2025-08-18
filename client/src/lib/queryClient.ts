@@ -73,12 +73,19 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "returnNull" }),
+      refetchOnWindowFocus: false, // Prevent unnecessary 401 loops
+      retry: (failureCount, error: any) => {
+        const status = error?.message?.match(/^(\d+):/)?.[1];
+        // Don't retry 401/403 errors, only retry server errors (5xx)
+        if (status && (status.startsWith('4'))) {
+          return false;
+        }
+        return failureCount < 2;
+      },
       staleTime: 0, // Always fresh - no stale data allowed
       gcTime: 5 * 60 * 1000, // 5 minutes
       refetchOnMount: 'always',
-      refetchOnReconnect: true,
-      refetchOnWindowFocus: true,
-      retry: 1
+      refetchOnReconnect: true
     },
     mutations: {
       retry: 0, // No retry for mutations - fail fast
