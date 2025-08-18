@@ -131,7 +131,15 @@ export function validateFileUpload(
 // SQL injection prevention
 export function preventSQLInjection(req: Request, res: Response, next: NextFunction) {
   const sqlInjectionPatterns = [
-    /(\bUNION\b|\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bDROP\b|\bCREATE\b|\bALTER\b)/i,
+    // Only match SQL keywords that are likely part of SQL injection attempts
+    /(\bUNION\s+SELECT\b|\bUNION\s+ALL\s+SELECT\b)/i,
+    /(\bSELECT\s+\*\s+FROM\b|\bSELECT\s+.+\s+FROM\b)/i,
+    /(\bINSERT\s+INTO\b|\bINSERT\s+.+\s+VALUES\b)/i,
+    /(\bUPDATE\s+\w+\s+SET\b)/i,
+    /(\bDELETE\s+FROM\b)/i,
+    /(\bDROP\s+(TABLE|DATABASE|INDEX)\b)/i,
+    /(\bCREATE\s+(TABLE|DATABASE|INDEX)\b)/i,
+    /(\bALTER\s+TABLE\b)/i,
     /(\b(OR|AND)\b\s+\b\d+\s*=\s*\d+)/i,
     /(--|;|\||\/\*|\*\/)/,
     /(\bEXEC\b|\bEXECUTE\b|\bxp_\w+)/i
