@@ -55,18 +55,8 @@ app.use(cors({
   credentials: true,
 }));
 
-const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
-app.use(session({
-  secret: process.env.SESSION_SECRET!,
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: ONE_MONTH,
-  },
-}));
+// Session configuration moved to setupAuth() in routes.ts
+// This prevents duplicate session middleware
 
 app.use(express.json());
 

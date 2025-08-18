@@ -1,0 +1,305 @@
+Two things are happening:
+
+GET /api/user is returning 401 because the request arrives without a recognized session (userId: undefined).
+
+Your root page GET / is slow (0.8–2.7s). That’s usually DB connection/pooling or N+1 queries during SSR.
+
+Here’s a tight, copy-pasteable plan to fix both, plus quick diagnostics.
+
+1) Fix /api/user → 401 (no session)
+Quick triage (2 minutes)
+
+In the browser DevTools → Network → /api/user, check:
+
+Request has cookies? (or Authorization: Bearer … if you use header auth)
+
+Response ever sets Set-Cookie on login?
+
+If your frontend uses fetch/axios, ensure it sends cookies:
+
+fetch(url, { credentials: 'include' })
+
+axios.get(url, { withCredentials: true })
+
+If you’re behind a proxy (Vercel/Cloudflare/Nginx), make sure the server trusts it so secure cookies behave correctly:
+
+// Express
+app.set('trust proxy', 1);
+
+
+If your API and web app are on different hosts/subdomains, your cookie must use a shared domain (e.g. .example.com) and SameSite=None; Secure.
+
+Harden your CORS + cookie pipeline
+
+Server (Express example):
+
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+
+app.set('trust proxy', 1); // important on any proxy/CDN
+app.use(cookieParser());
+
+// Allow your exact origins and credentials
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://your-production-domain.com',
+  ],
+  credentials: true,
+}));
+
+// Never send HTML error pages from APIs
+app.use((req,res,next)=>{ res.setHeader('Content-Type','application/json'); next(); });
+
+
+Client
+
+// fetch
+await fetch('/api/user', { credentials: 'include' });
+
+// axios
+axios.defaults.withCredentials = true;
+
+If you use JWT in an HttpOnly cookie
+
+Issue: Missing cookie, wrong cookie flags, invalid/expired JWT, or secret mismatch across envs.
+
+Login handler: set the cookie correctly
+
+import jwt from 'jsonwebtoken';
+
+function baseDomainFromEnv() {
+  // e.g. return '.your-domain.com' in prod; undefined in localhost
+  return process.env.NODE_ENV === 'production' ? '.your-domain.com' : undefined;
+}
+
+function setAuthCookie(res, payload) {
+  const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '7d' });
+  res.cookie('auth', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',  // HTTPS only in prod
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: baseDomainFromEnv(),
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+}
+
+
+Auth middleware: decode & attach req.user
+
+import type { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const cookieToken = req.cookies?.auth;
+  const header = req.get('authorization') || '';
+  const bearer = header.startsWith('Bearer ') ? header.slice(7) : null;
+  const token = cookieToken || bearer;
+  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+
+  try {
+    const user = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; email: string };
+    (req as any).user = user;
+    return next();
+  } catch (e) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
+
+
+Route
+
+app.get('/api/user', requireAuth, (req, res) => {
+  res.json({ user: (req as any).user });
+});
+
+
+Temporary debug (delete after)
+
+app.get('/api/_debug/headers', (req,res) => {
+  res.json({
+    cookies: req.headers.cookie || null,
+    authHeader: req.get('authorization') || null,
+    host: req.get('host'),
+    xfp: req.get('x-forwarded-proto')
+  });
+});
+
+
+Secret consistency
+
+Ensure JWT_SECRET is identical across all server instances/environments. A mismatch → 401 on verify.
+
+If you use NextAuth/Lucia/etc., the same idea applies: the framework’s secret and cookie settings must match per env. Double-check NEXTAUTH_URL, NEXTAUTH_SECRET, cookie domain, sameSite: 'none' when using cross-site, and that the callback URL exactly matches what the provider sends back.
+
+If you use header tokens instead of cookies
+
+Always send Authorization: Bearer <token> from the client and accept CORS. Still apply requireAuth above, but read only the header.
+
+2) Fix root GET / slowness (0.8–2.7s)
+
+The usual culprits:
+
+DB connection setup per request (serverless or non-pooled)
+
+N+1 queries / heavy SSR fetch
+
+Cold starts on serverless functions
+
+Unindexed WHERE/JOIN conditions
+
+DB + pooling for Neon
+
+Prod: you’re already using a -pooler host — good.
+
+Dev: switch to the pooled connection string too (Neon gives you both). Using the non-pooled host in dev often causes >1s handshakes.
+
+node-postgres Pool (if you use pg directly)
+
+// db/pool.ts
+import { Pool } from 'pg';
+
+declare global { // reuse in hot reload/dev
+  // @ts-ignore
+  var pgPool: Pool | undefined;
+}
+
+export const pool = global.pgPool ?? new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  keepAlive: true,
+  ssl: { rejectUnauthorized: false },
+});
+
+if (process.env.NODE_ENV !== 'production') global.pgPool = pool;
+
+
+Use the pooled client everywhere:
+
+import { pool } from './db/pool';
+const { rows } = await pool.query('select 1');
+
+
+Prisma
+
+Use the pooled DSN for Prisma too.
+
+In dev/Next.js, reuse the Prisma client singleton to avoid 100s of connections.
+
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({ log: ['error', 'warn'] });
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
+
+Serverless (Edge/Neon serverless driver)
+If you’re on serverless/edge handlers for read-heavy endpoints, consider @neondatabase/serverless (HTTP driver) to avoid TCP setup cost. Keep write paths on pooled Postgres.
+
+Find the slow step (cheap instrumentation)
+
+Add micro-timing around your SSR/data layer:
+
+const t0 = performance.now();
+const homeData = await getHomeData(); // your DB picks
+const t1 = performance.now();
+
+// Inside getHomeData:
+const a0 = performance.now();
+const x = await pool.query('SELECT ...'); // or prisma call
+const a1 = performance.now();
+
+console.log('[perf] home total', (t1 - t0).toFixed(1), 'ms', {
+  db: (a1 - a0).toFixed(1),
+});
+
+
+If DB time is small but total is large, look at render-time work (large JSON serialization, image/asset waterfalls, blocking bundle).
+
+Kill N+1s and add indexes
+
+Combine related queries with JOINs or a single Prisma include.
+
+Add indexes for any columns used in WHERE, ORDER BY, or foreign keys shown on the home page.
+
+CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+
+Run EXPLAIN ANALYZE on the slowest queries and fix “Seq Scan” on large tables when filters exist.
+
+Cache what’s cacheable
+
+For public home data: add a short HTTP cache (Cache-Control: s-maxage=60, stale-while-revalidate=120) at your CDN.
+
+In app code, memoize config/constants so they’re not recomputed each request.
+
+Cold starts
+
+Prefer Edge (for simple read endpoints) to reduce cold-start penalties.
+
+Consolidate tiny API routes so you don’t cold-start multiple Lambdas per page load.
+
+3) Sanity checklist you can run right now
+
+/api/user in DevTools
+
+Request shows Cookie header? If no → fix credentials: 'include', cookie domain/sameSite, and CORS.
+
+If yes but 401 → check server logs: dump decoded JWT error, especially exp/iat and secret mismatch logs.
+
+Proxy + cookies
+
+app.set('trust proxy', 1)
+
+In prod, cookies: secure: true, sameSite: 'none' for cross-site.
+
+Shared domain (.your-domain.com) if using subdomains.
+
+Env
+
+Same JWT_SECRET/framework secret across all instances.
+
+Verify your dev DB uses a pooled Neon DSN too. (Neon dashboard → “Pooled connection string”.)
+
+DB pooling singleton
+
+Ensure you do not create a new client per request.
+
+Log timings
+
+Add the [perf] logs above to find the slow part (connect vs query vs render).
+
+4) Helpful test commands
+
+See if cookies are sent (from your machine):
+
+# After logging in via browser, try:
+curl -I https://your-domain.com/api/user \
+  -H "Cookie: auth=YOUR_TOKEN_FROM_BROWSER"
+
+
+Decode token server-side (temp)
+
+app.get('/api/_debug/token', (req,res)=>{
+  try {
+    const token = req.cookies?.auth;
+    if (!token) return res.json({ hasToken:false });
+    const decoded = jwt.decode(token, { complete: true });
+    res.json({ hasToken:true, header: decoded?.header, payload: decoded?.payload });
+  } catch(e) { res.json({ error: String(e) }); }
+});
+
+5) Security note (important)
+
+You previously pasted full database connection strings (with usernames/passwords). Treat them as leaked:
+
+Rotate those Neon credentials (generate new roles/passwords).
+
+Update your DATABASE_URL/Prisma .env with the new pooled DSNs.

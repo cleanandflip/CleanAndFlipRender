@@ -1254,10 +1254,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Save to addresses table
         address = await storage.createAddress(userId!, validatedAddress as any);
         
-        // Update user profile address if making default
-        if (makeDefault) {
-          await storage.updateUserProfileAddress(userId!, address.id);
-        }
+        // FIXED: Removed updateUserProfileAddress - using is_default flag instead
+        // Default address is now handled by the is_default flag in the address
       } else {
         // Create temporary address for cart only
         address = await storage.createAddress(userId!, {
@@ -2693,22 +2691,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userId = (req.user as any).id;
       
-      // Fetch user with profile address using SSOT approach
-      // Also check if user has any default address (fix for cart redirect issue)
+      // Fetch user with default address using SSOT approach
+      // FIXED: Removed profile_address_id references - using is_default addresses
       const userWithAddress = await db.execute(sql`
         SELECT 
           u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
           u.profile_complete, u.is_local_customer,
-          u.profile_address_id,
           a.id as address_id, a.first_name as addr_first_name, 
           a.last_name as addr_last_name, a.street1, a.street2, a.city, 
           a.state, a.postal_code, a.country, a.latitude, a.longitude, 
           a.is_local, a.is_default, a.created_at as address_created_at,
-          a.updated_at as address_updated_at,
-          COALESCE(da.id, a.id) as fallback_address_id
+          a.updated_at as address_updated_at
         FROM users u
-        LEFT JOIN addresses a ON u.profile_address_id = a.id
-        LEFT JOIN addresses da ON da.user_id = u.id AND da.is_default = true
+        LEFT JOIN addresses a ON a.user_id = u.id AND a.is_default = true
         WHERE u.id = ${userId}
       `);
 
@@ -2739,12 +2734,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } : undefined;
 
       // Fix cart redirect issue: profile is complete if they have ANY default address
-      const hasAnyAddress = Boolean(userData.fallback_address_id || userData.profile_address_id);
+      const hasAnyAddress = Boolean(userData.address_id);
       
       Logger.debug(`[USER API] Profile completion check:`, {
         userId: userData.id,
-        profile_address_id: userData.profile_address_id,
-        fallback_address_id: userData.fallback_address_id,
         hasAnyAddress,
         profileComplete: hasAnyAddress
       });
@@ -2757,7 +2750,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: userData.phone,
         role: userData.role,
         profileComplete: hasAnyAddress, // Profile complete if they have any address
-        profileAddressId: userData.profile_address_id || userData.fallback_address_id, // Include profileAddressId for ProtectedRoute
+        profileAddressId: userData.address_id, // Use default address as profile address
         isLocal: Boolean(userData.is_local_customer),
         profileAddress
       };
