@@ -125,12 +125,6 @@ function DashboardContent() {
     return submission.status === 'pending' || submission.status === 'under_review';
   };
 
-  // Check if submission can be cancelled
-  const canCancelSubmission = (submission: any) => {
-    const nonCancellableStatuses = ['scheduled', 'completed', 'cancelled'];
-    return !nonCancellableStatuses.includes(submission.status);
-  };
-
   const getStatusIcon = (status: string) => {
     const icons = {
       pending: Clock,
