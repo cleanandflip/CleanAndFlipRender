@@ -33,7 +33,6 @@ The server-side uses a layered REST API architecture built with Node.js:
 PostgreSQL is the primary database, utilizing:
 - **Database**: Neon serverless PostgreSQL with strict environment-specific database URLs and rotated security credentials.
 - **Environment Configuration**: PROD_DATABASE_URL for production, DEV_DATABASE_URL for development, with NO fallbacks or backwards compatibility for maximum security.
-- **Environment Isolation**: Complete dev/prod cart contamination prevention system with boot-time validation, automatic environment detection, and API routing isolation (2025-08-18).
 - **Schema Management**: Drizzle Kit for migrations with automatic retry logic and environment-aware configuration, production-controlled migration system.
 - **Search**: PostgreSQL tsvector for full-text search.
 - **Session Storage**: Database-backed session storage with environment-aware configuration.

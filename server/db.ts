@@ -1,5 +1,5 @@
 // server/db.ts
-import { DATABASE_URL } from "./config/env";
+import { DATABASE_URL } from "./config/database";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "../shared/schema";

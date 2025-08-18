@@ -10,7 +10,7 @@ import connectPg from "connect-pg-simple";
 import { normalizeEmail, parseCityStateZip, isLocalZip, validateCityStateZip, normalizePhone } from "@shared/utils";
 import { authLimiter } from "./middleware/security";
 import { Logger, LogLevel } from "./utils/logger";
-import { DATABASE_URL } from "./config/env";
+import { DATABASE_URL } from "./config/database";
 import { initializeGoogleAuth } from './auth/google-strategy';
 
 declare global {
