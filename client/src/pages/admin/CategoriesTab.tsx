@@ -155,10 +155,10 @@ export function CategoriesTab() {
       render: (category: Category) => (
         <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${
           category.isActive
-            ? 'bg-green-500/20 text-green-400 border-green-500/50'
-            : 'bg-gray-500/20 text-gray-400 border-gray-500/50'
+            ? 'bg-green-500/20 text-green-300 border-green-500/50'
+            : 'bg-red-500/20 text-red-300 border-red-500/50'
         }`}>
-          {category.isActive ? 'Active' : 'Inactive'}
+          {category.isActive ? 'Active' : 'Disabled'}
         </span>
       )
     }

@@ -62,15 +62,15 @@ interface Submission {
 }
 
 const statusOptions = [
-  { value: 'pending', label: 'Pending Review', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' },
-  { value: 'reviewing', label: 'Under Review', color: 'bg-blue-500/20 text-blue-400 border-blue-500/50' },
-  { value: 'under_review', label: 'Under Review', color: 'bg-blue-500/20 text-blue-400 border-blue-500/50' },
-  { value: 'approved', label: 'Approved', color: 'bg-green-500/20 text-green-400 border-green-500/50' },
-  { value: 'accepted', label: 'Accepted/Offer Made', color: 'bg-green-500/20 text-green-400 border-green-500/50' },
-  { value: 'declined', label: 'Declined', color: 'bg-red-500/20 text-red-400 border-red-500/50' },
-  { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-500/20 text-gray-400 border-gray-500/50' },
-  { value: 'scheduled', label: 'Pickup Scheduled', color: 'bg-purple-500/20 text-purple-400 border-purple-500/50' },
-  { value: 'completed', label: 'Completed', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' },
+  { value: 'pending', label: 'Pending Review', color: 'bg-amber-500/20 text-amber-300 border-amber-500/50' },
+  { value: 'reviewing', label: 'Under Review', color: 'bg-blue-500/20 text-blue-300 border-blue-500/50' },
+  { value: 'under_review', label: 'Under Review', color: 'bg-blue-500/20 text-blue-300 border-blue-500/50' },
+  { value: 'approved', label: 'Approved', color: 'bg-green-500/20 text-green-300 border-green-500/50' },
+  { value: 'accepted', label: 'Accepted/Offer Made', color: 'bg-green-500/20 text-green-300 border-green-500/50' },
+  { value: 'declined', label: 'Declined', color: 'bg-orange-500/20 text-orange-300 border-orange-500/50' },
+  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-500/20 text-red-300 border-red-500/50' },
+  { value: 'scheduled', label: 'Pickup Scheduled', color: 'bg-violet-500/20 text-violet-300 border-violet-500/50' },
+  { value: 'completed', label: 'Completed', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50' },
 ];
 
 const statusDropdownOptions: DropdownOption[] = [

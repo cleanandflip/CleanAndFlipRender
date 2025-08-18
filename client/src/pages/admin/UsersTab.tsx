@@ -172,9 +172,10 @@ export function UsersTab() {
       render: (user: User) => (
         <span className={cn(
           "px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit border",
-          user.role === 'developer' ? "bg-purple-500/20 text-purple-400 border-purple-500/50" :
-          user.role === 'admin' ? "bg-red-500/20 text-red-400 border-red-500/50" :
-          "bg-blue-500/20 text-blue-400 border-blue-500/50"
+          user.role === 'developer' ? "bg-violet-500/20 text-violet-300 border-violet-500/50" :
+          user.role === 'admin' ? "bg-rose-500/20 text-rose-300 border-rose-500/50" :
+          user.role === 'manager' ? "bg-orange-500/20 text-orange-300 border-orange-500/50" :
+          "bg-blue-500/20 text-blue-300 border-blue-500/50"
         )}>
           {user.role === 'developer' && <Crown className="w-3 h-3" />}
           {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
@@ -188,10 +189,10 @@ export function UsersTab() {
         <span className={cn(
           "px-3 py-1 rounded-full text-xs font-medium border",
           user.isActive 
-            ? "bg-green-500/20 text-green-400 border-green-500/50" 
-            : "bg-gray-500/20 text-gray-400 border-gray-500/50"
+            ? "bg-green-500/20 text-green-300 border-green-500/50" 
+            : "bg-red-500/20 text-red-300 border-red-500/50"
         )}>
-          {user.isActive ? 'Active' : 'Inactive'}
+          {user.isActive ? 'Active' : 'Disabled'}
         </span>
       )
     },
