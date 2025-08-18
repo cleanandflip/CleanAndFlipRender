@@ -62,12 +62,15 @@ interface Submission {
 }
 
 const statusOptions = [
-  { value: 'pending', label: 'Pending Review', color: 'bg-yellow-500' },
-  { value: 'under_review', label: 'Under Review', color: 'bg-blue-500' },
-  { value: 'accepted', label: 'Accepted/Offer Made', color: 'bg-green-500' },
-  { value: 'declined', label: 'Declined', color: 'bg-red-500' },
-  { value: 'scheduled', label: 'Pickup Scheduled', color: 'bg-purple-500' },
-  { value: 'completed', label: 'Completed', color: 'bg-gray-500' },
+  { value: 'pending', label: 'Pending Review', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' },
+  { value: 'reviewing', label: 'Under Review', color: 'bg-blue-500/20 text-blue-400 border-blue-500/50' },
+  { value: 'under_review', label: 'Under Review', color: 'bg-blue-500/20 text-blue-400 border-blue-500/50' },
+  { value: 'approved', label: 'Approved', color: 'bg-green-500/20 text-green-400 border-green-500/50' },
+  { value: 'accepted', label: 'Accepted/Offer Made', color: 'bg-green-500/20 text-green-400 border-green-500/50' },
+  { value: 'declined', label: 'Declined', color: 'bg-red-500/20 text-red-400 border-red-500/50' },
+  { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-500/20 text-gray-400 border-gray-500/50' },
+  { value: 'scheduled', label: 'Pickup Scheduled', color: 'bg-purple-500/20 text-purple-400 border-purple-500/50' },
+  { value: 'completed', label: 'Completed', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' },
 ];
 
 const statusDropdownOptions: DropdownOption[] = [
@@ -80,20 +83,20 @@ const statusFormOptions: DropdownOption[] = statusOptions.map(s => ({
   label: s.label 
 }));
 
-// Status Badge Component
+// Enhanced Status Badge Component with Modern Colors
 function StatusBadge({ status }: { status: string }) {
-  const statusOption = statusOptions.find(s => s.value === status);
+  const statusOption = statusOptions.find(s => s.value === status.toLowerCase());
   
   if (!statusOption) {
     return (
-      <Badge className="bg-gray-500 text-white">
-        {status}
+      <Badge className="bg-gray-500/20 text-gray-400 border border-gray-500/50 font-medium px-2 py-1 text-xs">
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
   }
   
   return (
-    <Badge className={`${statusOption.color} text-white`}>
+    <Badge className={`${statusOption.color} border font-medium px-2 py-1 text-xs`}>
       {statusOption.label}
     </Badge>
   );

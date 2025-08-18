@@ -154,10 +154,10 @@ export function ProductsTab() {
       key: 'stock',
       label: 'Stock',
       render: (product: Product) => (
-        <span className={`inline-flex px-2 py-1 rounded-full text-xs ${
-          product.stock > 0 
-            ? 'bg-green-500/20 text-green-400'
-            : 'bg-red-500/20 text-red-400'
+        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${
+          product.stock > 10 ? 'bg-green-500/20 text-green-400 border-green-500/50' :
+          product.stock > 0 ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' :
+          'bg-red-500/20 text-red-400 border-red-500/50'
         }`}>
           {product.stock} units
         </span>
@@ -175,12 +175,14 @@ export function ProductsTab() {
       key: 'status',
       label: 'Status',
       render: (product: Product) => (
-        <span className={`inline-flex px-2 py-1 rounded-full text-xs ${
-          product.status === 'active'
-            ? 'bg-green-500/20 text-green-400'
-            : 'bg-gray-500/20 text-gray-400'
+        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${
+          product.status === 'active' ? 'bg-green-500/20 text-green-400 border-green-500/50' :
+          product.status === 'inactive' ? 'bg-gray-500/20 text-gray-400 border-gray-500/50' :
+          product.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' :
+          product.status === 'archived' ? 'bg-red-500/20 text-red-400 border-red-500/50' :
+          'bg-gray-500/20 text-gray-400 border-gray-500/50'
         }`}>
-          {product.status}
+          {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
         </span>
       )
     }
