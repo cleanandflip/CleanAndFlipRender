@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { requireAuth, requireRole } from '../../auth';
 import { SystemMonitor } from '../../services/systemMonitor';
 import { PerformanceMonitor } from '../../services/performanceMonitor';
-import { ErrorLogger } from '../../services/errorLogger';
 import { Logger } from '../../utils/logger';
 
 const router = Router();
@@ -16,12 +15,11 @@ router.get('/health', async (req, res) => {
   try {
     const systemHealth = await SystemMonitor.getSystemHealth();
     const performanceStats = PerformanceMonitor.getSystemStats();
-    const errorStats = await ErrorLogger.getErrorStats();
     
     const response = {
       system: systemHealth,
       performance: performanceStats,
-      errors: errorStats,
+      errors: { message: 'Error tracking disabled' },
       timestamp: new Date().toISOString()
     };
     

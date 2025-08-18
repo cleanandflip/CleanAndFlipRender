@@ -14,29 +14,29 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// server/config/env.ts
-import { z } from "zod";
-var EnvSchema, env;
-var init_env = __esm({
-  "server/config/env.ts"() {
+// server/config/database.ts
+var APP_ENV, PROD, DEV, DATABASE_URL, getDbHost, getAppEnv;
+var init_database = __esm({
+  "server/config/database.ts"() {
     "use strict";
-    EnvSchema = z.object({
-      NODE_ENV: z.enum(["production", "development", "test"]).default("development"),
-      APP_ENV: z.enum(["production", "staging", "development"]).default("development"),
-      DATABASE_URL: z.string().url(),
-      EXPECTED_DB_HOST: z.string().optional(),
-      SESSION_SECRET: z.string().min(10).default("dev-secret-change-in-production"),
-      PORT: z.string().optional(),
-      APP_BUILD_ID: z.string().optional()
-    });
-    env = EnvSchema.parse(process.env);
+    APP_ENV = process.env.APP_ENV || "development";
+    PROD = process.env.PROD_DATABASE_URL?.trim();
+    DEV = process.env.DEV_DATABASE_URL?.trim();
+    if (APP_ENV === "production" && !PROD) {
+      throw new Error("PROD_DATABASE_URL is required when APP_ENV=production");
+    }
+    if (APP_ENV === "development" && !DEV) {
+      throw new Error("DEV_DATABASE_URL is required when APP_ENV=development");
+    }
+    DATABASE_URL = APP_ENV === "production" ? PROD : DEV;
+    getDbHost = () => new URL(DATABASE_URL).host;
+    getAppEnv = () => APP_ENV;
   }
 });
 
 // shared/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
-  activityLogs: () => activityLogs,
   addresses: () => addresses,
   addressesRelations: () => addressesRelations,
   cartItems: () => cartItems,
@@ -49,11 +49,7 @@ __export(schema_exports, {
   equipmentSubmissionStatusEnum: () => equipmentSubmissionStatusEnum,
   equipmentSubmissions: () => equipmentSubmissions,
   equipmentSubmissionsRelations: () => equipmentSubmissionsRelations,
-  errorLogInstances: () => errorLogInstances,
-  errorLogs: () => errorLogs,
-  errorsRaw: () => errorsRaw,
   fulfillmentTypeEnum: () => fulfillmentTypeEnum,
-  insertActivityLogSchema: () => insertActivityLogSchema,
   insertAddressSchema: () => insertAddressSchema,
   insertCartItemSchema: () => insertCartItemSchema,
   insertCategorySchema: () => insertCategorySchema,
@@ -71,8 +67,6 @@ __export(schema_exports, {
   insertUserEmailPreferencesSchema: () => insertUserEmailPreferencesSchema,
   insertUserSchema: () => insertUserSchema,
   insertWishlistSchema: () => insertWishlistSchema,
-  issueEvents: () => issueEvents,
-  issues: () => issues,
   newsletterSubscribers: () => newsletterSubscribers,
   orderAddresses: () => orderAddresses,
   orderItems: () => orderItems,
@@ -115,8 +109,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { z as z2 } from "zod";
-var tsvector, sessions, errorsRaw, issues, issueEvents, userRoleEnum, fulfillmentTypeEnum, users, categories, productConditionEnum, productStatusEnum, products, addresses, serviceZones, orderAddresses, orderStatusEnum, orders, orderItems, cartItems, wishlists, activityLogs, emailQueue, equipmentSubmissionStatusEnum, equipmentSubmissions, usersRelations, categoriesRelations, productsRelations, ordersRelations, orderItemsRelations, cartItemsRelations, addressesRelations, equipmentSubmissionsRelations, wishlistsRelations, insertUserSchema, insertCategorySchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCartItemSchema, insertAddressSchema, insertEquipmentSubmissionSchema, insertActivityLogSchema, insertWishlistSchema, errorLogs, errorLogInstances, registerDataSchema, reviews, insertReviewSchema, coupons, insertCouponSchema, orderTracking, insertOrderTrackingSchema, returnRequests, insertReturnRequestSchema, emailLogs, newsletterSubscribers, userEmailPreferences, passwordResetTokens, insertEmailLogSchema, insertNewsletterSubscriberSchema, insertUserEmailPreferencesSchema, insertPasswordResetTokenSchema;
+import { z } from "zod";
+var tsvector, sessions, userRoleEnum, fulfillmentTypeEnum, users, categories, productConditionEnum, productStatusEnum, products, addresses, serviceZones, orderAddresses, orderStatusEnum, orders, orderItems, cartItems, wishlists, emailQueue, equipmentSubmissionStatusEnum, equipmentSubmissions, usersRelations, categoriesRelations, productsRelations, ordersRelations, orderItemsRelations, cartItemsRelations, addressesRelations, equipmentSubmissionsRelations, wishlistsRelations, insertUserSchema, insertCategorySchema, insertProductSchema, insertOrderSchema, insertOrderItemSchema, insertCartItemSchema, insertAddressSchema, insertEquipmentSubmissionSchema, insertWishlistSchema, registerDataSchema, reviews, insertReviewSchema, coupons, insertCouponSchema, orderTracking, insertOrderTrackingSchema, returnRequests, insertReturnRequestSchema, emailLogs, newsletterSubscribers, userEmailPreferences, passwordResetTokens, insertEmailLogSchema, insertNewsletterSubscriberSchema, insertUserEmailPreferencesSchema, insertPasswordResetTokenSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -134,65 +128,6 @@ var init_schema = __esm({
       },
       (table) => [index("IDX_session_expire").on(table.expire)]
     );
-    errorsRaw = pgTable("errors_raw", {
-      id: serial("id").primaryKey(),
-      eventId: varchar("event_id").notNull().unique(),
-      createdAt: timestamp("created_at").defaultNow().notNull(),
-      level: varchar("level").notNull(),
-      // error, warn, info
-      env: varchar("env").notNull(),
-      // development, production
-      release: varchar("release"),
-      service: varchar("service").notNull(),
-      // client, server
-      url: text("url"),
-      method: varchar("method"),
-      statusCode: integer("status_code"),
-      message: text("message").notNull(),
-      type: varchar("type"),
-      stack: jsonb("stack"),
-      // string[]
-      fingerprint: varchar("fingerprint").notNull(),
-      userId: varchar("user_id"),
-      tags: jsonb("tags"),
-      // Record<string, string | number | boolean>
-      extra: jsonb("extra")
-      // Record<string, any>
-    }, (table) => [
-      index("idx_errors_raw_created_at").on(table.createdAt),
-      index("idx_errors_raw_fingerprint").on(table.fingerprint),
-      index("idx_errors_raw_level").on(table.level)
-    ]);
-    issues = pgTable("issues", {
-      id: serial("id").primaryKey(),
-      fingerprint: varchar("fingerprint").notNull().unique(),
-      title: text("title").notNull(),
-      firstSeen: timestamp("first_seen").defaultNow().notNull(),
-      lastSeen: timestamp("last_seen").defaultNow().notNull(),
-      level: varchar("level").notNull(),
-      count: integer("count").default(0).notNull(),
-      affectedUsers: integer("affected_users").default(0).notNull(),
-      resolved: boolean("resolved").default(false).notNull(),
-      ignored: boolean("ignored").default(false).notNull(),
-      sampleEventId: varchar("sample_event_id"),
-      envs: jsonb("envs").notNull()
-      // Record<string, number>
-    }, (table) => [
-      index("idx_issues_last_seen").on(table.lastSeen),
-      index("idx_issues_resolved").on(table.resolved),
-      index("idx_issues_level").on(table.level)
-    ]);
-    issueEvents = pgTable("issue_events", {
-      id: serial("id").primaryKey(),
-      fingerprint: varchar("fingerprint").notNull(),
-      hour: timestamp("hour").notNull(),
-      count: integer("count").default(0).notNull()
-    }, (table) => [
-      index("idx_issue_events_hour").on(table.hour),
-      index("idx_issue_events_fingerprint").on(table.fingerprint),
-      // Unique constraint for fingerprint + hour combination
-      index("idx_issue_events_unique").on(table.fingerprint, table.hour)
-    ]);
     userRoleEnum = pgEnum("user_role", [
       "user",
       "developer"
@@ -226,7 +161,7 @@ var init_schema = __esm({
       isEmailVerified: boolean("is_email_verified").default(false),
       profileComplete: boolean("profile_complete").default(false),
       // SSOT Profile address reference - nullable FK to addresses (VARCHAR to match existing DB)
-      profileAddressId: varchar("profile_address_id").references(() => addresses.id, { onDelete: "set null" }),
+      // REMOVED: profileAddressId - using SSOT address system
       createdAt: timestamp("created_at").defaultNow(),
       updatedAt: timestamp("updated_at").defaultNow()
     });
@@ -414,25 +349,6 @@ var init_schema = __esm({
       index("idx_wishlists_user").on(table.userId),
       index("idx_wishlists_product").on(table.productId)
     ]);
-    activityLogs = pgTable("activity_logs", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      eventType: varchar("event_type").notNull(),
-      // 'page_view', 'user_action', 'purchase'
-      userId: varchar("user_id").references(() => users.id),
-      sessionId: varchar("session_id"),
-      action: varchar("action"),
-      // What action was performed
-      page: varchar("page"),
-      // Which page/route
-      pageUrl: varchar("page_url"),
-      // Full URL (added for compatibility)
-      metadata: jsonb("metadata"),
-      // Additional data
-      createdAt: timestamp("created_at").defaultNow()
-    }, (table) => [
-      index("idx_activity_logs_created").on(table.createdAt),
-      index("idx_activity_logs_type").on(table.eventType)
-    ]);
     emailQueue = pgTable("email_queue", {
       id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
       toEmail: varchar("to_email").notNull(),
@@ -498,7 +414,7 @@ var init_schema = __esm({
       orders: many(orders),
       cartItems: many(cartItems),
       addresses: many(addresses),
-      activities: many(activityLogs),
+      // REMOVED: activities relation - internal tracking not needed
       equipmentSubmissions: many(equipmentSubmissions),
       wishlists: many(wishlists)
     }));
@@ -613,61 +529,12 @@ var init_schema = __esm({
       createdAt: true,
       updatedAt: true
     });
-    insertActivityLogSchema = createInsertSchema(activityLogs).omit({
-      id: true,
-      createdAt: true
-    });
     insertWishlistSchema = createInsertSchema(wishlists).omit({
       id: true,
       createdAt: true
     });
-    errorLogs = pgTable("error_logs", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      error_type: varchar("error_type").notNull(),
-      // 'error', 'warning', 'info'
-      severity: varchar("severity").notNull(),
-      // 'critical', 'high', 'medium', 'low'
-      message: text("message").notNull(),
-      stack_trace: text("stack_trace"),
-      file_path: varchar("file_path"),
-      line_number: integer("line_number"),
-      column_number: integer("column_number"),
-      user_id: varchar("user_id").references(() => users.id),
-      user_email: varchar("user_email"),
-      user_ip: varchar("user_ip"),
-      user_agent: text("user_agent"),
-      url: varchar("url"),
-      method: varchar("method"),
-      request_body: jsonb("request_body"),
-      response_status: integer("response_status"),
-      browser: varchar("browser"),
-      os: varchar("os"),
-      device_type: varchar("device_type"),
-      session_id: varchar("session_id"),
-      environment: varchar("environment").default("production"),
-      resolved: boolean("resolved").default(false),
-      resolved_by: varchar("resolved_by").references(() => users.id),
-      resolved_at: timestamp("resolved_at"),
-      notes: text("notes"),
-      occurrence_count: integer("occurrence_count").default(1),
-      first_seen: timestamp("first_seen").defaultNow(),
-      last_seen: timestamp("last_seen").defaultNow(),
-      created_at: timestamp("created_at").defaultNow()
-    }, (table) => [
-      index("idx_error_logs_severity").on(table.severity),
-      index("idx_error_logs_type").on(table.error_type),
-      index("idx_error_logs_user").on(table.user_id),
-      index("idx_error_logs_resolved").on(table.resolved),
-      index("idx_error_logs_created").on(table.created_at)
-    ]);
-    errorLogInstances = pgTable("error_log_instances", {
-      id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-      error_log_id: varchar("error_log_id").references(() => errorLogs.id, { onDelete: "cascade" }),
-      occurred_at: timestamp("occurred_at").defaultNow(),
-      context: jsonb("context")
-    });
     registerDataSchema = insertUserSchema.extend({
-      confirmPassword: z2.string()
+      confirmPassword: z.string()
       // REMOVED: Legacy fullAddress field - using SSOT formatted address
     }).omit({
       role: true,
@@ -841,12 +708,12 @@ __export(db_exports, {
   getDb: () => getDb,
   ping: () => ping
 });
-import { neon as neon3 } from "@neondatabase/serverless";
-import { drizzle as drizzle2 } from "drizzle-orm/neon-http";
+import { neon as neon2 } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 function getDb() {
   if (_db) return _db;
-  const sql9 = neon3(env.DATABASE_URL);
-  _db = drizzle2(sql9, { schema: schema_exports });
+  const sql8 = neon2(DATABASE_URL);
+  _db = drizzle(sql8, { schema: schema_exports });
   return _db;
 }
 async function ping() {
@@ -857,7 +724,7 @@ var _db, db;
 var init_db = __esm({
   "server/db.ts"() {
     "use strict";
-    init_env();
+    init_database();
     init_schema();
     _db = null;
     db = getDb();
@@ -975,7 +842,7 @@ var init_storage = __esm({
           COALESCE(auth_provider, 'local') as auth_provider,
           COALESCE(is_email_verified, false) as is_email_verified,
           google_email, google_picture,
-          profile_address_id,
+          -- REMOVED: profile_address_id - using SSOT address system
           COALESCE(is_local_customer, false) as is_local_customer,
           COALESCE(profile_complete, false) as profile_complete
         FROM users
@@ -1010,7 +877,7 @@ var init_storage = __esm({
                   isEmailVerified: false,
                   googleEmail: null,
                   googlePicture: null,
-                  profileAddressId: null,
+                  // REMOVED: profileAddressId - using SSOT address system
                   isLocalCustomer: false,
                   profileComplete: false
                 };
@@ -1038,9 +905,9 @@ var init_storage = __esm({
           COALESCE(auth_provider, 'local') as auth_provider,
           COALESCE(is_email_verified, false) as is_email_verified,
           google_email, google_picture,
-          profile_address_id,
+          -- REMOVED: profile_address_id - using SSOT address system
           COALESCE(is_local_customer, false) as is_local_customer,
-          COALESCE(profile_complete, false) as profile_complete,
+          COALESCE(profile_complete, false) as profile_complete
         FROM users
         WHERE LOWER(email) = LOWER(${normalizedEmail})
         LIMIT 1
@@ -1073,7 +940,7 @@ var init_storage = __esm({
                   isEmailVerified: false,
                   googleEmail: null,
                   googlePicture: null,
-                  profileAddressId: null,
+                  // REMOVED: profileAddressId - using SSOT address system
                   isLocalCustomer: false,
                   profileComplete: false
                 };
@@ -1096,9 +963,9 @@ var init_storage = __esm({
             COALESCE(auth_provider, 'local') as auth_provider,
             COALESCE(is_email_verified, false) as is_email_verified,
             google_email, google_picture,
-            profile_address_id,
+            -- REMOVED: profile_address_id - using SSOT address system
             COALESCE(is_local_customer, false) as is_local_customer,
-            COALESCE(profile_complete, false) as profile_complete,
+            COALESCE(profile_complete, false) as profile_complete
           FROM users
           WHERE LOWER(email) = LOWER(${normalizedEmail})
           LIMIT 1
@@ -1176,13 +1043,7 @@ var init_storage = __esm({
         }).where(eq(users.id, id)).returning();
         return user;
       }
-      async updateUserProfileAddress(id, profileAddressId) {
-        const [user] = await db.update(users).set({
-          profileAddressId,
-          updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(users.id, id)).returning();
-        return user;
-      }
+      // REMOVED: updateUserProfileAddress - using SSOT address system
       // Category operations
       async getCategories() {
         return await db.select().from(categories).orderBy(asc(categories.name));
@@ -1607,28 +1468,9 @@ var init_storage = __esm({
       // Removed duplicate getAdminStats function
       // Removed duplicate getAllUsers function
       async getAnalytics() {
-        const [pageViewsResult] = await db.select({ count: sql2`count(*)` }).from(activityLogs).where(
-          and(
-            eq(activityLogs.eventType, "page_view"),
-            sql2`${activityLogs.createdAt} > NOW() - INTERVAL '7 days'`
-          )
-        );
-        const [activeUsersResult] = await db.select({ count: sql2`count(distinct ${activityLogs.userId})` }).from(activityLogs).where(
-          and(
-            sql2`${activityLogs.createdAt} > NOW() - INTERVAL '1 hour'`,
-            isNotNull(activityLogs.userId)
-          )
-        );
-        const [visitsResult] = await db.select({ count: sql2`count(distinct ${activityLogs.sessionId})` }).from(activityLogs).where(
-          and(
-            eq(activityLogs.eventType, "page_view"),
-            sql2`${activityLogs.createdAt} > NOW() - INTERVAL '7 days'`
-          )
-        );
         const [orderCountResult] = await db.select({ count: sql2`count(*)` }).from(orders).where(sql2`${orders.createdAt} > NOW() - INTERVAL '7 days'`);
-        const visits = Number(visitsResult.count || 1);
         const orderCount = Number(orderCountResult.count || 0);
-        const conversionRate = visits > 0 ? orderCount / visits * 100 : 0;
+        const conversionRate = 0;
         const [avgOrderResult] = await db.select({ avgValue: sql2`coalesce(avg(${orders.total}), 0)` }).from(orders).where(eq(orders.status, "delivered"));
         const topProducts = await db.select({
           productId: orderItems.productId,
@@ -1636,24 +1478,16 @@ var init_storage = __esm({
           totalSold: sql2`sum(${orderItems.quantity})`,
           revenue: sql2`sum(${orderItems.quantity} * ${orderItems.price})`
         }).from(orderItems).leftJoin(products, eq(orderItems.productId, products.id)).groupBy(orderItems.productId, products.name).orderBy(sql2`sum(${orderItems.quantity}) desc`).limit(5);
-        const recentActivity = await db.select({
-          id: activityLogs.id,
-          type: activityLogs.eventType,
-          details: sql2`CASE 
-          WHEN ${activityLogs.eventType} = 'page_view' THEN 'Page view: ' || COALESCE(${activityLogs.page}, 'Unknown')
-          WHEN ${activityLogs.eventType} = 'user_action' THEN 'User action: ' || COALESCE(${activityLogs.action}, 'Unknown')
-          ELSE ${activityLogs.eventType}
-        END`,
-          timestamp: activityLogs.createdAt
-        }).from(activityLogs).orderBy(desc(activityLogs.createdAt)).limit(10);
+        const recentActivity = [];
         return {
           pageViews: {
-            current: Number(pageViewsResult.count || 0),
+            current: 0,
+            // SIMPLIFIED: activity tracking removed
             change: 0
-            // Would need historical tracking for real change calculation
           },
           activeUsers: {
-            current: Number(activeUsersResult.count || 0),
+            current: 0,
+            // SIMPLIFIED: activity tracking removed
             change: 0
           },
           conversionRate: {
@@ -1665,7 +1499,8 @@ var init_storage = __esm({
             change: 0
           },
           topProducts,
-          recentActivity
+          recentActivity: []
+          // SIMPLIFIED: no activity tracking
         };
       }
       // Removed duplicate healthCheck function
@@ -1900,11 +1735,7 @@ var init_storage = __esm({
       // Removed duplicate exportProductsToCSV function
       // Removed duplicate exportUsersToCSV function
       // Removed duplicate exportOrdersToCSV function
-      // Activity tracking for real analytics
-      async trackActivity(activity) {
-        const [newActivity] = await db.insert(activityLogs).values(activity).returning();
-        return newActivity;
-      }
+      // REMOVED: Activity tracking - internal tracking not needed
       // Equipment Submission operations (essential for single-seller model)
       async createSubmission(data) {
         const referenceNumber = `CF-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
@@ -2063,54 +1894,6 @@ var init_storage = __esm({
   }
 });
 
-// server/config/database.ts
-function getCurrentEnvironment() {
-  return "development";
-  console.log("[DB] Environment defaulting to development (safest option)");
-  return "development";
-}
-function getDatabaseConfig() {
-  const environment = getCurrentEnvironment();
-  if (environment === "production") {
-    let prodUrl = void 0;
-    prodUrl = env.DATABASE_URL;
-    if (prodUrl.includes("lingering-flower")) {
-      throw new Error("CRITICAL: Cannot use development database (lingering-flower) in production!");
-    }
-    console.log("[DB] \u2705 Using PRODUCTION database (muddy-moon)");
-    return {
-      url: prodUrl,
-      name: "production",
-      environment: "production",
-      maxRetries: 5,
-      retryDelay: 2e3
-    };
-  } else {
-    const devUrl = process.env.DATABASE_URL_DEV || process.env.DATABASE_URL;
-    if (!devUrl) {
-      throw new Error("DATABASE_URL must be set for development environment");
-    }
-    if (devUrl.includes("muddy-moon")) {
-      console.warn("[DB] \u26A0\uFE0F  WARNING: Development environment using production database!");
-      console.warn("[DB] This is allowed but not recommended for safety");
-    }
-    console.log("[DB] \u2705 Using DEVELOPMENT database (localhost environment)");
-    return {
-      url: devUrl,
-      name: "development",
-      environment: "development",
-      maxRetries: 3,
-      retryDelay: 1e3
-    };
-  }
-}
-var init_database = __esm({
-  "server/config/database.ts"() {
-    "use strict";
-    init_env();
-  }
-});
-
 // server/auth/google-strategy.ts
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
@@ -2237,37 +2020,73 @@ function validatePassword(password) {
 }
 function setupAuth(app2) {
   initializeGoogleAuth();
+  console.log("[SESSION] Validating database configuration...");
+  console.log("[SESSION] DATABASE_URL configured:", !!DATABASE_URL);
+  console.log("[SESSION] DATABASE_URL format:", DATABASE_URL?.startsWith("postgresql://") ? "Valid PostgreSQL" : "Invalid");
+  if (!DATABASE_URL) {
+    console.error("[SESSION] CRITICAL: No DATABASE_URL found - this will cause MemoryStore fallback");
+    console.error("[SESSION] Environment check:", {
+      NODE_ENV: process.env.NODE_ENV,
+      APP_ENV: process.env.APP_ENV,
+      hasProdUrl: !!process.env.PROD_DATABASE_URL,
+      hasDevUrl: !!process.env.DEV_DATABASE_URL,
+      hasLegacyUrl: !!process.env.DATABASE_URL
+    });
+    throw new Error("DATABASE_URL is required for session storage - cannot proceed with MemoryStore");
+  }
+  console.log("[SESSION] Testing database connection...");
   const PostgresSessionStore = connectPg(session);
-  const dbConfig = getDatabaseConfig();
-  console.log("[SESSION] Using database:", dbConfig.name);
-  console.log("[SESSION] Environment:", dbConfig.environment);
-  const ONE_MONTH2 = 30 * 24 * 60 * 60 * 1e3;
-  const sessionSettings = {
-    secret: process.env.SESSION_SECRET || "dev_secret_change_me",
-    resave: false,
-    saveUninitialized: true,
-    // guests get a stable session
-    store: new PostgresSessionStore({
-      conString: dbConfig.url,
+  let sessionStore;
+  try {
+    sessionStore = new PostgresSessionStore({
+      conString: DATABASE_URL,
       createTableIfMissing: false,
       // Don't create table - already exists
       schemaName: "public",
       tableName: "sessions",
-      // Use existing sessions table
+      ttl: 7 * 24 * 60 * 60,
+      // 7 days (seconds)
+      pruneSessionInterval: 60 * 60,
+      // Prune expired rows hourly
       errorLog: (err) => {
-        if (err && !err.message?.includes("already exists") && !err.message?.includes("IDX_session_expire")) {
-          Logger.error("Session store error:", err);
+        console.error("[SESSION STORE] PostgreSQL store error:", {
+          message: err.message,
+          code: err.code,
+          name: err.name
+        });
+        if (process.env.NODE_ENV === "production" || process.env.APP_ENV === "production") {
+          console.error("[SESSION STORE] PRODUCTION ERROR: PostgreSQL session store failed");
         }
       }
-    }),
+    });
+    console.log("[SESSION] PostgreSQL session store created successfully");
+  } catch (error) {
+    console.error("[SESSION] FAILED to create PostgreSQL session store:", error.message);
+    console.error("[SESSION] This will definitely cause MemoryStore fallback");
+    throw new Error(`Session store initialization failed: ${error.message}`);
+  }
+  const isProd = process.env.NODE_ENV === "production" || process.env.APP_ENV === "production";
+  const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1e3;
+  const sessionSettings = {
+    secret: process.env.SESSION_SECRET,
+    name: "cf.sid",
+    resave: false,
+    // Don't write on every request
+    saveUninitialized: false,
+    // CRITICAL: Don't create sessions for anonymous visitors
+    store: sessionStore,
     cookie: {
+      path: "/",
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: ONE_MONTH2
+      secure: isProd,
+      // HTTPS only in production
+      sameSite: isProd ? "none" : "lax",
+      // Cross-site in production
+      maxAge: SEVEN_DAYS
+      // 7 days instead of 30
     },
     rolling: true
-    // CRITICAL: Reset expiry on activity
+    // Reset expiry on activity
   };
   app2.set("trust proxy", 1);
   app2.use((req, _res, next) => {
@@ -2277,7 +2096,18 @@ function setupAuth(app2) {
     }
     return next();
   });
+  console.log("[SESSION] Applying session middleware with PostgreSQL store...");
   app2.use(session(sessionSettings));
+  const appliedStore = sessionSettings.store;
+  if (appliedStore && appliedStore.constructor.name === "PGStore") {
+    console.log("[SESSION] \u2705 PostgreSQL session store confirmed active");
+  } else {
+    console.error("[SESSION] \u274C WARNING: Session store is not PostgreSQL - MemoryStore fallback detected!");
+    console.error("[SESSION] Store type:", appliedStore?.constructor?.name || "Unknown");
+    if (process.env.NODE_ENV === "production" || process.env.APP_ENV === "production") {
+      throw new Error("Production cannot use MemoryStore for sessions");
+    }
+  }
   app2.use(passport2.initialize());
   app2.use(passport2.session());
   passport2.use(
@@ -3141,684 +2971,6 @@ var init_cache2 = __esm({
   }
 });
 
-// server/routes/observability.ts
-var observability_exports = {};
-__export(observability_exports, {
-  default: () => observability_default
-});
-import express from "express";
-var router, observability_default;
-var init_observability = __esm({
-  "server/routes/observability.ts"() {
-    "use strict";
-    router = express.Router();
-    router.post("/errors", (req, res) => {
-      res.sendStatus(204);
-    });
-    observability_default = router;
-  }
-});
-
-// server/services/errorLogger.ts
-import { eq as eq6, desc as desc3, sql as sql5, and as and4, gte as gte3 } from "drizzle-orm";
-var ErrorLogger;
-var init_errorLogger = __esm({
-  "server/services/errorLogger.ts"() {
-    "use strict";
-    init_db();
-    init_schema();
-    init_logger();
-    ErrorLogger = class {
-      static async logError(error, context = {}) {
-        if (this.shouldSkipLogging(error)) {
-          Logger.error(error.message, error);
-          return null;
-        }
-        try {
-          const severity = this.determineSeverity(error, context);
-          const errorData = this.extractErrorData(error, context, "error", severity);
-          const existingError = await this.findSimilarError(error);
-          if (existingError) {
-            await this.incrementOccurrence(existingError.id);
-            await this.createInstance(existingError.id, context);
-            return existingError.id;
-          }
-          const [newError] = await db.insert(errorLogs).values(errorData).returning();
-          await this.createInstance(newError.id, context);
-          if (severity === "critical") {
-            Logger.error(`CRITICAL ERROR: ${error.message}`, { errorId: newError.id, stack: error.stack });
-          }
-          return newError.id;
-        } catch (logError) {
-          Logger.error("Failed to log error:", logError);
-          return null;
-        }
-      }
-      static async logWarning(message, context = {}) {
-        if (message.includes("WebSocket") && message.includes("close")) {
-          return null;
-        }
-        try {
-          const errorData = {
-            error_type: "warning",
-            severity: "medium",
-            message,
-            ...this.extractContextData(context),
-            environment: process.env.NODE_ENV || "production"
-          };
-          const [warning] = await db.insert(errorLogs).values(errorData).returning();
-          await this.createInstance(warning.id, context);
-          return warning.id;
-        } catch (logError) {
-          Logger.error("Failed to log warning:", logError);
-          return null;
-        }
-      }
-      static async logInfo(message, context = {}) {
-        try {
-          const errorData = {
-            error_type: "info",
-            severity: "low",
-            message,
-            ...this.extractContextData(context),
-            environment: process.env.NODE_ENV || "production"
-          };
-          const [info] = await db.insert(errorLogs).values(errorData).returning();
-          await this.createInstance(info.id, context);
-          return info.id;
-        } catch (logError) {
-          Logger.error("Failed to log info:", logError);
-          return null;
-        }
-      }
-      static shouldSkipLogging(error) {
-        const message = error.message.toLowerCase();
-        if (message.includes("websocket") && (message.includes("close") || message.includes("disconnect"))) {
-          return true;
-        }
-        if (process.env.NODE_ENV === "development" && message.includes("connection")) {
-          return true;
-        }
-        const skipPatterns = [
-          "emitclose",
-          "client disconnected",
-          "socket hang up",
-          "connection reset",
-          "econnreset"
-        ];
-        return skipPatterns.some((pattern) => message.includes(pattern));
-      }
-      static async findSimilarError(error) {
-        try {
-          const [existing] = await db.select().from(errorLogs).where(
-            and4(
-              eq6(errorLogs.message, error.message),
-              eq6(errorLogs.resolved, false)
-            )
-          ).limit(1);
-          return existing || null;
-        } catch (err) {
-          Logger.error("Failed to find similar error:", err);
-          return null;
-        }
-      }
-      static async incrementOccurrence(errorId) {
-        try {
-          await db.update(errorLogs).set({
-            occurrence_count: sql5`${errorLogs.occurrence_count} + 1`,
-            last_seen: /* @__PURE__ */ new Date()
-          }).where(eq6(errorLogs.id, errorId));
-        } catch (err) {
-          Logger.error("Failed to increment occurrence:", err);
-        }
-      }
-      static async createInstance(errorLogId, context) {
-        try {
-          await db.insert(errorLogInstances).values({
-            error_log_id: errorLogId,
-            context
-          });
-        } catch (err) {
-          Logger.error("Failed to create error instance:", err);
-        }
-      }
-      static async getErrorTrends(timeRange = "24h") {
-        try {
-          const timeRanges = {
-            "24h": sql5`NOW() - INTERVAL '24 hours'`,
-            "7d": sql5`NOW() - INTERVAL '7 days'`,
-            "30d": sql5`NOW() - INTERVAL '30 days'`
-          };
-          const timeFilter = timeRanges[timeRange] || timeRanges["24h"];
-          const trends = await db.select({
-            hour: sql5`DATE_TRUNC('hour', created_at)`,
-            count: sql5`COUNT(*)`,
-            severity: errorLogs.severity
-          }).from(errorLogs).where(gte3(errorLogs.created_at, timeFilter)).groupBy(sql5`DATE_TRUNC('hour', created_at)`, errorLogs.severity).orderBy(desc3(sql5`DATE_TRUNC('hour', created_at)`));
-          return trends;
-        } catch (err) {
-          Logger.error("Failed to get error trends:", err);
-          return [];
-        }
-      }
-      static async getTopErrors(limit = 10) {
-        try {
-          const topErrors = await db.select().from(errorLogs).where(eq6(errorLogs.resolved, false)).orderBy(desc3(errorLogs.occurrence_count)).limit(limit);
-          return topErrors;
-        } catch (err) {
-          Logger.error("Failed to get top errors:", err);
-          return [];
-        }
-      }
-      static async getErrorsByUser(userId) {
-        try {
-          const userErrors = await db.select().from(errorLogs).where(eq6(errorLogs.user_id, userId)).orderBy(desc3(errorLogs.created_at));
-          return userErrors;
-        } catch (err) {
-          Logger.error("Failed to get errors by user:", err);
-          return [];
-        }
-      }
-      static async getUnresolvedCritical() {
-        try {
-          const criticalErrors = await db.select().from(errorLogs).where(
-            and4(
-              eq6(errorLogs.severity, "critical"),
-              eq6(errorLogs.resolved, false)
-            )
-          ).orderBy(desc3(errorLogs.created_at));
-          return criticalErrors;
-        } catch (err) {
-          Logger.error("Failed to get unresolved critical errors:", err);
-          return [];
-        }
-      }
-      static async resolveError(errorId, resolvedBy, notes) {
-        try {
-          await db.update(errorLogs).set({
-            resolved: true,
-            resolved_by: resolvedBy,
-            resolved_at: /* @__PURE__ */ new Date(),
-            notes
-          }).where(eq6(errorLogs.id, errorId));
-          Logger.info(`Error ${errorId} resolved by ${resolvedBy}: ${notes}`);
-        } catch (err) {
-          Logger.error("Failed to resolve error:", err);
-        }
-      }
-      // Bulk resolve errors by fingerprint
-      static async resolveErrorsByFingerprint(message, errorType, resolvedBy, notes) {
-        try {
-          await db.update(errorLogs).set({
-            resolved: true,
-            resolved_by: resolvedBy,
-            resolved_at: /* @__PURE__ */ new Date(),
-            notes
-          }).where(and4(
-            eq6(errorLogs.message, message),
-            eq6(errorLogs.error_type, errorType),
-            eq6(errorLogs.resolved, false)
-          ));
-          Logger.info(`All errors matching fingerprint ${message}-${errorType} resolved by ${resolvedBy}`);
-        } catch (err) {
-          Logger.error("Failed to bulk resolve errors:", err);
-        }
-      }
-      static async getErrorsWithFilters(filters, options) {
-        try {
-          const { page, limit, timeRange, search } = options;
-          const offset = (page - 1) * limit;
-          let query = db.select().from(errorLogs);
-          const conditions = [];
-          if (filters.severity) {
-            conditions.push(eq6(errorLogs.severity, filters.severity));
-          }
-          if (typeof filters.resolved === "boolean") {
-            conditions.push(eq6(errorLogs.resolved, filters.resolved));
-          }
-          const timeRanges = {
-            "24h": sql5`NOW() - INTERVAL '24 hours'`,
-            "7d": sql5`NOW() - INTERVAL '7 days'`,
-            "30d": sql5`NOW() - INTERVAL '30 days'`
-          };
-          if (timeRanges[timeRange]) {
-            conditions.push(gte3(errorLogs.created_at, timeRanges[timeRange]));
-          }
-          if (search) {
-            conditions.push(sql5`${errorLogs.message} ILIKE ${`%${search}%`}`);
-          }
-          let finalQuery = query;
-          if (conditions.length > 0) {
-            finalQuery = query.where(and4(...conditions));
-          }
-          const results = await finalQuery.orderBy(desc3(errorLogs.created_at)).limit(limit).offset(offset);
-          return results;
-        } catch (err) {
-          Logger.error("Failed to get errors with filters:", err);
-          return [];
-        }
-      }
-      static async getErrorById(errorId) {
-        try {
-          const [error] = await db.select().from(errorLogs).where(eq6(errorLogs.id, errorId));
-          if (!error) return null;
-          const instances = await db.select().from(errorLogInstances).where(eq6(errorLogInstances.error_log_id, errorId)).orderBy(desc3(errorLogInstances.occurred_at)).limit(10);
-          return { ...error, instances };
-        } catch (err) {
-          Logger.error("Failed to get error by ID:", err);
-          return null;
-        }
-      }
-      static async getErrorStats() {
-        try {
-          const [totalCount] = await db.select({ count: sql5`COUNT(*)` }).from(errorLogs);
-          const [resolvedCount] = await db.select({ count: sql5`COUNT(*)` }).from(errorLogs).where(eq6(errorLogs.resolved, true));
-          const [criticalCount] = await db.select({ count: sql5`COUNT(*)` }).from(errorLogs).where(and4(eq6(errorLogs.severity, "critical"), eq6(errorLogs.resolved, false)));
-          const [affectedUsersCount] = await db.select({ count: sql5`COUNT(DISTINCT ${errorLogs.user_id})` }).from(errorLogs).where(sql5`${errorLogs.user_id} IS NOT NULL`);
-          const errorRate = totalCount.count > 0 ? Math.round(criticalCount.count / totalCount.count * 100) : 0;
-          return {
-            total: totalCount.count || 0,
-            resolved: resolvedCount.count || 0,
-            critical: criticalCount.count || 0,
-            affectedUsers: affectedUsersCount.count || 0,
-            errorRate
-          };
-        } catch (err) {
-          Logger.error("Failed to get error stats:", err);
-          return {
-            total: 0,
-            resolved: 0,
-            critical: 0,
-            affectedUsers: 0,
-            errorRate: 0
-          };
-        }
-      }
-      static determineSeverity(error, context) {
-        const message = error.message.toLowerCase();
-        const stack = error.stack?.toLowerCase() || "";
-        if (message.includes("database") || message.includes("connection") || message.includes("auth") || message.includes("payment") || context.res?.statusCode === 500) {
-          return "critical";
-        }
-        if (message.includes("validation") || message.includes("permission") || context.res?.statusCode === 400 || context.res?.statusCode === 401 || context.res?.statusCode === 403) {
-          return "high";
-        }
-        if (message.includes("not found") || context.res?.statusCode === 404) {
-          return "medium";
-        }
-        return "low";
-      }
-      static extractErrorData(error, context, type, severity) {
-        const stackLines = error.stack?.split("\n") || [];
-        const firstStackLine = stackLines[1] || "";
-        const fileMatch = firstStackLine.match(/at.*\((.+):(\d+):(\d+)\)/);
-        return {
-          error_type: type,
-          severity,
-          message: error.message,
-          stack_trace: error.stack,
-          file_path: fileMatch ? fileMatch[1] : null,
-          line_number: fileMatch ? parseInt(fileMatch[2]) : null,
-          column_number: fileMatch ? parseInt(fileMatch[3]) : null,
-          ...this.extractContextData(context),
-          environment: process.env.NODE_ENV || "production"
-        };
-      }
-      static extractContextData(context) {
-        return {
-          user_id: context.user?.id || null,
-          user_email: context.user?.email || null,
-          user_ip: context.req?.ip || null,
-          user_agent: context.req?.userAgent || null,
-          url: context.req?.url || null,
-          method: context.req?.method || null,
-          request_body: context.req?.body || null,
-          response_status: context.res?.statusCode || null,
-          browser: this.extractBrowser(context.req?.userAgent),
-          os: this.extractOS(context.req?.userAgent),
-          device_type: this.extractDeviceType(context.req?.userAgent),
-          session_id: null
-          // Could be extracted from session
-        };
-      }
-      static extractBrowser(userAgent) {
-        if (!userAgent) return null;
-        const browsers = {
-          "Chrome": /Chrome\/([\d.]+)/,
-          "Firefox": /Firefox\/([\d.]+)/,
-          "Safari": /Safari\/([\d.]+)/,
-          "Edge": /Edge\/([\d.]+)/,
-          "Opera": /Opera\/([\d.]+)/
-        };
-        for (const [browser, regex] of Object.entries(browsers)) {
-          if (regex.test(userAgent)) {
-            return browser;
-          }
-        }
-        return "Unknown";
-      }
-      static extractOS(userAgent) {
-        if (!userAgent) return null;
-        const os = {
-          "Windows": /Windows NT ([\d.]+)/,
-          "MacOS": /Mac OS X ([\d_]+)/,
-          "Linux": /Linux/,
-          "iOS": /iPhone|iPad/,
-          "Android": /Android ([\d.]+)/
-        };
-        for (const [osName, regex] of Object.entries(os)) {
-          if (regex.test(userAgent)) {
-            return osName;
-          }
-        }
-        return "Unknown";
-      }
-      static extractDeviceType(userAgent) {
-        if (!userAgent) return null;
-        if (/iPhone|iPad|iPod/.test(userAgent)) return "Mobile";
-        if (/Android/.test(userAgent) && /Mobile/.test(userAgent)) return "Mobile";
-        if (/Android/.test(userAgent)) return "Tablet";
-        return "Desktop";
-      }
-    };
-  }
-});
-
-// server/routes/admin/error-management.ts
-var error_management_exports = {};
-__export(error_management_exports, {
-  default: () => error_management_default
-});
-import { Router as Router4 } from "express";
-var router5, error_management_default;
-var init_error_management = __esm({
-  "server/routes/admin/error-management.ts"() {
-    "use strict";
-    init_errorLogger();
-    init_auth();
-    router5 = Router4();
-    router5.use(requireAuth);
-    router5.use(requireRole("developer"));
-    router5.get("/errors", async (req, res) => {
-      try {
-        const {
-          page = 1,
-          limit = 50,
-          severity,
-          resolved,
-          timeRange = "24h",
-          search
-        } = req.query;
-        const filters = {};
-        if (severity && severity !== "all") {
-          filters.severity = severity;
-        }
-        if (resolved && resolved !== "all") {
-          filters.resolved = resolved === "true";
-        }
-        const errors = await ErrorLogger.getErrorsWithFilters(filters, {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          timeRange,
-          search
-        });
-        res.json(errors);
-      } catch (error) {
-        console.error("Failed to get errors:", error);
-        res.status(500).json({ error: "Failed to get errors" });
-      }
-    });
-    router5.get("/errors/trends", async (req, res) => {
-      try {
-        const { timeRange = "24h" } = req.query;
-        res.json([]);
-      } catch (error) {
-        console.error("Failed to get error trends:", error);
-        res.status(500).json({ error: "Failed to get error trends" });
-      }
-    });
-    router5.get("/errors/stats", async (req, res) => {
-      try {
-        const stats = await ErrorLogger.getErrorStats();
-        res.json(stats);
-      } catch (error) {
-        console.error("Failed to get error stats:", error);
-        res.status(500).json({ error: "Failed to get error stats" });
-      }
-    });
-    router5.post("/codebase/analyze", async (req, res) => {
-      try {
-        const options = {
-          includePerformance: req.body.includePerformance !== false,
-          includeSecurity: req.body.includeSecurity !== false,
-          includeCodeQuality: req.body.includeCodeQuality !== false,
-          outputToDatabase: req.body.outputToDatabase === true
-        };
-        res.status(410).json({ error: "Legacy analysis deprecated. Use /api/observability instead." });
-      } catch (error) {
-        console.error("Codebase analysis failed:", error);
-        res.status(500).json({ error: "Codebase analysis failed", details: error?.message || "Unknown error" });
-      }
-    });
-    router5.get("/codebase/health", async (req, res) => {
-      try {
-        res.json({ status: "ok", findingsCount: 0, timestamp: (/* @__PURE__ */ new Date()).toISOString() });
-      } catch (error) {
-        console.error("Health check failed:", error);
-        res.status(500).json({ error: "Health check failed", details: error?.message || "Unknown error" });
-      }
-    });
-    router5.get("/codebase/last-scan", async (req, res) => {
-      try {
-        res.status(404).json({ error: "No previous scan results found" });
-      } catch (error) {
-        console.error("Failed to get last scan:", error);
-        res.status(500).json({ error: "Failed to get last scan results" });
-      }
-    });
-    router5.get("/codebase/history", async (req, res) => {
-      try {
-        res.json([]);
-      } catch (error) {
-        console.error("Failed to get scan history:", error);
-        res.status(500).json({ error: "Failed to get scan history" });
-      }
-    });
-    router5.get("/codebase/report", async (req, res) => {
-      try {
-        const format = req.query.format === "markdown" ? "markdown" : "json";
-        res.status(410).json({ error: "Legacy reporting deprecated. Use /api/observability for current error tracking." });
-      } catch (error) {
-        console.error("Failed to generate report:", error);
-        res.status(500).json({ error: "Failed to generate report", details: error?.message || "Unknown error" });
-      }
-    });
-    router5.post("/errors/log", async (req, res) => {
-      try {
-        const {
-          message,
-          stack,
-          component,
-          action,
-          severity = "medium",
-          url,
-          userAgent,
-          userContext
-        } = req.body;
-        await ErrorLogger.logError(new Error(message), {
-          req: { url, userAgent, ip: req.ip },
-          user: { id: req.user?.id },
-          action,
-          metadata: { component, severity, userContext }
-        });
-        res.status(201).json({ success: true });
-      } catch (error) {
-        console.error("Failed to log error:", error);
-        res.status(500).json({ error: "Failed to log error" });
-      }
-    });
-    router5.get("/errors/:id", async (req, res) => {
-      try {
-        const { id } = req.params;
-        const error = await ErrorLogger.getErrorById(id);
-        if (!error) {
-          return res.status(404).json({ error: "Error not found" });
-        }
-        res.json(error);
-      } catch (error) {
-        console.error("Failed to get error:", error);
-        res.status(500).json({ error: "Failed to get error" });
-      }
-    });
-    router5.post("/errors/:id/resolve", async (req, res) => {
-      try {
-        const { id } = req.params;
-        const { notes = "Resolved via admin dashboard" } = req.body;
-        const userId = req.user?.id || "system";
-        await ErrorLogger.resolveError(id, userId, notes);
-        res.json({ success: true, message: "Error resolved successfully" });
-      } catch (error) {
-        console.error("Failed to resolve error:", error);
-        res.status(500).json({ error: "Failed to resolve error" });
-      }
-    });
-    router5.post("/errors/bulk-resolve", async (req, res) => {
-      try {
-        const { errorIds, notes } = req.body;
-        const user = req.user;
-        for (const errorId of errorIds) {
-          await ErrorLogger.resolveError(errorId, user.id, notes);
-        }
-        res.json({
-          success: true,
-          message: `${errorIds.length} errors resolved successfully`
-        });
-      } catch (error) {
-        console.error("Failed to bulk resolve errors:", error);
-        res.status(500).json({ error: "Failed to bulk resolve errors" });
-      }
-    });
-    router5.post("/errors/client", async (req, res) => {
-      try {
-        const errorData = req.body;
-        const error = new Error(errorData.message);
-        error.stack = errorData.stack;
-        const context = {
-          req: {
-            url: errorData.url,
-            userAgent: errorData.userAgent,
-            ip: req.ip
-          },
-          user: errorData.userContext,
-          component: errorData.component,
-          action: errorData.action,
-          metadata: {
-            breadcrumbs: errorData.breadcrumbs,
-            clientSide: true,
-            ...errorData.metadata
-          }
-        };
-        await ErrorLogger.logError(error, context);
-        res.status(200).json({ success: true });
-      } catch (error) {
-        console.error("Failed to log client error:", error);
-        res.status(500).json({ error: "Failed to log error" });
-      }
-    });
-    router5.post("/errors/client-log", async (req, res) => {
-      try {
-        const logData = req.body;
-        const context = {
-          req: {
-            url: logData.url,
-            userAgent: logData.userAgent,
-            ip: req.ip
-          },
-          user: logData.userContext,
-          action: logData.action,
-          metadata: {
-            breadcrumbs: logData.breadcrumbs,
-            clientSide: true,
-            level: logData.level,
-            ...logData.metadata
-          }
-        };
-        if (logData.level === "error") {
-          await ErrorLogger.logError(new Error(logData.message), context);
-        } else if (logData.level === "warning") {
-          await ErrorLogger.logWarning(logData.message, context);
-        } else {
-          await ErrorLogger.logInfo(logData.message, context);
-        }
-        res.status(200).json({ success: true });
-      } catch (error) {
-        console.error("Failed to log client message:", error);
-        res.status(500).json({ error: "Failed to log message" });
-      }
-    });
-    router5.post("/errors/performance", async (req, res) => {
-      try {
-        const metric = req.body;
-        await ErrorLogger.logInfo(`Performance: ${metric.name} took ${metric.value}ms`, {
-          req: {
-            url: metric.url,
-            ip: req.ip
-          },
-          metadata: {
-            performance: true,
-            metric: metric.name,
-            value: metric.value,
-            timestamp: metric.timestamp
-          }
-        });
-        res.status(200).json({ success: true });
-      } catch (error) {
-        console.error("Failed to log performance metric:", error);
-        res.status(500).json({ error: "Failed to log performance metric" });
-      }
-    });
-    router5.post("/errors/log", async (req, res) => {
-      try {
-        const errorData = req.body;
-        const error = new Error(errorData.message || "Client-side error");
-        if (errorData.stack) {
-          error.stack = errorData.stack;
-        }
-        const context = {
-          req: {
-            url: errorData.url || req.url,
-            userAgent: req.headers["user-agent"],
-            ip: req.ip
-          },
-          user: errorData.userContext,
-          component: errorData.component,
-          action: errorData.action,
-          metadata: {
-            breadcrumbs: errorData.breadcrumbs,
-            clientSide: true,
-            level: errorData.level || "error",
-            timestamp: errorData.timestamp || (/* @__PURE__ */ new Date()).toISOString(),
-            environment: process.env.NODE_ENV || "development",
-            ...errorData.metadata
-          }
-        };
-        if (errorData.level === "error" || !errorData.level) {
-          await ErrorLogger.logError(error, context);
-        } else if (errorData.level === "warning") {
-          await ErrorLogger.logWarning(errorData.message, context);
-        } else {
-          await ErrorLogger.logInfo(errorData.message, context);
-        }
-        res.json({ success: true, message: "Error logged successfully" });
-      } catch (error) {
-        console.error("Failed to log frontend error:", error);
-        res.status(500).json({ error: "Failed to log error" });
-      }
-    });
-    error_management_default = router5;
-  }
-});
-
 // server/lib/addressCanonicalizer.ts
 var addressCanonicalizer_exports = {};
 __export(addressCanonicalizer_exports, {
@@ -4035,7 +3187,7 @@ var init_inputSanitization = __esm({
         }
         return obj;
       }
-      static validateAndSanitize(data, schema2) {
+      static validateAndSanitize(data, schema) {
         const sqlInjectionPatterns = [
           /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi,
           /(\b(OR|AND)\s+\w+\s*=\s*\w+)/gi,
@@ -4310,8 +3462,8 @@ var init_performanceMonitor = __esm({
         if (this.metrics.length > this.MAX_METRICS) {
           this.metrics = this.metrics.slice(0, this.MAX_METRICS);
         }
-        const DEV = process.env.NODE_ENV !== "production";
-        const SLOW_MS = DEV ? 2e3 : 700;
+        const DEV2 = process.env.NODE_ENV !== "production";
+        const SLOW_MS = DEV2 ? 2e3 : 700;
         if (name === "request_duration" && value > SLOW_MS) {
           Logger.warn(`Slow request detected: ${context?.method} ${context?.route} took ${value}ms`);
         }
@@ -4426,31 +3578,31 @@ var addresses_exports = {};
 __export(addresses_exports, {
   default: () => addresses_default
 });
-import { Router as Router7 } from "express";
-import { z as z4 } from "zod";
-var router8, addressSchema, addresses_default;
+import { Router as Router6 } from "express";
+import { z as z3 } from "zod";
+var router6, addressSchema, addresses_default;
 var init_addresses = __esm({
   "server/routes/addresses.ts"() {
     "use strict";
     init_storage();
     init_auth2();
     init_distance();
-    router8 = Router7();
-    addressSchema = z4.object({
-      firstName: z4.string().min(1, "First name is required"),
-      lastName: z4.string().min(1, "Last name is required"),
-      street1: z4.string().min(1, "Street address is required"),
-      street2: z4.string().optional().nullable(),
-      city: z4.string().min(1, "City is required"),
-      state: z4.string().length(2, "State must be 2 characters"),
-      postalCode: z4.string().regex(/^\d{5}(-\d{4})?$/, "Invalid postal code"),
-      country: z4.string().default("US"),
-      latitude: z4.number().nullable().optional(),
-      longitude: z4.number().nullable().optional(),
-      geoapifyPlaceId: z4.string().optional().nullable(),
-      setDefault: z4.boolean().default(false)
+    router6 = Router6();
+    addressSchema = z3.object({
+      firstName: z3.string().min(1, "First name is required"),
+      lastName: z3.string().min(1, "Last name is required"),
+      street1: z3.string().min(1, "Street address is required"),
+      street2: z3.string().optional().nullable(),
+      city: z3.string().min(1, "City is required"),
+      state: z3.string().length(2, "State must be 2 characters"),
+      postalCode: z3.string().regex(/^\d{5}(-\d{4})?$/, "Invalid postal code"),
+      country: z3.string().default("US"),
+      latitude: z3.number().nullable().optional(),
+      longitude: z3.number().nullable().optional(),
+      geoapifyPlaceId: z3.string().optional().nullable(),
+      setDefault: z3.boolean().default(false)
     });
-    router8.get("/", isAuthenticated, async (req, res) => {
+    router6.get("/", isAuthenticated, async (req, res) => {
       try {
         const userId = req.user.id;
         const addresses3 = await storage.getUserAddresses(userId);
@@ -4465,7 +3617,7 @@ var init_addresses = __esm({
         res.status(500).json({ message: "Failed to fetch addresses" });
       }
     });
-    router8.post("/", isAuthenticated, async (req, res) => {
+    router6.post("/", isAuthenticated, async (req, res) => {
       try {
         const userId = req.user.id;
         const data = addressSchema.parse(req.body);
@@ -4490,7 +3642,7 @@ var init_addresses = __esm({
         res.json(address);
       } catch (error) {
         console.error("POST /api/addresses error:", error);
-        if (error instanceof z4.ZodError) {
+        if (error instanceof z3.ZodError) {
           res.status(400).json({
             ok: false,
             error: "VALIDATION_ERROR",
@@ -4505,7 +3657,7 @@ var init_addresses = __esm({
         }
       }
     });
-    router8.patch("/:id", isAuthenticated, async (req, res) => {
+    router6.patch("/:id", isAuthenticated, async (req, res) => {
       try {
         const userId = req.user.id;
         const { id } = req.params;
@@ -4524,7 +3676,7 @@ var init_addresses = __esm({
         res.status(400).json({ message: "Failed to update address" });
       }
     });
-    router8.post("/:id/default", isAuthenticated, async (req, res) => {
+    router6.post("/:id/default", isAuthenticated, async (req, res) => {
       try {
         const userId = req.user.id;
         const { id } = req.params;
@@ -4535,7 +3687,7 @@ var init_addresses = __esm({
         res.status(400).json({ message: "Failed to set default address" });
       }
     });
-    router8.delete("/:id", isAuthenticated, async (req, res) => {
+    router6.delete("/:id", isAuthenticated, async (req, res) => {
       try {
         const userId = req.user.id;
         const { id } = req.params;
@@ -4557,7 +3709,7 @@ var init_addresses = __esm({
         res.status(500).json({ ok: false, error: "Failed to delete address" });
       }
     });
-    addresses_default = router8;
+    addresses_default = router6;
   }
 });
 
@@ -4575,17 +3727,17 @@ var init_cartOwner = __esm({
 var cart_exports = {};
 __export(cart_exports, {
   default: () => cart_default,
-  router: () => router9
+  router: () => router7
 });
-import express3 from "express";
-var router9, cart_default;
+import express2 from "express";
+var router7, cart_default;
 var init_cart = __esm({
   "server/routes/cart.ts"() {
     "use strict";
     init_cartOwner();
     init_storage();
-    router9 = express3.Router();
-    router9.get("/", async (req, res, next) => {
+    router7 = express2.Router();
+    router7.get("/", async (req, res, next) => {
       try {
         const ownerId = getCartOwnerId(req);
         console.log(`[CART V2] GET cart for owner: ${ownerId}`);
@@ -4599,7 +3751,7 @@ var init_cart = __esm({
         next(error);
       }
     });
-    router9.post("/", async (req, res, next) => {
+    router7.post("/", async (req, res, next) => {
       try {
         const ownerId = getCartOwnerId(req);
         const { productId, qty, variantId } = req.body || {};
@@ -4618,7 +3770,7 @@ var init_cart = __esm({
         next(error);
       }
     });
-    router9.patch("/product/:productId", async (req, res, next) => {
+    router7.patch("/product/:productId", async (req, res, next) => {
       try {
         const ownerId = getCartOwnerId(req);
         const { productId } = req.params;
@@ -4634,7 +3786,7 @@ var init_cart = __esm({
         next(error);
       }
     });
-    router9.delete("/product/:productId", async (req, res, next) => {
+    router7.delete("/product/:productId", async (req, res, next) => {
       try {
         const ownerId = getCartOwnerId(req);
         const { productId } = req.params;
@@ -4646,7 +3798,7 @@ var init_cart = __esm({
         next(error);
       }
     });
-    cart_default = router9;
+    cart_default = router7;
   }
 });
 
@@ -4761,10 +3913,10 @@ var shipping_exports = {};
 __export(shipping_exports, {
   default: () => shipping_default
 });
-import express4 from "express";
-import { z as z5 } from "zod";
-import { eq as eq7, and as and5 } from "drizzle-orm";
-var requireAuth2, router10, WAREHOUSE_COORDS, LOCAL_DELIVERY_MAX_MILES, ShippingQuoteSchema, shipping_default;
+import express3 from "express";
+import { z as z4 } from "zod";
+import { eq as eq6, and as and4 } from "drizzle-orm";
+var requireAuth2, router8, WAREHOUSE_COORDS, LOCAL_DELIVERY_MAX_MILES, ShippingQuoteSchema, shipping_default;
 var init_shipping2 = __esm({
   "server/routes/shipping.ts"() {
     "use strict";
@@ -4773,26 +3925,26 @@ var init_shipping2 = __esm({
     init_auth2();
     init_geo();
     ({ requireAuth: requireAuth2 } = authMiddleware);
-    router10 = express4.Router();
+    router8 = express3.Router();
     WAREHOUSE_COORDS = { lat: 40.7128, lon: -74.006 };
     LOCAL_DELIVERY_MAX_MILES = 30;
-    ShippingQuoteSchema = z5.object({
-      addressId: z5.string().optional(),
+    ShippingQuoteSchema = z4.object({
+      addressId: z4.string().optional(),
       // For "new address" flow
-      street1: z5.string().optional(),
-      city: z5.string().optional(),
-      state: z5.string().optional(),
-      postalCode: z5.string().optional(),
-      latitude: z5.number().optional(),
-      longitude: z5.number().optional()
+      street1: z4.string().optional(),
+      city: z4.string().optional(),
+      state: z4.string().optional(),
+      postalCode: z4.string().optional(),
+      latitude: z4.number().optional(),
+      longitude: z4.number().optional()
     });
-    router10.post("/quote", requireAuth2, async (req, res) => {
+    router8.post("/quote", requireAuth2, async (req, res) => {
       try {
         const userId = req.user.id;
         const validatedData = ShippingQuoteSchema.parse(req.body);
         let addressCoords = null;
         if (validatedData.addressId) {
-          const address = await db.select().from(addresses).where(eq7(addresses.id, validatedData.addressId)).limit(1);
+          const address = await db.select().from(addresses).where(eq6(addresses.id, validatedData.addressId)).limit(1);
           if (!address.length) {
             return res.status(404).json({ error: "Address not found" });
           }
@@ -4853,10 +4005,10 @@ var init_shipping2 = __esm({
         res.status(500).json({ error: "Failed to generate shipping quote" });
       }
     });
-    router10.get("/user/locality", requireAuth2, async (req, res) => {
+    router8.get("/user/locality", requireAuth2, async (req, res) => {
       try {
         const userId = req.user.id;
-        const defaultAddress = await db.select().from(addresses).where(and5(eq7(addresses.userId, userId), eq7(addresses.isDefault, true))).limit(1);
+        const defaultAddress = await db.select().from(addresses).where(and4(eq6(addresses.userId, userId), eq6(addresses.isDefault, true))).limit(1);
         if (!defaultAddress.length || !defaultAddress[0].latitude || !defaultAddress[0].longitude) {
           return res.json({ isLocal: false, distanceMiles: null });
         }
@@ -4872,7 +4024,7 @@ var init_shipping2 = __esm({
         res.status(500).json({ error: "Failed to check locality" });
       }
     });
-    shipping_default = router10;
+    shipping_default = router8;
   }
 });
 
@@ -4882,7 +4034,7 @@ __export(cart_validation_exports, {
   default: () => cart_validation_default,
   guardCartItemAgainstLocality: () => guardCartItemAgainstLocality
 });
-import { Router as Router8 } from "express";
+import { Router as Router7 } from "express";
 function guardCartItemAgainstLocality({
   userIsLocal,
   product
@@ -4895,14 +4047,14 @@ function guardCartItemAgainstLocality({
     throw err;
   }
 }
-var router11, cart_validation_default;
+var router9, cart_validation_default;
 var init_cart_validation = __esm({
   "server/routes/cart-validation.ts"() {
     "use strict";
     init_auth();
     init_storage();
-    router11 = Router8();
-    router11.post("/validate", requireAuth, async (req, res) => {
+    router9 = Router7();
+    router9.post("/validate", requireAuth, async (req, res) => {
       try {
         const userId = req.user.id;
         const addresses3 = await storage.getUserAddresses(userId);
@@ -4939,7 +4091,7 @@ var init_cart_validation = __esm({
         res.status(500).json({ error: "Failed to validate cart" });
       }
     });
-    cart_validation_default = router11;
+    cart_validation_default = router9;
   }
 });
 
@@ -4985,7 +4137,7 @@ __export(email_exports, {
   isValidEmail: () => isValidEmail,
   normalizeEmail: () => normalizeEmail2
 });
-import { sql as sql7 } from "drizzle-orm";
+import { sql as sql6 } from "drizzle-orm";
 import { Resend } from "resend";
 function normalizeEmail2(email) {
   if (!email || typeof email !== "string") {
@@ -4995,7 +4147,7 @@ function normalizeEmail2(email) {
 }
 function createEmailCondition(email) {
   const normalizedEmail = normalizeEmail2(email);
-  return sql7`LOWER(${users.email}) = ${normalizedEmail}`;
+  return sql6`LOWER(${users.email}) = ${normalizedEmail}`;
 }
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -5398,30 +4550,28 @@ var init_systemMonitor = __esm({
 // server/routes/admin/system-management.ts
 var system_management_exports = {};
 __export(system_management_exports, {
-  systemManagementRoutes: () => router12
+  systemManagementRoutes: () => router10
 });
-import { Router as Router9 } from "express";
-var router12;
+import { Router as Router8 } from "express";
+var router10;
 var init_system_management = __esm({
   "server/routes/admin/system-management.ts"() {
     "use strict";
     init_auth();
     init_systemMonitor();
     init_performanceMonitor();
-    init_errorLogger();
     init_logger();
-    router12 = Router9();
-    router12.use(requireAuth);
-    router12.use(requireRole("developer"));
-    router12.get("/health", async (req, res) => {
+    router10 = Router8();
+    router10.use(requireAuth);
+    router10.use(requireRole("developer"));
+    router10.get("/health", async (req, res) => {
       try {
         const systemHealth = await SystemMonitor.getSystemHealth();
         const performanceStats = PerformanceMonitor.getSystemStats();
-        const errorStats = await ErrorLogger.getErrorStats();
         const response = {
           system: systemHealth,
           performance: performanceStats,
-          errors: errorStats,
+          errors: { message: "Error tracking disabled" },
           timestamp: (/* @__PURE__ */ new Date()).toISOString()
         };
         res.json(response);
@@ -5430,7 +4580,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get system health" });
       }
     });
-    router12.get("/performance", async (req, res) => {
+    router10.get("/performance", async (req, res) => {
       try {
         const { timeWindow = "hour", metricName, limit = 1e3 } = req.query;
         const summary = PerformanceMonitor.getMetricsSummary(timeWindow);
@@ -5447,7 +4597,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get performance metrics" });
       }
     });
-    router12.get("/alerts", async (req, res) => {
+    router10.get("/alerts", async (req, res) => {
       try {
         const { resolved = false } = req.query;
         const alerts = resolved === "true" ? SystemMonitor.getAllAlerts() : SystemMonitor.getActiveAlerts();
@@ -5460,7 +4610,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get system alerts" });
       }
     });
-    router12.post("/alerts/:alertId/resolve", async (req, res) => {
+    router10.post("/alerts/:alertId/resolve", async (req, res) => {
       try {
         const { alertId } = req.params;
         const resolved = SystemMonitor.resolveAlert(alertId);
@@ -5474,7 +4624,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to resolve alert" });
       }
     });
-    router12.post("/alerts/cleanup", async (req, res) => {
+    router10.post("/alerts/cleanup", async (req, res) => {
       try {
         const clearedCount = SystemMonitor.clearResolvedAlerts();
         res.json({
@@ -5486,7 +4636,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to cleanup alerts" });
       }
     });
-    router12.get("/database", async (req, res) => {
+    router10.get("/database", async (req, res) => {
       try {
         const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
         const startTime = Date.now();
@@ -5531,7 +4681,7 @@ var init_system_management = __esm({
         });
       }
     });
-    router12.get("/logs", async (req, res) => {
+    router10.get("/logs", async (req, res) => {
       try {
         const {
           level = "info",
@@ -5553,7 +4703,7 @@ var init_system_management = __esm({
         res.status(500).json({ error: "Failed to get system logs" });
       }
     });
-    router12.post("/diagnostics", async (req, res) => {
+    router10.post("/diagnostics", async (req, res) => {
       try {
         const diagnostics = {
           timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -5754,7 +4904,7 @@ __export(referenceGenerator_exports, {
   generateReferenceNumber: () => generateReferenceNumber,
   generateUniqueReference: () => generateUniqueReference
 });
-import { eq as eq8 } from "drizzle-orm";
+import { eq as eq7 } from "drizzle-orm";
 function generateReferenceNumber() {
   const date = /* @__PURE__ */ new Date();
   const year = date.getFullYear();
@@ -5768,7 +4918,7 @@ async function generateUniqueReference() {
   let isUnique = false;
   while (!isUnique) {
     reference = generateReferenceNumber();
-    const existing = await db.select().from(equipmentSubmissions).where(eq8(equipmentSubmissions.referenceNumber, reference)).limit(1);
+    const existing = await db.select().from(equipmentSubmissions).where(eq7(equipmentSubmissions.referenceNumber, reference)).limit(1);
     isUnique = existing.length === 0;
   }
   return reference;
@@ -5781,13 +4931,169 @@ var init_referenceGenerator = __esm({
   }
 });
 
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+var vite_config_default;
+var init_vite_config = __esm({
+  async "vite.config.ts"() {
+    "use strict";
+    vite_config_default = defineConfig({
+      plugins: [
+        react(),
+        runtimeErrorOverlay(),
+        ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
+          await import("@replit/vite-plugin-cartographer").then(
+            (m) => m.cartographer()
+          )
+        ] : []
+      ],
+      resolve: {
+        alias: {
+          "@": path.resolve(import.meta.dirname, "client", "src"),
+          "@shared": path.resolve(import.meta.dirname, "shared"),
+          "@assets": path.resolve(import.meta.dirname, "attached_assets")
+        }
+      },
+      root: path.resolve(import.meta.dirname, "client"),
+      build: {
+        outDir: path.resolve(import.meta.dirname, "dist/public"),
+        emptyOutDir: true,
+        target: "es2020",
+        minify: "terser",
+        chunkSizeWarningLimit: 1e3,
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              // Core vendor chunks
+              "vendor-react": ["react", "react-dom"],
+              "vendor-router": ["wouter"],
+              "vendor-query": ["@tanstack/react-query"],
+              // UI library chunks
+              "vendor-ui": [
+                "@radix-ui/react-dialog",
+                "@radix-ui/react-dropdown-menu",
+                "@radix-ui/react-popover",
+                "@radix-ui/react-select",
+                "@radix-ui/react-toast",
+                "@radix-ui/react-tooltip"
+              ],
+              // Form handling
+              "vendor-form": ["react-hook-form", "@hookform/resolvers", "zod"],
+              // Utilities
+              "vendor-utils": ["clsx", "tailwind-merge", "date-fns", "lodash-es"],
+              // Icons
+              "vendor-icons": ["lucide-react"]
+            }
+          }
+        }
+      },
+      optimizeDeps: {
+        include: ["react", "react-dom", "wouter"],
+        exclude: ["@stripe/stripe-js"]
+      },
+      server: {
+        fs: {
+          strict: true,
+          deny: ["**/.*"]
+        }
+      }
+    });
+  }
+});
+
+// server/vite.ts
+var vite_exports = {};
+__export(vite_exports, {
+  log: () => log,
+  serveStatic: () => serveStatic,
+  setupVite: () => setupVite
+});
+import express4 from "express";
+import fs from "fs";
+import path2 from "path";
+import { createServer as createViteServer, createLogger } from "vite";
+import { nanoid } from "nanoid";
+function log(message, source = "express") {
+  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+}
+async function setupVite(app2, server2) {
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server: server2 },
+    allowedHosts: true
+  };
+  const vite = await createViteServer({
+    ...vite_config_default,
+    configFile: false,
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      }
+    },
+    server: serverOptions,
+    appType: "custom"
+  });
+  app2.use(vite.middlewares);
+  app2.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    try {
+      const clientTemplate = path2.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html"
+      );
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+}
+function serveStatic(app2) {
+  const distPath = path2.resolve(import.meta.dirname, "public");
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    );
+  }
+  app2.use(express4.static(distPath));
+  app2.use("*", (_req, res) => {
+    res.sendFile(path2.resolve(distPath, "index.html"));
+  });
+}
+var viteLogger;
+var init_vite = __esm({
+  async "server/vite.ts"() {
+    "use strict";
+    await init_vite_config();
+    viteLogger = createLogger();
+  }
+});
+
 // server/middleware/compression.ts
 var compression_exports = {};
 __export(compression_exports, {
   setupProductionOptimizations: () => setupProductionOptimizations
 });
 import compression2 from "compression";
-import path from "path";
+import path3 from "path";
 import express5 from "express";
 import { fileURLToPath } from "url";
 function setupProductionOptimizations(app2) {
@@ -5800,7 +5106,7 @@ function setupProductionOptimizations(app2) {
       threshold: 0
     }));
     app2.use(
-      express5.static(path.join(__dirname, "../../client-dist"), {
+      express5.static(path3.join(__dirname, "../../client-dist"), {
         etag: true,
         lastModified: true,
         maxAge: "365d",
@@ -5824,42 +5130,28 @@ var __dirname;
 var init_compression = __esm({
   "server/middleware/compression.ts"() {
     "use strict";
-    __dirname = path.dirname(fileURLToPath(import.meta.url));
+    __dirname = path3.dirname(fileURLToPath(import.meta.url));
   }
 });
 
 // server/index.ts
-init_env();
-import express7 from "express";
-import session2 from "express-session";
+init_database();
+import express6 from "express";
 import cookieParser from "cookie-parser";
 import cors2 from "cors";
 
-// server/config/guards.ts
-init_env();
-function assertProdDB() {
-  if (env.APP_ENV !== "production") return;
-  const url = new URL(env.DATABASE_URL);
-  if (env.EXPECTED_DB_HOST && url.host !== env.EXPECTED_DB_HOST) {
-    throw new Error(`[BOOT] Wrong DB host for prod: got ${url.host}, expected ${env.EXPECTED_DB_HOST}`);
-  }
-  if (url.protocol !== "postgres:") {
-    throw new Error("[BOOT] DATABASE_URL must be postgres:// in prod");
-  }
-}
-
 // server/db/migrate.ts
-init_env();
-import { neon as neon2 } from "@neondatabase/serverless";
+init_database();
+import { neon } from "@neondatabase/serverless";
 async function applyMigrations() {
-  const sql9 = neon2(env.DATABASE_URL);
+  const sql8 = neon(DATABASE_URL);
   console.log("[MIGRATIONS] Applying\u2026");
   try {
     console.log("[MIGRATIONS] Dropping retired columns...");
-    await sql9`ALTER TABLE "users" DROP COLUMN IF EXISTS "onboarding_completed_at"`;
-    await sql9`ALTER TABLE "users" DROP COLUMN IF EXISTS "profile_address_id"`;
+    await sql8`ALTER TABLE "users" DROP COLUMN IF EXISTS "onboarding_completed_at"`;
+    await sql8`ALTER TABLE "users" DROP COLUMN IF EXISTS "profile_address_id"`;
     console.log("[MIGRATIONS] Setting up cart integrity...");
-    await sql9`
+    await sql8`
       DO $$ 
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_cart_items_product') THEN
@@ -5871,7 +5163,7 @@ async function applyMigrations() {
         END IF;
       END$$;
     `;
-    await sql9`
+    await sql8`
       CREATE UNIQUE INDEX IF NOT EXISTS "uniq_cart_owner_product"
       ON "cart_items"(COALESCE(user_id::text, session_id), product_id, COALESCE(variant_id,''));
     `;
@@ -6510,14 +5802,13 @@ function createRequestLogger() {
 // server/routes.ts
 init_logger();
 init_db();
-init_observability();
 
 // server/routes/auth-google.ts
 init_storage();
 import passport3 from "passport";
 import { Strategy as GoogleStrategy3 } from "passport-google-oauth20";
 import { Router } from "express";
-var router2 = Router();
+var router = Router();
 passport3.use(new GoogleStrategy3({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -6560,7 +5851,7 @@ passport3.use(new GoogleStrategy3({
     return done(error, void 0);
   }
 }));
-router2.get("/google", (req, res, next) => {
+router.get("/google", (req, res, next) => {
   req.session.returnTo = req.query.returnTo || req.headers.referer || "/dashboard";
   req.session.save((err) => {
     if (err) console.error("Session save error:", err);
@@ -6569,33 +5860,33 @@ router2.get("/google", (req, res, next) => {
     })(req, res, next);
   });
 });
-router2.get(
+router.get(
   "/google/callback",
   passport3.authenticate("google", { failureRedirect: "/auth?error=google_auth_failed" }),
   async (req, res) => {
     const user = req.user;
-    const host = req.get("host");
-    const baseUrl = host?.includes("cleanandflip.com") ? "https://cleanandflip.com" : host?.includes("cleanflip.replit.app") ? "https://cleanflip.replit.app" : "";
+    const host2 = req.get("host");
+    const baseUrl = host2?.includes("cleanandflip.com") ? "https://cleanandflip.com" : host2?.includes("cleanflip.replit.app") ? "https://cleanflip.replit.app" : "";
     const returnUrl = req.session.returnTo || "/dashboard";
     delete req.session.returnTo;
     res.redirect(`${baseUrl}${returnUrl}`);
   }
 );
-var auth_google_default = router2;
+var auth_google_default = router;
 
 // server/routes/stripe-webhooks.ts
 init_storage();
 init_logger();
 import { Router as Router2 } from "express";
 import Stripe2 from "stripe";
-import express2 from "express";
-var router3 = Router2();
+import express from "express";
+var router2 = Router2();
 var stripe2 = new Stripe2(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-07-30.basil"
 });
-router3.post(
+router2.post(
   "/webhook",
-  express2.raw({ type: "application/json" }),
+  express.raw({ type: "application/json" }),
   // CRITICAL: Use raw body for signature verification
   async (req, res) => {
     const sig = req.headers["stripe-signature"];
@@ -6676,8 +5967,8 @@ async function handlePaymentCanceled(paymentIntent) {
   await storage.updateOrderStatus(orderId || "", "cancelled");
   await restoreInventoryForOrder(orderId);
 }
-async function handleCheckoutCompleted(session3) {
-  const orderId = session3.metadata?.orderId;
+async function handleCheckoutCompleted(session2) {
+  const orderId = session2.metadata?.orderId;
   if (!orderId) {
     Logger.error("No orderId in checkout session metadata");
     return;
@@ -6701,7 +5992,7 @@ async function restoreInventoryForOrder(orderId) {
     Logger.error("Error restoring inventory:", error);
   }
 }
-var stripe_webhooks_default = router3;
+var stripe_webhooks_default = router2;
 
 // server/routes/admin-metrics.ts
 init_storage();
@@ -6711,8 +6002,8 @@ init_schema();
 init_logger();
 import { Router as Router3 } from "express";
 import { eq as eq5, gte as gte2, sql as sql4, and as and3, desc as desc2 } from "drizzle-orm";
-var router4 = Router3();
-router4.get("/metrics", requireAuth, requireRole("developer"), async (req, res) => {
+var router3 = Router3();
+router3.get("/metrics", requireAuth, requireRole("developer"), async (req, res) => {
   try {
     const metrics = {};
     const today = /* @__PURE__ */ new Date();
@@ -6770,7 +6061,7 @@ router4.get("/metrics", requireAuth, requireRole("developer"), async (req, res) 
     res.status(500).json({ error: "Failed to calculate metrics" });
   }
 });
-router4.put("/orders/:id/status", requireAuth, requireRole("developer"), async (req, res) => {
+router3.put("/orders/:id/status", requireAuth, requireRole("developer"), async (req, res) => {
   try {
     const { status, trackingNumber, carrier, notes } = req.body;
     const orderId = req.params.id;
@@ -6834,16 +6125,13 @@ router4.put("/orders/:id/status", requireAuth, requireRole("developer"), async (
     res.status(500).json({ error: "Failed to update order status" });
   }
 });
-var admin_metrics_default = router4;
-
-// server/routes.ts
-init_error_management();
+var admin_metrics_default = router3;
 
 // server/routes/checkout.ts
 init_storage();
 init_auth2();
-import { Router as Router5 } from "express";
-import { z as z3 } from "zod";
+import { Router as Router4 } from "express";
+import { z as z2 } from "zod";
 
 // shared/locality.ts
 var SSOT_VERSION = "v2024.1";
@@ -6854,8 +6142,8 @@ function normalizeZip(input) {
   return match ? match[0] : null;
 }
 function isLocalZip2(zip) {
-  const z6 = normalizeZip(zip);
-  return !!(z6 && LOCAL_ZIPS.has(z6));
+  const z5 = normalizeZip(zip);
+  return !!(z5 && LOCAL_ZIPS.has(z5));
 }
 
 // server/services/localityService.ts
@@ -6864,10 +6152,10 @@ async function getDefaultZip(userId) {
   if (!userId) return null;
   try {
     const { addresses: addresses3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const { eq: eq10, and: and7 } = await import("drizzle-orm");
-    const result = await db.select({ postalCode: addresses3.postalCode }).from(addresses3).where(and7(
-      eq10(addresses3.userId, userId),
-      eq10(addresses3.isDefault, true)
+    const { eq: eq9, and: and6 } = await import("drizzle-orm");
+    const result = await db.select({ postalCode: addresses3.postalCode }).from(addresses3).where(and6(
+      eq9(addresses3.userId, userId),
+      eq9(addresses3.isDefault, true)
     )).limit(1);
     return result[0]?.postalCode ?? null;
   } catch (error) {
@@ -7005,19 +6293,19 @@ var LocalityService = class {
 var localityService = new LocalityService();
 
 // server/routes/checkout.ts
-var router6 = Router5();
-var AddressSchema = z3.object({
-  firstName: z3.string(),
-  lastName: z3.string(),
-  email: z3.string().email(),
-  street1: z3.string(),
-  street2: z3.string().optional(),
-  city: z3.string(),
-  state: z3.string(),
-  postalCode: z3.string(),
-  country: z3.string().default("US")
+var router4 = Router4();
+var AddressSchema = z2.object({
+  firstName: z2.string(),
+  lastName: z2.string(),
+  email: z2.string().email(),
+  street1: z2.string(),
+  street2: z2.string().optional(),
+  city: z2.string(),
+  state: z2.string(),
+  postalCode: z2.string(),
+  country: z2.string().default("US")
 });
-router6.post("/quote", authMiddleware.optionalAuth, async (req, res) => {
+router4.post("/quote", authMiddleware.optionalAuth, async (req, res) => {
   try {
     const { addressId, address } = req.body;
     let addressData = address;
@@ -7073,7 +6361,7 @@ router6.post("/quote", authMiddleware.optionalAuth, async (req, res) => {
     res.status(500).json({ error: "Failed to calculate shipping quote" });
   }
 });
-router6.post("/submit", async (req, res) => {
+router4.post("/submit", async (req, res) => {
   try {
     const { addressId, quoteId, contact, deliveryInstructions } = req.body;
     if (!addressId || !quoteId) {
@@ -7086,13 +6374,13 @@ router6.post("/submit", async (req, res) => {
     res.status(500).json({ error: "Failed to submit checkout" });
   }
 });
-var checkout_default = router6;
+var checkout_default = router4;
 
 // server/routes/locality.ts
-import { Router as Router6 } from "express";
+import { Router as Router5 } from "express";
 init_auth2();
-var router7 = Router6();
-router7.get("/status", authMiddleware.optionalAuth, async (req, res) => {
+var router5 = Router5();
+router5.get("/status", authMiddleware.optionalAuth, async (req, res) => {
   try {
     const zipOverride = req.query.zip;
     const localityResult = await getLocalityForRequest(req, zipOverride);
@@ -7110,7 +6398,7 @@ router7.get("/status", authMiddleware.optionalAuth, async (req, res) => {
     });
   }
 });
-var locality_default = router7;
+var locality_default = router5;
 
 // server/routes.ts
 init_schema();
@@ -7156,7 +6444,7 @@ function convertSubmissionsToCSV(submissions) {
 }
 
 // server/routes.ts
-import { eq as eq9, desc as desc4, ilike as ilike2, sql as sql8, and as and6, or as or3, gte as gte4, lte as lte3, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
+import { eq as eq8, desc as desc3, ilike as ilike2, sql as sql7, and as and5, or as or3, gte as gte3, lte as lte2, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
 
 // server/utils/startup-banner.ts
 init_logger();
@@ -7257,12 +6545,12 @@ init_cache();
 // server/config/search.ts
 init_db();
 init_logger();
-import { sql as sql6 } from "drizzle-orm";
+import { sql as sql5 } from "drizzle-orm";
 async function initializeSearchIndexes() {
   try {
     Logger.info("Initializing search indexes for Neon serverless...");
     try {
-      await db.execute(sql6`
+      await db.execute(sql5`
         ALTER TABLE products 
         ADD COLUMN IF NOT EXISTS search_vector tsvector
       `);
@@ -7271,7 +6559,7 @@ async function initializeSearchIndexes() {
       Logger.debug("Search vector column handling:", error?.message || "Unknown error");
     }
     try {
-      await db.execute(sql6`
+      await db.execute(sql5`
         CREATE INDEX IF NOT EXISTS idx_products_search 
         ON products USING GIN(search_vector)
       `);
@@ -7280,7 +6568,7 @@ async function initializeSearchIndexes() {
       Logger.debug("Search index handling:", error?.message || "Unknown error");
     }
     try {
-      const updateResult = await db.execute(sql6`
+      const updateResult = await db.execute(sql5`
         UPDATE products SET search_vector = 
           setweight(to_tsvector('english', coalesce(name,'')), 'A') ||
           setweight(to_tsvector('english', coalesce(description,'')), 'B') ||
@@ -7292,7 +6580,7 @@ async function initializeSearchIndexes() {
       Logger.warn("Search vector update failed (non-critical):", error?.message || "Unknown error");
     }
     try {
-      await db.execute(sql6`
+      await db.execute(sql5`
         CREATE OR REPLACE FUNCTION update_product_search_vector()
         RETURNS TRIGGER AS $$
         BEGIN
@@ -7309,10 +6597,10 @@ async function initializeSearchIndexes() {
       Logger.warn("Search trigger function creation failed:", error?.message || "Unknown error");
     }
     try {
-      await db.execute(sql6`
+      await db.execute(sql5`
         DROP TRIGGER IF EXISTS trigger_update_product_search_vector ON products
       `);
-      await db.execute(sql6`
+      await db.execute(sql5`
         CREATE TRIGGER trigger_update_product_search_vector
           BEFORE INSERT OR UPDATE ON products
           FOR EACH ROW EXECUTE FUNCTION update_product_search_vector()
@@ -7468,14 +6756,11 @@ async function registerRoutes(app2) {
   });
   const shippingRoutes = await Promise.resolve().then(() => (init_shipping2(), shipping_exports));
   app2.use("/api/shipping", shippingRoutes.default);
-  const observabilityRoutes = await Promise.resolve().then(() => (init_observability(), observability_exports));
-  app2.use("/api/observability", observabilityRoutes.default);
   app2.use("/api/checkout", checkout_default);
   app2.use("/api/locality", locality_default);
   const cartValidationRoutes = await Promise.resolve().then(() => (init_cart_validation(), cart_validation_exports));
   app2.use("/api/cart", cartValidationRoutes.default);
   app2.use("/api/admin", admin_metrics_default);
-  app2.use("/api/admin", error_management_default);
   try {
     await initializeSearchIndexes();
   } catch (error) {
@@ -7972,9 +7257,9 @@ async function registerRoutes(app2) {
       const { productId } = req.params;
       console.log(`[CART DELETE ROUTE] === STARTING CART REMOVAL ===`);
       console.log(`[CART DELETE ROUTE] User: ${userId}, Product: ${productId}`);
-      const cartItem = await db.select().from(cartItems).where(and6(
-        eq9(cartItems.userId, userId),
-        eq9(cartItems.productId, productId)
+      const cartItem = await db.select().from(cartItems).where(and5(
+        eq8(cartItems.userId, userId),
+        eq8(cartItems.productId, productId)
       )).limit(1);
       console.log(`[CART DELETE ROUTE] Found cart items:`, cartItem);
       if (cartItem.length === 0) {
@@ -7983,7 +7268,7 @@ async function registerRoutes(app2) {
       }
       const itemToDelete = cartItem[0];
       console.log(`[CART DELETE ROUTE] Deleting cart item:`, itemToDelete.id);
-      const deleteResult = await db.delete(cartItems).where(eq9(cartItems.id, itemToDelete.id));
+      const deleteResult = await db.delete(cartItems).where(eq8(cartItems.id, itemToDelete.id));
       console.log(`[CART DELETE ROUTE] Delete result:`, deleteResult.rowCount);
       if (deleteResult.rowCount === 0) {
         console.log(`[CART DELETE ROUTE] ERROR - No rows deleted`);
@@ -8013,14 +7298,14 @@ async function registerRoutes(app2) {
       for (const item of cartEntries) {
         const product = await storage.getProduct(item.productId);
         if (!product || product.status !== "active") {
-          await db.delete(cartItems).where(eq9(cartItems.id, item.id));
+          await db.delete(cartItems).where(eq8(cartItems.id, item.id));
           updates.push({ action: "removed", itemId: item.id, reason: "Product unavailable" });
           continue;
         }
         if (item.quantity > (product.stockQuantity || 0)) {
           const newQuantity = Math.max(0, product.stockQuantity || 0);
           if (newQuantity === 0) {
-            await db.delete(cartItems).where(eq9(cartItems.id, item.id));
+            await db.delete(cartItems).where(eq8(cartItems.id, item.id));
             updates.push({ action: "removed", itemId: item.id, reason: "Out of stock" });
           } else {
             await storage.updateCartItem(item.id, newQuantity);
@@ -8072,9 +7357,6 @@ async function registerRoutes(app2) {
       let address;
       if (saveToProfile) {
         address = await storage.createAddress(userId, validatedAddress);
-        if (makeDefault) {
-          await storage.updateUserProfileAddress(userId, address.id);
-        }
       } else {
         address = await storage.createAddress(userId, {
           ...validatedAddress,
@@ -8246,13 +7528,13 @@ async function registerRoutes(app2) {
     };
     try {
       try {
-        await db.execute(sql8`SELECT subcategory FROM products LIMIT 1`);
+        await db.execute(sql7`SELECT subcategory FROM products LIMIT 1`);
         results.tables["products.subcategory"] = "exists";
       } catch (e) {
         results.tables["products.subcategory"] = "missing";
         results.issues.push("products.subcategory column missing");
       }
-      const addressCheck = await db.execute(sql8`
+      const addressCheck = await db.execute(sql7`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_name = 'addresses'
@@ -8288,11 +7570,11 @@ async function registerRoutes(app2) {
           title: products.name,
           subtitle: products.brand,
           price: products.price,
-          image: sql8`${products.images}->0`,
-          type: sql8`'product'`
+          image: sql7`${products.images}->0`,
+          type: sql7`'product'`
         }).from(products).where(
-          and6(
-            eq9(products.status, "active"),
+          and5(
+            eq8(products.status, "active"),
             or3(
               ilike2(products.name, searchTerm),
               ilike2(products.brand, searchTerm),
@@ -8310,10 +7592,10 @@ async function registerRoutes(app2) {
         const categoryResults = await db.select({
           id: categories.id,
           title: categories.name,
-          type: sql8`'category'`
+          type: sql7`'category'`
         }).from(categories).where(
-          and6(
-            eq9(categories.isActive, true),
+          and5(
+            eq8(categories.isActive, true),
             ilike2(categories.name, searchTerm)
           )
         ).limit(5);
@@ -8326,9 +7608,9 @@ async function registerRoutes(app2) {
       const suggestions = await db.select({
         term: products.name,
         category: categories.name
-      }).from(products).leftJoin(categories, eq9(products.categoryId, categories.id)).where(
-        and6(
-          eq9(products.status, "active"),
+      }).from(products).leftJoin(categories, eq8(products.categoryId, categories.id)).where(
+        and5(
+          eq8(products.status, "active"),
           ilike2(products.name, searchTerm)
         )
       ).limit(5);
@@ -8359,8 +7641,6 @@ async function registerRoutes(app2) {
     }
   });
   try {
-    const errorManagementModule = await Promise.resolve().then(() => (init_error_management(), error_management_exports));
-    app2.use("/api/admin", errorManagementModule.default);
     Logger.info("Error management routes registered successfully");
   } catch (error) {
     Logger.error("Failed to register error management routes:", error);
@@ -8410,27 +7690,27 @@ async function registerRoutes(app2) {
         );
       }
       if (role !== "all") {
-        conditions.push(eq9(users.role, role));
+        conditions.push(eq8(users.role, role));
       }
-      const usersQuery = db.select().from(users).where(conditions.length > 0 ? and6(...conditions) : void 0).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
+      const usersQuery = db.select().from(users).where(conditions.length > 0 ? and5(...conditions) : void 0).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
       switch (sortBy) {
         case "created":
-          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.createdAt) : asc2(users.createdAt));
+          usersQuery.orderBy(sortOrder === "desc" ? desc3(users.createdAt) : asc2(users.createdAt));
           break;
         case "name":
-          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.firstName) : asc2(users.firstName));
+          usersQuery.orderBy(sortOrder === "desc" ? desc3(users.firstName) : asc2(users.firstName));
           break;
         case "email":
-          usersQuery.orderBy(sortOrder === "desc" ? desc4(users.email) : asc2(users.email));
+          usersQuery.orderBy(sortOrder === "desc" ? desc3(users.email) : asc2(users.email));
           break;
         default:
-          usersQuery.orderBy(desc4(users.createdAt));
+          usersQuery.orderBy(desc3(users.createdAt));
       }
       const usersList = await usersQuery;
       const usersWithStats = await Promise.all(
         usersList.map(async (user) => {
           try {
-            const userOrders = await db.select().from(orders).where(eq9(orders.userId, user.id));
+            const userOrders = await db.select().from(orders).where(eq8(orders.userId, user.id));
             const completedUserOrders = userOrders.filter(
               (o) => o.status === "delivered"
             );
@@ -8453,7 +7733,7 @@ async function registerRoutes(app2) {
           }
         })
       );
-      const totalUsersResult = await db.select({ count: count() }).from(users).where(conditions.length > 0 ? and6(...conditions) : void 0);
+      const totalUsersResult = await db.select({ count: count() }).from(users).where(conditions.length > 0 ? and5(...conditions) : void 0);
       res.json({
         users: usersWithStats,
         total: totalUsersResult[0]?.count || 0,
@@ -8524,7 +7804,7 @@ async function registerRoutes(app2) {
             productId: orderItems.productId,
             quantity: orderItems.quantity,
             productName: products.name
-          }).from(orderItems).innerJoin(products, eq9(orderItems.productId, products.id)).where(eq9(orderItems.orderId, order.id));
+          }).from(orderItems).innerJoin(products, eq8(orderItems.productId, products.id)).where(eq8(orderItems.orderId, order.id));
           orderItemsData.forEach((item) => {
             const key2 = item.productName;
             productSales[key2] = (productSales[key2] || 0) + (item.quantity || 1);
@@ -8552,7 +7832,7 @@ async function registerRoutes(app2) {
           name: products.name,
           views: products.views,
           price: products.price
-        }).from(products).orderBy(desc4(products.views)).limit(5);
+        }).from(products).orderBy(desc3(products.views)).limit(5);
         topProductsList = realTopProducts.map((p) => ({
           name: p.name,
           sales: 0,
@@ -8572,7 +7852,7 @@ async function registerRoutes(app2) {
         stockQuantity: products.stockQuantity,
         price: products.price,
         featured: products.featured
-      }).from(products).orderBy(desc4(products.views)).limit(10);
+      }).from(products).orderBy(desc3(products.views)).limit(10);
       const totalInventoryValue = allProducts.reduce((sum2, product) => {
         return sum2 + (parseFloat(product.price) || 0) * (product.stockQuantity || 0);
       }, 0);
@@ -8646,7 +7926,7 @@ async function registerRoutes(app2) {
           id: categories.id,
           name: categories.name
         }
-      }).from(products).leftJoin(categories, eq9(products.categoryId, categories.id));
+      }).from(products).leftJoin(categories, eq8(products.categoryId, categories.id));
       const conditions = [];
       if (search) {
         conditions.push(
@@ -8658,24 +7938,24 @@ async function registerRoutes(app2) {
         );
       }
       if (category !== "all") {
-        conditions.push(eq9(products.categoryId, category));
+        conditions.push(eq8(products.categoryId, category));
       }
       const minPrice = parseFloat(priceMin);
       const maxPrice = parseFloat(priceMax);
       if (minPrice > 0) {
-        conditions.push(gte4(sql8`CAST(${products.price} AS NUMERIC)`, minPrice));
+        conditions.push(gte3(sql7`CAST(${products.price} AS NUMERIC)`, minPrice));
       }
       if (maxPrice < 1e4) {
-        conditions.push(lte3(sql8`CAST(${products.price} AS NUMERIC)`, maxPrice));
+        conditions.push(lte2(sql7`CAST(${products.price} AS NUMERIC)`, maxPrice));
       }
       if (conditions.length > 0) {
-        query = query.where(and6(...conditions));
+        query = query.where(and5(...conditions));
       }
-      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql8`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
-      query = query.orderBy(sortOrder === "desc" ? desc4(sortColumn) : asc2(sortColumn));
-      let countQuery = db.select({ count: sql8`count(*)` }).from(products);
+      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql7`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
+      query = query.orderBy(sortOrder === "desc" ? desc3(sortColumn) : asc2(sortColumn));
+      let countQuery = db.select({ count: sql7`count(*)` }).from(products);
       if (conditions.length > 0) {
-        countQuery = countQuery.where(and6(...conditions));
+        countQuery = countQuery.where(and5(...conditions));
       }
       const [totalResult] = await countQuery;
       const total = totalResult?.count || 0;
@@ -8781,7 +8061,7 @@ async function registerRoutes(app2) {
         condition: products.condition,
         category: categories.name,
         createdAt: products.createdAt
-      }).from(products).leftJoin(categories, eq9(products.categoryId, categories.id));
+      }).from(products).leftJoin(categories, eq8(products.categoryId, categories.id));
       if (format === "csv") {
         const headers = ["ID", "Name", "Price", "Stock", "Brand", "Condition", "Category", "Created"];
         const rows = allProducts.map((p) => [
@@ -8872,7 +8152,7 @@ async function registerRoutes(app2) {
         displayOrder: categories.displayOrder,
         createdAt: categories.createdAt,
         updatedAt: categories.updatedAt,
-        productCount: sql8`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
+        productCount: sql7`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
       }).from(categories);
       const conditions = [];
       if (search) {
@@ -8884,12 +8164,12 @@ async function registerRoutes(app2) {
         );
       }
       if (conditions.length > 0) {
-        query = query.where(and6(...conditions));
+        query = query.where(and5(...conditions));
       }
-      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql8`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
-      query = query.orderBy(sortOrder === "desc" ? desc4(sortColumn) : asc2(sortColumn));
+      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql7`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
+      query = query.orderBy(sortOrder === "desc" ? desc3(sortColumn) : asc2(sortColumn));
       const result = await query;
-      const totalProducts = await db.select({ count: sql8`COUNT(*)` }).from(products);
+      const totalProducts = await db.select({ count: sql7`COUNT(*)` }).from(products);
       const activeCategories = result.filter((cat) => cat.isActive).length;
       const emptyCategories = result.filter((cat) => Number(cat.productCount) === 0).length;
       res.json({
@@ -9011,7 +8291,7 @@ async function registerRoutes(app2) {
         return res.status(400).json({ error: "Categories array is required" });
       }
       for (const update of categoryUpdates) {
-        await db.update(categories).set({ displayOrder: update.order }).where(eq9(categories.id, update.id));
+        await db.update(categories).set({ displayOrder: update.order }).where(eq8(categories.id, update.id));
       }
       res.json({ success: true });
     } catch (error) {
@@ -9022,14 +8302,14 @@ async function registerRoutes(app2) {
   app2.delete("/api/admin/categories/:id", requireRole("developer"), async (req, res) => {
     try {
       const { id } = req.params;
-      const productCount = await db.select({ count: sql8`COUNT(*)` }).from(products).where(eq9(products.categoryId, id));
+      const productCount = await db.select({ count: sql7`COUNT(*)` }).from(products).where(eq8(products.categoryId, id));
       if (productCount[0]?.count > 0) {
         return res.status(400).json({
           error: "Cannot delete category with products",
           message: `This category has ${productCount[0].count} products. Remove products first.`
         });
       }
-      await db.delete(categories).where(eq9(categories.id, id));
+      await db.delete(categories).where(eq8(categories.id, id));
       try {
         if (wsManager3?.publish) {
           wsManager3.publish({
@@ -9054,7 +8334,7 @@ async function registerRoutes(app2) {
       let dbLatency = 0;
       try {
         const start = Date.now();
-        await db.select({ test: sql8`1` });
+        await db.select({ test: sql7`1` });
         dbLatency = Date.now() - start;
       } catch (error) {
         dbStatus = "Disconnected";
@@ -9098,9 +8378,9 @@ async function registerRoutes(app2) {
     try {
       const memoryUsage = process.memoryUsage();
       const uptime = process.uptime();
-      const [userCount] = await db.select({ count: sql8`COUNT(*)` }).from(users);
-      const [productCount] = await db.select({ count: sql8`COUNT(*)` }).from(products);
-      const [orderCount] = await db.select({ count: sql8`COUNT(*)` }).from(orders);
+      const [userCount] = await db.select({ count: sql7`COUNT(*)` }).from(users);
+      const [productCount] = await db.select({ count: sql7`COUNT(*)` }).from(products);
+      const [orderCount] = await db.select({ count: sql7`COUNT(*)` }).from(orders);
       const systemInfo = {
         application: {
           name: "Clean & Flip Admin",
@@ -9190,20 +8470,17 @@ async function registerRoutes(app2) {
     try {
       Logger.debug(`[USER API] User found: ${JSON.stringify(req.user)}`);
       const userId = req.user.id;
-      const userWithAddress = await db.execute(sql8`
+      const userWithAddress = await db.execute(sql7`
         SELECT 
           u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
           u.profile_complete, u.is_local_customer,
-          u.profile_address_id,
           a.id as address_id, a.first_name as addr_first_name, 
           a.last_name as addr_last_name, a.street1, a.street2, a.city, 
           a.state, a.postal_code, a.country, a.latitude, a.longitude, 
           a.is_local, a.is_default, a.created_at as address_created_at,
-          a.updated_at as address_updated_at,
-          COALESCE(da.id, a.id) as fallback_address_id
+          a.updated_at as address_updated_at
         FROM users u
-        LEFT JOIN addresses a ON u.profile_address_id = a.id
-        LEFT JOIN addresses da ON da.user_id = u.id AND da.is_default = true
+        LEFT JOIN addresses a ON a.user_id = u.id AND a.is_default = true
         WHERE u.id = ${userId}
       `);
       if (!userWithAddress.rows.length) {
@@ -9228,11 +8505,9 @@ async function registerRoutes(app2) {
         createdAt: userData.address_created_at,
         updatedAt: userData.address_updated_at
       } : void 0;
-      const hasAnyAddress = Boolean(userData.fallback_address_id || userData.profile_address_id);
+      const hasAnyAddress = Boolean(userData.address_id);
       Logger.debug(`[USER API] Profile completion check:`, {
         userId: userData.id,
-        profile_address_id: userData.profile_address_id,
-        fallback_address_id: userData.fallback_address_id,
         hasAnyAddress,
         profileComplete: hasAnyAddress
       });
@@ -9245,8 +8520,8 @@ async function registerRoutes(app2) {
         role: userData.role,
         profileComplete: hasAnyAddress,
         // Profile complete if they have any address
-        profileAddressId: userData.profile_address_id || userData.fallback_address_id,
-        // Include profileAddressId for ProtectedRoute
+        profileAddressId: userData.address_id,
+        // Use default address as profile address
         isLocal: Boolean(userData.is_local_customer),
         profileAddress
       };
@@ -9504,7 +8779,7 @@ async function registerRoutes(app2) {
         cleanData.password = updateData.password;
       }
       Logger.info(`Updating user ${id} with data:`, { ...cleanData, password: cleanData.password ? "[HIDDEN]" : void 0 });
-      const [updatedUser] = await db.update(users).set(cleanData).where(eq9(users.id, id)).returning();
+      const [updatedUser] = await db.update(users).set(cleanData).where(eq8(users.id, id)).returning();
       if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -9543,7 +8818,7 @@ async function registerRoutes(app2) {
       if (!["user", "developer"].includes(role)) {
         return res.status(400).json({ error: 'Invalid role. Must be "user" or "developer"' });
       }
-      const [existingUser] = await db.select().from(users).where(eq9(users.email, email)).limit(1);
+      const [existingUser] = await db.select().from(users).where(eq8(users.email, email)).limit(1);
       if (existingUser) {
         return res.status(400).json({ error: "User with this email already exists" });
       }
@@ -9661,7 +8936,7 @@ async function registerRoutes(app2) {
       const totalCount = totalResult[0]?.total || 0;
       const conditions = [];
       if (status && status !== "all") {
-        conditions.push(eq9(equipmentSubmissions.status, status));
+        conditions.push(eq8(equipmentSubmissions.status, status));
       }
       if (search) {
         conditions.push(
@@ -9674,11 +8949,11 @@ async function registerRoutes(app2) {
       const query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql7`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
-      }).from(equipmentSubmissions).leftJoin(users, eq9(equipmentSubmissions.userId, users.id)).orderBy(desc4(equipmentSubmissions.createdAt)).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
-      const submissions = conditions.length > 0 ? await query.where(and6(...conditions)) : await query;
+      }).from(equipmentSubmissions).leftJoin(users, eq8(equipmentSubmissions.userId, users.id)).orderBy(desc3(equipmentSubmissions.createdAt)).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
+      const submissions = conditions.length > 0 ? await query.where(and5(...conditions)) : await query;
       const statusCounts = await db.select({
         status: equipmentSubmissions.status,
         count: count()
@@ -9723,7 +8998,7 @@ async function registerRoutes(app2) {
         Logger.error("No userId found in authentication sources");
         return res.json([]);
       }
-      const submissions = await db.select().from(equipmentSubmissions).where(eq9(equipmentSubmissions.userId, userId)).orderBy(desc4(equipmentSubmissions.createdAt));
+      const submissions = await db.select().from(equipmentSubmissions).where(eq8(equipmentSubmissions.userId, userId)).orderBy(desc3(equipmentSubmissions.createdAt));
       res.json(submissions || []);
     } catch (error) {
       Logger.error("Error fetching user submissions:", error);
@@ -9740,9 +9015,9 @@ async function registerRoutes(app2) {
         return res.status(401).json({ error: "Authentication required" });
       }
       const submission = await db.select().from(equipmentSubmissions).where(
-        and6(
-          eq9(equipmentSubmissions.id, id),
-          eq9(equipmentSubmissions.userId, userId)
+        and5(
+          eq8(equipmentSubmissions.id, id),
+          eq8(equipmentSubmissions.userId, userId)
         )
       ).limit(1);
       if (!submission || submission.length === 0) {
@@ -9759,7 +9034,7 @@ async function registerRoutes(app2) {
         status: "cancelled",
         updatedAt: /* @__PURE__ */ new Date(),
         adminNotes: `User cancelled: ${reason || "No reason provided"}`
-      }).where(eq9(equipmentSubmissions.id, id));
+      }).where(eq8(equipmentSubmissions.id, id));
       Logger.info(`Equipment submission cancelled by user: ${id}`);
       res.json({ success: true, message: "Submission cancelled successfully" });
     } catch (error) {
@@ -9803,7 +9078,7 @@ async function registerRoutes(app2) {
       }
       const results = await Promise.allSettled(
         submissionIds.map(
-          (id) => db.update(equipmentSubmissions).set(updateData).where(eq9(equipmentSubmissions.id, id))
+          (id) => db.update(equipmentSubmissions).set(updateData).where(eq8(equipmentSubmissions.id, id))
         )
       );
       const successCount = results.filter((r) => r.status === "fulfilled").length;
@@ -9824,7 +9099,7 @@ async function registerRoutes(app2) {
       } = req.query;
       const conditions = [];
       if (status && status !== "all") {
-        conditions.push(eq9(equipmentSubmissions.status, status));
+        conditions.push(eq8(equipmentSubmissions.status, status));
       }
       if (search) {
         conditions.push(
@@ -9837,12 +9112,12 @@ async function registerRoutes(app2) {
       let query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql7`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
-      }).from(equipmentSubmissions).leftJoin(users, eq9(equipmentSubmissions.userId, users.id)).orderBy(desc4(equipmentSubmissions.createdAt));
+      }).from(equipmentSubmissions).leftJoin(users, eq8(equipmentSubmissions.userId, users.id)).orderBy(desc3(equipmentSubmissions.createdAt));
       if (conditions.length > 0) {
-        query = query.where(and6(...conditions));
+        query = query.where(and5(...conditions));
       }
       const submissions = await query;
       if (format === "csv") {
@@ -10049,6 +9324,15 @@ async function registerRoutes(app2) {
     });
   }
   const httpServer = createServer(app2);
+  if (process.env.NODE_ENV === "production") {
+    const { serveStatic: serveStatic2 } = await init_vite().then(() => vite_exports);
+    serveStatic2(app2);
+    Logger.info("[FRONTEND] Production static files configured");
+  } else {
+    const { setupVite: setupVite2 } = await init_vite().then(() => vite_exports);
+    await setupVite2(app2, httpServer);
+    Logger.info("[FRONTEND] Development Vite server configured with HMR");
+  }
   const { setupWebSocket: setupWebSocket2, wsManager: wsManager3 } = await Promise.resolve().then(() => (init_websocket(), websocket_exports));
   setupWebSocket2(httpServer);
   setWebSocketManager(wsManager3);
@@ -10071,18 +9355,18 @@ async function registerRoutes(app2) {
     Logger.info("Database connected successfully");
     process.env.DB_CONNECTION_LOGGED = "true";
   }
-  const port2 = Number(process.env.PORT) || 5e3;
-  const host = "0.0.0.0";
-  Logger.info(`[STARTUP] Attempting to start server on ${host}:${port2}`);
+  const port = Number(process.env.PORT) || 5e3;
+  const host2 = "0.0.0.0";
+  Logger.info(`[STARTUP] Attempting to start server on ${host2}:${port}`);
   Logger.info(`[STARTUP] Environment: ${process.env.NODE_ENV || "development"}`);
   Logger.info(`[STARTUP] Node version: ${process.version}`);
-  const server2 = httpServer.listen(port2, host, () => {
+  const server2 = httpServer.listen(port, host2, () => {
     const address = server2.address();
     Logger.info(`\u{1F680} Server successfully started and listening`, {
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       environment: process.env.NODE_ENV || "development",
-      host,
-      port: port2,
+      host: host2,
+      port,
       actualAddress: address,
       redis: redisConnected ? "Connected" : "Disabled",
       websocket: "Enabled",
@@ -10091,10 +9375,10 @@ async function registerRoutes(app2) {
         memory: process.memoryUsage()
       }
     });
-    logger.info(`\u{1F680} Server started on port ${port2}`, {
+    logger.info(`\u{1F680} Server started on port ${port}`, {
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       environment: process.env.NODE_ENV || "development",
-      port: port2,
+      port,
       redis: redisConnected ? "Connected" : "Disabled",
       websocket: "Enabled"
     });
@@ -10102,21 +9386,21 @@ async function registerRoutes(app2) {
   server2.on("error", (error) => {
     Logger.error(`[STARTUP] Server failed to start:`, error);
     if (error.code === "EADDRINUSE") {
-      Logger.error(`[STARTUP] Port ${port2} is already in use`);
+      Logger.error(`[STARTUP] Port ${port} is already in use`);
     } else if (error.code === "EACCES") {
-      Logger.error(`[STARTUP] Permission denied to bind to port ${port2}`);
+      Logger.error(`[STARTUP] Permission denied to bind to port ${port}`);
     }
     process.exit(1);
   });
   const checkUserPurchaseHistory = async (userId, productId) => {
     try {
-      const [purchase] = await db.select().from(orderItems).innerJoin(orders, eq9(orders.id, orderItems.orderId)).where(
-        and6(
-          eq9(orders.userId, userId),
-          eq9(orderItems.productId, productId),
+      const [purchase] = await db.select().from(orderItems).innerJoin(orders, eq8(orders.id, orderItems.orderId)).where(
+        and5(
+          eq8(orders.userId, userId),
+          eq8(orderItems.productId, productId),
           or3(
-            eq9(orders.status, "delivered"),
-            eq9(orders.status, "confirmed")
+            eq8(orders.status, "delivered"),
+            eq8(orders.status, "confirmed")
           )
         )
       ).limit(1);
@@ -10151,7 +9435,7 @@ async function registerRoutes(app2) {
   });
   app2.get("/api/reviews/:productId", async (req, res) => {
     try {
-      const productReviews = await db.select().from(reviews).where(eq9(reviews.productId, req.params.productId)).orderBy(desc4(reviews.createdAt));
+      const productReviews = await db.select().from(reviews).where(eq8(reviews.productId, req.params.productId)).orderBy(desc3(reviews.createdAt));
       res.json(productReviews);
     } catch (error) {
       Logger.error("Error fetching reviews", error);
@@ -10164,9 +9448,9 @@ async function registerRoutes(app2) {
       if (!code) {
         return res.status(400).json({ error: "Coupon code required" });
       }
-      const coupon = await db.select().from(coupons).where(and6(
-        eq9(coupons.code, code.toUpperCase()),
-        eq9(coupons.isActive, true)
+      const coupon = await db.select().from(coupons).where(and5(
+        eq8(coupons.code, code.toUpperCase()),
+        eq8(coupons.isActive, true)
       )).limit(1);
       if (!coupon.length) {
         return res.status(404).json({ error: "Invalid coupon code" });
@@ -10203,7 +9487,7 @@ async function registerRoutes(app2) {
   app2.post("/api/inventory/check", async (req, res) => {
     try {
       const { productId, quantity = 1 } = req.body;
-      const product = await db.select().from(products).where(eq9(products.id, productId)).limit(1);
+      const product = await db.select().from(products).where(eq8(products.id, productId)).limit(1);
       if (!product.length) {
         return res.status(404).json({ error: "Product not found" });
       }
@@ -10237,191 +9521,49 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: "Failed to subscribe" });
     }
   });
-  app2.use(observability_default);
   if (process.env.NODE_ENV === "production") {
     const { setupProductionOptimizations: setupProductionOptimizations2 } = await Promise.resolve().then(() => (init_compression(), compression_exports));
     setupProductionOptimizations2(app2);
   }
   server2.on("listening", () => {
-    Logger.info(`[STARTUP] Server is now accepting connections on ${host}:${port2}`);
+    Logger.info(`[STARTUP] Server is now accepting connections on ${host2}:${port}`);
   });
   return server2;
 }
 
-// server/vite.ts
-import express6 from "express";
-import fs from "fs";
-import path3 from "path";
-import { createServer as createViteServer, createLogger } from "vite";
-
-// vite.config.ts
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import path2 from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-var vite_config_default = defineConfig({
-  plugins: [
-    react(),
-    runtimeErrorOverlay(),
-    ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
-      await import("@replit/vite-plugin-cartographer").then(
-        (m) => m.cartographer()
-      )
-    ] : []
-  ],
-  resolve: {
-    alias: {
-      "@": path2.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path2.resolve(import.meta.dirname, "shared"),
-      "@assets": path2.resolve(import.meta.dirname, "attached_assets")
-    }
-  },
-  root: path2.resolve(import.meta.dirname, "client"),
-  build: {
-    outDir: path2.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true,
-    target: "es2020",
-    minify: "terser",
-    chunkSizeWarningLimit: 1e3,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          // Core vendor chunks
-          "vendor-react": ["react", "react-dom"],
-          "vendor-router": ["wouter"],
-          "vendor-query": ["@tanstack/react-query"],
-          // UI library chunks
-          "vendor-ui": [
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-popover",
-            "@radix-ui/react-select",
-            "@radix-ui/react-toast",
-            "@radix-ui/react-tooltip"
-          ],
-          // Form handling
-          "vendor-form": ["react-hook-form", "@hookform/resolvers", "zod"],
-          // Utilities
-          "vendor-utils": ["clsx", "tailwind-merge", "date-fns", "lodash-es"],
-          // Icons
-          "vendor-icons": ["lucide-react"]
-        }
-      }
-    }
-  },
-  optimizeDeps: {
-    include: ["react", "react-dom", "wouter"],
-    exclude: ["@stripe/stripe-js"]
-  },
-  server: {
-    fs: {
-      strict: true,
-      deny: ["**/.*"]
-    }
-  }
-});
-
-// server/vite.ts
-import { nanoid } from "nanoid";
-var viteLogger = createLogger();
-async function setupVite(app2, server2) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server: server2 },
-    allowedHosts: true
-  };
-  const vite = await createViteServer({
-    ...vite_config_default,
-    configFile: false,
-    customLogger: {
-      ...viteLogger,
-      error: (msg, options) => {
-        viteLogger.error(msg, options);
-        process.exit(1);
-      }
-    },
-    server: serverOptions,
-    appType: "custom"
-  });
-  app2.use(vite.middlewares);
-  app2.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
-    try {
-      const clientTemplate = path3.resolve(
-        import.meta.dirname,
-        "..",
-        "client",
-        "index.html"
-      );
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
-    } catch (e) {
-      vite.ssrFixStacktrace(e);
-      next(e);
-    }
-  });
-}
-function serveStatic(app2) {
-  const distPath = path3.resolve(import.meta.dirname, "public");
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
-    );
-  }
-  app2.use(express6.static(distPath));
-  app2.use("*", (_req, res) => {
-    res.sendFile(path3.resolve(distPath, "index.html"));
-  });
-}
-
 // server/index.ts
-console.log("[BOOT]", { env: env.APP_ENV, nodeEnv: env.NODE_ENV, build: env.APP_BUILD_ID });
-console.log("[BOOT] DB:", new URL(env.DATABASE_URL).host);
-assertProdDB();
-await applyMigrations().catch((e) => {
-  console.error("[MIGRATIONS] Failed:", e);
-  process.exit(1);
-});
+var env = getAppEnv();
+var host = getDbHost();
+console.log("[BOOT]", { env, nodeEnv: process.env.NODE_ENV });
+if (env === "production") {
+  if (!host.includes("muddy-moon") || !host.includes("pooler")) {
+    console.error("[CRITICAL] \u274C Production attempted to use non-prod DB host:", host);
+    process.exit(1);
+  }
+  console.log("[PRODUCTION] \u2705 Using production DB host:", host);
+} else {
+  console.log("[DEV] Using development DB host:", host);
+}
+var shouldRunMigrations = process.env.RUN_MIGRATIONS === "true" || env === "development";
+if (shouldRunMigrations) {
+  console.log("[MIGRATIONS] Running migrations...");
+  await applyMigrations().catch((e) => {
+    console.error("[MIGRATIONS] Failed:", e);
+    process.exit(1);
+  });
+} else {
+  console.log("[MIGRATIONS] Skipped (RUN_MIGRATIONS not set)");
+}
 await ping().catch((e) => {
   console.error("[DB] Ping failed:", e);
   process.exit(1);
 });
-var app = express7();
+var app = express6();
 app.set("trust proxy", 1);
 app.use(cookieParser());
 app.use(cors2({
   origin: process.env.CORS_ORIGIN || true,
   credentials: true
 }));
-var ONE_MONTH = 30 * 24 * 60 * 60 * 1e3;
-app.use(session2({
-  secret: env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: env.NODE_ENV === "production",
-    maxAge: ONE_MONTH
-  }
-}));
-app.use(express7.json());
+app.use(express6.json());
 await registerRoutes(app);
-if (env.NODE_ENV === "production") {
-  serveStatic(app);
-} else {
-  await setupVite(app);
-}
-app.use((err, _req, res, _next) => {
-  console.error("[UNCAUGHT]", err);
-  res.status(500).json({ error: "Internal Server Error" });
-});
-var port = Number(env.PORT || 5e3);
-app.listen(port, () => {
-  console.log(`[READY] Listening on :${port}`);
-});
