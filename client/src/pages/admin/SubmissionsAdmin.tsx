@@ -99,10 +99,10 @@ export default function SubmissionsAdmin() {
   const submissionsTotal = submissionsResponse?.total || 0;
   const submissionsPending = submissionsResponse?.pending || 0;
 
-  // Debug logging
-  console.log('🔍 Debug - submissionsResponse:', submissionsResponse);
-  console.log('🔍 Debug - submissions array:', submissions);
-  console.log('🔍 Debug - submissions length:', submissions?.length);
+  // Debug logging - can be removed once working
+  // console.log('🔍 Debug - submissionsResponse:', submissionsResponse);
+  // console.log('🔍 Debug - submissions array:', submissions);
+  // console.log('🔍 Debug - submissions length:', submissions?.length);
 
   // Update submission mutation
   const updateSubmissionMutation = useMutation({
