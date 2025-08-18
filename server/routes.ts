@@ -2667,26 +2667,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // All address endpoints moved to server/routes/addresses.ts for SSOT
 
-  // Simple users endpoint for admin
+  // Simple users endpoint for admin with address integration (SSOT)
   app.get("/api/users", requireRole('developer'), async (req, res) => {
     try {
-      const usersList = await db.select().from(users).limit(100);
+      // Fetch users with address information (SSOT approach)
+      const usersList = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          phone: users.phone,
+          role: users.role,
+          lastLoginAt: users.lastLoginAt,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          profileImageUrl: users.profileImageUrl,
+          // Include address information using COALESCE for production compatibility
+          addressId: sql<string>`(SELECT id FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
+          street: sql<string>`(SELECT COALESCE(street1, street) FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
+          city: sql<string>`(SELECT city FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
+          state: sql<string>`(SELECT state FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
+          zipCode: sql<string>`(SELECT COALESCE(postal_code, zip_code) FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`
+        })
+        .from(users)
+        .limit(100);
       
-      // Transform to match frontend interface
+      // Transform to match frontend interface with address integration
       const transformedUsers = usersList.map(user => ({
         id: user.id,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        phone: user.phone,
         role: user.role,
-        isActive: user.role !== 'developer', // Transform field name
-        lastLogin: user.updatedAt?.toISOString() || null,
-        createdAt: user.createdAt?.toISOString() || null
+        isActive: user.role !== 'banned', // Derive from role until column is added
+        lastLogin: user.lastLoginAt?.toISOString() || null,
+        createdAt: user.createdAt?.toISOString() || null,
+        profileImageUrl: user.profileImageUrl,
+        // Address information from SSOT addresses table
+        addressId: user.addressId,
+        street: user.street,
+        city: user.city,
+        state: user.state,
+        zipCode: user.zipCode
       }));
       
       res.json(transformedUsers);
     } catch (error) {
-      Logger.error("Error fetching users", error);
+      Logger.error("Error fetching users", error as any);
       res.status(500).json({ error: "Failed to fetch users" });
     }
   });
@@ -3078,7 +3107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Full user update endpoint
+  // Full user update endpoint with address integration (SSOT)
   app.put("/api/admin/users/:id", requireRole('developer'), async (req, res) => {
     try {
       const { id } = req.params;
@@ -3125,6 +3154,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedUser) {
         return res.status(404).json({ error: 'User not found' });
       }
+
+      // Handle address update/creation (SSOT integration)
+      const addressFields = {
+        street: updateData.street,
+        city: updateData.city,
+        state: updateData.state,
+        zipCode: updateData.zipCode
+      };
+      
+      const hasAddressData = Object.values(addressFields).some(val => val && val.trim());
+      
+      if (hasAddressData) {
+        Logger.info(`Updating address for user ${id}:`, addressFields);
+        
+        try {
+          // Check if user has existing default address
+          const [existingAddress] = await db
+            .select()
+            .from(addresses)
+            .where(and(
+              eq(addresses.userId, id),
+              eq(addresses.isDefault, true)
+            ))
+            .limit(1);
+
+          const addressData = {
+            userId: id,
+            street1: addressFields.street, // Use street1 for new format
+            city: addressFields.city,
+            state: addressFields.state,
+            postalCode: addressFields.zipCode, // Use postalCode for new format
+            country: 'US', // Default country
+            isDefault: true,
+            type: 'home' as const,
+            updatedAt: new Date()
+          };
+
+          if (existingAddress) {
+            // Update existing address
+            await db
+              .update(addresses)
+              .set(addressData)
+              .where(eq(addresses.id, existingAddress.id));
+            
+            Logger.info(`Updated existing address ${existingAddress.id} for user ${id}`);
+          } else {
+            // Create new address
+            addressData.createdAt = new Date();
+            const [newAddress] = await db
+              .insert(addresses)
+              .values(addressData)
+              .returning();
+            
+            Logger.info(`Created new address ${newAddress.id} for user ${id}`);
+          }
+        } catch (addressError) {
+          Logger.warn(`Address update failed for user ${id}:`, addressError);
+          // Don't fail the entire user update if address update fails
+        }
+      }
       
       // Broadcast update via WebSocket using new typed system
       try {
@@ -3155,10 +3244,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create new user endpoint
+  // Create new user endpoint with address integration (SSOT)
   app.post("/api/admin/users", requireRole('developer'), async (req, res) => {
     try {
-      const { email, password, role = 'user', firstName, lastName, phone } = req.body;
+      const { email, password, role = 'user', firstName, lastName, phone, street, city, state, zipCode } = req.body;
       
       // Validate required fields
       if (!email || !password || !firstName || !lastName) {
@@ -3209,6 +3298,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!newUser) {
         return res.status(500).json({ error: 'Failed to create user' });
+      }
+
+      // Handle address creation if provided (SSOT integration)
+      const addressFields = {
+        street: street,
+        city: city,
+        state: state,
+        zipCode: zipCode
+      };
+      
+      const hasAddressData = Object.values(addressFields).some(val => val && val.trim());
+      
+      if (hasAddressData) {
+        Logger.info(`Creating address for new user ${newUser.id}:`, addressFields);
+        
+        try {
+          const addressData = {
+            userId: newUser.id,
+            street1: addressFields.street, // Use street1 for new format
+            city: addressFields.city,
+            state: addressFields.state,
+            postalCode: addressFields.zipCode, // Use postalCode for new format
+            country: 'US', // Default country
+            isDefault: true,
+            type: 'home' as const,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+
+          const [newAddress] = await db
+            .insert(addresses)
+            .values(addressData)
+            .returning();
+          
+          Logger.info(`Created address ${newAddress.id} for new user ${newUser.id}`);
+        } catch (addressError) {
+          Logger.warn(`Address creation failed for new user ${newUser.id}:`, addressError);
+          // Don't fail the entire user creation if address creation fails
+        }
       }
       
       // Broadcast update via WebSocket using new typed system

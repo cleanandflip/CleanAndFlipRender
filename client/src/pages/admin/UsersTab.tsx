@@ -15,10 +15,18 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  phone?: string;
   role: 'user' | 'developer';
   isActive: boolean;
   lastLogin: string;
   createdAt: string;
+  profileImageUrl?: string;
+  // Address fields from SSOT addresses table
+  addressId?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
 }
 
 export function UsersTab() {
@@ -198,6 +206,24 @@ export function UsersTab() {
         </span>
       ),
       sortable: true
+    },
+    {
+      key: 'address',
+      label: 'Address',
+      render: (user: User) => (
+        <div className="text-sm">
+          {user.street ? (
+            <div className="space-y-1">
+              <p className="text-white font-medium">{user.street}</p>
+              <p className="text-gray-400">
+                {[user.city, user.state, user.zipCode].filter(Boolean).join(', ')}
+              </p>
+            </div>
+          ) : (
+            <span className="text-gray-500 italic">No address set</span>
+          )}
+        </div>
+      )
     },
     {
       key: 'createdAt',
