@@ -790,24 +790,24 @@ function DashboardContent() {
             </div>
 
             <div className="px-6 py-4 border-t border-gray-700 flex items-center justify-end gap-3">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setCancellingSubmission(null)}
-                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
               >
                 Keep Submission
-              </button>
+              </Button>
               
-              <button
+              <Button
+                variant="destructive"
                 onClick={() => {
                   if (cancellingSubmission) {
                     cancelSubmissionMutation.mutate(cancellingSubmission.id);
                   }
                 }}
-                disabled={cancelSubmissionMutation.isPending}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                loading={cancelSubmissionMutation.isPending}
               >
                 {cancelSubmissionMutation.isPending ? 'Cancelling...' : 'Yes, Cancel Submission'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

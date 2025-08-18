@@ -22,10 +22,10 @@ export function UnifiedButton({
   className
 }: UnifiedButtonProps) {
   const variants = {
-    primary: "bg-blue-500 hover:bg-blue-600 text-white",
-    secondary: "bg-white/10 hover:bg-white/20 text-white border border-gray-700",
-    danger: "bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50",
-    ghost: "hover:bg-white/10 text-gray-400 hover:text-white"
+    primary: "bg-blue-500 hover:bg-blue-600 text-white hover:shadow-[0_8px_25px_rgba(59,130,246,0.3),0_3px_10px_rgba(0,0,0,0.2)] hover:-translate-y-0.5",
+    secondary: "bg-white/10 hover:bg-white/20 text-white border border-gray-700 hover:shadow-[0_8px_25px_rgba(59,130,246,0.15),0_3px_10px_rgba(0,0,0,0.1)] hover:-translate-y-0.5",
+    danger: "bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 hover:shadow-[0_8px_25px_rgba(239,68,68,0.3),0_3px_10px_rgba(0,0,0,0.2)] hover:-translate-y-0.5",
+    ghost: "hover:bg-white/10 text-gray-400 hover:text-white hover:shadow-[0_8px_25px_rgba(59,130,246,0.1),0_3px_10px_rgba(0,0,0,0.05)] hover:-translate-y-0.5"
   };
 
   const sizes = {
@@ -39,9 +39,14 @@ export function UnifiedButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex items-center gap-2 rounded-lg",
-        "font-medium transition-all duration-200",
+        "inline-flex items-center gap-2 rounded-lg relative overflow-hidden",
+        "font-medium transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)",
         "disabled:opacity-50 disabled:cursor-not-allowed",
+        "active:scale-[0.98] active:translate-y-0 active:shadow-inner",
+        "before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full",
+        "before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent",
+        "before:transition-all before:duration-500 hover:before:left-full",
+        "[&>svg]:transition-all [&>svg]:duration-300 hover:[&>svg]:scale-110 hover:[&>svg]:rotate-2",
         variants[variant],
         sizes[size],
         className
