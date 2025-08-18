@@ -6,7 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 // CartProvider removed - using direct TanStack Query hooks
-import { AuthProvider } from "@/hooks/use-auth";
+// Remove AuthProvider - using direct hooks now
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Navigation from "@/components/layout/navigation";
 import Footer from "@/components/layout/footer";
@@ -196,13 +196,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <>
-            <Toaster />
-            <Router />
-          </>
-        </AuthProvider>
+        <Router />
       </TooltipProvider>
+      <Toaster />
     </QueryClientProvider>
   );
 }

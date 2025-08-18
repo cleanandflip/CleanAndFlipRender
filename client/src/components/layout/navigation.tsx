@@ -8,7 +8,7 @@ import SearchBar from "@/components/search/SearchBar";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { useCart } from "@/hooks/useCart";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, useLogout } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code, LayoutGrid, Code2, Shield } from "lucide-react";
 import { LocalBadge } from "@/components/locality/LocalBadge";
@@ -28,7 +28,10 @@ export default function Navigation() {
   // Cart functionality with real-time updates - FIXED DATA ACCESS
   const { data: cart } = useCart();  
   const cartCount = cart && Array.isArray((cart as any).items) ? (cart as any).items.length : 0;
-  const { user, logoutMutation } = useAuth();
+  const { data: authData, isLoading: authLoading } = useAuth();
+  const isAuthenticated = authData?.authenticated || false;
+  const user = authData?.user;
+  const logoutMutation = useLogout();
   const { toast } = useToast();
   const { data: locality } = useLocality(); // SSOT single source of truth
   const local = locality || DEFAULT_LOCALITY; // Never undefined
@@ -213,7 +216,7 @@ export default function Navigation() {
             <div className="hidden lg:block h-8 w-px bg-white/10" />
 
             {/* Account - Professional Dropdown */}
-            {user ? (
+            {isAuthenticated && user ? (
               <div className="relative">
                 <button 
                   ref={triggerRef}
