@@ -2322,7 +2322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           displayOrder: categories.displayOrder,
           createdAt: categories.createdAt,
           updatedAt: categories.updatedAt,
-          productCount: sql<number>`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})`
+          productCount: sql<number>`(SELECT COUNT(*) FROM products WHERE category_id = categories.id)`
         })
         .from(categories);
 
@@ -2344,7 +2344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Apply sorting
       const sortColumn = sortBy === 'name' ? categories.name :
-                        sortBy === 'products' ? sql<number>`(SELECT COUNT(*) FROM ${products} WHERE ${products.categoryId} = ${categories.id})` :
+                        sortBy === 'products' ? sql<number>`(SELECT COUNT(*) FROM products WHERE category_id = categories.id)` :
                         sortBy === 'created' ? categories.createdAt :
                         categories.displayOrder;
 
@@ -2513,7 +2513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const productCount = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(products)
-        .where(eq(products.categoryId, id));
+        .where(sql`category_id = ${id}`);
 
       if (productCount[0]?.count > 0) {
         return res.status(400).json({ 
