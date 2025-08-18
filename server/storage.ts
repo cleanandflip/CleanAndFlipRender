@@ -1657,6 +1657,7 @@ export class DatabaseStorage implements IStorage {
             COALESCE(geoapify_place_id, NULL) as geoapify_place_id,
             COALESCE(is_default, false) as is_default,
             COALESCE(is_local, false) as is_local,
+            COALESCE(type, 'shipping') as type,
             COALESCE(created_at, NOW()) as created_at,
             COALESCE(updated_at, NOW()) as updated_at
           FROM addresses 
@@ -1688,6 +1689,7 @@ export class DatabaseStorage implements IStorage {
             COALESCE(geoapify_place_id, NULL) as geoapify_place_id,
             COALESCE(is_default, false) as is_default,
             COALESCE(is_local, false) as is_local,
+            COALESCE(type, 'shipping') as type,
             COALESCE(created_at, NOW()) as created_at,
             COALESCE(updated_at, NOW()) as updated_at
           FROM addresses 
@@ -1715,7 +1717,8 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...address,
           userId,
-          id: randomUUID()
+          id: randomUUID(),
+          type: 'shipping' // Ensure type is always provided
         })
         .returning();
       return newAddress;
@@ -1733,13 +1736,13 @@ export class DatabaseStorage implements IStorage {
         const result = await db.execute(sql`
           INSERT INTO addresses (
             id, user_id, first_name, last_name, street1, street2, city, state, postal_code, country,
-            latitude, longitude, geoapify_place_id, is_default, is_local, created_at, updated_at
+            latitude, longitude, geoapify_place_id, is_default, is_local, created_at, updated_at, type
           ) VALUES (
             ${newId}, ${userId}, ${address.firstName}, ${address.lastName}, 
             ${address.street1}, ${address.street2 || ''}, ${address.city}, ${address.state}, 
             ${address.postalCode}, ${address.country || 'US'},
             ${address.latitude || null}, ${address.longitude || null}, ${address.geoapifyPlaceId || null},
-            ${address.isDefault || false}, ${address.isLocal || false}, NOW(), NOW()
+            ${address.isDefault || false}, ${address.isLocal || false}, NOW(), NOW(), 'shipping'
           ) RETURNING *
         `);
         return result.rows[0] as Address;

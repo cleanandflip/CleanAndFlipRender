@@ -180,6 +180,7 @@ export const addresses = pgTable("addresses", {
   geoapifyPlaceId: text("geoapify_place_id"), // From Geoapify API
   isDefault: boolean("is_default").default(false).notNull(),
   isLocal: boolean("is_local").default(false).notNull(), // Computed field
+  type: varchar("type").default("shipping").notNull(), // Address type (shipping, billing, etc.)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
