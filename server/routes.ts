@@ -276,6 +276,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const addressRoutes = await import('./routes/addresses');
   app.use('/api/addresses', addressRoutes.default);
   
+  // Import and use new session-aware auth routes
+  const authSessionRoutes = await import('./routes/auth-session');
+  app.use('/api', authSessionRoutes.default);
+  
   // Import SSOT cart routes with session middleware and migration
   const { router: cartRouter } = await import('./routes/cart');
   const ensureSession = (await import('./middleware/ensureSession')).default;
@@ -2769,7 +2773,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/sessions/:sid/revoke", requireRole('developer'), revokeSession);
   app.get("/api/admin/system/health-enhanced", requireRole('developer'), getSystemHealth);
 
-  // User endpoint - now guest-safe with better responses
+  // User endpoint moved to auth-session.ts - keeping this one for legacy fallback
+  /*
   app.get("/api/user", authImprovements.guestSafeUser, async (req, res) => {
     // At this point, we know the user is authenticated (guestSafeUser would have returned early for guests)
     
@@ -2872,6 +2877,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch user data" });
     }
   });
+  */ // End legacy user endpoint comment
 
   // Activity tracking endpoint - fire and forget for performance
   // Fire-and-forget activity tracking with instant 202 response

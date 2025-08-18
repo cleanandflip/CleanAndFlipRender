@@ -1,7 +1,7 @@
 // server/index.ts
 import express from "express";
-import session from "express-session";
 import cookieParser from "cookie-parser";
+import { buildSessionMiddleware, TRUST_PROXY_HOPS } from "./config/session";
 import cors from "cors";
 import { DATABASE_URL, getDbHost, getAppEnv } from './config/database';
 import { applyMigrations } from "./db/migrate";
@@ -92,9 +92,10 @@ await verifyProductSchema().catch((e) => {
 
 // 3) Express app
 const app = express();
-app.set("trust proxy", 1);
+app.set("trust proxy", TRUST_PROXY_HOPS);
 
 app.use(cookieParser());
+app.use(buildSessionMiddleware());
 app.use(cors({
   origin: process.env.CORS_ORIGIN || true,
   credentials: true,
@@ -113,8 +114,7 @@ try {
   console.warn("🟡 Universal Webhooks failed to mount:", error?.message || error);
 }
 
-// Session configuration moved to setupAuth() in routes.ts
-// This prevents duplicate session middleware
+// Session middleware now configured above
 
 app.use(express.json());
 

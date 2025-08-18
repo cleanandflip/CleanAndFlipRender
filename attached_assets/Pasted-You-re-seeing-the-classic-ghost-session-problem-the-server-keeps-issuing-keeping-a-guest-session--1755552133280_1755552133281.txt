@@ -1,0 +1,309 @@
+You’re seeing the classic “ghost session” problem: the server keeps issuing/keeping a guest session cookie, your /api/user endpoint returns 200 for guests, and the SPA treats “has session” like “logged-in.” On top of that, your logout isn’t fully clearing the cookie because the clear options don’t match the set options, and you may also be creating a session for every anonymous page view.
+
+Hand this to Replit and have them apply it as-is.
+
+✅ Fix being stuck in a blank account & make logout bullet-proof
+0) Summary of what to change
+
+Don’t create sessions for anonymous users (saveUninitialized:false).
+
+Use env-specific cookie names (CF_SID_DEV vs CF_SID_PROD).
+
+Set trust proxy so secure cookies behave behind Replit’s proxy.
+
+Make /api/logout both destroy the server session and clear the cookie with exactly the same options used to set it (name, path, domain, sameSite, secure).
+
+Make /api/user never 401; return {auth:false, user:null} for guests and no-store cache headers.
+
+On the client, derive logged-in state from auth === true, not “cookie present,” and hard reset client caches on logout.
+
+Add a small session debug route to confirm what the server sees.
+
+1) Session middleware: one source of truth
+
+File: server/config/session.ts (new)
+
+import session from "express-session";
+import pgSimple from "connect-pg-simple";
+import { Pool } from "pg";
+import { APP_ENV } from "./env";
+import { DATABASE_URL } from "./env";
+
+export function getSessionCookieName() {
+  return APP_ENV === "production" ? "CF_SID_PROD" : "CF_SID_DEV";
+}
+
+// IMPORTANT: Replit is HTTPS-terminated at the proxy.
+// We must trust proxy so express-session can mark cookies secure.
+export const TRUST_PROXY_HOPS = 1;
+
+export function getCookieOptions() {
+  // Replit public URLs are HTTPS; local dev via Replit preview is also HTTPS through the proxy.
+  const secure = true; // keep true; we trust the proxy so Secure is okay
+  return {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure,
+    // Do NOT set 'domain' unless you absolutely need cross-subdomain cookies.
+    // Leaving it undefined scopes the cookie to the current host correctly in Replit.
+  };
+}
+
+export function buildSessionMiddleware() {
+  const PgStore = pgSimple(session);
+
+  const pool = new Pool({ connectionString: DATABASE_URL });
+  const store = new PgStore({
+    pool,
+    tableName: "sessions",
+    // prune every hour
+    pruneSessionInterval: 60 * 60,
+  });
+
+  return session({
+    name: getSessionCookieName(),
+    store,
+    secret: process.env.SESSION_SECRET || "change-me-in-replit-secrets",
+    resave: false,
+    // CRITICAL: don't set a cookie for anonymous visitors unless we modify req.session
+    saveUninitialized: false,
+    proxy: true,
+    cookie: {
+      ...getCookieOptions(),
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days for signed-in sessions
+    },
+    unset: "destroy",
+  });
+}
+
+
+Wire it up early:
+
+File: server/index.ts
+
+import express from "express";
+import { buildSessionMiddleware, TRUST_PROXY_HOPS } from "./config/session";
+import { assertEnvSafety } from "./config/env-guard";
+
+assertEnvSafety();
+
+const app = express();
+app.set("trust proxy", TRUST_PROXY_HOPS);
+
+app.use(buildSessionMiddleware());
+
+// ... your routes below
+
+2) Don’t auto-create sessions for guests
+
+If you have any middleware that touches req.session for every request (e.g., storing lastSeen, anonymous cart IDs, etc.), it forces a cookie even for guests. Gate those writes:
+
+app.use((req, _res, next) => {
+  // only create/modify session when necessary
+  // e.g., if (req.user) or if performing a cart action
+  // Avoid: req.session.foo = ... for general GETs
+  next();
+});
+
+
+For cart: create a guest session only when the user actually performs a cart operation (add/update), not on every GET to /.
+
+3) Logout that actually logs out
+
+File: server/routes/auth.ts (or where logout lives)
+
+import { getSessionCookieName, getCookieOptions } from "../config/session";
+
+app.post("/api/logout", (req, res) => {
+  const cookieName = getSessionCookieName();
+  const cookieOpts = getCookieOptions();
+
+  // Destroy server session first
+  req.session?.destroy((err) => {
+    // Clear cookie using EXACTLY the same settings (name/path/sameSite/secure/domain)
+    res.clearCookie(cookieName, cookieOpts);
+    if (err) {
+      req.log?.warn({ err }, "Logout: session destroy error");
+      return res.status(200).json({ ok: true, hint: "session row may already be gone" });
+    }
+    return res.status(200).json({ ok: true });
+  });
+});
+
+
+If you ever set a domain when creating the cookie, you must pass the same domain when clearing it. The safest path on Replit is to not set a domain at all.
+
+4) /api/user semantics & caching
+
+Make it guest-safe: always 200, never 401. Add strict cache busting.
+
+app.get("/api/user", (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+
+  if (req.user) {
+    return res.json({
+      auth: true,
+      user: {
+        id: req.user.id,
+        email: req.user.email,
+        // ...whatever else you already return
+      }
+    });
+  }
+  return res.json({ auth: false, user: null });
+});
+
+
+This matches your logs showing 200 and small contentLength for guests. The SPA must treat auth:false as signed out.
+
+5) Client: auth hook must not rely on “has cookie”
+
+File: client/src/hooks/use-auth.tsx (key points)
+
+const fetchUser = async () => {
+  const res = await fetch("/api/user", { credentials: "include" });
+  if (!res.ok) throw new Error("user fetch failed");
+  const data = await res.json();
+  // Normalize shape
+  return { auth: !!data?.auth, user: data?.user || null };
+};
+
+export function useAuth() {
+  const q = useQuery({
+    queryKey: ["user"],
+    queryFn: fetchUser,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: true,
+  });
+
+  const loggedIn = !!q.data?.auth;
+  const user = q.data?.user ?? null;
+  return { ...q, loggedIn, user };
+}
+
+Logout mutation (hard reset)
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+export function useLogout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      await fetch("/api/logout", { method: "POST", credentials: "include" });
+    },
+    onSuccess: async () => {
+      // Clear all cached user data and navigation state
+      qc.removeQueries({ queryKey: ["user"], exact: false });
+      localStorage.removeItem("nav_state");
+      sessionStorage.clear();
+      // Full reload ensures all in-memory state resets and cookie changes are applied
+      window.location.assign("/");
+    },
+  });
+}
+
+
+In your UI, after clicking “Sign out,” call logout.mutate() and optionally show a toast—don’t rely on HMR state.
+
+6) Kill duplicate / stale cookies automatically (optional but handy)
+
+If you previously had multiple cookie names, add a small cleaner once per request (no-op in steady state):
+
+import cookie from "cookie";
+import { getSessionCookieName, getCookieOptions } from "./config/session";
+
+app.use((req, res, next) => {
+  const desired = getSessionCookieName();
+  const raw = req.headers.cookie || "";
+  const parsed = cookie.parse(raw);
+  const names = Object.keys(parsed);
+
+  const staleNames = names.filter(n =>
+    // remove old names you used before
+    ["connect.sid", "sid", "SESSIONID", "CF_SID", "CF_SID_STAGING"].includes(n) && n !== desired
+  );
+
+  if (staleNames.length) {
+    const opts = getCookieOptions();
+    staleNames.forEach(n => res.clearCookie(n, opts));
+  }
+
+  next();
+});
+
+7) Debug endpoints (temporary; dev only)
+app.get("/api/session/debug", (req, res) => {
+  res.json({
+    hasSession: !!req.session,
+    sessionID: req.sessionID,
+    userId: req.user?.id ?? null,
+    cookie: {
+      name: getSessionCookieName(),
+      options: getCookieOptions(),
+    }
+  });
+});
+
+app.post("/api/session/reset", (req, res) => {
+  const name = getSessionCookieName();
+  const opts = getCookieOptions();
+  req.session?.destroy(() => {
+    res.clearCookie(name, opts);
+    res.json({ ok: true });
+  });
+});
+
+8) Acceptance test (what to verify)
+
+Guest landing
+
+Open the site in a fresh private window.
+
+DevTools → Application → Cookies shows no session cookie until you do an action that actually needs a session (e.g., add to cart).
+
+GET /api/user → 200 {auth:false, user:null}.
+
+Sign in
+
+After login, cookie name is CF_SID_DEV in dev, CF_SID_PROD in prod.
+
+/api/user → 200 {auth:true, user:{...}}.
+
+SPA shows your real account, not a blank one.
+
+Sign out
+
+Click Sign out → POST /api/logout 200.
+
+Cookie disappears immediately in DevTools.
+
+/api/user → 200 {auth:false, user:null}.
+
+SPA reloads to homepage as guest.
+
+Switching tabs / HMR
+
+Even after hot updates, useAuth().loggedIn is only true if auth:true.
+
+9) Replit secrets to set/confirm
+
+SESSION_SECRET — long random string.
+
+Keep your DEV_DATABASE_URL / PROD_DATABASE_URL as-is.
+
+Do not set a cookie domain unless you truly need cross-subdomain; Replit preview hosts vary—scoping to current host avoids “can’t log out.”
+
+Why you were “stuck”
+
+A cookie was still present (or a new guest cookie was being minted immediately), and the client logic treated “session exists” as “signed-in.”
+
+Logout was clearing a different cookie configuration than the one originally set (mismatch on name/path/sameSite/secure/domain), so the browser kept the original cookie.
+
+The server created sessions for every visit (saveUninitialized:true or touching req.session on GET), so you looked “signed into a blank account.”
+
+The changes above stop creating cookies for anonymous views, make logout deterministic, and make the SPA state derive from an explicit auth boolean—so you won’t get trapped in a ghost session again.
