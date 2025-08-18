@@ -90,7 +90,7 @@ export default function SellToUs() {
     queryClient.invalidateQueries({ queryKey: ["/api/user"] });
   }, [queryClient]);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [referenceNumber, setReferenceNumber] = useState<string>("");
+  const [submissionData, setSubmissionData] = useState<{referenceNumber: string} | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
   const form = useForm<SubmissionForm>({
@@ -134,8 +134,8 @@ export default function SellToUs() {
     },
     onSuccess: (data: any) => {
       setIsSubmitted(true);
-      // Store reference number for display
-      setReferenceNumber(data.referenceNumber);
+      // Store submission data for display
+      setSubmissionData({ referenceNumber: data.referenceNumber });
       // Scroll to top immediately when submission is successful
       window.scrollTo({ top: 0, behavior: 'smooth' });
       toast({
@@ -262,15 +262,17 @@ export default function SellToUs() {
             <div className="bg-gray-900/50 rounded-lg p-6 mb-6">
               <p className="text-text-muted text-sm mb-2">Your Reference Number</p>
               <div className="flex items-center justify-center gap-4">
-                <code className="text-2xl font-mono text-accent-blue bg-gray-800 px-4 py-2 rounded">
-                  {referenceNumber}
+                <code className="text-3xl font-mono font-bold text-accent-blue bg-gray-800 px-6 py-3 rounded-lg border border-accent-blue/30">
+                  {submissionData?.referenceNumber || 'Loading...'}
                 </code>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => {
-                    navigator.clipboard.writeText(referenceNumber);
-                    toast({ title: "Reference copied!", description: "Use this to track your submission" });
+                    if (submissionData?.referenceNumber) {
+                      navigator.clipboard.writeText(submissionData.referenceNumber);
+                      toast({ title: "Reference copied!", description: "Use this to track your submission" });
+                    }
                   }}
                   className="hover:bg-gray-700"
                 >
@@ -290,7 +292,7 @@ export default function SellToUs() {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Button 
-                onClick={() => window.open(`/track-submission?ref=${referenceNumber}`, '_blank')}
+                onClick={() => window.open(`/track-submission?ref=${submissionData?.referenceNumber}`, '_blank')}
                 className="bg-accent-blue hover:bg-blue-600"
               >
                 <Eye className="w-4 h-4 mr-2" />

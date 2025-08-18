@@ -1546,8 +1546,14 @@ export class DatabaseStorage implements IStorage {
 
   // Equipment Submission operations (essential for single-seller model)
   async createSubmission(data: InsertEquipmentSubmission): Promise<EquipmentSubmission> {
-    // Generate unique reference number
-    const referenceNumber = `CF-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    // Generate shorter, user-friendly reference number
+    const now = new Date();
+    const year = now.getFullYear().toString().slice(-2); // Last 2 digits of year
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const random = Math.floor(100 + Math.random() * 900); // 3-digit random
+    
+    const referenceNumber = `CF${year}${month}${day}${random}`;
     
     const [submission] = await db
       .insert(equipmentSubmissions)
