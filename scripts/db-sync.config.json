@@ -1,0 +1,114 @@
+{
+  "profiles": {
+    "dev->prod:full": {
+      "description": "Complete dev to prod sync - all tables and data",
+      "schema": { 
+        "usePgDump": true, 
+        "apply": { 
+          "allowDrop": false, 
+          "allowAlterType": true 
+        }, 
+        "skipTables": [], 
+        "schemaOnly": false 
+      },
+      "data": {
+        "mode": "selective",
+        "batchSize": 1000,
+        "updatedAtColumn": "updated_at",
+        "tables": {
+          "upsert": [
+            "users", "addresses", "products", "categories", "coupons", 
+            "orders", "order_items", "order_tracking", "cart_items",
+            "reviews", "return_requests", "equipment_submissions", 
+            "newsletter_subscribers", "user_email_preferences", 
+            "wishlists", "email_queue", "email_logs", "password_reset_tokens"
+          ],
+          "seedExact": ["categories"],
+          "exclude": ["sessions"],
+          "deleteExtraInSeedExact": false
+        }
+      }
+    },
+    "dev->prod:catalog": {
+      "description": "Push catalog/config from dev to prod (no PII).",
+      "schema": { 
+        "usePgDump": true, 
+        "apply": { 
+          "allowDrop": false, 
+          "allowAlterType": true 
+        }, 
+        "skipTables": ["sessions"], 
+        "schemaOnly": false 
+      },
+      "data": {
+        "mode": "selective",
+        "batchSize": 1000,
+        "updatedAtColumn": "updated_at",
+        "tables": {
+          "upsert": ["products", "categories", "coupons"],
+          "seedExact": ["categories"],
+          "exclude": [
+            "orders","order_items","order_tracking","cart_items",
+            "email_queue","email_logs","password_reset_tokens",
+            "reviews","return_requests","sessions","equipment_submissions",
+            "newsletter_subscribers","user_email_preferences",
+            "wishlists","addresses","users"
+          ],
+          "deleteExtraInSeedExact": false
+        }
+      }
+    },
+    "prod->dev:safe": {
+      "description": "Pull prod down to dev; mask PII deterministically.",
+      "schema": { 
+        "usePgDump": true, 
+        "apply": { 
+          "allowDrop": false, 
+          "allowAlterType": true 
+        }, 
+        "skipTables": ["sessions"], 
+        "schemaOnly": false 
+      },
+      "data": {
+        "mode": "selective",
+        "batchSize": 1000,
+        "updatedAtColumn": "updated_at",
+        "tables": {
+          "upsert": ["products","categories","coupons","users","addresses"],
+          "seedExact": [],
+          "exclude": [
+            "orders","order_items","order_tracking","cart_items",
+            "email_queue","email_logs","password_reset_tokens",
+            "reviews","return_requests","sessions","equipment_submissions",
+            "newsletter_subscribers","user_email_preferences","wishlists"
+          ],
+          "deleteExtraInSeedExact": false
+        }
+      },
+      "piiMasking": {
+        "users": {
+          "email": "email",
+          "first_name": "firstName",
+          "last_name": "lastName",
+          "phone": "phone"
+        },
+        "addresses": {
+          "first_name": "firstName",
+          "last_name": "lastName",
+          "street1": "street",
+          "street2": "street",
+          "city": "city",
+          "state": "state",
+          "postal_code": "postal",
+          "latitude": "lat",
+          "longitude": "lon",
+          "geoapify_place_id": "null"
+        }
+      }
+    }
+  },
+  "verify": { 
+    "showCounts": true, 
+    "showMaxUpdatedAt": true 
+  }
+}
