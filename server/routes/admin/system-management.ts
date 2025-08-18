@@ -16,8 +16,17 @@ router.get('/health', async (req, res) => {
     const systemHealth = await SystemMonitor.getSystemHealth();
     const performanceStats = PerformanceMonitor.getSystemStats();
     
+    // Include environment information from the backend
+    const { APP_ENV } = await import('../../config/env.js');
+    
     const response = {
-      system: systemHealth,
+      system: {
+        ...systemHealth,
+        environment: APP_ENV, // Add the actual APP_ENV to the response
+        nodeVersion: process.version,
+        platform: process.platform,
+        processId: process.pid
+      },
       performance: performanceStats,
       errors: { message: 'Error tracking disabled' },
       timestamp: new Date().toISOString()

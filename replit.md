@@ -18,6 +18,14 @@ Clean & Flip is a production-hardened full-stack web application for exchanging 
 - All system health metrics displaying properly: database connection, memory usage, uptime, performance
 - Real-time monitoring working with 5-second refresh intervals
 - **CRITICAL FIX**: Database reporting now shows live, accurate information - Production displays "Production database (muddy-moon)" instead of hardcoded "Development database (lucky-poetry)"
+✅ **PRODUCTION ENVIRONMENT DETECTION FIXED** - Resolved critical deployment environment issue:
+- Fixed environment detection logic in server/config/env.ts to properly detect production deployments
+- Enhanced priority-based environment detection: Replit deployment > NODE_ENV > PROD_APP_ENV > fallbacks
+- Updated system health API to include actual APP_ENV environment information from backend
+- Fixed frontend SystemTab.tsx to display live environment data instead of hardcoded "Development"
+- Production deployments now correctly show "Production" environment badge (RED) and "Production database (muddy-moon)"
+- Development deployments correctly show "Development" environment badge (BLUE) and "Development database (lucky-poetry)"
+- Environment detection verified working: PROD_APP_ENV=production correctly triggers production mode
 ✅ **Universal Premium Button Animation System** - Enhanced every button across the entire codebase:
 - Implemented premium hover animations with 2px lift effects and enhanced glow shadows
 - Added shimmer animation effects that sweep across buttons on hover

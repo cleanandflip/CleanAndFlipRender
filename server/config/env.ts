@@ -5,23 +5,33 @@ export type AppEnv = "development" | "preview" | "staging" | "production";
 
 // Decide app env explicitly using environment-specific secrets
 export const APP_ENV: AppEnv = (() => {
-  // For development mode in Replit, check NODE_ENV first
-  if (process.env.NODE_ENV === "development" && process.env.DEV_APP_ENV) {
-    return "development";
-  }
-  
-  // For production deployments
-  if (process.env.NODE_ENV === "production" && process.env.PROD_APP_ENV) {
+  // PRIORITY 1: Check if we're in Replit deployment (production)
+  if (process.env.REPLIT_DEPLOYMENT === "1" || process.env.REPLIT_ENV === "production") {
     return "production";
   }
   
-  // Fallback logic based on environment
-  if (process.env.DEV_APP_ENV && !process.env.PROD_APP_ENV) return "development";
-  if (process.env.PROD_APP_ENV && !process.env.DEV_APP_ENV) return "production";
+  // PRIORITY 2: Check NODE_ENV for explicit production
+  if (process.env.NODE_ENV === "production") {
+    return "production";
+  }
   
-  // Legacy fallback
-  return (process.env.APP_ENV as AppEnv) ||
-         (process.env.NODE_ENV === "production" ? "production" : "development");
+  // PRIORITY 3: Check for production environment variables
+  if (process.env.PROD_APP_ENV === "production") {
+    return "production";
+  }
+  
+  // PRIORITY 4: Development fallbacks
+  if (process.env.NODE_ENV === "development" || process.env.DEV_APP_ENV === "development") {
+    return "development";
+  }
+  
+  // PRIORITY 5: Legacy fallback based on environment context
+  if (process.env.APP_ENV === "production") {
+    return "production";
+  }
+  
+  // Default to development for Replit workspace
+  return "development";
 })();
 
 // Require at least one of these to be set per env.

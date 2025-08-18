@@ -264,8 +264,12 @@ export function SystemTab() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Environment:</span>
-                      <Badge className="bg-blue-500/20 text-blue-400">
-                        {systemHealth?.system?.environment || 'Development'}
+                      <Badge className={
+                        systemHealth?.system?.environment === 'production' ? 
+                        "bg-red-500/20 text-red-400 border-red-500/30" : 
+                        "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                      }>
+                        {systemHealth?.system?.environment === 'production' ? 'Production' : 'Development'}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
@@ -274,11 +278,11 @@ export function SystemTab() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Platform:</span>
-                      <span className="text-white">Linux x64</span>
+                      <span className="text-white">{systemHealth?.system?.platform || 'Linux x64'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Process ID:</span>
-                      <span className="text-white">{systemHealth?.system?.pid || 'Unknown'}</span>
+                      <span className="text-white">{systemHealth?.system?.processId || 'Unknown'}</span>
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -296,7 +300,9 @@ export function SystemTab() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Database:</span>
-                      <span className="text-white">lucky-poetry</span>
+                      <span className="text-white">
+                        {systemHealth?.system?.database?.environment === 'production' ? 'Production' : 'Development'} database ({systemHealth?.system?.database?.name || 'unknown'})
+                      </span>
                     </div>
                   </div>
                 </div>
