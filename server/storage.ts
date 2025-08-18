@@ -1639,39 +1639,113 @@ export class DatabaseStorage implements IStorage {
 
   // SSOT Address operations
   async getUserAddresses(userId: string): Promise<Address[]> {
-    return await db
-      .select()
-      .from(addresses)
-      .where(eq(addresses.userId, userId))
-      .orderBy(desc(addresses.isDefault), desc(addresses.createdAt));
+    try {
+      return await db
+        .select()
+        .from(addresses)
+        .where(eq(addresses.userId, userId))
+        .orderBy(desc(addresses.isDefault), desc(addresses.createdAt));
+    } catch (error: any) {
+      if (error.code === '42703') {
+        // Production fallback for missing columns
+        Logger.warn('[STORAGE] Missing columns in addresses table, using raw SQL fallback');
+        const result = await db.execute(sql`
+          SELECT 
+            id, user_id, first_name, last_name, street1, street2, city, state, postal_code, country,
+            COALESCE(latitude, NULL) as latitude,
+            COALESCE(longitude, NULL) as longitude,
+            COALESCE(geoapify_place_id, NULL) as geoapify_place_id,
+            COALESCE(is_default, false) as is_default,
+            COALESCE(is_local, false) as is_local,
+            COALESCE(created_at, NOW()) as created_at,
+            COALESCE(updated_at, NOW()) as updated_at
+          FROM addresses 
+          WHERE user_id = ${userId}
+          ORDER BY is_default DESC, created_at DESC
+        `);
+        return result.rows as Address[];
+      }
+      throw error;
+    }
   }
 
   async getAddress(userId: string, id: string): Promise<Address | undefined> {
-    const [address] = await db
-      .select()
-      .from(addresses)
-      .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
-    return address;
+    try {
+      const [address] = await db
+        .select()
+        .from(addresses)
+        .where(and(eq(addresses.id, id), eq(addresses.userId, userId)));
+      return address;
+    } catch (error: any) {
+      if (error.code === '42703') {
+        // Production fallback for missing columns
+        Logger.warn('[STORAGE] Missing columns in getAddress, using raw SQL fallback');
+        const result = await db.execute(sql`
+          SELECT 
+            id, user_id, first_name, last_name, street1, street2, city, state, postal_code, country,
+            COALESCE(latitude, NULL) as latitude,
+            COALESCE(longitude, NULL) as longitude,
+            COALESCE(geoapify_place_id, NULL) as geoapify_place_id,
+            COALESCE(is_default, false) as is_default,
+            COALESCE(is_local, false) as is_local,
+            COALESCE(created_at, NOW()) as created_at,
+            COALESCE(updated_at, NOW()) as updated_at
+          FROM addresses 
+          WHERE id = ${id} AND user_id = ${userId}
+          LIMIT 1
+        `);
+        return result.rows[0] as Address | undefined;
+      }
+      throw error;
+    }
   }
 
   async createAddress(userId: string, address: InsertAddress): Promise<Address> {
-    // If setting as default, clear other defaults first
-    if (address.isDefault) {
-      await db
-        .update(addresses)
-        .set({ isDefault: false })
-        .where(eq(addresses.userId, userId));
-    }
+    try {
+      // If setting as default, clear other defaults first
+      if (address.isDefault) {
+        await db
+          .update(addresses)
+          .set({ isDefault: false })
+          .where(eq(addresses.userId, userId));
+      }
 
-    const [newAddress] = await db
-      .insert(addresses)
-      .values({
-        ...address,
-        userId,
-        id: randomUUID()
-      })
-      .returning();
-    return newAddress;
+      const [newAddress] = await db
+        .insert(addresses)
+        .values({
+          ...address,
+          userId,
+          id: randomUUID()
+        })
+        .returning();
+      return newAddress;
+    } catch (error: any) {
+      if (error.code === '42703') {
+        // Production fallback for missing columns
+        Logger.warn('[STORAGE] Missing columns in createAddress, using raw SQL fallback');
+        
+        // Clear defaults if needed
+        if (address.isDefault) {
+          await db.execute(sql`UPDATE addresses SET is_default = false WHERE user_id = ${userId}`);
+        }
+        
+        const newId = randomUUID();
+        const result = await db.execute(sql`
+          INSERT INTO addresses (
+            id, user_id, first_name, last_name, street1, street2, city, state, postal_code, country,
+            latitude, longitude, geoapify_place_id, is_default, is_local, created_at, updated_at
+          ) VALUES (
+            ${newId}, ${userId}, ${address.firstName}, ${address.lastName}, 
+            ${address.street1}, ${address.street2 || ''}, ${address.city}, ${address.state}, 
+            ${address.postalCode}, ${address.country || 'US'},
+            ${address.latitude || null}, ${address.longitude || null}, ${address.geoapifyPlaceId || null},
+            ${address.isDefault || false}, ${address.isLocal || false}, NOW(), NOW()
+          ) RETURNING *
+        `);
+        return result.rows[0] as Address;
+      }
+      throw error;
+    }
   }
 
   async updateAddress(userId: string, id: string, updates: Partial<InsertAddress>): Promise<Address> {

@@ -1,0 +1,208 @@
+2025-08-18 02:46:22.57
+a1a3742a
+User
+url: '/api/addresses',
+2025-08-18 02:46:22.57
+a1a3742a
+User
+userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+2025-08-18 02:46:22.57
+a1a3742a
+User
+ip: '34.60.193.23',
+2025-08-18 02:46:22.57
+a1a3742a
+User
+userId: undefined,
+2025-08-18 02:46:22.57
+a1a3742a
+User
+duration: 91,
+2025-08-18 02:46:22.57
+a1a3742a
+User
+statusCode: 500,
+2025-08-18 02:46:22.57
+a1a3742a
+User
+contentLength: 39
+2025-08-18 02:46:22.57
+a1a3742a
+User
+}
+2025-08-18 02:46:23.69
+a1a3742a
+User
+GET /api/addresses error: NeonDbError: column "latitude" does not exist
+2025-08-18 02:46:23.69
+a1a3742a
+User
+at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+2025-08-18 02:46:23.69
+a1a3742a
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-08-18 02:46:23.69
+a1a3742a
+User
+at async NeonHttpPreparedQuery.execute (file:///home/runner/workspace/node_modules/drizzle-orm/neon-http/session.js:40:20)
+2025-08-18 02:46:23.69
+a1a3742a
+User
+at async DatabaseStorage.getUserAddresses (file:///home/runner/workspace/dist/index.js:1821:16)
+2025-08-18 02:46:23.69
+a1a3742a
+User
+at async file:///home/runner/workspace/dist/index.js:3819:28 {
+2025-08-18 02:46:23.69
+a1a3742a
+User
+severity: 'ERROR',
+2025-08-18 02:46:23.69
+a1a3742a
+User
+code: '42703',
+2025-08-18 02:46:23.69
+a1a3742a
+User
+detail: undefined,
+2025-08-18 02:46:23.69
+a1a3742a
+User
+hint: undefined,
+2025-08-18 02:46:23.69
+a1a3742a
+User
+position: '117',
+2025-08-18 02:46:23.69
+a1a3742a
+User
+internalPosition: undefined,
+2025-08-18 02:46:23.69
+a1a3742a
+User
+internalQuery: undefined,
+2025-08-18 02:46:23.69
+a1a3742a
+User
+where: undefined,
+2025-08-18 02:46:23.69
+a1a3742a
+User
+schema: undefined,
+2025-08-18 02:46:23.69
+a1a3742a
+User
+table: undefined,
+2025-08-18 02:46:23.69
+a1a3742a
+User
+column: undefined,
+2025-08-18 02:46:23.69
+a1a3742a
+User
+dataType: undefined,
+2025-08-18 02:46:23.69
+a1a3742a
+User
+constraint: undefined,
+2025-08-18 02:46:23.69
+a1a3742a
+User
+file: 'parse_relation.c',
+2025-08-18 02:46:23.69
+a1a3742a
+User
+line: '3716',
+2025-08-18 02:46:23.69
+a1a3742a
+User
+routine: 'errorMissingColumn',
+2025-08-18 02:46:23.69
+a1a3742a
+User
+sourceError: undefined
+2025-08-18 02:46:23.69
+a1a3742a
+User
+}
+2025-08-18 02:46:23.71
+a1a3742a
+User
+[WARN] API GET / 500 92ms {
+2025-08-18 02:46:23.71
+a1a3742a
+User
+method: 'GET',
+2025-08-18 02:46:23.71
+a1a3742a
+User
+url: '/',
+2025-08-18 02:46:23.71
+a1a3742a
+User
+userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+2025-08-18 02:46:23.71
+a1a3742a
+User
+ip: '34.30.225.124',
+2025-08-18 02:46:23.71
+a1a3742a
+User
+userId: undefined,
+2025-08-18 02:46:23.71
+a1a3742a
+User
+duration: 92,
+2025-08-18 02:46:23.71
+a1a3742a
+User
+statusCode: 500,
+2025-08-18 02:46:23.71
+a1a3742a
+User
+contentLength: 39
+2025-08-18 02:46:23.71
+a1a3742a
+User
+}
+2025-08-18 02:46:23.71
+a1a3742a
+User
+[ERROR] GET / 500 92ms {
+2025-08-18 02:46:23.71
+a1a3742a
+User
+method: 'GET',
+2025-08-18 02:46:23.71
+a1a3742a
+User
+url: '/api/addresses',
+2025-08-18 02:46:23.71
+a1a3742a
+User
+userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+2025-08-18 02:46:23.71
+a1a3742a
+User
+ip: '34.30.225.124',
+2025-08-18 02:46:23.71
+a1a3742a
+User
+userId: undefined,
+2025-08-18 02:46:23.71
+a1a3742a
+User
+duration: 92,
+2025-08-18 02:46:23.71
+a1a3742a
+User
+statusCode: 500,
+2025-08-18 02:46:23.71
+a1a3742a
+User
+contentLength: 39
+2025-08-18 02:46:23.71
+a1a3742a
+User
+}
