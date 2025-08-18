@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// import { ScrollArea } from '@/components/ui/scroll-area'; // Removed due to React hook issues
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Database, Play, Table, Settings, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
@@ -206,7 +206,7 @@ export function DatabaseTab() {
                         <Table className="w-4 h-4" />
                         Tables ({currentDb.tables?.length || 0})
                       </Label>
-                      <ScrollArea className="h-40 w-full border rounded-md mt-2">
+                      <div className="h-40 w-full border rounded-md mt-2 overflow-y-auto">
                         <div className="p-2">
                           {currentDb.tables?.map((table: TableInfo) => (
                             <button
@@ -221,7 +221,7 @@ export function DatabaseTab() {
                             </button>
                           ))}
                         </div>
-                      </ScrollArea>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -345,7 +345,7 @@ export function DatabaseTab() {
                         </div>
                         {/* Results displayed using same component as query tab */}
                         {queryResult && (
-                          <ScrollArea className="w-full">
+                          <div className="w-full overflow-x-auto max-h-96">
                             <div className="overflow-x-auto">
                               <table className="w-full border-collapse border border-gray-300 text-sm">
                                 <thead>
@@ -370,7 +370,7 @@ export function DatabaseTab() {
                                 </tbody>
                               </table>
                             </div>
-                          </ScrollArea>
+                          </div>
                         )}
                       </div>
                     ) : (
