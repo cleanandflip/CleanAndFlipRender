@@ -1,4 +1,3 @@
-// ENHANCED SYSTEM TAB - Real-time Monitoring & Diagnostics
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
@@ -13,243 +12,193 @@ import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function SystemTab() {
   const ready = useWebSocketState();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeView, setActiveView] = useState('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Multiple data queries for comprehensive monitoring
+  // Real-time system health monitoring
   const { data: systemHealth, isLoading: healthLoading, refetch: refetchHealth } = useQuery({
     queryKey: ['/api/admin/system/health'],
-    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchInterval: 5000,
     staleTime: 0,
     cacheTime: 0
-  });
-
-  const { data: performanceData, refetch: refetchPerformance } = useQuery({
-    queryKey: ['/api/admin/system/performance'],
-    refetchInterval: 10000, // Refresh every 10 seconds
-    enabled: activeTab === 'performance'
-  });
-
-  const { data: alertsData, refetch: refetchAlerts } = useQuery({
-    queryKey: ['/api/admin/system/alerts'],
-    refetchInterval: 15000, // Refresh every 15 seconds
-    enabled: activeTab === 'alerts'
-  });
-
-  const { data: databaseData, refetch: refetchDatabase } = useQuery({
-    queryKey: ['/api/admin/system/database'],
-    refetchInterval: 30000, // Refresh every 30 seconds
-    enabled: activeTab === 'database'
   });
 
   // Global refresh function
   const refreshAll = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([
-        refetchHealth(),
-        refetchPerformance(), 
-        refetchAlerts(),
-        refetchDatabase()
-      ]);
+      await refetchHealth();
       toast({
-        title: "System Data Updated",
-        description: "All system metrics have been refreshed",
+        title: "System Refreshed",
+        description: "All monitoring data updated successfully",
       });
     } catch (error) {
       toast({
-        title: "Refresh Failed", 
-        description: "Failed to update system metrics",
+        title: "Refresh Failed",
+        description: "Unable to update system data",
         variant: "destructive",
       });
     } finally {
-      setTimeout(() => setIsRefreshing(false), 500);
+      setIsRefreshing(false);
     }
   };
 
   // Helper functions
   const formatUptime = (seconds: number) => {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
+    const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    return `${days}d ${hours}h ${minutes}m`;
+    return `${hours}h ${minutes}m`;
   };
 
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  // System status determination with proper logic
+  const getSystemStatus = () => {
+    if (!systemHealth?.system) return { status: 'unknown', color: 'gray' };
+    
+    const { database, memory, performance } = systemHealth.system;
+    
+    // Critical conditions
+    if (database?.status !== 'connected') {
+      return { status: 'critical', color: 'red' };
+    }
+    
+    if (memory && memory.used > memory.total * 0.9) {
+      return { status: 'critical', color: 'red' };
+    }
+    
+    // Warning conditions
+    if (memory && memory.used > memory.total * 0.75) {
+      return { status: 'warning', color: 'yellow' };
+    }
+    
+    if (performance && performance.avgResponseTime > 2000) {
+      return { status: 'warning', color: 'yellow' };
+    }
+    
+    // If database is connected and no critical issues, system is healthy
+    if (database?.status === 'connected') {
+      return { status: 'healthy', color: 'green' };
+    }
+    
+    return { status: 'unknown', color: 'gray' };
   };
 
-  const getHealthStatus = () => {
-    if (!systemHealth?.system) return { status: 'unknown', color: 'bg-gray-500' };
-    const status = systemHealth.system.status;
-    return {
-      status: status,
-      color: status === 'healthy' ? 'bg-green-500' : 
-             status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
-    };
+  const systemStatus = getSystemStatus();
+  const dbStatus = { 
+    status: systemHealth?.system?.database?.status === 'connected' ? 'healthy' : 'error',
+    color: systemHealth?.system?.database?.status === 'connected' ? 'green' : 'red'
   };
 
-  const getDbStatus = () => {
-    if (!systemHealth?.system?.database) return { status: 'unknown', color: 'bg-gray-500' };
-    const dbStatus = systemHealth.system.database.status;
-    return {
-      status: dbStatus === 'connected' ? 'Connected' : 'Disconnected',
-      color: dbStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
-    };
-  };
-
-  if (healthLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-        <p className="text-gray-400">Loading system diagnostics...</p>
-      </div>
-    );
-  }
-
-  const healthStatus = getHealthStatus();
-  const dbStatus = getDbStatus();
+  // Custom tab navigation
+  const TabButton = ({ id, label, icon: Icon, isActive, onClick }: {
+    id: string;
+    label: string;
+    icon: any;
+    isActive: boolean;
+    onClick: () => void;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+        isActive
+          ? 'bg-blue-600 text-white shadow-lg'
+          : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+      }`}
+    >
+      <Icon className="w-4 h-4" />
+      {label}
+    </button>
+  );
 
   return (
     <div className="space-y-6">
       {/* Header with Real-time Status */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="font-bebas text-4xl text-white">SYSTEM MONITORING</h1>
-          <div className="flex items-center gap-2">
-            {ready ? (
-              <div className="flex items-center gap-1 px-3 py-1 bg-green-500/20 rounded-full">
-                <Wifi className="w-4 h-4 text-green-400 animate-pulse" />
-                <span className="text-sm text-green-400 font-medium">Live Sync Active</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 px-3 py-1 bg-red-500/20 rounded-full">
-                <WifiOff className="w-4 h-4 text-red-400" />
-                <span className="text-sm text-red-400 font-medium">Connection Lost</span>
-              </div>
-            )}
-          </div>
+        <div>
+          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+            <Activity className="w-8 h-8" />
+            SYSTEM MONITORING
+            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 ml-2">
+              {ready ? 'Live Sync Active' : 'Sync Offline'}
+            </Badge>
+          </h2>
+          <p className="text-gray-400 mt-1">Real-time system health and performance monitoring</p>
         </div>
+        
         <UnifiedButton
           onClick={refreshAll}
           disabled={isRefreshing}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="flex items-center gap-2"
         >
-          <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {isRefreshing ? 'Updating...' : 'Refresh All'}
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Refresh All
         </UnifiedButton>
       </div>
 
-      {/* Critical Metrics Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-[#1e293b]/50 border-gray-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-400">System Status</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className={`w-3 h-3 rounded-full ${healthStatus.color}`}></div>
-                  <p className="text-2xl font-bold text-white capitalize">{healthStatus.status}</p>
-                </div>
-              </div>
-              {healthStatus.status === 'healthy' ? 
-                <Activity className="w-8 h-8 text-green-400" /> : 
-                <AlertTriangle className="w-8 h-8 text-red-400" />
-              }
-            </div>
-          </CardContent>
-        </Card>
+      {/* System Health Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <UnifiedMetricCard
+          title="System Status"
+          value={systemStatus.status === 'healthy' ? 'Healthy' : 
+                 systemStatus.status === 'warning' ? 'Warning' :
+                 systemStatus.status === 'critical' ? 'Critical' : 'Unknown'}
+          icon={systemStatus.status === 'healthy' ? CheckCircle : 
+                systemStatus.status === 'warning' ? AlertTriangle :
+                systemStatus.status === 'critical' ? XCircle : AlertCircle}
+          trend="up"
+          className="bg-[#1e293b]/50 border-gray-800"
+          valueClassName={`${
+            systemStatus.status === 'healthy' ? 'text-green-400' :
+            systemStatus.status === 'warning' ? 'text-yellow-400' :
+            systemStatus.status === 'critical' ? 'text-red-400' :
+            'text-gray-400'
+          }`}
+        />
 
-        <Card className="bg-[#1e293b]/50 border-gray-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-400">Database</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className={`w-3 h-3 rounded-full ${dbStatus.color}`}></div>
-                  <p className="text-2xl font-bold text-white">{dbStatus.status}</p>
-                </div>
-                {systemHealth?.system?.database?.latency && (
-                  <p className="text-xs text-gray-500 mt-1">{systemHealth.system.database.latency}ms latency</p>
-                )}
-              </div>
-              <Database className={`w-8 h-8 ${dbStatus.color === 'bg-green-500' ? 'text-green-400' : 'text-red-400'}`} />
-            </div>
-          </CardContent>
-        </Card>
+        <UnifiedMetricCard
+          title="Database"
+          value={dbStatus.status === 'healthy' ? 'Connected' : 'Error'}
+          subtitle={systemHealth?.system?.database?.latency ? `${systemHealth.system.database.latency}ms latency` : 'No response'}
+          icon={Database}
+          trend="stable"
+          className="bg-[#1e293b]/50 border-gray-800"
+          valueClassName={dbStatus.status === 'healthy' ? 'text-green-400' : 'text-red-400'}
+        />
 
-        <Card className="bg-[#1e293b]/50 border-gray-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-400">Uptime</p>
-                <p className="text-2xl font-bold text-white mt-2">
-                  {formatUptime(systemHealth?.system?.uptime || 0)}
-                </p>
-              </div>
-              <Clock className="w-8 h-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
+        <UnifiedMetricCard
+          title="Uptime"
+          value={formatUptime(systemHealth?.system?.uptime || 0)}
+          icon={Clock}
+          trend="up"
+          className="bg-[#1e293b]/50 border-gray-800"
+          valueClassName="text-blue-400"
+        />
 
-        <Card className="bg-[#1e293b]/50 border-gray-800">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-400">Memory Usage</p>
-                <p className="text-2xl font-bold text-white mt-2">
-                  {systemHealth?.system?.memory?.used || 0}MB
-                </p>
-                {systemHealth?.system?.memory && (
-                  <div className="mt-2">
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Used</span>
-                      <span>{((systemHealth.system.memory.used / systemHealth.system.memory.total) * 100).toFixed(1)}%</span>
-                    </div>
-                    <Progress 
-                      value={(systemHealth.system.memory.used / systemHealth.system.memory.total) * 100} 
-                      className="h-2 mt-1"
-                    />
-                  </div>
-                )}
-              </div>
-              <MemoryStick className="w-8 h-8 text-purple-400" />
-            </div>
-          </CardContent>
-        </Card>
+        <UnifiedMetricCard
+          title="Memory Usage"
+          value={systemHealth?.system?.memory ? `${systemHealth.system.memory.used}MB` : '0MB'}
+          subtitle={systemHealth?.system?.memory ? `${Math.round((systemHealth.system.memory.used / systemHealth.system.memory.total) * 100)}% used` : 'Loading...'}
+          icon={MemoryStick}
+          trend={systemHealth?.system?.memory?.used > 256 ? 'up' : 'stable'}
+          className="bg-[#1e293b]/50 border-gray-800"
+          valueClassName="text-purple-400"
+        />
       </div>
 
-      {/* Comprehensive Monitoring Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-[#1e293b]/50 border border-gray-800">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="performance" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            <Zap className="w-4 h-4 mr-2" />
-            Performance
-          </TabsTrigger>
-          <TabsTrigger value="alerts" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            <AlertCircle className="w-4 h-4 mr-2" />
-            Alerts
-          </TabsTrigger>
-          <TabsTrigger value="database" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            <Database className="w-4 h-4 mr-2" />
-            Database
-          </TabsTrigger>
-        </TabsList>
+      {/* Navigation Tabs */}
+      <div className="flex gap-2 p-1 bg-[#0f172a]/50 rounded-lg border border-gray-800">
+        <TabButton id="overview" label="Overview" icon={Shield} isActive={activeView === 'overview'} onClick={() => setActiveView('overview')} />
+        <TabButton id="performance" label="Performance" icon={TrendingUp} isActive={activeView === 'performance'} onClick={() => setActiveView('performance')} />
+        <TabButton id="alerts" label="Alerts" icon={AlertCircle} isActive={activeView === 'alerts'} onClick={() => setActiveView('alerts')} />
+        <TabButton id="database" label="Database" icon={Database} isActive={activeView === 'database'} onClick={() => setActiveView('database')} />
+      </div>
 
-        <TabsContent value="overview" className="space-y-6">
+      {/* Content Views */}
+      {activeView === 'overview' && (
+        <div className="space-y-6">
           {/* System Health Checks */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-[#1e293b]/50 border-gray-800">
@@ -264,19 +213,19 @@ export function SystemTab() {
                   { 
                     name: 'Database Connection', 
                     status: systemHealth?.system?.database?.status === 'connected' ? 'healthy' : 'error',
-                    details: `${systemHealth?.system?.database?.latency || 0}ms response time`,
+                    details: systemHealth?.system?.database?.latency ? `${systemHealth.system.database.latency}ms response time` : 'No connection',
                     icon: Database 
                   },
                   { 
                     name: 'Memory Usage', 
                     status: (systemHealth?.system?.memory?.used || 0) > 512 ? 'warning' : 'healthy',
-                    details: `${systemHealth?.system?.memory?.used || 0}MB / ${systemHealth?.system?.memory?.total || 0}MB`,
+                    details: systemHealth?.system?.memory ? `${systemHealth.system.memory.used}MB / ${systemHealth.system.memory.total}MB` : 'Loading...',
                     icon: MemoryStick 
                   },
                   { 
                     name: 'API Performance', 
                     status: (systemHealth?.system?.performance?.avgResponseTime || 0) > 1000 ? 'warning' : 'healthy',
-                    details: `${Math.round(systemHealth?.system?.performance?.avgResponseTime || 0)}ms average`,
+                    details: systemHealth?.system?.performance ? `${Math.round(systemHealth.system.performance.avgResponseTime)}ms average` : 'Monitoring...',
                     icon: Zap 
                   },
                   {
@@ -349,7 +298,7 @@ export function SystemTab() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Started:</span>
-                      <span className="text-white">{new Date(Date.now() - (systemHealth?.system?.uptime || 0) * 1000).toLocaleDateString()}</span>
+                      <span className="text-white">{systemHealth?.system?.uptime ? new Date(Date.now() - systemHealth.system.uptime * 1000).toLocaleDateString() : 'Unknown'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Timezone:</span>
@@ -360,8 +309,8 @@ export function SystemTab() {
                       <span className="text-white">{new Date().toLocaleTimeString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Load Average:</span>
-                      <span className="text-white">{systemHealth?.system?.loadAverage || 'N/A'}</span>
+                      <span className="text-gray-400">Database:</span>
+                      <span className="text-white">muddy-moon</span>
                     </div>
                   </div>
                 </div>
@@ -369,7 +318,7 @@ export function SystemTab() {
             </Card>
           </div>
 
-          {/* Quick Actions */}
+          {/* System Actions */}
           <Card className="bg-[#1e293b]/50 border-gray-800">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
@@ -400,7 +349,7 @@ export function SystemTab() {
                   onClick={async () => {
                     try {
                       const timestamp = new Date().toISOString();
-                      const logData = `System Health Report - ${timestamp}\n${'='.repeat(50)}\n\nSystem Status: ${healthStatus.status}\nDatabase: ${dbStatus.status}\nUptime: ${formatUptime(systemHealth?.system?.uptime || 0)}\nMemory: ${systemHealth?.system?.memory?.used || 0}MB used\n\nGenerated by Clean & Flip Admin Dashboard`;
+                      const logData = `System Health Report - ${timestamp}\n${'='.repeat(50)}\n\nSystem Status: ${systemStatus.status}\nDatabase: ${dbStatus.status}\nUptime: ${formatUptime(systemHealth?.system?.uptime || 0)}\nMemory: ${systemHealth?.system?.memory?.used || 0}MB used\n\nGenerated by Clean & Flip Admin Dashboard`;
                       
                       const blob = new Blob([logData], { type: 'text/plain' });
                       const url = URL.createObjectURL(blob);
@@ -446,7 +395,7 @@ export function SystemTab() {
                 <UnifiedButton
                   variant="secondary"
                   className="h-16 flex-col gap-2"
-                  onClick={() => setActiveTab('performance')}
+                  onClick={() => setActiveView('performance')}
                 >
                   <TrendingUp className="w-5 h-5" />
                   View Metrics
@@ -454,81 +403,122 @@ export function SystemTab() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="performance">
-          <Card className="bg-[#1e293b]/50 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white">Performance Metrics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <TrendingUp className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-400 text-lg">Performance monitoring data</p>
-                <p className="text-sm text-gray-500 mt-2">Real-time performance metrics will be displayed here</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="alerts">
-          <Card className="bg-[#1e293b]/50 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white">System Alerts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <AlertCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                <p className="text-green-400 text-lg">No Active Alerts</p>
-                <p className="text-sm text-gray-500 mt-2">System is operating normally</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="database">
-          <Card className="bg-[#1e293b]/50 border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-white">Database Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-[#0f172a]/50 rounded-lg">
-                  <Database className="w-8 h-8 text-green-400" />
-                  <div className="flex-1">
-                    <h3 className="text-white font-semibold">PostgreSQL Connection</h3>
-                    <p className="text-sm text-gray-400">Production database (muddy-moon)</p>
-                  </div>
-                  <Badge className="bg-green-500/20 text-green-400">Connected</Badge>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Response Time:</span>
-                      <span className="text-white">{systemHealth?.system?.database?.latency || 0}ms</span>
+      {activeView === 'performance' && (
+        <Card className="bg-[#1e293b]/50 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white">Performance Metrics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {systemHealth?.system?.performance && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="p-4 bg-[#0f172a]/50 rounded-lg border border-gray-700/50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Zap className="w-5 h-5 text-yellow-400" />
+                      <span className="text-white font-medium">Average Response Time</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Connection Pool:</span>
-                      <span className="text-white">Active</span>
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {Math.round(systemHealth.system.performance.avgResponseTime)}ms
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Last Query:</span>
-                      <span className="text-white">Just now</span>
+                  
+                  <div className="p-4 bg-[#0f172a]/50 rounded-lg border border-gray-700/50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Activity className="w-5 h-5 text-green-400" />
+                      <span className="text-white font-medium">Request Count</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">SSL Status:</span>
-                      <span className="text-white">Enabled</span>
+                    <div className="text-2xl font-bold text-green-400">
+                      {systemHealth.system.performance.requestCount || 0}
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-[#0f172a]/50 rounded-lg border border-gray-700/50">
+                    <div className="flex items-center gap-3 mb-2">
+                      <BarChart3 className="w-5 h-5 text-blue-400" />
+                      <span className="text-white font-medium">Throughput</span>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-400">
+                      {Math.round((systemHealth.system.performance.requestCount || 0) / (systemHealth.system.uptime || 1) * 60)}
+                      <span className="text-sm text-gray-400 ml-1">req/min</span>
                     </div>
                   </div>
                 </div>
+              )}
+              
+              {!systemHealth?.system?.performance && (
+                <div className="text-center py-12">
+                  <TrendingUp className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-400 text-lg">Performance monitoring active</p>
+                  <p className="text-sm text-gray-500 mt-2">Real-time performance metrics are being collected</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeView === 'alerts' && (
+        <Card className="bg-[#1e293b]/50 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white">System Alerts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12">
+              <AlertCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
+              <p className="text-green-400 text-lg">No Active Alerts</p>
+              <p className="text-sm text-gray-500 mt-2">System is operating normally</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeView === 'database' && (
+        <Card className="bg-[#1e293b]/50 border-gray-800">
+          <CardHeader>
+            <CardTitle className="text-white">Database Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 p-4 bg-[#0f172a]/50 rounded-lg">
+                <Database className={`w-8 h-8 ${dbStatus.status === 'healthy' ? 'text-green-400' : 'text-red-400'}`} />
+                <div className="flex-1">
+                  <h3 className="text-white font-semibold">PostgreSQL Connection</h3>
+                  <p className="text-sm text-gray-400">Production database (muddy-moon)</p>
+                </div>
+                <Badge className={`${dbStatus.status === 'healthy' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                  {dbStatus.status === 'healthy' ? 'Connected' : 'Error'}
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Response Time:</span>
+                    <span className="text-white">{systemHealth?.system?.database?.latency || 0}ms</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Connection Pool:</span>
+                    <span className="text-white">Active</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Last Query:</span>
+                    <span className="text-white">Just now</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">SSL Status:</span>
+                    <span className="text-white">Enabled</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

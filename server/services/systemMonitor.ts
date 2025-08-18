@@ -104,13 +104,18 @@ export class SystemMonitor {
     const errorRate = this.calculateErrorRate();
     const requestsPerMinute = this.calculateRequestsPerMinute();
 
-    // Determine overall status
+    // Determine overall status with proper logic
     let status: 'healthy' | 'warning' | 'critical' = 'healthy';
-    if (memoryPercent > 85 || dbStatus === 'disconnected' || avgResponseTime > 1000) {
+    
+    // Critical conditions - these must be fixed immediately
+    if (dbStatus === 'disconnected' || memoryPercent > 90) {
       status = 'critical';
-    } else if (memoryPercent > 70 || avgResponseTime > 500 || errorRate > 5) {
+    } 
+    // Warning conditions - these should be monitored
+    else if (memoryPercent > 75 || (avgResponseTime > 0 && avgResponseTime > 2000) || errorRate > 5) {
       status = 'warning';
     }
+    // If database is connected and no critical issues, system is healthy
 
     return {
       status,
