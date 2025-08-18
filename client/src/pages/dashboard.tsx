@@ -602,19 +602,19 @@ function DashboardContent() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">First Name</label>
-                      <div className="glass rounded-lg px-3 py-2">{user?.firstName || 'Not provided'}</div>
+                      <div className="glass rounded-lg px-3 py-2 inline-block min-w-[200px]">{user?.firstName || 'Not provided'}</div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Last Name</label>
-                      <div className="glass rounded-lg px-3 py-2">{user?.lastName || 'Not provided'}</div>
+                      <div className="glass rounded-lg px-3 py-2 inline-block min-w-[200px]">{user?.lastName || 'Not provided'}</div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Email</label>
-                      <div className="glass rounded-lg px-3 py-2">{user?.email || 'Not provided'}</div>
+                      <div className="glass rounded-lg px-3 py-2 inline-block min-w-[200px]">{user?.email || 'Not provided'}</div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Phone</label>
-                      <div className="glass rounded-lg px-3 py-2">{user?.phone || 'Not provided'}</div>
+                      <div className="glass rounded-lg px-3 py-2 inline-block min-w-[200px]">{user?.phone || 'Not provided'}</div>
                     </div>
                   </div>
                 </div>
@@ -628,28 +628,28 @@ function DashboardContent() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="w-full justify-start"
+                      className="justify-start min-w-[180px]"
                     >
                       Change Password
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="w-full justify-start"
+                      className="justify-start min-w-[180px]"
                     >
                       Email Preferences
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="w-full justify-start"
+                      className="justify-start min-w-[180px]"
                     >
                       Privacy Settings
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      className="w-full justify-start"
+                      className="justify-start min-w-[180px]"
                     >
                       Download Data
                     </Button>
