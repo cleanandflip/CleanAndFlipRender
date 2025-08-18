@@ -45,6 +45,7 @@ import { setupCompression } from "./config/compression";
 import { healthLive, healthReady } from "./config/health";
 // Removed old WebSocket import - using new enhanced WebSocket system
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
+import adminDatabaseRoutes from "./routes/admin-database";
 import { Logger, LogLevel } from "./utils/logger";
 import { db } from "./db";
 // (deduped imports moved below)
@@ -2760,6 +2761,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add improved auth logging middleware globally  
   app.use(authImprovements.improvedAuthLogging);
+
+  // Mount admin database routes
+  app.use('/api/admin', requireRole('developer'), adminDatabaseRoutes);
 
   // Legacy user endpoint redirected to unified auth
   // (Unified auth routes handle /api/user now)
