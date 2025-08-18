@@ -3,45 +3,39 @@ import * as process from "node:process";
 
 export type AppEnv = "development" | "preview" | "staging" | "production";
 
-// Decide app env explicitly; never infer prod from NODE_ENV alone.
+// safer: we compute expected hosts from the DSNs
 export const APP_ENV: AppEnv =
   (process.env.APP_ENV as AppEnv) ||
   (process.env.NODE_ENV === "production" ? "production" : "development");
 
-// Require at least one of these to be set per env.
+export const DEV_DATABASE_URL = process.env.DEV_DATABASE_URL?.trim() || "";
+export const PROD_DATABASE_URL = process.env.PROD_DATABASE_URL?.trim() || "";
+
 function must(...keys: string[]) {
-  for (const k of keys) {
-    const v = process.env[k];
-    if (v && v.trim()) return v.trim();
+  for (const k of keys) { 
+    const v = process.env[k]; 
+    if (v && v.trim()) return v.trim(); 
   }
-  throw new Error(`Missing required env: one of ${keys.join(", ")}`);
+  throw new Error(`Missing env: one of ${keys.join(", ")}`);
 }
 
-// Use dedicated DSNs per env; DO NOT point both to the same DB.
 export const DATABASE_URL =
-  APP_ENV === "production"
-    ? must("PROD_DATABASE_URL", "DATABASE_URL")
-    : must("DEV_DATABASE_URL", "DATABASE_URL");
+  APP_ENV === "production" ? must("PROD_DATABASE_URL","DATABASE_URL")
+                           : must("DEV_DATABASE_URL","DATABASE_URL");
 
-// Optional: a DSN or a bare hostname you *expect* for this env.
-// We accept either to reduce human error.
-export const EXPECTED_DB = (process.env.EXPECTED_DB_URL || process.env.EXPECTED_DB_HOST || "").trim();
-
-export function extractHost(value: string): string {
-  try {
-    // Works for postgres:// and postgresql:// DSNs
-    return new URL(value).host;
+export function extractHost(v: string): string {
+  try { 
+    return new URL(v).host; 
   } catch {
-    // Not a URL; treat as already a host, or a DSN w/o protocol
-    // Strip creds, path, and query if present
-    const s = value.replace(/^postgres(ql)?:\/\//, "");
+    const s = v.replace(/^postgres(ql)?:\/\//, "");
     const afterAt = s.split("@").pop() || s;
     return afterAt.split("/")[0].split("?")[0];
   }
 }
 
-export const DB_HOST = extractHost(DATABASE_URL);
-export const EXPECTED_DB_HOST = EXPECTED_DB ? extractHost(EXPECTED_DB) : "";
+export const DB_HOST        = extractHost(DATABASE_URL);
+export const DEV_DB_HOST    = DEV_DATABASE_URL ? extractHost(DEV_DATABASE_URL) : "";
+export const PROD_DB_HOST   = PROD_DATABASE_URL ? extractHost(PROD_DATABASE_URL) : "";
 
 // API base (server-to-server absolute, or leave blank and use relative on client)
 export const API_BASE_URL =
@@ -49,5 +43,4 @@ export const API_BASE_URL =
     ? process.env.API_BASE_URL_PROD?.trim() || ""
     : process.env.API_BASE_URL_DEV?.trim() || "";
 
-// Helpful banner
 export const ENV_BANNER = `[ENV_CONFIG] APP_ENV=${APP_ENV}, DATABASE_URL host=${DB_HOST}`;

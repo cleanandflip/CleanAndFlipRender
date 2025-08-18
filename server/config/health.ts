@@ -2,13 +2,16 @@ import { Request, Response } from 'express';
 import { db } from '../db';
 import { redis } from './cache';
 import { sql } from 'drizzle-orm';
+import { APP_ENV, DB_HOST } from './env';
 
 // Basic liveness check - just confirms service is running
 export async function healthLive(req: Request, res: Response) {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    service: 'clean-flip-api'
+    service: 'clean-flip-api',
+    env: APP_ENV,
+    dbHost: DB_HOST
   });
 }
 

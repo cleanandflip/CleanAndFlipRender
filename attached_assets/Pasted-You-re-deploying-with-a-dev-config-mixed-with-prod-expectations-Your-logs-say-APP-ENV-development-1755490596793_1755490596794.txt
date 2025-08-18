@@ -1,0 +1,144 @@
+You’re deploying with a dev config mixed with prod expectations.
+Your logs say:
+
+APP_ENV=development
+
+DB_HOST=ep-lingering-flower-... (DEV)
+
+EXPECTED_DB_HOST=ep-muddy-moon-...-pooler (PROD)
+
+The guard is doing its job and stopping the app.
+
+Below is a two-part fix:
+
+A) Immediate deployment fix (no code changes)
+
+In Replit → Deployments → Settings → Environment variables (deployment secrets), set only production values:
+
+Set
+
+APP_ENV=production
+
+DATABASE_URL=postgresql://…@ep-muddy-moon-aeggx6le-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require (your prod pooled DSN)
+
+(optional but recommended) PROD_DATABASE_URL=<same as DATABASE_URL>
+
+SESSION_SECRET=<prod random string>
+
+(if you keep the manual guard) EXPECTED_DB_HOST=ep-muddy-moon-aeggx6le-pooler.c-2.us-east-2.aws.neon.tech (hostname only)
+
+Remove/Unset
+
+DEV_DATABASE_URL
+
+any EXPECTED_DB_HOST pointing to dev
+
+any APP_ENV=development secret inherited from the workspace
+
+Redeploy. Your boot log should print:
+
+[ENV_GUARD] APP_ENV=production DB_HOST=ep-muddy-moon-aeggx6le-pooler.c-2.us-east-2.aws.neon.tech
+✅ ENV_GUARD: Environment isolation verified
+
+
+For local/Replit preview (dev) secrets, do the opposite:
+
+APP_ENV=development
+
+DEV_DATABASE_URL=postgresql://…@ep-lingering-flower-afk8pi6o.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require
+
+DATABASE_URL=<same as DEV_DATABASE_URL>
+
+(if using manual guard) EXPECTED_DB_HOST=ep-lingering-flower-afk8pi6o.c-2.us-west-2.aws.neon.tech
+
+B) Make the guard impossible to misconfigure (1 small code tweak)
+
+Right now you can create a conflict by setting a prod EXPECTED_DB_HOST while APP_ENV=development. Replace the guard to derive the expected host from the DSN for that env, so there’s nothing to keep in sync manually.
+
+1) server/config/env.ts
+// safer: we compute expected hosts from the DSNs
+export const APP_ENV =
+  (process.env.APP_ENV as "development"|"preview"|"staging"|"production") ||
+  (process.env.NODE_ENV === "production" ? "production" : "development");
+
+export const DEV_DATABASE_URL = process.env.DEV_DATABASE_URL?.trim() || "";
+export const PROD_DATABASE_URL = process.env.PROD_DATABASE_URL?.trim() || "";
+
+function must(...keys: string[]) {
+  for (const k of keys) { const v = process.env[k]; if (v && v.trim()) return v.trim(); }
+  throw new Error(`Missing env: one of ${keys.join(", ")}`);
+}
+export const DATABASE_URL =
+  APP_ENV === "production" ? must("PROD_DATABASE_URL","DATABASE_URL")
+                           : must("DEV_DATABASE_URL","DATABASE_URL");
+
+export function extractHost(v: string) {
+  try { return new URL(v).host; } catch {
+    const s = v.replace(/^postgres(ql)?:\/\//, "");
+    const afterAt = s.split("@").pop() || s;
+    return afterAt.split("/")[0].split("?")[0];
+  }
+}
+
+export const DB_HOST        = extractHost(DATABASE_URL);
+export const DEV_DB_HOST    = DEV_DATABASE_URL ? extractHost(DEV_DATABASE_URL) : "";
+export const PROD_DB_HOST   = PROD_DATABASE_URL ? extractHost(PROD_DATABASE_URL) : "";
+export const ENV_BANNER     = `[ENV_CONFIG] APP_ENV=${APP_ENV}, DATABASE_URL host=${DB_HOST}`;
+
+2) server/config/env-guard.ts
+import { APP_ENV, DB_HOST, DEV_DB_HOST, PROD_DB_HOST, ENV_BANNER } from "./env";
+
+export function assertEnvSafety() {
+  console.log(ENV_BANNER);
+  console.log(`[ENV_GUARD] APP_ENV=${APP_ENV} DB_HOST=${DB_HOST}`);
+
+  const expected = APP_ENV === "production" ? PROD_DB_HOST : DEV_DB_HOST;
+
+  // If we know the expected host for this env, enforce it
+  if (expected && DB_HOST !== expected) {
+    throw new Error(
+      `ENV_GUARD: Refusing to start. APP_ENV=${APP_ENV} but DATABASE_URL host=${DB_HOST} != expected(${APP_ENV})=${expected}`
+    );
+  }
+
+  // Extra belt-and-suspenders: never use the other env's host
+  if (APP_ENV === "production" && DEV_DB_HOST && DB_HOST === DEV_DB_HOST) {
+    throw new Error(`ENV_GUARD: production cannot use DEV host ${DEV_DB_HOST}`);
+  }
+  if (APP_ENV !== "production" && PROD_DB_HOST && DB_HOST === PROD_DB_HOST) {
+    throw new Error(`ENV_GUARD: ${APP_ENV} cannot use PROD host ${PROD_DB_HOST}`);
+  }
+
+  console.log("✅ ENV_GUARD: Environment isolation verified");
+}
+
+
+With this change you can delete EXPECTED_DB_HOST entirely. The guard always checks the host that belongs to the DSN for the current APP_ENV. No more mismatched secrets.
+
+Final checklist (run these each time)
+
+Before start
+APP_ENV in this environment is what you intend (prod for deployment, dev for preview).
+
+DSN sanity
+For prod deployment, only prod DSNs are present (PROD_DATABASE_URL, DATABASE_URL).
+For dev/preview, only dev DSNs are present (DEV_DATABASE_URL, DATABASE_URL).
+
+Boot banner
+On start you see the right host:
+
+Dev/preview: DB_HOST=ep-lingering-flower-...
+
+Prod: DB_HOST=ep-muddy-moon-aeggx6le-pooler-...
+
+Health check
+GET /api/healthz → { env: "production", dbHost: "ep-muddy-moon-...-pooler..." } in prod, and the dev host in preview.
+
+Client calls
+Frontend uses relative /api/... URLs in preview (or VITE_API_BASE_URL pointing to preview), never your prod domain.
+
+Why it was failing
+
+Your deployment had APP_ENV=development but an EXPECTED host for PROD. The app connected to the dev DSN (west-2) and the guard compared it to the prod host (east-2) → hard fail.
+
+Flip the deployment secrets to production as in A, or adopt the DSN-driven guard in B and you’ll be fully isolated: prod→prod only, dev→dev only.
