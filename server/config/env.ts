@@ -3,34 +3,59 @@ import * as process from "node:process";
 
 export type AppEnv = "development" | "preview" | "staging" | "production";
 
-// Decide app env explicitly using environment-specific secrets
+// EXTREMELY ADVANCED AND FOOLPROOF ENVIRONMENT DETECTION
 export const APP_ENV: AppEnv = (() => {
-  // PRIORITY 1: Check if we're in Replit deployment (production)
-  if (process.env.REPLIT_DEPLOYMENT === "1" || process.env.REPLIT_ENV === "production") {
-    return "production";
-  }
+  // CRITICAL: Localhost preview detection - if we're running on localhost, we're ALWAYS development
+  const hostname = process.env.HOSTNAME || '';
+  const isLocalhost = hostname.includes('localhost') || 
+                     hostname.includes('127.0.0.1') || 
+                     hostname.includes('0.0.0.0') ||
+                     process.env.REPLIT_DEV_DOMAIN;  // Replit preview domain
   
-  // PRIORITY 2: Check NODE_ENV for explicit production
-  if (process.env.NODE_ENV === "production") {
-    return "production";
-  }
-  
-  // PRIORITY 3: Check for production environment variables
-  if (process.env.PROD_APP_ENV === "production") {
-    return "production";
-  }
-  
-  // PRIORITY 4: Development fallbacks
-  if (process.env.NODE_ENV === "development" || process.env.DEV_APP_ENV === "development") {
+  if (isLocalhost) {
+    console.log('[ENV_DETECTION] 🔍 LOCALHOST DETECTED - Forcing DEVELOPMENT mode');
     return "development";
   }
   
-  // PRIORITY 5: Legacy fallback based on environment context
-  if (process.env.APP_ENV === "production") {
+  // PRIORITY 1: EXPLICIT PRODUCTION - Only if we have clear production indicators
+  const isExplicitProduction = process.env.REPLIT_DEPLOYMENT === "1" || 
+                              process.env.REPLIT_ENV === "production" ||
+                              (process.env.NODE_ENV === "production" && !process.env.DEV_APP_ENV);
+  
+  if (isExplicitProduction) {
+    console.log('[ENV_DETECTION] 🚀 EXPLICIT PRODUCTION DETECTED');
     return "production";
   }
   
-  // Default to development for Replit workspace
+  // PRIORITY 2: DEVELOPMENT INDICATORS - Strong development signals
+  const isDevelopment = process.env.NODE_ENV === "development" || 
+                       process.env.DEV_APP_ENV === "development" ||
+                       process.env.REPLIT_DEV === "1" ||
+                       !process.env.PROD_APP_ENV;  // No production env set = development
+  
+  if (isDevelopment) {
+    console.log('[ENV_DETECTION] 💻 DEVELOPMENT INDICATORS FOUND');
+    return "development";
+  }
+  
+  // PRIORITY 3: URL/Domain Analysis for advanced detection
+  const repl_url = process.env.REPL_URL || '';
+  const replit_domains = process.env.REPLIT_DOMAINS || '';
+  
+  // If we have .replit.dev domains, we're in development preview
+  if (repl_url.includes('.replit.dev') || replit_domains.includes('.replit.dev')) {
+    console.log('[ENV_DETECTION] 🌐 REPLIT.DEV DOMAIN DETECTED - DEVELOPMENT');
+    return "development";
+  }
+  
+  // If we have .replit.app domains, we're in production deployment
+  if (repl_url.includes('.replit.app') || replit_domains.includes('.replit.app')) {
+    console.log('[ENV_DETECTION] 🚀 REPLIT.APP DOMAIN DETECTED - PRODUCTION');
+    return "production";
+  }
+  
+  // FALLBACK: If all else fails, default to development for safety
+  console.log('[ENV_DETECTION] ⚠️  FALLBACK TO DEVELOPMENT (Safe Default)');
   return "development";
 })();
 

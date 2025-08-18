@@ -16,13 +16,42 @@ router.get('/health', async (req, res) => {
     const systemHealth = await SystemMonitor.getSystemHealth();
     const performanceStats = PerformanceMonitor.getSystemStats();
     
-    // Include environment information from the backend
-    const { APP_ENV } = await import('../../config/env.js');
+    // Include COMPREHENSIVE environment and database information from the backend
+    const { APP_ENV, DATABASE_URL, DB_HOST } = await import('../../config/env.js');
+    
+    // Extract database name from the connection string
+    const getDatabaseName = (dbUrl: string): string => {
+      try {
+        const url = new URL(dbUrl);
+        const pathSegments = url.pathname.split('/');
+        const dbName = pathSegments[pathSegments.length - 1];
+        
+        // Determine database environment based on host
+        if (url.hostname.includes('muddy-moon')) {
+          return 'muddy-moon';
+        } else if (url.hostname.includes('lucky-poetry')) {
+          return 'lucky-poetry';  
+        }
+        
+        return dbName || 'unknown';
+      } catch {
+        return 'unknown';
+      }
+    };
+    
+    const databaseName = getDatabaseName(DATABASE_URL);
+    const databaseEnvironment = databaseName === 'muddy-moon' ? 'production' : 'development';
     
     const response = {
       system: {
         ...systemHealth,
-        environment: APP_ENV, // Add the actual APP_ENV to the response
+        environment: APP_ENV, // The actual computed APP_ENV
+        database: {
+          ...systemHealth.database,
+          name: databaseName,
+          environment: databaseEnvironment,
+          host: DB_HOST
+        },
         nodeVersion: process.version,
         platform: process.platform,
         processId: process.pid
