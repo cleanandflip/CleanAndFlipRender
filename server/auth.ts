@@ -10,7 +10,7 @@ import connectPg from "connect-pg-simple";
 import { normalizeEmail, parseCityStateZip, isLocalZip, validateCityStateZip, normalizePhone } from "@shared/utils";
 import { authLimiter } from "./middleware/security";
 import { Logger, LogLevel } from "./utils/logger";
-import { DATABASE_URL } from "./config/database";
+import { DATABASE_URL, APP_ENV } from "./config/env";
 import { initializeGoogleAuth } from './auth/google-strategy';
 
 declare global {
@@ -119,7 +119,7 @@ export function setupAuth(app: Express) {
     throw new Error(`Session store initialization failed: ${error.message}`);
   }
   
-  const isProd = process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'production';
+  const isProd = APP_ENV === 'production';
   const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
   
   const sessionSettings: session.SessionOptions = {
@@ -134,10 +134,8 @@ export function setupAuth(app: Express) {
       secure: isProd,                         // HTTPS only in production
       sameSite: isProd ? 'none' : 'lax',      // Cross-site in production, lax for development
       maxAge: SEVEN_DAYS,                     // 7 days instead of 30
-      // Remove domain setting for development - let it default to the request host
-      ...(isProd && process.env.REPLIT_DOMAINS ? { 
-        domain: `.${process.env.REPLIT_DOMAINS.split(',')[0].replace(/^https?:\/\//, '')}` 
-      } : {})
+      // Only set domain in production if SESSION_COOKIE_DOMAIN is provided
+      domain: isProd ? process.env.SESSION_COOKIE_DOMAIN : undefined
     },
     rolling: true, // Reset expiry on activity
   };
@@ -532,8 +530,8 @@ export function setupAuth(app: Express) {
         res.clearCookie('cf.sid', {
           path: '/',
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+          secure: isProd,
+          sameSite: isProd ? 'none' : 'lax'
         });
         
         // Also try alternative cookie names for cleanup

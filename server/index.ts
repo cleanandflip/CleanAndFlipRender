@@ -15,6 +15,10 @@ const host = getDbHost();
 // 1) Boot logs that must appear once
 console.log("[BOOT]", { env, nodeEnv: process.env.NODE_ENV });
 
+// Add environment safety guard
+import { assertEnvSafety } from "./config/env-guard";
+assertEnvSafety();
+
 if (env === 'production') {
   // Guard: production must be on the muddy-moon pooled host
   if (!host.includes('muddy-moon') || !host.includes('pooler')) {
