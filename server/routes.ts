@@ -2763,7 +2763,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(authImprovements.improvedAuthLogging);
 
   // Mount admin database routes
-  app.use('/api/admin', requireRole('developer'), adminDatabaseRoutes);
+  try {
+    const adminDatabaseModule = await import('./routes/admin-database.js');
+    const adminDatabaseRoutes = adminDatabaseModule.default;
+    app.use('/api/admin', requireRole('developer'), adminDatabaseRoutes);
+  } catch (error) {
+    console.warn('Failed to load admin database routes:', error);
+  }
 
   // Legacy user endpoint redirected to unified auth
   // (Unified auth routes handle /api/user now)

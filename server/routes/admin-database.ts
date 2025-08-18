@@ -1,12 +1,16 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Pool } from '@neondatabase/serverless';
+import { Pool, neonConfig } from '@neondatabase/serverless';
 import { validateRequest } from '../middleware/validation';
+import ws from 'ws';
+
+// Configure Neon WebSocket constructor
+neonConfig.webSocketConstructor = ws;
 
 const router = Router();
 
-// Database connection pools - handle missing URLs gracefully
-const devPool = process.env.DEV_DATABASE_URL ? new Pool({ connectionString: process.env.DEV_DATABASE_URL }) : null;
+// Database connection pools - use current DATABASE_URL for development, PROD_DATABASE_URL for production
+const devPool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL }) : null;
 const prodPool = process.env.PROD_DATABASE_URL ? new Pool({ connectionString: process.env.PROD_DATABASE_URL }) : null;
 
 // Schema validation
@@ -37,7 +41,7 @@ async function getDatabaseInfo(pool: Pool | null, dbName: string) {
       name: dbName,
       tables: [],
       connectionStatus: 'error' as const,
-      error: `${dbName.toUpperCase()}_DATABASE_URL not configured`
+      error: `${dbName === 'development' ? 'DATABASE_URL' : 'PROD_DATABASE_URL'} not configured`
     };
   }
   try {
