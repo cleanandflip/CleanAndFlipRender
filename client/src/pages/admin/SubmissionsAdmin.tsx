@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { 
   Package, 
   Eye, 
@@ -105,6 +106,9 @@ export default function SubmissionsAdmin() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
   const [viewingSubmission, setViewingSubmission] = useState<Submission | null>(null);
+
+  // Lock body scroll when any modal is open
+  useScrollLock(!!(editingSubmission || viewingSubmission));
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch all submissions - using explicit fetch to debug the response
