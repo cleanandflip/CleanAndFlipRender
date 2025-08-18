@@ -649,6 +649,13 @@ function DashboardContent() {
                     variant="outline" 
                     size="default"
                     className="justify-start h-12"
+                    onClick={() => {
+                      toast({
+                        title: "Change Password",
+                        description: "Password change functionality coming soon. You can update your password through your Google account settings for now.",
+                        variant: "default"
+                      });
+                    }}
                   >
                     <Settings className="mr-2" size={16} />
                     Change Password
@@ -657,6 +664,13 @@ function DashboardContent() {
                     variant="outline" 
                     size="default"
                     className="justify-start h-12"
+                    onClick={() => {
+                      toast({
+                        title: "Email Preferences",
+                        description: "Email preference settings will be available soon. You'll be able to control notifications and marketing emails.",
+                        variant: "default"
+                      });
+                    }}
                   >
                     <Mail className="mr-2" size={16} />
                     Email Preferences
@@ -665,6 +679,13 @@ function DashboardContent() {
                     variant="outline" 
                     size="default"
                     className="justify-start h-12"
+                    onClick={() => {
+                      toast({
+                        title: "Privacy Settings",
+                        description: "Privacy controls are coming soon. You'll be able to manage data visibility and account privacy options.",
+                        variant: "default"
+                      });
+                    }}
                   >
                     <Shield className="mr-2" size={16} />
                     Privacy Settings
@@ -673,6 +694,38 @@ function DashboardContent() {
                     variant="outline" 
                     size="default"
                     className="justify-start h-12"
+                    onClick={() => {
+                      const userData = {
+                        profile: {
+                          firstName: user?.firstName,
+                          lastName: user?.lastName,
+                          email: user?.email,
+                          phone: user?.phone,
+                        },
+                        accountInfo: {
+                          memberSince: user?.createdAt,
+                          accountStatus: 'Active'
+                        }
+                      };
+                      
+                      const dataStr = JSON.stringify(userData, null, 2);
+                      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                      const url = URL.createObjectURL(dataBlob);
+                      
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `clean-flip-user-data-${Date.now()}.json`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                      
+                      toast({
+                        title: "Data Downloaded",
+                        description: "Your account data has been downloaded as a JSON file.",
+                        variant: "default"
+                      });
+                    }}
                   >
                     <Download className="mr-2" size={16} />
                     Download Data
