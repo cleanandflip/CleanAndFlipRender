@@ -335,7 +335,7 @@ export function SystemTab() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Node Version:</span>
-                      <span className="text-white">v{process.versions?.node || '20.19.3'}</span>
+                      <span className="text-white">{systemHealth?.system?.nodeVersion || 'v20.19.3'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Platform:</span>
