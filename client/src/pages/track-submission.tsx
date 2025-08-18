@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,9 +22,18 @@ import { useToast } from '@/hooks/use-toast';
 export default function TrackSubmission() {
   const [location] = useLocation();
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
-  const [referenceInput, setReferenceInput] = useState(urlParams.get('ref') || '');
-  const [searchRef, setSearchRef] = useState(urlParams.get('ref') || '');
+  const urlRef = urlParams.get('ref') || '';
+  const [referenceInput, setReferenceInput] = useState(urlRef);
+  const [searchRef, setSearchRef] = useState(urlRef);
   const { toast } = useToast();
+
+  // Auto-trigger search when URL has reference parameter
+  useEffect(() => {
+    if (urlRef) {
+      console.log('🔍 Auto-triggering search for:', urlRef);
+      setSearchRef(urlRef.toUpperCase().trim());
+    }
+  }, [urlRef]);
   
   const { data: submission, isLoading, error } = useQuery({
     queryKey: ['track-submission', searchRef],
