@@ -1,6 +1,6 @@
 // ENHANCED USER MODAL WITH ANIMATIONS
 import { useState, useEffect, useRef } from 'react';
-import { X, Loader2, Check, AlertCircle, User, Mail, Lock, MapPin, Shield } from 'lucide-react';
+import { X, Loader2, Check, AlertCircle, User, Mail, Lock, MapPin, Shield, Wifi } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -32,7 +32,8 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
     city: '',
     state: '',
     zipCode: '',
-    role: 'user'
+    role: 'user',
+    isActive: true
   });
 
   const [initialData, setInitialData] = useState<typeof formData | null>(null);
@@ -49,7 +50,8 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
         city: user.city || '',
         state: user.state || '',
         zipCode: user.zipCode || '',
-        role: user.role || 'user'
+        role: user.role || 'user',
+        isActive: user.isActive !== undefined ? user.isActive : true
       };
       setFormData(data);
       setInitialData(data);
@@ -428,6 +430,44 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
                       : 'Standard user access for shopping, account management, and basic platform features'
                     }
                   </p>
+                </div>
+                
+                {/* Account Status Toggle */}
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-400 mb-3">
+                    Account Status
+                  </label>
+                  <div className="flex items-center justify-between p-4 bg-gray-800/30 rounded-lg border border-gray-700/30">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${formData.isActive ? 'bg-green-400' : 'bg-gray-400'} animate-pulse`}></div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-300">
+                          {formData.isActive ? 'Active Account' : 'Inactive Account'}
+                        </span>
+                        <p className="text-xs text-gray-400">
+                          {formData.isActive 
+                            ? 'User can log in and access all platform features' 
+                            : 'User account is disabled and cannot access the platform'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
+                      className={`
+                        relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500/50 
+                        ${formData.isActive ? 'bg-green-500' : 'bg-gray-600'}
+                      `}
+                    >
+                      <span
+                        className={`
+                          inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform duration-200 ease-in-out
+                          ${formData.isActive ? 'translate-x-6' : 'translate-x-1'}
+                        `}
+                      />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

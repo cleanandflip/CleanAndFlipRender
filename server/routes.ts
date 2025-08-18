@@ -3104,6 +3104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: updateData.lastName || null, 
         phone: updateData.phone || null,
         role: updateData.role, // Include role in the update
+        isActive: updateData.isActive !== undefined ? updateData.isActive : true, // Include status toggle
         updatedAt: new Date()
       };
       

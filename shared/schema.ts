@@ -60,6 +60,7 @@ export const users = pgTable("users", {
   phone: varchar("phone"), // Optional field
   // REMOVED: Legacy address fields - using SSOT addresses table instead
   isLocalCustomer: boolean("is_local_customer").default(false),
+  isActive: boolean("is_active").default(true), // Status for enabling/disabling user accounts
   role: userRoleEnum("role").default("user"),
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
