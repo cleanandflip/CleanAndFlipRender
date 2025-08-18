@@ -1,0 +1,379 @@
+REPLIT: Implement Robust Google Sign-In/Sign-Up (OIDC, Code+PKCE, Sessions)
+
+Goals
+
+Google login works reliably in dev and prod (separate configs).
+
+New Google users are created; existing email users are linked (no duplicates).
+
+Session is established (same cookie as password login).
+
+/api/user returns profile without 401/500.
+
+Fix the a.latitude alias bug.
+
+0) DB migrations (idempotent)
+-- 0.1 user auth columns (safe to re-run)
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS google_sub text UNIQUE,
+  ADD COLUMN IF NOT EXISTS google_email text,
+  ADD COLUMN IF NOT EXISTS google_email_verified boolean,
+  ADD COLUMN IF NOT EXISTS google_picture text,
+  ADD COLUMN IF NOT EXISTS last_login_at timestamptz;
+
+-- Helpful index
+CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
+
+-- 0.2 sessions table index (for cleanup/perf)
+CREATE INDEX IF NOT EXISTS sessions_expire_idx ON sessions(expire);
+
+
+Linking rule: if a user logs in with Google and we find a users.email = id_token.email but google_sub IS NULL, set google_sub = id_token.sub and carry on.
+
+1) Env & Guards (dev vs prod)
+
+Secrets – DEV/Preview
+
+APP_ENV=development
+DEV_DATABASE_URL=postgresql://...dev...
+DATABASE_URL=postgresql://...dev...
+SESSION_SECRET=<dev random>
+GOOGLE_CLIENT_ID_DEV=xxxxxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET_DEV=xxxxxxx
+GOOGLE_REDIRECT_URI_DEV=https://<your-dev-origin>/auth/google/callback
+
+
+Secrets – PROD
+
+APP_ENV=production
+PROD_DATABASE_URL=postgresql://...prod-pooled...
+DATABASE_URL=postgresql://...prod-pooled...
+SESSION_SECRET=<prod random>
+GOOGLE_CLIENT_ID_PROD=xxxxxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET_PROD=xxxxxxx
+GOOGLE_REDIRECT_URI_PROD=https://<your-prod-domain>/auth/google/callback
+
+
+In Google Cloud Console:
+
+Authorized redirect URIs: set both your dev URI and prod URI.
+
+Authorized JavaScript origins: your dev origin(s) and prod origin.
+
+Scopes: openid email profile.
+
+Env loader (server/config/google.ts)
+
+// server/config/google.ts
+import { APP_ENV } from "./env";
+
+export const GOOGLE_CLIENT_ID =
+  APP_ENV === "production" ? process.env.GOOGLE_CLIENT_ID_PROD! : process.env.GOOGLE_CLIENT_ID_DEV!;
+
+export const GOOGLE_CLIENT_SECRET =
+  APP_ENV === "production" ? process.env.GOOGLE_CLIENT_SECRET_PROD! : process.env.GOOGLE_CLIENT_SECRET_DEV!;
+
+export const GOOGLE_REDIRECT_URI =
+  APP_ENV === "production" ? process.env.GOOGLE_REDIRECT_URI_PROD! : process.env.GOOGLE_REDIRECT_URI_DEV!;
+
+2) Server routes (Auth Code + PKCE, no Passport)
+2.1 Utilities
+// server/auth/google-helpers.ts
+import crypto from "node:crypto";
+import fetch from "node-fetch";
+import jwt from "jsonwebtoken";
+import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI } from "../config/google";
+
+export function randomB64Url(n=32) {
+  return crypto.randomBytes(n).toString("base64url");
+}
+
+export function sha256b64url(input: string) {
+  const h = crypto.createHash("sha256").update(input).digest();
+  return Buffer.from(h).toString("base64url");
+}
+
+export function googleAuthUrl({ state, codeChallenge, nonce }: {state:string; codeChallenge:string; nonce:string}) {
+  const p = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  p.searchParams.set("client_id", GOOGLE_CLIENT_ID);
+  p.searchParams.set("redirect_uri", GOOGLE_REDIRECT_URI);
+  p.searchParams.set("response_type", "code");
+  p.searchParams.set("scope", "openid email profile");
+  p.searchParams.set("code_challenge", codeChallenge);
+  p.searchParams.set("code_challenge_method", "S256");
+  p.searchParams.set("state", state);
+  p.searchParams.set("nonce", nonce);
+  // Optional: force account picker: p.searchParams.set("prompt","select_account");
+  return p.toString();
+}
+
+export async function exchangeCodeForTokens(code: string, codeVerifier: string) {
+  const body = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    client_secret: GOOGLE_CLIENT_SECRET,
+    code,
+    code_verifier: codeVerifier,
+    grant_type: "authorization_code",
+    redirect_uri: GOOGLE_REDIRECT_URI,
+  });
+  const r = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  if (!r.ok) throw new Error(`token exchange failed: ${r.status}`);
+  return r.json() as Promise<{
+    access_token: string;
+    id_token: string;
+    expires_in: number;
+    refresh_token?: string;
+    scope: string;
+    token_type: "Bearer";
+  }>;
+}
+
+export type GoogleIdToken = {
+  iss: string; aud: string; sub: string; email?: string; email_verified?: boolean;
+  name?: string; picture?: string; nonce?: string;
+};
+
+export function decodeIdToken(idToken: string): GoogleIdToken {
+  // Signature is validated by Google during exchange; we still sanity-check claims locally.
+  const decoded = jwt.decode(idToken) as GoogleIdToken | null;
+  if (!decoded) throw new Error("bad id_token");
+  return decoded;
+}
+
+2.2 Routes
+// server/auth/google-routes.ts
+import { Router } from "express";
+import { randomB64Url, sha256b64url, googleAuthUrl, exchangeCodeForTokens, decodeIdToken } from "./google-helpers";
+import { pool } from "../db/pool";
+
+export const googleAuth = Router();
+
+/** Step 1: redirect to Google with PKCE */
+googleAuth.get("/auth/google/start", (req, res, next) => {
+  try {
+    const state = randomB64Url(16);
+    const verifier = randomB64Url(32);
+    const codeChallenge = sha256b64url(verifier);
+    const nonce = randomB64Url(16);
+
+    // store ephemeral data in session
+    req.session.google = { state, verifier, nonce };
+    const url = googleAuthUrl({ state, codeChallenge, nonce });
+    res.redirect(url);
+  } catch (e) { next(e); }
+});
+
+/** Step 2: callback */
+googleAuth.get("/auth/google/callback", async (req, res, next) => {
+  try {
+    const { code, state } = req.query as { code?: string; state?: string };
+    if (!code || !state) return res.status(400).send("missing code/state");
+    const s = req.session.google;
+    if (!s || s.state !== state) return res.status(400).send("state mismatch");
+
+    const tokens = await exchangeCodeForTokens(code, s.verifier);
+    const claims = decodeIdToken(tokens.id_token);
+    if (claims.aud !== process.env.GOOGLE_CLIENT_ID_DEV && claims.aud !== process.env.GOOGLE_CLIENT_ID_PROD) {
+      return res.status(400).send("aud mismatch");
+    }
+    if (claims.nonce && s.nonce && claims.nonce !== s.nonce) return res.status(400).send("nonce mismatch");
+    if (claims.iss !== "https://accounts.google.com" && claims.iss !== "accounts.google.com") {
+      return res.status(400).send("iss mismatch");
+    }
+
+    // Upsert/link user
+    const email = (claims.email || "").toLowerCase();
+    const sub = claims.sub;
+    const picture = claims.picture || null;
+    const verified = !!claims.email_verified;
+
+    let userRow;
+    await pool.query("BEGIN");
+    try {
+      // link if email exists
+      const { rows: existing } = await pool.query(
+        `SELECT id, email, google_sub FROM users WHERE lower(email) = $1 LIMIT 1`,
+        [email]
+      );
+
+      if (existing.length) {
+        const u = existing[0];
+        if (!u.google_sub) {
+          await pool.query(
+            `UPDATE users SET google_sub=$1, google_email=$2, google_email_verified=$3, google_picture=$4, last_login_at=NOW() WHERE id=$5`,
+            [sub, email, verified, picture, u.id]
+          );
+        } else {
+          await pool.query(`UPDATE users SET last_login_at=NOW() WHERE id=$1`, [u.id]);
+        }
+        userRow = (await pool.query(`SELECT * FROM users WHERE id=$1`, [u.id])).rows[0];
+      } else {
+        const ins = await pool.query(
+          `INSERT INTO users (email, google_sub, google_email, google_email_verified, google_picture, last_login_at)
+           VALUES ($1,$2,$3,$4,$5,NOW()) RETURNING *`,
+          [email || null, sub, email || null, verified, picture]
+        );
+        userRow = ins.rows[0];
+      }
+      await pool.query("COMMIT");
+    } catch (e) {
+      await pool.query("ROLLBACK");
+      throw e;
+    }
+
+    // Establish session
+    req.session.regenerate(err => {
+      if (err) return next(err);
+      req.session.userId = userRow.id;
+      req.session.email = userRow.email;
+      res.redirect("/"); // or to a post-login route
+    });
+  } catch (e) { next(e); }
+});
+
+/** Logout */
+googleAuth.post("/auth/logout", (req, res, next) => {
+  req.session.destroy(err => {
+    if (err) return next(err);
+    res.clearCookie("cf.sid", { path: "/" });
+    res.json({ ok: true });
+  });
+});
+
+
+Mount (before your API routes):
+
+import { googleAuth } from "./auth/google-routes";
+app.use(googleAuth);
+
+3) Client: two simple buttons (popup and redirect)
+
+Prefer redirect (more reliable across ITP/blockers). Keep One Tap for later.
+
+// client/src/components/LoginButtons.tsx
+export function GoogleLoginButtons() {
+  return (
+    <div className="grid gap-2">
+      <a className="btn btn-google" href="/auth/google/start">Continue with Google</a>
+      {/* Keep your email/password flow too */}
+    </div>
+  );
+}
+
+
+All API calls should already use relative URLs and credentials: 'include'.
+
+4) Fix the /api/user 500 (wrong alias)
+
+Your log: NeonDbError: column a.latitude does not exist … Perhaps you meant "u.latitude".
+Fix the SELECT to reference the correct alias (likely u for users, a for addresses).
+
+// server/user.ts (where you fetch the current user)
+const q = `
+SELECT
+  u.id,
+  u.email,
+  u.google_picture,
+  u.google_email_verified,
+  u.last_login_at,
+  a.city,
+  a.state,
+  a.zip,
+  a.latitude,  -- keep only if 'a' (addresses) actually has these cols
+  a.longitude
+FROM users u
+LEFT JOIN addresses a ON a.user_id = u.id
+WHERE u.id = $1
+`;
+
+
+If latitude/longitude actually live on the users table, change to u.latitude, u.longitude and remove them from a.*.
+
+Also add a safe handler for unauthenticated:
+
+app.get('/api/user', async (req, res) => {
+  if (!req.session?.userId) return res.status(401).json({ error: 'Not authenticated' });
+  // ... run query above with req.session.userId
+});
+
+5) Session/CORS correctness (recap)
+
+app.set('trust proxy', 1)
+
+express-session with saveUninitialized:false, secure: isProd, sameSite: isProd ? 'none' : 'lax', domain only in prod.
+
+CORS origin = exact list per env, credentials:true.
+
+Client fetch/axios uses { credentials:'include' }.
+
+6) Acceptance tests (must pass)
+
+Dev vs Prod
+
+/api/healthz shows correct { env, dbHost } for each env.
+
+Google login (new user)
+
+Click “Continue with Google” → Google → back → redirected home.
+
+DB: new users row with google_sub, google_email_verified, last_login_at set.
+
+Cookie cf.sid present; /api/user → 200 with user.
+
+Google login (existing email)
+
+Create email/password user.
+
+Login via Google with same email → user is linked (no duplicate), google_sub filled.
+
+/api/user returns that user.
+
+Unauthorized
+
+Without session, GET /api/user → 401 JSON. No HTML error page.
+
+Broken state/nonce
+
+Tamper state → callback returns 400 (state mismatch), no session set.
+
+SQL alias
+
+/api/user never raises a.latitude error; add integration test to call it post-login.
+
+7) Troubleshooting map
+
+POST /api/login 401 in your logs is your password route, not Google; leave it as-is.
+
+If callback 400s with “aud/iss/nonce mismatch”:
+
+Check that the client_id and redirect URI match the ones in Google Cloud (and current env).
+
+If /api/user returns 401 after Google:
+
+Confirm session cookie exists; confirm req.session.regenerate resolves and sets userId.
+
+Ensure client fetches use credentials: 'include' and CORS allows your origin.
+
+8) Optional: One Tap (future)
+
+Add Google One Tap using GIS on the client to augment the button. It posts the credential (ID token) to /auth/google/onetap which verifies and links/creates the user (same upsert), then sets the session. Keep for later to avoid scope creep today.
+
+Hand-off summary for Replit
+
+Apply the DB migration in §0.
+
+Add env vars per env in §1; verify /api/healthz.
+
+Create helpers and routes in §2; mount before APIs.
+
+Update login UI with the Google button (§3).
+
+Fix the /api/user alias bug (§4).
+
+Verify acceptance tests (§6).
+
+This will give you a clean, reliable Google sign-in/sign-up that honors your session model and environment isolation.

@@ -214,6 +214,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // CORS configuration
   app.use(cors(corsOptions));
 
+  // Mount Google Auth routes BEFORE other middleware
+  const { googleAuth } = await import('./auth/google-routes');
+  app.use(googleAuth);
+
   // Kill HTTP/API caching for dynamic routes - no stale data allowed
   app.use((req, res, next) => {
     if (req.url.startsWith('/api/')) {

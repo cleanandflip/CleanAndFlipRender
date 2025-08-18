@@ -63,10 +63,13 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").default("user"),
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
-  // OAuth fields
+  // OAuth fields - Updated for new Google Auth system
   googleId: varchar("google_id").unique(),
+  googleSub: text("google_sub").unique(),
   googleEmail: varchar("google_email"),
+  googleEmailVerified: boolean("google_email_verified"),
   googlePicture: text("google_picture"),
+  lastLoginAt: timestamp("last_login_at"),
   profileImageUrl: text("profile_image_url"),
   authProvider: varchar("auth_provider").default("local"), // 'local', 'google'
   isEmailVerified: boolean("is_email_verified").default(false),
