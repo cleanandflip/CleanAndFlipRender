@@ -23,25 +23,27 @@ export default function TrackSubmission() {
   const [location] = useLocation();
   const { toast } = useToast();
   
-  // Extract URL parameters with better parsing
-  const urlParams = new URLSearchParams(location.includes('?') ? location.split('?')[1] : '');
-  const urlRef = urlParams.get('ref') || '';
-  
   const [referenceInput, setReferenceInput] = useState('');
   const [searchRef, setSearchRef] = useState('');
 
-  // Debug logging and auto-trigger search when URL has reference parameter
+  // Extract URL parameters and auto-trigger search
   useEffect(() => {
-    console.log('🔍 TrackSubmission - location:', location);
-    console.log('🔍 TrackSubmission - urlRef:', urlRef);
+    // Get the full URL including query parameters
+    const fullUrl = window.location.href;
+    const currentUrl = new URL(fullUrl);
+    const urlRef = currentUrl.searchParams.get('ref') || '';
+    
+    console.log('🔍 TrackSubmission - Full URL:', fullUrl);
+    console.log('🔍 TrackSubmission - location (wouter):', location);
+    console.log('🔍 TrackSubmission - urlRef extracted:', urlRef);
     
     if (urlRef) {
       const trimmedRef = urlRef.toUpperCase().trim();
-      console.log('🔍 Auto-triggering search for:', trimmedRef);
+      console.log('🔍 Auto-populating and searching for:', trimmedRef);
       setReferenceInput(trimmedRef);
       setSearchRef(trimmedRef);
     }
-  }, [location, urlRef]);
+  }, [location]);
   
   const { data: submission, isLoading, error } = useQuery({
     queryKey: ['track-submission', searchRef],
