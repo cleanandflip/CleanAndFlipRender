@@ -132,6 +132,7 @@ export const products = pgTable("products", {
   images: jsonb("images").$type<string[]>().default([]),
   specifications: jsonb("specifications").$type<Record<string, string | number | boolean>>().default({}),
   stockQuantity: integer("stock_quantity").default(1),
+  continueSellingWhenOutOfStock: boolean("continue_selling_when_out_of_stock").default(false),
   views: integer("views").default(0),
   featured: boolean("featured").default(false),
   // Search functionality

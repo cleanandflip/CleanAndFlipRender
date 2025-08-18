@@ -2930,7 +2930,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stockQuantity: parseInt(req.body.stockQuantity) || 0,
         weight: parseFloat(req.body.weight) || 0,
         isFeatured: false,
-        status: 'active'
+        status: 'active',
+        continueSellingWhenOutOfStock: req.body.continueSellingWhenOutOfStock ?? req.body.continue_selling_when_out_of_stock ?? false
       };
       
       Logger.debug(`Creating product with data: ${JSON.stringify(productData)}`);
@@ -2985,6 +2986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isFeatured = safeBool(b.isFeatured ?? b.is_featured ?? b.featured, false);
       const isLocal = safeBool(b.isLocalDeliveryAvailable ?? b.is_local_delivery_available ?? b.local_delivery, false);
       const isShip = safeBool(b.isShippingAvailable ?? b.is_shipping_available ?? b.shipping_available, true);
+      const continueWhenOutOfStock = safeBool(b.continueSellingWhenOutOfStock ?? b.continue_selling_when_out_of_stock, false);
       
       // Determine fulfillment mode using new two-value system
       let fulfillmentMode = "LOCAL_AND_SHIPPING";
@@ -2999,6 +3001,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         compare_at_price: b.compareAtPrice != null ? numeric(b.compareAtPrice) : null,
         cost: b.cost != null ? numeric(b.cost) : null,
         stockQuantity: intNum(b.stockQuantity ?? b.stock_quantity ?? b.stock, 0),
+        continueSellingWhenOutOfStock: continueWhenOutOfStock,
         status: b.status ?? "active",
         weight: numeric(b.weight, 0),
         sku: b.sku ?? null,

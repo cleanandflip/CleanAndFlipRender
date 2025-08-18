@@ -255,6 +255,8 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
         compareAtPrice: formData.compareAtPrice ? parseFloat(String(formData.compareAtPrice)) : null,
         cost: formData.cost ? parseFloat(String(formData.cost)) : null,
         stockQuantity: stockNum,
+        continueSellingWhenOutOfStock: !!formData.continueSellingWhenOutOfStock,
+        continue_selling_when_out_of_stock: !!formData.continueSellingWhenOutOfStock,
         status: formData.status,
         weight: formData.weight ? parseFloat(String(formData.weight)) : 0,
         sku: formData.sku || null,
