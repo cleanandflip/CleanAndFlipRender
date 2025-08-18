@@ -361,7 +361,6 @@ function DashboardContent() {
                     <Button 
                       variant="primary"
                       size="sm"
-                      className="h-8 bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
                     >
                       Browse Products
                     </Button>
@@ -414,7 +413,6 @@ function DashboardContent() {
                   <Button 
                     variant="primary"
                     size="sm"
-                    className="h-8 bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
                   >
                     Sell More Equipment
                   </Button>
@@ -483,7 +481,6 @@ function DashboardContent() {
                       <Button 
                         variant="primary"
                         size="sm"
-                        className="h-8 bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
                       >
                         Sell Equipment
                       </Button>
@@ -516,14 +513,13 @@ function DashboardContent() {
                           
                           <div className="flex gap-2">
                             <Button 
-                              variant="ghost" 
+                              variant="outline" 
                               size="sm"
                               onClick={() => {
                                 const trackUrl = `/track-submission?ref=${encodeURIComponent(submission.referenceNumber)}`;
                                 console.log('🔍 Navigating to:', trackUrl);
                                 window.location.href = trackUrl;
                               }}
-                              className="h-8 bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
                             >
                               <Eye className="w-4 h-4 mr-1" />
                               Track
@@ -534,7 +530,6 @@ function DashboardContent() {
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => setCancellingSubmission(submission)}
-                                className="h-8 bg-red-600 hover:bg-red-700 text-white border border-red-600 hover:border-red-700 transition-all duration-300"
                               >
                                 <X className="w-4 h-4 mr-1" />
                                 Cancel
@@ -636,30 +631,30 @@ function DashboardContent() {
                   </h3>
                   <div className="space-y-3">
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       size="sm"
-                      className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                      className="w-full justify-start"
                     >
                       Change Password
                     </Button>
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       size="sm"
-                      className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                      className="w-full justify-start"
                     >
                       Email Preferences
                     </Button>
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       size="sm"
-                      className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                      className="w-full justify-start"
                     >
                       Privacy Settings
                     </Button>
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       size="sm"
-                      className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                      className="w-full justify-start"
                     >
                       Download Data
                     </Button>
