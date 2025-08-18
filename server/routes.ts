@@ -46,6 +46,7 @@ import { healthLive, healthReady } from "./config/health";
 // Removed old WebSocket import - using new enhanced WebSocket system
 import { createRequestLogger, logger, shouldLog } from "./config/logger";
 import adminDatabaseRoutes from "./routes/admin-database";
+import adminDbRoutes from "./routes/admin-db";
 import { Logger, LogLevel } from "./utils/logger";
 import { db } from "./db";
 // (deduped imports moved below)
@@ -2769,6 +2770,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.use('/api/admin', requireRole('developer'), adminDatabaseRoutes);
   } catch (error) {
     console.warn('Failed to load admin database routes:', error);
+  }
+
+  // Mount enhanced admin database management routes
+  try {
+    const adminDbModule = await import('./routes/admin-db.js');
+    const adminDbRoutes = adminDbModule.default;
+    app.use(requireRole('developer'), adminDbRoutes);
+  } catch (error) {
+    console.warn('Failed to load enhanced admin database routes:', error);
   }
 
   // Legacy user endpoint redirected to unified auth
