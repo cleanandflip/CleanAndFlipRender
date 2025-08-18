@@ -125,14 +125,14 @@ export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
     name: 'cf.sid',
-    resave: false,            // Don't write on every request
-    saveUninitialized: false, // CRITICAL: Don't create sessions for anonymous visitors
+    resave: true,             // Force save to ensure persistence
+    saveUninitialized: false, // CRITICAL: Don't create sessions for anonymous visitors  
     store: sessionStore,
     cookie: {
       path: '/',
       httpOnly: true,
-      secure: isProd,                         // HTTPS only in production
-      sameSite: isProd ? 'none' : 'lax',      // Cross-site in production, lax for development
+      secure: false,                          // TESTING: Disable secure in development
+      sameSite: 'lax',                        // TESTING: Always use lax
       maxAge: SEVEN_DAYS,                     // 7 days instead of 30
       // Only set domain in production if SESSION_COOKIE_DOMAIN is provided
       domain: isProd ? process.env.SESSION_COOKIE_DOMAIN : undefined
@@ -477,7 +477,7 @@ export function setupAuth(app: Express) {
       };
       
       // CRITICAL: Use req.logIn to establish Passport session properly
-      req.logIn(userForSession, (loginErr) => {
+      req.logIn(userForSession, { session: true }, (loginErr) => {
         if (loginErr) {
           Logger.error('Session creation error:', loginErr);
           return res.status(500).json({ 
@@ -486,7 +486,7 @@ export function setupAuth(app: Express) {
           });
         }
         
-        // CRITICAL FIX: Ensure session is saved before responding
+        // Ensure session is saved manually to force persistence
         req.session.save((saveErr) => {
           if (saveErr) {
             Logger.error('Session save error:', saveErr);
@@ -590,6 +590,24 @@ export function setupAuth(app: Express) {
       userId: (req.session as any)?.passport?.user,
       isAuthenticated: req.isAuthenticated?.() || false,
       sessionData: req.session,
+      fullPassportData: (req.session as any)?.passport,
+      userFromReq: req.user,
+    });
+  });
+
+  // TESTING: Force login endpoint to test session
+  app.post("/api/force-session-test", (req, res) => {
+    // Manually set session data for testing
+    (req.session as any).passport = { user: 'test-user-123' };
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Session save failed', details: err.message });
+      }
+      res.json({
+        message: 'Session data forced',
+        sessionID: req.sessionID,
+        sessionData: req.session
+      });
     });
   });
 
