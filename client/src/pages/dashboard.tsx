@@ -638,18 +638,60 @@ function DashboardContent() {
       </div>
 
       {/* Cancellation Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={!!cancellingSubmission}
-        title="Cancel Equipment Submission?"
-        message={`Are you sure you want to cancel your submission for ${cancellingSubmission?.name}? Reference: ${cancellingSubmission?.referenceNumber}. This action cannot be undone.`}
-        onCancel={() => setCancellingSubmission(null)}
-        onDiscard={() => {
-          if (cancellingSubmission) {
-            cancelSubmissionMutation.mutate(cancellingSubmission.id);
-          }
-        }}
-        showSave={false}
-      />
+      {cancellingSubmission && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setCancellingSubmission(null)}
+          />
+          
+          <div className="relative bg-[#1e293b] border border-gray-700 rounded-xl shadow-2xl w-full max-w-md mx-4 animate-scaleIn">
+            <div className="px-6 py-4 border-b border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <X className="w-5 h-5 text-red-400" />
+                </div>
+                <h2 className="text-xl font-bold text-white">Cancel Equipment Submission?</h2>
+              </div>
+            </div>
+
+            <div className="px-6 py-6">
+              <p className="text-gray-300">
+                Are you sure you want to cancel your submission for{' '}
+                <strong className="text-white">{cancellingSubmission.name}</strong>?
+              </p>
+              <p className="text-sm text-gray-400 font-mono mt-2">
+                Reference: {cancellingSubmission.referenceNumber}
+              </p>
+              <p className="text-gray-300 mt-4">
+                This action cannot be undone. You'll need to create a new submission 
+                if you want to sell this item in the future.
+              </p>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-700 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setCancellingSubmission(null)}
+                className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+              >
+                Keep Submission
+              </button>
+              
+              <button
+                onClick={() => {
+                  if (cancellingSubmission) {
+                    cancelSubmissionMutation.mutate(cancellingSubmission.id);
+                  }
+                }}
+                disabled={cancelSubmissionMutation.isPending}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                {cancelSubmissionMutation.isPending ? 'Cancelling...' : 'Yes, Cancel Submission'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
