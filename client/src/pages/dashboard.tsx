@@ -471,21 +471,21 @@ function DashboardContent() {
                           </div>
                           
                           <div className="flex gap-2">
-                            <SmartLink 
-                              href={`/track-submission?ref=${encodeURIComponent(submission.referenceNumber)}`}
-                              onClick={() => console.log('🔍 Dashboard Track clicked - ref:', submission.referenceNumber)}
-                            >
-                              <div className="glass glass-hover rounded-lg p-1 inline-block">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  Track
-                                </Button>
-                              </div>
-                            </SmartLink>
+                            <div className="glass glass-hover rounded-lg p-1 inline-block">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => {
+                                  const trackUrl = `/track-submission?ref=${encodeURIComponent(submission.referenceNumber)}`;
+                                  console.log('🔍 Navigating to:', trackUrl);
+                                  window.location.href = trackUrl;
+                                }}
+                                className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Track
+                              </Button>
+                            </div>
                             
                             {canCancelSubmission(submission) && (
                               <div className="glass glass-hover rounded-lg p-1 inline-block">
