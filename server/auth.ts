@@ -96,21 +96,18 @@ export function setupAuth(app: Express) {
       conString: DATABASE_URL,
       createTableIfMissing: false, // Don't create table - already exists
       schemaName: 'public',
-      tableName: 'sessions', // Use existing sessions table
+      tableName: 'sessions',
+      ttl: 7 * 24 * 60 * 60,          // 7 days (seconds)
+      pruneSessionInterval: 60 * 60,  // Prune expired rows hourly
       errorLog: (err: any) => {
-        // CRITICAL: All session store errors indicate potential MemoryStore fallback
-        console.error('[SESSION STORE] PostgreSQL store error - this may cause MemoryStore fallback:', {
+        console.error('[SESSION STORE] PostgreSQL store error:', {
           message: err.message,
           code: err.code,
-          sqlState: err.sqlState,
-          name: err.name,
-          stack: err.stack
+          name: err.name
         });
         
-        // Production should NEVER fall back to MemoryStore
         if (process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'production') {
-          console.error('[SESSION STORE] PRODUCTION ERROR: PostgreSQL session store failed - this is a CRITICAL issue');
-          console.error('[SESSION STORE] Production database issues will cause MemoryStore fallback and session loss');
+          console.error('[SESSION STORE] PRODUCTION ERROR: PostgreSQL session store failed');
         }
       }
     });
@@ -122,19 +119,23 @@ export function setupAuth(app: Express) {
     throw new Error(`Session store initialization failed: ${error.message}`);
   }
   
-  const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
+  const isProd = process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'production';
+  const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "dev_secret_change_me",
-    resave: false,
-    saveUninitialized: true, // guests get a stable session
-    store: sessionStore, // Use the validated session store
+    secret: process.env.SESSION_SECRET!,
+    name: 'cf.sid',
+    resave: false,            // Don't write on every request
+    saveUninitialized: false, // CRITICAL: Don't create sessions for anonymous visitors
+    store: sessionStore,
     cookie: {
+      path: '/',
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === "production",
-      maxAge: ONE_MONTH,
+      secure: isProd,                         // HTTPS only in production
+      sameSite: isProd ? 'none' : 'lax',      // Cross-site in production
+      maxAge: SEVEN_DAYS,                     // 7 days instead of 30
     },
-    rolling: true, // CRITICAL: Reset expiry on activity
+    rolling: true, // Reset expiry on activity
   };
 
   app.set("trust proxy", 1);
