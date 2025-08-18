@@ -336,7 +336,7 @@ function DashboardContent() {
                     <Button 
                       variant="primary"
                       size="sm"
-                      className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       View All Orders
                     </Button>
@@ -356,7 +356,7 @@ function DashboardContent() {
                       <Button 
                         variant="primary"
                         size="sm"
-                        className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Browse Products
                       </Button>
@@ -386,7 +386,7 @@ function DashboardContent() {
                               <Button 
                                 variant="ghost" 
                                 size="sm"
-                                className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                               >
                                 View Details
                               </Button>
@@ -411,7 +411,7 @@ function DashboardContent() {
                     <Button 
                       variant="primary"
                       size="sm"
-                      className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       Sell More Equipment
                     </Button>
@@ -439,7 +439,7 @@ function DashboardContent() {
                       <Button 
                         variant="primary"
                         size="sm"
-                        className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Sell Equipment
                       </Button>
@@ -475,7 +475,7 @@ function DashboardContent() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                  className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 >
                                   <Eye className="w-4 h-4 mr-1" />
                                   Track
@@ -489,7 +489,7 @@ function DashboardContent() {
                                   variant="destructive"
                                   size="sm"
                                   onClick={() => setCancellingSubmission(submission)}
-                                  className="h-8 bg-red-600 hover:bg-red-700 text-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                  className="h-8 bg-red-600 hover:bg-red-700 text-white border border-red-600 hover:border-red-700 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 >
                                   <X className="w-4 h-4 mr-1" />
                                   Cancel
@@ -595,7 +595,7 @@ function DashboardContent() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Change Password
                       </Button>
@@ -604,7 +604,7 @@ function DashboardContent() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Email Preferences
                       </Button>
@@ -613,7 +613,7 @@ function DashboardContent() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Privacy Settings
                       </Button>
@@ -622,7 +622,7 @@ function DashboardContent() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Download Data
                       </Button>
@@ -662,14 +662,14 @@ function DashboardContent() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <div className="glass glass-hover rounded-lg p-1 inline-block">
-              <AlertDialogCancel className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <AlertDialogCancel className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 Keep Submission
               </AlertDialogCancel>
             </div>
             <div className="glass glass-hover rounded-lg p-1 inline-block">
               <AlertDialogAction
                 onClick={() => cancelSubmissionMutation.mutate(cancellingSubmission?.id)}
-                className="h-8 bg-red-600 hover:bg-red-700 text-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="h-8 bg-red-600 hover:bg-red-700 text-white border border-red-600 hover:border-red-700 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 disabled={cancelSubmissionMutation.isPending}
               >
                 {cancelSubmissionMutation.isPending ? 'Cancelling...' : 'Yes, Cancel Submission'}

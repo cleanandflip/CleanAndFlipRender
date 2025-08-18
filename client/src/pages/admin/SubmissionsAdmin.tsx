@@ -245,7 +245,7 @@ export default function SubmissionsAdmin() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setViewingSubmission(submission)}
-                        className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         <Eye className="w-4 h-4 mr-1" />
                         View
@@ -256,7 +256,7 @@ export default function SubmissionsAdmin() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setEditingSubmission(submission)}
-                        className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Edit
