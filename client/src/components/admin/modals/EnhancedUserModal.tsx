@@ -79,13 +79,16 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-        handleClose();
+        // Don't close if confirm dialog is showing
+        if (!unsavedChanges.showDialog) {
+          handleClose();
+        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [unsavedChanges.showDialog]);
 
   const handleClose = () => {
     if (!unsavedChanges.confirmNavigation(() => onClose())) {

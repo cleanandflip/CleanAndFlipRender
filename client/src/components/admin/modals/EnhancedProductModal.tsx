@@ -132,7 +132,10 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-        handleClose();
+        // Don't close if confirm dialog is showing
+        if (!unsavedChanges.showDialog) {
+          handleClose();
+        }
       }
     };
 
@@ -140,7 +143,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [unsavedChanges.showDialog]);
 
   // HANDLE CLOSE WITH SAVE PROMPT
   const handleClose = () => {

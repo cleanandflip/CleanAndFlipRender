@@ -293,7 +293,8 @@ export default function CategoryManagement() {
         credentials: 'include'
       });
       if (!response.ok) {
-        throw new Error('Failed to delete category');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to delete category' }));
+        throw new Error(errorData.message || 'Failed to delete category');
       }
       return response.json();
     },
@@ -307,9 +308,20 @@ export default function CategoryManagement() {
       });
     },
     onError: (error: Error) => {
+      let title = "Error";
+      let description = error.message;
+      
+      // Check if it's a category with products error
+      if (error.message.includes("Cannot delete category with products") || 
+          error.message.includes("products. Remove products first") ||
+          error.message.includes("products. Please move or delete")) {
+        title = "Cannot Delete Category";
+        description = "This category contains products. Please move or delete all products from this category first, then try again.";
+      }
+      
       toast({
-        title: "Error",
-        description: error.message,
+        title,
+        description,
         variant: "destructive",
       });
     }

@@ -2509,7 +2509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
-      // Check if category has products
+      // Check if category has products - using correct column name
       const productCount = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(products)
@@ -2518,7 +2518,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (productCount[0]?.count > 0) {
         return res.status(400).json({ 
           error: "Cannot delete category with products",
-          message: `This category has ${productCount[0].count} products. Remove products first.`
+          message: `This category has ${productCount[0].count} products. Please move or delete these products first, then try again.`,
+          productCount: productCount[0].count
         });
       }
 
