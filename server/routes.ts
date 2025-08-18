@@ -2706,21 +2706,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const userId = (req.user as any).id;
       
-      // Fetch user with default address using SSOT approach
-      // FIXED: Removed profile_address_id references and non-existent latitude/longitude columns
-      const userWithAddress = await db.execute(sql`
-        SELECT 
-          u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
-          u.profile_complete, u.is_local_customer,
-          a.id as address_id, a.first_name as addr_first_name, 
-          a.last_name as addr_last_name, a.street1, a.street2, a.city, 
-          a.state, a.postal_code, a.country, 
-          a.is_local, a.is_default, a.created_at as address_created_at,
-          a.updated_at as address_updated_at
-        FROM users u
-        LEFT JOIN addresses a ON a.user_id = u.id AND a.is_default = true
-        WHERE u.id = ${userId}
-      `);
+      // Fetch user with default address using SSOT approach with production-safe fallback
+      let userWithAddress;
+      try {
+        userWithAddress = await db.execute(sql`
+          SELECT 
+            u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
+            u.profile_complete, u.is_local_customer,
+            a.id as address_id, a.first_name as addr_first_name, 
+            a.last_name as addr_last_name, a.street1, a.street2, a.city, 
+            a.state, a.postal_code, a.country, 
+            COALESCE(a.is_local, false) as is_local, a.is_default, a.created_at as address_created_at,
+            a.updated_at as address_updated_at
+          FROM users u
+          LEFT JOIN addresses a ON a.user_id = u.id AND a.is_default = true
+          WHERE u.id = ${userId}
+        `);
+      } catch (error: any) {
+        if (error.code === '42703') {
+          // Production fallback for missing is_local column
+          Logger.warn('[USER API] is_local column missing, using fallback query');
+          userWithAddress = await db.execute(sql`
+            SELECT 
+              u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
+              u.profile_complete, u.is_local_customer,
+              a.id as address_id, a.first_name as addr_first_name, 
+              a.last_name as addr_last_name, a.street1, a.street2, a.city, 
+              a.state, a.postal_code, a.country, 
+              false as is_local, a.is_default, a.created_at as address_created_at,
+              a.updated_at as address_updated_at
+            FROM users u
+            LEFT JOIN addresses a ON a.user_id = u.id AND a.is_default = true
+            WHERE u.id = ${userId}
+          `);
+        } else {
+          throw error;
+        }
+      }
 
       if (!userWithAddress.rows.length) {
         return res.status(404).json({ error: "User not found" });

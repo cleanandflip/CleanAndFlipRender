@@ -1,0 +1,208 @@
+2025-08-18 02:35:32.06
+a1a3742a
+User
+[ERROR] GET /api/user 500 99ms {
+2025-08-18 02:35:32.06
+a1a3742a
+User
+method: 'GET',
+2025-08-18 02:35:32.06
+a1a3742a
+User
+url: '/api/user',
+2025-08-18 02:35:32.06
+a1a3742a
+User
+userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+2025-08-18 02:35:32.06
+a1a3742a
+User
+ip: '34.30.225.124',
+2025-08-18 02:35:32.06
+a1a3742a
+User
+userId: undefined,
+2025-08-18 02:35:32.06
+a1a3742a
+User
+duration: 99,
+2025-08-18 02:35:32.06
+a1a3742a
+User
+statusCode: 500,
+2025-08-18 02:35:32.06
+a1a3742a
+User
+contentLength: 37
+2025-08-18 02:35:32.06
+a1a3742a
+User
+}
+2025-08-18 02:35:38.78
+a1a3742a
+User
+[ERROR] Error fetching user with address: NeonDbError: column a.is_local does not exist
+2025-08-18 02:35:38.78
+a1a3742a
+User
+at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+2025-08-18 02:35:38.78
+a1a3742a
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-08-18 02:35:38.78
+a1a3742a
+User
+at async file:///home/runner/workspace/dist/index.js:8827:31 {
+2025-08-18 02:35:38.78
+a1a3742a
+User
+severity: 'ERROR',
+2025-08-18 02:35:38.78
+a1a3742a
+User
+code: '42703',
+2025-08-18 02:35:38.78
+a1a3742a
+User
+detail: undefined,
+2025-08-18 02:35:38.78
+a1a3742a
+User
+hint: undefined,
+2025-08-18 02:35:38.78
+a1a3742a
+User
+position: '331',
+2025-08-18 02:35:38.78
+a1a3742a
+User
+internalPosition: undefined,
+2025-08-18 02:35:38.78
+a1a3742a
+User
+internalQuery: undefined,
+2025-08-18 02:35:38.78
+a1a3742a
+User
+where: undefined,
+2025-08-18 02:35:38.78
+a1a3742a
+User
+schema: undefined,
+2025-08-18 02:35:38.78
+a1a3742a
+User
+table: undefined,
+2025-08-18 02:35:38.78
+a1a3742a
+User
+column: undefined,
+2025-08-18 02:35:38.78
+a1a3742a
+User
+dataType: undefined,
+2025-08-18 02:35:38.78
+a1a3742a
+User
+constraint: undefined,
+2025-08-18 02:35:38.78
+a1a3742a
+User
+file: 'parse_relation.c',
+2025-08-18 02:35:38.78
+a1a3742a
+User
+line: '3716',
+2025-08-18 02:35:38.78
+a1a3742a
+User
+routine: 'errorMissingColumn',
+2025-08-18 02:35:38.78
+a1a3742a
+User
+sourceError: undefined
+2025-08-18 02:35:38.78
+a1a3742a
+User
+}
+2025-08-18 02:35:38.80
+a1a3742a
+User
+[WARN] API GET /api/user 500 156ms {
+2025-08-18 02:35:38.80
+a1a3742a
+User
+method: 'GET',
+2025-08-18 02:35:38.80
+a1a3742a
+User
+url: '/api/user',
+2025-08-18 02:35:38.80
+a1a3742a
+User
+userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+2025-08-18 02:35:38.80
+a1a3742a
+User
+ip: '34.123.199.62',
+2025-08-18 02:35:38.80
+a1a3742a
+User
+userId: undefined,
+2025-08-18 02:35:38.80
+a1a3742a
+User
+duration: 156,
+2025-08-18 02:35:38.80
+a1a3742a
+User
+statusCode: 500,
+2025-08-18 02:35:38.80
+a1a3742a
+User
+contentLength: 37
+2025-08-18 02:35:38.80
+a1a3742a
+User
+}
+2025-08-18 02:35:38.80
+a1a3742a
+User
+[ERROR] GET /api/user 500 157ms {
+2025-08-18 02:35:38.80
+a1a3742a
+User
+method: 'GET',
+2025-08-18 02:35:38.80
+a1a3742a
+User
+url: '/api/user',
+2025-08-18 02:35:38.80
+a1a3742a
+User
+userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+2025-08-18 02:35:38.80
+a1a3742a
+User
+ip: '34.123.199.62',
+2025-08-18 02:35:38.80
+a1a3742a
+User
+userId: undefined,
+2025-08-18 02:35:38.80
+a1a3742a
+User
+duration: 157,
+2025-08-18 02:35:38.80
+a1a3742a
+User
+statusCode: 500,
+2025-08-18 02:35:38.80
+a1a3742a
+User
+contentLength: 37
+2025-08-18 02:35:38.80
+a1a3742a
+User
+}

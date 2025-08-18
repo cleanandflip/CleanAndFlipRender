@@ -114,7 +114,7 @@ async function primaryKey(c: Client, t: string) {
 /* ---------------- schema sync ---------------- */
 async function applySchema(srcUrl: string, dstUrl: string, p: Profile) {
   ok('schema: dumping source schema via pg_dump');
-  const dump = await capture('pg_dump', [`--dbname=${srcUrl}`, '--schema-only', '--no-owner', '--no-privileges', '--if-exists']);
+  const dump = await capture('pg_dump', [`--dbname=${srcUrl}`, '--schema-only', '--no-owner', '--no-privileges', '--clean', '--if-exists']);
   let ddl = dump;
   if (!p.schema.apply.allowDrop) {
     ddl = ddl.split('\n').filter(line=>!/^DROP\s+/i.test(line.trim())).join('\n');
