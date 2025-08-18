@@ -332,11 +332,11 @@ function DashboardContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">ORDER HISTORY</h2>
                 <SmartLink href="/orders">
-                  <div className="glass glass-hover rounded-lg p-1">
+                  <div className="glass glass-hover rounded-lg p-1 inline-block">
                     <Button 
                       variant="primary"
                       size="sm"
-                      className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       View All Orders
                     </Button>
@@ -352,11 +352,11 @@ function DashboardContent() {
                     Start shopping to see your order history here.
                   </p>
                   <SmartLink href="/products">
-                    <div className="glass glass-hover rounded-lg p-1">
+                    <div className="glass glass-hover rounded-lg p-1 inline-block">
                       <Button 
                         variant="primary"
                         size="sm"
-                        className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Browse Products
                       </Button>
@@ -382,11 +382,11 @@ function DashboardContent() {
                         <div className="text-right">
                           <div className="font-semibold text-lg">${order.total}</div>
                           <SmartLink href={`/orders/${order.id}`}>
-                            <div className="glass glass-hover rounded-lg p-1 mt-2">
+                            <div className="glass glass-hover rounded-lg p-1 mt-2 inline-block">
                               <Button 
                                 variant="ghost" 
                                 size="sm"
-                                className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                               >
                                 View Details
                               </Button>
@@ -407,11 +407,11 @@ function DashboardContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">EQUIPMENT SUBMISSIONS</h2>
                 <SmartLink href="/sell-to-us">
-                  <div className="glass glass-hover rounded-lg p-1">
+                  <div className="glass glass-hover rounded-lg p-1 inline-block">
                     <Button 
                       variant="primary"
                       size="sm"
-                      className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
                       Sell More Equipment
                     </Button>
@@ -435,11 +435,11 @@ function DashboardContent() {
                     Have equipment to sell? Submit it for a cash offer.
                   </p>
                   <SmartLink href="/sell-to-us">
-                    <div className="glass glass-hover rounded-lg p-1">
+                    <div className="glass glass-hover rounded-lg p-1 inline-block">
                       <Button 
                         variant="primary"
                         size="sm"
-                        className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Sell Equipment
                       </Button>
@@ -471,11 +471,11 @@ function DashboardContent() {
                           
                           <div className="flex gap-2">
                             <SmartLink href={`/track-submission?ref=${submission.referenceNumber}`}>
-                              <div className="glass glass-hover rounded-lg p-1">
+                              <div className="glass glass-hover rounded-lg p-1 inline-block">
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                  className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 >
                                   <Eye className="w-4 h-4 mr-1" />
                                   Track
@@ -484,12 +484,12 @@ function DashboardContent() {
                             </SmartLink>
                             
                             {canCancelSubmission(submission) && (
-                              <div className="glass glass-hover rounded-lg p-1">
+                              <div className="glass glass-hover rounded-lg p-1 inline-block">
                                 <Button
                                   variant="destructive"
                                   size="sm"
                                   onClick={() => setCancellingSubmission(submission)}
-                                  className="h-8 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                  className="h-8 bg-red-600 hover:bg-red-700 text-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 >
                                   <X className="w-4 h-4 mr-1" />
                                   Cancel
@@ -595,7 +595,7 @@ function DashboardContent() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        className="w-full h-8 justify-start transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Change Password
                       </Button>
@@ -604,7 +604,7 @@ function DashboardContent() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        className="w-full h-8 justify-start transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Email Preferences
                       </Button>
@@ -613,7 +613,7 @@ function DashboardContent() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        className="w-full h-8 justify-start transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Privacy Settings
                       </Button>
@@ -622,7 +622,7 @@ function DashboardContent() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        className="w-full h-8 justify-start transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Download Data
                       </Button>
@@ -661,15 +661,15 @@ function DashboardContent() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <div className="glass glass-hover rounded-lg p-1">
-              <AlertDialogCancel className="h-8 transition-all duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <div className="glass glass-hover rounded-lg p-1 inline-block">
+              <AlertDialogCancel className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 Keep Submission
               </AlertDialogCancel>
             </div>
-            <div className="glass glass-hover rounded-lg p-1">
+            <div className="glass glass-hover rounded-lg p-1 inline-block">
               <AlertDialogAction
                 onClick={() => cancelSubmissionMutation.mutate(cancellingSubmission?.id)}
-                className="h-8 bg-destructive hover:bg-destructive/90 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="h-8 bg-red-600 hover:bg-red-700 text-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 disabled={cancelSubmissionMutation.isPending}
               >
                 {cancelSubmissionMutation.isPending ? 'Cancelling...' : 'Yes, Cancel Submission'}
