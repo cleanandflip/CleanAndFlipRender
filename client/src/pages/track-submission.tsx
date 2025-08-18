@@ -21,19 +21,27 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function TrackSubmission() {
   const [location] = useLocation();
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
-  const urlRef = urlParams.get('ref') || '';
-  const [referenceInput, setReferenceInput] = useState(urlRef);
-  const [searchRef, setSearchRef] = useState(urlRef);
   const { toast } = useToast();
+  
+  // Extract URL parameters with better parsing
+  const urlParams = new URLSearchParams(location.includes('?') ? location.split('?')[1] : '');
+  const urlRef = urlParams.get('ref') || '';
+  
+  const [referenceInput, setReferenceInput] = useState('');
+  const [searchRef, setSearchRef] = useState('');
 
-  // Auto-trigger search when URL has reference parameter
+  // Debug logging and auto-trigger search when URL has reference parameter
   useEffect(() => {
+    console.log('🔍 TrackSubmission - location:', location);
+    console.log('🔍 TrackSubmission - urlRef:', urlRef);
+    
     if (urlRef) {
-      console.log('🔍 Auto-triggering search for:', urlRef);
-      setSearchRef(urlRef.toUpperCase().trim());
+      const trimmedRef = urlRef.toUpperCase().trim();
+      console.log('🔍 Auto-triggering search for:', trimmedRef);
+      setReferenceInput(trimmedRef);
+      setSearchRef(trimmedRef);
     }
-  }, [urlRef]);
+  }, [location, urlRef]);
   
   const { data: submission, isLoading, error } = useQuery({
     queryKey: ['track-submission', searchRef],
