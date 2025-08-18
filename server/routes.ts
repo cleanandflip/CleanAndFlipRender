@@ -3126,16 +3126,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Invalid role. Must be "user" or "developer"' });
       }
       
-      // Clean the update data
+      // Clean the update data (excluding isActive since column doesn't exist)
       const cleanData: any = {
         email: updateData.email,
         firstName: updateData.firstName || null,
         lastName: updateData.lastName || null, 
         phone: updateData.phone || null,
         role: updateData.role, // Include role in the update
-        isActive: updateData.isActive !== undefined ? updateData.isActive : true, // Include status toggle
         updatedAt: new Date()
       };
+      
+      // Note: isActive is handled programmatically in the GET endpoint, not stored in DB
       
       // Add password if provided
       if (updateData.password) {
@@ -3179,32 +3180,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ))
             .limit(1);
 
-          const addressData = {
-            userId: id,
-            street1: addressFields.street, // Use street1 for new format
-            city: addressFields.city,
-            state: addressFields.state,
-            postalCode: addressFields.zipCode, // Use postalCode for new format
-            country: 'US', // Default country
-            isDefault: true,
-            type: 'home' as const,
-            updatedAt: new Date()
-          };
-
           if (existingAddress) {
             // Update existing address
             await db
               .update(addresses)
-              .set(addressData)
+              .set({
+                street1: addressFields.street,
+                city: addressFields.city,
+                state: addressFields.state,
+                postalCode: addressFields.zipCode,
+                country: 'US',
+                updatedAt: new Date()
+              })
               .where(eq(addresses.id, existingAddress.id));
             
             Logger.info(`Updated existing address ${existingAddress.id} for user ${id}`);
           } else {
             // Create new address
-            addressData.createdAt = new Date();
             const [newAddress] = await db
               .insert(addresses)
-              .values(addressData)
+              .values({
+                userId: id,
+                street1: addressFields.street,
+                city: addressFields.city,
+                state: addressFields.state,
+                postalCode: addressFields.zipCode,
+                country: 'US',
+                isDefault: true,
+                type: 'home',
+                createdAt: new Date(),
+                updatedAt: new Date()
+              })
               .returning();
             
             Logger.info(`Created new address ${newAddress.id} for user ${id}`);
@@ -3314,22 +3320,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Logger.info(`Creating address for new user ${newUser.id}:`, addressFields);
         
         try {
-          const addressData = {
-            userId: newUser.id,
-            street1: addressFields.street, // Use street1 for new format
-            city: addressFields.city,
-            state: addressFields.state,
-            postalCode: addressFields.zipCode, // Use postalCode for new format
-            country: 'US', // Default country
-            isDefault: true,
-            type: 'home' as const,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-
           const [newAddress] = await db
             .insert(addresses)
-            .values(addressData)
+            .values({
+              userId: newUser.id,
+              street1: addressFields.street,
+              city: addressFields.city,
+              state: addressFields.state,
+              postalCode: addressFields.zipCode,
+              country: 'US',
+              isDefault: true,
+              type: 'home',
+              createdAt: new Date(),
+              updatedAt: new Date()
+            })
             .returning();
           
           Logger.info(`Created address ${newAddress.id} for new user ${newUser.id}`);

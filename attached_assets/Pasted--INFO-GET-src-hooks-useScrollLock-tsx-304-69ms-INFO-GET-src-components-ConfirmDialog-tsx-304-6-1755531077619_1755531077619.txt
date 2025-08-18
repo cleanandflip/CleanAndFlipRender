@@ -1,0 +1,104 @@
+[INFO] GET /src/hooks/useScrollLock.tsx 304 69ms 
+[INFO] GET /src/components/ConfirmDialog.tsx 304 66ms 
+[INFO] ADMIN REQUEST: GET /products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 {
+  userId: undefined,
+  ip: '10.81.9.5',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+}
+[INFO] ADMIN RESPONSE: GET /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 117ms { userId: undefined, ip: '10.81.9.5', duration: 117, statusCode: 200 }
+[INFO] API GET /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 117ms {
+  method: 'GET',
+  url: '/api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.5',
+  userId: undefined,
+  duration: 117,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 118ms 
+3:30:51 PM GET     /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 118ms
+[INFO] API POST /api/track-activity 202 69ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.5',
+  userId: undefined,
+  duration: 69,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 69ms 
+3:30:52 PM POST    /api/track-activity                      202 70ms
+[INFO] API GET /api/users 200 95ms {
+  method: 'GET',
+  url: '/api/users',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.27',
+  userId: undefined,
+  duration: 95,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/users 200 95ms 
+3:30:52 PM GET     /api/users                               200 96ms
+[INFO] ADMIN REQUEST: PUT /users/edf7a514-a0f6-4a35-8a24-a2811346285a {
+  userId: undefined,
+  ip: '10.81.0.27',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+}
+[INFO] Updating user edf7a514-a0f6-4a35-8a24-a2811346285a with data: {
+  email: 'ailexkorolchuk@gmail.com',
+  firstName: 'Ailex',
+  lastName: 'Korolchuk',
+  phone: null,
+  role: 'user',
+  isActive: false,
+  updatedAt: 2025-08-18T15:31:02.266Z,
+  password: undefined
+}
+[ERROR] Error updating user NeonDbError: column "is_active" does not exist
+    at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonHttpPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-http/session.ts:68:18)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:3148:29) {
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '252',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn',
+  sourceError: undefined
+}
+[INFO] ADMIN RESPONSE: PUT /api/admin/users/edf7a514-a0f6-4a35-8a24-a2811346285a 500 206ms { userId: undefined, ip: '10.81.0.27', duration: 206, statusCode: 500 }
+[WARN] API PUT /api/admin/users/edf7a514-a0f6-4a35-8a24-a2811346285a 500 206ms {
+  method: 'PUT',
+  url: '/api/admin/users/edf7a514-a0f6-4a35-8a24-a2811346285a',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.27',
+  userId: undefined,
+  duration: 206,
+  statusCode: 500,
+  contentLength: 81
+}
+[ERROR] PUT /api/admin/users/edf7a514-a0f6-4a35-8a24-a2811346285a 500 206ms {
+  method: 'PUT',
+  url: '/api/admin/users/edf7a514-a0f6-4a35-8a24-a2811346285a',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.27',
+  userId: undefined,
+  duration: 206,
+  statusCode: 500,
+  contentLength: 81
+}
+3:31:02 PM PUT     /api/admin/users/edf7a514-a0f6-4a35-8a24-a2811346285a 500 207ms
