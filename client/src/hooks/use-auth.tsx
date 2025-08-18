@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnWindowFocus: false, // Prevent auth check loops
     staleTime: 2 * 60 * 1000, // Cache for 2 minutes
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes - CRITICAL FIX
+    refetchOnWindowFocus: false, // Don't check auth on window focus
     refetchOnReconnect: false, // Don't spam on reconnect
     refetchOnMount: true, // Always check fresh auth state
   });
