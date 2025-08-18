@@ -1736,13 +1736,15 @@ export class DatabaseStorage implements IStorage {
         const result = await db.execute(sql`
           INSERT INTO addresses (
             id, user_id, first_name, last_name, street1, street2, city, state, postal_code, country,
-            latitude, longitude, geoapify_place_id, is_default, is_local, created_at, updated_at, type
+            latitude, longitude, geoapify_place_id, is_default, is_local, created_at, updated_at, type,
+            street, zip_code
           ) VALUES (
             ${newId}, ${userId}, ${address.firstName}, ${address.lastName}, 
             ${address.street1}, ${address.street2 || ''}, ${address.city}, ${address.state}, 
             ${address.postalCode}, ${address.country || 'US'},
             ${address.latitude || null}, ${address.longitude || null}, ${address.geoapifyPlaceId || null},
-            ${address.isDefault || false}, ${address.isLocal || false}, NOW(), NOW(), 'shipping'
+            ${address.isDefault || false}, ${address.isLocal || false}, NOW(), NOW(), 'shipping',
+            ${address.street1}, ${address.postalCode}
           ) RETURNING *
         `);
         return result.rows[0] as Address;
