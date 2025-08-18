@@ -5,6 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 interface UserModalProps {
   user?: any;
@@ -14,8 +15,6 @@ interface UserModalProps {
 
 export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
   const [loading, setLoading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const { ready, subscribe, lastMessage } = useWebSocketState();
   
@@ -60,12 +59,11 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (initialData) {
-      const changed = JSON.stringify(formData) !== JSON.stringify(initialData);
-      setHasChanges(changed);
-    }
-  }, [formData, initialData]);
+  // Unsaved changes protection
+  const unsavedChanges = useUnsavedChanges({
+    hasChanges: initialData ? JSON.stringify(formData) !== JSON.stringify(initialData) : false,
+    message: 'You have unsaved user changes. Would you like to save them before closing?'
+  });
 
   // Disable Replit's beforeunload when modal is open
   useEffect(() => {
@@ -87,29 +85,12 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [hasChanges]);
+  }, []);
 
   const handleClose = () => {
-    if (hasChanges) {
-      setShowConfirm(true);
-    } else {
-      onClose();
+    if (!unsavedChanges.confirmNavigation(() => onClose())) {
+      // Navigation was prevented, dialog is showing
     }
-  };
-
-  const handleSaveAndClose = async () => {
-    setShowConfirm(false);
-    await handleSubmit();
-  };
-
-  const handleDiscardAndClose = () => {
-    setShowConfirm(false);
-    setHasChanges(false);
-    onClose();
-  };
-
-  const handleCancelClose = () => {
-    setShowConfirm(false);
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -215,7 +196,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {hasChanges && (
+            {unsavedChanges.showDialog && (
               <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/20 rounded-full">
                 <AlertCircle className="w-4 h-4 text-yellow-400" />
                 <span className="text-xs text-yellow-400">Unsaved changes</span>
@@ -476,7 +457,7 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
           {/* Footer Actions */}
           <div className="px-6 py-4 border-t border-gray-700 bg-[#1e293b]/80 flex justify-between items-center">
             <div className="flex items-center gap-2 text-sm text-gray-400">
-              {hasChanges && (
+              {(initialData && JSON.stringify(formData) !== JSON.stringify(initialData)) && (
                 <>
                   <AlertCircle className="w-4 h-4 text-yellow-400" />
                   <span>You have unsaved changes</span>
@@ -515,14 +496,17 @@ export function EnhancedUserModal({ user, onClose, onSave }: UserModalProps) {
         </form>
       </div>
 
-      {/* Native Confirmation Dialog */}
+      {/* Unsaved Changes Dialog */}
       <ConfirmDialog
-        isOpen={showConfirm}
-        title="Unsaved Changes"
-        message="You have unsaved changes. Would you like to save them before closing?"
-        onSave={handleSaveAndClose}
-        onDiscard={handleDiscardAndClose}
-        onCancel={handleCancelClose}
+        isOpen={unsavedChanges.showDialog}
+        title="Unsaved User Changes"
+        message="You have unsaved user changes. Would you like to save them before closing?"
+        onSave={() => unsavedChanges.handleSave(() => {
+          handleSubmit();
+        })}
+        onDiscard={unsavedChanges.handleDiscard}
+        onCancel={unsavedChanges.handleCancel}
+        showSave={true}
       />
     </div>
   );

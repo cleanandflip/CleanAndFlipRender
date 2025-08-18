@@ -5,6 +5,8 @@ import { toast } from '@/hooks/use-toast';
 import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 import { FulfillmentMode, modeFromProduct, booleansFromMode, FULFILLMENT, getFulfillmentDescription } from '@shared/fulfillment';
 
@@ -17,7 +19,6 @@ interface ProductModalProps {
 export function EnhancedProductModal({ product, onClose, onSave }: ProductModalProps) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const { connected, socket, subscribe } = useWebSocketState();
   const queryClient = useQueryClient();
@@ -121,13 +122,11 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
     }
   }, [product]);
 
-  // DETECT CHANGES
-  useEffect(() => {
-    if (initialData) {
-      const changed = JSON.stringify(formData) !== JSON.stringify(initialData);
-      setHasChanges(changed);
-    }
-  }, [formData, initialData]);
+  // Unsaved changes protection
+  const unsavedChanges = useUnsavedChanges({
+    hasChanges: initialData ? JSON.stringify(formData) !== JSON.stringify(initialData) : false,
+    message: 'You have unsaved product changes. Would you like to save them before closing?'
+  });
 
   // CLICK OUTSIDE HANDLER
   useEffect(() => {
@@ -141,18 +140,12 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [hasChanges]);
+  }, []);
 
   // HANDLE CLOSE WITH SAVE PROMPT
   const handleClose = () => {
-    if (hasChanges) {
-      if (confirm('You have unsaved changes. Do you want to save them?')) {
-        handleSubmit();
-      } else if (confirm('Are you sure you want to discard your changes?')) {
-        onClose();
-      }
-    } else {
-      onClose();
+    if (!unsavedChanges.confirmNavigation(() => onClose())) {
+      // Navigation was prevented, dialog is showing
     }
   };
 
@@ -342,7 +335,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {hasChanges && (
+            {(initialData && JSON.stringify(formData) !== JSON.stringify(initialData)) && (
               <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/20 rounded-full">
                 <AlertCircle className="w-4 h-4 text-yellow-400" />
                 <span className="text-xs text-yellow-400">Unsaved changes</span>
@@ -668,7 +661,7 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
           {/* Footer Actions */}
           <div className="px-6 py-4 border-t border-gray-700 bg-[#1e293b]/80 flex justify-between items-center">
             <div className="flex items-center gap-2 text-sm text-gray-400">
-              {hasChanges && (
+              {(initialData && JSON.stringify(formData) !== JSON.stringify(initialData)) && (
                 <>
                   <AlertCircle className="w-4 h-4 text-yellow-400" />
                   <span>You have unsaved changes</span>
@@ -706,6 +699,19 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
           </div>
         </form>
       </div>
+      
+      {/* Unsaved Changes Dialog */}
+      <ConfirmDialog
+        isOpen={unsavedChanges.showDialog}
+        title="Unsaved Product Changes"
+        message="You have unsaved product changes. Would you like to save them before closing?"
+        onSave={() => unsavedChanges.handleSave(() => {
+          handleSubmit();
+        })}
+        onDiscard={unsavedChanges.handleDiscard}
+        onCancel={unsavedChanges.handleCancel}
+        showSave={true}
+      />
     </div>
   );
 }

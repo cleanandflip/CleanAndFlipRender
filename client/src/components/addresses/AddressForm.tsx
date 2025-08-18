@@ -18,6 +18,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { addressApi, addressQueryKeys, addressUtils, type CreateAddressRequest } from '@/api/addresses';
 import { AddressAutocomplete } from '@/components/ui/address-autocomplete';
 import { toast } from '@/hooks/use-toast';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 // Validation schema
 const addressFormSchema = z.object({
@@ -64,6 +66,12 @@ export function AddressForm({
       setDefault: false,
       ...defaultValues
     }
+  });
+  
+  // Unsaved changes protection
+  const unsavedChanges = useUnsavedChanges({
+    hasChanges: form.formState.isDirty,
+    message: 'You have unsaved address changes. Would you like to save them before closing?'
   });
 
   const createAddressMutation = useMutation({
@@ -286,7 +294,11 @@ export function AddressForm({
               <Button
                 type="button"
                 variant="outline"
-                onClick={onCancel}
+                onClick={() => {
+                  if (unsavedChanges.confirmNavigation(() => onCancel())) {
+                    // Navigation confirmed immediately if no changes
+                  }
+                }}
                 data-testid="button-cancel"
               >
                 Cancel
@@ -302,6 +314,19 @@ export function AddressForm({
           </div>
         </form>
       </CardContent>
+      
+      {/* Unsaved Changes Dialog */}
+      <ConfirmDialog
+        isOpen={unsavedChanges.showDialog}
+        title="Unsaved Address Changes"
+        message="You have unsaved address changes. Would you like to save them before closing?"
+        onSave={() => unsavedChanges.handleSave(() => {
+          form.handleSubmit(onSubmit)();
+        })}
+        onDiscard={unsavedChanges.handleDiscard}
+        onCancel={unsavedChanges.handleCancel}
+        showSave={true}
+      />
     </Card>
   );
 }

@@ -11,6 +11,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Mail, CheckCircle, X } from 'lucide-react';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -27,6 +29,16 @@ export default function ForgotPasswordPage() {
     defaultValues: {
       email: '',
     },
+  });
+
+  // Track if form has changes
+  const formValues = form.watch();
+  const hasChanges = formValues.email !== '' && !isSubmitted;
+
+  // Unsaved changes protection
+  const unsavedChanges = useUnsavedChanges({
+    hasChanges,
+    message: 'You have entered an email address for password reset. Would you like to submit it before leaving?'
   });
 
   const forgotPasswordMutation = useMutation({
@@ -189,6 +201,19 @@ export default function ForgotPasswordPage() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Unsaved Changes Dialog */}
+      <ConfirmDialog
+        isOpen={unsavedChanges.showDialog}
+        title="Unsaved Password Reset"
+        message="You have entered an email address for password reset. Would you like to submit it before leaving?"
+        onSave={() => unsavedChanges.handleSave(() => {
+          form.handleSubmit(onSubmit)();
+        })}
+        onDiscard={unsavedChanges.handleDiscard}
+        onCancel={unsavedChanges.handleCancel}
+        showSave={true}
+      />
     </div>
   );
 }

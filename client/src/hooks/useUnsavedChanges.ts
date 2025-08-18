@@ -46,8 +46,20 @@ export function useUnsavedChanges({
     return true;
   };
 
-  const handleSave = () => {
+  const handleSave = (saveCallback?: () => void | Promise<void>) => {
     setShowDialog(false);
+    if (saveCallback) {
+      const result = saveCallback();
+      if (result instanceof Promise) {
+        result.then(() => {
+          isNavigating.current = true;
+          pendingAction();
+        });
+      } else {
+        isNavigating.current = true;
+        pendingAction();
+      }
+    }
     return true;
   };
 

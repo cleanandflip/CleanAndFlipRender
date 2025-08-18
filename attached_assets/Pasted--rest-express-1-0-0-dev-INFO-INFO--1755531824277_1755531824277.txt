@@ -1,0 +1,367 @@
+> rest-express@1.0.0 dev
+[INFO] 
+================================================ 
+[INFO]         🏋️  CLEAN & FLIP - SERVER READY 🏋️         
+[INFO] ================================================
+ 
+[INFO]   ⚠️  Environment     development 
+[INFO]   ⚠️  Port            5000 
+[INFO]   ✅ Database        Connected 
+[INFO]   ⚠️  Redis Cache     Disabled 
+[INFO]   ✅ Session Store   PostgreSQL 
+[INFO]   ✅ File Storage    Cloudinary 
+[INFO]   ✅ Payment System  Stripe 
+[INFO]   ✅ WebSocket       Active 
+[INFO]   ✅ Security        OWASP Compliant 
+[INFO]   ✅ Performance     Optimized 
+[INFO] 
+================================================ 
+[INFO]   Startup completed in 1572ms 
+[INFO] 
+🎯 All systems operational - no warnings 
+[INFO] ================================================
+ 
+[INFO] 💡 Performance: Enable Redis for better caching 
+[INFO] 📝 Logs: Optimized logging active - Redis spam eliminated
+ 
+[INFO] Database connected successfully 
+[INFO] [STARTUP] Attempting to start server on 0.0.0.0:5000 
+[INFO] [STARTUP] Environment: development 
+[INFO] [STARTUP] Node version: v20.19.3 
+[INFO] 🚀 Server successfully started and listening {
+  timestamp: '2025-08-18T15:41:58.650Z',
+  environment: 'development',
+  host: '0.0.0.0',
+  port: 5000,
+  actualAddress: { address: '0.0.0.0', family: 'IPv4', port: 5000 },
+  redis: 'Disabled',
+  websocket: 'Enabled',
+  process: {
+    pid: 10430,
+    memory: {
+      rss: 376205312,
+      heapTotal: 137138176,
+      heapUsed: 113432560,
+      external: 9625598,
+      arrayBuffers: 3434089
+    }
+  }
+}
+3:41:58 PM info: 🚀 Server started on port 5000
+[INFO] [STARTUP] Server is now accepting connections on 0.0.0.0:5000 
+[INFO] GET / 200 471ms 
+3:41:59 PM GET     /                                        200 483ms
+3:42:00 PM GET     /@react-refresh                          304 301ms
+[INFO] GET /src/main.tsx?v=FTPtnSXDw3VTH4oghVfw6 200 2464ms 
+[WARN] Slow request detected: GET /src/main.tsx?v=FTPtnSXDw3VTH4oghVfw6 took 2464.012526ms 
+[WARN] Slow request detected: GET /@vite/client took 2519.399223ms 
+3:42:02 PM GET     /@vite/client                            200 2522ms
+3:42:02 PM warn: Slow request detected: GET /@vite/client took 2522ms
+[INFO] GET /src/hooks/useWebSocketState.tsx?v=FTPtnSXDw3VTH4oghVfw6 200 71ms 
+[INFO] GET /src/App.tsx?v=FTPtnSXDw3VTH4oghVfw6 200 119ms 
+[INFO] GET /src/components/ErrorBoundary.tsx?v=FTPtnSXDw3VTH4oghVfw6 200 119ms 
+[INFO] GET /@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs 304 70ms 
+[INFO] GET /src/index.css?v=FTPtnSXDw3VTH4oghVfw6 200 214ms 
+[INFO] GET /src/components/ui/button.tsx 304 76ms 
+[INFO] GET /src/config/routes.ts 304 72ms 
+[INFO] GET /src/components/ui/toaster.tsx 304 70ms 
+[INFO] GET /src/lib/queryClient.ts 304 74ms 
+[INFO] GET /src/components/ui/tooltip.tsx 304 70ms 
+[INFO] GET /src/hooks/use-auth.tsx 304 69ms 
+[INFO] GET /src/components/ErrorBoundary.tsx 200 70ms 
+[INFO] GET /src/components/layout/navigation.tsx 304 70ms 
+[INFO] GET /src/components/cart/cart-drawer.tsx 304 67ms 
+[INFO] GET /src/components/ui/page-loader.tsx 304 67ms 
+[INFO] GET /src/components/layout/footer.tsx 304 124ms 
+[INFO] GET /src/lib/environment.ts 304 70ms 
+[INFO] GET /src/components/ProtectedRoute.tsx 304 69ms 
+[INFO] GET /src/components/PWAInstaller.tsx 304 69ms 
+[INFO] GET /src/components/Analytics.tsx 304 72ms 
+[INFO] GET /src/hooks/useWebSocketState.tsx 200 67ms 
+[INFO] GET /src/lib/utils.ts 304 67ms 
+[INFO] GET /src/hooks/use-toast.ts 304 69ms 
+[INFO] GET /src/components/ui/sheet.tsx 304 67ms 
+[INFO] GET /src/components/search/SearchBar.tsx 304 68ms 
+[INFO] GET /src/components/ui/toast.tsx 304 68ms 
+[INFO] GET /src/lib/navigation-state.ts 304 68ms 
+[INFO] GET /src/components/common/logo.tsx 304 67ms 
+[INFO] GET /src/hooks/useCart.ts 304 66ms 
+[INFO] GET /src/hooks/useLocality.ts 304 69ms 
+[INFO] GET /@fs/home/runner/workspace/shared/locality.ts 304 68ms 
+[INFO] GET /src/components/ui/separator.tsx 304 68ms 
+[INFO] GET /src/components/ui/card.tsx 304 68ms 
+[INFO] GET /src/lib/searchService.ts 304 66ms 
+[INFO] GET /src/lib/searchNavCoordinator.ts 304 71ms 
+[INFO] GET /src/lib/api.ts 304 80ms 
+[CART V2] GET cart for owner: 071cbc80-e718-4a59-96a3-94d641b8b0a6
+[INFO] API POST /api/track-activity 202 97ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 97,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 97ms 
+3:42:03 PM POST    /api/track-activity                      202 98ms
+[STORAGE DEBUG] Item: Barbell, Price: 90.00, Unit: 90, Quantity: 1, Subtotal contribution: 90
+[STORAGE DEBUG] Final subtotal: 90, Items count: 1
+[LOCALITY] SSOT evaluation: {"userId":"071cbc80-e718-4a59-96a3-94d641b8b0a6","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[INFO] GET /src/pages/home.tsx 304 286ms 
+[INFO] API GET / 200 271ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.2.18',
+  userId: undefined,
+  duration: 271,
+  statusCode: 200,
+  contentLength: 660
+}
+3:42:03 PM GET     /api/cart                                200 272ms
+[INFO] API GET /status 200 270ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.27',
+  userId: undefined,
+  duration: 270,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 271ms 
+3:42:03 PM GET     /api/locality/status                     200 271ms
+[INFO] GET /src/hooks/useProductLiveSync.ts 304 73ms 
+[INFO] GET /src/components/products/product-card.tsx 304 73ms 
+[INFO] GET /src/components/shared/AnimatedComponents.tsx 304 74ms 
+[INFO] GET /src/components/categories/category-grid.tsx 304 79ms 
+[INFO] API GET /api/user 200 507ms {
+  method: 'GET',
+  url: '/api/user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.27',
+  userId: undefined,
+  duration: 507,
+  statusCode: 200,
+  contentLength: 606
+}
+3:42:03 PM GET     /api/user                                200 508ms
+[INFO] GET /src/components/products/ProductsResults.tsx 304 70ms 
+[INFO] GET /src/components/ui/EmptyState.tsx 304 68ms 
+[INFO] GET /src/hooks/useProducts.ts 304 66ms 
+[INFO] GET /src/styles/design-system/theme.ts 304 89ms 
+[INFO] GET /src/components/locality/LocalBadge.tsx 304 68ms 
+[INFO] GET /src/components/ui/smart-link.tsx 304 71ms 
+[INFO] GET /src/components/ui/badge.tsx 304 69ms 
+[INFO] GET /src/components/ui/StockIndicator.tsx 304 69ms 
+[INFO] GET /src/components/ui/ProductPrice.tsx 304 66ms 
+[INFO] GET /src/components/AddToCartButton.tsx 304 69ms 
+[INFO] GET /src/components/locality/ProductAvailabilityChips.tsx 304 67ms 
+[INFO] GET /src/components/locality/FreeDeliveryPill.tsx 304 68ms 
+[INFO] GET /src/styles/design-system/components.ts 304 68ms 
+[CART V2] GET cart for owner: 071cbc80-e718-4a59-96a3-94d641b8b0a6
+[INFO] GET /src/components/ImageWithFallback.tsx 304 65ms 
+[INFO] API POST /api/track-activity 202 68ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 68,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 68ms 
+3:42:03 PM POST    /api/track-activity                      202 68ms
+[STORAGE DEBUG] Item: Barbell, Price: 90.00, Unit: 90, Quantity: 1, Subtotal contribution: 90
+[STORAGE DEBUG] Final subtotal: 90, Items count: 1
+[INFO] GET /src/components/products/product-grid.tsx 304 68ms 
+[INFO] API GET / 200 97ms {
+  method: 'GET',
+  url: '/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.5',
+  userId: undefined,
+  duration: 97,
+  statusCode: 200,
+  contentLength: 660
+}
+3:42:04 PM GET     /api/cart                                200 98ms
+[INFO] GET /src/lib/categories.ts 304 67ms 
+[INFO] GET /@fs/home/runner/workspace/shared/fulfillment.ts 304 72ms 
+[INFO] GET /src/components/fulfillment/FulfillmentBadge.tsx 304 67ms 
+[INFO] GET /@fs/home/runner/workspace/shared/availability.ts 304 70ms 
+[INFO] GET /src/lib/cloudinary.ts 304 73ms 
+[LOCALITY] SSOT evaluation: {"userId":"071cbc80-e718-4a59-96a3-94d641b8b0a6","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[INFO] API GET /api/categories?active=true 200 96ms {
+  method: 'GET',
+  url: '/api/categories?active=true',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.5',
+  userId: undefined,
+  duration: 96,
+  statusCode: 200,
+  contentLength: 880
+}
+3:42:04 PM GET     /api/categories?active=true              200 96ms
+[INFO] API GET /api/products/featured 200 95ms {
+  method: 'GET',
+  url: '/api/products/featured',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.0.27',
+  userId: undefined,
+  duration: 95,
+  statusCode: 200,
+  contentLength: 775
+}
+3:42:04 PM GET     /api/products/featured                   200 96ms
+[INFO] API GET /status 200 102ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 102,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 103ms 
+3:42:04 PM GET     /api/locality/status                     200 104ms
+3:42:09 PM [vite] (client) hmr update /src/index.css?v=FTPtnSXDw3VTH4oghVfw6
+[INFO] API POST /api/track-activity 202 335ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 335,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 335ms 
+[INFO] GET /src/pages/admin.tsx 304 337ms 
+3:42:12 PM POST    /api/track-activity                      202 338ms
+3:42:12 PM [vite] (client) hmr update /src/index.css?v=FTPtnSXDw3VTH4oghVfw6 (x2)
+[INFO] GET /src/pages/admin/UsersTab.tsx 304 188ms 
+[INFO] GET /src/pages/admin/AnalyticsTab.tsx 304 185ms 
+[INFO] GET /src/lib/protected-route.tsx 304 76ms 
+[INFO] GET /src/components/admin/AdminLayout.tsx 304 94ms 
+[INFO] GET /src/pages/admin/CategoriesTab.tsx 200 181ms 
+[INFO] GET /src/pages/admin/ProductsTab.tsx 304 171ms 
+[INFO] GET /src/pages/admin/SystemTab.tsx 304 81ms 
+[INFO] GET /src/pages/admin/StripeTab.tsx 304 80ms 
+[INFO] GET /src/pages/admin/SubmissionsTab.tsx 304 67ms 
+[INFO] GET /src/components/admin/UnifiedMetricCard.tsx 304 69ms 
+[INFO] GET /src/components/admin/UnifiedDataTable.tsx 304 68ms 
+[INFO] GET /src/components/admin/UnifiedButton.tsx 304 68ms 
+[INFO] GET /src/components/admin/modals/EnhancedUserModal.tsx 304 67ms 
+[INFO] GET /src/components/admin/modals/EnhancedProductModal.tsx 200 69ms 
+[INFO] GET /src/components/admin/modals/EnhancedCategoryModal.tsx?t=1755531732573 200 68ms 
+[INFO] GET /src/components/admin/modals/EnhancedSubmissionModal.tsx 200 68ms 
+[INFO] GET /src/components/ConfirmDialog.tsx 304 68ms 
+[INFO] GET /src/hooks/useScrollLock.tsx 304 69ms 
+[INFO] GET /src/hooks/useUnsavedChanges.ts 304 70ms 
+[INFO] ADMIN REQUEST: GET /products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 {
+  userId: undefined,
+  ip: '10.81.4.5',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+}
+[INFO] ADMIN RESPONSE: GET /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 132ms { userId: undefined, ip: '10.81.4.5', duration: 132, statusCode: 200 }
+[INFO] API GET /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 133ms {
+  method: 'GET',
+  url: '/api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.5',
+  userId: undefined,
+  duration: 133,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 133ms 
+3:42:13 PM GET     /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 134ms
+3:42:15 PM [vite] (client) hmr update /src/index.css?v=FTPtnSXDw3VTH4oghVfw6, /src/components/admin/modals/EnhancedCategoryModal.tsx
+[INFO] API GET /api/categories?active=true 200 70ms {
+  method: 'GET',
+  url: '/api/categories?active=true',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.5',
+  userId: undefined,
+  duration: 70,
+  statusCode: 200,
+  contentLength: 880
+}
+3:42:15 PM GET     /api/categories?active=true              200 71ms
+3:42:18 PM [vite] (client) hmr update /src/index.css?v=FTPtnSXDw3VTH4oghVfw6, /src/components/admin/modals/EnhancedCategoryModal.tsx (x2)
+[INFO] API POST /api/track-activity 202 135ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.5',
+  userId: undefined,
+  duration: 135,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 136ms 
+3:42:23 PM POST    /api/track-activity                      202 136ms
+[INFO] GET /src/pages/sell-to-us.tsx 200 248ms 
+[INFO] GET /src/components/ui/Dropdown.tsx 200 71ms 
+[INFO] GET /src/components/ui/input.tsx 304 73ms 
+[INFO] GET /src/components/shared/ImageUploadZone.tsx 200 200ms 
+[INFO] GET /src/components/ui/textarea.tsx 200 212ms 
+[INFO] GET /src/components/ui/form.tsx 200 260ms 
+[INFO] GET /src/hooks/useCloudinaryUpload.tsx 200 69ms 
+[INFO] GET /src/components/ui/label.tsx 304 71ms 
+[LOCALITY] SSOT evaluation: {"userId":"071cbc80-e718-4a59-96a3-94d641b8b0a6","status":"LOCAL","source":"address","eligible":true,"zip":"28806","effectiveModeForUser":"LOCAL_AND_SHIPPING"}
+[INFO] API GET /status 200 94ms {
+  method: 'GET',
+  url: '/status',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.9.5',
+  userId: undefined,
+  duration: 94,
+  statusCode: 200,
+  contentLength: 258
+}
+[INFO] GET /status 200 94ms 
+3:42:23 PM GET     /api/locality/status                     200 95ms
+[INFO] API GET /api/user 200 95ms {
+  method: 'GET',
+  url: '/api/user',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 95,
+  statusCode: 200,
+  contentLength: 606
+}
+3:42:23 PM GET     /api/user                                200 96ms
+[WARN] Slow request detected: POST /api/upload/images took 1032ms 
+[INFO] API POST /api/upload/images 200 1055ms {
+  method: 'POST',
+  url: '/api/upload/images',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 1055,
+  statusCode: 200,
+  contentLength: 179
+}
+[INFO] POST /api/upload/images 200 1056ms 
+3:42:38 PM POST    /api/upload/images                       200 1056ms
+3:42:38 PM warn: Slow request detected: POST /api/upload/images took 1056ms
+[INFO] Equipment submission created: aed90937-e50c-41fa-bf07-7989149bba38 with reference: REF-20250818-8850 
+[INFO] API POST /api/equipment-submissions 200 235ms {
+  method: 'POST',
+  url: '/api/equipment-submissions',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 235,
+  statusCode: 200,
+  contentLength: 686
+}
+[INFO] POST /api/equipment-submissions 200 235ms 
+3:42:40 PM POST    /api/equipment-submissions               200 235ms

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/shared/AnimatedComponents";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { 
   Mail, 
   Phone, 
@@ -54,6 +56,16 @@ export default function Contact() {
       message: "",
       topic: "",
     },
+  });
+
+  // Track if form has changes by comparing with initial values
+  const formValues = form.watch();
+  const hasChanges = Object.values(formValues).some(value => value !== "");
+
+  // Unsaved changes protection
+  const unsavedChanges = useUnsavedChanges({
+    hasChanges: hasChanges && !isSubmitted,
+    message: 'You have unsaved contact form data. Would you like to save it before leaving?'
   });
 
   const submitMutation = useMutation({
@@ -374,6 +386,19 @@ export default function Contact() {
           </div>
         </div>
       </div>
+      
+      {/* Unsaved Changes Dialog */}
+      <ConfirmDialog
+        isOpen={unsavedChanges.showDialog}
+        title="Unsaved Contact Form"
+        message="You have unsaved contact form data. Would you like to save it before leaving?"
+        onSave={() => unsavedChanges.handleSave(() => {
+          form.handleSubmit(onSubmit)();
+        })}
+        onDiscard={unsavedChanges.handleDiscard}
+        onCancel={unsavedChanges.handleCancel}
+        showSave={true}
+      />
     </div>
   );
 }

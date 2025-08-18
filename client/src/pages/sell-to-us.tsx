@@ -6,6 +6,8 @@ import { PriceInput } from "@/components/ui/price-input";
 import Dropdown from "@/components/ui/Dropdown";
 import DropdownField from "@/components/form/DropdownField";
 import { Textarea } from "@/components/ui/textarea";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card } from "@/components/shared/AnimatedComponents";
@@ -103,6 +105,19 @@ export default function SellToUs() {
       description: "",
       images: [],
     },
+  });
+
+  // Track if form has changes by comparing with initial values
+  const formValues = form.watch();
+  const hasChanges = formValues.name !== "" || formValues.brand !== "" || 
+    formValues.category !== "" || formValues.condition !== "good" ||
+    formValues.weight !== "" || formValues.askingPrice !== "" ||
+    formValues.description !== "" || uploadedImages.length > 0;
+
+  // Unsaved changes protection
+  const unsavedChanges = useUnsavedChanges({
+    hasChanges: hasChanges && !isSubmitted,
+    message: 'You have unsaved equipment submission data. Would you like to save it before leaving?'
   });
 
   const submitMutation = useMutation({
@@ -687,6 +702,19 @@ export default function SellToUs() {
           </div>
         </div>
       </div>
+      
+      {/* Unsaved Changes Dialog */}
+      <ConfirmDialog
+        isOpen={unsavedChanges.showDialog}
+        title="Unsaved Equipment Submission"
+        message="You have unsaved equipment submission data. Would you like to save it before leaving?"
+        onSave={() => unsavedChanges.handleSave(() => {
+          form.handleSubmit(onSubmit)();
+        })}
+        onDiscard={unsavedChanges.handleDiscard}
+        onCancel={unsavedChanges.handleCancel}
+        showSave={true}
+      />
     </div>
   );
 }

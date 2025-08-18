@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Link, useLocation } from 'wouter';
 import { Loader2, CheckCircle, XCircle, Eye, EyeOff, Shield } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 const resetPasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -41,6 +43,16 @@ export function ResetPassword() {
       password: '',
       confirmPassword: ''
     }
+  });
+
+  // Track if form has changes
+  const formValues = form.watch();
+  const hasChanges = (formValues.password !== '' || formValues.confirmPassword !== '') && !isSuccess;
+
+  // Unsaved changes protection
+  const unsavedChanges = useUnsavedChanges({
+    hasChanges,
+    message: 'You have entered password reset information. Would you like to complete the reset before leaving?'
   });
 
   // Validate token on mount
@@ -294,6 +306,19 @@ export function ResetPassword() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Unsaved Changes Dialog */}
+      <ConfirmDialog
+        isOpen={unsavedChanges.showDialog}
+        title="Unsaved Password Reset"
+        message="You have entered password reset information. Would you like to complete the reset before leaving?"
+        onSave={() => unsavedChanges.handleSave(() => {
+          form.handleSubmit(onSubmit)();
+        })}
+        onDiscard={unsavedChanges.handleDiscard}
+        onCancel={unsavedChanges.handleCancel}
+        showSave={true}
+      />
     </div>
   );
 }

@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Upload, X, Truck, Package, MapPin } from 'lucide-react';
 import { broadcastProductUpdate } from '@/lib/queryClient';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 interface ProductFormData {
   name: string;
@@ -78,6 +80,17 @@ export function ProductForm() {
     isLocalDeliveryAvailable: true,
     isShippingAvailable: true,
     isLocalPickup: true
+  });
+
+  // Track if form has changes
+  const hasChanges = formData.name !== '' || formData.description !== '' ||
+    formData.price !== 0 || formData.categoryId !== '' ||
+    formData.brand !== '' || formData.images.length > 0;
+
+  // Unsaved changes protection
+  const unsavedChanges = useUnsavedChanges({
+    hasChanges,
+    message: 'You have unsaved product changes. Would you like to save them before leaving?'
   });
   
   const [imagePreview, setImagePreview] = useState<string[]>([]);
@@ -672,6 +685,19 @@ export function ProductForm() {
           </button>
         </div>
       </form>
+      
+      {/* Unsaved Changes Dialog */}
+      <ConfirmDialog
+        isOpen={unsavedChanges.showDialog}
+        title="Unsaved Product Changes"
+        message="You have unsaved product changes. Would you like to save them before leaving?"
+        onSave={() => unsavedChanges.handleSave(() => {
+          document.querySelector('form')?.requestSubmit();
+        })}
+        onDiscard={unsavedChanges.handleDiscard}
+        onCancel={unsavedChanges.handleCancel}
+        showSave={true}
+      />
     </div>
   );
 }

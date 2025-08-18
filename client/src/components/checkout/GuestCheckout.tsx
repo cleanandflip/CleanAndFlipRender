@@ -9,6 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card } from "@/components/shared/AnimatedComponents";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Phone, MapPin, Lock } from "lucide-react";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const guestCheckoutSchema = z.object({
   email: z.string().email("Valid email is required"),
@@ -63,6 +65,19 @@ export function GuestCheckout({ onSubmit, isLoading = false }: GuestCheckoutProp
       confirmPassword: '',
       marketingEmails: false,
     },
+  });
+
+  // Track if form has changes by comparing with initial values
+  const formValues = form.watch();
+  const hasChanges = formValues.email !== '' || formValues.firstName !== '' ||
+    formValues.lastName !== '' || formValues.phone !== '' ||
+    formValues.street1 !== '' || formValues.city !== '' ||
+    formValues.state !== '' || formValues.zipCode !== '';
+
+  // Unsaved changes protection
+  const unsavedChanges = useUnsavedChanges({
+    hasChanges,
+    message: 'You have unsaved checkout information. Would you like to complete your purchase before leaving?'
   });
 
   const createAccount = form.watch('createAccount');
@@ -335,6 +350,19 @@ export function GuestCheckout({ onSubmit, isLoading = false }: GuestCheckoutProp
           </p>
         </form>
       </Form>
+      
+      {/* Unsaved Changes Dialog */}
+      <ConfirmDialog
+        isOpen={unsavedChanges.showDialog}
+        title="Unsaved Checkout Information"
+        message="You have unsaved checkout information. Would you like to complete your purchase before leaving?"
+        onSave={() => unsavedChanges.handleSave(() => {
+          form.handleSubmit(handleSubmit)();
+        })}
+        onDiscard={unsavedChanges.handleDiscard}
+        onCancel={unsavedChanges.handleCancel}
+        showSave={true}
+      />
     </Card>
   );
 }
