@@ -2707,14 +2707,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       
       // Fetch user with default address using SSOT approach
-      // FIXED: Removed profile_address_id references - using is_default addresses
+      // FIXED: Removed profile_address_id references and non-existent latitude/longitude columns
       const userWithAddress = await db.execute(sql`
         SELECT 
           u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
           u.profile_complete, u.is_local_customer,
           a.id as address_id, a.first_name as addr_first_name, 
           a.last_name as addr_last_name, a.street1, a.street2, a.city, 
-          a.state, a.postal_code, a.country, a.latitude, a.longitude, 
+          a.state, a.postal_code, a.country, 
           a.is_local, a.is_default, a.created_at as address_created_at,
           a.updated_at as address_updated_at
         FROM users u
@@ -2740,8 +2740,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         state: userData.state,
         postalCode: userData.postal_code,
         country: userData.country || "US",
-        latitude: userData.latitude ? parseFloat(String(userData.latitude)) : undefined,
-        longitude: userData.longitude ? parseFloat(String(userData.longitude)) : undefined,
+        latitude: undefined, // Remove latitude/longitude as they don't exist in addresses table
+        longitude: undefined,
         isLocal: Boolean(userData.is_local),
         isDefault: Boolean(userData.is_default),
         createdAt: userData.address_created_at,

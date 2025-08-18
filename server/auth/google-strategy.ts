@@ -33,18 +33,18 @@ export function initializeGoogleAuth() {
           return done(new Error('No email from Google'), false);
         }
         
-        // Check if user exists by Google ID
+        // Check if user exists by Google Sub (new Google Auth schema)
         let [existingUser] = await db
           .select()
           .from(users)
-          .where(eq(users.googleId, googleId))
+          .where(eq(users.googleSub, googleId))
           .limit(1);
         
         if (existingUser) {
           // Existing Google user - update last login
           await db.update(users)
             .set({ 
-              updatedAt: new Date(),
+              lastLoginAt: new Date(),
               googlePicture: picture // Update picture in case it changed
             })
             .where(eq(users.id, existingUser.id));
@@ -67,8 +67,9 @@ export function initializeGoogleAuth() {
           // User exists with email/password - link Google account
           await db.update(users)
             .set({
-              googleId,
+              googleSub: googleId,
               googleEmail: email,
+              googleEmailVerified: true,
               googlePicture: picture,
               authProvider: 'google',
               isEmailVerified: true,
@@ -79,7 +80,7 @@ export function initializeGoogleAuth() {
           Logger.debug('[AUTH] Linked Google to existing account:', email);
           return done(null, {
             ...existingUser,
-            googleId,
+            googleSub: googleId,
             role: existingUser.role || 'user'
           } as any);
         }
@@ -91,9 +92,11 @@ export function initializeGoogleAuth() {
           .values({
             id: newUserId,
             email,
-            googleId,
+            googleSub: googleId,
             googleEmail: email,
+            googleEmailVerified: true,
             googlePicture: picture,
+            lastLoginAt: new Date(),
             firstName,
             lastName,
             authProvider: 'google',
