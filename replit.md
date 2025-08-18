@@ -35,6 +35,7 @@ PostgreSQL is the primary database, utilizing:
 - **Environment Configuration**: Environment-specific secrets system with DEV_APP_ENV/PROD_APP_ENV controlling database selection. DEV_DATABASE_URL (lucky-poetry) for development, PROD_DATABASE_URL (muddy-moon) for production.
 - **Database Lockdown**: Complete environment isolation achieved (2025-08-18). All hardcoded database references removed. Development uses lucky-poetry exclusively, production uses muddy-moon exclusively. Cross-contamination is impossible.
 - **Production Safety**: Critical safety guards implemented in server/index.ts block wrong database usage. Production deployment will fail-fast if attempting to use development database. Environment detection and database selection verified as bulletproof.
+- **Google Auth Schema**: Production database (muddy-moon) verified with complete Google OAuth schema including google_sub, google_email, google_email_verified, google_picture, and last_login_at columns (2025-08-18). Development database should be configured with DEV_DATABASE_URL when needed.
 - **Schema Management**: Drizzle Kit for migrations with automatic retry logic and environment-aware configuration, production-controlled migration system.
 - **Search**: PostgreSQL tsvector for full-text search.
 - **Session Storage**: Database-backed session storage with environment-aware configuration.
