@@ -42,7 +42,7 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
         description: category.description || '',
         imageUrl: category.imageUrl || '',
         displayOrder: category.displayOrder?.toString() || '0',
-        isActive: category.isActive !== false,
+        isActive: Boolean(category.isActive),
         productCount: category.productCount?.toString() || '0',
         filterConfig: category.filterConfig ? JSON.stringify(category.filterConfig, null, 2) : '{}'
       };
@@ -185,7 +185,7 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
         slug: formData.slug,
         description: formData.description,
         existing_image_url: formData.imageUrl,
-        is_active: formData.isActive.toString(),
+        is_active: formData.isActive ? 'true' : 'false',
         filter_config: formData.filterConfig || '{}'
       };
       

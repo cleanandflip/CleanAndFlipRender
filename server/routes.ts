@@ -2367,8 +2367,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           slug: category.slug,
           description: category.description,
           imageUrl: category.imageUrl,
-          active: category.isActive,
-          order: category.displayOrder || 0,
+          isActive: category.isActive,
+          displayOrder: category.displayOrder || 0,
           productCount: Number(category.productCount) || 0,
           createdAt: category.createdAt,
           updatedAt: category.updatedAt
