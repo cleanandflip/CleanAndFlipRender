@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import CategoryFilterConfig from "@/components/admin/category-filter-config";
 import { apiRequest, broadcastProductUpdate } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useCategoryLiveSync } from "@/hooks/useCategoryLiveSync";
 import { 
   Plus, 
   Edit, 
@@ -274,8 +275,10 @@ export default function CategoryManagement() {
   const [editingCategory, setEditingCategory] = useState<Category | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const queryKey = ['/api/admin/categories'];
+  
   const { data: categories = [], isLoading } = useQuery<Category[]>({
-    queryKey: ['/api/admin/categories'],
+    queryKey,
     queryFn: async () => {
       const response = await fetch('/api/admin/categories', { credentials: 'include' });
       if (!response.ok) {
@@ -285,6 +288,9 @@ export default function CategoryManagement() {
     },
     refetchInterval: 30000
   });
+
+  // Enable live sync for real-time category updates
+  useCategoryLiveSync({ queryKey });
 
   const deleteMutation = useMutation({
     mutationFn: async (categoryId: string) => {

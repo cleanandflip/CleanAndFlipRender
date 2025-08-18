@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Card } from "@/components/shared/AnimatedComponents";
 import { globalDesignSystem as theme } from "@/styles/design-system/theme";
 import ImageWithFallback from "@/components/ImageWithFallback";
+import { useCategoryLiveSync } from "@/hooks/useCategoryLiveSync";
 
 interface Category {
   id: string;
@@ -14,8 +15,10 @@ interface Category {
 }
 
 export default function CategoryGrid() {
+  const queryKey = ['/api/categories', 'active'];
+  
   const { data: categories = [], isLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories', 'active'],
+    queryKey,
     queryFn: async () => {
       try {
         const response = await fetch('/api/categories?active=true');
@@ -32,6 +35,9 @@ export default function CategoryGrid() {
     staleTime: 0, // Always fresh for real-time updates
     refetchInterval: 30000 // Refresh every 30 seconds
   });
+
+  // Enable live sync for real-time category updates
+  useCategoryLiveSync({ queryKey });
 
   if (isLoading) {
     return (

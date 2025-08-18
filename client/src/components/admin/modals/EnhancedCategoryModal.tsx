@@ -1,11 +1,12 @@
-// ENHANCED CATEGORY MODAL WITH ANIMATIONS
+// ENHANCED CATEGORY MODAL WITH ANIMATIONS AND PRODUCT MANAGEMENT
 import { useState, useEffect, useRef } from 'react';
-import { X, Upload, Trash2, Loader2, Plus, Check, AlertCircle, Tag } from 'lucide-react';
+import { X, Upload, Trash2, Loader2, Plus, Check, AlertCircle, Tag, Package, Move } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { useQuery } from '@tanstack/react-query';
 
 interface CategoryModalProps {
   category?: any;
@@ -33,7 +34,38 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
     filterConfig: '{}'
   });
 
+  const [activeTab, setActiveTab] = useState<'details' | 'products'>('details');
+  const [reassigning, setReassigning] = useState<string | null>(null);
+
   const [initialData, setInitialData] = useState<typeof formData | null>(null);
+
+  // Fetch products assigned to this category
+  const { data: categoryProducts = [], isLoading: productsLoading } = useQuery({
+    queryKey: ['/api/admin/products', 'category', category?.id],
+    queryFn: async () => {
+      if (!category?.id) return [];
+      const response = await fetch(`/api/admin/products?category=${category.id}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch products');
+      const data = await response.json();
+      return data.products || [];
+    },
+    enabled: !!category?.id
+  });
+
+  // Fetch all categories for reassignment dropdown
+  const { data: allCategories = [] } = useQuery({
+    queryKey: ['/api/admin/categories'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/categories', {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      const data = await response.json();
+      return data.categories || [];
+    }
+  });
 
   useEffect(() => {
     if (category) {
@@ -216,6 +248,37 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
     }
   };
 
+  const handleProductReassign = async (productId: string, newCategoryId: string) => {
+    if (!newCategoryId) return;
+
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryId: newCategoryId }),
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Product moved successfully",
+          description: "Product has been reassigned to the new category",
+        });
+        setReassigning(null);
+        // Refresh product list for this category
+        window.location.reload(); // Simple refresh to update all counts
+      } else {
+        throw new Error('Failed to reassign product');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Failed to move product",
+        description: error.message || "An error occurred while moving the product",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div 
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
@@ -253,8 +316,42 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
           </div>
         </div>
 
+        {/* Tabs - only show for editing existing categories */}
+        {category && (
+          <div className="px-6 py-3 bg-[#1e293b]/30 border-b border-gray-700">
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab('details')}
+                className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                  activeTab === 'details'
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Tag className="w-4 h-4" />
+                Category Details
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('products')}
+                className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                  activeTab === 'products'
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Package className="w-4 h-4" />
+                Products ({categoryProducts.length})
+              </button>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto bg-[#0f172a]/50">
-          <div className="p-6 space-y-8">
+          {/* Category Details Tab */}
+          {(activeTab === 'details' || !category) && (
+            <div className="p-6 space-y-8">
             
             {/* Category Image */}
             <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
@@ -380,7 +477,92 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          )}
+
+          {/* Products Tab */}
+          {category && activeTab === 'products' && (
+            <div className="p-6">
+              <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Package className="w-5 h-5 text-blue-400" />
+                  Products in this Category
+                  <span className="text-sm font-normal text-gray-400">({categoryProducts.length} items)</span>
+                </h3>
+
+                {productsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
+                    <span className="ml-2 text-gray-400">Loading products...</span>
+                  </div>
+                ) : categoryProducts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-400">No products assigned to this category</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {categoryProducts.map((product: any) => (
+                      <div
+                        key={product.id}
+                        className="flex items-center justify-between p-4 bg-[#0f172a] rounded-lg border border-gray-700"
+                      >
+                        <div className="flex items-center gap-3">
+                          {product.images?.[0] && (
+                            <img
+                              src={product.images[0]}
+                              alt={product.name}
+                              className="w-10 h-10 object-cover rounded"
+                            />
+                          )}
+                          <div>
+                            <h4 className="text-white font-medium">{product.name}</h4>
+                            <p className="text-sm text-gray-400">${product.price}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          {reassigning === product.id ? (
+                            <div className="flex items-center gap-2">
+                              <select
+                                className="px-3 py-1.5 bg-[#1e293b] border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onChange={(e) => handleProductReassign(product.id, e.target.value)}
+                              >
+                                <option value="">Select category...</option>
+                                {allCategories
+                                  .filter((cat: any) => cat.id !== category.id)
+                                  .map((cat: any) => (
+                                    <option key={cat.id} value={cat.id}>
+                                      {cat.name}
+                                    </option>
+                                  ))}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => setReassigning(null)}
+                                className="p-1.5 text-gray-400 hover:text-white"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setReassigning(product.id)}
+                              className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-all duration-200 flex items-center gap-1.5"
+                            >
+                              <Move className="w-3 h-3" />
+                              <span className="text-sm">Move</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Footer Actions */}
           <div className="px-6 py-4 border-t border-gray-700 bg-[#1e293b]/80 flex justify-between items-center">
