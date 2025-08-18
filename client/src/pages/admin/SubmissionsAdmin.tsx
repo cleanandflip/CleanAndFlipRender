@@ -3,13 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import Dropdown from "@/components/ui/Dropdown";
+import type { DropdownOption } from "@/components/ui/Dropdown";
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -63,6 +58,16 @@ const statusOptions = [
   { value: 'scheduled', label: 'Pickup Scheduled', color: 'bg-purple-500' },
   { value: 'completed', label: 'Completed', color: 'bg-gray-500' },
 ];
+
+const statusDropdownOptions: DropdownOption[] = [
+  { value: 'all', label: 'All Statuses' },
+  ...statusOptions.map(s => ({ value: s.value, label: s.label }))
+];
+
+const statusFormOptions: DropdownOption[] = statusOptions.map(s => ({ 
+  value: s.value, 
+  label: s.label 
+}));
 
 export default function SubmissionsAdmin() {
   const { toast } = useToast();
@@ -158,19 +163,13 @@ export default function SubmissionsAdmin() {
             </div>
           </div>
           <div className="w-full sm:w-48">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="glass border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {statusOptions.map((status) => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Dropdown
+              options={statusDropdownOptions}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              placeholder="Filter by status"
+              className="glass border-border"
+            />
           </div>
         </div>
       </Card>
@@ -336,21 +335,13 @@ function EditSubmissionForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium mb-2">Status</label>
-        <Select 
-          value={formData.status} 
-          onValueChange={(value: string) => setFormData(prev => ({ ...prev, status: value }))}
-        >
-          <SelectTrigger className="glass border-border">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {statusOptions.map((status) => (
-              <SelectItem key={status.value} value={status.value}>
-                {status.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Dropdown
+          options={statusFormOptions}
+          value={formData.status}
+          onChange={(value: string) => setFormData(prev => ({ ...prev, status: value }))}
+          placeholder="Select status"
+          className="glass border-border"
+        />
       </div>
 
       <div>
