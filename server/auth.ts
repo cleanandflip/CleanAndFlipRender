@@ -132,8 +132,12 @@ export function setupAuth(app: Express) {
       path: '/',
       httpOnly: true,
       secure: isProd,                         // HTTPS only in production
-      sameSite: isProd ? 'none' : 'lax',      // Cross-site in production
+      sameSite: isProd ? 'none' : 'lax',      // Cross-site in production, lax for development
       maxAge: SEVEN_DAYS,                     // 7 days instead of 30
+      // Remove domain setting for development - let it default to the request host
+      ...(isProd && process.env.REPLIT_DOMAINS ? { 
+        domain: `.${process.env.REPLIT_DOMAINS.split(',')[0].replace(/^https?:\/\//, '')}` 
+      } : {})
     },
     rolling: true, // Reset expiry on activity
   };
@@ -524,15 +528,16 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ error: 'Logout failed' });
         }
         
-        // Clear session cookie completely
-        res.clearCookie('connect.sid', {
+        // Clear session cookie completely using the same name as session
+        res.clearCookie('cf.sid', {
           path: '/',
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax'
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
         });
         
-        // Also try alternative cookie names
+        // Also try alternative cookie names for cleanup
+        res.clearCookie('connect.sid');
         res.clearCookie('sessionId');
         res.clearCookie('session');
         

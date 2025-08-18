@@ -37,7 +37,7 @@ import {
   requestLogging, 
   errorTracking 
 } from "./middleware/monitoring";
-import { ErrorLogger } from "./services/errorLogger";
+// Removed ErrorLogger import - service has been eliminated
 import { autoSyncProducts } from "./middleware/product-sync";
 // import { runPenetrationTests } from "./security/penetration-tests"; // Removed unused import
 import { setupCompression } from "./config/compression";
@@ -91,7 +91,7 @@ import {
   cartItems,
   addresses,
   equipmentSubmissions,
-  activityLogs,
+  // activityLogs, // REMOVED - not needed for current operations
   reviews,
   coupons,
   emailQueue,
@@ -239,6 +239,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication
   setupAuth(app);
+  
+  // Add session debug endpoint to diagnose authentication issues
+  app.get('/api/_debug/session', (req, res) => {
+    res.json({
+      sessionID: req.sessionID || null,
+      hasSession: !!req.session,
+      userId: (req.session as any)?.userId ?? null,
+      user: req.user ? { id: req.user.id, email: req.user.email } : null,
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      cookieHeader: req.headers.cookie ?? null,
+      userAgent: req.headers['user-agent'],
+      timestamp: new Date().toISOString()
+    });
+  });
   
   // Google OAuth routes
   app.use('/api/auth', googleAuthRoutes);
@@ -2781,7 +2795,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           at: new Date()
         };
         
-        await storage.trackActivity(activity);
+        // Activity tracking temporarily disabled - storage method not implemented
+        // await storage.trackActivity(activity);
       } catch (error: any) {
         Logger.debug?.('track-activity failed', { error });
       }
