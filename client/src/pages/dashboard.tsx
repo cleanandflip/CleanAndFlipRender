@@ -338,15 +338,12 @@ function DashboardContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">ORDER HISTORY</h2>
                 <SmartLink href="/orders">
-                  <div className="glass glass-hover rounded-lg p-1 inline-block">
-                    <Button 
-                      variant="primary"
-                      size="sm"
-                      className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      View All Orders
-                    </Button>
-                  </div>
+                  <Button 
+                    variant="primary"
+                    size="sm"
+                  >
+                    View All Orders
+                  </Button>
                 </SmartLink>
               </div>
 
