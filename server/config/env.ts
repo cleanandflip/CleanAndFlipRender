@@ -5,11 +5,21 @@ export type AppEnv = "development" | "preview" | "staging" | "production";
 
 // Decide app env explicitly using environment-specific secrets
 export const APP_ENV: AppEnv = (() => {
-  // Check for environment-specific secrets first
-  if (process.env.PROD_APP_ENV) return "production";
-  if (process.env.DEV_APP_ENV) return "development";
+  // For development mode in Replit, check NODE_ENV first
+  if (process.env.NODE_ENV === "development" && process.env.DEV_APP_ENV) {
+    return "development";
+  }
   
-  // Fallback to legacy APP_ENV or NODE_ENV
+  // For production deployments
+  if (process.env.NODE_ENV === "production" && process.env.PROD_APP_ENV) {
+    return "production";
+  }
+  
+  // Fallback logic based on environment
+  if (process.env.DEV_APP_ENV && !process.env.PROD_APP_ENV) return "development";
+  if (process.env.PROD_APP_ENV && !process.env.DEV_APP_ENV) return "production";
+  
+  // Legacy fallback
   return (process.env.APP_ENV as AppEnv) ||
          (process.env.NODE_ENV === "production" ? "production" : "development");
 })();
