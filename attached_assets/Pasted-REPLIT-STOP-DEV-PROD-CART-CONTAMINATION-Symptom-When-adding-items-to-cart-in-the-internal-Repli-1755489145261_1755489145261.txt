@@ -1,0 +1,222 @@
+REPLIT: STOP DEV → PROD CART CONTAMINATION
+
+Symptom: When adding items to cart in the internal Replit preview, the items also appear in production.
+Goal: Dev/Preview must never talk to Prod DB or Prod API.
+
+Acceptance Criteria (do not stop until all pass)
+
+From Replit preview, add to cart → row appears only in DEV DB (cart_items) and not in PROD DB.
+
+Preview’s network tab shows only requests to dev API base (localhost or preview host), never to production domain.
+
+Server boot logs print a clear banner: APP_ENV=<env> DB_HOST=<host> API_BASE=<url>.
+
+Tripwire: If APP_ENV=development/preview and DB host ≠ EXPECTED_DB_HOST → process exits with an error.
+
+CORS/Origins and cookies are environment-scoped (no cross-site leakage).
+
+Step 1 — Snapshot & Prove the Bug (Network + SQL)
+
+In Replit preview, open DevTools → Network while adding to cart.
+
+If you see any request going to your production domain (e.g., https://api.<prod-domain>...), that’s the cause.
+
+Run these read-only checks to verify which DB is being hit:
+
+-- On the server handling the Replit preview:
+SELECT current_database(), inet_server_addr(), version();
+
+-- Check new cart rows (show last 10) on DEV:
+SELECT id, user_id, product_id, created_at FROM cart_items ORDER BY created_at DESC LIMIT 10;
+
+-- Same query on PROD to confirm no new rows from preview:
+SELECT id, user_id, product_id, created_at FROM cart_items ORDER BY created_at DESC LIMIT 10;
+
+Step 2 — Audit Environment Selection (fix misrouting)
+
+Likely causes:
+
+Preview frontend uses production API base URL.
+
+Server uses production DATABASE_URL because of a bad loader, NODE_ENV defaulting to production, or an env fallback.
+
+2a) Standardize config loader
+
+Create src/config/env.ts:
+
+// src/config/env.ts
+import { URL } from 'url';
+
+type AppEnv = 'development' | 'preview' | 'staging' | 'production';
+
+export const APP_ENV: AppEnv =
+  (process.env.APP_ENV as AppEnv) ||
+  (process.env.REPLIT_ENV ? 'development' : (process.env.NODE_ENV === 'production' ? 'production' : 'development'));
+
+function must(...names: string[]) {
+  for (const n of names) {
+    const v = process.env[n];
+    if (v) return v;
+  }
+  throw new Error(`Missing required env: one of ${names.join(', ')}`);
+}
+
+// Always expose exactly ONE DB URL to the app
+export const DATABASE_URL =
+  APP_ENV === 'production'
+    ? must('DATABASE_URL', 'PROD_DATABASE_URL')
+    : must('DEV_DATABASE_URL', 'DATABASE_URL'); // in preview/dev, prefer DEV_DATABASE_URL
+
+export const EXPECTED_DB_HOST = process.env.EXPECTED_DB_HOST || ''; // set per env
+export const API_BASE =
+  APP_ENV === 'production'
+    ? must('API_BASE_URL_PROD', 'API_BASE_URL')       // e.g., https://api.prod-domain.com
+    : must('API_BASE_URL_DEV', 'API_BASE_URL', '');   // e.g., http://localhost:3000 or preview origin
+
+export function dbHostFromUrl(u = DATABASE_URL) {
+  return new URL(u).host;
+}
+
+2b) Add a tripwire at server boot
+
+Create src/config/env-guard.ts:
+
+// src/config/env-guard.ts
+import { APP_ENV, DATABASE_URL, EXPECTED_DB_HOST, dbHostFromUrl } from './env';
+
+export function assertEnvSafety() {
+  const host = dbHostFromUrl(DATABASE_URL);
+  const banner = `[env] APP_ENV=${APP_ENV} DB_HOST=${host}`;
+  console.log(banner);
+
+  // Refuse to start if the DB host isn't what we expect for this env
+  if (EXPECTED_DB_HOST && host !== EXPECTED_DB_HOST) {
+    throw new Error(
+      `ENV_GUARD: Refusing to start. APP_ENV=${APP_ENV} but DATABASE_URL host=${host} != EXPECTED_DB_HOST=${EXPECTED_DB_HOST}`
+    );
+  }
+}
+
+
+Use it in your server entry (before DB init and routes):
+
+// server/index.ts (or app bootstrap)
+import { assertEnvSafety } from '../config/env-guard';
+assertEnvSafety();
+
+
+Set Replit Secrets for preview/dev:
+
+APP_ENV=development (or preview)
+
+DEV_DATABASE_URL=<DEV DSN>
+
+EXPECTED_DB_HOST=<host part of DEV DSN>
+
+API_BASE_URL_DEV=http://localhost:3000 (or your preview origin)
+Do NOT set PROD_DATABASE_URL/API_BASE_URL_PROD in Replit preview.
+
+Step 3 — Force the frontend to the right API
+
+Create a tiny helper used everywhere we build API URLs:
+
+// src/lib/getApiBase.ts
+export function getApiBase() {
+  // Prefer same-origin relative calls in Next.js/SPA to avoid cross-env hits
+  return process.env.NEXT_PUBLIC_API_BASE_URL || '';
+}
+
+
+In all fetch/axios calls, do one of the following:
+
+Preferred: use relative paths (/api/cart) so preview calls its own backend.
+
+If you must use absolute URLs, set NEXT_PUBLIC_API_BASE_URL in Replit to the preview origin, never the production domain.
+
+// fetch example
+await fetch(`${getApiBase()}/api/cart`, {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ productId }),
+});
+
+Step 4 — Prisma / pg pooling must respect DEV DSN
+
+Ensure prisma/schema.prisma uses only env("DATABASE_URL").
+
+In Replit preview:
+
+Set DEV_DATABASE_URL and (optionally) also set DATABASE_URL = same dev DSN to keep Prisma happy.
+
+Run npx prisma generate after changing envs.
+
+Singleton pool:
+
+// db/pool.ts
+import { Pool } from 'pg';
+import { DATABASE_URL } from '../config/env';
+
+declare global { var __pgPool: Pool | undefined; }
+export const pool = global.__pgPool ?? new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
+if (process.env.NODE_ENV !== 'production') global.__pgPool = pool;
+
+Step 5 — Lock CORS & cookies per environment
+// server/cors.ts
+import cors from 'cors';
+import { APP_ENV } from '../config/env';
+
+const allowed = APP_ENV === 'production'
+  ? ['https://<prod-domain>']
+  : ['http://localhost:3000', 'https://<your-replit-preview-host>'];
+
+export const corsMiddleware = cors({ origin: allowed, credentials: true });
+
+
+Mount before routes and use relative paths to avoid cross-site cookies. For sessions/JWT cookies, in dev/preview:
+
+sameSite: 'lax', secure: false (on HTTP)
+
+Domain unset (host-only) so it does not leak to prod.
+
+Step 6 — Add a visible health/identity endpoint
+// server/routes/health.ts
+import express from 'express';
+import { APP_ENV, API_BASE } from '../config/env';
+import { pool } from '../db/pool';
+const r = express.Router();
+
+r.get('/api/healthz', async (_req, res) => {
+  const { rows } = await pool.query('select current_database() as db, current_user as role');
+  res.json({ env: APP_ENV, apiBase: API_BASE || 'relative', db: rows[0]?.db, role: rows[0]?.role });
+});
+export default r;
+
+
+From Replit preview, hit /api/healthz and verify env=development/preview and db=<DEV DB name>.
+
+Step 7 — Final regression tests
+
+Preview: add to cart → verify in DEV DB only.
+
+Production site: add to cart → verify in PROD DB only.
+
+Network tab in preview: no calls to prod domain.
+
+Restart preview with a wrong EXPECTED_DB_HOST → server must refuse to boot (tripwire works).
+
+Step 8 — Optional extra hardening
+
+In PROD, restrict CORS to only the prod origin; block any *.repl.co origin.
+
+Create separate Postgres roles (app_dev, app_prod) scoped to their DBs to make cross-writes impossible by credentials alone.
+
+Add log tag to every request: [env=${APP_ENV}] and DB host at boot.
+
+Likely root cause you’ll find
+
+Preview frontend is pointing to production API base URL, so “dev” actions hit prod API, which uses prod DB — hence the cart contamination.
+
+Secondary causes: env loader prefers DATABASE_URL (prod) over DEV_DATABASE_URL, or NODE_ENV is production in Replit preview, selecting prod config.
+
+Fix all of the above, keep the tripwire, and don’t remove the health banner.

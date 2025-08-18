@@ -12,7 +12,11 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  // Import dynamically to avoid build issues
+  const { buildApiUrl } = await import('./getApiBase');
+  const finalUrl = buildApiUrl(url);
+  
+  const res = await fetch(finalUrl, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -54,7 +58,11 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const url = buildUrl(queryKey);
-    const res = await fetch(url, {
+    // Import dynamically to avoid build issues
+    const { buildApiUrl } = await import('./getApiBase');
+    const finalUrl = buildApiUrl(url);
+    
+    const res = await fetch(finalUrl, {
       credentials: "include",
     });
 

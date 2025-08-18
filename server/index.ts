@@ -3,20 +3,25 @@ import express from "express";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import { DATABASE_URL, getDbHost, getAppEnv } from './config/database';
+import { assertEnvSafety } from "./config/env-guard";
+import { DATABASE_URL, APP_ENV, dbHostFromUrl } from './config/env';
 import { applyMigrations } from "./db/migrate";
 import { ping } from "./db";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 
-const env = getAppEnv();
-const host = getDbHost();
+// CRITICAL: Environment isolation check - prevents dev from hitting prod DB
+assertEnvSafety();
+
+const env = APP_ENV;
+const host = dbHostFromUrl();
 
 // 1) Boot logs that must appear once
 console.log("[BOOT]", { env, nodeEnv: process.env.NODE_ENV });
+console.log(`[DB_ISOLATION] APP_ENV=${env} DB_HOST=${host}`);
 
 if (env === 'production') {
-  // Guard: production must be on the muddy-moon pooled host
+  // Guard: production must be on the expected production host
   if (!host.includes('muddy-moon') || !host.includes('pooler')) {
     console.error('[CRITICAL] ❌ Production attempted to use non-prod DB host:', host);
     process.exit(1);

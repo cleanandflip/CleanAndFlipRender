@@ -253,6 +253,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString()
     });
   });
+
+  // Environment health endpoint - CRITICAL for verifying isolation
+  app.get('/api/healthz', async (req, res) => {
+    try {
+      const { APP_ENV, dbHostFromUrl } = await import('./config/env');
+      const dbInfo = await db.execute(sql`SELECT current_database() as db, current_user as role, inet_server_addr() as server_ip`);
+      const dbRow = dbInfo.rows[0];
+      
+      res.json({
+        env: APP_ENV,
+        nodeEnv: process.env.NODE_ENV,
+        dbHost: dbHostFromUrl(),
+        database: dbRow?.db,
+        dbUser: dbRow?.role,
+        serverIp: dbRow?.server_ip,
+        replitEnv: process.env.REPLIT_ENV || null,
+        timestamp: new Date().toISOString(),
+        warning: APP_ENV !== 'production' ? 'DEVELOPMENT/PREVIEW ENVIRONMENT' : 'PRODUCTION ENVIRONMENT'
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Health check failed', details: (error as any).message });
+    }
+  });
   
   // Google OAuth routes
   app.use('/api/auth', googleAuthRoutes);
