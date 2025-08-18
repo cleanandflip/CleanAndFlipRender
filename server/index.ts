@@ -13,6 +13,10 @@ import { assertUniversalEnvGuards } from "./config/universal-guards";
 import { universalEnvHeaders } from "./middleware/universal-env-headers";
 import { universalHealth } from "./routes/universal-health";
 import { mountUniversalWebhooks } from "./webhooks/universal-router";
+// Public health endpoint (no auth required)
+import { publicHealth } from "./routes/public-health";
+// Schema verification utility
+import { verifyProductSchema } from "./utils/verify-product-schema";
 
 const env = getAppEnv();
 const host = getDbHost();
@@ -80,6 +84,12 @@ await ping().catch((e) => {
   process.exit(1);
 });
 
+// Verify product schema (add missing columns in non-prod)
+await verifyProductSchema().catch((e) => {
+  console.error("[SCHEMA] Verification failed:", e);
+  // Don't exit - log and continue
+});
+
 // 3) Express app
 const app = express();
 app.set("trust proxy", 1);
@@ -89,6 +99,9 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || true,
   credentials: true,
 }));
+
+// PUBLIC HEALTH ENDPOINT - MUST BE FIRST (no auth required)
+app.use(publicHealth);
 
 // Universal Environment System headers
 app.use(universalEnvHeaders);
@@ -105,7 +118,7 @@ try {
 
 app.use(express.json());
 
-// Universal Health endpoint
+// Universal Health endpoint (secondary)
 app.use(universalHealth);
 
 // Register API routes - they handle server startup internally  
