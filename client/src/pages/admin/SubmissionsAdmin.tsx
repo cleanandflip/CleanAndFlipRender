@@ -14,6 +14,7 @@ import {
   Package, 
   Eye, 
   Edit, 
+  FileEdit,
   Calendar, 
   DollarSign, 
   MessageSquare, 
@@ -22,7 +23,16 @@ import {
   XCircle,
   Search,
   Filter,
-  RefreshCcw
+  RefreshCcw,
+  User,
+  MapPin,
+  Phone,
+  Mail,
+  Ruler,
+  ShoppingBag,
+  Tag,
+  Image as ImageIcon,
+  Star
 } from 'lucide-react';
 
 interface Submission {
@@ -36,6 +46,10 @@ interface Submission {
   images?: string[];
   askingPrice?: string | number;
   weight?: number;
+  dimensions?: string;
+  yearPurchased?: number;
+  originalPrice?: number;
+  offeredPrice?: number;
   status: string;
   adminNotes?: string;
   createdAt: string;
@@ -63,6 +77,25 @@ const statusFormOptions: DropdownOption[] = statusOptions.map(s => ({
   value: s.value, 
   label: s.label 
 }));
+
+// Status Badge Component
+function StatusBadge({ status }: { status: string }) {
+  const statusOption = statusOptions.find(s => s.value === status);
+  
+  if (!statusOption) {
+    return (
+      <Badge className="bg-gray-500 text-white">
+        {status}
+      </Badge>
+    );
+  }
+  
+  return (
+    <Badge className={`${statusOption.color} text-white`}>
+      {statusOption.label}
+    </Badge>
+  );
+}
 
 export default function SubmissionsAdmin() {
   const { toast } = useToast();
@@ -300,12 +333,24 @@ export default function SubmissionsAdmin() {
 
       {/* Edit Submission Modal */}
       <Dialog open={!!editingSubmission} onOpenChange={() => setEditingSubmission(null)}>
-        <DialogContent className="glass border-border max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-white">
-              Edit Submission: {editingSubmission?.referenceNumber}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="bg-[#0F172A] border border-[rgba(59,130,246,0.2)] max-w-3xl backdrop-blur-xl shadow-2xl">
+          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 -mx-6 -mt-6 px-6 pt-6 pb-4 mb-6 border-b border-[rgba(59,130,246,0.2)]">
+            <DialogHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <FileEdit className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-bold text-white">
+                    Edit Submission
+                  </DialogTitle>
+                  <p className="text-sm text-blue-300 font-mono">
+                    {editingSubmission?.referenceNumber}
+                  </p>
+                </div>
+              </div>
+            </DialogHeader>
+          </div>
           
           {editingSubmission && (
             <EditSubmissionForm
@@ -320,12 +365,29 @@ export default function SubmissionsAdmin() {
 
       {/* View Submission Modal */}
       <Dialog open={!!viewingSubmission} onOpenChange={() => setViewingSubmission(null)}>
-        <DialogContent className="glass border-border max-w-4xl">
-          <DialogHeader>
-            <DialogTitle className="text-white">
-              Submission Details: {viewingSubmission?.referenceNumber}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="bg-[#0F172A] border border-[rgba(59,130,246,0.2)] max-w-5xl backdrop-blur-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 -mx-6 -mt-6 px-6 pt-6 pb-4 mb-6 border-b border-[rgba(59,130,246,0.2)] sticky top-0 z-10 backdrop-blur-xl">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/20 rounded-lg">
+                    <Eye className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-xl font-bold text-white">
+                      Submission Details
+                    </DialogTitle>
+                    <p className="text-sm text-blue-300 font-mono">
+                      {viewingSubmission?.referenceNumber}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={viewingSubmission?.status || 'pending'} />
+                </div>
+              </div>
+            </DialogHeader>
+          </div>
           
           {viewingSubmission && (
             <ViewSubmissionDetails submission={viewingSubmission} />
@@ -364,169 +426,293 @@ function EditSubmissionForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-2">Status</label>
-        <Dropdown
-          options={statusFormOptions}
-          value={formData.status}
-          onChange={(value: string) => setFormData(prev => ({ ...prev, status: value }))}
-          placeholder="Select status"
-          className="glass border-border"
-        />
+    <div className="space-y-6">
+      {/* Equipment Summary */}
+      <div className="bg-[#1e293b]/50 border border-[rgba(59,130,246,0.1)] rounded-xl p-6">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-blue-500/20 rounded-lg">
+            <Package className="w-6 h-6 text-blue-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-white mb-2">{submission.name}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-gray-400">Brand</p>
+                <p className="text-white">{submission.brand || 'Not specified'}</p>
+              </div>
+              <div>
+                <p className="text-gray-400">Condition</p>
+                <p className="text-white capitalize">{submission.condition?.replace('_', ' ')}</p>
+              </div>
+              <div>
+                <p className="text-gray-400">Asking Price</p>
+                <p className="text-green-400 font-medium">
+                  {submission.askingPrice ? `$${submission.askingPrice}` : 'Open to offers'}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-400">Current Status</p>
+                <StatusBadge status={submission.status} />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-2">Offered Price (optional)</label>
-        <Input
-          type="number"
-          step="0.01"
-          value={formData.offeredPrice}
-          onChange={(e) => setFormData(prev => ({ ...prev, offeredPrice: e.target.value }))}
-          className="glass border-border"
-          placeholder="Enter offer amount"
-        />
-      </div>
+      {/* Edit Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-white mb-3">
+              <Tag className="w-4 h-4 text-blue-400" />
+              Status
+            </label>
+            <Dropdown
+              options={statusFormOptions}
+              value={formData.status}
+              onChange={(value: string) => setFormData(prev => ({ ...prev, status: value }))}
+              placeholder="Select status"
+              className="bg-[#1e293b]/50 border-[rgba(59,130,246,0.2)] text-white"
+            />
+          </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-2">Admin Notes</label>
-        <Textarea
-          value={formData.adminNotes}
-          onChange={(e) => setFormData(prev => ({ ...prev, adminNotes: e.target.value }))}
-          className="glass border-border"
-          rows={4}
-          placeholder="Add notes about this submission..."
-        />
-      </div>
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-white mb-3">
+              <DollarSign className="w-4 h-4 text-green-400" />
+              Offered Price (optional)
+            </label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.offeredPrice}
+              onChange={(e) => setFormData(prev => ({ ...prev, offeredPrice: e.target.value }))}
+              className="bg-[#1e293b]/50 border-[rgba(59,130,246,0.2)] text-white placeholder-gray-400"
+              placeholder="Enter offer amount"
+            />
+          </div>
+        </div>
 
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading} className="bg-accent-blue hover:bg-blue-600">
-          {isLoading ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </DialogFooter>
-    </form>
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-white mb-3">
+            <MessageSquare className="w-4 h-4 text-blue-400" />
+            Admin Notes
+          </label>
+          <Textarea
+            value={formData.adminNotes}
+            onChange={(e) => setFormData(prev => ({ ...prev, adminNotes: e.target.value }))}
+            className="bg-[#1e293b]/50 border-[rgba(59,130,246,0.2)] text-white placeholder-gray-400"
+            rows={4}
+            placeholder="Add internal notes about this submission, pricing decisions, quality assessments, etc..."
+          />
+        </div>
+
+        <DialogFooter className="pt-6 border-t border-[rgba(59,130,246,0.1)]">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isLoading} loading={isLoading}>
+            {isLoading ? 'Saving Changes...' : 'Save Changes'}
+          </Button>
+        </DialogFooter>
+      </form>
+    </div>
   );
 }
 
 // View Submission Details Component
 function ViewSubmissionDetails({ submission }: { submission: Submission }) {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h3 className="font-semibold mb-4 text-accent-blue">Equipment Details</h3>
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm text-text-secondary">Name</p>
-              <p>{submission.name}</p>
+    <div className="space-y-8 pb-6">
+      {/* Equipment Overview Card */}
+      <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-[rgba(59,130,246,0.2)] rounded-xl p-6">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-blue-500/20 rounded-lg">
+            <Package className="w-8 h-8 text-blue-400" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-white mb-2">{submission.name}</h2>
+            <div className="flex items-center gap-4 text-sm text-gray-300">
+              <span className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                {new Date(submission.createdAt).toLocaleDateString()}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                {new Date(submission.createdAt).toLocaleTimeString()}
+              </span>
             </div>
-            <div>
-              <p className="text-sm text-text-secondary">Brand</p>
-              <p>{submission.brand || 'Not specified'}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-green-400">
+              {submission.askingPrice ? `$${submission.askingPrice}` : 'Open to offers'}
+            </p>
+            <p className="text-sm text-gray-400">Asking Price</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Equipment Details */}
+        <div className="bg-[#1e293b]/50 border border-[rgba(59,130,246,0.1)] rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <ShoppingBag className="w-5 h-5 text-blue-400" />
             </div>
-            <div>
-              <p className="text-sm text-text-secondary">Category</p>
-              <p className="capitalize">{submission.category}</p>
+            <h3 className="text-lg font-semibold text-white">Equipment Details</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
+              <Tag className="w-4 h-4 text-blue-400" />
+              <div>
+                <p className="text-xs text-gray-400">Brand</p>
+                <p className="text-white font-medium">{submission.brand || 'Not specified'}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-text-secondary">Condition</p>
-              <p className="capitalize">{submission.condition?.replace('_', ' ')}</p>
+            
+            <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
+              <Star className="w-4 h-4 text-yellow-400" />
+              <div>
+                <p className="text-xs text-gray-400">Condition</p>
+                <p className="text-white font-medium capitalize">{submission.condition?.replace('_', ' ')}</p>
+              </div>
             </div>
+            
             {submission.weight && (
-              <div>
-                <p className="text-sm text-text-secondary">Weight</p>
-                <p>{submission.weight} lbs</p>
+              <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
+                <Package className="w-4 h-4 text-purple-400" />
+                <div>
+                  <p className="text-xs text-gray-400">Weight</p>
+                  <p className="text-white font-medium">{submission.weight} lbs</p>
+                </div>
               </div>
             )}
+
             {submission.dimensions && (
-              <div>
-                <p className="text-sm text-text-secondary">Dimensions</p>
-                <p>{submission.dimensions}</p>
+              <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
+                <Ruler className="w-4 h-4 text-orange-400" />
+                <div>
+                  <p className="text-xs text-gray-400">Dimensions</p>
+                  <p className="text-white font-medium">{submission.dimensions}</p>
+                </div>
               </div>
             )}
+
             {submission.yearPurchased && (
-              <div>
-                <p className="text-sm text-text-secondary">Year Purchased</p>
-                <p>{submission.yearPurchased}</p>
+              <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
+                <Calendar className="w-4 h-4 text-green-400" />
+                <div>
+                  <p className="text-xs text-gray-400">Year Purchased</p>
+                  <p className="text-white font-medium">{submission.yearPurchased}</p>
+                </div>
               </div>
             )}
+
             {submission.originalPrice && (
-              <div>
-                <p className="text-sm text-text-secondary">Original Price</p>
-                <p>${submission.originalPrice}</p>
+              <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
+                <DollarSign className="w-4 h-4 text-green-400" />
+                <div>
+                  <p className="text-xs text-gray-400">Original Price</p>
+                  <p className="text-white font-medium">${submission.originalPrice}</p>
+                </div>
               </div>
             )}
           </div>
         </div>
-        
-        <div>
-          <h3 className="font-semibold mb-4 text-accent-blue">Seller Information</h3>
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm text-text-secondary">Email</p>
-              <p>{submission.sellerEmail}</p>
+
+        {/* Seller Information */}
+        <div className="bg-[#1e293b]/50 border border-[rgba(59,130,246,0.1)] rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <User className="w-5 h-5 text-blue-400" />
             </div>
-            {submission.sellerPhone && (
+            <h3 className="text-lg font-semibold text-white">Seller Information</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
+              <Mail className="w-4 h-4 text-blue-400" />
               <div>
-                <p className="text-sm text-text-secondary">Phone</p>
-                <p>{submission.sellerPhone}</p>
+                <p className="text-xs text-gray-400">Email</p>
+                <p className="text-white font-medium">{submission.user?.email || 'N/A'}</p>
+              </div>
+            </div>
+
+            {submission.user?.name && (
+              <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
+                <User className="w-4 h-4 text-purple-400" />
+                <div>
+                  <p className="text-xs text-gray-400">Name</p>
+                  <p className="text-white font-medium">{submission.user.name}</p>
+                </div>
               </div>
             )}
-            {submission.sellerLocation && (
-              <div>
-                <p className="text-sm text-text-secondary">Location</p>
-                <p>{submission.sellerLocation}</p>
-              </div>
-            )}
-            <div>
-              <p className="text-sm text-text-secondary">Asking Price</p>
-              <p>{submission.askingPrice ? `$${submission.askingPrice}` : 'Open to offers'}</p>
-            </div>
+
             {submission.offeredPrice && (
-              <div>
-                <p className="text-sm text-text-secondary">Our Offer</p>
-                <p className="text-green-400 font-semibold">${submission.offeredPrice}</p>
+              <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <DollarSign className="w-5 h-5 text-green-400" />
+                <div>
+                  <p className="text-xs text-green-300">Our Offer</p>
+                  <p className="text-xl font-bold text-green-400">${submission.offeredPrice}</p>
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
-      
-      {submission.description && (
-        <div>
-          <h3 className="font-semibold mb-2 text-accent-blue">Description</h3>
-          <p className="text-text-secondary">{submission.description}</p>
-        </div>
-      )}
-      
-      {submission.notes && (
-        <div>
-          <h3 className="font-semibold mb-2 text-accent-blue">Seller Notes</h3>
-          <p className="text-text-secondary">{submission.notes}</p>
-        </div>
-      )}
-      
-      {submission.adminNotes && (
-        <div>
-          <h3 className="font-semibold mb-2 text-red-400">Admin Notes</h3>
-          <p className="text-text-secondary">{submission.adminNotes}</p>
-        </div>
-      )}
-      
+
+      {/* Description & Notes */}
+      <div className="space-y-6">
+        {submission.description && (
+          <div className="bg-[#1e293b]/50 border border-[rgba(59,130,246,0.1)] rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <MessageSquare className="w-5 h-5 text-blue-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Description</h3>
+            </div>
+            <p className="text-gray-300 leading-relaxed">{submission.description}</p>
+          </div>
+        )}
+
+        {submission.adminNotes && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <MessageSquare className="w-5 h-5 text-red-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-red-400">Admin Notes</h3>
+            </div>
+            <p className="text-gray-300 leading-relaxed">{submission.adminNotes}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Images Gallery */}
       {submission.images && submission.images.length > 0 && (
-        <div>
-          <h3 className="font-semibold mb-4 text-accent-blue">Images</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {submission.images.map((image, index) => (
-              <div key={index} className="aspect-square rounded-lg overflow-hidden glass">
+        <div className="bg-[#1e293b]/50 border border-[rgba(59,130,246,0.1)] rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <ImageIcon className="w-5 h-5 text-blue-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white">Equipment Images</h3>
+            <Badge variant="secondary" className="ml-auto">
+              {submission.images.length} {submission.images.length === 1 ? 'Photo' : 'Photos'}
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {submission.images?.map((image, index) => (
+              <div key={index} className="group relative aspect-square rounded-lg overflow-hidden bg-[#0F172A]/50 border border-[rgba(59,130,246,0.1)] hover:border-blue-400/40 transition-colors">
                 <img
                   src={image}
-                  alt={`Equipment ${index + 1}`}
-                  className="w-full h-full object-cover"
+                  alt={`${submission.name} - Image ${index + 1}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                  {index + 1} of {submission.images?.length || 0}
+                </div>
               </div>
             ))}
           </div>
