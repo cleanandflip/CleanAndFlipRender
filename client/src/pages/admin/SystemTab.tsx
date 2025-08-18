@@ -310,7 +310,7 @@ export function SystemTab() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Database:</span>
-                      <span className="text-white">muddy-moon</span>
+                      <span className="text-white">lucky-poetry</span>
                     </div>
                   </div>
                 </div>
@@ -486,7 +486,7 @@ export function SystemTab() {
                 <Database className={`w-8 h-8 ${dbStatus.status === 'healthy' ? 'text-green-400' : 'text-red-400'}`} />
                 <div className="flex-1">
                   <h3 className="text-white font-semibold">PostgreSQL Connection</h3>
-                  <p className="text-sm text-gray-400">Production database (muddy-moon)</p>
+                  <p className="text-sm text-gray-400">Development database (lucky-poetry)</p>
                 </div>
                 <Badge className={`${dbStatus.status === 'healthy' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                   {dbStatus.status === 'healthy' ? 'Connected' : 'Error'}
