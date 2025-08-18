@@ -71,11 +71,27 @@ export default function SubmissionsAdmin() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
   const [viewingSubmission, setViewingSubmission] = useState<Submission | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch all submissions
-  const { data: submissionsResponse, isLoading } = useQuery({
+  // Fetch all submissions - using explicit fetch to debug the response
+  const { data: submissionsResponse, isLoading, refetch } = useQuery({
     queryKey: ['/api/admin/submissions'],
-    queryFn: async () => await apiRequest('GET', '/api/admin/submissions'),
+    queryFn: async () => {
+      const response = await fetch('/api/admin/submissions', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('🔍 Raw fetch response:', data);
+      return data;
+    },
   });
 
   // Extract submissions array from API response
@@ -144,12 +160,17 @@ export default function SubmissionsAdmin() {
       <div className="flex justify-between items-center">
         <h1 className="font-bebas text-4xl">SUBMISSIONS MANAGEMENT</h1>
         <Button
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/admin/submissions'] })}
+          onClick={async () => {
+            setIsRefreshing(true);
+            await refetch();
+            setTimeout(() => setIsRefreshing(false), 500);
+          }}
           variant="outline"
           className="glass border-border"
+          disabled={isRefreshing}
         >
-          <RefreshCcw className="w-4 h-4 mr-2" />
-          Refresh
+          <RefreshCcw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Refreshing...' : 'Refresh'}
         </Button>
       </div>
 
