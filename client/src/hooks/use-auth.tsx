@@ -50,11 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     retry: false, // Don't retry 401s for auth checks
     throwOnError: false, // Handle errors gracefully
     refetchOnWindowFocus: false, // Prevent auth check loops
-    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes - CRITICAL FIX
-    refetchOnWindowFocus: false, // Don't check auth on window focus
-    refetchOnReconnect: false, // Don't spam on reconnect
-    refetchOnMount: true, // Always check fresh auth state
+    staleTime: 0, // Always fresh to prevent auth state issues
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchOnMount: true, // Always check on mount
+    refetchOnReconnect: false // Don't spam on reconnect
   });
 
   // ONBOARDING REMOVED - No more auto-redirects, users browse freely

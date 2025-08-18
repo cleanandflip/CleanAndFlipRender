@@ -2749,115 +2749,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add improved auth logging middleware globally
+  // Import and use unified auth routes
+  try {
+    const authUnifiedModule = await import('./routes/auth-unified.js');
+    const authUnifiedRoutes = authUnifiedModule.default;
+    app.use(authUnifiedRoutes);
+  } catch (error) {
+    console.warn('Failed to load unified auth routes:', error);
+  }
+
+  // Add improved auth logging middleware globally  
   app.use(authImprovements.improvedAuthLogging);
 
-  // Add auth state endpoint for explicit auth checking
-  app.get("/api/auth/state", authImprovements.authState);
-
-  // User endpoint - now guest-safe with better responses
-  app.get("/api/user", authImprovements.guestSafeUser, async (req, res) => {
-    // At this point, we know the user is authenticated (guestSafeUser would have returned early for guests)
-    
-    try {
-      Logger.debug(`[USER API] User found: ${JSON.stringify(req.user)}`);
-      
-      const userId = (req.user as any).id;
-      
-      // Fetch user with default address using SSOT approach with production-safe fallback
-      let userWithAddress;
-      try {
-        userWithAddress = await db.execute(sql`
-          SELECT 
-            u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
-            u.profile_complete, u.is_local_customer,
-            a.id as address_id, a.first_name as addr_first_name, 
-            a.last_name as addr_last_name, a.street1, a.street2, a.city, 
-            a.state, a.postal_code, a.country, 
-            COALESCE(a.is_local, false) as is_local, a.is_default, 
-            COALESCE(a.created_at, NOW()) as address_created_at,
-            COALESCE(a.updated_at, NOW()) as address_updated_at
-          FROM users u
-          LEFT JOIN addresses a ON a.user_id = u.id AND a.is_default = true
-          WHERE u.id = ${userId}
-        `);
-      } catch (error: any) {
-        if (error.code === '42703') {
-          // Production fallback for missing is_local column
-          Logger.warn('[USER API] is_local column missing, using fallback query');
-          userWithAddress = await db.execute(sql`
-            SELECT 
-              u.id, u.email, u.first_name, u.last_name, u.phone, u.role, 
-              u.profile_complete, u.is_local_customer,
-              a.id as address_id, a.first_name as addr_first_name, 
-              a.last_name as addr_last_name, a.street1, a.street2, a.city, 
-              a.state, a.postal_code, a.country, 
-              false as is_local, a.is_default, 
-              COALESCE(a.created_at, NOW()) as address_created_at,
-              COALESCE(a.updated_at, NOW()) as address_updated_at
-            FROM users u
-            LEFT JOIN addresses a ON a.user_id = u.id AND a.is_default = true
-            WHERE u.id = ${userId}
-          `);
-        } else {
-          throw error;
-        }
-      }
-
-      if (!userWithAddress.rows.length) {
-        return res.status(404).json({ error: "User not found" });
-      }
-
-      const userData = userWithAddress.rows[0];
-      
-      // Build response with SSOT address structure
-      const profileAddress = userData.address_id ? {
-        id: userData.address_id,
-        firstName: userData.addr_first_name,
-        lastName: userData.addr_last_name,
-        fullName: `${userData.addr_first_name} ${userData.addr_last_name}`,
-        street1: userData.street1,
-        street2: userData.street2 || "",
-        city: userData.city,
-        state: userData.state,
-        postalCode: userData.postal_code,
-        country: userData.country || "US",
-        latitude: undefined, // Remove latitude/longitude as they don't exist in addresses table
-        longitude: undefined,
-        isLocal: Boolean(userData.is_local),
-        isDefault: Boolean(userData.is_default),
-        createdAt: userData.address_created_at,
-        updatedAt: userData.address_updated_at
-      } : undefined;
-
-      // Fix cart redirect issue: profile is complete if they have ANY default address
-      const hasAnyAddress = Boolean(userData.address_id);
-      
-      Logger.debug(`[USER API] Profile completion check:`, {
-        userId: userData.id,
-        hasAnyAddress,
-        profileComplete: hasAnyAddress
-      });
-      
-      const response = {
-        id: userData.id,
-        email: userData.email,
-        firstName: userData.first_name,
-        lastName: userData.last_name,
-        phone: userData.phone,
-        role: userData.role,
-        profileComplete: hasAnyAddress, // Profile complete if they have any address
-        profileAddressId: userData.address_id, // Use default address as profile address
-        isLocal: Boolean(userData.is_local_customer),
-        profileAddress
-      };
-
-      res.json(response);
-    } catch (error) {
-      Logger.error("Error fetching user with address:", error);
-      res.status(500).json({ error: "Failed to fetch user data" });
-    }
-  });
+  // Legacy user endpoint redirected to unified auth
+  // (Unified auth routes handle /api/user now)
 
   // Activity tracking endpoint - fire and forget for performance
   // Fire-and-forget activity tracking with instant 202 response

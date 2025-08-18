@@ -64,11 +64,13 @@ The system employs a multi-layered security approach with Google OAuth integrati
 - **PRODUCTION**: Google OAuth will now redirect to https://cleanandflip.com/api/auth/google/callback
 - **VERIFIED**: No more replit.app domain redirects for users in production
 
-✅ **AUTHENTICATION & LOGGING OPTIMIZED** - Eliminated noisy 401 logs and improved UX:
-- **ROOT CAUSE**: Guest users receiving scary 401 errors and noisy WARN logs on normal browsing
-- **SOLUTION**: Guest-safe responses, smart 401 logging, and improved retry logic
-- **FIXED**: /api/user now returns 200 {"auth":false} for guests instead of 401 errors
-- **LOGGING**: Expected guest 401s demoted to INFO level, unexpected ones logged with debug details
-- **NEW ENDPOINTS**: /api/auth/state for explicit auth checking without 401 responses
-- **FRONTEND**: Added smart retry logic and refetchOnWindowFocus prevention
-- **VERIFIED**: Clean logs, better UX, and robust authentication flow
+✅ **AUTHENTICATION & SESSION SYSTEM COMPLETELY REBUILT** - Eliminated "stuck on blank account" issue:
+- **ROOT CAUSE**: Frontend cached stale user data while backend correctly logged out users
+- **SOLUTION**: Unified session configuration, reliable logout, and fresh auth state management
+- **NEW MIDDLEWARE**: session-config.ts with consistent cookie options and PostgreSQL store
+- **UNIFIED AUTH**: auth-unified.ts with guest-safe /api/user (always 200) and reliable /api/logout
+- **IMPROVED LOGGING**: auth-improved.ts with smart 401 handling (INFO for guests, WARN for issues)
+- **FRONTEND HOOK**: use-auth-unified.tsx with staleTime:0 and proper cache invalidation
+- **DATABASE SAFETY**: Confirmed lucky-poetry (dev) and muddy-moon (prod) environment isolation
+- **SESSION SECURITY**: 30-day TTL, HttpOnly cookies, trust proxy for HTTPS, PostgreSQL persistence
+- **VERIFIED**: No more "stuck account" states, clean authentication flow, reliable logout

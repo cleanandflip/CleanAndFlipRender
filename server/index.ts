@@ -1,7 +1,7 @@
 // server/index.ts
 import express from "express";
-import session from "express-session";
 import cookieParser from "cookie-parser";
+import { sessionMiddleware, preventAuthCache } from './middleware/session-config';
 import cors from "cors";
 import { DATABASE_URL, getDbHost, getAppEnv } from './config/database';
 import { applyMigrations } from "./db/migrate";
