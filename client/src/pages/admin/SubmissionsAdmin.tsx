@@ -281,28 +281,24 @@ export default function SubmissionsAdmin() {
                   </div>
                   
                   <div className="flex gap-2">
-                    <div className="glass glass-hover rounded-lg p-1 inline-block">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setViewingSubmission(submission)}
-                        className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </Button>
-                    </div>
-                    <div className="glass glass-hover rounded-lg p-1 inline-block">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingSubmission(submission)}
-                        className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setViewingSubmission(submission)}
+                      className="h-8 bg-blue-600 hover:bg-blue-700 text-white border border-blue-500 hover:border-blue-400 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/25"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingSubmission(submission)}
+                      className="h-8 bg-blue-600 hover:bg-blue-700 text-white border border-blue-500 hover:border-blue-400 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-blue-500/25"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
                   </div>
                 </div>
                 
