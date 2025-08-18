@@ -24,15 +24,22 @@ const tsvector = customType<{ data: string; notNull: false; default: false }>({
   },
 });
 
-// Session storage table (required for auth)
+// Session storage table (required for auth) - Enhanced for dashboard
 export const sessions = pgTable(
   "sessions",
   {
     sid: varchar("sid").primaryKey(),
     sess: jsonb("sess").notNull(),
     expire: timestamp("expire").notNull(),
+    userId: varchar("user_id"),
+    ip: varchar("ip"),
+    userAgent: text("user_agent"),
+    lastSeenAt: timestamp("last_seen_at").defaultNow(),
   },
-  (table) => [index("IDX_session_expire").on(table.expire)]
+  (table) => [
+    index("IDX_session_expire").on(table.expire),
+    index("idx_sessions_user_seen").on(table.userId, table.lastSeenAt),
+  ]
 );
 
 // REMOVED: Internal error tracking tables - not needed for now
@@ -75,11 +82,53 @@ export const users = pgTable("users", {
   authProvider: varchar("auth_provider").default("local"), // 'local', 'google'
   isEmailVerified: boolean("is_email_verified").default(false),
   profileComplete: boolean("profile_complete").default(false),
+  // Dashboard enhancement columns
+  emailVerifiedAt: timestamp("email_verified_at"),
+  lastIp: varchar("last_ip"),
+  lastUserAgent: text("last_user_agent"),
+  mfaEnabled: boolean("mfa_enabled").default(false),
+  status: varchar("status").default("active"),
+  marketingOptIn: boolean("marketing_opt_in").default(false),
+  pictureUrl: text("picture_url"),
   // SSOT Profile address reference - nullable FK to addresses (VARCHAR to match existing DB)
   // REMOVED: profileAddressId - using SSOT address system
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// User OAuth identities table
+export const userIdentities = pgTable("user_identities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  provider: varchar("provider").notNull(), // 'google'
+  providerUserId: text("provider_user_id").notNull(), // Google sub
+  email: varchar("email"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_user_identities_user").on(table.userId),
+]);
+
+// Login events/audit table
+export const loginEvents = pgTable("login_events", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  email: varchar("email"),
+  provider: varchar("provider").notNull(), // 'password' | 'google'
+  method: varchar("method").notNull(), // 'signin' | 'signup' | 'refresh'
+  success: boolean("success").notNull(),
+  errorCode: text("error_code"),
+  ip: varchar("ip"),
+  userAgent: text("user_agent"),
+  country: varchar("country"),
+  region: varchar("region"),
+  city: varchar("city"),
+  riskScore: integer("risk_score").default(0),
+  sessionId: text("session_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_login_events_user_time").on(table.userId, table.createdAt),
+  index("idx_login_events_time").on(table.createdAt),
+]);
 
 // REMOVED: User onboarding table - no longer needed per user instructions
 
@@ -491,6 +540,17 @@ export const insertWishlistSchema = createInsertSchema(wishlists).omit({
   createdAt: true,
 });
 
+// New dashboard table insert schemas
+export const insertUserIdentitySchema = createInsertSchema(userIdentities).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertLoginEventSchema = createInsertSchema(loginEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 
@@ -539,6 +599,15 @@ export type InsertEquipmentSubmission = z.infer<typeof insertEquipmentSubmission
 
 export type Wishlist = typeof wishlists.$inferSelect;
 export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
+
+// New dashboard types
+export type UserIdentity = typeof userIdentities.$inferSelect;
+export type InsertUserIdentity = z.infer<typeof insertUserIdentitySchema>;
+
+export type LoginEvent = typeof loginEvents.$inferSelect;
+export type InsertLoginEvent = z.infer<typeof insertLoginEventSchema>;
+
+export type Session = typeof sessions.$inferSelect;
 
 // REMOVED: ActivityLog types - internal tracking not needed
 

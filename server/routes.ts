@@ -7,6 +7,13 @@ import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
 import { authMiddleware } from "./middleware/auth";
 import { authImprovements } from "./middleware/auth-improved";
+import { 
+  getEnhancedUsersList, 
+  getUserDetails, 
+  revokeUserSessions, 
+  revokeSession,
+  getSystemHealth 
+} from "./routes/admin-enhanced";
 import { upload, cloudinary } from "./config/cloudinary";
 import multer from 'multer';
 import cors from "cors";
@@ -2754,6 +2761,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add auth state endpoint for explicit auth checking
   app.get("/api/auth/state", authImprovements.authState);
+
+  // Enhanced admin routes
+  app.get("/api/admin/users", requireRole('developer'), getEnhancedUsersList);
+  app.get("/api/admin/users/:id", requireRole('developer'), getUserDetails);
+  app.post("/api/admin/users/:id/sessions/revoke", requireRole('developer'), revokeUserSessions);
+  app.post("/api/admin/sessions/:sid/revoke", requireRole('developer'), revokeSession);
+  app.get("/api/admin/system/health-enhanced", requireRole('developer'), getSystemHealth);
 
   // User endpoint - now guest-safe with better responses
   app.get("/api/user", authImprovements.guestSafeUser, async (req, res) => {

@@ -1,0 +1,339 @@
+🔧 Developer Dashboard Upgrade — Build-On-Top Spec (No rewrites)
+
+Scope lock: Only modify files used by the current /admin area (client + server). Keep layout, tabs, routes, and design system. Everything below is additive and backwards-compatible.
+
+Non-negotiables
+
+Keep dev/prod isolation (use the shared env.ts exports only; no direct process.env.* reads).
+
+All API calls remain relative + credentials:'include'.
+
+RBAC: /admin/* is Support/Developer only; PII (full IPs) is Developer-only with click-to-reveal.
+
+Health endpoints are public and mounted before auth.
+
+Do not create new dashboards; extend the existing tabs with new cards/columns/drawers.
+
+1) Database: additive objects (run in dev = lucky-poetry and prod = muddy-moon)
+
+Create migration 001_dashboard_foundation.sql and apply to both DBs via env vars (DEV_DATABASE_URL, PROD_DATABASE_URL). Do not hardcode DSNs.
+
+-- Users enrichment
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS auth_provider           text,      -- 'password' | 'google' | 'both'
+  ADD COLUMN IF NOT EXISTS email_verified_at       timestamptz,
+  ADD COLUMN IF NOT EXISTS last_login_at           timestamptz,
+  ADD COLUMN IF NOT EXISTS last_ip                 inet,
+  ADD COLUMN IF NOT EXISTS last_user_agent         text,
+  ADD COLUMN IF NOT EXISTS mfa_enabled             boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS role                    text DEFAULT 'user',   -- 'user'|'support'|'developer'
+  ADD COLUMN IF NOT EXISTS status                  text DEFAULT 'active',
+  ADD COLUMN IF NOT EXISTS stripe_customer_id      text,
+  ADD COLUMN IF NOT EXISTS marketing_opt_in        boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS picture_url             text;
+
+CREATE INDEX IF NOT EXISTS idx_users_email        ON public.users (email);
+CREATE INDEX IF NOT EXISTS idx_users_last_login   ON public.users (last_login_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_role         ON public.users (role);
+
+-- OAuth identity linker
+CREATE TABLE IF NOT EXISTS public.user_identities (
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id          uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  provider         text NOT NULL,          -- 'google'
+  provider_user_id text NOT NULL,          -- Google sub
+  email            text,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (provider, provider_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_user_identities_user ON public.user_identities (user_id);
+
+-- Login events/audit
+CREATE TABLE IF NOT EXISTS public.login_events (
+  id         bigserial PRIMARY KEY,
+  user_id    uuid NULL REFERENCES public.users(id) ON DELETE SET NULL,
+  email      text NULL,
+  provider   text NOT NULL,      -- 'password' | 'google'
+  method     text NOT NULL,      -- 'signin' | 'signup' | 'refresh'
+  success    boolean NOT NULL,
+  error_code text NULL,
+  ip         inet NULL,
+  user_agent text NULL,
+  country    text NULL,
+  region     text NULL,
+  city       text NULL,
+  risk_score int NULL DEFAULT 0,
+  session_id text NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_login_events_user_time ON public.login_events (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_login_events_time      ON public.login_events (created_at DESC);
+
+-- Sessions introspection (if table is ours)
+ALTER TABLE public.sessions
+  ADD COLUMN IF NOT EXISTS user_id      uuid,
+  ADD COLUMN IF NOT EXISTS ip           inet,
+  ADD COLUMN IF NOT EXISTS user_agent   text,
+  ADD COLUMN IF NOT EXISTS last_seen_at timestamptz DEFAULT now();
+CREATE INDEX IF NOT EXISTS idx_sessions_user_seen ON public.sessions (user_id, last_seen_at DESC);
+
+-- Products: missing column (safe, idempotent)
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS continue_selling_when_out_of_stock boolean NOT NULL DEFAULT false;
+
+-- Aggregates for Users tab
+CREATE MATERIALIZED VIEW IF NOT EXISTS public.user_aggregate AS
+SELECT
+  u.id,
+  count(DISTINCT o.id) AS orders_count,
+  coalesce(sum(oi.quantity * oi.unit_price), 0)::numeric(12,2) AS lifetime_value,
+  max(o.created_at) AS last_order_at,
+  max(le.created_at) FILTER (WHERE le.success) AS last_success_login_at
+FROM public.users u
+LEFT JOIN public.orders o       ON o.user_id = u.id
+LEFT JOIN public.order_items oi ON oi.order_id = o.id
+LEFT JOIN public.login_events le ON le.user_id = u.id
+GROUP BY u.id;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_aggregate_id ON public.user_aggregate (id);
+
+
+After deploy to each environment:
+
+REFRESH MATERIALIZED VIEW CONCURRENTLY public.user_aggregate;
+
+2) Auth pipeline (augment existing flow only)
+
+On every login (password or Google):
+
+Upsert user_identities (provider='google', provider_user_id=sub).
+
+Set/merge users.auth_provider → 'password' | 'google' | 'both'.
+
+Update users.last_login_at, last_ip, last_user_agent.
+
+Insert into login_events with {user_id,email,provider,method:'signin',success:true,ip,ua,session_id}.
+
+On failures: insert with success=false and error_code.
+
+On session create:
+
+Save sessions.user_id, sessions.ip, sessions.user_agent; bump last_seen_at occasionally (~5 min).
+
+3) API: extend existing /admin endpoints (no new sections outside)
+
+All /api/admin/* require role ∈ ('support','developer'). Only developer sees full PII.
+
+Users list (extend current handler)
+
+GET /api/admin/users?query=&provider=&role=&status=&page=1&pageSize=25&sort=last_login_at:desc
+
+Return per row:
+
+id, email, first_name, last_name, role, status
+
+auth_provider, providers[] (from user_identities)
+
+email_verified_at, mfa_enabled
+
+last_login_at, last_ip (masked unless developer), last_user_agent (optional)
+
+sessions_count, orders_count, lifetime_value, joined
+
+User 360 (extend current show)
+
+GET /api/admin/users/:id
+Return sections:
+
+account (id, email, name, picture_url, role, status, verified, stripe_customer_id, marketing_opt_in)
+
+auth (auth_provider, identities[], mfa_enabled, last_login_at, last_ip/ua)
+
+sessions (active sessions with sid, ip, ua, created_at, last_seen_at)
+
+activity (login_events last 50: success/fail, provider, geo/ip/ua, risk_score)
+
+commerce (orders summary: count, LTV, last order; last 10 orders)
+
+addresses (shipping/billing)
+
+emails (last 20 transactional)
+
+notes (admin)
+
+Sessions management
+
+GET /api/admin/users/:id/sessions
+
+POST /api/admin/users/:id/sessions/revoke (all)
+
+POST /api/admin/sessions/:sid/revoke (single)
+
+System overview (extend current)
+
+Add fields: env, nodeVersion, dbHost, uptime, pid, timezone, dbLatency, apiP95, wsClients, pendingMigrations, searchIndexStatus, lastWebhook{at,status,error}, slowQueries[].
+
+Stripe summary (extend current)
+
+Add: mode (test/live), accountId, lastWebhookAt, lastWebhookStatus, lastError.
+
+Health (public)
+
+Ensure:
+
+/api/healthz returns { ok:true, env, dbHost, database } public
+
+Aliases /health, /api/admin/system/health → 307 to /api/healthz
+
+/api/user guest-safe (optional but recommended)
+
+Return 200 {auth:false} for guests (instead of 401) to reduce noise. If you keep 401, demote log level for this specific path when no session.
+
+4) UI: inside existing /admin tabs only
+
+Re-use existing cards/tables/drawers and styling.
+
+Products tab
+
+Add column ContinueWhenOOS (toggle).
+
+Add Created/Updated columns.
+
+Bulk action: toggle ContinueWhenOOS.
+
+Metric card: % Low Stock; small “Reindex search” action (per item & bulk).
+
+Categories tab
+
+Columns: ProductsCount, Created, Updated.
+
+Action: Merge categories (modal → server consolidates).
+
+Submissions tab
+
+Drawer timeline: status changes (who/when), attachments, submitter stats (prior submissions, trust score).
+
+Approve → scaffold product; Reject → canned reasons.
+
+Analytics tab
+
+Time range picker (Today/7d/30d/Custom).
+
+Add tiles: Active Users, Low-stock SKUs, Searches (24h).
+
+Keep existing charts; add drill-downs to Products/Users with the selected window.
+
+Users tab (main upgrade)
+
+Table columns
+
+Avatar/Name, Email, Role, Auth Provider (Password/Google/Both), Email Verified, MFA
+
+Last Login, Last IP (masked unless Developer), Sessions (active)
+
+Orders, LTV, Joined, Status
+
+Filters
+
+Provider, Role, Status, MFA, Verified, Joined range, Last-login range
+
+Row actions
+
+View 360 (drawer), Revoke sessions, Force password reset, Toggle MFA, Change role, Disable/Enable
+
+User 360 drawer
+
+Account, Auth & Security (providers + Google sub), Sessions (device/IP/UA/LastSeen; revoke), Activity (login events), Commerce (orders/LTV), Addresses, Emails, Notes
+
+PII reveal: eye icon → confirm → show full IPs (Developer only) and write to audit_log
+
+System tab
+
+Environment card: APP_ENV, NODE_ENV, DB host name, uptime, PID, timezone
+
+Health checks: DB latency, API p95, WS clients, pending migrations, search index status, last webhook + status
+
+Database card: host, row counts (users, orders, products)
+
+Slow queries: top 5 (pg_stat_statements if available)
+
+Settings sub-panel: low-stock threshold, analytics retention days, login-event retention days
+
+Stripe tab
+
+Header: Mode, Account ID, Last webhook time/status, Last error
+
+Table (time range): id, amount, status, customer(email), link to Stripe
+
+Buttons: Sync everything (idempotent), Retry last failed webhook
+
+5) Privacy & masking
+
+Default mask IPs as a.b.c.xxx. Only developer can click “Reveal PII” → show full IP for the session; log an audit_log entry with actor, userId, field revealed, timestamp.
+
+Retention: keep raw login_events ≤ 90 days; aggregate thereafter (configurable in System → Settings).
+
+6) Logging
+
+For known anonymous paths (/api/user if 401 on guest), log as INFO with (guest) suffix.
+
+On real 401s elsewhere, log structured context:
+
+{ path, hasCookie, hasSession, origin, referer, userAgent }
+
+Add admin UI metrics: { page:'/admin/users', ttfb, renderMs, rows } to existing telemetry.
+
+7) Testing & Acceptance
+
+DB
+
+Migration applies cleanly to both DBs (lucky-poetry & muddy-moon).
+
+REFRESH MATERIALIZED VIEW CONCURRENTLY public.user_aggregate; completes.
+
+Auth
+
+Password & Google sign-in write login_events, update users.last_login_at/ip/ua, maintain user_identities.
+
+Users tab
+
+Table populates new columns; filters and sorting work; IP masked for Support, full for Developer after reveal.
+
+System tab
+
+Shows APP_ENV and the correct DB host for the running environment; health checks are green.
+
+Health
+
+/api/healthz returns 200 without auth; /health & /api/admin/system/health redirect to it.
+
+No regressions
+
+Existing admin navigation, cards, Live Sync indicators, and styling remain intact.
+
+8) Guardrails & flags
+
+Wrap all new UI blocks with ADMIN_ENHANCED feature flag (env or runtime toggle) so we can disable quickly if needed.
+
+Keep the environment guard you already installed; do not add any code that infers env from hostname/port.
+
+9) Small helpers (use; don’t rewrite)
+
+Masking
+
+export const maskIp = (ip?: string, canViewFull?: boolean) =>
+  !ip ? '-' : canViewFull ? ip : ip.replace(/\.\d+$/, '.xxx');
+
+
+React Query (avoid 401 loops)
+
+useQuery({
+  queryKey: ['admin','users', params],
+  queryFn: fetchUsers,
+  refetchOnWindowFocus: false,
+  retry: (count, err: any) => {
+    const s = err?.status ?? err?.response?.status;
+    return s >= 500 && count < 2; // don't retry unauth
+  },
+});
+
+Done = All acceptance checks pass, /admin UX unchanged except for the new information and actions, and no environment/PII leaks.
