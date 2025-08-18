@@ -344,6 +344,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/health', healthLive);
   app.get('/health/live', healthLive);
   app.get('/health/ready', healthReady);
+  
+  // Universal Environment System health endpoint
+  try {
+    const { universalHealth } = await import('./routes/universal-health');
+    app.use(universalHealth);
+    Logger.debug('✅ Universal Environment System health endpoint mounted');
+  } catch (error: any) {
+    Logger.warn('🟡 Universal health endpoint failed to mount:', error?.message || error);
+  }
 
   // GEOApify Proxy with caching and proper error handling
   const geocodeCache = new LRUCache<string, any>({ max: 500, ttl: 1000 * 60 * 60 }); // 1h cache

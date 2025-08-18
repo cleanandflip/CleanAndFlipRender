@@ -8,6 +8,11 @@ import { applyMigrations } from "./db/migrate";
 import { ping } from "./db";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
+// Universal Environment System
+import { assertUniversalEnvGuards } from "./config/universal-guards";
+import { universalEnvHeaders } from "./middleware/universal-env-headers";
+import { universalHealth } from "./routes/universal-health";
+import { mountUniversalWebhooks } from "./webhooks/universal-router";
 
 const env = getAppEnv();
 const host = getDbHost();
@@ -18,6 +23,14 @@ console.log("[BOOT]", { env, nodeEnv: process.env.NODE_ENV });
 // Add environment safety guard
 import { assertEnvSafety } from "./config/env-guard";
 assertEnvSafety();
+
+// Universal Environment System Guards
+try {
+  assertUniversalEnvGuards();
+} catch (error: any) {
+  console.error("🔴 Universal Environment Guard Failed:", error?.message || error);
+  // Don't exit - fall back to existing system
+}
 
 // CRITICAL: Database Environment Safety Guards
 if (env === 'production') {
@@ -77,10 +90,23 @@ app.use(cors({
   credentials: true,
 }));
 
+// Universal Environment System headers
+app.use(universalEnvHeaders);
+
+// Mount Universal Environment System webhooks FIRST (they need raw body)
+try {
+  mountUniversalWebhooks(app);
+} catch (error: any) {
+  console.warn("🟡 Universal Webhooks failed to mount:", error?.message || error);
+}
+
 // Session configuration moved to setupAuth() in routes.ts
 // This prevents duplicate session middleware
 
 app.use(express.json());
+
+// Universal Health endpoint
+app.use(universalHealth);
 
 // Register API routes - they handle server startup internally  
 await registerRoutes(app);

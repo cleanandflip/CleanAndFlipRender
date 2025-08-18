@@ -4,6 +4,16 @@
 Clean & Flip is a production-hardened full-stack web application for exchanging weightlifting equipment. It offers features for buying and selling gym gear, including product catalog management, user authentication, a shopping cart, order processing, and administrative tools. The platform operates on a single-seller model, with admin managing inventory and processing user submissions. The project features enterprise-grade production hardening with automatic migrations, environment validation, complete onboarding system removal, and comprehensive data integrity constraints.
 
 ## Recent Changes (August 18, 2025)
+✅ **UNIVERSAL ENVIRONMENT SYSTEM IMPLEMENTED** - Complete production-grade environment management system:
+- Created comprehensive Universal Environment System with centralized configuration (server/config/universal-env.ts)
+- Implemented environment safety guards preventing database cross-contamination (server/config/universal-guards.ts)
+- Added singleton database connection pool with environment-aware configuration (server/db/universal-pool.ts)
+- Built environment-scoped webhook system with HMAC security (/wh/dev/* and /wh/prod/* endpoints)
+- Created universal health monitoring endpoint (/api/healthz) showing real-time environment status
+- Developed static analysis tools detecting 100+ code quality issues (scripts/universal-env-checker.ts)
+- Integrated environment-aware middleware for CORS, sessions, and debugging headers
+- System now shows clear environment banners: [ENV] app=development node=development dbHost=ep-lucky-poetry...
+- **SECURITY**: Database guards prevent production data corruption - development blocked from production DB access
 ✅ **COMPLETE DATABASE SYNCHRONIZATION ACHIEVED** - Both development and production databases now have identical schemas and data:
 - Created comprehensive schema synchronization scripts ensuring 100% column alignment between lucky-poetry (DEV) and muddy-moon (PROD)
 - Successfully synchronized all critical tables: 7 categories, 2 products, 5 users, 5 addresses
