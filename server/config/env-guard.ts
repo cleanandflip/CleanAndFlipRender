@@ -14,12 +14,27 @@ export function assertEnvSafety() {
     );
   }
 
-  // Extra opinionated safety rails (optional, keep if helpful):
+  // Extra opinionated safety rails - prevent cross-environment contamination:
   if (APP_ENV !== "production") {
-    // In dev/preview/staging we defensively forbid known prod hosts if the user forgot EXPECTED_DB_HOST
-    const knownProdHosts = (process.env.KNOWN_PROD_HOSTS || "").split(",").map(s => s.trim()).filter(Boolean);
-    if (knownProdHosts.length && knownProdHosts.includes(DB_HOST)) {
-      throw new Error(`ENV_GUARD: Dev-like env (${APP_ENV}) cannot use known prod host ${DB_HOST}`);
+    // Development MUST use lucky-poetry database
+    const devHost = "ep-lucky-poetry-aetqlg65-pooler.c-2.us-east-2.aws.neon.tech";
+    const prodHost = "ep-muddy-moon-aeggx6le-pooler.c-2.us-east-2.aws.neon.tech";
+    const oldDevHost = "ep-lingering-flower-afk8pi6o.c-2.us-west-2.aws.neon.tech";
+    
+    if (DB_HOST === prodHost) {
+      throw new Error(`ENV_GUARD: Development environment cannot use production database (${prodHost})`);
+    }
+    if (DB_HOST === oldDevHost) {
+      throw new Error(`ENV_GUARD: Development environment cannot use old database (${oldDevHost}). Use lucky-poetry only.`);
+    }
+    if (DB_HOST !== devHost) {
+      console.warn(`⚠️  ENV_GUARD: Development should use ${devHost}, but using ${DB_HOST}`);
+    }
+  } else {
+    // Production MUST use muddy-moon database
+    const prodHost = "ep-muddy-moon-aeggx6le-pooler.c-2.us-east-2.aws.neon.tech";
+    if (DB_HOST !== prodHost) {
+      throw new Error(`ENV_GUARD: Production environment MUST use muddy-moon database (${prodHost}), not ${DB_HOST}`);
     }
   }
 
