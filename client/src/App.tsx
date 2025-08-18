@@ -17,6 +17,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { Analytics } from "@/components/Analytics";
 import { PWAInstaller } from "@/components/PWAInstaller";
 import { useWebSocketState } from "@/hooks/useWebSocketState";
+import { EmergencyLogout } from "@/components/EmergencyLogout";
 
 
 // Lazy load ALL pages for optimal performance
@@ -199,6 +200,7 @@ function App() {
         <AuthProvider>
           <>
             <Toaster />
+            <EmergencyLogout />
             <Router />
           </>
         </AuthProvider>
