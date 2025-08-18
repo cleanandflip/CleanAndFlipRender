@@ -54,33 +54,19 @@ export function SystemTab() {
     return `${hours}h ${minutes}m`;
   };
 
-  // System status determination with proper logic
+  // System status determination - use backend status directly
   const getSystemStatus = () => {
     if (!systemHealth?.system) return { status: 'unknown', color: 'gray' };
     
-    const { database, memory, performance } = systemHealth.system;
+    // Use the status from the backend system health response
+    const backendStatus = systemHealth.system.status;
     
-    // Critical conditions
-    if (database?.status !== 'connected') {
-      return { status: 'critical', color: 'red' };
-    }
-    
-    if (memory && memory.used > memory.total * 0.9) {
-      return { status: 'critical', color: 'red' };
-    }
-    
-    // Warning conditions
-    if (memory && memory.used > memory.total * 0.75) {
-      return { status: 'warning', color: 'yellow' };
-    }
-    
-    if (performance && performance.avgResponseTime > 2000) {
-      return { status: 'warning', color: 'yellow' };
-    }
-    
-    // If database is connected and no critical issues, system is healthy
-    if (database?.status === 'connected') {
+    if (backendStatus === 'healthy') {
       return { status: 'healthy', color: 'green' };
+    } else if (backendStatus === 'warning') {
+      return { status: 'warning', color: 'yellow' };
+    } else if (backendStatus === 'critical') {
+      return { status: 'critical', color: 'red' };
     }
     
     return { status: 'unknown', color: 'gray' };
