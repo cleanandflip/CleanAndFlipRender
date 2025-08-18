@@ -358,15 +358,13 @@ function DashboardContent() {
                     Start shopping to see your order history here.
                   </p>
                   <SmartLink href="/products">
-                    <div className="glass glass-hover rounded-lg p-1 inline-block">
-                      <Button 
-                        variant="primary"
-                        size="sm"
-                        className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        Browse Products
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="primary"
+                      size="sm"
+                      className="h-8 bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                    >
+                      Browse Products
+                    </Button>
                   </SmartLink>
                 </div>
               ) : (
@@ -413,15 +411,13 @@ function DashboardContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bebas text-2xl">EQUIPMENT SUBMISSIONS</h2>
                 <SmartLink href="/sell-to-us">
-                  <div className="glass glass-hover rounded-lg p-1 inline-block">
-                    <Button 
-                      variant="primary"
-                      size="sm"
-                      className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      Sell More Equipment
-                    </Button>
-                  </div>
+                  <Button 
+                    variant="primary"
+                    size="sm"
+                    className="h-8 bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                  >
+                    Sell More Equipment
+                  </Button>
                 </SmartLink>
               </div>
 
@@ -484,15 +480,13 @@ function DashboardContent() {
                   </p>
                   {submissionTab === 'open' && (
                     <SmartLink href="/sell-to-us">
-                      <div className="glass glass-hover rounded-lg p-1 inline-block">
-                        <Button 
-                          variant="primary"
-                          size="sm"
-                          className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        >
-                          Sell Equipment
-                        </Button>
-                      </div>
+                      <Button 
+                        variant="primary"
+                        size="sm"
+                        className="h-8 bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                      >
+                        Sell Equipment
+                      </Button>
                     </SmartLink>
                   )}
                 </div>
@@ -521,34 +515,30 @@ function DashboardContent() {
                           </div>
                           
                           <div className="flex gap-2">
-                            <div className="glass glass-hover rounded-lg p-1 inline-block">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => {
-                                  const trackUrl = `/track-submission?ref=${encodeURIComponent(submission.referenceNumber)}`;
-                                  console.log('🔍 Navigating to:', trackUrl);
-                                  window.location.href = trackUrl;
-                                }}
-                                className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                              >
-                                <Eye className="w-4 h-4 mr-1" />
-                                Track
-                              </Button>
-                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                const trackUrl = `/track-submission?ref=${encodeURIComponent(submission.referenceNumber)}`;
+                                console.log('🔍 Navigating to:', trackUrl);
+                                window.location.href = trackUrl;
+                              }}
+                              className="h-8 bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Track
+                            </Button>
                             
                             {canCancelSubmission(submission) && (
-                              <div className="glass glass-hover rounded-lg p-1 inline-block">
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => setCancellingSubmission(submission)}
-                                  className="h-8 bg-red-600 hover:bg-red-700 text-white border border-red-600 hover:border-red-700 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                >
-                                  <X className="w-4 h-4 mr-1" />
-                                  Cancel
-                                </Button>
-                              </div>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => setCancellingSubmission(submission)}
+                                className="h-8 bg-red-600 hover:bg-red-700 text-white border border-red-600 hover:border-red-700 transition-all duration-300"
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Cancel
+                              </Button>
                             )}
                           </div>
                         </div>
@@ -645,42 +635,34 @@ function DashboardContent() {
                     Account Settings
                   </h3>
                   <div className="space-y-3">
-                    <div className="glass glass-hover rounded-lg p-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        Change Password
-                      </Button>
-                    </div>
-                    <div className="glass glass-hover rounded-lg p-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        Email Preferences
-                      </Button>
-                    </div>
-                    <div className="glass glass-hover rounded-lg p-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        Privacy Settings
-                      </Button>
-                    </div>
-                    <div className="glass glass-hover rounded-lg p-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        Download Data
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                    >
+                      Change Password
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                    >
+                      Email Preferences
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                    >
+                      Privacy Settings
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="w-full h-8 justify-start bg-white hover:bg-gray-100 text-black border border-gray-300 hover:border-gray-400 transition-all duration-300"
+                    >
+                      Download Data
+                    </Button>
                   </div>
                 </div>
               </div>
