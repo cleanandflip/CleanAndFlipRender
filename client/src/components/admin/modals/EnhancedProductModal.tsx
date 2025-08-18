@@ -320,14 +320,14 @@ export function EnhancedProductModal({ product, onClose, onSave }: ProductModalP
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 animate-fadeIn"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
     >
       <div 
         ref={modalRef}
-        className="bg-[#1e293b] border border-gray-700 rounded-xl w-full max-w-6xl h-[95vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp"
+        className="bg-[#1e293b] border border-gray-700 rounded-xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp"
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between bg-gradient-to-r from-[#1e293b] to-[#2d3748]">
