@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import Dropdown from "@/components/ui/Dropdown";
 import type { DropdownOption } from "@/components/ui/Dropdown";
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+// Removed old Dialog imports - using custom modal styling
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -334,8 +334,13 @@ export default function SubmissionsAdmin() {
 
       {/* Edit Submission Modal - styled like Category Modal */}
       {editingSubmission && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-[#1e293b] border border-gray-700 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 animate-fadeIn"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingSubmission(null);
+          }}
+        >
+          <div className="bg-[#1e293b] border border-gray-700 rounded-xl w-full max-w-5xl h-[95vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between bg-gradient-to-r from-[#1e293b] to-[#2d3748]">
               <div>
@@ -367,8 +372,13 @@ export default function SubmissionsAdmin() {
 
       {/* View Submission Modal - styled like Category Modal */}
       {viewingSubmission && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-[#1e293b] border border-gray-700 rounded-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 animate-fadeIn"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setViewingSubmission(null);
+          }}
+        >
+          <div className="bg-[#1e293b] border border-gray-700 rounded-xl w-full max-w-7xl h-[95vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between bg-gradient-to-r from-[#1e293b] to-[#2d3748]">
               <div>
@@ -482,11 +492,12 @@ function EditSubmissionForm({
                 className="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 required
               >
-                {statusOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+                <option value="pending">Pending Review</option>
+                <option value="reviewing">Under Review</option>
+                <option value="approved">Approved</option>
+                <option value="declined">Declined</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="completed">Completed</option>
               </select>
             </div>
 
@@ -683,7 +694,11 @@ function ViewSubmissionDetails({ submission }: { submission: Submission }) {
             
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {submission.images.map((image, index) => (
-                <div key={index} className="group relative aspect-square rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500 transition-colors">
+                <div 
+                  key={index} 
+                  className="group relative aspect-square rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500 transition-colors cursor-pointer"
+                  onClick={() => window.open(image, '_blank')}
+                >
                   <img
                     src={image}
                     alt={`${submission.name} - Image ${index + 1}`}
@@ -692,6 +707,11 @@ function ViewSubmissionDetails({ submission }: { submission: Submission }) {
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
                   <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                     {index + 1} / {submission.images.length}
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="bg-blue-500/80 text-white px-3 py-1 rounded-full text-sm font-medium">
+                      Click to view full size
+                    </div>
                   </div>
                 </div>
               ))}
