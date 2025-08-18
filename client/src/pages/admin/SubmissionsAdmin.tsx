@@ -159,19 +159,21 @@ export default function SubmissionsAdmin() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="font-bebas text-4xl">SUBMISSIONS MANAGEMENT</h1>
-        <Button
-          onClick={async () => {
-            setIsRefreshing(true);
-            await refetch();
-            setTimeout(() => setIsRefreshing(false), 500);
-          }}
-          variant="outline"
-          className="glass border-border"
-          disabled={isRefreshing}
-        >
-          <RefreshCcw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-          {isRefreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
+        <div className="glass glass-hover rounded-lg p-1 inline-block">
+          <Button
+            onClick={async () => {
+              setIsRefreshing(true);
+              await refetch();
+              setTimeout(() => setIsRefreshing(false), 500);
+            }}
+            variant="outline"
+            className="h-8 bg-white hover:bg-gray-100 text-black border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            disabled={isRefreshing}
+          >
+            <RefreshCcw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -238,24 +240,28 @@ export default function SubmissionsAdmin() {
                   </div>
                   
                   <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setViewingSubmission(submission)}
-                      className="glass glass-hover rounded-lg"
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditingSubmission(submission)}
-                      className="glass glass-hover rounded-lg"
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
+                    <div className="glass glass-hover rounded-lg p-1 inline-block">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setViewingSubmission(submission)}
+                        className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                    </div>
+                    <div className="glass glass-hover rounded-lg p-1 inline-block">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingSubmission(submission)}
+                        className="h-8 bg-white hover:bg-gray-100 text-black transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 
