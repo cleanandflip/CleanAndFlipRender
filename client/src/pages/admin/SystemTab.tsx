@@ -472,7 +472,12 @@ export function SystemTab() {
                 <Database className={`w-8 h-8 ${dbStatus.status === 'healthy' ? 'text-green-400' : 'text-red-400'}`} />
                 <div className="flex-1">
                   <h3 className="text-white font-semibold">PostgreSQL Connection</h3>
-                  <p className="text-sm text-gray-400">Development database (lucky-poetry)</p>
+                  <p className="text-sm text-gray-400">
+                    {systemHealth?.system?.database?.environment && systemHealth?.system?.database?.name ? 
+                      `${systemHealth.system.database.environment === 'production' ? 'Production' : 'Development'} database (${systemHealth.system.database.name})` :
+                      'Database connection active'
+                    }
+                  </p>
                 </div>
                 <Badge className={`${dbStatus.status === 'healthy' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                   {dbStatus.status === 'healthy' ? 'Connected' : 'Error'}

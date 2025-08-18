@@ -12,6 +12,9 @@ export interface SystemHealth {
   database: {
     status: 'connected' | 'disconnected';
     latency: number;
+    host?: string;
+    environment?: 'development' | 'production';
+    name?: string;
   };
   performance: {
     avgResponseTime: number;
@@ -86,14 +89,40 @@ export class SystemMonitor {
     const memoryTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
     const memoryPercent = (memoryUsedMB / memoryTotalMB) * 100;
 
-    // Test database connection
+    // Test database connection and get environment info
     let dbStatus: 'connected' | 'disconnected' = 'connected';
     let dbLatency = 0;
+    let dbHost = '';
+    let dbEnvironment: 'development' | 'production' = 'development';
+    let dbName = '';
+    
     try {
       const { db } = await import('../db.js');
+      const { DATABASE_URL } = await import('../config/env.js');
+      
       const start = Date.now();
       await db.execute('SELECT 1');
       dbLatency = Date.now() - start;
+      
+      // Extract host and environment from DATABASE_URL
+      if (DATABASE_URL) {
+        const url = new URL(DATABASE_URL);
+        dbHost = url.hostname;
+        
+        // Determine environment based on hostname
+        if (dbHost.includes('muddy-moon')) {
+          dbEnvironment = 'production';
+          dbName = 'muddy-moon';
+        } else if (dbHost.includes('lingering-flower') || dbHost.includes('lucky-poetry')) {
+          dbEnvironment = 'development';
+          dbName = dbHost.includes('lucky-poetry') ? 'lucky-poetry' : 'lingering-flower';
+        } else {
+          // Fallback to APP_ENV detection
+          const { APP_ENV } = await import('../config/env.js');
+          dbEnvironment = APP_ENV as 'development' | 'production';
+          dbName = dbEnvironment === 'production' ? 'production-db' : 'development-db';
+        }
+      }
     } catch (error) {
       dbStatus = 'disconnected';
       dbLatency = -1;
@@ -127,7 +156,10 @@ export class SystemMonitor {
       },
       database: {
         status: dbStatus,
-        latency: dbLatency
+        latency: dbLatency,
+        host: dbHost,
+        environment: dbEnvironment,
+        name: dbName
       },
       performance: {
         avgResponseTime: Math.round(avgResponseTime),
