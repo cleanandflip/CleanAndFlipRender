@@ -25,7 +25,7 @@ export function DeliveryEligibilityBanner() {
         <div className="flex items-center gap-3">
           <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" aria-hidden="true" />
           <p className="text-green-800 dark:text-green-200 font-medium">
-            Free local delivery in your area • Most orders arrive in 2–4 hrs
+            Free local delivery in your area • Most orders arrive in 24–48 hrs
           </p>
         </div>
       </Card>
