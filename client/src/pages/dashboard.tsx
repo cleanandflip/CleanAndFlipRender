@@ -449,6 +449,7 @@ function DashboardContent() {
               ) : (
                 <div className="space-y-4">
                   {(submissions || []).map((submission) => {
+                    console.log('🔍 Dashboard submission data:', submission);
                     const StatusIcon = getStatusIcon(submission.status || 'pending');
                     
                     return (
@@ -465,12 +466,15 @@ function DashboardContent() {
                               </Badge>
                             </div>
                             <p className="text-sm text-text-secondary font-mono mb-1">
-                              {submission.referenceNumber}
+                              {submission.referenceNumber || 'No reference number'}
                             </p>
                           </div>
                           
                           <div className="flex gap-2">
-                            <SmartLink href={`/track-submission?ref=${submission.referenceNumber}`}>
+                            <SmartLink 
+                              href={`/track-submission?ref=${encodeURIComponent(submission.referenceNumber)}`}
+                              onClick={() => console.log('🔍 Dashboard Track clicked - ref:', submission.referenceNumber)}
+                            >
                               <div className="glass glass-hover rounded-lg p-1 inline-block">
                                 <Button 
                                   variant="ghost" 
