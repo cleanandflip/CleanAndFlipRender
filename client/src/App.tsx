@@ -40,7 +40,7 @@ const Contact = lazy(() => import("@/pages/contact"));
 const ShippingInfo = lazy(() => import("@/pages/shipping"));
 const LegalPrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
 const LegalTermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
-const ObservabilityPage = lazy(() => import("@/pages/observability"));
+// REMOVED: ObservabilityPage - internal error tracking not needed
 const AuthPage = lazy(() => import("@/pages/auth"));
 const FAQ = lazy(() => import("@/pages/faq"));
 const Reviews = lazy(() => import("@/pages/reviews"));
@@ -149,7 +149,7 @@ function Router() {
               <Route path={ROUTES.ADMIN} component={AdminDashboard} />
               <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
               <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
-              <Route path="/admin/observability" component={ObservabilityPage} />
+              {/* REMOVED: observability route - internal error tracking not needed */}
               
               {/* Legal Routes */}
               <Route path="/terms-of-service" component={LegalTermsOfService} />

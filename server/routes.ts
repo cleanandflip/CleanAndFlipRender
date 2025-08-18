@@ -48,7 +48,7 @@ import { Logger, LogLevel } from "./utils/logger";
 import { db } from "./db";
 // (deduped imports moved below)
 
-import observability from "./routes/observability";
+// REMOVED: observability routes - internal error tracking not needed
 import { getLocalityStatus } from "./locality/locality.controller";
 import { requireLocalCustomer } from "./middleware/requireLocalCustomer";
 import { modeFromProduct } from "../shared/fulfillment";
@@ -272,9 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const shippingRoutes = await import('./routes/shipping');
   app.use('/api/shipping', shippingRoutes.default);
   
-  // Observability error handler (dev tolerant)
-  const observabilityRoutes = await import('./routes/observability');
-  app.use('/api/observability', observabilityRoutes.default);
+  // REMOVED: observability routes - internal error tracking not needed
   
   // ONBOARDING REMOVED - Users browse freely, address required only at checkout
   
@@ -298,8 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Observability routes (local Sentry-style error tracking)
 // SSOT: Unified system
   
-  // New enhanced observability system with proper filtering and actions
-  // Mounted later in the file after other route definitions
+  // REMOVED: observability system - internal error tracking not needed
   
   // Client error logging is now handled at middleware level
   // No additional route needed since middleware handles it
@@ -4082,8 +4079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mount observability router
-  app.use(observability);
+  // REMOVED: observability router - internal error tracking not needed
   
   // Apply production optimizations (compression, static asset caching)
   if (process.env.NODE_ENV === "production") {

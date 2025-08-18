@@ -7,7 +7,7 @@ import {
   cartItems,
   addresses,
   equipmentSubmissions,
-  activityLogs,
+  // REMOVED: activityLogs - internal tracking not needed
   type User,
   type InsertUser,
   type Product,
@@ -24,8 +24,7 @@ import {
   type InsertAddress,
   type EquipmentSubmission,
   type InsertEquipmentSubmission,
-  type ActivityLog,
-  type InsertActivityLog,
+  // REMOVED: ActivityLog types - internal tracking not needed
   // userOnboarding removed - simplified flow without forced onboarding
 } from "@shared/schema";
 import { db } from "./db";
@@ -134,7 +133,7 @@ export interface IStorage {
   exportProductsToCSV(): Promise<string>;
   exportUsersToCSV(): Promise<string>;
   exportOrdersToCSV(): Promise<string>;
-  trackActivity(activity: InsertActivityLog): Promise<ActivityLog>;
+  // REMOVED: trackActivity - internal tracking not needed
   getAnalytics(): Promise<any>;
   
   // SSOT Address operations
@@ -1088,47 +1087,15 @@ export class DatabaseStorage implements IStorage {
   // Removed duplicate getAllUsers function
 
   async getAnalytics(): Promise<any> {
-    // Get REAL page views from last 7 days
-    const [pageViewsResult] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(activityLogs)
-      .where(
-        and(
-          eq(activityLogs.eventType, 'page_view'),
-          sql`${activityLogs.createdAt} > NOW() - INTERVAL '7 days'`
-        )
-      );
-
-    // Get REAL active users (unique users in last hour)
-    const [activeUsersResult] = await db
-      .select({ count: sql<number>`count(distinct ${activityLogs.userId})` })
-      .from(activityLogs)
-      .where(
-        and(
-          sql`${activityLogs.createdAt} > NOW() - INTERVAL '1 hour'`,
-          isNotNull(activityLogs.userId)
-        )
-      );
-
-    // Calculate REAL conversion rate based on visits vs orders
-    const [visitsResult] = await db
-      .select({ count: sql<number>`count(distinct ${activityLogs.sessionId})` })
-      .from(activityLogs)
-      .where(
-        and(
-          eq(activityLogs.eventType, 'page_view'),
-          sql`${activityLogs.createdAt} > NOW() - INTERVAL '7 days'`
-        )
-      );
+    // REMOVED: Activity logs analytics - using simplified metrics
 
     const [orderCountResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(orders)
       .where(sql`${orders.createdAt} > NOW() - INTERVAL '7 days'`);
 
-    const visits = Number(visitsResult.count || 1);
     const orderCount = Number(orderCountResult.count || 0);
-    const conversionRate = visits > 0 ? (orderCount / visits * 100) : 0;
+    const conversionRate = 0; // SIMPLIFIED: no visit tracking without activity logs
 
     // Get average order value from delivered orders (fix enum error)
     const [avgOrderResult] = await db
@@ -1150,29 +1117,16 @@ export class DatabaseStorage implements IStorage {
       .orderBy(sql`sum(${orderItems.quantity}) desc`)
       .limit(5);
 
-    // Get recent activity from activity_logs (last 10 entries)
-    const recentActivity = await db
-      .select({
-        id: activityLogs.id,
-        type: activityLogs.eventType,
-        details: sql<string>`CASE 
-          WHEN ${activityLogs.eventType} = 'page_view' THEN 'Page view: ' || COALESCE(${activityLogs.page}, 'Unknown')
-          WHEN ${activityLogs.eventType} = 'user_action' THEN 'User action: ' || COALESCE(${activityLogs.action}, 'Unknown')
-          ELSE ${activityLogs.eventType}
-        END`,
-        timestamp: activityLogs.createdAt
-      })
-      .from(activityLogs)
-      .orderBy(desc(activityLogs.createdAt))
-      .limit(10);
+    // REMOVED: Activity logs query - internal tracking not needed
+    const recentActivity: any[] = [];
 
     return {
       pageViews: { 
-        current: Number(pageViewsResult.count || 0),
-        change: 0 // Would need historical tracking for real change calculation
+        current: 0, // SIMPLIFIED: activity tracking removed
+        change: 0
       },
       activeUsers: { 
-        current: Number(activeUsersResult.count || 0),
+        current: 0, // SIMPLIFIED: activity tracking removed
         change: 0
       },
       conversionRate: { 
@@ -1184,7 +1138,7 @@ export class DatabaseStorage implements IStorage {
         change: 0 
       },
       topProducts,
-      recentActivity
+      recentActivity: [] // SIMPLIFIED: no activity tracking
     };
   }
 
@@ -1582,11 +1536,7 @@ export class DatabaseStorage implements IStorage {
 
   // Removed duplicate exportOrdersToCSV function
 
-  // Activity tracking for real analytics
-  async trackActivity(activity: InsertActivityLog): Promise<ActivityLog> {
-    const [newActivity] = await db.insert(activityLogs).values(activity).returning();
-    return newActivity;
-  }
+  // REMOVED: Activity tracking - internal tracking not needed
 
 
 
