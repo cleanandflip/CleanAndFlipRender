@@ -29,25 +29,20 @@ interface Submission {
   id: string;
   referenceNumber: string;
   name: string;
+  equipmentName?: string;
   brand?: string;
-  category: string;
   condition: string;
   description?: string;
   images?: string[];
-  askingPrice?: number;
+  askingPrice?: string | number;
   weight?: number;
-  dimensions?: string;
-  yearPurchased?: number;
-  originalPrice?: number;
-  sellerEmail: string;
-  sellerPhone?: string;
-  sellerLocation?: string;
-  notes?: string;
   status: string;
   adminNotes?: string;
-  offeredPrice?: number;
   createdAt: string;
-  updatedAt?: string;
+  user?: {
+    name: string;
+    email: string;
+  };
 }
 
 const statusOptions = [
@@ -78,10 +73,15 @@ export default function SubmissionsAdmin() {
   const [viewingSubmission, setViewingSubmission] = useState<Submission | null>(null);
 
   // Fetch all submissions
-  const { data: submissions, isLoading } = useQuery({
+  const { data: submissionsResponse, isLoading } = useQuery({
     queryKey: ['/api/admin/submissions'],
     queryFn: async () => await apiRequest('GET', '/api/admin/submissions'),
   });
+
+  // Extract submissions array from API response
+  const submissions = (submissionsResponse?.data || []) as Submission[];
+  const submissionsTotal = submissionsResponse?.total || 0;
+  const submissionsPending = submissionsResponse?.pending || 0;
 
   // Update submission mutation
   const updateSubmissionMutation = useMutation({
@@ -122,12 +122,12 @@ export default function SubmissionsAdmin() {
   };
 
   // Filter submissions  
-  const filteredSubmissions = (submissions as Submission[])?.filter((submission: Submission) => {
+  const filteredSubmissions = submissions?.filter((submission: Submission) => {
     const matchesSearch = 
       submission.referenceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       submission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       submission.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      submission.sellerEmail.toLowerCase().includes(searchTerm.toLowerCase());
+      submission.user?.email.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || submission.status === statusFilter;
     
@@ -239,8 +239,8 @@ export default function SubmissionsAdmin() {
                     <p>{submission.brand || 'Not specified'}</p>
                   </div>
                   <div>
-                    <p className="text-text-secondary">Category</p>
-                    <p className="capitalize">{submission.category}</p>
+                    <p className="text-text-secondary">Submitter</p>
+                    <p>{submission.user?.email || 'Unknown'}</p>
                   </div>
                   <div>
                     <p className="text-text-secondary">Condition</p>
