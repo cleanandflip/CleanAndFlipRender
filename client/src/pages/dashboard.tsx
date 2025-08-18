@@ -426,7 +426,7 @@ function DashboardContent() {
                     onClick={() => setSubmissionTab('open')}
                     className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                       submissionTab === 'open'
-                        ? 'bg-white text-black'
+                        ? 'text-black bg-[#3b82f6]'
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >
