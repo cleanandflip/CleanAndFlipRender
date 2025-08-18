@@ -1,0 +1,257 @@
+Critical bugs & contradictions
+1) Conflicting environment identity (dev vs prod) in the same boot
+
+Evidence (same boot):
+
+APP_ENV=development … DB_HOST=<dev-host> ✅
+
+later: [ENV] app=production node=production dbHost=<prod-host> ❌ (contradicts above)
+
+webhooks: Universal Webhooks mounted at /wh/prod/* while APP_ENV is development ❌
+
+Impact:
+Parts of the app think they’re prod and others dev. This can cause:
+
+webhooks to hit the wrong prefix/secret
+
+data writes to the wrong DB (contamination risk)
+
+cookies/CORS flags to be wrong
+
+Root cause: multiple config paths. You have:
+
+[ENV_DETECTION] 🔍 LOCALHOST DETECTED - Forcing DEVELOPMENT mode
+
+[ENV_CONFIG]/[ENV_GUARD] that say dev is selected
+
+another logger ([ENV] app=production…) computing env differently
+
+Fix (do all 3):
+
+Kill the auto-detector. Never “force dev” at runtime. Let APP_ENV decide.
+
+Remove any code that sets/overrides APP_ENV based on host/localhost/port.
+
+Single source of truth. Ensure every module imports from the same src/config/env.ts.
+
+Search & fix:
+
+grep -R "process\.env\." src server client ➜ replace direct reads with env.ts exports
+
+grep -R "\[ENV\]" src server ➜ update that logger to use APP_ENV, DB_HOST from env.ts
+
+Make webhook prefix use the same env (see item 3 below).
+
+Acceptance check (on boot, one line only):
+[ENV] app=development node=production dbHost=<dev-host> (in dev)
+or
+[ENV] app=production node=production dbHost=<prod-host> (in prod)
+
+2) You’re starting with NODE_ENV=production and printing dev
+
+Evidence:
+> NODE_ENV=production node dist/index.js
+[BOOT] { env: 'development', nodeEnv: 'production' }
+
+Impact:
+
+If any place derives “prod-ness” from NODE_ENV, you’ll get mixed cookie/CORS behavior again.
+
+Fix:
+
+Your runtime behavior should key off APP_ENV, not NODE_ENV.
+
+Keep NODE_ENV=production in deploy (fine for perf) but everywhere branch on APP_ENV.
+
+In session/CORS/webhook code, confirm you use APP_ENV === 'production', not NODE_ENV.
+
+3) Webhooks mounted under the wrong prefix
+
+Evidence:
+Universal Webhooks mounted at /wh/prod/* while APP_ENV=development.
+
+Impact:
+Dev webhooks will post to /wh/dev/* (if your SaaS is configured that way) and get 404, or worse, you’ll test against prod secrets.
+
+Fix:
+In your webhook router, mount using the shared constant from env.ts:
+
+// env.ts
+export const WEBHOOK_PREFIX = APP_ENV === 'production' ? '/wh/prod' : '/wh/dev';
+
+// router.ts
+app.use(WEBHOOK_PREFIX, router);
+
+
+Do not compute this elsewhere. If you already do this, it means one path still imports a different env helper—fix per #1.
+
+Acceptance check (dev): log should say
+Universal Webhooks mounted at /wh/dev/*
+
+🟠 High impact: safety & performance
+4) Schema/data work at boot can be destructive or wasteful
+
+Evidence:
+[MIGRATIONS] Dropping retired columns...
+Search vectors updated for existing products
+
+Impact:
+
+“Dropping retired columns” is destructive. If this ever runs in prod unexpectedly, you could lose data.
+
+“Update vectors for existing products” on every boot can be expensive.
+
+Fix:
+
+Run schema migrations in your deploy pipeline only (or behind APP_ENV === 'production' guard with a confirmation flag), not at every server boot.
+
+For search:
+
+Use an idempotent trigger approach (you have it) and avoid mass “update all” on every boot.
+
+Gate any bulk backfills behind an admin task (one-off).
+
+5) Redis caching disabled in production
+
+Evidence:
+Redis caching disabled by environment variable + later “Production-grade security measures now active”.
+
+Impact:
+Lower throughput; higher DB load.
+
+Fix:
+
+If you intend to disable cache in dev only, use:
+
+const enableCache = APP_ENV === 'production' && process.env.ENABLE_REDIS !== 'false';
+
+
+If Redis isn’t available in your deploy target, keep it off, but be aware of the perf cost. Consider Neon’s read replicas or caching layer instead.
+
+🟡 Medium: clarity & consistency
+6) Duplicate/confusing banners
+
+Evidence:
+[ENV_GUARD] … ok and ✅ UNIVERSAL_ENV_GUARD: ok and [ENV] app=… all mixed.
+
+Impact:
+Noise makes real errors harder to spot.
+
+Fix:
+Emit one environment banner and one guard line. Example:
+
+[ENV] app=development node=production dbHost=<dev-host>
+[ENV_GUARD] ok
+
+7) Session/CORS correctness (re-verify)
+
+What we want:
+
+secure: true and sameSite: 'none' only in production.
+
+Dev cookies: hostOnly domain, secure: false, sameSite: 'lax'.
+
+CORS origins come from env lists (dev vs prod).
+
+Quick code sanity:
+
+const isProd = APP_ENV === 'production';
+cookie: { secure: isProd, sameSite: isProd ? 'none' : 'lax', domain: isProd ? SESSION_COOKIE_DOMAIN : undefined }
+cors({ origin: CORS_ORIGINS, credentials: true });
+
+🧹 Waste / small papercuts
+
+You log both “Environment production” and earlier “APP_ENV=development”. Remove the “Environment production” log or make it read APP_ENV.
+
+Confirm app.set('trust proxy', 1) is enabled (Replit/forwarded traffic). Missing this breaks secure-cookie setting detection.
+
+WebSocket startup is fine; just ensure it never reads env directly—import from env.ts.
+
+If you still have a “LOCALHOST DETECTED” heuristic, delete it (see #1).
+
+✅ What to change right now (copy/paste plan)
+
+Delete any runtime auto-detection like:
+
+if (hostname === 'localhost' || process.env.PORT === '5000') APP_ENV = 'development'
+
+
+Never override APP_ENV at runtime.
+
+Enforce single env import:
+
+Replace all process.env.* usages with imports from src/config/env.ts.
+
+Replace all custom banners with:
+
+console.log(`[ENV] app=${APP_ENV} node=${process.env.NODE_ENV} dbHost=${DB_HOST}`);
+
+
+Fix webhook mount:
+
+// env.ts
+export const WEBHOOK_PREFIX = APP_ENV === 'production' ? '/wh/prod' : '/wh/dev';
+// router.ts
+app.use(WEBHOOK_PREFIX, router);
+
+
+Guard migrations:
+
+Remove automatic destructive steps at boot.
+
+Run migrations in CI/deploy step only, or gate behind an explicit flag + APP_ENV === 'production' check.
+
+Cache toggle:
+
+Only disable in dev. In prod, enable unless explicitly disabled.
+
+Add a canary health line (keep it forever):
+
+GET /api/healthz → { env, dbHost, database, role }
+
+
+Use it to confirm every instance is on the expected DB & env.
+
+🔬 Quick commands to hunt remaining landmines
+
+Run these locally to catch stragglers:
+
+# any direct env usage (should be only inside src/config/env.ts)
+grep -R "process\.env\." src server client | grep -v "src/config/env.ts"
+
+# legacy env banners or mixed loggers
+grep -R "^\[ENV\]\|ENV_DETECTION\|UNIVERSAL_ENV_GUARD" src server
+
+# hardcoded absolute URLs in client (should use relative/api helper)
+grep -R "https\?://" client/src | grep -vE "googleapis|stripe|cloudinary"
+
+# any webhook paths mounted without WEBHOOK_PREFIX
+grep -R "app\.post(.*webhook" src server
+grep -R "/wh/prod\|/wh/dev" src server
+
+
+Fix anything these surface by routing through env.ts.
+
+Final acceptance checks (do them right after you patch)
+
+Boot once in dev:
+
+Banner: [ENV] app=development node=production dbHost=<dev-host>
+
+Webhooks: … mounted at /wh/dev/*
+
+/api/healthz: { env: "development", dbHost: "<dev-host>" }
+
+Boot once in prod:
+
+Banner: [ENV] app=production node=production dbHost=<prod-host>
+
+Webhooks: … mounted at /wh/prod/*
+
+/api/healthz: { env: "production", dbHost: "<prod-host>" }
+
+Add to cart in dev doesn’t change prod DB; the reverse also true.
+
+No mass “update vectors” run on every boot; only trigger/backfill when needed.
+
+If you want, paste the small files where those conflicting logs are printed (the module that logs [ENV] app=production and the webhook mount snippet). I’ll rewrite them to always consume the shared env.ts so everything is 100% consistent

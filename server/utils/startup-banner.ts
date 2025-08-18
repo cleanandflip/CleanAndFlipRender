@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { logger } from '../config/logger';
 import { Logger } from '../utils/logger';
+import { APP_ENV } from '../config/env';
 
 export function displayStartupBanner(config: any) {
   console.clear(); // Clear console for clean start
@@ -10,7 +11,7 @@ export function displayStartupBanner(config: any) {
   Logger.info(chalk.cyan('================================================\n'));
   
   const status = [
-    { name: 'Environment', value: process.env.NODE_ENV || 'development', status: 'info' },
+    { name: 'Environment', value: APP_ENV, status: 'info' },
     { name: 'Port', value: config.port, status: 'info' },
     { name: 'Database', value: config.db ? 'Connected' : 'Failed', status: config.db ? 'success' : 'error' },
     { name: 'Redis Cache', value: config.redis ? 'Connected' : 'Disabled', status: config.redis ? 'success' : 'warning' },

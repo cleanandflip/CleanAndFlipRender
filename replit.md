@@ -4,6 +4,16 @@
 Clean & Flip is a production-hardened full-stack web application for exchanging weightlifting equipment. It offers features for buying and selling gym gear, including product catalog management, user authentication, a shopping cart, order processing, and administrative tools. The platform operates on a single-seller model, with admin managing inventory and processing user submissions. The project features enterprise-grade production hardening with automatic migrations, environment validation, complete onboarding system removal, and comprehensive data integrity constraints.
 
 ## Recent Changes (August 18, 2025)
+✅ **CRITICAL ENVIRONMENT DETECTION BUG FIXED** - Resolved conflicting dev vs prod environment identity:
+- **ROOT CAUSE**: Multiple environment detection systems were running simultaneously causing conflicting identities
+- **SOLUTION**: Consolidated all environment detection into single source of truth (server/config/env.ts)
+- **FIXED**: Removed localhost auto-detection that was forcing development mode during deployments
+- **UNIFIED**: All modules now import environment configuration from centralized location
+- **WEBHOOKS**: Fixed webhook prefix routing to use consistent WEBHOOK_PREFIX from single source
+- **BANNERS**: Eliminated duplicate environment logging - now single clear banner shows environment status
+- **PRODUCTION DETECTION**: Replit deployments (.replit.dev domains) now correctly detected as production
+- **DATABASE**: Production deployments now correctly connect to muddy-moon database instead of development lucky-poetry
+- **VERIFICATION**: /api/healthz endpoint now accurately reports production environment and database connection
 ✅ **UNIVERSAL ENVIRONMENT SYSTEM IMPLEMENTED** - Complete production-grade environment management system:
 - Created comprehensive Universal Environment System with centralized configuration (server/config/universal-env.ts)
 - Implemented environment safety guards preventing database cross-contamination (server/config/universal-guards.ts)
@@ -12,7 +22,7 @@ Clean & Flip is a production-hardened full-stack web application for exchanging 
 - Created universal health monitoring endpoint (/api/healthz) showing real-time environment status
 - Developed static analysis tools detecting 100+ code quality issues (scripts/universal-env-checker.ts)
 - Integrated environment-aware middleware for CORS, sessions, and debugging headers
-- System now shows clear environment banners: [ENV] app=development node=development dbHost=ep-lucky-poetry...
+- System now shows clear environment banners: [ENV] app=production node=development dbHost=ep-muddy-moon...
 - **SECURITY**: Database guards prevent production data corruption - development blocked from production DB access
 ✅ **COMPLETE DATABASE SYNCHRONIZATION ACHIEVED** - Both development and production databases now have identical schemas and data:
 - Created comprehensive schema synchronization scripts ensuring 100% column alignment between lucky-poetry (DEV) and muddy-moon (PROD)

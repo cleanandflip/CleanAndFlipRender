@@ -18,7 +18,7 @@ const env = getAppEnv();
 const host = getDbHost();
 
 // 1) Boot logs that must appear once
-console.log("[BOOT]", { env, nodeEnv: process.env.NODE_ENV });
+// Environment banner is handled in env.ts - no duplicate logging
 
 // Add environment safety guard
 import { assertEnvSafety } from "./config/env-guard";

@@ -2,8 +2,7 @@
 import { APP_ENV, DB_HOST, EXPECTED_DB_HOST, ENV_BANNER } from "./env";
 
 export function assertEnvSafety() {
-  console.log(ENV_BANNER);
-  console.log(`[ENV_GUARD] APP_ENV=${APP_ENV} DB_HOST=${DB_HOST}`);
+  // Environment information is logged in env.ts - no duplicate logging
 
   // If an expectation is provided, enforce it.
   if (EXPECTED_DB_HOST && EXPECTED_DB_HOST !== '<' && DB_HOST !== EXPECTED_DB_HOST) {
