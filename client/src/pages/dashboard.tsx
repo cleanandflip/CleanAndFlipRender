@@ -40,6 +40,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { apiRequest } from "@/lib/queryClient";
 import AddressesPanel from "@/components/dashboard/AddressesPanel";
+import { asArray, count, isNonEmptyArray } from "@/lib/safe";
 
 import type { Order, EquipmentSubmission } from "@shared/schema";
 
@@ -69,11 +70,12 @@ function DashboardContent() {
   // Initialize browser back button handling
   useBackButton();
   
-  const { data: orders = [] } = useQuery<Order[]>({
+  const { data: ordersData } = useQuery<Order[]>({
     queryKey: ["/api/orders"],
   });
+  const orders = asArray(ordersData);
 
-  const { data: submissions = [], isLoading: submissionsLoading, refetch: refetchSubmissions } = useQuery<EquipmentSubmission[]>({
+  const { data: submissionsData, isLoading: submissionsLoading, refetch: refetchSubmissions } = useQuery<EquipmentSubmission[]>({
     queryKey: ["/api/my-submissions"],
     enabled: !!user?.id,
     retry: 2,
@@ -82,6 +84,7 @@ function DashboardContent() {
     refetchOnWindowFocus: true, // Always refetch when user returns to tab
     refetchOnMount: true, // Always refetch when component mounts
   });
+  const submissions = asArray(submissionsData);
 
 
 
@@ -122,7 +125,7 @@ function DashboardContent() {
     }
   };
 
-  const filteredSubmissions = filterSubmissions(submissions || [], submissionTab);
+  const filteredSubmissions = filterSubmissions(submissions, submissionTab);
 
   const canCancelSubmission = (submission: EquipmentSubmission) => {
     return submission.status === 'pending' || submission.status === 'under_review';
@@ -229,7 +232,7 @@ function DashboardContent() {
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card className="p-6 text-center">
             <Package className="mx-auto mb-3 text-accent-blue" size={32} />
-            <div className="text-2xl font-bold">{orders?.length || 0}</div>
+            <div className="text-2xl font-bold">{count(orders)}</div>
             <div className="text-sm text-text-muted">Total Orders</div>
           </Card>
           
@@ -239,7 +242,7 @@ function DashboardContent() {
               {submissionsLoading ? (
                 <span className="animate-pulse">...</span>
               ) : (
-                submissions?.length || 0
+                count(submissions)
               )}
             </div>
             <div className="text-sm text-text-muted">Submissions</div>
@@ -289,9 +292,9 @@ function DashboardContent() {
                 }`}
               >
                 Submissions
-                {Array.isArray(submissions) && submissions.filter(s => s.status === 'pending').length > 0 && (
+                {count(submissions.filter(s => s.status === 'pending')) > 0 && (
                   <Badge className={`ml-2 ${activeTab === 'submissions' ? 'bg-blue-400 text-blue-100' : 'bg-blue-500 text-white'}`} variant="secondary">
-                    {submissions.filter(s => s.status === 'pending').length}
+                    {count(submissions.filter(s => s.status === 'pending'))}
                   </Badge>
                 )}
               </Button>
@@ -350,7 +353,7 @@ function DashboardContent() {
                 </SmartLink>
               </div>
 
-              {orders.length === 0 ? (
+              {!isNonEmptyArray(orders) ? (
                 <div className="text-center py-12">
                   <Package className="mx-auto mb-4 text-gray-400" size={48} />
                   <h3 className="text-xl font-semibold mb-2">No orders yet</h3>
@@ -428,7 +431,7 @@ function DashboardContent() {
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    Open ({filterSubmissions(submissions || [], 'open').length})
+                    Open ({count(filterSubmissions(asArray(submissions), 'open'))})
                   </button>
                   <button
                     onClick={() => setSubmissionTab('completed')}
@@ -438,7 +441,7 @@ function DashboardContent() {
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    Completed ({filterSubmissions(submissions || [], 'completed').length})
+                    Completed ({count(filterSubmissions(asArray(submissions), 'completed'))})
                   </button>
                   <button
                     onClick={() => setSubmissionTab('cancelled')}
@@ -448,7 +451,7 @@ function DashboardContent() {
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    Cancelled ({filterSubmissions(submissions || [], 'cancelled').length})
+                    Cancelled ({count(filterSubmissions(asArray(submissions), 'cancelled'))})
                   </button>
                 </div>
               </div>
@@ -461,7 +464,7 @@ function DashboardContent() {
                     <div className="h-3 w-48 bg-gray-700 rounded mx-auto"></div>
                   </div>
                 </div>
-              ) : filteredSubmissions.length === 0 ? (
+              ) : !isNonEmptyArray(filteredSubmissions) ? (
                 <div className="text-center py-12">
                   <DollarSign className="mx-auto mb-4 text-gray-400" size={48} />
                   <h3 className="text-xl font-semibold mb-2">
