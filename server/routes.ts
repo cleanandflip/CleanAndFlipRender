@@ -2755,6 +2755,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add auth state endpoint for explicit auth checking
   app.get("/api/auth/state", authImprovements.authState);
 
+  // Mount admin dashboard routes
+  const adminDashboardRoutes = await import("./routes/admin-dashboard");
+  app.use("/api/admin", adminDashboardRoutes.default);
+
   // User endpoint - now guest-safe with better responses
   app.get("/api/user", authImprovements.guestSafeUser, async (req, res) => {
     // At this point, we know the user is authenticated (guestSafeUser would have returned early for guests)
