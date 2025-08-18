@@ -1,0 +1,129 @@
+[INFO] ADMIN REQUEST: GET /products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 {
+  userId: undefined,
+  ip: '10.81.5.39',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+}
+[INFO] ADMIN RESPONSE: GET /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 132ms { userId: undefined, ip: '10.81.5.39', duration: 132, statusCode: 200 }
+[INFO] API GET /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 133ms {
+  method: 'GET',
+  url: '/api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 133,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 134ms 
+2:38:20 PM GET     /api/admin/products?search=&category=all&status=all&sortBy=name&sortOrder=asc&page=1&limit=20 200 135ms
+[INFO] ADMIN REQUEST: GET /categories {
+  userId: undefined,
+  ip: '10.81.4.17',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+}
+[INFO] API POST /api/track-activity 202 76ms {
+  method: 'POST',
+  url: '/api/track-activity',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 76,
+  statusCode: 202,
+  contentLength: undefined
+}
+[INFO] POST /api/track-activity 202 76ms 
+2:38:21 PM POST    /api/track-activity                      202 77ms
+[INFO] ADMIN RESPONSE: GET /api/admin/categories 200 123ms { userId: undefined, ip: '10.81.4.17', duration: 123, statusCode: 200 }
+[INFO] API GET /api/admin/categories 200 124ms {
+  method: 'GET',
+  url: '/api/admin/categories',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.17',
+  userId: undefined,
+  duration: 124,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/admin/categories 200 124ms 
+2:38:21 PM GET     /api/admin/categories                    200 125ms
+[INFO] ADMIN REQUEST: PUT /categories/02ee3f0e-94e0-4464-b259-9413b48aba30 {
+  userId: undefined,
+  ip: '10.81.4.17',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+}
+[INFO] ADMIN RESPONSE: PUT /api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30 200 193ms { userId: undefined, ip: '10.81.4.17', duration: 193, statusCode: 200 }
+[INFO] API PUT /api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30 200 193ms {
+  method: 'PUT',
+  url: '/api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.17',
+  userId: undefined,
+  duration: 193,
+  statusCode: 200,
+  contentLength: 304
+}
+[INFO] PUT /api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30 200 194ms 
+2:38:26 PM PUT     /api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30 200 194ms
+[INFO] ADMIN REQUEST: GET /categories {
+  userId: undefined,
+  ip: '10.81.5.39',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+}
+[INFO] ADMIN RESPONSE: GET /api/admin/categories 200 129ms { userId: undefined, ip: '10.81.5.39', duration: 129, statusCode: 200 }
+[INFO] API GET /api/admin/categories 200 129ms {
+  method: 'GET',
+  url: '/api/admin/categories',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.5.39',
+  userId: undefined,
+  duration: 129,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/admin/categories 200 129ms 
+2:38:26 PM GET     /api/admin/categories                    200 130ms
+[INFO] ADMIN REQUEST: GET /categories {
+  userId: undefined,
+  ip: '10.81.4.17',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+}
+[INFO] ADMIN RESPONSE: GET /api/admin/categories 200 115ms { userId: undefined, ip: '10.81.4.17', duration: 115, statusCode: 200 }
+[INFO] API GET /api/admin/categories 200 116ms {
+  method: 'GET',
+  url: '/api/admin/categories',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.17',
+  userId: undefined,
+  duration: 116,
+  statusCode: 200,
+  contentLength: undefined
+}
+[INFO] GET /api/admin/categories 200 116ms 
+2:38:26 PM GET     /api/admin/categories                    200 116ms
+[INFO] ADMIN REQUEST: DELETE /categories/02ee3f0e-94e0-4464-b259-9413b48aba30 {
+  userId: undefined,
+  ip: '10.81.4.17',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
+}
+[INFO] ADMIN RESPONSE: DELETE /api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30 400 360ms { userId: undefined, ip: '10.81.4.17', duration: 360, statusCode: 400 }
+[WARN] API DELETE /api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30 400 361ms {
+  method: 'DELETE',
+  url: '/api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.17',
+  userId: undefined,
+  duration: 361,
+  statusCode: 400,
+  contentLength: 113
+}
+[WARN] DELETE /api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30 400 361ms {
+  method: 'DELETE',
+  url: '/api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+  ip: '10.81.4.17',
+  userId: undefined,
+  duration: 361,
+  statusCode: 400,
+  contentLength: 113
+}
+2:39:08 PM DELETE  /api/admin/categories/02ee3f0e-94e0-4464-b259-9413b48aba30 400 361ms

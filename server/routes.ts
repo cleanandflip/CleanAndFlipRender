@@ -3239,6 +3239,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin User DELETE endpoint
+  app.delete("/api/admin/users/:id", requireRole('developer'), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Get user first to check if exists
+      const [userToDelete] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
+      
+      if (!userToDelete) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Delete the user
+      await db.delete(users).where(eq(users.id, id));
+      
+      // Broadcast update via WebSocket
+      try {
+        if (wsManager?.publish) {
+          wsManager.publish({
+            topic: "user:update",
+            userId: id
+          });
+        }
+      } catch (error) {
+        Logger.warn('WebSocket broadcast failed:', error);
+      }
+      
+      res.json({ 
+        success: true,
+        message: `User ${userToDelete.email} has been deleted`
+      });
+      
+    } catch (error) {
+      Logger.error("Error deleting user", error);
+      res.status(500).json({ 
+        error: "Failed to delete user",
+        details: (error as any)?.message 
+      });
+    }
+  });
+
   // User role management (legacy endpoint - kept for compatibility)
   app.put("/api/admin/users/:id/role", requireRole('developer'), async (req, res) => {
     try {

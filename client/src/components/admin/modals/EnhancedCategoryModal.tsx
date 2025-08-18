@@ -181,10 +181,12 @@ export function EnhancedCategoryModal({ category, onClose, onSave }: CategoryMod
       const method = category ? 'PUT' : 'POST';
       
       const submitData = {
-        ...formData,
-        displayOrder: parseInt(formData.displayOrder) || 0,
-        productCount: parseInt(formData.productCount) || 0,
-        filterConfig: formData.filterConfig ? JSON.parse(formData.filterConfig) : {}
+        name: formData.name,
+        slug: formData.slug,
+        description: formData.description,
+        existing_image_url: formData.imageUrl,
+        is_active: formData.isActive.toString(),
+        filter_config: formData.filterConfig || '{}'
       };
       
       const res = await fetch(endpoint, {
