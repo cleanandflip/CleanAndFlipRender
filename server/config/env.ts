@@ -3,10 +3,16 @@ import * as process from "node:process";
 
 export type AppEnv = "development" | "preview" | "staging" | "production";
 
-// Decide app env explicitly; never infer prod from NODE_ENV alone.
-export const APP_ENV: AppEnv =
-  (process.env.APP_ENV as AppEnv) ||
-  (process.env.NODE_ENV === "production" ? "production" : "development");
+// Decide app env explicitly using environment-specific secrets
+export const APP_ENV: AppEnv = (() => {
+  // Check for environment-specific secrets first
+  if (process.env.PROD_APP_ENV) return "production";
+  if (process.env.DEV_APP_ENV) return "development";
+  
+  // Fallback to legacy APP_ENV or NODE_ENV
+  return (process.env.APP_ENV as AppEnv) ||
+         (process.env.NODE_ENV === "production" ? "production" : "development");
+})();
 
 // Require at least one of these to be set per env.
 function must(...keys: string[]) {
