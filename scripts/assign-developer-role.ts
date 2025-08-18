@@ -15,14 +15,17 @@ async function assignDeveloperRoles() {
   const pool = new Pool({ connectionString: DEV_URL });
   
   try {
-    // Update users with Gmail or Replit emails to developer role
+    // Manual role assignment - update specific user by ID or email
+    // This should only be run by authorized administrators
     const result = await pool.query(`
       UPDATE users 
       SET role = 'developer', updated_at = NOW() 
-      WHERE (email ILIKE '%@gmail.com' OR email ILIKE '%@replit.com' OR email ILIKE '%admin%') 
-      AND role != 'developer'
+      WHERE id = $1 OR email = $2
       RETURNING id, email, role, first_name, last_name;
-    `);
+    `, [
+      process.env.ADMIN_USER_ID || 'none', 
+      process.env.ADMIN_EMAIL || 'none'
+    ]);
     
     if (result.rows.length === 0) {
       console.log('✅ No users found to update or all users already have developer role');

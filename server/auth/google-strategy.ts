@@ -88,9 +88,6 @@ export function initializeGoogleAuth() {
         // New user - create account
         const newUserId = randomUUID();
         
-        // Determine role based on email domain
-        const isDeveloper = email?.includes('@gmail.com') || email?.includes('@replit.com') || email?.includes('admin');
-        
         const [newUser] = await db.insert(users)
           .values({
             id: newUserId,
@@ -105,7 +102,7 @@ export function initializeGoogleAuth() {
             authProvider: 'google',
             isEmailVerified: true,
             profileComplete: true, // Google users are immediately active
-            role: isDeveloper ? 'developer' : 'user'
+            role: 'user' // All new users start as regular users
           })
           .returning();
         

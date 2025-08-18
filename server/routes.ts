@@ -76,6 +76,7 @@ function broadcastCartUpdate(userId: string, action: string = 'update', data?: a
 import googleAuthRoutes from "./routes/auth-google";
 import stripeWebhookRoutes from './routes/stripe-webhooks';
 import adminMetricsRoutes from './routes/admin-metrics';
+import adminSetupRoutes from './routes/admin-setup';
 // ERROR MANAGEMENT COMPLETELY REMOVED
 // addressRoutes dynamically imported below
 import checkoutRoutes from './routes/checkout';
@@ -298,6 +299,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // SSOT Locality routes
   app.use('/api/locality', localityRoutes);
+  
+  // Admin Setup Routes (TEMPORARY - for initial setup only)
+  if (process.env.NODE_ENV === 'development') {
+    app.use('/', adminSetupRoutes);
+  }
   
   // Cart validation route
   const cartValidationRoutes = await import('./routes/cart-validation');
