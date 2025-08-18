@@ -133,30 +133,7 @@
   transform: translateY(-1px);
 }
 
-/* Outline Button */
-.btn-outline {
-  background: var(--field-bg);
-  border: 1.5px solid var(--outline-default);
-  color: var(--field-text);
-  transition: var(--field-transition);
-}
-
-.btn-outline:hover:not(:disabled) {
-  background: var(--field-bg-hover);
-  border-color: var(--outline-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.btn-outline:focus-visible {
-  border-color: var(--outline-focus);
-  box-shadow: var(--field-shadow-focus);
-}
-
-.btn-outline:active:not(:disabled) {
-  transform: translateY(0);
-  background: var(--field-bg-focus);
-}
+/* Outline Button - Removed to prevent conflicts with outline-theme.css */
 
 /* Glass Morphism Effect */
 .btn-glass {
