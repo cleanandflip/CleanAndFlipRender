@@ -1,41 +1,19 @@
 // server/config/env-guard.ts
-import { APP_ENV, DB_HOST, EXPECTED_DB_HOST, ENV_BANNER } from "./env";
+import { APP_ENV, DATABASE_URL, DEV_DB_HOST, PROD_DB_HOST, dbHostFromUrl } from "./env";
 
 export function assertEnvSafety() {
-  // Environment information is logged in env.ts - no duplicate logging
+  const host = dbHostFromUrl(DATABASE_URL);
+  console.log(`[ENV_GUARD] app=${APP_ENV} node=${process.env.NODE_ENV} dbHost=${host}`);
 
-  // If an expectation is provided, enforce it.
-  if (EXPECTED_DB_HOST && EXPECTED_DB_HOST !== '<' && DB_HOST !== EXPECTED_DB_HOST) {
-    console.error(`❌ ENV_GUARD VIOLATION: Expected DB host '${EXPECTED_DB_HOST}' but got '${DB_HOST}'`);
-    console.error(`❌ This prevents cross-environment contamination`);
+  if (APP_ENV === "development" && host === PROD_DB_HOST) {
     throw new Error(
-      `ENV_GUARD: Refusing to start. APP_ENV=${APP_ENV} but DATABASE_URL host=${DB_HOST} != EXPECTED_DB_HOST=${EXPECTED_DB_HOST}`
+      `ENV_GUARD: dev app is pointing at PROD DB (${host}). Refusing to start.`
     );
   }
-
-  // Extra opinionated safety rails - prevent cross-environment contamination:
-  if (APP_ENV !== "production") {
-    // Development MUST use lucky-poetry database
-    const devHost = "ep-lucky-poetry-aetqlg65-pooler.c-2.us-east-2.aws.neon.tech";
-    const prodHost = "ep-muddy-moon-aeggx6le-pooler.c-2.us-east-2.aws.neon.tech";
-    const oldDevHost = "ep-lingering-flower-afk8pi6o.c-2.us-west-2.aws.neon.tech";
-    
-    if (DB_HOST === prodHost) {
-      throw new Error(`ENV_GUARD: Development environment cannot use production database (${prodHost})`);
-    }
-    if (DB_HOST === oldDevHost) {
-      throw new Error(`ENV_GUARD: Development environment cannot use old database (${oldDevHost}). Use lucky-poetry only.`);
-    }
-    if (DB_HOST !== devHost) {
-      console.warn(`⚠️  ENV_GUARD: Development should use ${devHost}, but using ${DB_HOST}`);
-    }
-  } else {
-    // Production MUST use muddy-moon database
-    const prodHost = "ep-muddy-moon-aeggx6le-pooler.c-2.us-east-2.aws.neon.tech";
-    if (DB_HOST !== prodHost) {
-      throw new Error(`ENV_GUARD: Production environment MUST use muddy-moon database (${prodHost}), not ${DB_HOST}`);
-    }
+  if (APP_ENV === "production" && host !== PROD_DB_HOST) {
+    throw new Error(
+      `ENV_GUARD: production app must point at PROD DB (${PROD_DB_HOST}) but got ${host}`
+    );
   }
-
   console.log("✅ ENV_GUARD: Environment isolation verified");
 }

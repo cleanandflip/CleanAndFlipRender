@@ -4329,6 +4329,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Admin Routes - Dashboard upgrade functionality
+  app.get('/api/admin/users', requireRole('developer'), async (req, res) => {
+    try {
+      const { getEnhancedUsersList } = await import('./routes/admin-enhanced');
+      return getEnhancedUsersList(req, res);
+    } catch (error) {
+      Logger.error('Error loading enhanced admin routes:', error);
+      res.status(500).json({ error: 'Enhanced admin functionality temporarily unavailable' });
+    }
+  });
+
+  app.get('/api/admin/users/:userId', requireRole('developer'), async (req, res) => {
+    try {
+      const { getUserDetail } = await import('./routes/admin-enhanced');
+      return getUserDetail(req, res);
+    } catch (error) {
+      Logger.error('Error loading enhanced user detail:', error);
+      res.status(500).json({ error: 'Enhanced user detail temporarily unavailable' });
+    }
+  });
+
   // REMOVED: observability router - internal error tracking not needed
   
   // Apply production optimizations (compression, static asset caching)
