@@ -2755,10 +2755,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add auth state endpoint for explicit auth checking
   app.get("/api/auth/state", authImprovements.authState);
 
-  // Mount admin dashboard routes
-  const adminDashboardRoutes = await import("./routes/admin-dashboard");
-  app.use("/api/admin", adminDashboardRoutes.default);
-
   // User endpoint - now guest-safe with better responses
   app.get("/api/user", authImprovements.guestSafeUser, async (req, res) => {
     // At this point, we know the user is authenticated (guestSafeUser would have returned early for guests)
@@ -4056,14 +4052,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
-  // CRITICAL FIX: Add API route protection middleware BEFORE frontend setup
-  app.use('/api/*', (req, res, next) => {
-    // If we reach here, it means no API route handled the request
-    // This should not happen if routes are properly registered
-    Logger.warn(`Unhandled API route: ${req.method} ${req.originalUrl}`);
-    res.status(404).json({ error: 'API endpoint not found' });
-  });
-
   // Setup frontend serving AFTER creating httpServer
   if (process.env.NODE_ENV === "production") {
     const { serveStatic } = await import('./vite');

@@ -42,22 +42,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   
   const {
-    data: authResponse,
+    data: user,
     error,
     isLoading,
-  } = useQuery<{ auth: boolean; user?: SelectUser | null }, Error>({
+  } = useQuery<SelectUser | undefined, Error>({
     queryKey: ["/api/user"],
     retry: false, // Don't retry 401s for auth checks
     throwOnError: false, // Handle errors gracefully
+    refetchOnWindowFocus: false, // Prevent auth check loops
     staleTime: 2 * 60 * 1000, // Cache for 2 minutes
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes - CRITICAL FIX
     refetchOnWindowFocus: false, // Don't check auth on window focus
     refetchOnReconnect: false, // Don't spam on reconnect
     refetchOnMount: true, // Always check fresh auth state
   });
-
-  // Extract user from response
-  const user = authResponse?.user;
 
   // ONBOARDING REMOVED - No more auto-redirects, users browse freely
 
@@ -73,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(normalizedCredentials),
-        credentials: "include", // CRITICAL: Include cookies for session
+        credentials: "include",
       });
 
       const result = await response.json();
@@ -88,13 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: async (user: SelectUser) => {
       // CRITICAL FIX: Wait for session to propagate before updating cache
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Clear all cached data to force fresh requests
-      queryClient.clear();
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       // Update query cache with new user data
-      queryClient.setQueryData(["/api/user"], { auth: true, user });
+      queryClient.setQueryData(["/api/user"], user);
       
       // Force refetch to verify session persistence  
       await queryClient.refetchQueries({ queryKey: ["/api/user"] });
@@ -147,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await new Promise(resolve => setTimeout(resolve, 200));
       
       // Update query cache with new user data
-      queryClient.setQueryData(["/api/user"], { auth: true, user });
+      queryClient.setQueryData(["/api/user"], user);
       
       // Force refetch to verify session persistence
       await queryClient.refetchQueries({ queryKey: ["/api/user"] });
@@ -195,7 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       // CRITICAL FIX: Complete client-side cleanup
-      queryClient.setQueryData(["/api/user"], { auth: false, user: null });
+      queryClient.setQueryData(["/api/user"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.clear(); // Clear all cached queries to prevent hooks issues
       

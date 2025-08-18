@@ -12,8 +12,6 @@ import {
   index,
   pgEnum,
   customType,
-  bigserial,
-  unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -753,63 +751,6 @@ export type InsertUserEmailPreferences = z.infer<typeof insertUserEmailPreferenc
 
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
-
-// New dashboard tables for admin functionality
-export const userIdentities = pgTable('user_identities', {
-  id: varchar('id').primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  provider: text('provider').notNull(), // 'google'
-  providerUserId: text('provider_user_id').notNull(), // Google sub
-  email: text('email'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [
-  unique().on(table.provider, table.providerUserId),
-  index('idx_user_identities_user').on(table.userId),
-]);
-
-export const loginEvents = pgTable('login_events', {
-  id: bigserial('id', { mode: 'bigint' }).primaryKey(),
-  userId: varchar('user_id').references(() => users.id, { onDelete: 'set null' }),
-  email: text('email'),
-  provider: text('provider').notNull(), // 'password' | 'google'
-  method: text('method').notNull(), // 'signin' | 'signup' | 'refresh'
-  success: boolean('success').notNull(),
-  errorCode: text('error_code'),
-  ip: text('ip'), // Using text for inet compatibility
-  userAgent: text('user_agent'),
-  country: text('country'),
-  region: text('region'),
-  city: text('city'),
-  riskScore: integer('risk_score').default(0),
-  sessionId: text('session_id'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [
-  index('idx_login_events_user_time').on(table.userId, desc(table.createdAt)),
-  index('idx_login_events_time').on(desc(table.createdAt)),
-]);
-
-export const adminAuditLog = pgTable('admin_audit_log', {
-  id: bigserial('id', { mode: 'bigint' }).primaryKey(),
-  actorUserId: varchar('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
-  actorRole: text('actor_role'),
-  action: text('action').notNull(),
-  targetType: text('target_type'),
-  targetId: text('target_id'),
-  details: jsonb('details'),
-  ip: text('ip'),
-  userAgent: text('user_agent'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [
-  index('idx_admin_audit_actor_time').on(table.actorUserId, desc(table.createdAt)),
-  index('idx_admin_audit_time').on(desc(table.createdAt)),
-]);
-
-export type SelectUserIdentity = typeof userIdentities.$inferSelect;
-export type InsertUserIdentity = typeof userIdentities.$inferInsert;
-export type SelectLoginEvent = typeof loginEvents.$inferSelect;
-export type InsertLoginEvent = typeof loginEvents.$inferInsert;
-export type SelectAdminAuditLog = typeof adminAuditLog.$inferSelect;
-export type InsertAdminAuditLog = typeof adminAuditLog.$inferInsert;
 
 // Type for status history tracking
 export type StatusHistoryEntry = {
