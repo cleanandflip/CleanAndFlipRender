@@ -33,12 +33,13 @@ The server-side uses a layered REST API architecture built with Node.js:
 PostgreSQL is the primary database, utilizing:
 - **Database**: Neon serverless PostgreSQL with strict environment-specific database URLs and rotated security credentials.
 - **Environment Configuration**: Environment-specific secrets system with DEV_APP_ENV/PROD_APP_ENV controlling database selection. DEV_DATABASE_URL (lucky-poetry) for development, PROD_DATABASE_URL (muddy-moon) for production.
+- **Database Lockdown**: Complete environment isolation achieved (2025-08-18). All hardcoded database references removed. Development uses lucky-poetry exclusively, production uses muddy-moon exclusively. Cross-contamination is impossible.
 - **Schema Management**: Drizzle Kit for migrations with automatic retry logic and environment-aware configuration, production-controlled migration system.
 - **Search**: PostgreSQL tsvector for full-text search.
 - **Session Storage**: Database-backed session storage with environment-aware configuration.
 - **Schema**: Key tables include users, products, categories, orders, cart items, and equipment submissions with proper relationships. Legacy columns (profile_address_id, onboarding_completed_at) have been retired.
 - **Safety Guards**: Enterprise-grade multi-layered production database validation with complete environment isolation using EXPECTED_DB_HOST validation. Environment classification prevents cross-contamination between development and production databases.
-- **Security**: Complete DATABASE_URL elimination achieved (2025-08-17) with rotated database passwords, environment-specific secrets classification (2025-08-18), and pooled connections for maximum security.
+- **Security**: Complete DATABASE_URL elimination achieved (2025-08-17) with rotated database passwords, environment-specific secrets classification (2025-08-18), and pooled connections for maximum security. All lingering-flower references purged (2025-08-18).
 
 ### Authentication and Authorization
 A comprehensive multi-layered security approach with Google OAuth integration and simplified role-based access control:
