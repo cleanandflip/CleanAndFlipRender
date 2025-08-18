@@ -7,13 +7,6 @@ import { storage } from "./storage";
 import { setupAuth, requireAuth, requireRole } from "./auth";
 import { authMiddleware } from "./middleware/auth";
 import { authImprovements } from "./middleware/auth-improved";
-import { 
-  getEnhancedUsersList, 
-  getUserDetails, 
-  revokeUserSessions, 
-  revokeSession,
-  getSystemHealth 
-} from "./routes/admin-enhanced";
 import { upload, cloudinary } from "./config/cloudinary";
 import multer from 'multer';
 import cors from "cors";
@@ -275,10 +268,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import and use SSOT address routes
   const addressRoutes = await import('./routes/addresses');
   app.use('/api/addresses', addressRoutes.default);
-  
-  // Import and use new session-aware auth routes
-  const authSessionRoutes = await import('./routes/auth-session');
-  app.use('/api', authSessionRoutes.default);
   
   // Import SSOT cart routes with session middleware and migration
   const { router: cartRouter } = await import('./routes/cart');
@@ -2766,15 +2755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add auth state endpoint for explicit auth checking
   app.get("/api/auth/state", authImprovements.authState);
 
-  // Enhanced admin routes
-  app.get("/api/admin/users", requireRole('developer'), getEnhancedUsersList);
-  app.get("/api/admin/users/:id", requireRole('developer'), getUserDetails);
-  app.post("/api/admin/users/:id/sessions/revoke", requireRole('developer'), revokeUserSessions);
-  app.post("/api/admin/sessions/:sid/revoke", requireRole('developer'), revokeSession);
-  app.get("/api/admin/system/health-enhanced", requireRole('developer'), getSystemHealth);
-
-  // User endpoint moved to auth-session.ts - keeping this one for legacy fallback
-  /*
+  // User endpoint - now guest-safe with better responses
   app.get("/api/user", authImprovements.guestSafeUser, async (req, res) => {
     // At this point, we know the user is authenticated (guestSafeUser would have returned early for guests)
     
@@ -2877,7 +2858,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch user data" });
     }
   });
-  */ // End legacy user endpoint comment
 
   // Activity tracking endpoint - fire and forget for performance
   // Fire-and-forget activity tracking with instant 202 response
@@ -4332,27 +4312,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       Logger.error("Error subscribing to newsletter", error);
       res.status(500).json({ error: "Failed to subscribe" });
-    }
-  });
-
-  // Enhanced Admin Routes - Dashboard upgrade functionality
-  app.get('/api/admin/users', requireRole('developer'), async (req, res) => {
-    try {
-      const { getEnhancedUsersList } = await import('./routes/admin-enhanced');
-      return getEnhancedUsersList(req, res);
-    } catch (error) {
-      Logger.error('Error loading enhanced admin routes:', error);
-      res.status(500).json({ error: 'Enhanced admin functionality temporarily unavailable' });
-    }
-  });
-
-  app.get('/api/admin/users/:userId', requireRole('developer'), async (req, res) => {
-    try {
-      const { getUserDetail } = await import('./routes/admin-enhanced');
-      return getUserDetail(req, res);
-    } catch (error) {
-      Logger.error('Error loading enhanced user detail:', error);
-      res.status(500).json({ error: 'Enhanced user detail temporarily unavailable' });
     }
   });
 

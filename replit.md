@@ -42,22 +42,6 @@ The system employs a multi-layered security approach with Google OAuth integrati
 
 ## Recent Fixes and Improvements
 
-✅ **SESSION MANAGEMENT SYSTEM COMPLETELY IMPLEMENTED** - Resolved ghost session issues:
-- **ROOT CAUSE**: Session persistence bugs causing authentication loops and stale user states
-- **SOLUTION**: Comprehensive session configuration with environment-specific cookie settings
-- **FIXED**: New session-based auth endpoints with guest-safe responses (no more 401 errors)
-- **ENHANCED**: Logout functionality with comprehensive session cleanup and page reloads
-- **UPDATED**: Client-side auth hooks to work seamlessly with new session system
-- **VERIFIED**: Login/logout flow working perfectly with persistent sessions
-
-✅ **DATABASE SCHEMA INCONSISTENCIES RESOLVED** - Fixed critical admin endpoint failures:
-- **ROOT CAUSE**: Missing columns (email_verified_at, login_count, sign_in_provider, last_ip, etc.) in users table
-- **SOLUTION**: Applied comprehensive schema migration adding all missing admin tracking fields
-- **FIXED**: /api/admin/users and /api/admin/analytics endpoints now working without 500 errors
-- **ADDED COLUMNS**: email_verified_at, login_count, sign_in_provider, last_ip, last_user_agent, mfa_enabled, status, marketing_opt_in, picture_url
-- **ENHANCED**: Admin dashboard can now properly display user analytics and tracking data
-- **VERIFIED**: All admin endpoints returning 200 responses with complete user data
-
 ✅ **DATABASE SCHEMA ERRORS COMPLETELY RESOLVED** - Fixed critical column missing error:
 - **ROOT CAUSE**: products table missing continue_selling_when_out_of_stock boolean column
 - **SOLUTION**: Created dual-database migration script adding column to both lucky-poetry and muddy-moon
@@ -79,3 +63,12 @@ The system employs a multi-layered security approach with Google OAuth integrati
 - **FIXED**: server/auth/google-strategy.ts, server/config/google.ts, and server/auth.ts now use correct domain
 - **PRODUCTION**: Google OAuth will now redirect to https://cleanandflip.com/api/auth/google/callback
 - **VERIFIED**: No more replit.app domain redirects for users in production
+
+✅ **AUTHENTICATION & LOGGING OPTIMIZED** - Eliminated noisy 401 logs and improved UX:
+- **ROOT CAUSE**: Guest users receiving scary 401 errors and noisy WARN logs on normal browsing
+- **SOLUTION**: Guest-safe responses, smart 401 logging, and improved retry logic
+- **FIXED**: /api/user now returns 200 {"auth":false} for guests instead of 401 errors
+- **LOGGING**: Expected guest 401s demoted to INFO level, unexpected ones logged with debug details
+- **NEW ENDPOINTS**: /api/auth/state for explicit auth checking without 401 responses
+- **FRONTEND**: Added smart retry logic and refetchOnWindowFocus prevention
+- **VERIFIED**: Clean logs, better UX, and robust authentication flow

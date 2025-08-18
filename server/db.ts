@@ -2,11 +2,10 @@
 import { DATABASE_URL } from "./config/env";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import * as schema from "@shared/schema";
 
-// Database connection with proper environment isolation
+// Simple database connection without schema to avoid circular references
 const sql = neon(DATABASE_URL);
-export const db = drizzle(sql, { schema });
+export const db = drizzle(sql);
 
 // Optional simple health check
 export async function ping() {

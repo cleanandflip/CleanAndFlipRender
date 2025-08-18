@@ -41,32 +41,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const fetchUser = async () => {
-    const res = await fetch("/api/user", { credentials: "include" });
-    if (!res.ok) throw new Error("user fetch failed");
-    const data = await res.json();
-    // Return normalized shape from new session-aware endpoint
-    return { auth: !!data?.auth, user: data?.user || null };
-  };
-
   const {
-    data,
+    data: user,
     error,
     isLoading,
-  } = useQuery({
-    queryKey: ["user"],
-    queryFn: fetchUser,
+  } = useQuery<SelectUser | undefined, Error>({
+    queryKey: ["/api/user"],
     retry: false, // Don't retry 401s for auth checks
     throwOnError: false, // Handle errors gracefully
     refetchOnWindowFocus: false, // Prevent auth check loops
     staleTime: 2 * 60 * 1000, // Cache for 2 minutes
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes - CRITICAL FIX
+    refetchOnWindowFocus: false, // Don't check auth on window focus
     refetchOnReconnect: false, // Don't spam on reconnect
     refetchOnMount: true, // Always check fresh auth state
   });
-
-  const user = data?.user;
-  const isAuthenticated = !!data?.auth;
 
   // ONBOARDING REMOVED - No more auto-redirects, users browse freely
 
@@ -100,10 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await new Promise(resolve => setTimeout(resolve, 200));
       
       // Update query cache with new user data
-      queryClient.setQueryData(["user"], { auth: true, user });
+      queryClient.setQueryData(["/api/user"], user);
       
       // Force refetch to verify session persistence  
-      await queryClient.refetchQueries({ queryKey: ["user"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/user"] });
       
       toast({
         title: "Welcome back!",
@@ -153,10 +142,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await new Promise(resolve => setTimeout(resolve, 200));
       
       // Update query cache with new user data
-      queryClient.setQueryData(["user"], { auth: true, user });
+      queryClient.setQueryData(["/api/user"], user);
       
       // Force refetch to verify session persistence
-      await queryClient.refetchQueries({ queryKey: ["user"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/user"] });
       
       toast({
         title: "Account created!",
@@ -197,20 +186,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await fetch("/api/logout", { method: "POST", credentials: "include" });
+      await apiRequest("POST", "/api/logout");
     },
-    onSuccess: async () => {
-      // Clear all cached user data and navigation state
-      queryClient.removeQueries({ queryKey: ["user"], exact: false });
-      localStorage.removeItem("nav_state");
+    onSuccess: () => {
+      // CRITICAL FIX: Complete client-side cleanup
+      queryClient.setQueryData(["/api/user"], null);
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.clear(); // Clear all cached queries to prevent hooks issues
+      
+      // Clear any potential browser storage
+      localStorage.clear();
       sessionStorage.clear();
-      // Full reload ensures all in-memory state resets and cookie changes are applied
-      window.location.assign("/");
+      
+      // Force immediate refetch to ensure clean state
+      setTimeout(() => {
+        window.location.href = '/'; // Redirect to home after cleanup
+      }, 100);
+      
+      toast({
+        title: "Logged out",
+        description: "See you next time!",
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Logout Error",
-        description: error.message || "Failed to logout",
+        title: "Logout failed",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -220,7 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user: user ?? null,
-        isAuthenticated: isAuthenticated,
+        isAuthenticated: !!user,
         isLoading,
         error,
         loginMutation,

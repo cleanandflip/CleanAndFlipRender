@@ -31,8 +31,9 @@ export const DEV_DATABASE_URL = opt("DEV_DATABASE_URL", process.env.DATABASE_URL
 export const PROD_DATABASE_URL = opt("PROD_DATABASE_URL", process.env.DATABASE_URL || "");
 export const DATABASE_URL = APP_ENV === "production" ? PROD_DATABASE_URL : DEV_DATABASE_URL;
 
-// Compute DB host from the selected DATABASE_URL
-export const DB_HOST = hostOf(DATABASE_URL);
+// Import DB_HOST from single source
+import { DB_HOST } from './env';
+export { DB_HOST };
 export const DEV_DB_HOST = hostOf(DEV_DATABASE_URL);
 export const PROD_DB_HOST = hostOf(PROD_DATABASE_URL);
 
@@ -47,8 +48,9 @@ export const CORS_ORIGINS =
     ? opt("CORS_ORIGINS_PROD").split(",").map(s=>s.trim()).filter(Boolean)
     : opt("CORS_ORIGINS_DEV").split(",").map(s=>s.trim()).filter(Boolean);
 
-// Webhook prefix - use standard default
-export const WEBHOOK_PREFIX = opt("WEBHOOK_PREFIX", "/webhooks");
+// Webhook prefix - imported from single source
+import { WEBHOOK_PREFIX } from './env';
+export { WEBHOOK_PREFIX };
 
 // Provider secrets (extend as you add providers) - optional for now
 export const WEBHOOKS = {

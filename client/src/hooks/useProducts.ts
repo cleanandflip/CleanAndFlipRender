@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { fromSlug, toSlug } from "@/lib/categories";
 import { searchService } from '@/lib/searchService';
-import { asArray } from "@/lib/safe";
 import type { Product } from "@shared/schema";
 
 interface ProductsResponse {
@@ -34,7 +33,7 @@ export function useProducts(args?: { q: string; category: string; sort: string; 
     refetchOnReconnect: false, // Don't refetch on reconnect
   });
 
-  const allProducts = asArray(productsResponse?.products);
+  const allProducts = Array.isArray(productsResponse?.products) ? productsResponse.products : [];
 
   // Client-side filtering based on URL parameters
   const filteredProducts = useMemo(() => {
