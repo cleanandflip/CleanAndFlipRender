@@ -2685,7 +2685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           profileImageUrl: users.profileImageUrl,
           // Include address information using COALESCE for production compatibility
           addressId: sql<string>`(SELECT id FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
-          street: sql<string>`(SELECT COALESCE(street1, street) FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
+          street: sql<string>`(SELECT COALESCE(street1, street, '') FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
           city: sql<string>`(SELECT city FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
           state: sql<string>`(SELECT state FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
           zipCode: sql<string>`(SELECT COALESCE(postal_code, zip_code) FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`
