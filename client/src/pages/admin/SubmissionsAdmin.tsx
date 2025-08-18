@@ -14,7 +14,7 @@ import {
   Package, 
   Eye, 
   Edit, 
-  FileEdit,
+  X,
   Calendar, 
   DollarSign, 
   MessageSquare, 
@@ -32,7 +32,8 @@ import {
   ShoppingBag,
   Tag,
   Image as ImageIcon,
-  Star
+  Star,
+  AlertCircle
 } from 'lucide-react';
 
 interface Submission {
@@ -331,74 +332,71 @@ export default function SubmissionsAdmin() {
         </div>
       )}
 
-      {/* Edit Submission Modal */}
-      <Dialog open={!!editingSubmission} onOpenChange={() => setEditingSubmission(null)}>
-        <DialogContent className="bg-[#0F172A] border border-[rgba(59,130,246,0.2)] max-w-3xl backdrop-blur-xl shadow-2xl">
-          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 -mx-6 -mt-6 px-6 pt-6 pb-4 mb-6 border-b border-[rgba(59,130,246,0.2)]">
-            <DialogHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <FileEdit className="w-5 h-5 text-blue-400" />
-                </div>
-                <div>
-                  <DialogTitle className="text-xl font-bold text-white">
-                    Edit Submission
-                  </DialogTitle>
-                  <p className="text-sm text-blue-300 font-mono">
-                    {editingSubmission?.referenceNumber}
-                  </p>
-                </div>
+      {/* Edit Submission Modal - styled like Category Modal */}
+      {editingSubmission && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-[#1e293b] border border-gray-700 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between bg-gradient-to-r from-[#1e293b] to-[#2d3748]">
+              <div>
+                <h2 className="text-xl font-bold text-white">Edit Submission</h2>
+                <p className="text-sm text-gray-400 mt-1">
+                  {editingSubmission.referenceNumber} - {editingSubmission.name}
+                </p>
               </div>
-            </DialogHeader>
-          </div>
-          
-          {editingSubmission && (
+              <div className="flex items-center gap-2">
+                <StatusBadge status={editingSubmission.status} />
+                <button
+                  onClick={() => setEditingSubmission(null)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 group"
+                >
+                  <X className="w-5 h-5 text-gray-400 group-hover:text-white" />
+                </button>
+              </div>
+            </div>
+
             <EditSubmissionForm
               submission={editingSubmission}
               onSave={handleUpdateSubmission}
               onCancel={() => setEditingSubmission(null)}
               isLoading={updateSubmissionMutation.isPending}
             />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* View Submission Modal */}
-      <Dialog open={!!viewingSubmission} onOpenChange={() => setViewingSubmission(null)}>
-        <DialogContent className="bg-[#0F172A] border border-[rgba(59,130,246,0.2)] max-w-5xl backdrop-blur-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 -mx-6 -mt-6 px-6 pt-6 pb-4 mb-6 border-b border-[rgba(59,130,246,0.2)] sticky top-0 z-10 backdrop-blur-xl">
-            <DialogHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Eye className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <DialogTitle className="text-xl font-bold text-white">
-                      Submission Details
-                    </DialogTitle>
-                    <p className="text-sm text-blue-300 font-mono">
-                      {viewingSubmission?.referenceNumber}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={viewingSubmission?.status || 'pending'} />
-                </div>
-              </div>
-            </DialogHeader>
           </div>
-          
-          {viewingSubmission && (
+        </div>
+      )}
+
+      {/* View Submission Modal - styled like Category Modal */}
+      {viewingSubmission && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-[#1e293b] border border-gray-700 rounded-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between bg-gradient-to-r from-[#1e293b] to-[#2d3748]">
+              <div>
+                <h2 className="text-xl font-bold text-white">Submission Details</h2>
+                <p className="text-sm text-gray-400 mt-1">
+                  {viewingSubmission.referenceNumber} - {viewingSubmission.name}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <StatusBadge status={viewingSubmission.status} />
+                <button
+                  onClick={() => setViewingSubmission(null)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 group"
+                >
+                  <X className="w-5 h-5 text-gray-400 group-hover:text-white" />
+                </button>
+              </div>
+            </div>
+
             <ViewSubmissionDetails submission={viewingSubmission} />
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// Edit Submission Form Component
+// Edit Submission Form Component - styled like Category Modal
 function EditSubmissionForm({ 
   submission, 
   onSave, 
@@ -413,8 +411,10 @@ function EditSubmissionForm({
   const [formData, setFormData] = useState({
     status: submission.status,
     adminNotes: submission.adminNotes || '',
-    offeredPrice: submission.offeredPrice || '',
+    offeredPrice: submission.offeredPrice?.toString() || '',
   });
+
+  const [initialData] = useState(formData);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -426,194 +426,179 @@ function EditSubmissionForm({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Equipment Summary */}
-      <div className="bg-[#1e293b]/50 border border-[rgba(59,130,246,0.1)] rounded-xl p-6">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-blue-500/20 rounded-lg">
-            <Package className="w-6 h-6 text-blue-400" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white mb-2">{submission.name}</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <p className="text-gray-400">Brand</p>
-                <p className="text-white">{submission.brand || 'Not specified'}</p>
+    <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto bg-[#0f172a]/50">
+      <div className="p-6 space-y-8">
+        
+        {/* Equipment Summary */}
+        <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Package className="w-5 h-5 text-blue-400" />
+            Equipment Summary
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Name</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white">
+                {submission.name}
               </div>
-              <div>
-                <p className="text-gray-400">Condition</p>
-                <p className="text-white capitalize">{submission.condition?.replace('_', ' ')}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Brand</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white">
+                {submission.brand || 'Not specified'}
               </div>
-              <div>
-                <p className="text-gray-400">Asking Price</p>
-                <p className="text-green-400 font-medium">
-                  {submission.askingPrice ? `$${submission.askingPrice}` : 'Open to offers'}
-                </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Condition</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white capitalize">
+                {submission.condition?.replace('_', ' ')}
               </div>
-              <div>
-                <p className="text-gray-400">Current Status</p>
-                <StatusBadge status={submission.status} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Asking Price</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-green-400 font-medium">
+                {submission.askingPrice ? `$${submission.askingPrice}` : 'Open to offers'}
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Edit Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-white mb-3">
-              <Tag className="w-4 h-4 text-blue-400" />
-              Status
-            </label>
-            <Dropdown
-              options={statusFormOptions}
-              value={formData.status}
-              onChange={(value: string) => setFormData(prev => ({ ...prev, status: value }))}
-              placeholder="Select status"
-              className="bg-[#1e293b]/50 border-[rgba(59,130,246,0.2)] text-white"
-            />
-          </div>
+        {/* Status Management */}
+        <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Tag className="w-5 h-5 text-blue-400" />
+            Status Management
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Status <span className="text-red-400">*</span>
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                required
+              >
+                {statusOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-white mb-3">
-              <DollarSign className="w-4 h-4 text-green-400" />
-              Offered Price (optional)
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.offeredPrice}
-              onChange={(e) => setFormData(prev => ({ ...prev, offeredPrice: e.target.value }))}
-              className="bg-[#1e293b]/50 border-[rgba(59,130,246,0.2)] text-white placeholder-gray-400"
-              placeholder="Enter offer amount"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Offered Price (optional)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.offeredPrice}
+                onChange={(e) => setFormData({ ...formData, offeredPrice: e.target.value })}
+                className="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="Enter offer amount"
+              />
+            </div>
           </div>
         </div>
 
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-white mb-3">
-            <MessageSquare className="w-4 h-4 text-blue-400" />
+        {/* Admin Notes */}
+        <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-blue-400" />
             Admin Notes
-          </label>
-          <Textarea
+          </h3>
+          
+          <textarea
             value={formData.adminNotes}
-            onChange={(e) => setFormData(prev => ({ ...prev, adminNotes: e.target.value }))}
-            className="bg-[#1e293b]/50 border-[rgba(59,130,246,0.2)] text-white placeholder-gray-400"
-            rows={4}
-            placeholder="Add internal notes about this submission, pricing decisions, quality assessments, etc..."
+            onChange={(e) => setFormData({ ...formData, adminNotes: e.target.value })}
+            rows={6}
+            className="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+            placeholder="Add internal notes about this submission, pricing decisions, quality assessments, communication history, etc..."
           />
         </div>
+      </div>
 
-        <DialogFooter className="pt-6 border-t border-[rgba(59,130,246,0.1)]">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isLoading} loading={isLoading}>
-            {isLoading ? 'Saving Changes...' : 'Save Changes'}
-          </Button>
-        </DialogFooter>
-      </form>
-    </div>
+      {/* Footer Actions */}
+      <div className="px-6 py-4 border-t border-gray-700 flex justify-end gap-4 bg-[#1e293b]">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-6 py-2 border border-gray-600 rounded-lg text-gray-400 hover:text-white hover:border-gray-400 transition-all duration-200"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200 flex items-center gap-2"
+        >
+          {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+          {isLoading ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+    </form>
   );
 }
 
-// View Submission Details Component
+// View Submission Details Component - styled like Category Modal
 function ViewSubmissionDetails({ submission }: { submission: Submission }) {
   return (
-    <div className="space-y-8 pb-6">
-      {/* Equipment Overview Card */}
-      <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-[rgba(59,130,246,0.2)] rounded-xl p-6">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-blue-500/20 rounded-lg">
-            <Package className="w-8 h-8 text-blue-400" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white mb-2">{submission.name}</h2>
-            <div className="flex items-center gap-4 text-sm text-gray-300">
-              <span className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                {new Date(submission.createdAt).toLocaleDateString()}
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                {new Date(submission.createdAt).toLocaleTimeString()}
-              </span>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-green-400">
-              {submission.askingPrice ? `$${submission.askingPrice}` : 'Open to offers'}
-            </p>
-            <p className="text-sm text-gray-400">Asking Price</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Equipment Details */}
-        <div className="bg-[#1e293b]/50 border border-[rgba(59,130,246,0.1)] rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <ShoppingBag className="w-5 h-5 text-blue-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-white">Equipment Details</h3>
-          </div>
+    <div className="flex-1 overflow-y-auto bg-[#0f172a]/50">
+      <div className="p-6 space-y-8">
+        
+        {/* Equipment Information */}
+        <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Package className="w-5 h-5 text-blue-400" />
+            Equipment Information
+          </h3>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
-              <Tag className="w-4 h-4 text-blue-400" />
-              <div>
-                <p className="text-xs text-gray-400">Brand</p>
-                <p className="text-white font-medium">{submission.brand || 'Not specified'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Equipment Name</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white font-medium">
+                {submission.name}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Brand</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white">
+                {submission.brand || 'Not specified'}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Condition</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white capitalize">
+                {submission.condition?.replace('_', ' ')}
               </div>
             </div>
             
-            <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
-              <Star className="w-4 h-4 text-yellow-400" />
-              <div>
-                <p className="text-xs text-gray-400">Condition</p>
-                <p className="text-white font-medium capitalize">{submission.condition?.replace('_', ' ')}</p>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Asking Price</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-green-400 font-bold text-lg">
+                {submission.askingPrice ? `$${submission.askingPrice}` : 'Open to offers'}
               </div>
             </div>
             
             {submission.weight && (
-              <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
-                <Package className="w-4 h-4 text-purple-400" />
-                <div>
-                  <p className="text-xs text-gray-400">Weight</p>
-                  <p className="text-white font-medium">{submission.weight} lbs</p>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Weight</label>
+                <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white">
+                  {submission.weight} lbs
                 </div>
               </div>
             )}
 
-            {submission.dimensions && (
-              <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
-                <Ruler className="w-4 h-4 text-orange-400" />
-                <div>
-                  <p className="text-xs text-gray-400">Dimensions</p>
-                  <p className="text-white font-medium">{submission.dimensions}</p>
-                </div>
-              </div>
-            )}
-
-            {submission.yearPurchased && (
-              <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
-                <Calendar className="w-4 h-4 text-green-400" />
-                <div>
-                  <p className="text-xs text-gray-400">Year Purchased</p>
-                  <p className="text-white font-medium">{submission.yearPurchased}</p>
-                </div>
-              </div>
-            )}
-
-            {submission.originalPrice && (
-              <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
-                <DollarSign className="w-4 h-4 text-green-400" />
-                <div>
-                  <p className="text-xs text-gray-400">Original Price</p>
-                  <p className="text-white font-medium">${submission.originalPrice}</p>
+            {submission.offeredPrice && (
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Our Offer</label>
+                <div className="px-4 py-3 bg-green-500/20 border border-green-500 rounded-lg text-green-400 font-bold text-lg">
+                  ${submission.offeredPrice}
                 </div>
               </div>
             )}
@@ -621,103 +606,99 @@ function ViewSubmissionDetails({ submission }: { submission: Submission }) {
         </div>
 
         {/* Seller Information */}
-        <div className="bg-[#1e293b]/50 border border-[rgba(59,130,246,0.1)] rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <User className="w-5 h-5 text-blue-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-white">Seller Information</h3>
-          </div>
+        <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <User className="w-5 h-5 text-blue-400" />
+            Seller Information
+          </h3>
           
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
-              <Mail className="w-4 h-4 text-blue-400" />
-              <div>
-                <p className="text-xs text-gray-400">Email</p>
-                <p className="text-white font-medium">{submission.user?.email || 'N/A'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Email</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white">
+                {submission.user?.email || 'N/A'}
               </div>
             </div>
-
+            
             {submission.user?.name && (
-              <div className="flex items-center gap-3 p-3 bg-[#0F172A]/50 rounded-lg">
-                <User className="w-4 h-4 text-purple-400" />
-                <div>
-                  <p className="text-xs text-gray-400">Name</p>
-                  <p className="text-white font-medium">{submission.user.name}</p>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Name</label>
+                <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white">
+                  {submission.user.name}
                 </div>
               </div>
             )}
-
-            {submission.offeredPrice && (
-              <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-                <DollarSign className="w-5 h-5 text-green-400" />
-                <div>
-                  <p className="text-xs text-green-300">Our Offer</p>
-                  <p className="text-xl font-bold text-green-400">${submission.offeredPrice}</p>
-                </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Submitted</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-white">
+                {new Date(submission.createdAt).toLocaleString()}
               </div>
-            )}
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Reference #</label>
+              <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-blue-400 font-mono">
+                {submission.referenceNumber}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Description & Notes */}
-      <div className="space-y-6">
+        {/* Description */}
         {submission.description && (
-          <div className="bg-[#1e293b]/50 border border-[rgba(59,130,246,0.1)] rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <MessageSquare className="w-5 h-5 text-blue-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white">Description</h3>
+          <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-blue-400" />
+              Description
+            </h3>
+            
+            <div className="px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-lg text-gray-300 leading-relaxed">
+              {submission.description}
             </div>
-            <p className="text-gray-300 leading-relaxed">{submission.description}</p>
           </div>
         )}
 
+        {/* Admin Notes */}
         {submission.adminNotes && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-500/20 rounded-lg">
-                <MessageSquare className="w-5 h-5 text-red-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-red-400">Admin Notes</h3>
+          <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-red-700/50">
+            <h3 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-400" />
+              Admin Notes
+            </h3>
+            
+            <div className="px-4 py-3 bg-red-900/20 border border-red-700 rounded-lg text-gray-300 leading-relaxed">
+              {submission.adminNotes}
             </div>
-            <p className="text-gray-300 leading-relaxed">{submission.adminNotes}</p>
+          </div>
+        )}
+
+        {/* Images */}
+        {submission.images && submission.images.length > 0 && (
+          <div className="bg-[#1e293b]/50 rounded-xl p-6 border border-gray-700/50">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-blue-400" />
+              Equipment Images ({submission.images.length})
+            </h3>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {submission.images.map((image, index) => (
+                <div key={index} className="group relative aspect-square rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500 transition-colors">
+                  <img
+                    src={image}
+                    alt={`${submission.name} - Image ${index + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    {index + 1} / {submission.images.length}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
-
-      {/* Images Gallery */}
-      {submission.images && submission.images.length > 0 && (
-        <div className="bg-[#1e293b]/50 border border-[rgba(59,130,246,0.1)] rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <ImageIcon className="w-5 h-5 text-blue-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-white">Equipment Images</h3>
-            <Badge variant="secondary" className="ml-auto">
-              {submission.images.length} {submission.images.length === 1 ? 'Photo' : 'Photos'}
-            </Badge>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {submission.images?.map((image, index) => (
-              <div key={index} className="group relative aspect-square rounded-lg overflow-hidden bg-[#0F172A]/50 border border-[rgba(59,130,246,0.1)] hover:border-blue-400/40 transition-colors">
-                <img
-                  src={image}
-                  alt={`${submission.name} - Image ${index + 1}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-                <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                  {index + 1} of {submission.images?.length || 0}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
