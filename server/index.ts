@@ -19,15 +19,33 @@ console.log("[BOOT]", { env, nodeEnv: process.env.NODE_ENV });
 import { assertEnvSafety } from "./config/env-guard";
 assertEnvSafety();
 
+// CRITICAL: Database Environment Safety Guards
 if (env === 'production') {
-  // Guard: production must be on the muddy-moon pooled host
-  if (!host.includes('muddy-moon') || !host.includes('pooler')) {
-    console.error('[CRITICAL] ❌ Production attempted to use non-prod DB host:', host);
+  // Production MUST use muddy-moon database only
+  if (!host.includes('muddy-moon')) {
+    console.error('[CRITICAL SECURITY] ❌ Production attempted to use NON-PRODUCTION database!');
+    console.error('[CRITICAL SECURITY] Expected: muddy-moon, Got:', host);
+    console.error('[CRITICAL SECURITY] Deployment BLOCKED to prevent data corruption');
     process.exit(1);
   }
-  console.log('[PRODUCTION] ✅ Using production DB host:', host);
+  
+  // Ensure production uses pooled connection
+  if (!host.includes('pooler')) {
+    console.error('[CRITICAL] ❌ Production must use pooled connection');
+    process.exit(1);
+  }
+  
+  console.log('[PRODUCTION] ✅ Using production DB host (muddy-moon):', host);
 } else {
-  console.log('[DEV] Using development DB host:', host);
+  // Development MUST use lucky-poetry database only
+  if (!host.includes('lucky-poetry')) {
+    console.error('[CRITICAL DEV] ❌ Development attempted to use NON-DEVELOPMENT database!');
+    console.error('[CRITICAL DEV] Expected: lucky-poetry, Got:', host);
+    console.error('[CRITICAL DEV] Startup BLOCKED to prevent cross-contamination');
+    process.exit(1);
+  }
+  
+  console.log('[DEV] ✅ Using development DB host (lucky-poetry):', host);
 }
 
 // 2) Migrations with production control
