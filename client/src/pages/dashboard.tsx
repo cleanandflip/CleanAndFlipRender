@@ -31,7 +31,10 @@ import {
   Eye,
   AlertCircle,
   Calendar,
-  Ban
+  Ban,
+  Mail,
+  Shield,
+  Download
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -590,73 +593,106 @@ function DashboardContent() {
 
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <Card className="p-6">
-              <h2 className="font-bebas text-2xl mb-6">PROFILE INFORMATION</h2>
-              
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-semibold mb-4 flex items-center">
-                    <User className="mr-2" size={20} />
-                    Personal Information
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">First Name</label>
-                      <div className="glass rounded-lg px-3 py-2 inline-block min-w-[200px]">{user?.firstName || 'Not provided'}</div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Last Name</label>
-                      <div className="glass rounded-lg px-3 py-2 inline-block min-w-[200px]">{user?.lastName || 'Not provided'}</div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Email</label>
-                      <div className="glass rounded-lg px-3 py-2 inline-block min-w-[200px]">{user?.email || 'Not provided'}</div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Phone</label>
-                      <div className="glass rounded-lg px-3 py-2 inline-block min-w-[200px]">{user?.phone || 'Not provided'}</div>
-                    </div>
+            <div className="space-y-6">
+              {/* Profile Header */}
+              <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                    <User className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="font-bebas text-2xl">
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName} ${user.lastName}` 
+                        : 'Profile Information'
+                      }
+                    </h2>
+                    <p className="text-text-secondary">Manage your account details and preferences</p>
                   </div>
                 </div>
-                
-                <div>
-                  <h3 className="font-semibold mb-4 flex items-center">
-                    <Settings className="mr-2" size={20} />
-                    Account Settings
-                  </h3>
-                  <div className="space-y-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="justify-start min-w-[180px]"
-                    >
-                      Change Password
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="justify-start min-w-[180px]"
-                    >
-                      Email Preferences
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="justify-start min-w-[180px]"
-                    >
-                      Privacy Settings
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="justify-start min-w-[180px]"
-                    >
-                      Download Data
-                    </Button>
+              </Card>
+
+              {/* Personal Information Card */}
+              <Card className="p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center">
+                  <User className="mr-2" size={20} />
+                  Personal Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-text-secondary">First Name</label>
+                    <p className="font-medium">{user?.firstName || 'Not provided'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-text-secondary">Last Name</label>
+                    <p className="font-medium">{user?.lastName || 'Not provided'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-text-secondary">Email Address</label>
+                    <p className="font-medium">{user?.email || 'Not provided'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-text-secondary">Phone Number</label>
+                    <p className="font-medium">{user?.phone || 'Not provided'}</p>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+
+              {/* Account Settings Card */}
+              <Card className="p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center">
+                  <Settings className="mr-2" size={20} />
+                  Account Settings
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Button 
+                    variant="outline" 
+                    size="default"
+                    className="justify-start h-12"
+                  >
+                    <Settings className="mr-2" size={16} />
+                    Change Password
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="default"
+                    className="justify-start h-12"
+                  >
+                    <Mail className="mr-2" size={16} />
+                    Email Preferences
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="default"
+                    className="justify-start h-12"
+                  >
+                    <Shield className="mr-2" size={16} />
+                    Privacy Settings
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="default"
+                    className="justify-start h-12"
+                  >
+                    <Download className="mr-2" size={16} />
+                    Download Data
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Account Status Card */}
+              <Card className="p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center">
+                  <CheckCircle className="mr-2" size={20} />
+                  Account Status
+                </h3>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="font-medium">Account Active</span>
+                  <span className="text-text-secondary">• Member since {new Date(user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                </div>
+              </Card>
+            </div>
           )}
 
           {/* Addresses Tab - SSOT System */}
