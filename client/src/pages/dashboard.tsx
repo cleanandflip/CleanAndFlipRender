@@ -385,15 +385,13 @@ function DashboardContent() {
                         <div className="text-right">
                           <div className="font-semibold text-lg">${order.total}</div>
                           <SmartLink href={`/orders/${order.id}`}>
-                            <div className="glass glass-hover rounded-lg p-1 mt-2 inline-block">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-8 bg-white hover:bg-gray-100 text-black border border-white transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                              >
-                                View Details
-                              </Button>
-                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="mt-2"
+                            >
+                              View Details
+                            </Button>
                           </SmartLink>
                         </div>
                       </div>
