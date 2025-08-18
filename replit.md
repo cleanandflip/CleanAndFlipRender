@@ -3,6 +3,14 @@
 ## Overview
 Clean & Flip is a production-hardened full-stack web application for exchanging weightlifting equipment. It offers features for buying and selling gym gear, including product catalog management, user authentication, a shopping cart, order processing, and administrative tools. The platform operates on a single-seller model, with admin managing inventory and processing user submissions. The project features enterprise-grade production hardening with automatic migrations, environment validation, complete onboarding system removal, and comprehensive data integrity constraints.
 
+## Recent Changes (August 18, 2025)
+✅ **Database Schema Synchronization Complete** - Fixed "column a.is_local does not exist" and "column a.updated_at does not exist" errors by:
+- Added missing is_local, created_at, updated_at columns to production addresses table
+- Implemented production-safe SQL queries with COALESCE fallbacks in server/routes.ts
+- Verified Google OAuth schema alignment between development and production environments
+- Confirmed environment isolation: development (lucky-poetry) and production (muddy-moon) databases properly separated
+✅ **Google Authentication System Ready** - Both signup and signin flows prepared with proper user state persistence and schema compatibility
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 

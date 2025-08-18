@@ -2716,8 +2716,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             a.id as address_id, a.first_name as addr_first_name, 
             a.last_name as addr_last_name, a.street1, a.street2, a.city, 
             a.state, a.postal_code, a.country, 
-            COALESCE(a.is_local, false) as is_local, a.is_default, a.created_at as address_created_at,
-            a.updated_at as address_updated_at
+            COALESCE(a.is_local, false) as is_local, a.is_default, 
+            COALESCE(a.created_at, NOW()) as address_created_at,
+            COALESCE(a.updated_at, NOW()) as address_updated_at
           FROM users u
           LEFT JOIN addresses a ON a.user_id = u.id AND a.is_default = true
           WHERE u.id = ${userId}
@@ -2733,8 +2734,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               a.id as address_id, a.first_name as addr_first_name, 
               a.last_name as addr_last_name, a.street1, a.street2, a.city, 
               a.state, a.postal_code, a.country, 
-              false as is_local, a.is_default, a.created_at as address_created_at,
-              a.updated_at as address_updated_at
+              false as is_local, a.is_default, 
+              COALESCE(a.created_at, NOW()) as address_created_at,
+              COALESCE(a.updated_at, NOW()) as address_updated_at
             FROM users u
             LEFT JOIN addresses a ON a.user_id = u.id AND a.is_default = true
             WHERE u.id = ${userId}
