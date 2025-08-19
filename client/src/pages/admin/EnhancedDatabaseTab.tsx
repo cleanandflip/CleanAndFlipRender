@@ -65,7 +65,7 @@ interface Checkpoint {
 
 export default function EnhancedDatabaseTab() {
   const { toast } = useToast();
-  const [selectedBranch, setSelectedBranch] = useState<string>('production');
+  const [selectedBranch, setSelectedBranch] = useState<string>('dev');
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [selectedSchema, setSelectedSchema] = useState<string>('public');
   const [showTableDetails, setShowTableDetails] = useState<boolean>(false);
@@ -82,7 +82,7 @@ export default function EnhancedDatabaseTab() {
 
   // Fetch tables for selected branch
   const { data: tables = [], isLoading: tablesLoading } = useQuery<Table[]>({
-    queryKey: ['/api/admin/db', selectedBranch, 'tables'],
+    queryKey: ['/api/admin/db/' + selectedBranch + '/tables'],
     enabled: !!selectedBranch,
   });
 
@@ -92,19 +92,19 @@ export default function EnhancedDatabaseTab() {
     indexes: Array<any>;
     rowCount: number;
   }>({
-    queryKey: ['/api/admin/db', selectedBranch, 'tables', selectedSchema, selectedTable],
+    queryKey: ['/api/admin/db/' + selectedBranch + '/tables/' + selectedSchema + '/' + selectedTable],
     enabled: !!selectedBranch && !!selectedTable && showTableDetails,
   });
 
   // Fetch migrations
   const { data: migrations = [] } = useQuery<Migration[]>({
-    queryKey: ['/api/admin/db', selectedBranch, 'migrations'],
+    queryKey: ['/api/admin/db/' + selectedBranch + '/migrations'],
     enabled: !!selectedBranch,
   });
 
   // Fetch checkpoints
   const { data: checkpoints = [] } = useQuery<Checkpoint[]>({
-    queryKey: ['/api/admin/db', selectedBranch, 'checkpoints'],
+    queryKey: ['/api/admin/db/' + selectedBranch + '/checkpoints'],
     enabled: !!selectedBranch,
   });
 
@@ -123,7 +123,7 @@ export default function EnhancedDatabaseTab() {
     },
     onSuccess: () => {
       toast({ title: "Checkpoint Created", description: "Database checkpoint created successfully" });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/db', selectedBranch, 'checkpoints'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/db/' + selectedBranch + '/checkpoints'] });
       setShowCheckpointDialog(false);
       setCheckpointLabel('');
       setCheckpointNotes('');
