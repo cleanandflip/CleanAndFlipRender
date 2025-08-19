@@ -10,7 +10,7 @@ import { UsersTab } from './admin/UsersTab';
 import { SystemTab } from './admin/SystemTab';
 import { StripeTab } from './admin/StripeTab';
 import { SubmissionsTab } from './admin/SubmissionsTab';
-import { EnhancedDatabaseTab } from './admin/EnhancedDatabaseTab';
+import { SimpleDatabaseTab } from './admin/SimpleDatabaseTab';
 
 export function AdminDashboard() {
   const [, params] = useRoute('/admin/:tab?');
@@ -25,7 +25,7 @@ export function AdminDashboard() {
       case 'system': return <SystemTab />;
       case 'stripe': return <StripeTab />;
       case 'submissions': return <SubmissionsTab />;
-      case 'database': return <EnhancedDatabaseTab />;
+      case 'database': return <SimpleDatabaseTab />;
       default: return <ProductsTab />;
     }
   };

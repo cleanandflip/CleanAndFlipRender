@@ -74,7 +74,25 @@ export async function migrationHistory(branch: Branch) {
 export async function getTableRowCount(branch: Branch, schema: string, table: string) {
   const db = getPool(branch);
   try {
-    const { rows } = await db.query(
+    const q = `SELECT COUNT(*) as count FROM "${schema}"."${table}"`;
+    const { rows } = await db.query(q);
+    return parseInt(rows[0].count);
+  } catch {
+    return 0;
+  }
+}
+
+export async function logAdminAction(branch: Branch, action: string, actorId: string | null, details: object) {
+  const db = getPool(branch);
+  try {
+    await db.query(
+      'INSERT INTO admin_actions (actor_id, action, details) VALUES ($1, $2, $3)',
+      [actorId, action, JSON.stringify(details)]
+    );
+  } catch (error) {
+    console.error('Failed to log admin action:', error);
+  }
+}
       `SELECT COUNT(*) as count FROM ${schema}.${table}`
     );
     return parseInt(rows[0].count);
