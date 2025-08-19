@@ -78,7 +78,7 @@ r.get("/:branch/migrations", async (req, res) => {
 });
 
 // Execute SQL query
-r.post("/api/admin/db/:branch/query", async (req: any, res) => {
+r.post("/:branch/query", async (req: any, res) => {
   try {
     const branch = BranchSchema.parse(req.params.branch);
     const { query } = req.body;
@@ -121,7 +121,7 @@ r.post("/api/admin/db/:branch/query", async (req: any, res) => {
 });
 
 // Get table data with pagination
-r.post("/api/admin/db/:branch/table-data", async (req: any, res) => {
+r.post("/:branch/table-data", async (req: any, res) => {
   try {
     const branch = BranchSchema.parse(req.params.branch);
     const { table, schema = 'public', limit = 100, offset = 0 } = req.body;
@@ -150,7 +150,7 @@ r.post("/api/admin/db/:branch/table-data", async (req: any, res) => {
 });
 
 // Run migrations UP or DOWN (typed confirmation for prod)
-r.post("/api/admin/db/:branch/migrate", async (req: any, res) => {
+r.post("/:branch/migrate", async (req: any, res) => {
   try {
     const branch = BranchSchema.parse(req.params.branch);
     const direction = z.enum(["up", "down"]).parse(req.query.dir ?? "up");
@@ -215,7 +215,7 @@ r.post("/api/admin/db/:branch/migrate", async (req: any, res) => {
 });
 
 // Create checkpoint (placeholder for now - would integrate with Neon branches)
-r.post("/api/admin/db/:branch/checkpoint", async (req: any, res) => {
+r.post("/:branch/checkpoint", async (req: any, res) => {
   try {
     const branch = BranchSchema.parse(req.params.branch);
     const { label, notes } = req.body;
@@ -245,7 +245,7 @@ r.post("/api/admin/db/:branch/checkpoint", async (req: any, res) => {
 });
 
 // List checkpoints
-r.get("/api/admin/db/:branch/checkpoints", async (req, res) => {
+r.get("/:branch/checkpoints", async (req, res) => {
   try {
     const branch = BranchSchema.parse(req.params.branch);
     

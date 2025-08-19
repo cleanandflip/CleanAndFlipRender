@@ -21,8 +21,8 @@ interface DatabaseTableModalProps {
 interface TableColumn {
   column_name: string;
   data_type: string;
-  is_nullable: string;
-  column_default: string;
+  is_nullable?: string;
+  column_default?: string;
 }
 
 interface TableIndex {
@@ -34,7 +34,7 @@ export function DatabaseTableModal({ table, branch, isOpen, onClose }: DatabaseT
   const [activeTab, setActiveTab] = useState<'structure' | 'indexes' | 'data'>('structure');
 
   // Fetch table details
-  const { data: tableDetails, isLoading } = useQuery({
+  const { data: tableDetails, isLoading, refetch } = useQuery({
     queryKey: ['/api/admin/db/' + branch + '/tables/' + table.table_schema + '/' + table.table_name],
     queryFn: async () => {
       const res = await fetch(`/api/admin/db/${branch}/tables/${table.table_schema}/${table.table_name}`, {

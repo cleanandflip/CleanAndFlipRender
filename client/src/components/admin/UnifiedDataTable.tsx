@@ -21,6 +21,7 @@ interface DataTableProps<T> {
   onSearch?: (query: string) => void;
   onRefresh?: () => void;
   onExport?: () => void;
+  onRowClick?: (item: T) => void;
   actions?: {
     onView?: (item: T) => void;
     onEdit?: (item: T) => void;
@@ -34,13 +35,14 @@ interface DataTableProps<T> {
   loading?: boolean;
 }
 
-export function UnifiedDataTable<T extends { id: string | number }>({
+export function UnifiedDataTable<T extends { id?: string | number; table_name?: string }>({
   data,
   columns,
   searchPlaceholder = "Search...",
   onSearch,
   onRefresh,
   onExport,
+  onRowClick,
   actions,
   pagination,
   loading = false
@@ -162,18 +164,19 @@ export function UnifiedDataTable<T extends { id: string | number }>({
             ) : (
               data.map((item, index) => (
                 <tr
-                  key={item.id}
+                  key={item.id || item.table_name || index}
                   className={cn(
                     "border-b border-gray-800/50",
                     "hover:bg-white/5 transition-colors",
-                    selectedRows.has(item.id) && "bg-blue-500/10"
+                    selectedRows.has(item.id || item.table_name || index) && "bg-blue-500/10"
                   )}
+                  onClick={() => onRowClick?.(item)}
                 >
                   <td className="px-6 py-4">
                     <input
                       type="checkbox"
-                      checked={selectedRows.has(item.id)}
-                      onChange={() => handleSelectRow(item.id)}
+                      checked={selectedRows.has(item.id || item.table_name || index)}
+                      onChange={() => handleSelectRow(item.id || item.table_name || index)}
                       className="rounded border-gray-600 bg-transparent"
                     />
                   </td>
