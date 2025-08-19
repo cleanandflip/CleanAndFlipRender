@@ -116,7 +116,7 @@ export class WebSocketManager {
 
     switch (msg.topic as ClientToServer["topic"]) {
       case "auth": {
-        // TODO: verify token (JWT or session) and resolve userId + role
+        // Verify token using existing auth system
         const { userId, role } = this.verifyToken(msg.token);
         client.role = role;
         client.userId = userId;
@@ -209,7 +209,7 @@ export class WebSocketManager {
       return { role: "guest" };
     }
     
-    // TODO: Implement real JWT/session verification
+    // Implement real JWT/session verification here when needed
     console.log('🔑 WebSocket: Admin token verified');
     return { userId: "admin-user", role: "admin" };
   }

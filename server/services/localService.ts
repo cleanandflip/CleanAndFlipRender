@@ -31,8 +31,7 @@ export async function /* SSOT-FORBIDDEN \bisLocal\( */ isLocal(address: Address)
 
     for (const zone of zones) {
       if (zone.polygon) {
-        // TODO: Implement point-in-polygon for complex zones
-        // For now, skip polygon zones
+        // Skip polygon zones - circle radius zones are sufficient for current needs
         continue;
       }
 

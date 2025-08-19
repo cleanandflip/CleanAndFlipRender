@@ -69,8 +69,8 @@ export function setupAuth(app: Express) {
   
   // CRITICAL: Validate database configuration BEFORE creating session store
   console.log('[SESSION] Validating database configuration...');
-  console.log('[SESSION] DATABASE_URL configured:', !!DATABASE_URL);
-  console.log('[SESSION] DATABASE_URL format:', DATABASE_URL?.startsWith('postgresql://') ? 'Valid PostgreSQL' : 'Invalid');
+  console.log('[SESSION] DATABASE_URL configured:', !!ENV.devDbUrl);
+  console.log('[SESSION] DATABASE_URL format:', ENV.devDbUrl?.startsWith('postgresql://') ? 'Valid PostgreSQL' : 'Invalid');
   
   if (!ENV.devDbUrl) {
     console.error('[SESSION] CRITICAL: No DATABASE_URL found - this will cause MemoryStore fallback');
