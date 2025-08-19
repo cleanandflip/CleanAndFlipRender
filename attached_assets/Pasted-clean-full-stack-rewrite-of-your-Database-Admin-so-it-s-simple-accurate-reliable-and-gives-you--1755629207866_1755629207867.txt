@@ -1,0 +1,876 @@
+clean full-stack rewrite of your Database Admin so it’s simple, accurate, reliable, and gives you:
+
+Dev & Prod branches side-by-side (Lucky-Poem ⇄ Muddy-Moon)
+
+Real checkpoints that persist (no silent resets), with list/diff/rollback
+
+One-click branch sync (Dev→Prod or Prod→Dev) with a confirmation modal, progress, and toasts
+
+Removal of all duplicate/legacy UI
+
+Solid auth/guardrails so you don’t brick Prod by mistake
+
+Below are targeted fixes + drop-in files. You can paste/replace exactly as shown.
+
+0) Quick fixes you hit right now
+A) Vite case-sensitivity + duplicate identifiers
+
+Use lowercase import for shadcn select everywhere:
+
+- import { Select, SelectTrigger, SelectValue } from "@/components/ui/Select"
++ import { Select, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
+In client/src/pages/admin/EnhancedDatabaseTab.tsx remove the duplicate state:
+
+- const [showCheckpointManager, setShowCheckpointManager] = useState(false);
+- const [showCheckpointManager, setShowCheckpointManager] = useState(false);
++ const [isCheckpointManagerOpen, setCheckpointManagerOpen] = useState(false);
+
+
+In client/src/components/admin/UnifiedDataTable.tsx rename the prop to avoid redeclare:
+
+- function UnifiedDataTable({ ..., searchQuery, ... }: Props) {
++ function UnifiedDataTable({ ..., filterQuery, ... }: Props) {
+
+
+…and update call sites:
+
+- <UnifiedDataTable ... searchQuery={searchQuery} />
++ <UnifiedDataTable ... filterQuery={searchQuery} />
+
+B) Auth page crash (Cannot read properties of undefined (reading 'isPending'))
+
+Guard against undefined:
+
+- const { isPending, error, mutate } = useAuthAction();
++ const auth = useAuthAction();
++ const isPending = auth?.isPending ?? false;
++ const error = auth?.error ?? null;
++ const mutate = auth?.mutate ?? (() => {});
+
+1) Remove duplicate / legacy Database UI (permanently)
+
+Delete the old UIs (they cause drift & errors):
+
+git rm -f client/src/pages/admin/SimpleDatabaseTab.tsx client/src/pages/database-admin.tsx
+git commit -m "chore(db-admin): remove legacy/duplicate database UIs"
+
+
+Also remove any routes/imports that referenced them.
+
+Your single source of truth UI is:
+
+client/src/pages/admin/EnhancedDatabaseTab.tsx
+
+2) Environment layout (two pools; branch-aware)
+
+Create/update a simple registry so every admin action can target dev or prod on demand.
+
+server/db/registry.ts
+
+import { Pool } from "pg";
+
+export type Branch = "dev" | "prod";
+
+const devUrl = process.env.DEV_DATABASE_URL || process.env.DATABASE_URL; // Lucky-Poem
+const prodUrl = process.env.PROD_DATABASE_URL;                           // Muddy-Moon
+
+if (!devUrl) throw new Error("DEV_DATABASE_URL (or DATABASE_URL) missing");
+if (!prodUrl) throw new Error("PROD_DATABASE_URL missing");
+
+const devPool = new Pool({ connectionString: devUrl, max: 10 });
+const prodPool = new Pool({ connectionString: prodUrl, max: 10 });
+
+export function getPool(branch: Branch): Pool {
+  return branch === "prod" ? prodPool : devPool;
+}
+
+3) Real Checkpoints that persist (list / diff / rollback)
+
+We’ll store checkpoint metadata in an admin schema and materialize snapshot schemas like ckpt_20250819_013445_mylabel that hold plain tables (no FKs) and sequence values. Rollback replays from that snapshot. This works in any Postgres (including Neon), without vendor APIs.
+
+3.1 Migration: schema + functions
+
+Create a migration file, e.g.
+server/db/migrations/20250819_checkpoints.sql
+
+BEGIN;
+
+CREATE SCHEMA IF NOT EXISTS admin;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS admin.db_checkpoints (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  branch       text NOT NULL CHECK (branch IN ('dev','prod')),
+  label        text NOT NULL,
+  schema_name  text NOT NULL UNIQUE,
+  notes        text,
+  created_by   text,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS admin.db_checkpoint_tables (
+  checkpoint_id uuid NOT NULL REFERENCES admin.db_checkpoints(id) ON DELETE CASCADE,
+  table_schema  text NOT NULL,
+  table_name    text NOT NULL,
+  row_count     bigint,
+  PRIMARY KEY (checkpoint_id, table_schema, table_name)
+);
+
+CREATE TABLE IF NOT EXISTS admin.db_checkpoint_sequences (
+  checkpoint_id   uuid NOT NULL REFERENCES admin.db_checkpoints(id) ON DELETE CASCADE,
+  sequence_schema text NOT NULL,
+  sequence_name   text NOT NULL,
+  last_value      bigint NOT NULL,
+  PRIMARY KEY (checkpoint_id, sequence_schema, sequence_name)
+);
+
+-- Normalize a label to a slug
+CREATE OR REPLACE FUNCTION admin.slugify_label(p_label text)
+RETURNS text LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE s text;
+BEGIN
+  s := lower(regexp_replace(p_label, '[^a-zA-Z0-9]+', '_', 'g'));
+  s := regexp_replace(s, '^_+|_+$', '', 'g');
+  IF s = '' THEN s := 'checkpoint'; END IF;
+  RETURN s;
+END$$;
+
+-- Create snapshot schema with shallow table copies (no constraints) + data + sequence values
+CREATE OR REPLACE FUNCTION admin.create_checkpoint(
+  p_branch text,
+  p_label  text,
+  p_notes  text DEFAULT NULL,
+  p_include_schemas text[] DEFAULT ARRAY['public'],
+  p_created_by text DEFAULT NULL
+) RETURNS uuid
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_id uuid := gen_random_uuid();
+  v_slug text := admin.slugify_label(p_label);
+  v_schema text := 'ckpt_' || to_char(now(), 'YYYYMMDD_HH24MISS') || '_' || v_slug;
+  r record;
+  v_count bigint;
+  v_sql text;
+BEGIN
+  IF NOT (p_branch IN ('dev','prod')) THEN
+    RAISE EXCEPTION 'invalid branch';
+  END IF;
+
+  EXECUTE format('CREATE SCHEMA %I', v_schema);
+
+  -- Copy tables (structure w/o constraints) and data
+  FOR r IN
+    SELECT table_schema, table_name
+    FROM information_schema.tables
+    WHERE table_type='BASE TABLE'
+      AND table_schema = ANY(p_include_schemas)
+      AND table_schema NOT IN ('admin', 'pg_catalog', 'information_schema')
+  LOOP
+    v_sql := format('CREATE TABLE %I.%I (LIKE %I.%I INCLUDING DEFAULTS INCLUDING IDENTITY)', v_schema, r.table_name, r.table_schema, r.table_name);
+    EXECUTE v_sql;
+
+    v_sql := format('INSERT INTO %I.%I SELECT * FROM %I.%I', v_schema, r.table_name, r.table_schema, r.table_name);
+    EXECUTE v_sql;
+
+    EXECUTE format('SELECT count(*) FROM %I.%I', v_schema, r.table_name) INTO v_count;
+
+    INSERT INTO admin.db_checkpoint_tables(checkpoint_id, table_schema, table_name, row_count)
+    VALUES (v_id, v_schema, r.table_name, v_count);
+  END LOOP;
+
+  -- Capture sequences
+  FOR r IN
+    SELECT sequence_schema, sequence_name
+    FROM information_schema.sequences
+    WHERE sequence_schema = ANY(p_include_schemas)
+      AND sequence_schema NOT IN ('admin', 'pg_catalog', 'information_schema')
+  LOOP
+    EXECUTE format('SELECT last_value FROM %I.%I', r.sequence_schema, r.sequence_name) INTO v_count;
+    INSERT INTO admin.db_checkpoint_sequences(checkpoint_id, sequence_schema, sequence_name, last_value)
+    VALUES (v_id, r.sequence_schema, r.sequence_name, v_count);
+  END LOOP;
+
+  INSERT INTO admin.db_checkpoints(id, branch, label, schema_name, notes, created_by)
+  VALUES (v_id, p_branch, p_label, v_schema, p_notes, p_created_by);
+
+  RETURN v_id;
+END$$;
+
+-- Diff: per-table row-count deltas between current and checkpoint
+CREATE OR REPLACE FUNCTION admin.diff_checkpoint(p_checkpoint uuid)
+RETURNS TABLE(table_name text, current_count bigint, checkpoint_count bigint, delta bigint)
+LANGUAGE plpgsql
+AS $$
+DECLARE v_schema text;
+BEGIN
+  SELECT schema_name INTO v_schema FROM admin.db_checkpoints WHERE id = p_checkpoint;
+  IF v_schema IS NULL THEN RAISE EXCEPTION 'checkpoint not found'; END IF;
+
+  RETURN QUERY
+  WITH cur AS (
+    SELECT table_name, (xpath('/row/c/text()', xml_count))[1]::text::bigint AS cnt
+    FROM (
+      SELECT t.table_name,
+             xmlforest((SELECT count(*) FROM format('%I.%I', t.table_schema, t.table_name)::regclass) AS c) AS xml_count
+      FROM information_schema.tables t
+      WHERE t.table_type='BASE TABLE' AND t.table_schema='public'
+    ) x
+  ), ck AS (
+    SELECT table_name, row_count AS cnt
+    FROM admin.db_checkpoint_tables
+    WHERE checkpoint_id = p_checkpoint
+  )
+  SELECT COALESCE(cur.table_name, ck.table_name) AS table_name,
+         COALESCE(cur.cnt, 0) AS current_count,
+         COALESCE(ck.cnt, 0) AS checkpoint_count,
+         COALESCE(cur.cnt,0) - COALESCE(ck.cnt,0) AS delta
+  FROM cur
+  FULL OUTER JOIN ck ON ck.table_name = cur.table_name
+  ORDER BY table_name;
+END$$;
+
+-- Roll back: replace current data with snapshot data and restore sequences
+CREATE OR REPLACE FUNCTION admin.rollback_to_checkpoint(p_checkpoint uuid)
+RETURNS void LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_schema text;
+  r record;
+  cols text;
+  shared_cols text;
+  v_sql text;
+BEGIN
+  SELECT schema_name INTO v_schema FROM admin.db_checkpoints WHERE id = p_checkpoint;
+  IF v_schema IS NULL THEN RAISE EXCEPTION 'checkpoint not found'; END IF;
+
+  PERFORM pg_advisory_lock(987654321); -- global guard
+
+  BEGIN
+    -- Disable triggers/constraints to avoid FK order issues
+    EXECUTE 'SET session_replication_role = replica';
+
+    -- Truncate all public tables
+    FOR r IN
+      SELECT table_schema, table_name
+      FROM information_schema.tables
+      WHERE table_type='BASE TABLE' AND table_schema='public'
+    LOOP
+      EXECUTE format('TRUNCATE TABLE %I.%I CASCADE', r.table_schema, r.table_name);
+    END LOOP;
+
+    -- Refill from checkpoint, using shared column intersection
+    FOR r IN
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = v_schema AND table_type='BASE TABLE'
+    LOOP
+      SELECT string_agg(quote_ident(c.column_name), ',')
+      INTO shared_cols
+      FROM information_schema.columns c
+      JOIN information_schema.columns p
+        ON p.table_schema='public' AND p.table_name=r.table_name
+       AND p.column_name=c.column_name
+      WHERE c.table_schema = v_schema AND c.table_name=r.table_name;
+
+      IF shared_cols IS NULL THEN CONTINUE; END IF;
+
+      v_sql := format('INSERT INTO public.%I(%s) SELECT %s FROM %I.%I',
+                      r.table_name, shared_cols, shared_cols, v_schema, r.table_name);
+      EXECUTE v_sql;
+    END LOOP;
+
+    -- Restore sequences
+    FOR r IN
+      SELECT sequence_schema, sequence_name, last_value
+      FROM admin.db_checkpoint_sequences
+      WHERE checkpoint_id = p_checkpoint
+    LOOP
+      EXECUTE format('SELECT setval(%L, %s, true)', quote_ident(r.sequence_schema)||'.'||quote_ident(r.sequence_name), r.last_value);
+    END LOOP;
+
+    EXECUTE 'SET session_replication_role = origin';
+  EXCEPTION WHEN OTHERS THEN
+    EXECUTE 'SET session_replication_role = origin';
+    RAISE;
+  END;
+
+  PERFORM pg_advisory_unlock(987654321);
+END$$;
+
+COMMIT;
+
+
+Run your normal migration runner (whatever applyMigrations uses). This is vendor-agnostic and will work on both Lucky-Poem (dev) and Muddy-Moon (prod).
+
+3.2 Server helpers for checkpoints
+
+server/db/checkpoints.ts
+
+import { Pool } from "pg";
+
+export async function createCheckpoint(pool: Pool, branch: "dev"|"prod", label: string, notes?: string, who?: string) {
+  const q = `SELECT admin.create_checkpoint($1,$2,$3,$4,$5) AS id`;
+  const schemas = ['public']; // add more if you need
+  const { rows } = await pool.query(q, [branch, label, notes || null, schemas, who || null]);
+  return rows[0].id as string;
+}
+
+export async function listCheckpoints(pool: Pool) {
+  const { rows } = await pool.query(
+    `SELECT id, branch, label, schema_name, notes, created_by, created_at
+     FROM admin.db_checkpoints ORDER BY created_at DESC`
+  );
+  return rows;
+}
+
+export async function diffCheckpoint(pool: Pool, id: string) {
+  const { rows } = await pool.query(
+    `SELECT * FROM admin.diff_checkpoint($1)`, [id]
+  );
+  return rows;
+}
+
+export async function rollbackToCheckpoint(pool: Pool, id: string) {
+  await pool.query(`BEGIN`);
+  try {
+    await pool.query(`SELECT admin.rollback_to_checkpoint($1)`, [id]);
+    await pool.query(`COMMIT`);
+  } catch (e) {
+    await pool.query(`ROLLBACK`);
+    throw e;
+  }
+}
+
+3.3 Routes (checkpoints)
+
+Extend your existing admin DB routes:
+
+server/routes/admin-db.ts (additions)
+
+import { Router } from "express";
+import { getPool } from "../db/registry";
+import { createCheckpoint, listCheckpoints, diffCheckpoint, rollbackToCheckpoint } from "../db/checkpoints";
+import { requireAdmin } from "../middleware/require-admin";
+
+const router = Router();
+
+// List checkpoints (per branch DB)
+router.get("/api/admin/db/:branch/checkpoints", requireAdmin, async (req, res) => {
+  const pool = getPool(req.params.branch === "prod" ? "prod" : "dev");
+  const rows = await listCheckpoints(pool);
+  res.json({ ok: true, checkpoints: rows });
+});
+
+// Create checkpoint
+router.post("/api/admin/db/:branch/checkpoint", requireAdmin, async (req, res) => {
+  const { label, notes } = req.body || {};
+  if (!label) return res.status(400).json({ ok: false, error: "Label required" });
+  const branch = (req.params.branch === "prod" ? "prod" : "dev");
+  const pool = getPool(branch);
+  const id = await createCheckpoint(pool, branch, label, notes, req.user?.email || "admin");
+  res.json({ ok: true, id });
+});
+
+// Diff
+router.get("/api/admin/db/:branch/checkpoints/:id/diff", requireAdmin, async (req, res) => {
+  const branch = (req.params.branch === "prod" ? "prod" : "dev");
+  const pool = getPool(branch);
+  const diff = await diffCheckpoint(pool, req.params.id);
+  res.json({ ok: true, diff });
+});
+
+// Rollback
+router.post("/api/admin/db/:branch/rollback/:id", requireAdmin, async (req, res) => {
+  const branch = (req.params.branch === "prod" ? "prod" : "dev");
+  const pool = getPool(branch);
+  await rollbackToCheckpoint(pool, req.params.id);
+  res.json({ ok: true });
+});
+
+export default router;
+
+
+requireAdmin is your existing role check; keep it strict.
+
+4) One-click Sync between databases (Dev ⇄ Prod)
+
+Design goals:
+
+Safe: creates an auto checkpoint on the target before syncing.
+
+Fast enough for typical datasets.
+
+Order-agnostic: temporarily disables triggers (FKs) during copy.
+
+Progress via WebSocket (you already have WS online).
+
+Confirmation text for Dev→Prod.
+
+4.1 Service (copy data)
+
+server/services/db-sync.ts
+
+import { Pool } from "pg";
+import { getPool, Branch } from "../db/registry";
+import { createCheckpoint } from "../db/checkpoints";
+
+// Helper: list tables in public schema, excluding admin/sessions if desired
+async function listTables(pool: Pool): Promise<string[]> {
+  const { rows } = await pool.query(`
+    SELECT table_name
+    FROM information_schema.tables
+    WHERE table_schema='public' AND table_type='BASE TABLE'
+      AND table_name NOT IN ('sessions') -- optional
+    ORDER BY table_name
+  `);
+  return rows.map(r => r.table_name);
+}
+
+// Copy all data from source→target (truncating target)
+export async function syncDatabases(opts: {
+  from: Branch;
+  to: Branch;
+  wsBroadcast?: (msg: any) => void;   // optional progress reporter
+  actor?: string;                     // who launched sync
+}) {
+  const source = getPool(opts.from);
+  const target = getPool(opts.to);
+
+  if (opts.from === opts.to) throw new Error("from and to must differ");
+
+  // 1) Create a target checkpoint (safety net)
+  const ckptId = await createCheckpoint(target, opts.to, `autosync_${opts.from}_to_${opts.to}`, "Automatic checkpoint before sync", opts.actor);
+  opts.wsBroadcast?.({ type: "sync/checkpoint-created", checkpointId: ckptId });
+
+  // 2) Get tables
+  const tables = await listTables(source);
+  opts.wsBroadcast?.({ type: "sync/tables", tables });
+
+  // 3) Advisory lock to avoid concurrent destructive ops
+  await target.query(`SELECT pg_advisory_lock(123456789)`);
+
+  try {
+    await target.query('BEGIN');
+    await target.query(`SET session_replication_role = replica`); // disable triggers/FKs
+
+    // TRUNCATE all target tables
+    for (const t of tables) {
+      await target.query(`TRUNCATE TABLE public.${JSON.stringify(t).slice(1,-1)} CASCADE`);
+    }
+    opts.wsBroadcast?.({ type: "sync/truncated", count: tables.length });
+
+    // For each table, stream from source and insert into target
+    for (const t of tables) {
+      opts.wsBroadcast?.({ type: "sync/table-start", table: t });
+
+      // Get column list intersection
+      const { rows: cols } = await target.query(`
+        SELECT c.column_name
+        FROM information_schema.columns c
+        WHERE c.table_schema='public' AND c.table_name=$1
+        ORDER BY c.ordinal_position
+      `, [t]);
+      const colList = cols.map((c: any) => `"${c.column_name}"`).join(',');
+
+      // Batch pull from source
+      const batch = 5000;
+      let offset = 0;
+      let total = 0;
+
+      while (true) {
+        const { rows: chunk } = await source.query(
+          `SELECT ${colList || '*'} FROM public.${JSON.stringify(t).slice(1,-1)} OFFSET $1 LIMIT $2`,
+          [offset, batch]
+        );
+        if (!chunk.length) break;
+
+        // Build multi-row INSERT
+        const values: any[] = [];
+        const placeholders: string[] = [];
+        chunk.forEach((row, i) => {
+          const cols = Object.values(row);
+          const base = i*cols.length;
+          placeholders.push(
+            `(${cols.map((_c, j) => `$${base + j + 1}`).join(',')})`
+          );
+          values.push(...cols);
+        });
+
+        if (values.length) {
+          await target.query(
+            `INSERT INTO public.${JSON.stringify(t).slice(1,-1)} (${colList}) VALUES ${placeholders.join(',')}`,
+            values
+          );
+        }
+
+        offset += batch;
+        total  += chunk.length;
+        opts.wsBroadcast?.({ type: "sync/table-progress", table: t, total });
+      }
+
+      opts.wsBroadcast?.({ type: "sync/table-done", table: t, total });
+    }
+
+    // 4) Restore sequences from source
+    const { rows: seqs } = await source.query(`
+      SELECT sequence_schema, sequence_name
+      FROM information_schema.sequences
+      WHERE sequence_schema='public'
+    `);
+
+    for (const s of seqs) {
+      const q = `SELECT last_value FROM ${JSON.stringify(s.sequence_schema).slice(1,-1)}.${JSON.stringify(s.sequence_name).slice(1,-1)}`;
+      const { rows } = await source.query(q);
+      const last = rows[0]?.last_value ?? 1;
+      await target.query(`SELECT setval($1, $2, true)`, [`"${s.sequence_schema}"."${s.sequence_name}"`, last]);
+    }
+
+    await target.query(`SET session_replication_role = origin`);
+    await target.query('COMMIT');
+    opts.wsBroadcast?.({ type: "sync/done", checkpointId: ckptId });
+  } catch (e) {
+    await target.query('ROLLBACK');
+    opts.wsBroadcast?.({ type: "sync/error", error: String(e) });
+    throw e;
+  } finally {
+    await target.query(`SELECT pg_advisory_unlock(123456789)`);
+  }
+
+  return { checkpointId: ckptId };
+}
+
+
+This approach is portable and safe for your current stack. For huge data, you can later swap the inner copy to pg-copy-streams for COPY-level speeds.
+
+4.2 API route
+
+server/routes/admin-db.ts (add this near the other routes)
+
+import { syncDatabases } from "../services/db-sync";
+
+// Fire-and-wait sync (simple). Requires admin.
+router.post("/api/admin/db/sync", requireAdmin, async (req, res) => {
+  const { direction } = req.body as { direction: "dev_to_prod" | "prod_to_dev" };
+  if (!direction) return res.status(400).json({ ok: false, error: "direction required" });
+
+  const from = direction === "dev_to_prod" ? "dev" : "prod";
+  const to   = direction === "dev_to_prod" ? "prod" : "dev";
+
+  // optional: stricter confirmation for Dev→Prod
+  if (direction === "dev_to_prod" && req.body?.confirmText !== "SYNC PRODUCTION") {
+    return res.status(400).json({ ok: false, error: "Confirmation text mismatch" });
+  }
+
+  try {
+    const ws = req.app.get("wsBroadcast"); // if you stored a broadcast fn on app
+    const result = await syncDatabases({
+      from, to,
+      wsBroadcast: (msg) => ws?.({ channel: "db-sync", ...msg }),
+      actor: req.user?.email || "admin"
+    });
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: String(e) });
+  }
+});
+
+
+If you have a WS hub already, stash a wsBroadcast on app.set("wsBroadcast", fn) in your WebSocket bootstrap so the service can send progress.
+
+5) Frontend: One-click Sync UI + Checkpoints (single tab)
+
+All in client/src/pages/admin/EnhancedDatabaseTab.tsx.
+What you add:
+
+“Branches” section (already there) — keep Dev & Prod toggles.
+
+“Checkpoints” section — list, create, diff, rollback.
+
+“Sync” section with:
+
+Direction toggle: Dev → Prod or Prod → Dev
+
+“Preview” (optional) calls /checkpoints & /tables to render counts
+
+Sync Now button → opens Modal with confirmation text when Dev→Prod
+
+Progress bar with WebSocket updates
+
+Success/Failure toast
+
+Key snippets you can paste into your Enhanced tab:
+
+// imports (top of file)
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { motion } from "framer-motion";
+
+// ... inside component state:
+const [direction, setDirection] = useState<"dev_to_prod" | "prod_to_dev">("dev_to_prod");
+const [confirmOpen, setConfirmOpen] = useState(false);
+const [confirmText, setConfirmText] = useState("");
+const [progress, setProgress] = useState<{phase?: string; table?: string; total?: number} | null>(null);
+const { toast } = useToast();
+const qc = useQueryClient();
+
+// WebSocket progress (subscribe once)
+useEffect(() => {
+  // reuse your existing WS hook if you have it
+  const ws = new WebSocket(location.origin.replace("http", "ws"));
+  ws.onopen = () => ws.send(JSON.stringify({ subscribe: "db-sync" }));
+  ws.onmessage = (ev) => {
+    try {
+      const msg = JSON.parse(ev.data);
+      if (msg?.channel !== "db-sync") return;
+      if (msg.type === "sync/checkpoint-created") setProgress({ phase: "Checkpoint created" });
+      if (msg.type === "sync/truncated")          setProgress({ phase: "Truncated target" });
+      if (msg.type === "sync/table-start")        setProgress({ phase: "Copying", table: msg.table, total: 0 });
+      if (msg.type === "sync/table-progress")     setProgress({ phase: "Copying", table: msg.table, total: msg.total });
+      if (msg.type === "sync/table-done")         setProgress({ phase: "Copied", table: msg.table, total: msg.total });
+      if (msg.type === "sync/done")               setProgress({ phase: "Done" });
+      if (msg.type === "sync/error")              setProgress({ phase: "Error" });
+    } catch {}
+  };
+  return () => ws.close();
+}, []);
+
+// mutation
+const syncMutation = useMutation({
+  mutationFn: async () => {
+    const body: any = { direction };
+    if (direction === "dev_to_prod") body.confirmText = confirmText;
+    const res = await fetch(`/api/admin/db/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+  onSuccess: (data) => {
+    toast({ title: "Sync complete", description: `Checkpoint: ${data.checkpointId}` });
+    setConfirmOpen(false);
+    setConfirmText("");
+    setProgress({ phase: "Done" });
+  },
+  onError: (err: any) => {
+    toast({ title: "Sync failed", description: String(err), variant: "destructive" });
+  }
+});
+
+// UI controls
+return (
+  <div className="space-y-8">
+    {/* Branch picker and table browser you already have above... */}
+
+    {/* --- Sync Section --- */}
+    <div className="rounded-2xl border p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold">Sync Databases</h3>
+        <Select value={direction} onValueChange={(v:any)=>setDirection(v)}>
+          <SelectTrigger className="w-[220px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="dev_to_prod">Development → Production</SelectItem>
+            <SelectItem value="prod_to_dev">Production → Development</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button variant="secondary" onClick={()=>setConfirmOpen(true)}>
+          {direction === "dev_to_prod" ? "Sync Dev → Prod" : "Sync Prod → Dev"}
+        </Button>
+
+        {progress?.phase && (
+          <motion.div
+            key={progress.phase + (progress.table||"")}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="text-sm text-muted-foreground"
+          >
+            {progress.phase}{progress.table ? `: ${progress.table}` : ""}{typeof progress.total === "number" ? ` (${progress.total})` : ""}
+          </motion.div>
+        )}
+      </div>
+    </div>
+
+    {/* --- Confirm Modal --- */}
+    <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {direction === "dev_to_prod" ? "Confirm Dev → Prod Sync" : "Confirm Prod → Dev Sync"}
+          </DialogTitle>
+        </DialogHeader>
+
+        {direction === "dev_to_prod" ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              This will overwrite <b>Production</b> with <b>Development</b>.
+              A checkpoint of Production is created automatically so you can roll back.
+              Type <code>SYNC PRODUCTION</code> to continue.
+            </p>
+            <Input value={confirmText} onChange={e=>setConfirmText(e.target.value)} placeholder="SYNC PRODUCTION" />
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            This will overwrite <b>Development</b> with <b>Production</b>.
+            A checkpoint of Development is created automatically.
+          </p>
+        )}
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={()=>setConfirmOpen(false)}>Cancel</Button>
+          <Button
+            onClick={()=>syncMutation.mutate()}
+            disabled={direction==="dev_to_prod" && confirmText !== "SYNC PRODUCTION"}
+          >
+            {syncMutation.isPending ? "Syncing..." : "Sync Now"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </div>
+);
+
+
+The modal shows an animation via framer-motion on progress lines; the mutation triggers toasts.
+
+6) Checkpoints UI (create/list/diff/rollback)
+
+In the same Enhanced tab, add a card for checkpoints (use your existing styles). Minimal example:
+
+// ... add state
+const [newCkptLabel, setNewCkptLabel] = useState("manual");
+const [branchForCkpt, setBranchForCkpt] = useState<"dev"|"prod">("dev");
+
+const ckptQuery = useQuery({
+  queryKey: ["ckpts", branchForCkpt],
+  queryFn: async () => {
+    const r = await fetch(`/api/admin/db/${branchForCkpt}/checkpoints`, { credentials: "include" });
+    return r.json();
+  }
+});
+
+const makeCkpt = useMutation({
+  mutationFn: async () => {
+    const r = await fetch(`/api/admin/db/${branchForCkpt}/checkpoint`, {
+      method: "POST", credentials: "include",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ label: newCkptLabel })
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  onSuccess: () => {
+    toast({ title: "Checkpoint created" });
+    qc.invalidateQueries({ queryKey: ["ckpts", branchForCkpt] });
+  }
+});
+
+const doRollback = useMutation({
+  mutationFn: async (id: string) => {
+    const r = await fetch(`/api/admin/db/${branchForCkpt}/rollback/${id}`, {
+      method: "POST", credentials: "include"
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  onSuccess: () => toast({ title: "Rolled back successfully" })
+});
+
+// ... render
+<div className="rounded-2xl border p-4">
+  <div className="flex items-center justify-between mb-3">
+    <h3 className="text-lg font-semibold">Checkpoints</h3>
+    <Select value={branchForCkpt} onValueChange={(v:any)=>setBranchForCkpt(v)}>
+      <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="dev">Development</SelectItem>
+        <SelectItem value="prod">Production</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+
+  <div className="flex gap-2">
+    <Input className="w-[240px]" value={newCkptLabel} onChange={e=>setNewCkptLabel(e.target.value)} placeholder="Label" />
+    <Button onClick={()=>makeCkpt.mutate()}>Create Checkpoint</Button>
+  </div>
+
+  <div className="mt-4 space-y-2">
+    {ckptQuery.data?.checkpoints?.map((c:any)=>(
+      <div key={c.id} className="flex items-center justify-between border rounded-xl p-2">
+        <div className="text-sm">
+          <div className="font-medium">{c.label}</div>
+          <div className="text-muted-foreground">{c.schema_name} • {new Date(c.created_at).toLocaleString()}</div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={async ()=>{
+            const r = await fetch(`/api/admin/db/${branchForCkpt}/checkpoints/${c.id}/diff`, { credentials: "include" });
+            const json = await r.json();
+            // render a modal or console.log
+            console.table(json.diff);
+          }}>Diff</Button>
+          <Button variant="destructive" onClick={()=>doRollback.mutate(c.id)}>Rollback</Button>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+7) Safety & Accuracy
+
+Admin-only routes (requireAdmin).
+
+Advisory locks around destructive ops.
+
+Auto-checkpoint before every sync on the target.
+
+Disable triggers/constraints during bulk copy with session_replication_role = replica.
+
+Column intersection on rollback/sync to tolerate minor schema drift.
+
+Audit: You already log admin actions — log sync events too (add one line in the route after success).
+
+8) Performance notes
+
+Current Node batch insert is fine for moderate data. For very large sets, switch to pg-copy-streams for COPY-inserts (keeps the same surface API).
+
+Indexes are not restored in checkpoint snapshots (by design) to keep snapshots light; rollback fills primary tables then you operate on the live schema with proper indexes.
+
+If your tables are huge and FKs are NOT DEFERRABLE, session_replication_role is the safest portable bypass (restored at end).
+
+9) What Replit should “upgrade” on your workspace (summary for the team)
+
+Enable two Postgres pools (DEV_DATABASE_URL Lucky-Poem, PROD_DATABASE_URL Muddy-Moon).
+
+Ship checkpoint SQL (above) and run migrations on both DBs.
+
+Wire new admin endpoints for:
+
+GET/POST /api/admin/db/:branch/checkpoints
+
+GET /api/admin/db/:branch/checkpoints/:id/diff
+
+POST /api/admin/db/:branch/rollback/:id
+
+POST /api/admin/db/sync (auto-checkpoint + progress via WS)
+
+Delete legacy DB UI and keep EnhancedDatabaseTab only.
+
+Add Sync UI with modal confirmation (“SYNC PRODUCTION”), progress, toasts.
+
+Fix current build/runtime errors (Select path, duplicate identifiers, auth guards).
+
+(Optional) Add Redis for caching admin lists if needed (not required).
+
+This gives you Neon-like confidence (branching/checkpoints/rollback) while remaining provider-agnostic and simple to use: one page, one click, clear progress, and a big safety net.

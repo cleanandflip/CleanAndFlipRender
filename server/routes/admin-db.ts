@@ -12,6 +12,8 @@ import {
 } from "../db/admin.sql";
 import { getPool, type Branch } from "../db/registry";
 import { spawn } from "node:child_process";
+import { createCheckpoint, listCheckpoints, diffCheckpoint, rollbackToCheckpoint } from "../db/checkpoints";
+import { syncDatabases } from "../services/db-sync";
 // File imports removed - using in-memory storage instead
 
 // Helper function to get database connection for branch
@@ -362,26 +364,151 @@ r.post("/:branch/rollback/:checkpointId", async (req: any, res) => {
       confirmPhrase
     });
 
-    // In a real implementation, this would:
-    // 1. Create a backup of current state
-    // 2. Execute the rollback using pg_restore or similar
-    // 3. Verify the rollback was successful
+    // Use the new real checkpoint system
+    await rollbackToCheckpoint(getPool(branch), checkpointId);
     
-    // For now, return success with warning that this is a placeholder
     res.json({
       success: true,
-      message: `Database rollback to checkpoint '${checkpoint.label}' has been initiated`,
+      message: `Database rollback to checkpoint '${checkpoint.label}' completed successfully`,
       checkpoint: {
         id: checkpointId,
         label: checkpoint.label,
         created_at: checkpoint.created_at
-      },
-      warning: "This is a placeholder implementation. In production, this would perform actual database rollback."
+      }
     });
     
   } catch (error: any) {
     console.error('Rollback error:', error);
     res.status(500).json({ error: error.message || "Rollback failed" });
+  }
+});
+
+// ============= NEW CHECKPOINT ROUTES =============
+
+// List checkpoints for a branch
+r.get("/:branch/checkpoints-v2", async (req, res) => {
+  try {
+    const branch = BranchSchema.parse(req.params.branch);
+    const pool = getPool(branch);
+    const checkpoints = await listCheckpoints(pool);
+    res.json({ ok: true, checkpoints });
+  } catch (error: any) {
+    console.error('Error fetching checkpoints:', error);
+    res.status(500).json({ ok: false, error: error.message || "Failed to fetch checkpoints" });
+  }
+});
+
+// Create checkpoint
+r.post("/:branch/checkpoint-v2", async (req: any, res) => {
+  try {
+    const branch = BranchSchema.parse(req.params.branch);
+    const { label, notes } = req.body || {};
+    if (!label) return res.status(400).json({ ok: false, error: "Label required" });
+    
+    const pool = getPool(branch);
+    const id = await createCheckpoint(pool, branch, label, notes, req.user?.email || "admin");
+    
+    // Log the action
+    await logAdminAction(branch, req.user?.id || 'unknown', 'checkpoint_created_v2', {
+      checkpointId: id,
+      label,
+      notes,
+      branch
+    });
+    
+    res.json({ ok: true, id });
+  } catch (error: any) {
+    console.error('Error creating checkpoint:', error);
+    res.status(500).json({ ok: false, error: error.message || "Failed to create checkpoint" });
+  }
+});
+
+// Get checkpoint diff
+r.get("/:branch/checkpoints-v2/:id/diff", async (req, res) => {
+  try {
+    const branch = BranchSchema.parse(req.params.branch);
+    const pool = getPool(branch);
+    const diff = await diffCheckpoint(pool, req.params.id);
+    res.json({ ok: true, diff });
+  } catch (error: any) {
+    console.error('Error getting checkpoint diff:', error);
+    res.status(500).json({ ok: false, error: error.message || "Failed to get checkpoint diff" });
+  }
+});
+
+// Rollback to checkpoint (new implementation)
+r.post("/:branch/rollback-v2/:id", async (req: any, res) => {
+  try {
+    const branch = BranchSchema.parse(req.params.branch);
+    const { id } = req.params;
+    const { confirmPhrase } = req.body;
+    
+    // Require confirmation phrase for destructive operation
+    if (confirmPhrase !== `ROLLBACK ${branch.toUpperCase()}`) {
+      return res.status(400).json({ 
+        ok: false,
+        error: `Please type "ROLLBACK ${branch.toUpperCase()}" to confirm this destructive operation` 
+      });
+    }
+
+    const pool = getPool(branch);
+    await rollbackToCheckpoint(pool, id);
+    
+    // Log the rollback action
+    await logAdminAction(branch, req.user?.id || 'unknown', 'rollback_executed_v2', {
+      checkpointId: id,
+      branch,
+      confirmPhrase
+    });
+    
+    res.json({ ok: true, message: "Rollback completed successfully" });
+  } catch (error: any) {
+    console.error('Rollback error:', error);
+    res.status(500).json({ ok: false, error: error.message || "Rollback failed" });
+  }
+});
+
+// ============= DATABASE SYNC ROUTES =============
+
+// Fire-and-wait sync (simple). Requires admin.
+r.post("/sync", async (req: any, res) => {
+  try {
+    const { direction } = req.body as { direction: "dev_to_prod" | "prod_to_dev" };
+    if (!direction) return res.status(400).json({ ok: false, error: "direction required" });
+
+    const from = direction === "dev_to_prod" ? "dev" : "prod";
+    const to   = direction === "dev_to_prod" ? "prod" : "dev";
+
+    // Stricter confirmation for Dev→Prod
+    if (direction === "dev_to_prod" && req.body?.confirmText !== "SYNC PRODUCTION") {
+      return res.status(400).json({ ok: false, error: "Confirmation text mismatch" });
+    }
+
+    // Simple broadcast function for progress
+    const wsBroadcast = (msg: any) => {
+      // If you have WebSocket setup, broadcast here
+      console.log('DB Sync Progress:', msg);
+    };
+
+    const result = await syncDatabases({
+      from, to,
+      wsBroadcast,
+      actor: req.user?.email || "admin"
+    });
+    
+    // Log the sync action
+    await logAdminAction(to, req.user?.id || 'unknown', 'database_sync', {
+      direction,
+      from,
+      to,
+      checkpointId: result.checkpointId,
+      actor: req.user?.email || "admin"
+    });
+    
+    res.json({ ok: true, ...result });
+  } catch (error: any) {
+    console.error('Database sync error:', error);
+    res.status(500).json({ ok: false, error: String(error) });
   }
 });
 

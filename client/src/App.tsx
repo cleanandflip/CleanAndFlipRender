@@ -45,7 +45,7 @@ const LegalTermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
 const AuthPage = lazy(() => import("@/pages/auth"));
 const FAQ = lazy(() => import("@/pages/faq"));
 const Reviews = lazy(() => import("@/pages/reviews"));
-const DatabaseAdmin = lazy(() => import("@/pages/database-admin"));
+const DatabaseAdmin = lazy(() => import("@/pages/admin/DatabaseTabRewritten").then(m => ({ default: m.DatabaseTabRewritten })));
 
 const Terms = lazy(() => import("@/pages/terms"));
 const Privacy = lazy(() => import("@/pages/privacy"));
