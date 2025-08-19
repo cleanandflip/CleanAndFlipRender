@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { X, Table as TableIcon, Database, Eye, RefreshCw } from 'lucide-react';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { globalDesignSystem as theme } from '@/styles/design-system/theme';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface DatabaseTableModalProps {
   table: {
@@ -32,6 +33,9 @@ interface TableIndex {
 
 export function DatabaseTableModal({ table, branch, isOpen, onClose }: DatabaseTableModalProps) {
   const [activeTab, setActiveTab] = useState<'structure' | 'indexes' | 'data'>('structure');
+  
+  // Lock scroll when modal is open
+  useScrollLock(isOpen);
 
   // Fetch table details
   const { data: tableDetails, isLoading, refetch } = useQuery({

@@ -296,28 +296,28 @@ export function EnhancedDatabaseTab() {
           title="Total Tables"
           value={stats.totalTables.toString()}
           icon={TableIcon}
-          trend={{ value: 0, direction: 'neutral' }}
+          trend="stable"
           color="blue"
         />
         <UnifiedMetricCard
           title="Database Migrations"
           value={stats.totalMigrations.toString()}
           icon={Settings}
-          trend={{ value: 0, direction: 'neutral' }}
+          trend="stable"
           color="purple"
         />
         <UnifiedMetricCard
           title="Checkpoints"
           value={stats.totalCheckpoints.toString()}
           icon={Clock}
-          trend={{ value: 0, direction: 'neutral' }}
+          trend="stable"
           color="green"
         />
         <UnifiedMetricCard
           title="Connection Status"
           value={connected ? "Online" : "Offline"}
           icon={connected ? Database : AlertTriangle}
-          trend={{ value: 0, direction: 'neutral' }}
+          trend="stable"
           color={connected ? "green" : "red"}
         />
       </div>
@@ -354,7 +354,7 @@ export function EnhancedDatabaseTab() {
             columns={tableColumns}
             loading={tablesLoading}
             onRowClick={handleTableRowClick}
-            emptyMessage="No tables found"
+
             searchQuery={searchQuery}
             data-table="database-tables"
           />

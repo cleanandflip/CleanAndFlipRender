@@ -1,8 +1,9 @@
 // DATABASE CHECKPOINT CREATION MODAL
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Download, RefreshCw } from 'lucide-react';
 import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { globalDesignSystem as theme } from '@/styles/design-system/theme';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface DatabaseCheckpointModalProps {
   branch: string;
@@ -15,6 +16,9 @@ export function DatabaseCheckpointModal({ branch, isOpen, onClose, onCheckpointC
   const [checkpointLabel, setCheckpointLabel] = useState('');
   const [checkpointNotes, setCheckpointNotes] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Lock scroll when modal is open
+  useScrollLock(isOpen);
 
   const createCheckpoint = async () => {
     if (!checkpointLabel.trim()) return;
@@ -33,11 +37,16 @@ export function DatabaseCheckpointModal({ branch, isOpen, onClose, onCheckpointC
       });
       
       if (!response.ok) {
-        throw new Error('Checkpoint creation failed');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Checkpoint creation failed');
       }
       
-      onCheckpointCreated();
+      const result = await response.json();
+      console.log('Checkpoint created successfully:', result);
+      
+      // Close modal and refresh data
       handleClose();
+      onCheckpointCreated();
     } catch (err: any) {
       console.error('Checkpoint creation failed:', err);
     } finally {
@@ -63,7 +72,7 @@ export function DatabaseCheckpointModal({ branch, isOpen, onClose, onCheckpointC
       
       {/* Modal */}
       <div 
-        className="relative w-full max-w-lg m-4 rounded-xl shadow-2xl overflow-hidden border"
+        className="relative w-full max-w-lg mx-4 my-8 max-h-[90vh] flex flex-col rounded-xl shadow-2xl overflow-hidden border"
         style={{ 
           backgroundColor: theme.colors.bg.primary,
           borderColor: theme.colors.border.default
