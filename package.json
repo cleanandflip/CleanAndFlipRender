@@ -1,0 +1,11 @@
+{
+  "name": "cleanfliprender",
+  "private": true,
+  "packageManager": "npm@10",
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "npm --prefix apps/api run dev",
+    "build:web": "npm --prefix apps/web run build",
+    "build:api": "npm --prefix apps/api run build"
+  }
+}
