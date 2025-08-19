@@ -7,6 +7,7 @@ import { UnifiedButton } from '@/components/admin/UnifiedButton';
 import { DatabaseTableModal } from '@/components/admin/modals/DatabaseTableModal';
 import { DatabaseQueryModal } from '@/components/admin/modals/DatabaseQueryModal';
 import { DatabaseCheckpointModal } from '@/components/admin/modals/DatabaseCheckpointModal';
+import { CheckpointManagerModal } from '@/components/admin/modals/CheckpointManagerModal';
 import { useWebSocketState } from '@/hooks/useWebSocketState';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -46,6 +47,7 @@ export function EnhancedDatabaseTab() {
   const [showTableModal, setShowTableModal] = useState(false);
   const [showQueryModal, setShowQueryModal] = useState(false);
   const [showCheckpointModal, setShowCheckpointModal] = useState(false);
+  const [showCheckpointManager, setShowCheckpointManager] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { connected, subscribe, ready } = useWebSocketState();
   const queryClient = useQueryClient();
@@ -312,6 +314,7 @@ export function EnhancedDatabaseTab() {
           icon={Clock}
           trend="stable"
           color="green"
+          onClick={() => setShowCheckpointManager(true)}
         />
         <UnifiedMetricCard
           title="Connection Status"
@@ -408,6 +411,12 @@ export function EnhancedDatabaseTab() {
             description: "Database checkpoint created successfully"
           });
         }}
+      />
+
+      <CheckpointManagerModal
+        branch={selectedBranch}
+        isOpen={showCheckpointManager}
+        onClose={() => setShowCheckpointManager(false)}
       />
     </div>
   );
