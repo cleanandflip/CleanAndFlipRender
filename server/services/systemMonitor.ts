@@ -117,10 +117,9 @@ export class SystemMonitor {
           dbEnvironment = 'development';
           dbName = dbHost.includes('lucky-poetry') ? 'lucky-poetry' : 'lingering-flower';
         } else {
-          // Fallback to APP_ENV detection
-          const { APP_ENV } = await import('../config/env.js');
-          dbEnvironment = APP_ENV as 'development' | 'production';
-          dbName = dbEnvironment === 'production' ? 'production-db' : 'development-db';
+          // Fallback to development
+          dbEnvironment = 'development';
+          dbName = 'development-db';
         }
       }
     } catch (error) {
