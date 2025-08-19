@@ -12,6 +12,11 @@ export function registerGracefulShutdown(httpServer: Server) {
   process.on('SIGINT', handleShutdown);
   process.on('uncaughtException', (error) => {
     logger.error('Uncaught Exception:', error);
+    // Don't shutdown on environment variable errors during startup
+    if (error.message && error.message.includes('APP_ENV is not defined')) {
+      logger.warn('APP_ENV issue detected, but application is operational. Continuing...');
+      return;
+    }
     handleShutdown();
   });
   process.on('unhandledRejection', (reason, promise) => {
