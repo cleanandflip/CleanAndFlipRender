@@ -1,0 +1,35 @@
+services:
+  # Backend API Service
+  - type: web
+    name: cleanandflip-api
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    preDeployCommand: npm run migrate
+    rootDir: ./server
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    autoDeploy: true
+    
+  # Frontend Static Site
+  - type: static
+    name: cleanandflip-frontend  
+    buildCommand: npm ci && npm run build
+    publishDir: ./dist
+    rootDir: ./client
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: cleanandflip-api
+          envVarKey: RENDER_EXTERNAL_URL
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -1,0 +1,391 @@
+Perfect—here are the exact, drop-in scripts and the tiny config changes you need. They’ll give you:
+
+Zero-downtime SQL migrations at deploy time
+
+Neon “checkpoints” (snapshots) you can create & restore
+
+One-click branch sync (Lucky-Poem ⟷ Muddy-Moon)
+
+Render build/start fixes (no more vite: not found)
+
+I’m assuming the API service lives in server/ and you have a top-level client/ (Vite) for the front-end.
+
+1) Add these scripts
+
+Create a folder: server/scripts/
+
+server/scripts/migrate.cjs
+
+Idempotent, transactional migration runner (reads server/migrations/*.sql and records to pgmigrations).
+
+#!/usr/bin/env node
+/* server/scripts/migrate.cjs */
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const { Client } = require("pg");
+
+const MIGRATIONS_DIR =
+  process.env.MIGRATIONS_DIR ||
+  (fs.existsSync(path.resolve("server/migrations"))
+    ? path.resolve("server/migrations")
+    : path.resolve("migrations"));
+
+const DATABASE_URL =
+  process.env.DATABASE_URL ||
+  process.env.PROD_DATABASE_URL ||
+  process.env.DEV_DATABASE_URL;
+
+if (!DATABASE_URL) {
+  console.error("❌ DATABASE_URL (or PROD/DEV_DATABASE_URL) is required.");
+  process.exit(1);
+}
+
+const sha256 = (buf) => crypto.createHash("sha256").update(buf).digest("hex");
+
+(async () => {
+  const client = new Client({
+    connectionString: DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  });
+
+  await client.connect();
+
+  // Ensure tracking table + exclusive lock so we never double-apply
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS pgmigrations (
+      id bigserial PRIMARY KEY,
+      filename text UNIQUE NOT NULL,
+      checksum text NOT NULL,
+      applied_at timestamptz NOT NULL DEFAULT now()
+    );
+  `);
+  await client.query("SELECT pg_advisory_lock(538146161239)");
+
+  const files = fs
+    .readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
+
+  if (!files.length) {
+    console.log(`ℹ️ No migrations found in ${MIGRATIONS_DIR}`);
+    await client.query("SELECT pg_advisory_unlock(538146161239)");
+    await client.end();
+    process.exit(0);
+  }
+
+  for (const file of files) {
+    const full = path.join(MIGRATIONS_DIR, file);
+    const sqlBuf = fs.readFileSync(full);
+    const checksum = sha256(sqlBuf);
+
+    const { rows } = await client.query(
+      "SELECT 1 FROM pgmigrations WHERE filename=$1 AND checksum=$2",
+      [file, checksum]
+    );
+    if (rows.length) {
+      console.log(`✓ ${file} already applied`);
+      continue;
+    }
+
+    console.log(`→ applying ${file}`);
+    try {
+      await client.query("BEGIN");
+      await client.query(sqlBuf.toString("utf8"));
+      await client.query(
+        "INSERT INTO pgmigrations(filename, checksum) VALUES ($1,$2)",
+        [file, checksum]
+      );
+      await client.query("COMMIT");
+      console.log(`✓ applied ${file}`);
+    } catch (err) {
+      await client.query("ROLLBACK");
+      console.error(`✗ failed ${file}\n${err.stack || err}`);
+      await client.query("SELECT pg_advisory_unlock(538146161239)");
+      await client.end();
+      process.exit(1);
+    }
+  }
+
+  await client.query("SELECT pg_advisory_unlock(538146161239)");
+  await client.end();
+  console.log("🎉 All migrations up to date.");
+})();
+
+server/scripts/neon-checkpoint.cjs
+
+Creates a Neon snapshot (“checkpoint”) for a given branch.
+
+#!/usr/bin/env node
+/* server/scripts/neon-checkpoint.cjs */
+const assert = (c, m) => { if (!c) { console.error("❌ " + m); process.exit(1); } };
+
+const apiKey     = process.env.NEON_API_KEY;
+const projectId  = process.env.NEON_PROJECT_ID;
+const branchId   = process.env.NEON_BRANCH_ID || process.env.PROD_BRANCH_ID || process.env.DEV_BRANCH_ID;
+const apiBase    = process.env.NEON_API_BASE || "https://console.neon.tech/api/v2"; // v2 REST
+
+assert(apiKey, "NEON_API_KEY is required");
+assert(projectId, "NEON_PROJECT_ID is required");
+assert(branchId, "NEON_BRANCH_ID (or PROD/DEV) is required");
+
+const nameArg = (process.argv.find(a => a.startsWith("--name=")) || "").split("=")[1];
+const name = nameArg || `cp-${new Date().toISOString().replace(/[:.]/g,"-")}`;
+
+(async () => {
+  const res = await fetch(
+    `${apiBase}/projects/${projectId}/branches/${branchId}/snapshot`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    }
+  );
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    console.error("❌ Snapshot failed:", body);
+    process.exit(1);
+  }
+  console.log("✅ Snapshot created", body);
+  // body.data?.id is typically the snapshot ID you’ll use to restore.
+})();
+
+
+API ref (endpoints & semantics): Create snapshot POST /projects/{project_id}/branches/{branch_id}/snapshot. 
+Neon
+
+server/scripts/neon-restore.cjs
+
+Restores a neon snapshot to a new branch, then (optionally) points a compute endpoint to it.
+
+#!/usr/bin/env node
+/* server/scripts/neon-restore.cjs */
+const assert = (c, m) => { if (!c) { console.error("❌ " + m); process.exit(1); } };
+
+const apiKey     = process.env.NEON_API_KEY;
+const projectId  = process.env.NEON_PROJECT_ID;
+const snapshotId = process.env.SNAPSHOT_ID || (process.argv.find(a=>a.startsWith("--snapshot="))||"").split("=")[1];
+const endpointId = process.env.NEON_TARGET_ENDPOINT_ID || (process.argv.find(a=>a.startsWith("--endpoint="))||"").split("=")[1];
+const apiBase    = process.env.NEON_API_BASE || "https://console.neon.tech/api/v2";
+
+assert(apiKey, "NEON_API_KEY is required");
+assert(projectId, "NEON_PROJECT_ID is required");
+assert(snapshotId, "SNAPSHOT_ID or --snapshot=<id> is required");
+
+const newBranchName = (process.argv.find(a=>a.startsWith("--name="))||"").split("=")[1]
+  || `restored-${new Date().toISOString().replace(/[:.]/g,"-")}`;
+
+(async () => {
+  // 1) Restore snapshot → new branch
+  const restore = await fetch(
+    `${apiBase}/projects/${projectId}/snapshots/${snapshotId}/restore`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ branch: { name: newBranchName } }) // restore to a new branch
+    }
+  );
+  const restoreBody = await restore.json().catch(()=> ({}));
+  if (!restore.ok) {
+    console.error("❌ Restore failed:", restoreBody);
+    process.exit(1);
+  }
+  const newBranchId = restoreBody?.branch?.id || restoreBody?.data?.branch?.id;
+  console.log("✅ Snapshot restored to branch:", newBranchId, newBranchName);
+
+  // 2) Optionally point an endpoint at the new branch (zero-downtime cutover)
+  if (endpointId) {
+    const patch = await fetch(
+      `${apiBase}/projects/${projectId}/endpoints/${endpointId}`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ branch_id: newBranchId }),
+      }
+    );
+    const patchBody = await patch.json().catch(()=> ({}));
+    if (!patch.ok) {
+      console.error("❌ Endpoint patch failed:", patchBody);
+      process.exit(1);
+    }
+    console.log(`✅ Endpoint ${endpointId} now points to ${newBranchId}`);
+  }
+})();
+
+
+API refs: Restore snapshot POST /projects/{project_id}/snapshots/{snapshot_id}/restore; Update compute endpoint PATCH /projects/{project_id}/endpoints/{endpoint_id}. 
+Neon
++1
+
+server/scripts/sync-db.cjs
+
+One-click “Lucky-Poem → Muddy-Moon” (or vice-versa). It snapshots the source branch, restores that snapshot into a fresh branch, then points the target endpoint at the restored branch. It prints a single success line you can pipe into a toast on the front-end.
+
+#!/usr/bin/env node
+/* server/scripts/sync-db.cjs */
+const assert = (c, m) => { if (!c) { console.error("❌ " + m); process.exit(1); } };
+
+const apiKey     = process.env.NEON_API_KEY;
+const projectId  = process.env.NEON_PROJECT_ID;
+const prodBranch = process.env.PROD_BRANCH_ID;   // e.g. br-small-sky-adbcvz66
+const devBranch  = process.env.DEV_BRANCH_ID;    // e.g. br-floral-glade-adajixy5
+const prodEp     = process.env.PROD_ENDPOINT_ID; // e.g. ep-long-butterfly-...
+const devEp      = process.env.DEV_ENDPOINT_ID;  // e.g. ep-crimson-scene-...
+const apiBase    = process.env.NEON_API_BASE || "https://console.neon.tech/api/v2";
+
+assert(apiKey, "NEON_API_KEY required");
+assert(projectId, "NEON_PROJECT_ID required");
+assert(prodBranch && devBranch, "Set PROD_BRANCH_ID and DEV_BRANCH_ID");
+assert(prodEp && devEp, "Set PROD_ENDPOINT_ID and DEV_ENDPOINT_ID");
+
+const dir = (process.argv.find(a=>a.startsWith("--from="))||"").split("=")[1] || "dev";
+const to  = dir === "dev" ? "prod" : "dev";
+
+const srcBranch = dir === "dev" ? devBranch : prodBranch;
+const dstEndpoint = to === "prod" ? prodEp : devEp;
+
+const fetchJSON = (url, init) =>
+  fetch(url, init).then(async r => [r.ok, await r.json().catch(()=> ({}))]);
+
+(async () => {
+  // 1) Snapshot source
+  const snapName = `sync-${dir}-to-${to}-${new Date().toISOString().replace(/[:.]/g,"-")}`;
+  const [okSnap, snap] = await fetchJSON(
+    `${apiBase}/projects/${projectId}/branches/${srcBranch}/snapshot`,
+    { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ name: snapName }) }
+  );
+  if (!okSnap) { console.error("❌ Snapshot failed", snap); process.exit(1); }
+  const snapshotId = snap?.snapshot?.id || snap?.data?.id;
+  if (!snapshotId) { console.error("❌ Could not read snapshot id", snap); process.exit(1); }
+  console.log(`📸 Snapshot ${snapshotId} created from ${srcBranch}`);
+
+  // 2) Restore snapshot to a new branch
+  const newBranchName = `synced-${dir}-to-${to}-${Date.now()}`;
+  const [okRestore, restored] = await fetchJSON(
+    `${apiBase}/projects/${projectId}/snapshots/${snapshotId}/restore`,
+    { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ branch: { name: newBranchName } }) }
+  );
+  if (!okRestore) { console.error("❌ Restore failed", restored); process.exit(1); }
+  const newBranchId = restored?.branch?.id || restored?.data?.branch?.id;
+  console.log(`🌱 Restored to new branch ${newBranchId}`);
+
+  // 3) Point target endpoint at the new branch
+  const [okPatch, patched] = await fetchJSON(
+    `${apiBase}/projects/${projectId}/endpoints/${dstEndpoint}`,
+    { method: "PATCH", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ branch_id: newBranchId }) }
+  );
+  if (!okPatch) { console.error("❌ Endpoint patch failed", patched); process.exit(1); }
+
+  console.log(`✅ Sync complete: ${dir.toUpperCase()} → ${to.toUpperCase()} | endpoint ${dstEndpoint} → ${newBranchId}`);
+})();
+
+
+The endpoints above (create snapshot, restore snapshot, patch endpoint) are from Neon’s v2 REST API. References: create snapshot, restore snapshot, update endpoint. 
+Neon
++2
+Neon
++2
+
+2) Wire the scripts into server/package.json
+
+Open server/package.json and add:
+
+{
+  "type": "module",
+  "engines": { "node": ">=20 <23" },
+  "scripts": {
+    "build": "esbuild index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "start": "node dist/index.js",
+    "migrate": "node scripts/migrate.cjs",
+    "checkpoint": "node scripts/neon-checkpoint.cjs",
+    "restore": "node scripts/neon-restore.cjs",
+    "sync-db": "node scripts/sync-db.cjs"
+  },
+  "dependencies": { "pg": "^8.11.5" },
+  "devDependencies": { "esbuild": "^0.21.5" }
+}
+
+
+If your repo’s root package.json currently has "build": "vite build && esbuild ..." that’s what caused vite: not found on Render. We’re building the API only here, so this server-scoped build avoids Vite entirely.
+
+3) Render service settings (API)
+
+In the Render dashboard for your Web Service:
+
+Root Directory: server
+
+Build Command: npm ci && npm run build
+
+Start Command: npm run start
+
+Pre-Deploy Command: npm run migrate (runs migrations before each deploy)
+
+Health Check Path: /healthz
+
+Render will use Node 22 unless you specify an engine. We pinned "engines" above so Render selects a Node 20/22 compatible runtime.
+
+Add this tiny route in server/index.ts if you don’t already have it:
+
+// health check
+app.get("/healthz", (_req, res) => {
+  res.status(200).json({ ok: true, time: new Date().toISOString() });
+});
+
+4) Environment variables (minimum for scripts)
+
+On Render → Environment (or Account Secrets):
+
+NODE_ENV=production
+
+DATABASE_URL → production Neon pooler URL
+
+DEV_DATABASE_URL → development Neon pooler URL (optional)
+
+NEON_API_KEY → your Neon API key
+
+NEON_PROJECT_ID → your project id (e.g., lingering-pond-1...)
+
+PROD_BRANCH_ID=br-small-sky-adbcvz66
+
+DEV_BRANCH_ID=br-floral-glade-adajixy5
+
+PROD_ENDPOINT_ID → your prod endpoint id (ep-long-butterfly-...)
+
+DEV_ENDPOINT_ID → your dev endpoint id (ep-crimson-scene-...)
+
+(Plus your existing keys like SESSION_SECRET, CLOUDINARY_*, STRIPE_SECRET_KEY, GOOGLE_CLIENT_ID/SECRET, RESEND_API_KEY, etc.)
+
+5) How to use (from Render shell or Replit)
+
+Run migrations manually (optional):
+
+cd server && DATABASE_URL="$PROD_DATABASE_URL" npm run migrate
+
+
+Create a production checkpoint (snapshot):
+
+cd server
+NEON_BRANCH_ID=br-small-sky-adbcvz66 npm run checkpoint -- --name="pre-release-2025-08-19"
+
+
+Restore a snapshot and point prod to it:
+
+cd server
+SNAPSHOT_ID=<returned_id> NEON_TARGET_ENDPOINT_ID=$PROD_ENDPOINT_ID npm run restore -- --name="prod-restore"
+
+
+One-click sync (Dev → Prod):
+
+cd server
+npm run sync-db -- --from=dev
+
+
+Swap --from=prod to push Prod → Dev instead.
+
+Why this works
+
+Checkpoints use Neon snapshots (server-side; persist until you delete them). Creating: POST /projects/{project_id}/branches/{branch_id}/snapshot; restoring: POST /projects/{project_id}/snapshots/{snapshot_id}/restore. Switching traffic is just patching a compute endpoint to the restored branch. 
+Neon
++2
+Neon
++2
