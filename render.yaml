@@ -1,5 +1,5 @@
 services:
-  # Backend API
+  # Backend API (Node/Express)
   - type: web
     name: cleanfliprender-api
     runtime: node
@@ -21,7 +21,7 @@ services:
       - key: SESSION_SECRET
         sync: false
 
-  # Frontend (Static Site)
+  # Frontend (Vite Static Site)
   - type: web
     name: cleanfliprender-web
     runtime: static
