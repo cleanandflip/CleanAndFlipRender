@@ -86,6 +86,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "cosmiconfig": "^9.0.0",
+    "cross-env": "^10.0.0",
     "csstree": "^0.0.3",
     "date-fns": "^3.6.0",
     "depcheck": "^1.4.7",

@@ -1,10 +1,10 @@
 // server/db.ts
-import { DATABASE_URL } from "./config/env";
+import { ENV } from "./config/env";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 
 // Simple database connection without schema to avoid circular references
-const sql = neon(DATABASE_URL);
+const sql = neon(ENV.devDbUrl);
 export const db = drizzle(sql);
 
 // Optional simple health check

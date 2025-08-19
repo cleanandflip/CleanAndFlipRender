@@ -1,6 +1,6 @@
 // ENHANCED DATABASE ADMIN - SINGLE SOURCE OF TRUTH
 import { useState, useEffect } from 'react';
-import { Database, Sync, GitBranch, Save, RotateCcw, Eye, Terminal, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Database, RefreshCw, GitBranch, Save, RotateCcw, Eye, Terminal, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -63,7 +63,7 @@ export function EnhancedDatabaseTab() {
     queryFn: async () => {
       const res = await fetch('/api/admin/database/info', { credentials: 'include' });
       if (!res.ok) throw new Error('Failed to fetch database info');
-      return res.json() as { development: DatabaseInfo; production: DatabaseInfo };
+      return res.json();
     }
   });
 
@@ -225,7 +225,7 @@ export function EnhancedDatabaseTab() {
         {/* Tables Overview */}
         {isConnected && currentDb?.tables && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {currentDb.tables.slice(0, 8).map((table) => (
+            {currentDb.tables.slice(0, 8).map((table: any) => (
               <div 
                 key={table.full_name}
                 className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
@@ -244,7 +244,7 @@ export function EnhancedDatabaseTab() {
       <div className="rounded-2xl border p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Sync className="h-5 w-5" />
+            <RefreshCw className="h-5 w-5" />
             Sync Databases
           </h3>
           <Select value={direction} onValueChange={(v: any) => setDirection(v)}>
