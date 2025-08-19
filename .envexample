@@ -1,0 +1,5 @@
+APP_ENV=production
+PORT=4000
+DATABASE_URL=postgresql://<user>:<pass>@<host>/<db>?sslmode=require
+SESSION_SECRET=replace-me
+FRONTEND_ORIGIN=https://cleanfliprender-web.onrender.com
