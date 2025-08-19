@@ -214,6 +214,48 @@ r.post("/:branch/migrate", async (req: any, res) => {
   }
 });
 
+// Get table data preview
+r.post("/:branch/table-data", async (req: any, res) => {
+  try {
+    const branch = BranchSchema.parse(req.params.branch);
+    const { table, schema = 'public', limit = 10, offset = 0 } = req.body;
+    
+    if (!table) {
+      return res.status(400).json({ error: 'Table name is required' });
+    }
+
+    const db = getDbForBranch(branch);
+    
+    // Get sample data from table
+    const dataQuery = `
+      SELECT * FROM "${schema}"."${table}" 
+      LIMIT $1 OFFSET $2
+    `;
+    const dataResult = await db.query(dataQuery, [limit, offset]);
+    
+    // Get column information for display
+    const columnsQuery = `
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns 
+      WHERE table_schema = $1 AND table_name = $2
+      ORDER BY ordinal_position
+    `;
+    const columnsResult = await db.query(columnsQuery, [schema, table]);
+
+    res.json({
+      success: true,
+      rows: dataResult.rows,
+      columns: columnsResult.rows,
+      total_count: dataResult.rows.length,
+      limit,
+      offset
+    });
+  } catch (error: any) {
+    console.error(`[ADMIN] Error fetching table data:`, error);
+    res.status(500).json({ error: 'Failed to fetch table data' });
+  }
+});
+
 // Create checkpoint (placeholder for now - would integrate with Neon branches)
 r.post("/:branch/checkpoint", async (req: any, res) => {
   try {

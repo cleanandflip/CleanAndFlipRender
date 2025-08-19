@@ -50,10 +50,33 @@ export function DatabaseTableModal({ table, branch, isOpen, onClose }: DatabaseT
     enabled: isOpen && !!branch && !!table,
   });
 
+  // Fetch table data preview
+  const { data: tableData, isLoading: dataLoading } = useQuery({
+    queryKey: ['/api/admin/db/' + branch + '/table-data', table.table_name],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/db/${branch}/table-data`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          table: table.table_name,
+          schema: table.table_schema,
+          limit: 10,
+          offset: 0
+        })
+      });
+      if (!res.ok) throw new Error('Failed to fetch table data');
+      return res.json();
+    },
+    enabled: isOpen && activeTab === 'data' && !!branch && !!table,
+  });
+
   if (!isOpen) return null;
 
   const columns: TableColumn[] = tableDetails?.columns || [];
   const indexes: TableIndex[] = tableDetails?.indexes || [];
+  const dataRows = tableData?.rows || [];
+  const dataColumns = tableData?.columns || [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -279,15 +302,64 @@ export function DatabaseTableModal({ table, branch, isOpen, onClose }: DatabaseT
                 {/* Data Tab */}
                 {activeTab === 'data' && (
                   <div className="space-y-4">
-                    <h3 className="text-lg font-medium" style={{ color: theme.colors.text.primary }}>
-                      Data Preview
-                    </h3>
-                    <div className="text-center py-8">
-                      <TableIcon className="h-8 w-8 mx-auto mb-2" style={{ color: theme.colors.text.muted }} />
-                      <p style={{ color: theme.colors.text.muted }}>
-                        Data preview feature coming soon
-                      </p>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium" style={{ color: theme.colors.text.primary }}>
+                        Data Preview ({dataRows.length} rows)
+                      </h3>
+                      {dataLoading && (
+                        <div className="flex items-center space-x-2 text-sm" style={{ color: theme.colors.text.muted }}>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          <span>Loading data...</span>
+                        </div>
+                      )}
                     </div>
+                    
+                    {dataRows.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b" style={{ borderColor: theme.colors.border.default }}>
+                              {dataColumns.map((column: any, index: number) => (
+                                <th 
+                                  key={index}
+                                  className="text-left py-3 px-4 font-medium" 
+                                  style={{ color: theme.colors.text.secondary }}
+                                >
+                                  {column.column_name}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {dataRows.map((row: any, rowIndex: number) => (
+                              <tr 
+                                key={rowIndex}
+                                className="border-b hover:bg-gray-800/50"
+                                style={{ borderColor: theme.colors.border.default }}
+                              >
+                                {dataColumns.map((column: any, colIndex: number) => (
+                                  <td key={colIndex} className="py-3 px-4">
+                                    <span className="text-sm font-mono" style={{ color: theme.colors.text.primary }}>
+                                      {row[column.column_name] !== null ? 
+                                        String(row[column.column_name]) : 
+                                        <span style={{ color: theme.colors.text.muted }}>NULL</span>
+                                      }
+                                    </span>
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : !dataLoading ? (
+                      <div className="text-center py-8">
+                        <TableIcon className="h-8 w-8 mx-auto mb-2" style={{ color: theme.colors.text.muted }} />
+                        <p style={{ color: theme.colors.text.muted }}>
+                          No data found in this table
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </>
