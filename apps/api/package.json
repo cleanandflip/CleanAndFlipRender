@@ -1,10 +1,9 @@
 {
   "name": "cleanfliprender-api",
-  "type": "module",
   "version": "0.1.0",
-  "engines": {
-    "node": ">=22.0.0"
-  },
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.0.0" },
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "esbuild src/index.ts --platform=node --bundle --format=esm --outfile=dist/index.js",
