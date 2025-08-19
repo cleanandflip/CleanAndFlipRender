@@ -19,7 +19,7 @@ r.use(requireAdmin);
 const BranchSchema = z.enum(["dev", "prod"]);
 
 // Get available database branches
-r.get("/api/admin/db/branches", (_req, res) => {
+r.get("/branches", (_req, res) => {
   res.json([
     { 
       key: "dev", 
@@ -35,7 +35,7 @@ r.get("/api/admin/db/branches", (_req, res) => {
 });
 
 // Get tables for a branch
-r.get("/api/admin/db/:branch/tables", async (req, res) => {
+r.get("/:branch/tables", async (req, res) => {
   try {
     const branch = BranchSchema.parse(req.params.branch);
     const tables = await listTables(branch);
@@ -47,7 +47,7 @@ r.get("/api/admin/db/:branch/tables", async (req, res) => {
 });
 
 // Get table details (columns and indexes)
-r.get("/api/admin/db/:branch/tables/:schema/:table", async (req, res) => {
+r.get("/:branch/tables/:schema/:table", async (req, res) => {
   try {
     const branch = BranchSchema.parse(req.params.branch);
     const { schema, table } = req.params;
@@ -66,7 +66,7 @@ r.get("/api/admin/db/:branch/tables/:schema/:table", async (req, res) => {
 });
 
 // Get migration history
-r.get("/api/admin/db/:branch/migrations", async (req, res) => {
+r.get("/:branch/migrations", async (req, res) => {
   try {
     const branch = BranchSchema.parse(req.params.branch);
     const migrations = await migrationHistory(branch);

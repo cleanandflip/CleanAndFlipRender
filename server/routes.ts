@@ -2765,20 +2765,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mount admin database routes
   try {
-    const adminDatabaseModule = await import('./routes/admin-database.js');
-    const adminDatabaseRoutes = adminDatabaseModule.default;
     app.use('/api/admin', requireRole('developer'), adminDatabaseRoutes);
+    console.log('✅ Admin database routes registered successfully');
   } catch (error) {
-    console.warn('Failed to load admin database routes:', error);
+    console.error('Failed to load admin database routes:', error);
   }
 
   // Mount enhanced admin database management routes
   try {
-    const adminDbModule = await import('./routes/admin-db.js');
-    const adminDbRoutes = adminDbModule.default;
-    app.use(requireRole('developer'), adminDbRoutes);
+    app.use('/api/admin/db', requireRole('developer'), adminDbRoutes);
+    console.log('✅ Enhanced admin database routes registered successfully');
   } catch (error) {
-    console.warn('Failed to load enhanced admin database routes:', error);
+    console.error('Failed to load enhanced admin database routes:', error);
   }
 
   // Legacy user endpoint redirected to unified auth
