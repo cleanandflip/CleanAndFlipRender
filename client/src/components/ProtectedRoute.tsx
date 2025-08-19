@@ -22,7 +22,7 @@ export function ProtectedRoute({ children, requireCompleteProfile = false }: Pro
   }
   
   if (!user) {
-    return <Redirect to="/login" />;
+    return <Redirect to="/auth" />;
   }
   
   // PROFILE GATING REMOVED - Allow cart/checkout access, handle address requirement at order time only

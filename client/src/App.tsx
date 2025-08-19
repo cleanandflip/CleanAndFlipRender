@@ -120,9 +120,9 @@ function Router() {
               <Route path="/warranty" component={Warranty} />
               <Route path="/inspection" component={Inspection} />
               
-              {/* Shopping Routes - Profile completion required */}
+              {/* Shopping Routes - Authentication required, but not complete profile */}
               <Route path={ROUTES.CART} component={() => (
-                <ProtectedRoute requireCompleteProfile={true}>
+                <ProtectedRoute>
                   <CartPage />
                 </ProtectedRoute>
               )} />
