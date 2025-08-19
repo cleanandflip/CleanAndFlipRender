@@ -8,13 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from '@/components/ui/select';
+
 import { 
   Dialog,
   DialogContent,
@@ -181,18 +175,18 @@ export default function EnhancedDatabaseTab() {
         <Database className="h-6 w-6 text-blue-400" />
         <h2 className="text-2xl font-bold text-white">Database Management</h2>
         <div className="flex gap-2">
-          <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select branch" />
-            </SelectTrigger>
-            <SelectContent>
-              {branches.map((branch) => (
-                <SelectItem key={branch.key} value={branch.key}>
-                  {branch.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select
+            value={selectedBranch}
+            onChange={(e) => setSelectedBranch(e.target.value)}
+            className="w-48 flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="">Select branch</option>
+            {branches.map((branch) => (
+              <option key={branch.key} value={branch.key}>
+                {branch.name}
+              </option>
+            ))}
+          </select>
           
           <Dialog open={showCheckpointDialog} onOpenChange={setShowCheckpointDialog}>
             <DialogTrigger asChild>
