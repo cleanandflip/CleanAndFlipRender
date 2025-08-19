@@ -8,7 +8,7 @@ export function initWebSocket(server: Server) {
     socket.send(JSON.stringify({ type: 'hello', ts: Date.now() }))
 
     socket.on('message', (raw) => {
-      // naive broadcast example
+      // broadcast example
       for (const client of wss.clients) {
         if (client.readyState === 1) client.send(raw)
       }
