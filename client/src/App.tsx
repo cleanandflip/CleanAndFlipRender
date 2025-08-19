@@ -6,7 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 // CartProvider removed - using direct TanStack Query hooks
-// Remove AuthProvider - using direct hooks now
+import { AuthProvider } from "@/hooks/use-auth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Navigation from "@/components/layout/navigation";
 import Footer from "@/components/layout/footer";
@@ -45,7 +45,6 @@ const LegalTermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
 const AuthPage = lazy(() => import("@/pages/auth"));
 const FAQ = lazy(() => import("@/pages/faq"));
 const Reviews = lazy(() => import("@/pages/reviews"));
-// DatabaseAdmin removed - now using EnhancedDatabaseTab within admin panel
 
 const Terms = lazy(() => import("@/pages/terms"));
 const Privacy = lazy(() => import("@/pages/privacy"));
@@ -120,9 +119,9 @@ function Router() {
               <Route path="/warranty" component={Warranty} />
               <Route path="/inspection" component={Inspection} />
               
-              {/* Shopping Routes - Authentication required, but not complete profile */}
+              {/* Shopping Routes - Profile completion required */}
               <Route path={ROUTES.CART} component={() => (
-                <ProtectedRoute>
+                <ProtectedRoute requireCompleteProfile={true}>
                   <CartPage />
                 </ProtectedRoute>
               )} />
@@ -152,7 +151,6 @@ function Router() {
               <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
               <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
               <Route path="/admin/submissions" component={SubmissionsAdmin} />
-              {/* Database admin now integrated within AdminDashboard as EnhancedDatabaseTab */}
               {/* REMOVED: observability route - internal error tracking not needed */}
               
               {/* Legal Routes */}
@@ -198,9 +196,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Router />
+        <AuthProvider>
+          <>
+            <Toaster />
+            <Router />
+          </>
+        </AuthProvider>
       </TooltipProvider>
-      <Toaster />
     </QueryClientProvider>
   );
 }

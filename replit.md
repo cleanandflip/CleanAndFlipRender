@@ -42,16 +42,6 @@ The system employs a multi-layered security approach with Google OAuth integrati
 
 ## Recent Fixes and Improvements
 
-✅ **COMPREHENSIVE DATABASE MANAGEMENT SYSTEM COMPLETED** - Full-stack database administration infrastructure:
-- **INFRASTRUCTURE**: Complete database registry system with branch-aware connection pools (dev/prod isolation)
-- **ADMIN TOOLS**: Enhanced database management with table inspection, schema visualization, SQL query execution
-- **MIGRATION SYSTEM**: Professional migration management with node-pg-migrate integration and rollback protection
-- **AUDIT TRAILS**: Complete admin action logging with audit tables (admin_actions, admin_checkpoints)
-- **SECURITY**: Production-safe with confirmation phrases for destructive operations and role-based access control
-- **UI**: Professional enhanced database tab with comprehensive features including query console and migration management
-- **API ROUTES**: Full REST API for database operations at /api/admin/db/* with proper error handling
-- **VERIFICATION**: Admin audit tables successfully created and migration system operational
-
 ✅ **DATABASE SCHEMA ERRORS COMPLETELY RESOLVED** - Fixed critical column missing error:
 - **ROOT CAUSE**: products table missing continue_selling_when_out_of_stock boolean column
 - **SOLUTION**: Created dual-database migration script adding column to both lucky-poetry and muddy-moon
@@ -74,26 +64,11 @@ The system employs a multi-layered security approach with Google OAuth integrati
 - **PRODUCTION**: Google OAuth will now redirect to https://cleanandflip.com/api/auth/google/callback
 - **VERIFIED**: No more replit.app domain redirects for users in production
 
-✅ **AUTHENTICATION & SESSION SYSTEM COMPLETELY REBUILT** - Eliminated "stuck on blank account" issue:
-- **ROOT CAUSE**: Frontend cached stale user data while backend correctly logged out users
-- **SOLUTION**: Unified session configuration, reliable logout, and fresh auth state management
-- **NEW MIDDLEWARE**: session-config.ts with consistent cookie options and PostgreSQL store
-- **UNIFIED AUTH**: auth-unified.ts with guest-safe /api/user (always 200) and reliable /api/logout
-- **IMPROVED LOGGING**: auth-improved.ts with smart 401 handling (INFO for guests, WARN for issues)
-- **FRONTEND HOOK**: use-auth-unified.tsx with staleTime:0 and proper cache invalidation
-- **DATABASE SAFETY**: Confirmed lucky-poetry (dev) and muddy-moon (prod) environment isolation
-- **SESSION SECURITY**: 30-day TTL, HttpOnly cookies, trust proxy for HTTPS, PostgreSQL persistence
-- **VERIFIED**: No more "stuck account" states, clean authentication flow, reliable logout
-
-✅ **ENHANCED DATABASE ADMIN SYSTEM COMPLETELY REWRITTEN** - Full-stack database management with branching:
-- **PURGED LEGACY**: Removed all duplicate/legacy database UI (SimpleDatabaseTab, DatabaseTab, modal components)
-- **SINGLE SOURCE**: EnhancedDatabaseTab.tsx is now the only database admin interface
-- **DUAL BRANCHES**: Side-by-side Dev (Lucky-Poem) ⇄ Prod (Muddy-Moon) branch management
-- **CHECKPOINT SYSTEM**: Real checkpoints with snapshot schemas, list/diff/rollback functionality
-- **ONE-CLICK SYNC**: Dev→Prod or Prod→Dev with confirmation modal and progress tracking
-- **SQL CONSOLE**: Built-in query execution with results display per branch
-- **INFRASTRUCTURE**: New registry.ts, checkpoints.ts, db-sync.ts services with PostgreSQL functions
-- **API ROUTES**: Complete REST API for checkpoints (/api/admin/db/:branch/checkpoints/*) and sync
-- **SAFETY GUARDS**: Auto-checkpoints before sync, confirmation phrases for production changes
-- **MODERN UI**: Clean shadcn/ui components with proper data-testid attributes for testing
-- **MIGRATION**: SQL migration ready for checkpoint schema (admin.db_checkpoints tables)
+✅ **AUTHENTICATION & LOGGING OPTIMIZED** - Eliminated noisy 401 logs and improved UX:
+- **ROOT CAUSE**: Guest users receiving scary 401 errors and noisy WARN logs on normal browsing
+- **SOLUTION**: Guest-safe responses, smart 401 logging, and improved retry logic
+- **FIXED**: /api/user now returns 200 {"auth":false} for guests instead of 401 errors
+- **LOGGING**: Expected guest 401s demoted to INFO level, unexpected ones logged with debug details
+- **NEW ENDPOINTS**: /api/auth/state for explicit auth checking without 401 responses
+- **FRONTEND**: Added smart retry logic and refetchOnWindowFocus prevention
+- **VERIFIED**: Clean logs, better UX, and robust authentication flow

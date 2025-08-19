@@ -10,16 +10,14 @@ export function ProtectedRoute({
   children: React.ReactNode;
   requireDeveloper?: boolean;
 }) {
-  const { data: authData, isLoading } = useAuth();
-  const user = authData?.user;
-  const isAuthenticated = authData?.authenticated || false;
+  const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !user) {
       setLocation("/auth");
     }
-  }, [isAuthenticated, isLoading, setLocation]);
+  }, [user, isLoading, setLocation]);
 
   if (isLoading) {
     return (
@@ -29,7 +27,7 @@ export function ProtectedRoute({
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!user) {
     return null; // Will redirect to auth
   }
 

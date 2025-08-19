@@ -46,8 +46,7 @@ import type { Order, EquipmentSubmission } from "@shared/schema";
 // Using SSOT AddressesPanel for unified address management
 
 function DashboardContent() {
-  const { data: authData } = useAuth();
-  const user = authData?.user;
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [location] = useLocation();
@@ -515,7 +514,7 @@ function DashboardContent() {
                               variant="outline" 
                               size="sm"
                               onClick={() => {
-                                const trackUrl = `/track-submission?ref=${encodeURIComponent(submission.referenceNumber || '')}`;
+                                const trackUrl = `/track-submission?ref=${encodeURIComponent(submission.referenceNumber)}`;
                                 console.log('🔍 Navigating to:', trackUrl);
                                 window.location.href = trackUrl;
                               }}

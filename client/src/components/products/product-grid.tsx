@@ -37,7 +37,7 @@ export default function ProductGrid({ products, viewMode = "grid", compactCards 
 
   const grid = viewMode === "grid";
   return (
-    <div className={grid ? "grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-fr" : "flex flex-col gap-3"}>
+    <div className={grid ? "grid grid-cols-2 md:grid-cols-3 gap-4" : "flex flex-col gap-3"}>
       {safeProducts?.map((p) => (
         <ProductCard key={p.id} product={p} viewMode={viewMode} compact={compactCards} />
       ))}

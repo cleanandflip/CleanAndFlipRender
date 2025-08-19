@@ -8,9 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireCompleteProfile = false }: ProtectedRouteProps) {
-  const { data: authData, isLoading } = useAuth();
-  const isAuthenticated = authData?.authenticated || false;
-  const user = authData?.user;
+  const { user, isLoading } = useAuth();
   
   if (isLoading) {
     return (
@@ -23,8 +21,8 @@ export function ProtectedRoute({ children, requireCompleteProfile = false }: Pro
     );
   }
   
-  if (!isAuthenticated || !user) {
-    return <Redirect to="/auth" />;
+  if (!user) {
+    return <Redirect to="/login" />;
   }
   
   // PROFILE GATING REMOVED - Allow cart/checkout access, handle address requirement at order time only

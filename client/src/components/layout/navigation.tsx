@@ -8,7 +8,7 @@ import SearchBar from "@/components/search/SearchBar";
 import { NavigationStateManager } from "@/lib/navigation-state";
 import Logo from "@/components/common/logo";
 import { useCart } from "@/hooks/useCart";
-import { useAuth, useLogout } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Menu, Search, ShoppingCart, User, X, LogOut, LogIn, UserPlus, Settings, XCircle, Package, History, ChevronDown, LayoutDashboard, Code, LayoutGrid, Code2, Shield } from "lucide-react";
 import { LocalBadge } from "@/components/locality/LocalBadge";
@@ -28,10 +28,7 @@ export default function Navigation() {
   // Cart functionality with real-time updates - FIXED DATA ACCESS
   const { data: cart } = useCart();  
   const cartCount = cart && Array.isArray((cart as any).items) ? (cart as any).items.length : 0;
-  const { data: authData, isLoading: authLoading } = useAuth();
-  const isAuthenticated = authData?.authenticated || false;
-  const user = authData?.user;
-  const logoutMutation = useLogout();
+  const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
   const { data: locality } = useLocality(); // SSOT single source of truth
   const local = locality || DEFAULT_LOCALITY; // Never undefined
@@ -124,13 +121,11 @@ export default function Navigation() {
   // Cart button toggle with SSOT profile completion check
   const handleCartClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    console.log('🛒 Cart button clicked!', { user, isAuthenticated, location, ROUTES_CART: ROUTES.CART });
     
     // Check if user is authenticated first
-    if (!isAuthenticated || !user) {
-      console.log('🚫 User not authenticated, showing sign in toast');
+    if (!user) {
       toast({
-        title: "Sign In Required", 
+        title: "Sign In Required",
         description: "Please sign in to access your cart",
         variant: "default",
         action: (
@@ -146,21 +141,17 @@ export default function Navigation() {
     }
     
     // CART ACCESS UNRESTRICTED - Users can browse cart freely, address required only at checkout
-    console.log('✅ User authenticated, proceeding with cart navigation', { isCartOpen, location, ROUTES_CART: ROUTES.CART });
     
     if (!isCartOpen) {
       // Save current location before opening cart
       if (location !== ROUTES.CART) {
-        console.log('📍 Saving previous path:', location);
         setPreviousPath(location);
         sessionStorage.setItem('cartPreviousPath', location);
       }
-      console.log('🚀 Navigating to cart:', ROUTES.CART);
       setLocation(ROUTES.CART);
     } else {
       // Cart is open, go back to previous view
       const savedPath = sessionStorage.getItem('cartPreviousPath') || previousPath;
-      console.log('⬅️ Cart is open, going back to:', savedPath || ROUTES.PRODUCTS);
       if (savedPath && savedPath !== ROUTES.CART) {
         setLocation(savedPath);
         sessionStorage.removeItem('cartPreviousPath');
@@ -222,7 +213,7 @@ export default function Navigation() {
             <div className="hidden lg:block h-8 w-px bg-white/10" />
 
             {/* Account - Professional Dropdown */}
-            {isAuthenticated && user ? (
+            {user ? (
               <div className="relative">
                 <button 
                   ref={triggerRef}

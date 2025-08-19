@@ -3,8 +3,8 @@ import * as process from "node:process";
 export type AppEnv = "development" | "production" | "preview" | "staging";
 
 // Import environment detection from the single source of truth
-import { ENV as ENV_FROM_CONFIG } from './env';
-export const APP_ENV = ENV_FROM_CONFIG.nodeEnv;
+import { APP_ENV as ENV_FROM_CONFIG } from './env';
+export const APP_ENV: AppEnv = ENV_FROM_CONFIG;
 
 function must(name: string): string {
   const v = process.env[name];
@@ -32,7 +32,7 @@ export const PROD_DATABASE_URL = opt("PROD_DATABASE_URL", process.env.DATABASE_U
 export const DATABASE_URL = APP_ENV === "production" ? PROD_DATABASE_URL : DEV_DATABASE_URL;
 
 // Import DB_HOST from single source
-import { ENV, DB_HOST } from './env';
+import { DB_HOST } from './env';
 export { DB_HOST };
 export const DEV_DB_HOST = hostOf(DEV_DATABASE_URL);
 export const PROD_DB_HOST = hostOf(PROD_DATABASE_URL);

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { useAuthActions } from "@/hooks/use-auth-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,9 +18,7 @@ import type { RegisterData } from "@shared/schema";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
-  const { data: authData, isLoading: authLoading } = useAuth();
-  const user = authData?.user;
-  const { emailLogin, emailRegister, google, github, isBusy } = useAuthActions();
+  const { user, isLoading: authLoading, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -59,7 +56,7 @@ export default function AuthPage() {
     e.preventDefault();
     scrollToForm();
     const formData = new FormData(e.currentTarget);
-    emailLogin.mutate({
+    loginMutation.mutate({
       email: formData.get("email") as string,
       password: formData.get("password") as string,
     });
@@ -79,7 +76,7 @@ export default function AuthPage() {
       return;
     }
     
-    emailRegister.mutate({
+    registerMutation.mutate({
       email: formData.get("email") as string,
       password,
       confirmPassword,
@@ -198,10 +195,10 @@ export default function AuthPage() {
                     variant="primary"
                     size="lg"
                     className="w-full h-11 text-sm"
-                    loading={emailLogin.isPending}
-                    disabled={emailLogin.isPending}
+                    loading={loginMutation.isPending}
+                    disabled={loginMutation.isPending}
                   >
-                    {emailLogin.isPending ? "Signing In..." : "Sign In"}
+                    {loginMutation.isPending ? "Signing In..." : "Sign In"}
                   </Button>
                 </form>
                 
@@ -210,7 +207,7 @@ export default function AuthPage() {
                     Or continue with
                   </div>
                   <hr className="border-gray-600 mb-4" />
-                  <GoogleSignInButton disabled={emailLogin.isPending} />
+                  <GoogleSignInButton disabled={loginMutation.isPending} />
                 </div>
               </Card>
             </TabsContent>
@@ -323,10 +320,10 @@ export default function AuthPage() {
                     variant="primary"
                     size="lg"
                     className="w-full h-11 text-sm mt-5"
-                    loading={emailRegister.isPending}
-                    disabled={emailRegister.isPending || !passwordsMatch || (!!password && !isPasswordValid(password))}
+                    loading={registerMutation.isPending}
+                    disabled={registerMutation.isPending || !passwordsMatch || (!!password && !isPasswordValid(password))}
                   >
-                    {emailRegister.isPending ? "Creating Account..." : "Create Account"}
+                    {registerMutation.isPending ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
                 
@@ -335,7 +332,7 @@ export default function AuthPage() {
                     Or continue with
                   </div>
                   <hr className="border-gray-600 mb-4" />
-                  <GoogleSignInButton disabled={emailRegister.isPending} />
+                  <GoogleSignInButton disabled={registerMutation.isPending} />
                 </div>
 
                 {/* Security info as subtle footer */}
