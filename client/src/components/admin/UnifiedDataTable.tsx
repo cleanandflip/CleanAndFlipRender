@@ -33,7 +33,7 @@ interface DataTableProps<T> {
     onPageChange: (page: number) => void;
   };
   loading?: boolean;
-  filterQuery?: string;
+  searchQuery?: string;
 }
 
 export function UnifiedDataTable<T extends { id?: string | number; table_name?: string }>({
@@ -44,7 +44,7 @@ export function UnifiedDataTable<T extends { id?: string | number; table_name?: 
   onRefresh,
   onExport,
   onRowClick,
-  filterQuery: controlledSearchQuery,
+  searchQuery: controlledSearchQuery,
   actions,
   pagination,
   loading = false
@@ -57,8 +57,7 @@ export function UnifiedDataTable<T extends { id?: string | number; table_name?: 
     if (selectedRows.size === data.length) {
       setSelectedRows(new Set());
     } else {
-      const validIds = data.map(item => item.id || item.table_name).filter((id): id is string | number => Boolean(id));
-      setSelectedRows(new Set(validIds));
+      setSelectedRows(new Set(data.map(item => item.id)));
     }
   };
 
