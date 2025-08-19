@@ -16,7 +16,7 @@ export default function App() {
     fetch(`${API_URL}/api/db-check`, { credentials: 'include' })
       .then(r => r.json())
       .then(setDb)
-      .catch(e => console.log('db-check error:', e))
+      .catch(() => {})
   }, [])
 
   return (
@@ -33,10 +33,6 @@ export default function App() {
       <pre style={{ background: '#f6f8fa', padding: 12, borderRadius: 8, overflow: 'auto' }}>
         {JSON.stringify(db, null, 2)}
       </pre>
-
-      <p style={{ marginTop: 24, fontSize: 12, opacity: 0.7 }}>
-        Configure <code>VITE_API_URL</code> in <code>apps/web/.env</code> or on Render Static Site build-time env.
-      </p>
     </div>
   )
 }
