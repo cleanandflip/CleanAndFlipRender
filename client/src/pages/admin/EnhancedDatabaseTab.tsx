@@ -48,6 +48,7 @@ export function EnhancedDatabaseTab() {
   const [showQueryModal, setShowQueryModal] = useState(false);
   const [showCheckpointModal, setShowCheckpointModal] = useState(false);
   const [showCheckpointManager, setShowCheckpointManager] = useState(false);
+  const [showCheckpointManager, setShowCheckpointManager] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { connected, subscribe, ready } = useWebSocketState();
   const queryClient = useQueryClient();
@@ -445,6 +446,14 @@ export function EnhancedDatabaseTab() {
           });
         }}
       />
+
+      {showCheckpointManager && (
+        <CheckpointManagerModal
+          branch={selectedBranch}
+          isOpen={showCheckpointManager}
+          onClose={() => setShowCheckpointManager(false)}
+        />
+      )}
 
       <CheckpointManagerModal
         branch={selectedBranch}

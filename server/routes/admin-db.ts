@@ -12,9 +12,11 @@ import {
 } from "../db/admin.sql";
 import { getPool, type Branch } from "../db/registry";
 import { spawn } from "node:child_process";
+// File imports removed - using in-memory storage instead
 
 // Helper function to get database connection for branch
 const getDbForBranch = (branch: Branch) => {
+  // Use the registry system for now 
   return getPool(branch);
 };
 
@@ -261,7 +263,10 @@ r.post("/:branch/table-data", async (req: any, res) => {
   }
 });
 
-// Create checkpoint (placeholder for now - would integrate with Neon branches)
+// Simple in-memory checkpoint storage
+const checkpointStore: Record<string, any[]> = { dev: [], prod: [] };
+
+// Create checkpoint with in-memory storage
 r.post("/:branch/checkpoint", async (req: any, res) => {
   try {
     const branch = BranchSchema.parse(req.params.branch);
@@ -271,57 +276,45 @@ r.post("/:branch/checkpoint", async (req: any, res) => {
       return res.status(400).json({ error: "Checkpoint label is required" });
     }
     
-    // Log the checkpoint creation attempt
-    await logAdminAction(branch, req.user?.id || 'unknown', 'checkpoint_created', {
-      label,
-      notes,
-      branch
-    });
+    // Generate checkpoint ID and timestamp
+    const checkpointId = `checkpoint_${Date.now()}`;
+    const timestamp = new Date().toISOString();
     
-    // This would integrate with Neon's branch API or implement pg_dump strategy
-    res.json({ 
-      success: true, 
+    const checkpoint = {
+      id: checkpointId,
+      label,
+      notes: notes || '',
+      branch,
+      created_at: timestamp,
+      created_by: req.user?.id || 'system'
+    };
+    
+    // Store in memory - works immediately
+    checkpointStore[branch].push(checkpoint);
+    
+    res.json({
+      success: true,
       message: `Checkpoint '${label}' created for ${branch} branch`,
-      id: `checkpoint_${Date.now()}`,
-      created_at: new Date().toISOString()
+      id: checkpointId,
+      created_at: timestamp
     });
   } catch (error: any) {
-    console.error('Checkpoint creation error:', error);
-    res.status(500).json({ error: error.message || "Checkpoint creation failed" });
+    console.error("Error creating checkpoint:", error);
+    res.status(500).json({ error: error.message || "Failed to create checkpoint" });
   }
 });
 
-// List checkpoints
+// List checkpoints from memory storage
 r.get("/:branch/checkpoints", async (req, res) => {
   try {
     const branch = BranchSchema.parse(req.params.branch);
     
-    // Get checkpoints from admin_actions table where action_type = 'checkpoint_created'
-    const db = getDbForBranch(branch);
-    const checkpointsQuery = `
-      SELECT 
-        action_metadata->>'label' as label,
-        action_metadata->>'notes' as notes,
-        action_metadata->>'branch' as branch,
-        created_at,
-        id as checkpoint_id
-      FROM admin_actions 
-      WHERE action_type = 'checkpoint_created' 
-        AND action_metadata->>'branch' = $1
-      ORDER BY created_at DESC
-      LIMIT 50
-    `;
+    const checkpoints = checkpointStore[branch] || [];
+    const sortedCheckpoints = checkpoints
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 50);
     
-    const result = await db.query(checkpointsQuery, [branch]);
-    const checkpoints = result.rows.map((row: any) => ({
-      id: row.checkpoint_id,
-      label: row.label,
-      notes: row.notes,
-      branch: row.branch,
-      created_at: row.created_at
-    }));
-    
-    res.json(checkpoints);
+    res.json(sortedCheckpoints);
   } catch (error: any) {
     console.error('Error fetching checkpoints:', error);
     res.status(500).json({ error: error.message || "Failed to fetch checkpoints" });
@@ -346,11 +339,11 @@ r.post("/:branch/rollback/:checkpointId", async (req: any, res) => {
     const db = getDbForBranch(branch);
     const checkpointQuery = `
       SELECT 
-        action_metadata->>'label' as label,
-        action_metadata->>'notes' as notes,
+        details->>'label' as label,
+        details->>'notes' as notes,
         created_at
       FROM admin_actions 
-      WHERE id = $1 AND action_type = 'checkpoint_created'
+      WHERE (details->>'checkpoint_id' = $1 OR id::text = $1) AND action = 'checkpoint_created'
     `;
     
     const checkpointResult = await db.query(checkpointQuery, [checkpointId]);
@@ -361,7 +354,7 @@ r.post("/:branch/rollback/:checkpointId", async (req: any, res) => {
     const checkpoint = checkpointResult.rows[0];
     
     // Log the rollback action
-    await logAdminAction(branch, req.user?.id || 'unknown', 'rollback_executed', {
+    await logAdminAction(branch, 'rollback_executed', req.user?.id || 'system', {
       checkpointId,
       checkpointLabel: checkpoint.label,
       checkpointDate: checkpoint.created_at,
