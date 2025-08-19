@@ -13,6 +13,11 @@ import {
 import { getPool, type Branch } from "../db/registry";
 import { spawn } from "node:child_process";
 
+// Helper function to get database connection for branch
+const getDbForBranch = (branch: Branch) => {
+  return getPool(branch);
+};
+
 const r = Router();
 r.use(requireAdmin);
 
@@ -308,7 +313,7 @@ r.get("/:branch/checkpoints", async (req, res) => {
     `;
     
     const result = await db.query(checkpointsQuery, [branch]);
-    const checkpoints = result.rows.map(row => ({
+    const checkpoints = result.rows.map((row: any) => ({
       id: row.checkpoint_id,
       label: row.label,
       notes: row.notes,

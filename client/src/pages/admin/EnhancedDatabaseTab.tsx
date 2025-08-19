@@ -290,6 +290,39 @@ export function EnhancedDatabaseTab() {
           <span>•</span>
           <span>Migrations: {stats.totalMigrations}</span>
         </div>
+
+        {/* Quick Actions */}
+        <div className="flex items-center space-x-4 mt-4">
+          <UnifiedButton
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowQueryModal(true)}
+            data-testid="button-open-sql-console"
+          >
+            <Terminal className="h-4 w-4 mr-2" />
+            SQL Console
+          </UnifiedButton>
+          
+          <UnifiedButton
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowCheckpointManager(true)}
+            data-testid="button-view-rollback"
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            View & Rollback
+          </UnifiedButton>
+          
+          <UnifiedButton
+            variant="primary"
+            size="sm"
+            onClick={() => setShowCheckpointModal(true)}
+            data-testid="button-create-checkpoint"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Create Checkpoint
+          </UnifiedButton>
+        </div>
       </div>
 
       {/* Metrics Grid */}
