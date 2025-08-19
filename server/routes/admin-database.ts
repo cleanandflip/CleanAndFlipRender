@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { validateRequest } from '../middleware/validation';
+import { getPool } from '../db/registry';
+import { createCheckpoint, listCheckpoints, diffCheckpoint, rollbackToCheckpoint } from '../db/checkpoints';
+import { syncDatabases } from '../services/db-sync';
 import ws from 'ws';
 
 // Configure Neon WebSocket constructor
@@ -230,6 +233,88 @@ router.post('/database/table-data', validateRequest(TableDataRequestSchema), asy
       error: error instanceof Error ? error.message : 'Failed to fetch table data',
       duration
     });
+  }
+});
+
+// === NEW CHECKPOINT & SYNC ROUTES ===
+
+// List checkpoints (per branch DB)
+router.get("/api/admin/db/:branch/checkpoints", async (req, res) => {
+  try {
+    const pool = getPool(req.params.branch === "prod" ? "prod" : "dev");
+    const rows = await listCheckpoints(pool);
+    res.json({ ok: true, checkpoints: rows });
+  } catch (error) {
+    console.error('Error listing checkpoints:', error);
+    res.status(500).json({ ok: false, error: String(error) });
+  }
+});
+
+// Create checkpoint
+router.post("/api/admin/db/:branch/checkpoint", async (req, res) => {
+  try {
+    const { label, notes } = req.body || {};
+    if (!label) return res.status(400).json({ ok: false, error: "Label required" });
+    
+    const branch = (req.params.branch === "prod" ? "prod" : "dev");
+    const pool = getPool(branch);
+    const id = await createCheckpoint(pool, branch, label, notes, req.body?.createdBy || "admin");
+    res.json({ ok: true, id });
+  } catch (error) {
+    console.error('Error creating checkpoint:', error);
+    res.status(500).json({ ok: false, error: String(error) });
+  }
+});
+
+// Diff
+router.get("/api/admin/db/:branch/checkpoints/:id/diff", async (req, res) => {
+  try {
+    const branch = (req.params.branch === "prod" ? "prod" : "dev");
+    const pool = getPool(branch);
+    const diff = await diffCheckpoint(pool, req.params.id);
+    res.json({ ok: true, diff });
+  } catch (error) {
+    console.error('Error diffing checkpoint:', error);
+    res.status(500).json({ ok: false, error: String(error) });
+  }
+});
+
+// Rollback
+router.post("/api/admin/db/:branch/rollback/:id", async (req, res) => {
+  try {
+    const branch = (req.params.branch === "prod" ? "prod" : "dev");
+    const pool = getPool(branch);
+    await rollbackToCheckpoint(pool, req.params.id);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error rolling back:', error);
+    res.status(500).json({ ok: false, error: String(error) });
+  }
+});
+
+// Fire-and-wait sync (simple). Requires admin.
+router.post("/api/admin/db/sync", async (req, res) => {
+  try {
+    const { direction } = req.body as { direction: "dev_to_prod" | "prod_to_dev" };
+    if (!direction) return res.status(400).json({ ok: false, error: "direction required" });
+
+    const from = direction === "dev_to_prod" ? "dev" : "prod";
+    const to   = direction === "dev_to_prod" ? "prod" : "dev";
+
+    // optional: stricter confirmation for Dev→Prod
+    if (direction === "dev_to_prod" && req.body?.confirmText !== "SYNC PRODUCTION") {
+      return res.status(400).json({ ok: false, error: "Confirmation text mismatch" });
+    }
+
+    // Simple sync without WebSocket progress for now
+    const result = await syncDatabases({
+      from, to,
+      actor: req.body?.createdBy || "admin"
+    });
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    console.error('Error syncing databases:', error);
+    res.status(500).json({ ok: false, error: String(error) });
   }
 });
 

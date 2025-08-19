@@ -1,460 +1,486 @@
-// DATABASE MANAGEMENT TAB WITH UNIFIED THEME
+// ENHANCED DATABASE ADMIN - SINGLE SOURCE OF TRUTH
 import { useState, useEffect } from 'react';
-import { Database, Table as TableIcon, Play, Download, RefreshCw, Eye, Settings, Terminal, Clock, AlertTriangle } from 'lucide-react';
-import { UnifiedMetricCard } from '@/components/admin/UnifiedMetricCard';
-import { UnifiedDataTable } from '@/components/admin/UnifiedDataTable';
-import { UnifiedButton } from '@/components/admin/UnifiedButton';
-import { DatabaseTableModal } from '@/components/admin/modals/DatabaseTableModal';
-import { DatabaseQueryModal } from '@/components/admin/modals/DatabaseQueryModal';
-import { DatabaseCheckpointModal } from '@/components/admin/modals/DatabaseCheckpointModal';
-import { CheckpointManagerModal } from '@/components/admin/modals/CheckpointManagerModal';
-import { useWebSocketState } from '@/hooks/useWebSocketState';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from '@/hooks/use-toast';
-import { globalDesignSystem as theme } from '@/styles/design-system/theme';
+import { Database, Sync, GitBranch, Save, RotateCcw, Eye, Terminal, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { motion } from "framer-motion";
 
-interface Branch {
-  key: string;
+type Branch = "dev" | "prod";
+
+interface DatabaseInfo {
   name: string;
-  url: string;
-}
-
-interface DatabaseTable {
-  table_schema: string;
-  table_name: string;
-  table_type: string;
-  total_bytes: string;
-  row_count_estimate: string;
-}
-
-interface Migration {
-  id: number;
-  name: string;
-  run_on: string;
+  tables: Array<{
+    schema: string;
+    name: string;
+    full_name: string;
+    row_count: number;
+    columns: Array<{
+      name: string;
+      type: string;
+      is_nullable: string;
+      default_value: string | null;
+    }>;
+  }>;
+  connectionStatus: "connected" | "error";
+  error?: string;
 }
 
 interface Checkpoint {
   id: string;
+  branch: string;
   label: string;
-  created_by: string;
-  created_at: string;
+  schema_name: string;
   notes?: string;
+  created_by?: string;
+  created_at: string;
 }
 
 export function EnhancedDatabaseTab() {
-  const [selectedBranch, setSelectedBranch] = useState<string>('dev');
-  const [selectedTable, setSelectedTable] = useState<DatabaseTable | null>(null);
-  const [showTableModal, setShowTableModal] = useState(false);
-  const [showQueryModal, setShowQueryModal] = useState(false);
-  const [showCheckpointModal, setShowCheckpointModal] = useState(false);
-  const [isCheckpointManagerOpen, setCheckpointManagerOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const { connected, subscribe, ready } = useWebSocketState();
-  const queryClient = useQueryClient();
+  // === STATE ===
+  const [selectedBranch, setSelectedBranch] = useState<Branch>("dev");
+  const [direction, setDirection] = useState<"dev_to_prod" | "prod_to_dev">("dev_to_prod");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [progress, setProgress] = useState<{phase?: string; table?: string; total?: number} | null>(null);
+  const [newCkptLabel, setNewCkptLabel] = useState("manual");
+  const [branchForCkpt, setBranchForCkpt] = useState<Branch>("dev");
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [sqlQuery, setSqlQuery] = useState("SELECT * FROM users LIMIT 10;");
+  const [queryResults, setQueryResults] = useState<any>(null);
+  
+  const { toast } = useToast();
+  const qc = useQueryClient();
 
-  // Fetch branches
-  const { data: branches = [] } = useQuery<Branch[]>({
-    queryKey: ['/api/admin/db/branches'],
+  // === QUERIES ===
+  
+  // Fetch database info for both branches
+  const { data: dbInfo, isLoading: dbInfoLoading, refetch: refetchDbInfo } = useQuery({
+    queryKey: ['/api/admin/database/info'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/db/branches', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch branches');
-      return res.json();
+      const res = await fetch('/api/admin/database/info', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch database info');
+      return res.json() as { development: DatabaseInfo; production: DatabaseInfo };
     }
   });
 
-  // Fetch tables for selected branch
-  const {
-    data: tables = [],
-    isLoading: tablesLoading,
-    refetch: refetchTables
-  } = useQuery<DatabaseTable[]>({
-    queryKey: ['/api/admin/db/' + selectedBranch + '/tables'],
+  // Fetch checkpoints for selected branch
+  const ckptQuery = useQuery({
+    queryKey: ["ckpts", branchForCkpt],
     queryFn: async () => {
-      const res = await fetch(`/api/admin/db/${selectedBranch}/tables`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch tables');
-      return res.json();
-    },
-    enabled: !!selectedBranch,
-  });
-
-  // Fetch migrations
-  const { data: migrations = [] } = useQuery<Migration[]>({
-    queryKey: ['/api/admin/db/' + selectedBranch + '/migrations'],
-    queryFn: async () => {
-      const res = await fetch(`/api/admin/db/${selectedBranch}/migrations`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch migrations');
-      return res.json();
-    },
-    enabled: !!selectedBranch,
-  });
-
-  // Fetch checkpoints
-  const { data: checkpoints = [] } = useQuery<Checkpoint[]>({
-    queryKey: ['/api/admin/db/' + selectedBranch + '/checkpoints'],
-    queryFn: async () => {
-      const res = await fetch(`/api/admin/db/${selectedBranch}/checkpoints`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch checkpoints');
-      return res.json();
-    },
-    enabled: !!selectedBranch,
-  });
-
-  // Setup live sync with WebSocket
-  useEffect(() => {
-    return subscribe("database:update", (msg) => {
-      console.log('🔄 Database live sync: Refreshing data', msg);
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/db/' + selectedBranch + '/tables'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/db/' + selectedBranch + '/migrations'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/db/' + selectedBranch + '/checkpoints'] });
-    });
-  }, [subscribe, queryClient, selectedBranch]);
-
-  // Filter tables based on search
-  const filteredTables = tables.filter(table =>
-    table.table_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    table.table_schema.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Calculate database statistics
-  const stats = {
-    totalTables: tables.length,
-    totalMigrations: migrations.length,
-    totalCheckpoints: checkpoints.length,
-    connectedBranch: selectedBranch === 'dev' ? 'Development' : 'Production'
-  };
-
-  // Table columns configuration for UnifiedDataTable
-  const tableColumns = [
-    {
-      key: 'table_name',
-      label: 'Table Name',
-      sortable: true,
-      render: (table: DatabaseTable) => (
-        <div className="flex items-center space-x-3">
-          <TableIcon className="h-4 w-4 text-blue-400" />
-          <span className="font-medium text-white">{table.table_name}</span>
-        </div>
-      )
-    },
-    {
-      key: 'table_schema',
-      label: 'Schema',
-      sortable: true,
-      render: (table: DatabaseTable) => (
-        <span className="text-gray-300">{table.table_schema}</span>
-      )
-    },
-    {
-      key: 'table_type',
-      label: 'Type',
-      sortable: true,
-      render: (table: DatabaseTable) => (
-        <span className="px-2 py-1 bg-blue-500/10 text-blue-300 rounded text-xs">
-          {table.table_type}
-        </span>
-      )
-    },
-    {
-      key: 'row_count_estimate',
-      label: 'Rows',
-      sortable: true,
-      render: (table: DatabaseTable) => (
-        <span className="text-gray-300">
-          {table.row_count_estimate === '-1' ? 'Unknown' : table.row_count_estimate}
-        </span>
-      )
-    },
-    {
-      key: 'total_bytes',
-      label: 'Size',
-      sortable: true,
-      render: (table: DatabaseTable) => (
-        <span className="text-gray-300">
-          {(parseInt(table.total_bytes) / 1024).toFixed(1)} KB
-        </span>
-      )
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (table: DatabaseTable) => (
-        <div className="flex space-x-2">
-          <UnifiedButton
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSelectedTable(table);
-              setShowTableModal(true);
-            }}
-            data-testid={`button-view-table-${table.table_name}`}
-          >
-            <Eye className="h-3 w-3" />
-          </UnifiedButton>
-        </div>
-      )
+      const r = await fetch(`/api/admin/db/${branchForCkpt}/checkpoints`, { credentials: "include" });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
     }
-  ];
+  });
 
-  const handleTableRowClick = (table: DatabaseTable) => {
-    setSelectedTable(table);
-    setShowTableModal(true);
-  };
+  // === MUTATIONS ===
+  
+  // Create checkpoint
+  const makeCkpt = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/admin/db/${branchForCkpt}/checkpoint`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({ label: newCkptLabel })
+      });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Checkpoint created" });
+      qc.invalidateQueries({ queryKey: ["ckpts", branchForCkpt] });
+      setNewCkptLabel("manual");
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed to create checkpoint", description: String(err), variant: "destructive" });
+    }
+  });
+
+  // Rollback to checkpoint
+  const doRollback = useMutation({
+    mutationFn: async (id: string) => {
+      const r = await fetch(`/api/admin/db/${branchForCkpt}/rollback/${id}`, {
+        method: "POST", credentials: "include"
+      });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Rolled back successfully" });
+      qc.invalidateQueries({ queryKey: ['/api/admin/database/info'] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Rollback failed", description: String(err), variant: "destructive" });
+    }
+  });
+
+  // Database sync
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const body: any = { direction };
+      if (direction === "dev_to_prod") body.confirmText = confirmText;
+      const res = await fetch(`/api/admin/db/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: "Sync complete", description: `Checkpoint: ${data.checkpointId}` });
+      setConfirmOpen(false);
+      setConfirmText("");
+      setProgress({ phase: "Done" });
+      qc.invalidateQueries({ queryKey: ['/api/admin/database/info'] });
+      qc.invalidateQueries({ queryKey: ["ckpts"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Sync failed", description: String(err), variant: "destructive" });
+      setProgress({ phase: "Error" });
+    }
+  });
+
+  // SQL Query execution
+  const executeQuery = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/admin/database/query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ 
+          database: selectedBranch === "dev" ? "development" : "production",
+          query: sqlQuery 
+        })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setQueryResults(data);
+      toast({ title: "Query executed", description: `${data.rowCount} rows returned` });
+    },
+    onError: (err: any) => {
+      toast({ title: "Query failed", description: String(err), variant: "destructive" });
+    }
+  });
+
+  // === RENDER ===
+  const currentDb = selectedBranch === "dev" ? dbInfo?.development : dbInfo?.production;
+  const isConnected = currentDb?.connectionStatus === "connected";
 
   return (
-    <div className="space-y-8" style={{ backgroundColor: theme.colors.bg.primary }}>
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-        <div className="flex items-center space-x-4">
-          <div className="p-3 rounded-xl" style={{ backgroundColor: theme.colors.bg.secondary }}>
-            <Database className="h-8 w-8" style={{ color: theme.colors.brand.blue }} />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold" style={{ color: theme.colors.text.primary }}>
-              Database Management
-            </h1>
-            <p className="text-base" style={{ color: theme.colors.text.muted }}>
-              Manage database tables, execute queries, and create checkpoints
-            </p>
-          </div>
+    <div className="space-y-6" data-testid="enhanced-database-tab">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Database className="h-6 w-6 text-blue-600" />
+          <h2 className="text-2xl font-bold">Database Administration</h2>
         </div>
-
-        <div className="flex items-center space-x-3">
-          {/* Branch Selector */}
-          <select
-            value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
-            className="px-4 py-2 rounded-lg border text-sm font-medium min-w-48"
-            style={{
-              backgroundColor: theme.colors.bg.secondary,
-              borderColor: theme.colors.border.default,
-              color: theme.colors.text.primary
-            }}
-            data-testid="select-database-branch"
-          >
-            <option value="">Select Database Branch</option>
-            {branches.map((branch) => (
-              <option key={branch.key} value={branch.key}>
-                {branch.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Action Buttons */}
-          <UnifiedButton
-            variant="secondary"
-            onClick={() => setShowQueryModal(true)}
-            disabled={!selectedBranch}
-            data-testid="button-execute-query"
-          >
-            <Terminal className="h-4 w-4 mr-2" />
-            Execute Query
-          </UnifiedButton>
-
-          <UnifiedButton
-            variant="secondary"
-            onClick={() => setShowCheckpointModal(true)}
-            disabled={!selectedBranch}
-            data-testid="button-create-checkpoint"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Create Checkpoint
-          </UnifiedButton>
-
-          <UnifiedButton
-            variant="ghost"
-            onClick={() => refetchTables()}
-            disabled={tablesLoading}
-            data-testid="button-refresh-tables"
-          >
-            <RefreshCw className={`h-4 w-4 ${tablesLoading ? 'animate-spin' : ''}`} />
-          </UnifiedButton>
-        </div>
+        <Button 
+          variant="outline" 
+          onClick={() => refetchDbInfo()}
+          data-testid="button-refresh-db"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      {/* Connection Status */}
-      <div className="flex items-center justify-between p-4 rounded-lg border"
-           style={{ 
-             backgroundColor: theme.colors.bg.secondary, 
-             borderColor: theme.colors.border.default 
-           }}>
-        <div className="flex items-center space-x-3">
-          <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`}></div>
-          <span className="text-sm font-medium" style={{ color: theme.colors.text.secondary }}>
-            WebSocket: {connected ? 'Connected' : 'Disconnected'}
+      {/* Branch Selector */}
+      <div className="rounded-2xl border p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <GitBranch className="h-5 w-5" />
+            Database Branches
+          </h3>
+          <Select value={selectedBranch} onValueChange={(v: Branch) => setSelectedBranch(v)}>
+            <SelectTrigger className="w-[180px]" data-testid="select-branch">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="dev">Development (Lucky-Poem)</SelectItem>
+              <SelectItem value="prod">Production (Muddy-Moon)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Connection Status */}
+        <div className="flex items-center gap-2 mb-4">
+          {isConnected ? (
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          ) : (
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+          )}
+          <span className={`text-sm ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+            {isConnected ? 'Connected' : currentDb?.error || 'Disconnected'}
           </span>
         </div>
-        <div className="flex items-center space-x-4 text-sm" style={{ color: theme.colors.text.muted }}>
-          <span>Branch: {stats.connectedBranch}</span>
-          <span>•</span>
-          <span>Tables: {stats.totalTables}</span>
-          <span>•</span>
-          <span>Migrations: {stats.totalMigrations}</span>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="flex items-center space-x-4 mt-4">
-          <UnifiedButton
-            variant="secondary"
-            size="sm"
-            onClick={() => setShowQueryModal(true)}
-            data-testid="button-open-sql-console"
-          >
-            <Terminal className="h-4 w-4 mr-2" />
-            SQL Console
-          </UnifiedButton>
-          
-          <UnifiedButton
-            variant="secondary"
-            size="sm"
-            onClick={() => setCheckpointManagerOpen(true)}
-            data-testid="button-view-rollback"
-          >
-            <Clock className="h-4 w-4 mr-2" />
-            View & Rollback
-          </UnifiedButton>
-          
-          <UnifiedButton
-            variant="primary"
-            size="sm"
-            onClick={() => setShowCheckpointModal(true)}
-            data-testid="button-create-checkpoint"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Create Checkpoint
-          </UnifiedButton>
-        </div>
-      </div>
-
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <UnifiedMetricCard
-          title="Total Tables"
-          value={stats.totalTables.toString()}
-          icon={TableIcon}
-          trend="stable"
-          color="blue"
-        />
-        <UnifiedMetricCard
-          title="Database Migrations"
-          value={stats.totalMigrations.toString()}
-          icon={Settings}
-          trend="stable"
-          color="purple"
-        />
-        <UnifiedMetricCard
-          title="Checkpoints"
-          value={stats.totalCheckpoints.toString()}
-          icon={Clock}
-          trend="stable"
-          color="green"
-          onClick={() => setCheckpointManagerOpen(true)}
-        />
-        <UnifiedMetricCard
-          title="Connection Status"
-          value={connected ? "Online" : "Offline"}
-          icon={connected ? Database : AlertTriangle}
-          trend="stable"
-          color={connected ? "green" : "red"}
-        />
-      </div>
-
-      {/* Database Tables Section */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold" style={{ color: theme.colors.text.primary }}>
-            Database Tables ({filteredTables.length})
-          </h2>
-          
-          {/* Search Input */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search tables..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-4 py-2 pl-10 rounded-lg border w-64 text-sm"
-              style={{
-                backgroundColor: theme.colors.bg.secondary,
-                borderColor: theme.colors.border.default,
-                color: theme.colors.text.primary
-              }}
-              data-testid="input-search-tables"
-            />
-            <Database className="absolute left-3 top-2.5 h-4 w-4" style={{ color: theme.colors.text.muted }} />
-          </div>
-        </div>
-
-        {selectedBranch ? (
-          <UnifiedDataTable
-            data={filteredTables}
-            columns={tableColumns}
-            loading={tablesLoading}
-            onRowClick={handleTableRowClick}
-
-            searchQuery={searchQuery}
-            data-table="database-tables"
-          />
-        ) : (
-          <div className="text-center py-12">
-            <Database className="h-12 w-12 mx-auto mb-4" style={{ color: theme.colors.text.muted }} />
-            <h3 className="text-lg font-medium mb-2" style={{ color: theme.colors.text.secondary }}>
-              Select a Database Branch
-            </h3>
-            <p className="text-sm" style={{ color: theme.colors.text.muted }}>
-              Choose a database branch from the dropdown above to view tables
-            </p>
+        {/* Tables Overview */}
+        {isConnected && currentDb?.tables && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {currentDb.tables.slice(0, 8).map((table) => (
+              <div 
+                key={table.full_name}
+                className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => setSelectedTable(table.name)}
+                data-testid={`table-card-${table.name}`}
+              >
+                <div className="font-medium text-sm">{table.name}</div>
+                <div className="text-xs text-gray-500">{table.row_count} rows</div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Modals */}
-      {selectedTable && (
-        <DatabaseTableModal
-          table={selectedTable}
-          branch={selectedBranch}
-          isOpen={showTableModal}
-          onClose={() => {
-            setShowTableModal(false);
-            setSelectedTable(null);
-          }}
-        />
-      )}
+      {/* Sync Databases */}
+      <div className="rounded-2xl border p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Sync className="h-5 w-5" />
+            Sync Databases
+          </h3>
+          <Select value={direction} onValueChange={(v: any) => setDirection(v)}>
+            <SelectTrigger className="w-[220px]" data-testid="select-sync-direction">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="dev_to_prod">Development → Production</SelectItem>
+              <SelectItem value="prod_to_dev">Production → Development</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-      <DatabaseQueryModal
-        branch={selectedBranch}
-        isOpen={showQueryModal}
-        onClose={() => setShowQueryModal(false)}
-        onQueryExecuted={() => {
-          refetchTables();
-          toast({
-            title: "Query Executed",
-            description: "SQL query completed successfully"
-          });
-        }}
-      />
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="secondary" 
+            onClick={() => setConfirmOpen(true)}
+            disabled={syncMutation.isPending}
+            data-testid="button-sync-databases"
+          >
+            {direction === "dev_to_prod" ? "Sync Dev → Prod" : "Sync Prod → Dev"}
+          </Button>
 
-      <DatabaseCheckpointModal
-        branch={selectedBranch}
-        isOpen={showCheckpointModal}
-        onClose={() => setShowCheckpointModal(false)}
-        onCheckpointCreated={() => {
-          queryClient.invalidateQueries({ queryKey: ['/api/admin/db/' + selectedBranch + '/checkpoints'] });
-          toast({
-            title: "Checkpoint Created",
-            description: "Database checkpoint created successfully"
-          });
-        }}
-      />
+          {progress?.phase && (
+            <motion.div
+              key={progress.phase + (progress.table || "")}
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }}
+              className="text-sm text-muted-foreground"
+            >
+              {progress.phase}
+              {progress.table ? `: ${progress.table}` : ""}
+              {typeof progress.total === "number" ? ` (${progress.total})` : ""}
+            </motion.div>
+          )}
+        </div>
+      </div>
 
-      <CheckpointManagerModal
-        branch={selectedBranch}
-        isOpen={isCheckpointManagerOpen}
-        onClose={() => setCheckpointManagerOpen(false)}
-      />
+      {/* Checkpoints */}
+      <div className="rounded-2xl border p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Save className="h-5 w-5" />
+            Checkpoints
+          </h3>
+          <Select value={branchForCkpt} onValueChange={(v: Branch) => setBranchForCkpt(v)}>
+            <SelectTrigger className="w-[140px]" data-testid="select-checkpoint-branch">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="dev">Development</SelectItem>
+              <SelectItem value="prod">Production</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
+        <div className="flex gap-2 mb-4">
+          <Input 
+            className="w-[240px]" 
+            value={newCkptLabel} 
+            onChange={e => setNewCkptLabel(e.target.value)} 
+            placeholder="Checkpoint label"
+            data-testid="input-checkpoint-label"
+          />
+          <Button 
+            onClick={() => makeCkpt.mutate()}
+            disabled={makeCkpt.isPending || !newCkptLabel.trim()}
+            data-testid="button-create-checkpoint"
+          >
+            Create Checkpoint
+          </Button>
+        </div>
 
+        <div className="space-y-2">
+          {ckptQuery.data?.checkpoints?.map((c: Checkpoint) => (
+            <div key={c.id} className="flex items-center justify-between border rounded-xl p-3">
+              <div className="text-sm">
+                <div className="font-medium">{c.label}</div>
+                <div className="text-muted-foreground flex items-center gap-2">
+                  <Clock className="h-3 w-3" />
+                  {new Date(c.created_at).toLocaleString()}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={async () => {
+                    const r = await fetch(`/api/admin/db/${branchForCkpt}/checkpoints/${c.id}/diff`, { 
+                      credentials: "include" 
+                    });
+                    const json = await r.json();
+                    console.table(json.diff);
+                    toast({ title: "Diff logged to console" });
+                  }}
+                  data-testid={`button-diff-${c.id}`}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  Diff
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => doRollback.mutate(c.id)}
+                  disabled={doRollback.isPending}
+                  data-testid={`button-rollback-${c.id}`}
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Rollback
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* SQL Console */}
+      <div className="rounded-2xl border p-4">
+        <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+          <Terminal className="h-5 w-5" />
+          SQL Console ({selectedBranch === "dev" ? "Development" : "Production"})
+        </h3>
+        
+        <div className="space-y-3">
+          <textarea
+            className="w-full h-32 p-3 border rounded font-mono text-sm"
+            value={sqlQuery}
+            onChange={e => setSqlQuery(e.target.value)}
+            placeholder="Enter SQL query..."
+            data-testid="textarea-sql-query"
+          />
+          
+          <Button 
+            onClick={() => executeQuery.mutate()}
+            disabled={executeQuery.isPending || !sqlQuery.trim()}
+            data-testid="button-execute-query"
+          >
+            Execute Query
+          </Button>
+
+          {queryResults && (
+            <div className="mt-4 p-3 bg-gray-50 rounded border">
+              <div className="text-sm font-medium mb-2">
+                Results: {queryResults.rowCount} rows in {queryResults.duration}ms
+              </div>
+              {queryResults.rows && queryResults.rows.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr>
+                        {queryResults.columns?.map((col: string) => (
+                          <th key={col} className="text-left p-1 border-b font-medium">
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {queryResults.rows.slice(0, 10).map((row: any, i: number) => (
+                        <tr key={i}>
+                          {queryResults.columns?.map((col: string) => (
+                            <td key={col} className="p-1 border-b">
+                              {String(row[col] || '')}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {queryResults.rows.length > 10 && (
+                    <div className="text-xs text-gray-500 mt-2">
+                      Showing first 10 rows of {queryResults.rows.length}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sync Confirmation Modal */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent data-testid="dialog-sync-confirmation">
+          <DialogHeader>
+            <DialogTitle>
+              {direction === "dev_to_prod" ? "Confirm Dev → Prod Sync" : "Confirm Prod → Dev Sync"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {direction === "dev_to_prod" ? (
+            <div className="space-y-3">
+              <div className="p-3 bg-red-50 border border-red-200 rounded">
+                <p className="text-sm text-red-800">
+                  ⚠️ This will overwrite <strong>Production</strong> with <strong>Development</strong> data.
+                  A checkpoint of Production is created automatically so you can roll back.
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">
+                  Type <code>SYNC PRODUCTION</code> to continue:
+                </label>
+                <Input 
+                  value={confirmText} 
+                  onChange={e => setConfirmText(e.target.value)} 
+                  placeholder="SYNC PRODUCTION"
+                  data-testid="input-sync-confirmation"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                This will overwrite <strong>Development</strong> with <strong>Production</strong> data.
+                A checkpoint of Development is created automatically.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => syncMutation.mutate()}
+              disabled={
+                syncMutation.isPending || 
+                (direction === "dev_to_prod" && confirmText !== "SYNC PRODUCTION")
+              }
+              data-testid="button-confirm-sync"
+            >
+              {syncMutation.isPending ? "Syncing..." : "Sync Now"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
-export default EnhancedDatabaseTab;

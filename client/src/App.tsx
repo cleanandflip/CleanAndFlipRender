@@ -45,7 +45,7 @@ const LegalTermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
 const AuthPage = lazy(() => import("@/pages/auth"));
 const FAQ = lazy(() => import("@/pages/faq"));
 const Reviews = lazy(() => import("@/pages/reviews"));
-const DatabaseAdmin = lazy(() => import("@/pages/database-admin"));
+// DatabaseAdmin removed - now using EnhancedDatabaseTab within admin panel
 
 const Terms = lazy(() => import("@/pages/terms"));
 const Privacy = lazy(() => import("@/pages/privacy"));
@@ -152,7 +152,7 @@ function Router() {
               <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
               <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
               <Route path="/admin/submissions" component={SubmissionsAdmin} />
-              <Route path="/admin/database" component={DatabaseAdmin} />
+              {/* Database admin now integrated within AdminDashboard as EnhancedDatabaseTab */}
               {/* REMOVED: observability route - internal error tracking not needed */}
               
               {/* Legal Routes */}

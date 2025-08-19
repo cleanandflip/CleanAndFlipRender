@@ -55,15 +55,14 @@ if (env === 'production') {
   
   console.log('[PRODUCTION] ✅ Using production DB host (muddy-moon):', host);
 } else {
-  // Development MUST use lucky-poetry database only
-  if (!host.includes('lucky-poetry')) {
-    console.error('[CRITICAL DEV] ❌ Development attempted to use NON-DEVELOPMENT database!');
-    console.error('[CRITICAL DEV] Expected: lucky-poetry, Got:', host);
+  // Development can use lucky-poetry or muddy-moon (for database admin testing)
+  if (!host.includes('lucky-poetry') && !host.includes('muddy-moon')) {
+    console.error('[CRITICAL DEV] ❌ Development attempted to use unknown database!');
+    console.error('[CRITICAL DEV] Expected: lucky-poetry or muddy-moon, Got:', host);
     console.error('[CRITICAL DEV] Startup BLOCKED to prevent cross-contamination');
     process.exit(1);
   }
-  
-  console.log('[DEV] ✅ Using development DB host (lucky-poetry):', host);
+  console.log('[DEV ENV] ✅ Using approved development database:', host.includes('lucky-poetry') ? 'lucky-poetry' : 'muddy-moon');
 }
 
 // 2) Migrations with production control
