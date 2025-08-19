@@ -27,8 +27,8 @@ export function hostOf(u: string): string {
   }
 }
 
-export const DEV_DATABASE_URL = opt("DEV_DATABASE_URL", process.env.DATABASE_URL || "");
-export const PROD_DATABASE_URL = opt("PROD_DATABASE_URL", process.env.DATABASE_URL || "");
+export const DEV_DATABASE_URL = process.env.DEV_DATABASE_URL || process.env.DATABASE_URL || "";
+export const PROD_DATABASE_URL = process.env.PROD_DATABASE_URL || process.env.DATABASE_URL || "";
 export const DATABASE_URL = APP_ENV === "production" ? PROD_DATABASE_URL : DEV_DATABASE_URL;
 
 // Import DB_HOST from single source

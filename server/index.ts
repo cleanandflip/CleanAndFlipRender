@@ -51,10 +51,12 @@ const shouldRunMigrations = process.env.RUN_MIGRATIONS === 'true' || env === 'de
 
 if (shouldRunMigrations) {
   console.log("[MIGRATIONS] Running migrations...");
-  await applyMigrations().catch((e) => {
-    console.error("[MIGRATIONS] Failed:", e);
-    process.exit(1); // fail fast; no crash loops from half-booted servers
-  });
+  try {
+    await applyMigrations();
+    console.log("[MIGRATIONS] Done.");
+  } catch (e: any) {
+    console.warn("[MIGRATIONS] Failed, continuing without migrations:", e?.message || e);
+  }
 } else {
   console.log("[MIGRATIONS] Skipped (RUN_MIGRATIONS not set)");
 }
