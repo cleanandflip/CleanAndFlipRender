@@ -90,9 +90,9 @@ function ScrollRestoration() {
 function Router() {
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col">
-        {/* Athletic atmosphere overlay */}
-        <div className="gym-atmosphere" />
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        {/* Athletic atmosphere overlay - DISABLED for layout fix */}
+        {/* <div className="gym-atmosphere" /> */}
         <Analytics />
         <PWAInstaller />
         <Navigation />
