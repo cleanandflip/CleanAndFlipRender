@@ -124,11 +124,13 @@ export default function Navigation() {
   // Cart button toggle with SSOT profile completion check
   const handleCartClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    console.log('🛒 Cart button clicked!', { user, isAuthenticated, location, ROUTES_CART: ROUTES.CART });
     
     // Check if user is authenticated first
-    if (!user) {
+    if (!isAuthenticated || !user) {
+      console.log('🚫 User not authenticated, showing sign in toast');
       toast({
-        title: "Sign In Required",
+        title: "Sign In Required", 
         description: "Please sign in to access your cart",
         variant: "default",
         action: (
@@ -144,17 +146,21 @@ export default function Navigation() {
     }
     
     // CART ACCESS UNRESTRICTED - Users can browse cart freely, address required only at checkout
+    console.log('✅ User authenticated, proceeding with cart navigation', { isCartOpen, location, ROUTES_CART: ROUTES.CART });
     
     if (!isCartOpen) {
       // Save current location before opening cart
       if (location !== ROUTES.CART) {
+        console.log('📍 Saving previous path:', location);
         setPreviousPath(location);
         sessionStorage.setItem('cartPreviousPath', location);
       }
+      console.log('🚀 Navigating to cart:', ROUTES.CART);
       setLocation(ROUTES.CART);
     } else {
       // Cart is open, go back to previous view
       const savedPath = sessionStorage.getItem('cartPreviousPath') || previousPath;
+      console.log('⬅️ Cart is open, going back to:', savedPath || ROUTES.PRODUCTS);
       if (savedPath && savedPath !== ROUTES.CART) {
         setLocation(savedPath);
         sessionStorage.removeItem('cartPreviousPath');
