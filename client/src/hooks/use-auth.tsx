@@ -42,10 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   
   const {
-    data: user,
+    data: authResponse,
     error,
     isLoading,
-  } = useQuery<SelectUser | undefined, Error>({
+  } = useQuery<{auth: boolean; user: SelectUser | null} | null, Error>({
     queryKey: ["/api/user"],
     retry: false, // Don't retry 401s for auth checks
     throwOnError: false, // Handle errors gracefully
@@ -56,6 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnReconnect: false, // Don't spam on reconnect
     refetchOnMount: true, // Always check fresh auth state
   });
+
+  // Extract user from the auth response
+  const user = authResponse?.user ?? null;
 
   // ONBOARDING REMOVED - No more auto-redirects, users browse freely
 
@@ -88,8 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // CRITICAL FIX: Wait for session to propagate before updating cache
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Update query cache with new user data
-      queryClient.setQueryData(["/api/user"], user);
+      // Update query cache with new user data in correct format
+      queryClient.setQueryData(["/api/user"], { auth: true, user });
       
       // Force refetch to verify session persistence  
       await queryClient.refetchQueries({ queryKey: ["/api/user"] });
@@ -141,8 +144,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // CRITICAL FIX: Wait for session to propagate after registration
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Update query cache with new user data
-      queryClient.setQueryData(["/api/user"], user);
+      // Update query cache with new user data in correct format
+      queryClient.setQueryData(["/api/user"], { auth: true, user });
       
       // Force refetch to verify session persistence
       await queryClient.refetchQueries({ queryKey: ["/api/user"] });
@@ -190,7 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       // CRITICAL FIX: Complete client-side cleanup
-      queryClient.setQueryData(["/api/user"], null);
+      queryClient.setQueryData(["/api/user"], { auth: false, user: null });
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.clear(); // Clear all cached queries to prevent hooks issues
       
