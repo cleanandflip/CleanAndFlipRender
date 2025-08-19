@@ -33,6 +33,7 @@ interface DataTableProps<T> {
     onPageChange: (page: number) => void;
   };
   loading?: boolean;
+  searchQuery?: string;
 }
 
 export function UnifiedDataTable<T extends { id?: string | number; table_name?: string }>({
@@ -43,6 +44,7 @@ export function UnifiedDataTable<T extends { id?: string | number; table_name?: 
   onRefresh,
   onExport,
   onRowClick,
+  searchQuery,
   actions,
   pagination,
   loading = false

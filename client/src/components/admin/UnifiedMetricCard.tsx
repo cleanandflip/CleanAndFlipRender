@@ -14,6 +14,8 @@ export interface MetricCardProps {
   valueClassName?: string;
   trend?: string;
   subtitle?: string;
+  color?: string;
+  onClick?: () => void;
 }
 
 export function UnifiedMetricCard({ 
@@ -24,16 +26,22 @@ export function UnifiedMetricCard({
   className,
   valueClassName,
   trend,
-  subtitle
+  subtitle,
+  color,
+  onClick
 }: MetricCardProps) {
   return (
-    <div className={cn(
-      "relative overflow-hidden rounded-xl",
-      "bg-[#1e293b]/50 border border-gray-800",
-      "backdrop-blur p-6",
-      "transition-all duration-300 hover:bg-[#1e293b]/70",
-      className
-    )}>
+    <div 
+      className={cn(
+        "relative overflow-hidden rounded-xl",
+        "bg-[#1e293b]/50 border border-gray-800",
+        "backdrop-blur p-6",
+        "transition-all duration-300 hover:bg-[#1e293b]/70",
+        onClick && "cursor-pointer",
+        className
+      )}
+      onClick={onClick}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-gray-400 mb-1">{title}</p>

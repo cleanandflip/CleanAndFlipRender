@@ -1,0 +1,95 @@
+one thing breaking the Admin page build is a duplicate state declaration in EnhancedDatabaseTab.tsx.
+
+Here’s exactly what to do in Replit 👇
+
+1) Fix the compile error (duplicate state)
+
+File: client/src/pages/admin/EnhancedDatabaseTab.tsx
+Error:
+
+Identifier 'showCheckpointManager' has already been declared. (51:9)
+
+
+What to change (copy/paste):
+Find the block where your hooks start and make it look like this (only ONE checkpoint-manager state):
+
+// top of the component, after imports
+const [showCheckpointModal, setShowCheckpointModal] = useState(false);
+// ✅ keep a single line for manager open state (rename to avoid collisions)
+const [isCheckpointManagerOpen, setCheckpointManagerOpen] = useState(false);
+
+const [searchQuery, setSearchQuery] = useState('');
+const { connected, subscribe, ready } = useWebSocketState();
+const queryClient = useQueryClient();
+
+
+Then update all references in this file:
+
+Replace showCheckpointManager → isCheckpointManagerOpen
+
+Replace setShowCheckpointManager → setCheckpointManagerOpen
+
+Tip: In Replit, use the global search (Ctrl/Cmd+Shift+F) and “Replace All” so you don’t miss any reference.
+
+2) (If needed) keep your Select import consistent
+
+You already fixed the missing component earlier. Double-check all imports use lowercase:
+
+import {
+  Select, SelectTrigger, SelectValue, SelectContent,
+  SelectItem, SelectSeparator, SelectLabel
+} from "@/components/ui/select"; // <-- lowercase 'select'
+
+3) Hard-refresh Vite if HMR gets stuck
+
+Vite sometimes caches the broken transform:
+
+Stop the dev process in Replit and start it again
+
+Or click the Restart button
+
+Hard refresh your browser (Ctrl/Cmd+Shift+R)
+
+4) Optional quality-of-life improvements
+
+These aren’t required to build, but they’ll prevent this kind of issue and reduce the background traffic you’re seeing.
+
+A) ESLint: catch redeclarations automatically
+
+.eslintrc (or your ESLint block):
+
+{
+  "rules": {
+    "no-redeclare": "error",
+    "no-shadow": "warn",
+    "@typescript-eslint/no-redeclare": "error"
+  }
+}
+
+B) Reduce periodic refetch spam (every ~30s)
+
+Those repeating /api/categories?active=true and /api/products/featured calls are almost certainly React Query re-fetches. If you don’t need background polling, set these in the relevant useQuery calls:
+
+useQuery({
+  /* ... */
+  refetchInterval: false,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+  staleTime: 2 * 60 * 1000 // or whatever makes sense
+});
+
+C) Quiet WebSocket heartbeats
+
+If the logs are noisy, guard the heartbeat log with a level check or collapse it to debug only.
+
+Quick checklist
+
+ Remove the duplicate showCheckpointManager line
+
+ Rename usages → isCheckpointManagerOpen / setCheckpointManagerOpen
+
+ Ensure @/components/ui/select import is lowercase
+
+ Restart dev server, hard refresh browser
+
+ (Optional) Add ESLint rules + tame React Query polling

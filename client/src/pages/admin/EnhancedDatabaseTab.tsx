@@ -47,8 +47,7 @@ export function EnhancedDatabaseTab() {
   const [showTableModal, setShowTableModal] = useState(false);
   const [showQueryModal, setShowQueryModal] = useState(false);
   const [showCheckpointModal, setShowCheckpointModal] = useState(false);
-  const [showCheckpointManager, setShowCheckpointManager] = useState(false);
-  const [showCheckpointManager, setShowCheckpointManager] = useState(false);
+  const [isCheckpointManagerOpen, setCheckpointManagerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { connected, subscribe, ready } = useWebSocketState();
   const queryClient = useQueryClient();
@@ -307,7 +306,7 @@ export function EnhancedDatabaseTab() {
           <UnifiedButton
             variant="secondary"
             size="sm"
-            onClick={() => setShowCheckpointManager(true)}
+            onClick={() => setCheckpointManagerOpen(true)}
             data-testid="button-view-rollback"
           >
             <Clock className="h-4 w-4 mr-2" />
@@ -348,7 +347,7 @@ export function EnhancedDatabaseTab() {
           icon={Clock}
           trend="stable"
           color="green"
-          onClick={() => setShowCheckpointManager(true)}
+          onClick={() => setCheckpointManagerOpen(true)}
         />
         <UnifiedMetricCard
           title="Connection Status"
@@ -447,19 +446,13 @@ export function EnhancedDatabaseTab() {
         }}
       />
 
-      {showCheckpointManager && (
-        <CheckpointManagerModal
-          branch={selectedBranch}
-          isOpen={showCheckpointManager}
-          onClose={() => setShowCheckpointManager(false)}
-        />
-      )}
-
       <CheckpointManagerModal
         branch={selectedBranch}
-        isOpen={showCheckpointManager}
-        onClose={() => setShowCheckpointManager(false)}
+        isOpen={isCheckpointManagerOpen}
+        onClose={() => setCheckpointManagerOpen(false)}
       />
+
+
     </div>
   );
 }
