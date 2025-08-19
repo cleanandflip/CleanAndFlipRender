@@ -1,0 +1,8 @@
+{
+  "id": "checkpoint_1755566066822",
+  "label": "Memory Store Test",
+  "notes": "Testing in-memory checkpoint storage",
+  "branch": "dev",
+  "created_at": "2025-08-19T01:14:26.822Z",
+  "created_by": "temp-dev-user"
+}

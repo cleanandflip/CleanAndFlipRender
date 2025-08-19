@@ -1,0 +1,259 @@
+“stuck on a blank account”
+
+From the logs:
+
+/api/logout returns 200 and the next /api/user shrinks from ~600 bytes to 69 bytes and SSOT shows userId:"guest". That means the server actually logged you out.
+
+The UI still shows “User” and remains “signed in” because:
+
+Some components hit a legacy /user endpoint while others call /api/user (you can see both in the logs). The legacy endpoint isn’t tied to the new auth flow, so React Query keeps cached, stale user data.
+
+Your use-auth.tsx has a duplicate config + long staleTime and you’re not invalidating the ['auth'] query on logout.
+
+In some environments the session cookie isn’t being cleared because clearCookie doesn’t use the exact same cookie attributes used when setting the session.
+
+Net effect: the backend says “guest”, but the frontend keeps rendering the old “User”.
+
+Fix Pack (copy-paste for Replit)
+
+Build on top of what’s already in /admin and the current server. Don’t introduce new frameworks.
+
+1) Server – make session cookies consistent & unify endpoints
+
+server/index.ts (or wherever you create express() and sessions):
+
+// 1) trust proxy so secure cookies work behind Replit/HTTPS proxy
+app.set('trust proxy', 1);
+
+const isProd = process.env.NODE_ENV === 'production';
+
+// 2) one place for cookie options; reuse for set + clear
+const cookieOptions = {
+  path: '/',
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  secure: isProd,         // ok with trust proxy = 1
+  maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+};
+
+app.use(session({
+  name: 'cf.sid',         // keep single, stable name
+  secret: process.env.SESSION_SECRET!,
+  resave: false,
+  saveUninitialized: false, // avoid creating sessions for true guests unless needed
+  store: pgSessionStore,    // your existing PG store
+  cookie: cookieOptions
+}));
+
+// helpful: never let /api/user get cached by browsers/CDNs
+app.use('/api/user', (_req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
+
+server/routes/auth.ts (or your routes file):
+
+// UNIFY: remove legacy "/user" route; keep ONLY "/api/user"
+router.get('/api/user', async (req, res) => {
+  if (!req.session?.userId) {
+    return res.status(200).json({
+      authenticated: false,
+      user: null,
+      session: { id: req.sessionID, guest: true }
+    });
+  }
+  const user = await db.getUserById(req.session.userId);
+  return res.json({
+    authenticated: true,
+    user,
+    session: { id: req.sessionID, guest: false }
+  });
+});
+
+// Strict, reliable logout
+router.post('/api/logout', async (req, res) => {
+  try {
+    const sid = req.sessionID;
+
+    // Destroy server-side session first
+    req.session.destroy(err => {
+      // Always attempt to clear cookie with the EXACT same attributes:
+      res.clearCookie('cf.sid', cookieOptions);
+
+      // Optional: for “nuke from orbit” dev-only force
+      res.set('Clear-Site-Data', '"cookies"');
+
+      if (err) {
+        return res.status(200).json({ ok: true, note: 'cookie cleared, store destroy failed', sid });
+      }
+      return res.status(200).json({ ok: true, sid });
+    });
+  } catch (e) {
+    // still clear cookie even on errors
+    res.clearCookie('cf.sid', cookieOptions);
+    return res.status(200).json({ ok: true, note: 'cookie cleared with error' });
+  }
+});
+
+// (Temporary) guard: if anything still calls /user, redirect it.
+router.get('/user', (_req, res) => res.redirect(307, '/api/user'));
+
+
+Also search & remove any old manual cookies like res.cookie('user') or legacy auth routes that aren’t under /api/*.
+
+2) Client – fix use-auth.tsx, always include credentials, and hard-invalidate on logout
+
+client/src/hooks/use-auth.tsx (replace the hook config):
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+const fetchUser = async () => {
+  const r = await fetch('/api/user', {
+    credentials: 'include',
+    headers: { 'Accept': 'application/json' },
+    cache: 'no-store'
+  });
+  if (r.status === 401) return { authenticated: false, user: null, session: null };
+  return r.json();
+};
+
+export function useAuth() {
+  return useQuery({
+    queryKey: ['auth'],
+    queryFn: fetchUser,
+    // Keep it fresh so logout reflects immediately
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: true
+  });
+}
+
+export function useLogout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    },
+    onSuccess: () => {
+      // Blow away any cached user data
+      qc.setQueryData(['auth'], { authenticated: false, user: null, session: null });
+      qc.invalidateQueries({ queryKey: ['auth'] });
+
+      // Clear local “guest” state that can keep the UI feeling “signed-in”
+      localStorage.removeItem('cartOwnerId');   // CART V2
+      localStorage.removeItem('cf_address');    // Locality
+      sessionStorage.clear();
+
+      // Hard navigate to fully reload cookies & menus
+      window.location.assign('/');
+    }
+  });
+}
+
+
+Anywhere you render the user (nav/user menu):
+
+Don’t default to the literal string "User". Prefer:
+
+const { data } = useAuth();
+const isAuthed = !!data?.authenticated;
+const displayName = data?.user?.name ?? 'Guest';
+
+
+If !isAuthed, show a “Sign in” CTA, not a fake account with “Sign out”.
+
+Search & replace any fetches to /user → /api/user.
+
+3) Remove stale code that keeps you stuck
+
+Purge or refactor:
+
+Any legacy client/src/hooks/useAuth.ts or components still importing from it.
+
+Any fetches or helpers that call /user (legacy path).
+
+Any localStorage “user” cache. The only source of truth should be useAuth() → /api/user.
+
+Old session helpers that set ad-hoc cookies.
+
+4) Optional but recommended hardening
+
+Session fixation safety: when you do log in, call req.session.regenerate() and then set req.session.userId = user.id.
+
+CORS: if you ever split origins, set cors({ origin: '<front-end-origin>', credentials: true }).
+
+/api/user shape: keep it uniform (never 401 unless truly forbidden). Frontend logic is simpler if unauthenticated is always 200 { authenticated:false }.
+
+Send Cache-Control: no-store on all auth/user endpoints.
+
+5) Quick test plan
+
+Open DevTools → Application → Cookies. Verify there’s only one cookie: cf.sid.
+
+Hit /api/user in the network tab. You should see { authenticated:false }.
+
+Sign in (whatever flow you use). /api/user should return { authenticated:true, user:{...} }.
+
+Click Sign Out.
+
+Network: /api/logout → 200, next /api/user → { authenticated:false }.
+
+Nav should instantly switch to “Sign in”. No “User” placeholder.
+
+6) Clean up the 401 noise (nice-to-have)
+
+Those periodic GET /api/user 401 lines are usually requests without cookies (prefetch, health checks, crawlers). Two options:
+
+Make /api/user always 200 with { authenticated:false } when no session is present (preferred).
+
+Or keep the 401 but drop the WARN level for it:
+
+if (req.path === '/api/user' && res.statusCode === 401) logger.debug(...);
+
+7) Fix the dashboard null crash (from your earlier error)
+
+DashboardContent is reading .length on a null value. Wrap with defaults:
+
+const items = (data?.items ?? []) as Item[];
+const count = items.length; // safe
+
+
+…and guard any addresses, orders, etc. with ?? [].
+
+8) Schema note you’ll hit next
+
+Your /api/admin/users & /api/admin/analytics are failing on a missing column:
+
+NeonDbError: column "email_verified_at" does not exist
+
+
+Either add the column or change your query to what you actually have. If you want the column (recommended):
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS email_verified_at timestamptz NULL,
+  ADD COLUMN IF NOT EXISTS last_login_at    timestamptz NULL,
+  ADD COLUMN IF NOT EXISTS sign_in_count    integer     NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS last_ip          inet        NULL;
+
+
+Update your admin queries to select these fields and stop referencing non-existent ones.
+
+9) One-time “stuck cookie” escape hatch (dev only)
+
+If you still get stuck on an old cookie, add a dev-only route to wipe cookies:
+
+if (process.env.NODE_ENV !== 'production') {
+  app.post('/api/dev/clear-cookies', (req, res) => {
+    res.clearCookie('cf.sid', cookieOptions);
+    res.set('Clear-Site-Data', '"cookies"');
+    res.json({ ok: true });
+  });
+}
+
+
+Call it once, then remove it.
+
+Follow the steps above and you’ll stop getting “stuck” on the phantom account: logout will reliably clear the session, /api/user will be the single source of truth, and the UI will immediately reflect the true auth state.

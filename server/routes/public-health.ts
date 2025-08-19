@@ -28,30 +28,6 @@ publicHealth.get('/api/healthz', async (_req, res) => {
   }
 });
 
-// Render-compatible health endpoint (root level)
-publicHealth.get('/healthz', async (_req, res) => {
-  try {
-    const r = await universalPool.query(`SELECT current_database() as db, current_user as role`);
-    res.json({ 
-      ok: true,
-      time: new Date().toISOString(),
-      env: APP_ENV, 
-      dbHost: DB_HOST, 
-      database: r.rows[0]?.db, 
-      status: 'healthy'
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      ok: false,
-      time: new Date().toISOString(),
-      env: APP_ENV, 
-      dbHost: DB_HOST, 
-      status: 'error', 
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
 // Back-compat aliases (public)
 publicHealth.get('/health', (_req, res) => res.redirect(307, '/api/healthz'));
 publicHealth.get('/api/admin/system/health', (_req, res) => res.redirect(307, '/api/healthz'));

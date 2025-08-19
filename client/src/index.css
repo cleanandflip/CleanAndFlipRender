@@ -662,7 +662,8 @@ body {
   }
 
   /* Remove conflicting backgrounds on page containers */
-  .page-container {
+  .page-container,
+  .min-h-screen {
     background: transparent !important;
   }
 

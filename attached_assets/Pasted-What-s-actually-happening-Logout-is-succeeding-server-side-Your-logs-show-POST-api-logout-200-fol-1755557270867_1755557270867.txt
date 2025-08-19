@@ -1,0 +1,216 @@
+What’s actually happening
+
+Logout is succeeding server-side. Your logs show POST /api/logout 200 followed by GET /api/user 200 with a tiny payload (~69 B), which is your guest shape.
+
+You’re “stuck on a blank account” because the UI still renders the user menu and dashboard for guests.
+
+Your /api/user endpoint returns 200 with { authenticated:false, user:null } for guests (good), but the frontend still assumes a 200 means “signed in.”
+
+DashboardContent then runs on a guest and crashes: Cannot read properties of null (reading 'length').
+
+Admin 500s (email_verified_at does not exist) are a separate DB schema issue. They don’t block sign-out, but they’ll keep the admin tabs broken.
+
+Below is a tight fix plan that will unstick the account and prevent this from coming back.
+
+A) Make the UI respect authenticated (the real fix)
+1) Canonical auth hook (client/src/hooks/use-auth.tsx)
+
+Make sure your auth hook always fetches with credentials and drives UI off authenticated, not status code.
+
+// client/src/hooks/use-auth.tsx
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+type AuthResponse = {
+  authenticated: boolean;
+  user: any | null;
+  session?: { id?: string; guest?: boolean };
+};
+
+const fetchUser = async (): Promise<AuthResponse> => {
+  const res = await fetch('/api/user', {
+    credentials: 'include',
+    headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
+    cache: 'no-store',
+  });
+  // Your API always returns 200; parse and use the flag:
+  return res.json();
+};
+
+export function useAuth() {
+  return useQuery({
+    queryKey: ['auth'],
+    queryFn: fetchUser,
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+    retry: false,
+  });
+}
+
+export function useLogout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const r = await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      if (!r.ok) throw new Error('Logout failed');
+      return r.json();
+    },
+    onSuccess: () => {
+      qc.setQueryData(['auth'], { authenticated: false, user: null });
+      qc.invalidateQueries({ queryKey: ['auth'] });
+      // clear any UI state that can spoof "logged in"
+      localStorage.removeItem('cartOwnerId');
+      localStorage.removeItem('cf_address');
+      localStorage.removeItem('user');
+      sessionStorage.clear();
+      // hard reload to ensure a clean slate
+      window.location.assign('/');
+    },
+  });
+}
+
+2) Guard protected pages (client/src/components/ProtectedRoute.tsx)
+
+Redirect guests using the flag, not HTTP status.
+
+import { Navigate } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
+
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { data, isLoading } = useAuth();
+  if (isLoading) return null; // or your loader
+  if (!data?.authenticated) return <Navigate to="/auth" replace />;
+  return <>{children}</>;
+}
+
+3) Fix the top-right user menu (client/src/components/layout/navigation.tsx)
+
+Only show the user dropdown when authenticated; otherwise show “Sign in”.
+
+const { data } = useAuth();
+const authed = !!data?.authenticated;
+
+return (
+  authed ? <UserMenu name={data?.user?.firstName ?? 'User'} /> : <SignInLink />
+);
+
+
+Why this fixes the “stuck” state: after logout the API already reports a guest; with the checks above, the UI stops rendering the user menu and can’t navigate to Dashboard/My Orders, so you won’t hit nulls.
+
+B) Server hardening (make the API unambiguous and uncacheable)
+
+You’ve already got a solid auth.ts. Add/confirm these small bits:
+
+1) /api/user should never be cached
+
+(Wherever you define it — you noted it’s in routes.ts.)
+
+app.get('/api/user', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
+  if (req.isAuthenticated?.() && req.user) {
+    const { password, ...user } = req.user;
+    return res.status(200).json({ authenticated: true, user });
+  }
+  return res.status(200).json({ authenticated: false, user: null });
+});
+
+2) Logout must clear the same cookie it set
+
+You’re already using cf.sid. Keep clearing it with identical attributes:
+
+res.clearCookie('cf.sid', {
+  path: '/',
+  httpOnly: true,
+  secure: APP_ENV === 'production',
+  sameSite: APP_ENV === 'production' ? 'none' : 'lax',
+});
+
+3) Trust proxy is set ✅
+
+app.set('trust proxy', 1) is present — keep it.
+
+C) Fix admin 500s (schema)
+
+Your logs show: column "email_verified_at" does not exist in /api/admin/analytics and /api/admin/users. Add missing columns (safe, idempotent):
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS last_login_at   TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS auth_provider   TEXT,
+  ADD COLUMN IF NOT EXISTS profile_image_url TEXT;
+
+-- optional, if your queries expect a boolean too
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN;
+
+
+Run it on both your dev (lucky-poetry) and prod (muddy-moon) DBs.
+
+D) Tell Replit exactly what to change / purge
+
+Keep one truth for auth.
+
+✅ Keep: server/auth.ts (sessions, passport, /api/login, /api/logout).
+
+✅ Keep: single /api/user endpoint (move it into auth.ts if you prefer; otherwise make sure there’s only one definition).
+
+❌ Remove: server/routes/auth-unified.ts (duplicate), server/middleware/session-config.ts (if not used anymore).
+
+Keep one client hook.
+
+✅ Keep: client/src/hooks/use-auth.tsx (the version above).
+
+❌ Remove: client/src/hooks/use-auth-unified.tsx and any legacy use-auth duplicates.
+
+Kill stale scripts and endpoints.
+
+Delete any legacy GET /user (non-/api) route.
+
+Search and remove unused logout helpers that clear connect.sid or other cookie names if you’ve standardized on cf.sid.
+
+# From the project root
+rg -n "auth-unified|use-auth-unified|/user\"\\)|connect\\.sid|session-config" -S
+
+
+Package scripts: Keep only the ones you actually use (dev, build, start).
+
+E) Quick verification (copy/paste)
+
+1) Check cookie and user state
+
+# in a shell on your machine
+curl -i -c jar -b jar https://<your-replit-url>/api/user
+# should be 200 with {"authenticated":false}
+
+# (after a real login in the browser)
+curl -i -c jar -b jar https://<your-replit-url>/api/user
+# should be 200 with {"authenticated":true,...}
+
+# logout
+curl -i -X POST -c jar -b jar https://<your-replit-url>/api/logout
+curl -s -c jar -b jar https://<your-replit-url>/api/user | jq
+# should be {"authenticated":false,"user":null}
+
+
+2) UI sanity
+
+Reload the page. The right-hand menu should say Sign in (not “User”), and /dashboard should redirect to /auth.
+
+Why this is the “best” fix
+
+We keep the nice 200 contract on /api/user (no error noise or retry storms).
+
+The UI can’t misinterpret state anymore — it renders purely on authenticated.
+
+Logout remains robust (server session destroyed + cookie cleared + client cache wiped).
+
+Old duplicates are purged so Replit isn’t running conflicting code paths.
+
+Admin errors are fixed with a small, safe migration.
+
+If you want, I can also give you tiny diffs for specific files (paths + patches).

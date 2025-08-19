@@ -10,7 +10,7 @@ import connectPg from "connect-pg-simple";
 import { normalizeEmail, parseCityStateZip, isLocalZip, validateCityStateZip, normalizePhone } from "@shared/utils";
 import { authLimiter } from "./middleware/security";
 import { Logger, LogLevel } from "./utils/logger";
-import { DATABASE_URL, APP_ENV } from "./config/env";
+import { ENV } from "./config/env";
 import { initializeGoogleAuth } from './auth/google-strategy';
 
 declare global {
@@ -72,7 +72,7 @@ export function setupAuth(app: Express) {
   console.log('[SESSION] DATABASE_URL configured:', !!DATABASE_URL);
   console.log('[SESSION] DATABASE_URL format:', DATABASE_URL?.startsWith('postgresql://') ? 'Valid PostgreSQL' : 'Invalid');
   
-  if (!DATABASE_URL) {
+  if (!ENV.devDbUrl) {
     console.error('[SESSION] CRITICAL: No DATABASE_URL found - this will cause MemoryStore fallback');
     console.error('[SESSION] Environment check:', {
       NODE_ENV: process.env.NODE_ENV,
@@ -93,7 +93,7 @@ export function setupAuth(app: Express) {
   let sessionStore: any;
   try {
     sessionStore = new PostgresSessionStore({
-      conString: DATABASE_URL,
+      conString: ENV.devDbUrl,
       createTableIfMissing: false, // Don't create table - already exists
       schemaName: 'public',
       tableName: 'sessions',
@@ -119,7 +119,7 @@ export function setupAuth(app: Express) {
     throw new Error(`Session store initialization failed: ${error.message}`);
   }
   
-  const isProd = APP_ENV === 'production';
+  const isProd = ENV.isProd;
   const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
   
   const sessionSettings: session.SessionOptions = {

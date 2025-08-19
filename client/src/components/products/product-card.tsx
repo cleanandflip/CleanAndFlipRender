@@ -184,7 +184,7 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
 
   // Grid view (default)
   return (
-    <div className="group relative bg-gray-800/30 rounded-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 animate-fade-in">
+    <div className="group relative bg-gray-800/30 rounded-lg overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 animate-fade-in flex flex-col h-full">
       {/* Only show critical stock badge */}
       {product.stockQuantity === 1 && (
         <div className="absolute top-3 left-3 z-20 animate-bounce-subtle">
@@ -194,12 +194,10 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
         </div>
       )}
       
-
-      
       {/* Clickable area for product details */}
-      <SmartLink href={routes.productDetail(product.id)} preserveState={true}>
-        <div className="cursor-pointer">
-          {/* Clean Image */}
+      <SmartLink href={routes.productDetail(product.id)} preserveState={true} className="flex flex-col flex-1">
+        <div className="cursor-pointer flex flex-col flex-1">
+          {/* Clean Image - Fixed aspect ratio */}
           <div className="aspect-square relative bg-gray-900/30 group-hover:bg-gray-900/40 transition-colors overflow-hidden">
             {hasImage ? (
               <img 
@@ -220,33 +218,39 @@ export default function ProductCard({ product, viewMode = 'grid', compact = fals
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
           
-          {/* Product Info Section */}
-          <div className="p-4 pb-2">
-            {/* Title */}
-            <h3 className="font-medium text-white mb-1 line-clamp-1 group-hover:text-slate-100 transition-colors duration-200">
-              {product.name}
-            </h3>
+          {/* Product Info Section - Fixed height structure */}
+          <div className="p-4 pb-2 flex-1 flex flex-col justify-between">
+            <div>
+              {/* Title - Fixed height with line clamp */}
+              <h3 className="font-medium text-white mb-2 line-clamp-2 leading-tight min-h-[3rem] group-hover:text-slate-100 transition-colors duration-200">
+                {product.name}
+              </h3>
+              
+              {/* Brand - Fixed height whether present or not */}
+              <div className="min-h-[1.5rem] mb-3">
+                {product.brand && (
+                  <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors">
+                    {product.brand}
+                  </p>
+                )}
+              </div>
+            </div>
             
-            {/* Brand */}
-            {product.brand && (
-              <p className="text-gray-400 text-sm mb-3 group-hover:text-gray-300 transition-colors">
-                {product.brand}
-              </p>
-            )}
-            
-            {/* Price */}
-            <p className="text-2xl font-bold text-white mb-4 group-hover:text-slate-100 transition-colors">
+            {/* Price - Always at bottom of text section */}
+            <p className="text-2xl font-bold text-white group-hover:text-slate-100 transition-colors">
               ${String(product.price)}
             </p>
           </div>
         </div>
       </SmartLink>
       
-      {/* Availability chips and add to cart */}
-      <div className="px-4 pb-4 space-y-2" onClick={(e) => e.stopPropagation()}>
+      {/* Availability chips and add to cart - Fixed height bottom section */}
+      <div className="px-4 pb-4 space-y-2 mt-auto" onClick={(e) => e.stopPropagation()}>
         <ProductAvailabilityChips product={{ isLocalDeliveryAvailable: isLocalDelivery, isShippingAvailable: isShipping }} />
         {isLocalEligible && isLocalDelivery && (
-          <FreeDeliveryPill />
+          <div className="min-h-[1.5rem]">
+            <FreeDeliveryPill />
+          </div>
         )}
         <AddToCartButton
           productId={product.id}

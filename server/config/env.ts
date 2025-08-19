@@ -1,90 +1,48 @@
 // server/config/env.ts
-import * as process from "node:process";
+import dotenv from "dotenv";
 
-export type AppEnv = "development" | "preview" | "staging" | "production";
+// 1) Capture whatever the CLI/script set first (e.g. NODE_ENV from `npm run dev`)
+const CLI_NODE_ENV = process.env.NODE_ENV;
 
-// SINGLE SOURCE OF TRUTH ENVIRONMENT DETECTION - No runtime overrides
-export const APP_ENV: AppEnv = (() => {
-  // PRIORITY 1: Explicit APP_ENV environment variable (highest priority)
-  if (process.env.APP_ENV) {
-    return process.env.APP_ENV as AppEnv;
-  }
-  
-  // PRIORITY 2: Replit deployment detection
-  const repl_url = process.env.REPL_URL || '';
-  const replit_domains = process.env.REPLIT_DOMAINS || '';
-  
-  // Replit deployments (.replit.dev or .replit.app) are production
-  if (repl_url.includes('.replit.dev') || replit_domains.includes('.replit.dev') ||
-      repl_url.includes('.replit.app') || replit_domains.includes('.replit.app')) {
-    return "production";
-  }
-  
-  // PRIORITY 3: Explicit production environment variables
-  if (process.env.REPLIT_DEPLOYMENT === "1" || process.env.REPLIT_ENV === "production") {
-    return "production";
-  }
-  
-  // PRIORITY 4: NODE_ENV fallback (for local development)
-  return process.env.NODE_ENV === "production" ? "production" : "development";
-})();
+// 2) Load .env files but DO NOT override anything already set by the shell/CLI
+dotenv.config({ override: false });
 
-// Require at least one of these to be set per env.
-function must(...keys: string[]) {
-  for (const k of keys) {
-    const v = process.env[k];
-    if (v && v.trim()) return v.trim();
-  }
-  throw new Error(`Missing required env: one of ${keys.join(", ")}`);
+// 3) Restore CLI-provided NODE_ENV if present (prevents .env from flipping it)
+if (CLI_NODE_ENV) process.env.NODE_ENV = CLI_NODE_ENV;
+
+// 4) Normalize
+const NODE_ENV = (process.env.NODE_ENV ?? "development") as
+  | "development"
+  | "production"
+  | "test";
+
+const PORT = Number(process.env.PORT ?? 5000);
+
+const DEV_DATABASE_URL = process.env.DEV_DATABASE_URL || process.env.DATABASE_URL;
+const PROD_DATABASE_URL = process.env.PROD_DATABASE_URL;
+
+if (!DEV_DATABASE_URL) {
+  throw new Error("Missing DEV_DATABASE_URL (or DATABASE_URL)");
+}
+if (!PROD_DATABASE_URL) {
+  throw new Error("Missing PROD_DATABASE_URL");
 }
 
-// WEBHOOK PREFIX - Single source of truth for webhook routing
-export const WEBHOOK_PREFIX = APP_ENV === "production" ? "/wh/prod" : "/wh/dev";
+export const ENV = {
+  nodeEnv: NODE_ENV,
+  isDev: NODE_ENV === "development",
+  isProd: NODE_ENV === "production",
+  port: PORT,
+  devDbUrl: DEV_DATABASE_URL,
+  prodDbUrl: PROD_DATABASE_URL,
+} as const;
 
-// Use dedicated DSNs per env; DO NOT point both to the same DB.
-export const DATABASE_URL =
-  APP_ENV === "production"
-    ? must("PROD_DATABASE_URL", "DATABASE_URL")
-    : must("DEV_DATABASE_URL", "DATABASE_URL");
+// Legacy exports for compatibility - all legacy components depend on these
+export const APP_ENV = NODE_ENV;
+export const DATABASE_URL = DEV_DATABASE_URL;
+export const DB_HOST = DEV_DATABASE_URL ? new URL(DEV_DATABASE_URL).host : 'localhost';
+export const WEBHOOK_PREFIX = process.env.WEBHOOK_PREFIX || '/wh';
+export const EXPECTED_DB_HOST = DB_HOST;
+export const ENV_BANNER = `${NODE_ENV.toUpperCase()} Environment`;
 
-// Database host extraction for logging and verification
-export const DB_HOST = (() => {
-  try {
-    return new URL(DATABASE_URL).host;
-  } catch {
-    const s = DATABASE_URL.replace(/^postgres(ql)?:\/\//, "");
-    const afterAt = s.split("@").pop() || s;
-    return afterAt.split("/")[0].split("?")[0];
-  }
-})();
-
-// Single environment banner - the only one that should exist
-console.log(`[ENV] app=${APP_ENV} node=${process.env.NODE_ENV || 'unknown'} dbHost=${DB_HOST}`);
-
-// Optional: a DSN or a bare hostname you *expect* for this env.
-// We accept either to reduce human error.
-export const EXPECTED_DB = (process.env.EXPECTED_DB_URL || process.env.EXPECTED_DB_HOST || "").trim();
-
-export function extractHost(value: string): string {
-  try {
-    // Works for postgres:// and postgresql:// DSNs
-    return new URL(value).host;
-  } catch {
-    // Not a URL; treat as already a host, or a DSN w/o protocol
-    // Strip creds, path, and query if present
-    const s = value.replace(/^postgres(ql)?:\/\//, "");
-    const afterAt = s.split("@").pop() || s;
-    return afterAt.split("/")[0].split("?")[0];
-  }
-}
-
-export const EXPECTED_DB_HOST = EXPECTED_DB ? extractHost(EXPECTED_DB) : "";
-
-// API base (server-to-server absolute, or leave blank and use relative on client)
-export const API_BASE_URL =
-  APP_ENV === "production"
-    ? process.env.API_BASE_URL_PROD?.trim() || ""
-    : process.env.API_BASE_URL_DEV?.trim() || "";
-
-// Helpful banner
-export const ENV_BANNER = `[ENV_CONFIG] APP_ENV=${APP_ENV}, DATABASE_URL host=${DB_HOST}`;
+Object.freeze(ENV);

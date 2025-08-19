@@ -6,7 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 // CartProvider removed - using direct TanStack Query hooks
-import { AuthProvider } from "@/hooks/use-auth";
+// Remove AuthProvider - using direct hooks now
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Navigation from "@/components/layout/navigation";
 import Footer from "@/components/layout/footer";
@@ -45,6 +45,7 @@ const LegalTermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
 const AuthPage = lazy(() => import("@/pages/auth"));
 const FAQ = lazy(() => import("@/pages/faq"));
 const Reviews = lazy(() => import("@/pages/reviews"));
+// DatabaseAdmin removed - now using EnhancedDatabaseTab within admin panel
 
 const Terms = lazy(() => import("@/pages/terms"));
 const Privacy = lazy(() => import("@/pages/privacy"));
@@ -90,9 +91,9 @@ function ScrollRestoration() {
 function Router() {
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        {/* Athletic atmosphere overlay - DISABLED for layout fix */}
-        {/* <div className="gym-atmosphere" /> */}
+      <div className="min-h-screen flex flex-col">
+        {/* Athletic atmosphere overlay */}
+        <div className="gym-atmosphere" />
         <Analytics />
         <PWAInstaller />
         <Navigation />
@@ -119,9 +120,9 @@ function Router() {
               <Route path="/warranty" component={Warranty} />
               <Route path="/inspection" component={Inspection} />
               
-              {/* Shopping Routes - Profile completion required */}
+              {/* Shopping Routes - Authentication required, but not complete profile */}
               <Route path={ROUTES.CART} component={() => (
-                <ProtectedRoute requireCompleteProfile={true}>
+                <ProtectedRoute>
                   <CartPage />
                 </ProtectedRoute>
               )} />
@@ -151,6 +152,7 @@ function Router() {
               <Route path={ROUTES.ADMIN_PRODUCT_NEW} component={ProductForm} />
               <Route path={ROUTES.ADMIN_PRODUCT_EDIT} component={ProductForm} />
               <Route path="/admin/submissions" component={SubmissionsAdmin} />
+              {/* Database admin now integrated within AdminDashboard as EnhancedDatabaseTab */}
               {/* REMOVED: observability route - internal error tracking not needed */}
               
               {/* Legal Routes */}
@@ -196,13 +198,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <>
-            <Toaster />
-            <Router />
-          </>
-        </AuthProvider>
+        <Router />
       </TooltipProvider>
+      <Toaster />
     </QueryClientProvider>
   );
 }

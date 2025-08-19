@@ -1,0 +1,250 @@
+You're seeing “Environment: production” because two different places decide what the env is:
+
+the pretty startup banner (showing production)
+
+your later [STARTUP] Environment: line (correctly shows development)
+
+That happens when:
+
+dotenv (or dotenv-flow) loads an .env that contains NODE_ENV=production and overrides the value set by your npm run dev, or
+
+the banner uses a different env variable (e.g. APP_ENV) or a reversed ternary (isProd ? 'development' : 'production'), or
+
+on Windows, NODE_ENV=development in the script isn’t applied unless you use cross-env.
+
+Below is a drop-in fix to make env handling single-source-of-truth, stop overrides, and make all logs agree. I also included cleanups for the other errors you posted (missing component, duplicate identifiers, old UI, etc.).
+
+✅ Make env consistent (no more “production” on localhost)
+1) Single source of truth for env
+
+server/config/env.ts
+
+// server/config/env.ts
+import dotenv from "dotenv";
+
+// 1) Capture whatever the CLI/script set first (e.g. NODE_ENV from `npm run dev`)
+const CLI_NODE_ENV = process.env.NODE_ENV;
+
+// 2) Load .env files but DO NOT override anything already set by the shell/CLI
+dotenv.config({ override: false });
+
+// 3) Restore CLI-provided NODE_ENV if present (prevents .env from flipping it)
+if (CLI_NODE_ENV) process.env.NODE_ENV = CLI_NODE_ENV;
+
+// 4) Normalize
+const NODE_ENV = (process.env.NODE_ENV ?? "development") as
+  | "development"
+  | "production"
+  | "test";
+
+const PORT = Number(process.env.PORT ?? 5000);
+
+const DEV_DATABASE_URL = process.env.DEV_DATABASE_URL || process.env.DATABASE_URL;
+const PROD_DATABASE_URL = process.env.PROD_DATABASE_URL;
+
+if (!DEV_DATABASE_URL) {
+  throw new Error("Missing DEV_DATABASE_URL (or DATABASE_URL)");
+}
+if (!PROD_DATABASE_URL) {
+  throw new Error("Missing PROD_DATABASE_URL");
+}
+
+export const ENV = {
+  nodeEnv: NODE_ENV,
+  isDev: NODE_ENV === "development",
+  isProd: NODE_ENV === "production",
+  port: PORT,
+  devDbUrl: DEV_DATABASE_URL,
+  prodDbUrl: PROD_DATABASE_URL,
+} as const;
+
+Object.freeze(ENV);
+
+2) Use it everywhere (banner + server)
+
+server/index.ts (top few lines)
+
+import { ENV } from "./config/env";   // <-- use our unified ENV
+
+// ... your server/app creation ...
+
+const banner = `
+================================================
+        🏋️  CLEAN & FLIP - SERVER READY 🏋️
+================================================
+
+  ⚠️  Environment     ${ENV.nodeEnv}
+  ⚠️  Port            ${ENV.port}
+  ✅ Database        Connected
+  ⚠️  Redis Cache     ${process.env.REDIS_URL ? "Enabled" : "Disabled"}
+  ✅ Session Store   PostgreSQL
+  ✅ File Storage    Cloudinary
+  ✅ Payment System  Stripe
+  ✅ WebSocket       Active
+  ✅ Security        OWASP Compliant
+  ✅ Performance     Optimized
+
+================================================
+  Startup completed in %dms
+`;
+
+console.info("[INFO]", banner.replace("%d", String(performance.now().toFixed(0))));
+
+app.listen(ENV.port, "0.0.0.0", () => {
+  console.info("[INFO] [STARTUP] Environment:", ENV.nodeEnv);
+  console.info("[INFO] [STARTUP] Node version:", process.version);
+  console.info("[INFO] 🚀 Server successfully started and listening", {
+    timestamp: new Date().toISOString(),
+    environment: ENV.nodeEnv,
+    host: "0.0.0.0",
+    port: ENV.port,
+    redis: process.env.REDIS_URL ? "Enabled" : "Disabled",
+    websocket: "Enabled",
+    process: {
+      pid: process.pid,
+      memory: process.memoryUsage(),
+    },
+  });
+});
+
+3) Package scripts that always work (Windows/Mac/Linux)
+
+package.json
+
+{
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development tsx server/index.ts",
+    "build": "tsup server/index.ts --format cjs --dts --out-dir dist",
+    "start": "cross-env NODE_ENV=production node dist/index.js"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "tsx": "^4.16.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.5.4",
+    "dotenv": "^16.4.5"
+  }
+}
+
+
+Install missing bits once: npm i -D cross-env dotenv tsx tsup typescript
+
+Now the banner and the later log will both say development when you run npm run dev, regardless of what’s in .env.
+
+Bonus guard: make sure your .env* files do not set NODE_ENV= at all. If any .env has NODE_ENV=production, delete that line.
+
+🧹 Fix the UI/runtime issues you posted
+A) Duplicate identifiers (build break)
+
+EnhancedDatabaseTab.tsx
+
+const [showCheckpointModal, setShowCheckpointModal] = useState(false);
+// REMOVE the duplicate line and rename to make intent clear:
+const [isCheckpointManagerOpen, setCheckpointManagerOpen] = useState(false);
+
+
+UnifiedDataTable.tsx
+
+You had searchQuery declared twice (once as prop, once internally).
+
+Easiest fix: rename the prop.
+
+- export function UnifiedDataTable({ ..., searchQuery, ... }: Props) {
++ export function UnifiedDataTable({ ..., filterQuery, ... }: Props) {
+   // and replace all usage inside with `filterQuery`
+}
+
+
+Update call sites:
+
+- <UnifiedDataTable ... searchQuery={searchQuery} />
++ <UnifiedDataTable ... filterQuery={searchQuery} />
+
+B) Missing component import (CategoriesTab)
+
+Failed to resolve import "@/components/admin/UnifiedMetricCard"
+
+You can either remove the usage or add a lightweight component so the page builds.
+
+client/src/components/admin/UnifiedMetricCard.tsx
+
+import { Card, CardContent } from "@/components/ui/card";
+
+type Props = {
+  label: string;
+  value: string | number;
+  hint?: string;
+};
+export function UnifiedMetricCard({ label, value, hint }: Props) {
+  return (
+    <Card className="rounded-2xl">
+      <CardContent className="p-4">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className="text-2xl font-semibold">{value}</div>
+        {hint ? <div className="text-xs text-muted-foreground mt-1">{hint}</div> : null}
+      </CardContent>
+    </Card>
+  );
+}
+export default UnifiedMetricCard;
+
+
+If you meant to remove all those legacy admin widgets, delete their imports and JSX from CategoriesTab.tsx. Otherwise, the tiny component above unblocks the build.
+
+C) shadcn import case
+
+Make sure Select comes from lowercase select:
+
+- import { Select, SelectTrigger, SelectValue } from "@/components/ui/Select";
++ import { Select, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+🗂️ Remove duplicate/unused Database UIs (permanent)
+
+If you haven’t already:
+
+git rm -f client/src/pages/admin/SimpleDatabaseTab.tsx client/src/pages/database-admin.tsx
+git commit -m "chore(db-admin): remove legacy/duplicate database UIs"
+
+
+Ensure routes and imports don’t reference those files anymore.
+
+🔄 Dev/Prod DB registry (matches the env fix)
+
+Keep your two pools and pick by branch:
+
+server/db/registry.ts
+
+import { Pool } from "pg";
+import { ENV } from "../config/env";
+
+export type Branch = "dev" | "prod";
+
+const devPool = new Pool({ connectionString: ENV.devDbUrl, max: 10 });
+const prodPool = new Pool({ connectionString: ENV.prodDbUrl, max: 10 });
+
+export function getPool(branch: Branch): Pool {
+  return branch === "prod" ? prodPool : devPool;
+}
+
+
+This ensures your Lucky-Poem (dev) and Muddy-Moon (prod) connections are 100% deterministic and not affected by the top-level NODE_ENV string.
+
+🧪 Quick checklist to confirm it’s fixed
+
+Run: npm run dev
+The banner should say Environment development and the later [STARTUP] Environment: should also say development.
+
+Temporarily add log:
+
+console.log("NODE_ENV:", process.env.NODE_ENV, "APP_ENV:", process.env.APP_ENV);
+
+
+Both should look sane (APP_ENV often undefined unless you use it).
+
+Kill overrides: search repo for dotenv.config({ override: true }) and replace with { override: false }.
+
+Windows users: verify cross-env is installed; otherwise NODE_ENV=development won’t apply.
+
+Build errors: the duplicate identifiers and missing component should be gone after the edits above.
+
+If you want, I can also give you the exact EnhancedDatabaseTab diff to add the one-click Sync and persistent Checkpoints we designed earlier (with toasts + progress). It drops into the current file and uses the same routes.
