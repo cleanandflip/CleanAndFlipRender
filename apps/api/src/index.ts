@@ -2,28 +2,30 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import { createServer } from 'node:http'
-import path from 'node:path'
+import { Pool } from 'pg'
 import { APP_ENV, PORT, FRONTEND_ORIGIN, DATABASE_URL } from './config'
 import { jsonErrorHandler } from './middleware/error'
 import { registerRoutes } from './routes'
 import { initWebSocket } from './websocket'
-import { Pool } from 'pg'
 
 const app = express()
 app.disable('x-powered-by')
 app.use(express.json())
 app.use(cors({ origin: FRONTEND_ORIGIN, credentials: true }))
 
-// Health
+// Health check (Render uses this)
 app.get('/healthz', (_req, res) => res.status(200).send('ok'))
 
 // API routes
-await registerRoutes(app)
+registerRoutes(app)
 
 // Optional DB check
 let pool: Pool | undefined
 if (DATABASE_URL) {
-  pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: APP_ENV === 'production' } })
+  pool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: { rejectUnauthorized: APP_ENV === 'production' }
+  })
   app.get('/api/db-check', async (_req, res) => {
     try {
       const r = await pool!.query('select 1 as up')
@@ -34,10 +36,10 @@ if (DATABASE_URL) {
   })
 }
 
-// Error handler (JSON)
+// JSON error handler
 app.use(jsonErrorHandler)
 
-// Create HTTP server and attach WebSocket (same port for Render)
+// Share the same HTTP port for HTTP + WebSockets (required on Render)
 const server = createServer(app)
 initWebSocket(server)
 
