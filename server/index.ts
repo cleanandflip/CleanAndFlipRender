@@ -3,7 +3,8 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import { sessionMiddleware, preventAuthCache } from './middleware/session-config';
 import cors from "cors";
-import { DATABASE_URL, getDbHost, getAppEnv } from './config/database';
+import { DATABASE_URL, DB_HOST } from './config/env';
+import { IS_PROD, APP_ENV } from './config/app-env';
 import { applyMigrations } from "./db/migrate";
 import { ping } from "./db";
 import { registerRoutes } from "./routes";
@@ -18,8 +19,8 @@ import { publicHealth } from "./routes/public-health";
 // Schema verification utility
 import { verifyProductSchema } from "./utils/verify-product-schema";
 
-const env = getAppEnv();
-const host = getDbHost();
+const env = APP_ENV;
+const host = DB_HOST;
 
 // 1) Boot logs that must appear once
 // Environment banner is handled in env.ts - no duplicate logging
@@ -92,6 +93,8 @@ await verifyProductSchema().catch((e) => {
 
 // 3) Express app
 const app = express();
+
+// Required so secure cookies work behind Replit's proxy / HTTPS terminator
 app.set("trust proxy", 1);
 
 app.use(cookieParser());

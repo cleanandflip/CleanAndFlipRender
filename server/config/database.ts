@@ -1,7 +1,10 @@
-// Deprecated - migrated to server/config/env.ts for better environment isolation
-// This file is kept for backward compatibility during transition
-import { DATABASE_URL, APP_ENV, DB_HOST } from './env';
+import { IS_PROD } from "./app-env";
+import { DATABASE_URL as EXISTING_DATABASE_URL } from "./env";
 
-export { DATABASE_URL };
-export const getDbHost = () => DB_HOST;
-export const getAppEnv = () => APP_ENV;
+export function getDatabaseUrl() {
+  // Use existing unified database URL logic
+  return EXISTING_DATABASE_URL;
+}
+
+// Export existing functions for compatibility
+export { DATABASE_URL, DB_HOST as getDbHost } from "./env";
