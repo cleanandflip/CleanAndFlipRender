@@ -183,19 +183,45 @@ export function sanitizeInput(req: any, res: any, next: any) {
 }
 
 // CORS configuration for production security
+// Build an allowlist from FRONTEND_ORIGINS (comma-separated) or FRONTEND_ORIGIN
+const allowedOrigins = (() => {
+  const list = (process.env.FRONTEND_ORIGINS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  if (process.env.FRONTEND_ORIGIN) list.push(process.env.FRONTEND_ORIGIN.trim());
+  return Array.from(new Set(list));
+})();
+
 export const corsOptions = {
-	origin: process.env.FRONTEND_ORIGIN,
-	credentials: true,
-	optionsSuccessStatus: 200,
-	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-	allowedHeaders: [
-		'Origin',
-		'X-Requested-With',
-		'Content-Type',
-		'Accept',
-		'Authorization',
-		'Cookie'
-	],
-	exposedHeaders: ['Set-Cookie'],
-	maxAge: 86400 // 24 hours
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    const appEnv = process.env.APP_ENV || process.env.NODE_ENV || 'development';
+    if (appEnv !== 'production') {
+      return callback(null, true);
+    }
+    if (!origin) return callback(null, true); // same-origin or curl
+    if (allowedOrigins.some(o => o === origin)) return callback(null, true);
+    // Also allow subdomain pattern matches if env uses wildcard (not recommended in prod)
+    const ok = allowedOrigins.some(o => {
+      if (o.startsWith('*.')) {
+        const suffix = o.slice(1); // remove leading '*'
+        return origin.endsWith(suffix);
+      }
+      return false;
+    });
+    return callback(ok ? null : new Error('CORS: origin not allowed'), ok);
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With',
+    'Content-Type',
+    'Accept',
+    'Authorization',
+    'Cookie'
+  ],
+  exposedHeaders: ['Set-Cookie'],
+  maxAge: 86400 // 24 hours
 };
