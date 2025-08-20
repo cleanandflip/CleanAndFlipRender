@@ -57,9 +57,16 @@ export const uploadLimiter = rateLimit({
 
 // Security headers configuration
 export function setupSecurityHeaders(app: Express) {
-  // Disable CSP in development to allow Vite
-  const cspConfig = process.env.NODE_ENV === 'development' 
-    ? false 
+  // Build frame-ancestors from env to allow embedding (e.g., Builder.io preview) when configured
+  const frameAncestorsEnv = (process.env.FRAME_ANCESTORS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  const frameAncestors = ["'self'", ...frameAncestorsEnv];
+
+  // Disable CSP in development to allow Vite HMR; otherwise apply strict CSP with optional frame ancestors
+  const cspConfig = process.env.NODE_ENV === 'development'
+    ? false
     : {
         directives: {
           defaultSrc: ["'self'"],
@@ -96,6 +103,8 @@ export function setupSecurityHeaders(app: Express) {
           objectSrc: ["'none'"],
           mediaSrc: ["'self'", "https://res.cloudinary.com"],
           manifestSrc: ["'self'"],
+          // Allow embedding in approved origins when FRAME_ANCESTORS is set
+          frameAncestors,
         },
       };
 
@@ -116,8 +125,13 @@ export function setupSecurityHeaders(app: Express) {
 
   // Additional security headers
   app.use((req, res, next) => {
-    // Prevent clickjacking
-    res.setHeader('X-Frame-Options', 'DENY');
+    // Prefer CSP frame-ancestors over X-Frame-Options. If no extra ancestors are set, fall back to SAMEORIGIN.
+    if (frameAncestors.length > 1) {
+      // Do not set X-Frame-Options when we explicitly allow external ancestors via CSP
+      // Browsers will honor frame-ancestors from CSP
+    } else {
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    }
     
     // Prevent MIME type sniffing
     res.setHeader('X-Content-Type-Options', 'nosniff');
