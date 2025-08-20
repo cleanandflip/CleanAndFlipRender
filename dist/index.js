@@ -59,13 +59,17 @@ var init_env = __esm({
     if (!DATABASE_URL_ENV) {
       throw new Error("Missing DATABASE_URL");
     }
+    if (!process.env.FRONTEND_ORIGIN) {
+      throw new Error("Missing FRONTEND_ORIGIN");
+    }
     ENV = {
       nodeEnv: NODE_ENV,
       isDev: NODE_ENV === "development",
       isProd: NODE_ENV === "production",
       port: PORT,
       devDbUrl: DATABASE_URL_ENV,
-      prodDbUrl: DATABASE_URL_ENV
+      prodDbUrl: DATABASE_URL_ENV,
+      frontendOrigin: process.env.FRONTEND_ORIGIN
     };
     APP_ENV = (process.env.APP_ENV ?? NODE_ENV).toLowerCase();
     DATABASE_URL2 = DATABASE_URL_ENV;
@@ -2106,7 +2110,7 @@ var init_google_strategy = __esm({
     GOOGLE_CONFIG = {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.NODE_ENV === "production" ? `${process.env.FRONTEND_URL || ""}/api/auth/google/callback` : "/api/auth/google/callback",
+      callbackURL: process.env.NODE_ENV === "production" ? `${process.env.FRONTEND_ORIGIN || ""}/api/auth/google/callback` : "/api/auth/google/callback",
       scope: ["profile", "email"]
     };
   }
@@ -2278,7 +2282,7 @@ function setupAuth(app2) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: process.env.NODE_ENV === "production" ? `${process.env.FRONTEND_URL || "https://cleanandfliprender.onrender.com"}/api/auth/google/callback` : "/api/auth/google/callback"
+          callbackURL: process.env.NODE_ENV === "production" ? `${ENV.frontendOrigin}/api/auth/google/callback` : "/api/auth/google/callback"
         },
         async (accessToken, refreshToken, profile2, done) => {
           try {
@@ -4436,65 +4440,6 @@ var init_diagnostic = __esm({
   }
 });
 
-// server/config/universal-env.ts
-var universal_env_exports = {};
-__export(universal_env_exports, {
-  APP_ENV: () => APP_ENV2,
-  CORS_ORIGINS: () => CORS_ORIGINS,
-  DATABASE_URL: () => DATABASE_URL3,
-  DB_HOST: () => DB_HOST2,
-  ENV_BANNER: () => ENV_BANNER2,
-  KNOWN_PROD_HOSTS: () => KNOWN_PROD_HOSTS,
-  SESSION_COOKIE_DOMAIN: () => SESSION_COOKIE_DOMAIN,
-  SESSION_SECRET: () => SESSION_SECRET,
-  WEBHOOKS: () => WEBHOOKS,
-  WEBHOOK_PREFIX: () => WEBHOOK_PREFIX,
-  hostOf: () => hostOf
-});
-import * as process2 from "node:process";
-function must(name) {
-  const v = process2.env[name];
-  if (!v || !v.trim()) throw new Error(`Missing env: ${name}`);
-  return v.trim();
-}
-function opt(name, def = "") {
-  const v = process2.env[name];
-  return (v ?? def).trim();
-}
-function hostOf(u) {
-  try {
-    return new URL(u).host;
-  } catch {
-    const s = u.replace(/^postgres(ql)?:\/\//, "");
-    const afterAt = s.split("@").pop() || s;
-    return afterAt.split("/")[0].split("?")[0];
-  }
-}
-var APP_ENV2, DATABASE_URL3, DB_HOST2, KNOWN_PROD_HOSTS, SESSION_SECRET, SESSION_COOKIE_DOMAIN, CORS_ORIGINS, WEBHOOKS, ENV_BANNER2;
-var init_universal_env = __esm({
-  "server/config/universal-env.ts"() {
-    "use strict";
-    init_env();
-    APP_ENV2 = "development";
-    DATABASE_URL3 = process2.env.DEV_DATABASE_URL || process2.env.DATABASE_URL || "";
-    DB_HOST2 = hostOf(DATABASE_URL3);
-    KNOWN_PROD_HOSTS = opt("KNOWN_PROD_HOSTS").split(",").map((s) => s.trim()).filter(Boolean);
-    SESSION_SECRET = must("SESSION_SECRET");
-    SESSION_COOKIE_DOMAIN = void 0;
-    CORS_ORIGINS = [];
-    WEBHOOKS = {
-      stripe: {
-        secret: "dummy-dev-secret"
-      },
-      generic: {
-        secret: "dummy-dev-secret",
-        signatureHeader: "x-signature"
-      }
-    };
-    ENV_BANNER2 = `[ENV] app=development node=${process2.env.NODE_ENV} dbHost=${DB_HOST2}`;
-  }
-});
-
 // server/db/universal-pool.ts
 var universal_pool_exports = {};
 __export(universal_pool_exports, {
@@ -4505,9 +4450,9 @@ var universalPool;
 var init_universal_pool = __esm({
   "server/db/universal-pool.ts"() {
     "use strict";
-    init_universal_env();
+    init_env();
     universalPool = global.__universalPgPool ?? new Pool3({
-      connectionString: DATABASE_URL3,
+      connectionString: DATABASE_URL2,
       ssl: { rejectUnauthorized: false },
       max: 10,
       idleTimeoutMillis: 3e4,
@@ -4529,15 +4474,15 @@ var universalHealth;
 var init_universal_health = __esm({
   "server/routes/universal-health.ts"() {
     "use strict";
-    init_universal_env();
+    init_env();
     init_universal_pool();
     universalHealth = Router12();
     universalHealth.get("/api/healthz", async (_req, res) => {
       try {
         const r2 = await universalPool.query(`select current_database() as db, current_user as role`);
         res.json({
-          env: APP_ENV2,
-          dbHost: DB_HOST2,
+          env: APP_ENV,
+          dbHost: DB_HOST,
           database: r2.rows[0]?.db,
           role: r2.rows[0]?.role,
           timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -4545,8 +4490,8 @@ var init_universal_health = __esm({
         });
       } catch (error) {
         res.status(500).json({
-          env: APP_ENV2,
-          dbHost: DB_HOST2,
+          env: APP_ENV,
+          dbHost: DB_HOST,
           error: "Database connection failed",
           timestamp: (/* @__PURE__ */ new Date()).toISOString(),
           status: "unhealthy"
@@ -4852,12 +4797,12 @@ var init_systemMonitor = __esm({
         let dbName = "";
         try {
           const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-          const { DATABASE_URL: DATABASE_URL4 } = await Promise.resolve().then(() => (init_env(), env_exports));
+          const { DATABASE_URL: DATABASE_URL3 } = await Promise.resolve().then(() => (init_env(), env_exports));
           const start = Date.now();
           await db2.execute("SELECT 1");
           dbLatency = Date.now() - start;
-          if (DATABASE_URL4) {
-            const url = new URL(DATABASE_URL4);
+          if (DATABASE_URL3) {
+            const url = new URL(DATABASE_URL3);
             dbHost = url.hostname;
             if (dbHost.includes("muddy-moon")) {
               dbEnvironment = "production";
@@ -5017,7 +4962,7 @@ var init_system_management = __esm({
       try {
         const systemHealth = await SystemMonitor.getSystemHealth();
         const performanceStats = PerformanceMonitor.getSystemStats();
-        const { APP_ENV: APP_ENV4, DATABASE_URL: DATABASE_URL4, DB_HOST: DB_HOST3 } = await Promise.resolve().then(() => (init_env(), env_exports));
+        const { APP_ENV: APP_ENV3, DATABASE_URL: DATABASE_URL3, DB_HOST: DB_HOST2 } = await Promise.resolve().then(() => (init_env(), env_exports));
         const getDatabaseName = (dbUrl) => {
           try {
             const url = new URL(dbUrl);
@@ -5033,18 +4978,18 @@ var init_system_management = __esm({
             return "unknown";
           }
         };
-        const databaseName = getDatabaseName(DATABASE_URL4);
+        const databaseName = getDatabaseName(DATABASE_URL3);
         const databaseEnvironment = databaseName === "muddy-moon" ? "production" : "development";
         const response = {
           system: {
             ...systemHealth,
-            environment: APP_ENV4,
+            environment: APP_ENV3,
             // The actual computed APP_ENV
             database: {
               ...systemHealth.database,
               name: databaseName,
               environment: databaseEnvironment,
-              host: DB_HOST3
+              host: DB_HOST2
             },
             nodeVersion: process.version,
             platform: process.platform,
@@ -5248,24 +5193,24 @@ var init_system_management = __esm({
 });
 
 // server/config/app-env.ts
-var APP_ENV3, IS_PROD;
+var APP_ENV2, IS_PROD;
 var init_app_env = __esm({
   "server/config/app-env.ts"() {
     "use strict";
-    APP_ENV3 = process.env.NODE_ENV === "development" ? "development" : (process.env.APP_ENV ?? process.env.NODE_ENV ?? "development").toLowerCase();
-    IS_PROD = APP_ENV3 === "production";
+    APP_ENV2 = process.env.NODE_ENV === "development" ? "development" : (process.env.APP_ENV ?? process.env.NODE_ENV ?? "development").toLowerCase();
+    IS_PROD = APP_ENV2 === "production";
   }
 });
 
 // server/middleware/session-config.ts
 import session2 from "express-session";
 import connectPg2 from "connect-pg-simple";
-var PgSession, isProd, cookieOptions, sessionMiddleware;
+var SESSION_SECRET, PgSession, isProd, cookieOptions, sessionMiddleware;
 var init_session_config = __esm({
   "server/middleware/session-config.ts"() {
     "use strict";
     init_app_env();
-    init_universal_env();
+    SESSION_SECRET = process.env.SESSION_SECRET;
     PgSession = connectPg2(session2);
     isProd = IS_PROD;
     cookieOptions = {
@@ -5677,6 +5622,12 @@ var init_vite_config = __esm({
         fs: {
           strict: true,
           deny: ["**/.*"]
+        },
+        port: 5173,
+        strictPort: true,
+        proxy: {
+          "/api": { target: process.env.VITE_API_URL || "http://localhost:4000", changeOrigin: true },
+          "/healthz": { target: process.env.VITE_API_URL || "http://localhost:4000", changeOrigin: true }
         }
       }
     });
@@ -6212,8 +6163,7 @@ function setupSecurityHeaders(app2) {
   });
 }
 var corsOptions = {
-  origin: process.env.NODE_ENV === "production" ? process.env.FRONTEND_URL || "https://your-domain.com" : true,
-  // Allow all origins in development
+  origin: process.env.FRONTEND_ORIGIN,
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -7354,14 +7304,14 @@ r.post("/:branch/migrate", async (req, res) => {
         error: `Database URL not configured for ${branch}`
       });
     }
-    const env3 = { ...process.env, DATABASE_URL: databaseUrl };
+    const env2 = { ...process.env, DATABASE_URL: databaseUrl };
     const args = [direction, "-m", "server/db/migrations"];
     if (direction === "down" && steps > 1) {
       for (let i = 1; i < steps; i++) {
         args.push("--count", "1");
       }
     }
-    const child = spawn("node-pg-migrate", args, { env: env3 });
+    const child = spawn("node-pg-migrate", args, { env: env2 });
     let out = "";
     let err = "";
     child.stdout?.on("data", (d) => out += d.toString());
@@ -7514,6 +7464,7 @@ init_db();
 
 // server/routes/auth-google.ts
 init_storage();
+init_env();
 import passport3 from "passport";
 import { Strategy as GoogleStrategy3 } from "passport-google-oauth20";
 import { Router as Router3 } from "express";
@@ -7574,7 +7525,7 @@ router2.get(
   passport3.authenticate("google", { failureRedirect: "/auth?error=google_auth_failed" }),
   async (req, res) => {
     const user = req.user;
-    const baseUrl = process.env.NODE_ENV === "production" ? process.env.FRONTEND_URL || "" : "";
+    const baseUrl = process.env.NODE_ENV === "production" ? ENV.frontendOrigin || "" : "";
     const returnUrl = req.session.returnTo || "/dashboard";
     delete req.session.returnTo;
     res.redirect(`${baseUrl}${returnUrl}`);
@@ -10127,11 +10078,8 @@ async function registerRoutes(app2) {
   );
   app2.get("/api/admin/system/health", requireRole("developer"), async (req, res) => {
     try {
-      const { APP_ENV: APP_ENV4, DB_HOST: DB_HOST3, universalPool: universalPool2 } = await Promise.resolve().then(() => (init_universal_env(), universal_env_exports)).then((m) => ({
-        APP_ENV: m.APP_ENV,
-        DB_HOST: m.DB_HOST,
-        universalPool: (init_universal_pool(), __toCommonJS(universal_pool_exports)).universalPool
-      }));
+      const { APP_ENV: APP_ENV3, DB_HOST: DB_HOST2 } = await Promise.resolve().then(() => (init_env(), env_exports));
+      const { universalPool: universalPool2 } = (init_universal_pool(), __toCommonJS(universal_pool_exports));
       const startTime = process.uptime();
       const memoryUsage = process.memoryUsage();
       let dbStatus = "Connected";
@@ -10145,7 +10093,7 @@ async function registerRoutes(app2) {
       } catch (error) {
         dbStatus = "Disconnected";
       }
-      const databaseName = DB_HOST3.includes("muddy-moon") ? "Production database (muddy-moon)" : DB_HOST3.includes("lucky-poetry") ? "Development database (lucky-poetry)" : `Database (${DB_HOST3.split("-")[1] || "unknown"})`;
+      const databaseName = DB_HOST2.includes("muddy-moon") ? "Production database (muddy-moon)" : DB_HOST2.includes("lucky-poetry") ? "Development database (lucky-poetry)" : `Database (${DB_HOST2.split("-")[1] || "unknown"})`;
       const systemHealth = {
         status: "healthy",
         timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -10155,7 +10103,7 @@ async function registerRoutes(app2) {
           latency: dbLatency,
           provider: "Neon PostgreSQL",
           name: databaseName,
-          host: DB_HOST3,
+          host: DB_HOST2,
           current_database: dbInfo.database,
           current_role: dbInfo.role
         },
@@ -10172,7 +10120,7 @@ async function registerRoutes(app2) {
           status: process.env.REDIS_URL ? "Connected" : "Disabled",
           provider: "Redis"
         },
-        environment: APP_ENV4,
+        environment: APP_ENV3,
         // Use Universal Environment System
         version: "1.0.0"
       };
@@ -10197,7 +10145,7 @@ async function registerRoutes(app2) {
         application: {
           name: "Clean & Flip Admin",
           version: "1.0.0",
-          environment: (init_universal_env(), __toCommonJS(universal_env_exports)).APP_ENV,
+          environment: (init_env(), __toCommonJS(env_exports)).APP_ENV,
           uptime: `${Math.floor(uptime / 3600)}h ${Math.floor(uptime % 3600 / 60)}m`,
           startTime: new Date(Date.now() - uptime * 1e3).toISOString()
         },
@@ -11193,9 +11141,13 @@ async function registerRoutes(app2) {
   }
   const httpServer = createServer(app2);
   if (process.env.NODE_ENV === "production") {
-    const { serveStatic: serveStatic2 } = await Promise.resolve().then(() => (init_vite(), vite_exports));
-    serveStatic2(app2);
-    Logger.info("[FRONTEND] Production static files configured");
+    if (process.env.SERVE_STATIC === "true") {
+      const { serveStatic: serveStatic2 } = await Promise.resolve().then(() => (init_vite(), vite_exports));
+      serveStatic2(app2);
+      Logger.info("[FRONTEND] Production static files configured");
+    } else {
+      Logger.info("[FRONTEND] Static file serving disabled (SERVE_STATIC=false)");
+    }
   } else {
     const { setupVite: setupVite2 } = await Promise.resolve().then(() => (init_vite(), vite_exports));
     await setupVite2(app2, httpServer);
@@ -11415,14 +11367,14 @@ var universalEnvHeaders = (_req, res, next) => {
 init_universal_health();
 
 // server/webhooks/universal-router.ts
-init_universal_env();
+init_env();
 import { Router as Router15 } from "express";
 import crypto4 from "node:crypto";
 import { json, raw } from "express";
 function mountUniversalWebhooks(app2) {
   const r2 = Router15();
   r2.post("/stripe", raw({ type: "*/*" }), (req, res) => {
-    const secret = WEBHOOKS.stripe.secret;
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
     const sig = String(req.headers["stripe-signature"] || "");
     const timestamp2 = sig.match(/t=([^,]+)/)?.[1];
     const v1 = sig.match(/v1=([^,]+)/)?.[1];
@@ -11434,8 +11386,9 @@ function mountUniversalWebhooks(app2) {
     res.json({ ok: true });
   });
   r2.post("/generic", raw({ type: "*/*" }), (req, res) => {
-    const secret = WEBHOOKS.generic.secret;
-    const header = String(req.headers[WEBHOOKS.generic.signatureHeader] || "");
+    const secret = process.env.GENERIC_WEBHOOK_SECRET;
+    const signatureHeader = (process.env.GENERIC_WEBHOOK_SIGNATURE_HEADER || "x-signature").toLowerCase();
+    const header = String(req.headers[signatureHeader] || "");
     const expected = crypto4.createHmac("sha256", secret).update(req.body).digest("hex");
     if (!timingSafeEqual(header, expected)) return res.status(400).send("Invalid signature");
     console.log(`\u2705 Universal Webhook: Generic event received via ${WEBHOOK_PREFIX}/generic`);
@@ -11520,7 +11473,7 @@ function assertEnvSafety() {
 }
 
 // server/index.ts
-var env2 = ENV.nodeEnv;
+var env = ENV.nodeEnv;
 var host = ENV.devDbUrl ? new URL(ENV.devDbUrl).host : "unknown";
 assertEnvSafety();
 try {
@@ -11532,7 +11485,7 @@ console.log("\u26A0\uFE0F  ENV_GUARD: Development should use ep-lucky-poetry-aet
 console.log("\u2705 ENV_GUARD: Environment isolation verified");
 console.log("[DEV ENV] \u2139\uFE0F Using unified database setup:", host);
 console.log("[DEV ENV] \u2139\uFE0F Continuing with relaxed guards for unified database mode");
-var shouldRunMigrations = process.env.RUN_MIGRATIONS === "true" || env2 === "development";
+var shouldRunMigrations = process.env.RUN_MIGRATIONS === "true" || env === "development";
 if (shouldRunMigrations) {
   console.log("[MIGRATIONS] Running migrations...");
   try {
@@ -11560,9 +11513,10 @@ var app = express6();
 app.set("trust proxy", 1);
 app.use(cookieParser());
 app.use(cors2({
-  origin: process.env.CORS_ORIGIN || true,
+  origin: process.env.FRONTEND_ORIGIN,
   credentials: true
 }));
+app.get("/healthz", (_req, res) => res.status(200).send("ok"));
 app.use(publicHealth);
 app.use(universalEnvHeaders);
 try {

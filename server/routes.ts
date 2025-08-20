@@ -2559,12 +2559,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // System health and information endpoints - UPDATED TO USE UNIVERSAL ENVIRONMENT SYSTEM
   app.get("/api/admin/system/health", requireRole('developer'), async (req, res) => {
     try {
-      // Import Universal Environment System
-      const { APP_ENV, DB_HOST, universalPool } = await import('./config/universal-env').then(m => ({
-        APP_ENV: m.APP_ENV,
-        DB_HOST: m.DB_HOST,
-        universalPool: require('./db/universal-pool').universalPool
-      }));
+      // Import environment and universal pool
+      const { APP_ENV, DB_HOST } = await import('./config/env');
+      const { universalPool } = require('./db/universal-pool');
       
       const startTime = process.uptime();
       const memoryUsage = process.memoryUsage();
@@ -2642,7 +2639,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         application: {
           name: 'Clean & Flip Admin',
           version: '1.0.0',
-          environment: require('./config/universal-env').APP_ENV,
+          environment: require('./config/env').APP_ENV,
           uptime: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m`,
           startTime: new Date(Date.now() - uptime * 1000).toISOString()
         },
