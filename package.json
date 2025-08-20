@@ -15,6 +15,7 @@
     "dev:web:env": "vite --config vite.config.ts",
     "dev:all": "npm run db:push && npm run dev:mono",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "build:web": "vite build",
     "start": "NODE_ENV=production node dist/index.js",
     "prod:mono": "cross-env PORT=4000 NODE_ENV=production APP_ENV=production SERVE_STATIC=true FRONTEND_ORIGIN=http://localhost:4000 node dist/index.js",
     "prod:api": "cross-env PORT=4000 NODE_ENV=production APP_ENV=production SERVE_STATIC=false FRONTEND_ORIGIN=http://localhost:5173 node dist/index.js",
