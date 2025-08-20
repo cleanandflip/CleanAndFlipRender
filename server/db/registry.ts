@@ -3,8 +3,8 @@ import { ENV } from "../config/env";
 
 export type Branch = "dev" | "prod";
 
-console.log("[DB Registry] Dev (Lucky-Poem):", ENV.devDbUrl?.slice(0, 30) + "...");
-console.log("[DB Registry] Prod (Muddy-Moon):", ENV.prodDbUrl?.slice(0, 30) + "...");
+console.log("[DB Registry] Dev host:", new URL(ENV.devDbUrl).host);
+console.log("[DB Registry] Prod host:", new URL(ENV.prodDbUrl).host);
 
 const devPool = new Pool({ connectionString: ENV.devDbUrl, max: 10 });
 const prodPool = new Pool({ connectionString: ENV.prodDbUrl, max: 10 });
