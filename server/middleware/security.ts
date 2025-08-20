@@ -57,9 +57,16 @@ export const uploadLimiter = rateLimit({
 
 // Security headers configuration
 export function setupSecurityHeaders(app: Express) {
-  // Disable CSP in development to allow Vite
-  const cspConfig = process.env.NODE_ENV === 'development' 
-    ? false 
+  // Build frame-ancestors from env to allow embedding (e.g., Builder.io preview) when configured
+  const frameAncestorsEnv = (process.env.FRAME_ANCESTORS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  const frameAncestors = ["'self'", ...frameAncestorsEnv];
+
+  // Disable CSP in development to allow Vite HMR; otherwise apply strict CSP with optional frame ancestors
+  const cspConfig = process.env.NODE_ENV === 'development'
+    ? false
     : {
         directives: {
           defaultSrc: ["'self'"],
@@ -96,6 +103,8 @@ export function setupSecurityHeaders(app: Express) {
           objectSrc: ["'none'"],
           mediaSrc: ["'self'", "https://res.cloudinary.com"],
           manifestSrc: ["'self'"],
+          // Allow embedding in approved origins when FRAME_ANCESTORS is set
+          frameAncestors,
         },
       };
 
@@ -116,8 +125,13 @@ export function setupSecurityHeaders(app: Express) {
 
   // Additional security headers
   app.use((req, res, next) => {
-    // Prevent clickjacking
-    res.setHeader('X-Frame-Options', 'DENY');
+    // Prefer CSP frame-ancestors over X-Frame-Options. If no extra ancestors are set, fall back to SAMEORIGIN.
+    if (frameAncestors.length > 1) {
+      // Do not set X-Frame-Options when we explicitly allow external ancestors via CSP
+      // Browsers will honor frame-ancestors from CSP
+    } else {
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    }
     
     // Prevent MIME type sniffing
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -169,19 +183,45 @@ export function sanitizeInput(req: any, res: any, next: any) {
 }
 
 // CORS configuration for production security
+// Build an allowlist from FRONTEND_ORIGINS (comma-separated) or FRONTEND_ORIGIN
+const allowedOrigins = (() => {
+  const list = (process.env.FRONTEND_ORIGINS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  if (process.env.FRONTEND_ORIGIN) list.push(process.env.FRONTEND_ORIGIN.trim());
+  return Array.from(new Set(list));
+})();
+
 export const corsOptions = {
-	origin: process.env.FRONTEND_ORIGIN,
-	credentials: true,
-	optionsSuccessStatus: 200,
-	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-	allowedHeaders: [
-		'Origin',
-		'X-Requested-With',
-		'Content-Type',
-		'Accept',
-		'Authorization',
-		'Cookie'
-	],
-	exposedHeaders: ['Set-Cookie'],
-	maxAge: 86400 // 24 hours
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    const appEnv = process.env.APP_ENV || process.env.NODE_ENV || 'development';
+    if (appEnv !== 'production') {
+      return callback(null, true);
+    }
+    if (!origin) return callback(null, true); // same-origin or curl
+    if (allowedOrigins.some(o => o === origin)) return callback(null, true);
+    // Also allow subdomain pattern matches if env uses wildcard (not recommended in prod)
+    const ok = allowedOrigins.some(o => {
+      if (o.startsWith('*.')) {
+        const suffix = o.slice(1); // remove leading '*'
+        return origin.endsWith(suffix);
+      }
+      return false;
+    });
+    return callback(ok ? null : new Error('CORS: origin not allowed'), ok);
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With',
+    'Content-Type',
+    'Accept',
+    'Authorization',
+    'Cookie'
+  ],
+  exposedHeaders: ['Set-Cookie'],
+  maxAge: 86400 // 24 hours
 };

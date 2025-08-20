@@ -216,6 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // CORS configuration
+  app.options('*', cors(corsOptions));
   app.use(cors(corsOptions));
 
   // Google OAuth handled via Passport in auth.ts
