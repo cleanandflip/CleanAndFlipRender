@@ -9,9 +9,7 @@ import { Logger } from '../utils/logger';
 const GOOGLE_CONFIG = {
   clientID: process.env.GOOGLE_CLIENT_ID!,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  callbackURL: process.env.NODE_ENV === 'production'
-    ? `${process.env.FRONTEND_ORIGIN || ''}/api/auth/google/callback`
-    : "/api/auth/google/callback",
+  callbackURL: "/api/auth/google/callback",
   scope: ['profile', 'email']
 };
 
