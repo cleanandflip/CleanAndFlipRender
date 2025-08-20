@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { APP_ENV, DB_HOST } from "../config/universal-env";
+import { APP_ENV, DB_HOST } from "../config/env";
 import { universalPool } from "../db/universal-pool";
 
 export const universalHealth = Router();

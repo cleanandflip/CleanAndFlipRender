@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { DATABASE_URL } from "../config/universal-env";
+import { DATABASE_URL } from "../config/env";
 
 declare global { 
   var __universalPgPool: Pool | undefined; 

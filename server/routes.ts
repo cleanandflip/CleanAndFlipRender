@@ -2559,12 +2559,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // System health and information endpoints - UPDATED TO USE UNIVERSAL ENVIRONMENT SYSTEM
   app.get("/api/admin/system/health", requireRole('developer'), async (req, res) => {
     try {
-      // Import Universal Environment System
-      const { APP_ENV, DB_HOST, universalPool } = await import('./config/universal-env').then(m => ({
-        APP_ENV: m.APP_ENV,
-        DB_HOST: m.DB_HOST,
-        universalPool: require('./db/universal-pool').universalPool
-      }));
+      // Import environment and universal pool
+      const { APP_ENV, DB_HOST } = await import('./config/env');
+      const { universalPool } = require('./db/universal-pool');
       
       const startTime = process.uptime();
       const memoryUsage = process.memoryUsage();
@@ -2642,7 +2639,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         application: {
           name: 'Clean & Flip Admin',
           version: '1.0.0',
-          environment: require('./config/universal-env').APP_ENV,
+          environment: require('./config/env').APP_ENV,
           uptime: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m`,
           startTime: new Date(Date.now() - uptime * 1000).toISOString()
         },
@@ -3977,9 +3974,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup frontend serving AFTER creating httpServer
   if (process.env.NODE_ENV === "production") {
-    const { serveStatic } = await import('./vite');
-    serveStatic(app);
-    Logger.info('[FRONTEND] Production static files configured');
+    if (process.env.SERVE_STATIC === 'true') {
+      const { serveStatic } = await import('./vite');
+      serveStatic(app);
+      Logger.info('[FRONTEND] Production static files configured');
+    } else {
+      Logger.info('[FRONTEND] Static file serving disabled (SERVE_STATIC=false)');
+    }
   } else {
     const { setupVite } = await import('./vite');
     await setupVite(app, httpServer);

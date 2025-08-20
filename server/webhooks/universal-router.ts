@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "node:crypto";
 import { json, raw } from "express";
-import { WEBHOOK_PREFIX, WEBHOOKS } from "../config/universal-env";
+import { WEBHOOK_PREFIX } from "../config/env";
 
 /**
  * Mounts webhooks at:
@@ -18,7 +18,7 @@ export function mountUniversalWebhooks(app: import("express").Express) {
 
   // Stripe (uses their "t=...,v1=..." header; lightweight verifier)
   r.post("/stripe", raw({ type: "*/*" }), (req, res) => {
-    const secret = WEBHOOKS.stripe.secret;
+    const secret = process.env.STRIPE_WEBHOOK_SECRET as string;
     const sig = String(req.headers["stripe-signature"] || "");
     const timestamp = sig.match(/t=([^,]+)/)?.[1];
     const v1 = sig.match(/v1=([^,]+)/)?.[1];
@@ -36,8 +36,9 @@ export function mountUniversalWebhooks(app: import("express").Express) {
 
   // Generic HMAC provider (x-signature: hex(hmac_sha256(body)))
   r.post("/generic", raw({ type: "*/*" }), (req, res) => {
-    const secret = WEBHOOKS.generic.secret;
-    const header = String(req.headers[WEBHOOKS.generic.signatureHeader] || "");
+    const secret = process.env.GENERIC_WEBHOOK_SECRET as string;
+    const signatureHeader = (process.env.GENERIC_WEBHOOK_SIGNATURE_HEADER || 'x-signature').toLowerCase();
+    const header = String((req.headers as any)[signatureHeader] || "");
     const expected = crypto.createHmac("sha256", secret).update(req.body as Buffer).digest("hex");
     if (!timingSafeEqual(header, expected)) return res.status(400).send("Invalid signature");
     

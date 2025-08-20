@@ -2,7 +2,7 @@
 import session from "express-session";
 import { IS_PROD } from "../config/app-env";
 import { db } from "../db";
-import { SESSION_SECRET } from "../config/universal-env";
+const SESSION_SECRET = process.env.SESSION_SECRET!;
 
 import connectPg from 'connect-pg-simple';
 const PgSession = connectPg(session);
