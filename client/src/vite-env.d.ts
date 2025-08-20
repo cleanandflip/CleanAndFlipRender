@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_GEOAPIFY_API_KEY?: string
   readonly VITE_GOOGLE_CLIENT_ID?: string
   readonly VITE_CLOUDINARY_CLOUD_NAME?: string
+  readonly VITE_BUILDER_PUBLIC_API_KEY?: string
 }
 interface ImportMeta {
   readonly env: ImportMetaEnv
