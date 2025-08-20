@@ -1,0 +1,35 @@
+databases:
+  - name: cleanandflip-db
+    plan: free
+
+services:
+  - type: web
+    name: CleanAndFlipRender
+    env: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    postdeployCommand: npm run db:push
+    autoDeploy: true
+    healthCheckPath: /api/healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: production
+      - key: RUN_MIGRATIONS
+        value: "false"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: STRIPE_SECRET_KEY
+        value: sk_test_change_me
+      - key: STRIPE_WEBHOOK_SECRET
+        value: whsec_change_me
+      - key: ENABLE_REDIS
+        value: "false"
+      - key: FRONTEND_URL
+        value: https://cleanandfliprender.onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cleanandflip-db
+          property: connectionString
