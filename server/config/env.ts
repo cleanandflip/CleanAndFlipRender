@@ -25,16 +25,16 @@ if (!DATABASE_URL_ENV) {
 }
 
 export const ENV = {
-  nodeEnv: "development",
-  isDev: true,
-  isProd: false,
+  nodeEnv: NODE_ENV,
+  isDev: NODE_ENV === "development",
+  isProd: NODE_ENV === "production",
   port: PORT,
   devDbUrl: DATABASE_URL_ENV,
   prodDbUrl: DATABASE_URL_ENV,
 } as const;
 
 // Simplified exports
-export const APP_ENV = "development";
+export const APP_ENV = (process.env.APP_ENV ?? NODE_ENV).toLowerCase();
 export const DATABASE_URL = DATABASE_URL_ENV;
 export const DB_HOST = DATABASE_URL ? new URL(DATABASE_URL).host : 'localhost';
 export const WEBHOOK_PREFIX = process.env.WEBHOOK_PREFIX || '/wh';

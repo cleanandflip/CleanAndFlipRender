@@ -60,14 +60,14 @@ var init_env = __esm({
       throw new Error("Missing DATABASE_URL");
     }
     ENV = {
-      nodeEnv: "development",
-      isDev: true,
-      isProd: false,
+      nodeEnv: NODE_ENV,
+      isDev: NODE_ENV === "development",
+      isProd: NODE_ENV === "production",
       port: PORT,
       devDbUrl: DATABASE_URL_ENV,
       prodDbUrl: DATABASE_URL_ENV
     };
-    APP_ENV = "development";
+    APP_ENV = (process.env.APP_ENV ?? NODE_ENV).toLowerCase();
     DATABASE_URL2 = DATABASE_URL_ENV;
     DB_HOST = DATABASE_URL2 ? new URL(DATABASE_URL2).host : "localhost";
     WEBHOOK_PREFIX = process.env.WEBHOOK_PREFIX || "/wh";
@@ -5619,11 +5619,13 @@ var init_referenceGenerator = __esm({
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { fileURLToPath } from "url";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-var vite_config_default;
+var __dirname, vite_config_default;
 var init_vite_config = __esm({
   async "vite.config.ts"() {
     "use strict";
+    __dirname = path.dirname(fileURLToPath(import.meta.url));
     vite_config_default = defineConfig({
       plugins: [
         react(),
@@ -5636,14 +5638,14 @@ var init_vite_config = __esm({
       ],
       resolve: {
         alias: {
-          "@": path.resolve(import.meta.dirname, "client", "src"),
-          "@shared": path.resolve(import.meta.dirname, "shared"),
-          "@assets": path.resolve(import.meta.dirname, "attached_assets")
+          "@": path.resolve(__dirname, "client", "src"),
+          "@shared": path.resolve(__dirname, "shared"),
+          "@assets": path.resolve(__dirname, "attached_assets")
         }
       },
-      root: path.resolve(import.meta.dirname, "client"),
+      root: path.resolve(__dirname, "client"),
       build: {
-        outDir: path.resolve(import.meta.dirname, "dist/public"),
+        outDir: path.resolve(__dirname, "dist/public"),
         emptyOutDir: true,
         target: "es2020",
         minify: "terser",
@@ -5698,6 +5700,7 @@ __export(vite_exports, {
 import express4 from "express";
 import fs from "fs";
 import path2 from "path";
+import { fileURLToPath as fileURLToPath2 } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
 import { nanoid } from "nanoid";
 function log(message, source = "express") {
@@ -5731,12 +5734,7 @@ async function setupVite(app2, server2) {
   app2.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = path2.resolve(
-        import.meta.dirname,
-        "..",
-        "client",
-        "index.html"
-      );
+      const clientTemplate = path2.resolve(__dirname2, "..", "client", "index.html");
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
@@ -5751,7 +5749,7 @@ async function setupVite(app2, server2) {
   });
 }
 function serveStatic(app2) {
-  const distPath = path2.resolve(import.meta.dirname, "public");
+  const distPath = path2.resolve(__dirname2, "public");
   if (!fs.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
@@ -5762,12 +5760,13 @@ function serveStatic(app2) {
     res.sendFile(path2.resolve(distPath, "index.html"));
   });
 }
-var viteLogger;
+var viteLogger, __dirname2;
 var init_vite = __esm({
   async "server/vite.ts"() {
     "use strict";
     await init_vite_config();
     viteLogger = createLogger();
+    __dirname2 = path2.dirname(fileURLToPath2(import.meta.url));
   }
 });
 
@@ -5779,7 +5778,7 @@ __export(compression_exports, {
 import compression2 from "compression";
 import path3 from "path";
 import express5 from "express";
-import { fileURLToPath } from "url";
+import { fileURLToPath as fileURLToPath3 } from "url";
 function setupProductionOptimizations(app2) {
   if (process.env.NODE_ENV === "production") {
     app2.use(compression2({
@@ -5790,7 +5789,7 @@ function setupProductionOptimizations(app2) {
       threshold: 0
     }));
     app2.use(
-      express5.static(path3.join(__dirname, "../../client-dist"), {
+      express5.static(path3.join(__dirname3, "../../client-dist"), {
         etag: true,
         lastModified: true,
         maxAge: "365d",
@@ -5810,11 +5809,11 @@ function setupProductionOptimizations(app2) {
     );
   }
 }
-var __dirname;
+var __dirname3;
 var init_compression = __esm({
   "server/middleware/compression.ts"() {
     "use strict";
-    __dirname = path3.dirname(fileURLToPath(import.meta.url));
+    __dirname3 = path3.dirname(fileURLToPath3(import.meta.url));
   }
 });
 

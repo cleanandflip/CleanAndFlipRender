@@ -1,7 +1,7 @@
 // server/index.ts
 import express from "express";
 import cookieParser from "cookie-parser";
-import { sessionMiddleware, preventAuthCache } from './middleware/session-config';
+// Session configuration is applied inside setupAuth() to avoid duplicate middleware
 import cors from "cors";
 import { DATABASE_URL, DB_HOST } from './config/env';
 import { IS_PROD, APP_ENV } from './config/app-env';
