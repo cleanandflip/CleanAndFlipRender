@@ -2106,7 +2106,7 @@ var init_google_strategy = __esm({
     GOOGLE_CONFIG = {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.NODE_ENV === "production" ? "https://cleanandflip.com/api/auth/google/callback" : "/api/auth/google/callback",
+      callbackURL: process.env.NODE_ENV === "production" ? `${process.env.FRONTEND_URL || ""}/api/auth/google/callback` : "/api/auth/google/callback",
       scope: ["profile", "email"]
     };
   }
@@ -2278,7 +2278,7 @@ function setupAuth(app2) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: process.env.NODE_ENV === "production" ? "https://cleanandflip.com/api/auth/google/callback" : "/api/auth/google/callback"
+          callbackURL: process.env.NODE_ENV === "production" ? `${process.env.FRONTEND_URL || "https://cleanandfliprender.onrender.com"}/api/auth/google/callback` : "/api/auth/google/callback"
         },
         async (accessToken, refreshToken, profile2, done) => {
           try {
@@ -5620,21 +5620,14 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 var __dirname, vite_config_default;
 var init_vite_config = __esm({
-  async "vite.config.ts"() {
+  "vite.config.ts"() {
     "use strict";
     __dirname = path.dirname(fileURLToPath(import.meta.url));
     vite_config_default = defineConfig({
       plugins: [
-        react(),
-        runtimeErrorOverlay(),
-        ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
-          await import("@replit/vite-plugin-cartographer").then(
-            (m) => m.cartographer()
-          )
-        ] : []
+        react()
       ],
       resolve: {
         alias: {
@@ -5762,9 +5755,9 @@ function serveStatic(app2) {
 }
 var viteLogger, __dirname2;
 var init_vite = __esm({
-  async "server/vite.ts"() {
+  "server/vite.ts"() {
     "use strict";
-    await init_vite_config();
+    init_vite_config();
     viteLogger = createLogger();
     __dirname2 = path2.dirname(fileURLToPath2(import.meta.url));
   }
@@ -7581,8 +7574,7 @@ router2.get(
   passport3.authenticate("google", { failureRedirect: "/auth?error=google_auth_failed" }),
   async (req, res) => {
     const user = req.user;
-    const host2 = req.get("host");
-    const baseUrl = host2?.includes("cleanandflip.com") ? "https://cleanandflip.com" : host2?.includes("cleanflip.replit.app") ? "https://cleanflip.replit.app" : "";
+    const baseUrl = process.env.NODE_ENV === "production" ? process.env.FRONTEND_URL || "" : "";
     const returnUrl = req.session.returnTo || "/dashboard";
     delete req.session.returnTo;
     res.redirect(`${baseUrl}${returnUrl}`);
@@ -11201,11 +11193,11 @@ async function registerRoutes(app2) {
   }
   const httpServer = createServer(app2);
   if (process.env.NODE_ENV === "production") {
-    const { serveStatic: serveStatic2 } = await init_vite().then(() => vite_exports);
+    const { serveStatic: serveStatic2 } = await Promise.resolve().then(() => (init_vite(), vite_exports));
     serveStatic2(app2);
     Logger.info("[FRONTEND] Production static files configured");
   } else {
-    const { setupVite: setupVite2 } = await init_vite().then(() => vite_exports);
+    const { setupVite: setupVite2 } = await Promise.resolve().then(() => (init_vite(), vite_exports));
     await setupVite2(app2, httpServer);
     Logger.info("[FRONTEND] Development Vite server configured with HMR");
   }
