@@ -227,7 +227,7 @@ export function setupAuth(app: Express) {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           callbackURL: process.env.NODE_ENV === 'production'
-            ? `${process.env.FRONTEND_URL || 'https://cleanandfliprender.onrender.com'}/api/auth/google/callback`
+            ? `${process.env.FRONTEND_ORIGIN}/api/auth/google/callback`
             : "/api/auth/google/callback"
         },
         async (accessToken, refreshToken, profile, done) => {

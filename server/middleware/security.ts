@@ -170,20 +170,18 @@ export function sanitizeInput(req: any, res: any, next: any) {
 
 // CORS configuration for production security
 export const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL || 'https://your-domain.com'
-    : true, // Allow all origins in development
-  credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Origin',
-    'X-Requested-With',
-    'Content-Type',
-    'Accept',
-    'Authorization',
-    'Cookie'
-  ],
-  exposedHeaders: ['Set-Cookie'],
-  maxAge: 86400 // 24 hours
+	origin: process.env.FRONTEND_ORIGIN,
+	credentials: true,
+	optionsSuccessStatus: 200,
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+	allowedHeaders: [
+		'Origin',
+		'X-Requested-With',
+		'Content-Type',
+		'Accept',
+		'Authorization',
+		'Cookie'
+	],
+	exposedHeaders: ['Set-Cookie'],
+	maxAge: 86400 // 24 hours
 };
