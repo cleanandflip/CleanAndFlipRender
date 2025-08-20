@@ -3977,9 +3977,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup frontend serving AFTER creating httpServer
   if (process.env.NODE_ENV === "production") {
-    const { serveStatic } = await import('./vite');
-    serveStatic(app);
-    Logger.info('[FRONTEND] Production static files configured');
+    if (process.env.SERVE_STATIC === 'true') {
+      const { serveStatic } = await import('./vite');
+      serveStatic(app);
+      Logger.info('[FRONTEND] Production static files configured');
+    } else {
+      Logger.info('[FRONTEND] Static file serving disabled (SERVE_STATIC=false)');
+    }
   } else {
     const { setupVite } = await import('./vite');
     await setupVite(app, httpServer);
