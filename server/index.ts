@@ -77,7 +77,7 @@ try {
 // 3) Express app
 const app = express();
 
-// Required so secure cookies work behind Replit's proxy / HTTPS terminator
+// Respect proxies in managed platforms
 app.set("trust proxy", 1);
 
 app.use(cookieParser());

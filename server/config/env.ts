@@ -33,7 +33,7 @@ export const ENV = {
   port: PORT,
   devDbUrl: DATABASE_URL_ENV,
   prodDbUrl: DATABASE_URL_ENV,
-  frontendOrigin: process.env.FRONTEND_ORIGIN,
+  frontendOrigin: process.env.APP_ORIGIN || '',
 } as const;
 
 // Simplified exports

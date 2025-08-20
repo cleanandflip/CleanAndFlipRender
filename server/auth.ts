@@ -132,7 +132,7 @@ export function setupAuth(app: Express) {
     cookie: {
       path: '/',
       httpOnly: true,
-      // Allow forcing cross-site cookies for Builder preview or split-host setups
+      // Allow forcing cross-site cookies for split-host setups
       secure: isProd || forceCrossSite,
       sameSite: (isProd || forceCrossSite) ? 'none' : 'lax',
       maxAge: SEVEN_DAYS,

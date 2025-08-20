@@ -222,10 +222,8 @@ export const enhanceSessionSecurity = (req: Request, res: Response, next: NextFu
 // CORS security with dynamic origin validation
 export const createSecureCORS = () => {
   const allowedOrigins = [
-    'https://cleanandflip.com',
-    'https://www.cleanandflip.com',
-    process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : null,
-    process.env.REPLIT_DOMAIN ? `https://${process.env.REPLIT_DOMAIN}` : null
+    process.env.APP_ORIGIN || '',
+    process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : ''
   ].filter(Boolean);
 
   return {
