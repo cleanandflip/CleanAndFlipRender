@@ -196,7 +196,7 @@ const allowedOrigins = (() => {
 export const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     const appEnv = process.env.APP_ENV || process.env.NODE_ENV || 'development';
-    if (appEnv !== 'production') {
+    if (process.env.CORS_ALLOW_ALL === 'true' || appEnv !== 'production') {
       return callback(null, true);
     }
     if (!origin) return callback(null, true); // same-origin or curl
@@ -212,16 +212,9 @@ export const corsOptions = {
     return callback(ok ? null : new Error('CORS: origin not allowed'), ok);
   },
   credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Origin',
-    'X-Requested-With',
-    'Content-Type',
-    'Accept',
-    'Authorization',
-    'Cookie'
-  ],
+  optionsSuccessStatus: 204,
+  methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  // Let cors echo requested headers instead of fixing a static list to avoid blocking custom headers
   exposedHeaders: ['Set-Cookie'],
   maxAge: 86400 // 24 hours
 };
