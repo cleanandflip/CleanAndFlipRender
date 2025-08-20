@@ -25,15 +25,6 @@ var __copyProps = (to, from, except, desc4) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// server/config/database.ts
-var DATABASE_URL;
-var init_database = __esm({
-  "server/config/database.ts"() {
-    "use strict";
-    DATABASE_URL = process.env.DATABASE_URL;
-  }
-});
-
 // server/config/env.ts
 var env_exports = {};
 __export(env_exports, {
@@ -3682,179 +3673,6 @@ var init_performanceMonitor = __esm({
   }
 });
 
-// server/config/google.ts
-var GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI;
-var init_google = __esm({
-  "server/config/google.ts"() {
-    "use strict";
-    GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-    GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-    GOOGLE_REDIRECT_URI = (() => {
-      const appEnv = process.env.APP_ENV || process.env.NODE_ENV || "development";
-      if (appEnv === "production") {
-        return "https://cleanandflip.com/api/auth/google/callback";
-      } else {
-        return "/api/auth/google/callback";
-      }
-    })();
-  }
-});
-
-// server/auth/google-helpers.ts
-import crypto2 from "node:crypto";
-import fetch2 from "node-fetch";
-import jwt from "jsonwebtoken";
-function randomB64Url(n = 32) {
-  return crypto2.randomBytes(n).toString("base64url");
-}
-function sha256b64url(input) {
-  const h = crypto2.createHash("sha256").update(input).digest();
-  return Buffer.from(h).toString("base64url");
-}
-function googleAuthUrl({ state, codeChallenge, nonce }) {
-  const p = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  p.searchParams.set("client_id", GOOGLE_CLIENT_ID);
-  p.searchParams.set("redirect_uri", GOOGLE_REDIRECT_URI);
-  p.searchParams.set("response_type", "code");
-  p.searchParams.set("scope", "openid email profile");
-  p.searchParams.set("code_challenge", codeChallenge);
-  p.searchParams.set("code_challenge_method", "S256");
-  p.searchParams.set("state", state);
-  p.searchParams.set("nonce", nonce);
-  return p.toString();
-}
-async function exchangeCodeForTokens(code, codeVerifier) {
-  const body = new URLSearchParams({
-    client_id: GOOGLE_CLIENT_ID,
-    client_secret: GOOGLE_CLIENT_SECRET,
-    code,
-    code_verifier: codeVerifier,
-    grant_type: "authorization_code",
-    redirect_uri: GOOGLE_REDIRECT_URI
-  });
-  const r2 = await fetch2("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body
-  });
-  if (!r2.ok) throw new Error(`token exchange failed: ${r2.status}`);
-  return r2.json();
-}
-function decodeIdToken(idToken) {
-  const decoded = jwt.decode(idToken);
-  if (!decoded) throw new Error("bad id_token");
-  return decoded;
-}
-var init_google_helpers = __esm({
-  "server/auth/google-helpers.ts"() {
-    "use strict";
-    init_google();
-  }
-});
-
-// server/auth/google-routes.ts
-var google_routes_exports = {};
-__export(google_routes_exports, {
-  googleAuth: () => googleAuth
-});
-import { Router as Router9 } from "express";
-import { neon as neon3 } from "@neondatabase/serverless";
-var googleAuth, sql7;
-var init_google_routes = __esm({
-  "server/auth/google-routes.ts"() {
-    "use strict";
-    init_google_helpers();
-    init_database();
-    googleAuth = Router9();
-    sql7 = neon3(DATABASE_URL);
-    googleAuth.get("/auth/google/start", (req, res, next) => {
-      try {
-        const state = randomB64Url(16);
-        const verifier = randomB64Url(32);
-        const codeChallenge = sha256b64url(verifier);
-        const nonce = randomB64Url(16);
-        req.session.google = { state, verifier, nonce };
-        const url = googleAuthUrl({ state, codeChallenge, nonce });
-        res.redirect(url);
-      } catch (e) {
-        next(e);
-      }
-    });
-    googleAuth.get("/auth/google/callback", async (req, res, next) => {
-      try {
-        const { code, state } = req.query;
-        if (!code || !state) return res.status(400).send("missing code/state");
-        const s = req.session.google;
-        if (!s || s.state !== state) return res.status(400).send("state mismatch");
-        const tokens = await exchangeCodeForTokens(code, s.verifier);
-        const claims = decodeIdToken(tokens.id_token);
-        if (claims.aud !== process.env.GOOGLE_CLIENT_ID) {
-          return res.status(400).send("aud mismatch");
-        }
-        if (claims.nonce && s.nonce && claims.nonce !== s.nonce) return res.status(400).send("nonce mismatch");
-        if (claims.iss !== "https://accounts.google.com" && claims.iss !== "accounts.google.com") {
-          return res.status(400).send("iss mismatch");
-        }
-        const email = (claims.email || "").toLowerCase();
-        const sub = claims.sub;
-        const picture = claims.picture || null;
-        const verified = !!claims.email_verified;
-        let userRow;
-        try {
-          const existing = await sql7`
-        SELECT id, email, google_sub FROM users WHERE lower(email) = ${email} LIMIT 1
-      `;
-          if (existing.length) {
-            const u = existing[0];
-            if (!u.google_sub) {
-              await sql7`
-            UPDATE users SET 
-              google_sub=${sub}, 
-              google_email=${email}, 
-              google_email_verified=${verified}, 
-              google_picture=${picture}, 
-              last_login_at=NOW() 
-            WHERE id=${u.id}
-          `;
-            } else {
-              await sql7`UPDATE users SET last_login_at=NOW() WHERE id=${u.id}`;
-            }
-            const updatedUser = await sql7`SELECT * FROM users WHERE id=${u.id}`;
-            userRow = updatedUser[0];
-          } else {
-            const newUser = await sql7`
-          INSERT INTO users (email, first_name, last_name, google_sub, google_email, google_email_verified, google_picture, last_login_at)
-          VALUES (${email || null}, ${claims.name || "Google"}, ${" User"}, ${sub}, ${email || null}, ${verified}, ${picture}, NOW()) 
-          RETURNING *
-        `;
-            userRow = newUser[0];
-          }
-        } catch (e) {
-          console.error("[GOOGLE AUTH] Database error:", e);
-          throw e;
-        }
-        req.session.regenerate((err) => {
-          if (err) return next(err);
-          req.session.userId = userRow.id;
-          req.session.email = userRow.email;
-          console.log("[GOOGLE AUTH] Session established for user:", userRow.id);
-          res.redirect("/");
-        });
-      } catch (e) {
-        console.error("[GOOGLE AUTH] Callback error:", e);
-        next(e);
-      }
-    });
-    googleAuth.post("/auth/logout", (req, res, next) => {
-      req.session.destroy((err) => {
-        if (err) return next(err);
-        res.clearCookie("cf.sid", { path: "/" });
-        res.json({ ok: true });
-      });
-    });
-  }
-});
-
 // server/config/shipping.ts
 var WAREHOUSE, LOCAL_RADIUS_MILES;
 var init_shipping = __esm({
@@ -3890,7 +3708,7 @@ var addresses_exports = {};
 __export(addresses_exports, {
   default: () => addresses_default
 });
-import { Router as Router10 } from "express";
+import { Router as Router9 } from "express";
 import { z as z5 } from "zod";
 var router8, addressSchema, addresses_default;
 var init_addresses = __esm({
@@ -3899,7 +3717,7 @@ var init_addresses = __esm({
     init_storage();
     init_auth2();
     init_distance();
-    router8 = Router10();
+    router8 = Router9();
     addressSchema = z5.object({
       firstName: z5.string().min(1, "First name is required"),
       lastName: z5.string().min(1, "Last name is required"),
@@ -4346,7 +4164,7 @@ __export(cart_validation_exports, {
   default: () => cart_validation_default,
   guardCartItemAgainstLocality: () => guardCartItemAgainstLocality
 });
-import { Router as Router11 } from "express";
+import { Router as Router10 } from "express";
 function guardCartItemAgainstLocality({
   userIsLocal,
   product
@@ -4365,7 +4183,7 @@ var init_cart_validation = __esm({
     "use strict";
     init_auth();
     init_storage();
-    router11 = Router11();
+    router11 = Router10();
     router11.post("/validate", requireAuth, async (req, res) => {
       try {
         const userId = req.user.id;
@@ -4469,14 +4287,14 @@ var universal_health_exports = {};
 __export(universal_health_exports, {
   universalHealth: () => universalHealth
 });
-import { Router as Router12 } from "express";
+import { Router as Router11 } from "express";
 var universalHealth;
 var init_universal_health = __esm({
   "server/routes/universal-health.ts"() {
     "use strict";
     init_env();
     init_universal_pool();
-    universalHealth = Router12();
+    universalHealth = Router11();
     universalHealth.get("/api/healthz", async (_req, res) => {
       try {
         const r2 = await universalPool.query(`select current_database() as db, current_user as role`);
@@ -4510,7 +4328,7 @@ __export(email_exports, {
   isValidEmail: () => isValidEmail,
   normalizeEmail: () => normalizeEmail2
 });
-import { sql as sql8 } from "drizzle-orm";
+import { sql as sql7 } from "drizzle-orm";
 import { Resend } from "resend";
 function normalizeEmail2(email) {
   if (!email || typeof email !== "string") {
@@ -4520,7 +4338,7 @@ function normalizeEmail2(email) {
 }
 function createEmailCondition(email) {
   const normalizedEmail = normalizeEmail2(email);
-  return sql8`LOWER(${users.email}) = ${normalizedEmail}`;
+  return sql7`LOWER(${users.email}) = ${normalizedEmail}`;
 }
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -4946,7 +4764,7 @@ var system_management_exports = {};
 __export(system_management_exports, {
   systemManagementRoutes: () => router12
 });
-import { Router as Router13 } from "express";
+import { Router as Router12 } from "express";
 var router12;
 var init_system_management = __esm({
   "server/routes/admin/system-management.ts"() {
@@ -4955,7 +4773,7 @@ var init_system_management = __esm({
     init_systemMonitor();
     init_performanceMonitor();
     init_logger();
-    router12 = Router13();
+    router12 = Router12();
     router12.use(requireAuth);
     router12.use(requireRole("developer"));
     router12.get("/health", async (req, res) => {
@@ -5250,7 +5068,7 @@ var auth_unified_exports = {};
 __export(auth_unified_exports, {
   default: () => auth_unified_default
 });
-import { Router as Router14 } from "express";
+import { Router as Router13 } from "express";
 var router13, auth_unified_default;
 var init_auth_unified = __esm({
   "server/routes/auth-unified.ts"() {
@@ -5258,7 +5076,7 @@ var init_auth_unified = __esm({
     init_logger();
     init_session_config();
     init_storage();
-    router13 = Router14();
+    router13 = Router13();
     router13.get("/api/user", async (req, res) => {
       try {
         const isAuthenticated2 = req.isAuthenticated && req.isAuthenticated() && req.user;
@@ -5767,17 +5585,21 @@ import cookieParser from "cookie-parser";
 import cors2 from "cors";
 
 // server/db/migrate.ts
-init_database();
 import { neon } from "@neondatabase/serverless";
+
+// server/config/database.ts
+var DATABASE_URL = process.env.DATABASE_URL;
+
+// server/db/migrate.ts
 async function applyMigrations() {
-  const sql10 = neon(DATABASE_URL);
+  const sql9 = neon(DATABASE_URL);
   console.log("[MIGRATIONS] Applying\u2026");
   try {
     console.log("[MIGRATIONS] Dropping retired columns...");
-    await sql10`ALTER TABLE "users" DROP COLUMN IF EXISTS "onboarding_completed_at"`;
-    await sql10`ALTER TABLE "users" DROP COLUMN IF EXISTS "profile_address_id"`;
+    await sql9`ALTER TABLE "users" DROP COLUMN IF EXISTS "onboarding_completed_at"`;
+    await sql9`ALTER TABLE "users" DROP COLUMN IF EXISTS "profile_address_id"`;
     console.log("[MIGRATIONS] Setting up cart integrity...");
-    await sql10`
+    await sql9`
       DO $$ 
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_cart_items_product') THEN
@@ -5789,12 +5611,12 @@ async function applyMigrations() {
         END IF;
       END$$;
     `;
-    await sql10`
+    await sql9`
       CREATE UNIQUE INDEX IF NOT EXISTS "uniq_cart_owner_product"
       ON "cart_items"(COALESCE(user_id::text, session_id), product_id, COALESCE(variant_id,''));
     `;
     console.log("[MIGRATIONS] Fixing schema drift...");
-    await fixProductionSchemaDrift(sql10);
+    await fixProductionSchemaDrift(sql9);
   } catch (error) {
     if (error.message?.includes("already exists") || error.message?.includes("does not exist")) {
       console.log("[MIGRATIONS] Skipping existing objects...");
@@ -5804,10 +5626,10 @@ async function applyMigrations() {
   }
   console.log("[MIGRATIONS] Done.");
 }
-async function fixProductionSchemaDrift(sql10) {
+async function fixProductionSchemaDrift(sql9) {
   try {
     console.log("[MIGRATIONS] Checking and adding missing columns...");
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -5817,7 +5639,7 @@ async function fixProductionSchemaDrift(sql10) {
           END IF;
       END $$;
     `;
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -5827,7 +5649,7 @@ async function fixProductionSchemaDrift(sql10) {
           END IF;
       END $$;
     `;
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -5837,7 +5659,7 @@ async function fixProductionSchemaDrift(sql10) {
           END IF;
       END $$;
     `;
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -5847,7 +5669,7 @@ async function fixProductionSchemaDrift(sql10) {
           END IF;
       END $$;
     `;
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -5857,7 +5679,7 @@ async function fixProductionSchemaDrift(sql10) {
           END IF;
       END $$;
     `;
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -5867,7 +5689,7 @@ async function fixProductionSchemaDrift(sql10) {
           END IF;
       END $$;
     `;
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -5877,7 +5699,7 @@ async function fixProductionSchemaDrift(sql10) {
           END IF;
       END $$;
     `;
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -5888,15 +5710,15 @@ async function fixProductionSchemaDrift(sql10) {
       END $$;
     `;
     console.log("[MIGRATIONS] Fixing cart_items schema...");
-    await fixCartItemsSchema(sql10);
+    await fixCartItemsSchema(sql9);
     console.log("[MIGRATIONS] Schema drift fixes applied successfully");
   } catch (error) {
     console.log("[MIGRATIONS] Schema drift fix error (safe to ignore if columns already exist):", error?.message);
   }
 }
-async function fixCartItemsSchema(sql10) {
+async function fixCartItemsSchema(sql9) {
   try {
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -5906,7 +5728,7 @@ async function fixCartItemsSchema(sql10) {
           END IF;
       END $$;
     `;
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -5916,7 +5738,7 @@ async function fixCartItemsSchema(sql10) {
           END IF;
       END $$;
     `;
-    await sql10`
+    await sql9`
       DO $$
       BEGIN
           IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -8119,7 +7941,7 @@ var locality_default = router7;
 
 // server/routes.ts
 init_schema();
-import crypto3 from "crypto";
+import crypto2 from "crypto";
 
 // server/utils/exportHelpers.ts
 function generateCSV(submissions) {
@@ -8161,7 +7983,7 @@ function convertSubmissionsToCSV(submissions) {
 }
 
 // server/routes.ts
-import { eq as eq9, desc as desc3, ilike as ilike2, sql as sql9, and as and5, or as or3, gte as gte3, lte as lte2, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
+import { eq as eq9, desc as desc3, ilike as ilike2, sql as sql8, and as and5, or as or3, gte as gte3, lte as lte2, asc as asc2, inArray as inArray2, count } from "drizzle-orm";
 
 // server/utils/startup-banner.ts
 init_logger();
@@ -8442,8 +8264,6 @@ async function registerRoutes(app2) {
     Logger.warn("Some enhanced middleware failed to load:", error);
   }
   app2.use(cors(corsOptions));
-  const { googleAuth: googleAuth2 } = await Promise.resolve().then(() => (init_google_routes(), google_routes_exports));
-  app2.use(googleAuth2);
   app2.use((req, res, next) => {
     if (req.url.startsWith("/api/")) {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -8794,7 +8614,7 @@ async function registerRoutes(app2) {
         timestamp: timestamp2.toString()
       };
       const signatureString = Object.keys(params).sort().map((key2) => `${key2}=${params[key2]}`).join("&") + process.env.CLOUDINARY_API_SECRET;
-      const signature = crypto3.createHash("sha1").update(signatureString).digest("hex");
+      const signature = crypto2.createHash("sha1").update(signatureString).digest("hex");
       Logger.debug(`[CLOUDINARY] Generated signature for folder: ${folder}`, {
         timestamp: timestamp2,
         signatureString: signatureString.replace(process.env.CLOUDINARY_API_SECRET, "[REDACTED]")
@@ -9273,13 +9093,13 @@ async function registerRoutes(app2) {
     };
     try {
       try {
-        await db.execute(sql9`SELECT subcategory FROM products LIMIT 1`);
+        await db.execute(sql8`SELECT subcategory FROM products LIMIT 1`);
         results.tables["products.subcategory"] = "exists";
       } catch (e) {
         results.tables["products.subcategory"] = "missing";
         results.issues.push("products.subcategory column missing");
       }
-      const addressCheck = await db.execute(sql9`
+      const addressCheck = await db.execute(sql8`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_name = 'addresses'
@@ -9315,8 +9135,8 @@ async function registerRoutes(app2) {
           title: products.name,
           subtitle: products.brand,
           price: products.price,
-          image: sql9`${products.images}->0`,
-          type: sql9`'product'`
+          image: sql8`${products.images}->0`,
+          type: sql8`'product'`
         }).from(products).where(
           and5(
             eq9(products.status, "active"),
@@ -9337,7 +9157,7 @@ async function registerRoutes(app2) {
         const categoryResults = await db.select({
           id: categories.id,
           title: categories.name,
-          type: sql9`'category'`
+          type: sql8`'category'`
         }).from(categories).where(
           and5(
             eq9(categories.isActive, true),
@@ -9688,17 +9508,17 @@ async function registerRoutes(app2) {
       const minPrice = parseFloat(priceMin);
       const maxPrice = parseFloat(priceMax);
       if (minPrice > 0) {
-        conditions.push(gte3(sql9`CAST(${products.price} AS NUMERIC)`, minPrice));
+        conditions.push(gte3(sql8`CAST(${products.price} AS NUMERIC)`, minPrice));
       }
       if (maxPrice < 1e4) {
-        conditions.push(lte2(sql9`CAST(${products.price} AS NUMERIC)`, maxPrice));
+        conditions.push(lte2(sql8`CAST(${products.price} AS NUMERIC)`, maxPrice));
       }
       if (conditions.length > 0) {
         query = query.where(and5(...conditions));
       }
-      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql9`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
+      const sortColumn = sortBy === "name" ? products.name : sortBy === "price" ? sql8`CAST(${products.price} AS NUMERIC)` : sortBy === "stock" ? products.stockQuantity : products.createdAt;
       query = query.orderBy(sortOrder === "desc" ? desc3(sortColumn) : asc2(sortColumn));
-      let countQuery = db.select({ count: sql9`count(*)` }).from(products);
+      let countQuery = db.select({ count: sql8`count(*)` }).from(products);
       if (conditions.length > 0) {
         countQuery = countQuery.where(and5(...conditions));
       }
@@ -9897,7 +9717,7 @@ async function registerRoutes(app2) {
         displayOrder: categories.displayOrder,
         createdAt: categories.createdAt,
         updatedAt: categories.updatedAt,
-        productCount: sql9`(SELECT COUNT(*) FROM products WHERE category_id = categories.id)`
+        productCount: sql8`(SELECT COUNT(*) FROM products WHERE category_id = categories.id)`
       }).from(categories);
       const conditions = [];
       if (search) {
@@ -9911,10 +9731,10 @@ async function registerRoutes(app2) {
       if (conditions.length > 0) {
         query = query.where(and5(...conditions));
       }
-      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql9`(SELECT COUNT(*) FROM products WHERE category_id = categories.id)` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
+      const sortColumn = sortBy === "name" ? categories.name : sortBy === "products" ? sql8`(SELECT COUNT(*) FROM products WHERE category_id = categories.id)` : sortBy === "created" ? categories.createdAt : categories.displayOrder;
       query = query.orderBy(sortOrder === "desc" ? desc3(sortColumn) : asc2(sortColumn));
       const result = await query;
-      const totalProducts = await db.select({ count: sql9`COUNT(*)` }).from(products);
+      const totalProducts = await db.select({ count: sql8`COUNT(*)` }).from(products);
       const activeCategories = result.filter((cat) => cat.isActive).length;
       const emptyCategories = result.filter((cat) => Number(cat.productCount) === 0).length;
       res.json({
@@ -10050,7 +9870,7 @@ async function registerRoutes(app2) {
     async (req, res) => {
       try {
         const { id } = req.params;
-        const productCount = await db.select({ count: sql9`COUNT(*)` }).from(products).where(sql9`category_id = ${id}`);
+        const productCount = await db.select({ count: sql8`COUNT(*)` }).from(products).where(sql8`category_id = ${id}`);
         if (productCount[0]?.count > 0) {
           return res.status(400).json({
             error: "Cannot delete category with products",
@@ -10138,9 +9958,9 @@ async function registerRoutes(app2) {
     try {
       const memoryUsage = process.memoryUsage();
       const uptime = process.uptime();
-      const [userCount] = await db.select({ count: sql9`COUNT(*)` }).from(users);
-      const [productCount] = await db.select({ count: sql9`COUNT(*)` }).from(products);
-      const [orderCount] = await db.select({ count: sql9`COUNT(*)` }).from(orders);
+      const [userCount] = await db.select({ count: sql8`COUNT(*)` }).from(users);
+      const [productCount] = await db.select({ count: sql8`COUNT(*)` }).from(products);
+      const [orderCount] = await db.select({ count: sql8`COUNT(*)` }).from(orders);
       const systemInfo = {
         application: {
           name: "Clean & Flip Admin",
@@ -10211,11 +10031,11 @@ async function registerRoutes(app2) {
         updatedAt: users.updatedAt,
         profileImageUrl: users.profileImageUrl,
         // Include address information using COALESCE for production compatibility
-        addressId: sql9`(SELECT id FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
-        street: sql9`(SELECT COALESCE(street1, street, '') FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
-        city: sql9`(SELECT city FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
-        state: sql9`(SELECT state FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
-        zipCode: sql9`(SELECT COALESCE(postal_code, zip_code) FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`
+        addressId: sql8`(SELECT id FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
+        street: sql8`(SELECT COALESCE(street1, street, '') FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
+        city: sql8`(SELECT city FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
+        state: sql8`(SELECT state FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`,
+        zipCode: sql8`(SELECT COALESCE(postal_code, zip_code) FROM addresses WHERE user_id = ${users.id} AND is_default = true LIMIT 1)`
       }).from(users).limit(100);
       const transformedUsers = usersList.map((user) => ({
         id: user.id,
@@ -10765,7 +10585,7 @@ async function registerRoutes(app2) {
       const query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql9`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
       }).from(equipmentSubmissions).leftJoin(users, eq9(equipmentSubmissions.userId, users.id)).orderBy(desc3(equipmentSubmissions.createdAt)).limit(Number(limit)).offset((Number(page) - 1) * Number(limit));
@@ -10928,7 +10748,7 @@ async function registerRoutes(app2) {
       let query = db.select({
         submission: equipmentSubmissions,
         user: {
-          name: sql9`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
+          name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
         }
       }).from(equipmentSubmissions).leftJoin(users, eq9(equipmentSubmissions.userId, users.id)).orderBy(desc3(equipmentSubmissions.createdAt));
@@ -11368,11 +11188,11 @@ init_universal_health();
 
 // server/webhooks/universal-router.ts
 init_env();
-import { Router as Router15 } from "express";
-import crypto4 from "node:crypto";
+import { Router as Router14 } from "express";
+import crypto3 from "node:crypto";
 import { json, raw } from "express";
 function mountUniversalWebhooks(app2) {
-  const r2 = Router15();
+  const r2 = Router14();
   r2.post("/stripe", raw({ type: "*/*" }), (req, res) => {
     const secret = process.env.STRIPE_WEBHOOK_SECRET;
     const sig = String(req.headers["stripe-signature"] || "");
@@ -11380,7 +11200,7 @@ function mountUniversalWebhooks(app2) {
     const v1 = sig.match(/v1=([^,]+)/)?.[1];
     if (!timestamp2 || !v1) return res.status(400).send("Bad Stripe signature");
     const payload = `${timestamp2}.${req.body.toString("utf8")}`;
-    const expected = crypto4.createHmac("sha256", secret).update(payload).digest("hex");
+    const expected = crypto3.createHmac("sha256", secret).update(payload).digest("hex");
     if (!timingSafeEqual(v1, expected)) return res.status(400).send("Invalid Stripe signature");
     console.log(`\u2705 Universal Webhook: Stripe event received via ${WEBHOOK_PREFIX}/stripe`);
     res.json({ ok: true });
@@ -11389,7 +11209,7 @@ function mountUniversalWebhooks(app2) {
     const secret = process.env.GENERIC_WEBHOOK_SECRET;
     const signatureHeader = (process.env.GENERIC_WEBHOOK_SIGNATURE_HEADER || "x-signature").toLowerCase();
     const header = String(req.headers[signatureHeader] || "");
-    const expected = crypto4.createHmac("sha256", secret).update(req.body).digest("hex");
+    const expected = crypto3.createHmac("sha256", secret).update(req.body).digest("hex");
     if (!timingSafeEqual(header, expected)) return res.status(400).send("Invalid signature");
     console.log(`\u2705 Universal Webhook: Generic event received via ${WEBHOOK_PREFIX}/generic`);
     res.json({ ok: true });
@@ -11402,14 +11222,14 @@ function timingSafeEqual(a, b) {
   const A = Buffer.from(a);
   const B = Buffer.from(b);
   if (A.length !== B.length) return false;
-  return crypto4.timingSafeEqual(A, B);
+  return crypto3.timingSafeEqual(A, B);
 }
 
 // server/routes/public-health.ts
 init_universal_pool();
 init_env();
-import { Router as Router16 } from "express";
-var publicHealth = Router16();
+import { Router as Router15 } from "express";
+var publicHealth = Router15();
 publicHealth.get("/api/healthz", async (_req, res) => {
   try {
     const r2 = await universalPool.query(`SELECT current_database() as db, current_user as role`);
@@ -11481,10 +11301,7 @@ try {
 } catch (error) {
   console.error("\u{1F534} Universal Environment Guard Failed:", error?.message || error);
 }
-console.log("\u26A0\uFE0F  ENV_GUARD: Development should use ep-lucky-poetry-aetqlg65-pooler.c-2.us-east-2.aws.neon.tech, but using", host);
 console.log("\u2705 ENV_GUARD: Environment isolation verified");
-console.log("[DEV ENV] \u2139\uFE0F Using unified database setup:", host);
-console.log("[DEV ENV] \u2139\uFE0F Continuing with relaxed guards for unified database mode");
 var shouldRunMigrations = process.env.RUN_MIGRATIONS === "true" || env === "development";
 if (shouldRunMigrations) {
   console.log("[MIGRATIONS] Running migrations...");
