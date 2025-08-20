@@ -381,9 +381,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(cached);
       }
 
-      const apiKey = process.env.VITE_GEOAPIFY_API_KEY;
+      const apiKey = process.env.GEOAPIFY_API_KEY;
       if (!apiKey) {
-        console.error('VITE_GEOAPIFY_API_KEY missing in server environment');
+        console.error('GEOAPIFY_API_KEY missing in server environment');
         return res.status(500).json({ error: 'API key not configured' });
       }
 
