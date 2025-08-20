@@ -381,7 +381,7 @@ export function setupAuth(app: Express) {
 
       // Determine role based on criteria (using normalized email)
       let role: "user" | "developer" = "user";
-      if (normalizedEmail.includes("developer") || normalizedEmail.includes("@dev.") || normalizedEmail === "admin@cleanandflip.com") {
+      if (normalizedEmail.includes("developer") || normalizedEmail.includes("@dev.")) {
         role = "developer";
       }
 
