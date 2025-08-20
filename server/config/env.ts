@@ -24,9 +24,7 @@ if (!DATABASE_URL_ENV) {
   throw new Error("Missing DATABASE_URL");
 }
 
-if (!process.env.FRONTEND_ORIGIN) {
-  throw new Error("Missing FRONTEND_ORIGIN");
-}
+// FRONTEND_ORIGIN no longer mandatory; default to same-origin usage
 
 export const ENV = {
   nodeEnv: NODE_ENV,

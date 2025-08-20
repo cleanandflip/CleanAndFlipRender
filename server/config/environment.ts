@@ -8,12 +8,7 @@ export type Environment = 'development' | 'production' | 'test';
  * Detect current environment using multiple methods
  */
 export function detectEnvironment(): Environment {
-  // Method 1: Check REPLIT_DEPLOYMENT flag
-  if (process.env.REPLIT_DEPLOYMENT === 'true') {
-    return 'production';
-  }
-  
-  // Method 2: Check NODE_ENV
+  // Check NODE_ENV
   if (process.env.NODE_ENV === 'production') {
     return 'production';
   }
@@ -50,9 +45,7 @@ export function isTest(): boolean {
 /**
  * Check if running in Replit deployment
  */
-export function isReplitDeployment(): boolean {
-  return process.env.REPLIT_DEPLOYMENT === 'true';
-}
+export function isReplitDeployment(): boolean { return false; }
 
 /**
  * Get environment configuration
@@ -166,7 +159,6 @@ export function logEnvironmentStatus() {
   console.log(`  Node Version: ${config.nodeVersion}`);
   console.log(`  Platform: ${config.platform}`);
   console.log(`  PID: ${config.pid}`);
-  console.log(`  Replit Deployment: ${config.isReplitDeployment}`);
   
   if (!validation.isValid) {
     console.error('Environment Validation Errors:');

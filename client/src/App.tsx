@@ -160,8 +160,7 @@ function Router() {
               <Route path="/privacy-policy" component={LegalPrivacyPolicy} />
               
               {/* 404 */}
-              {/* Builder catch-all: last route to render CMS pages */}
-              <Route path="*" component={lazy(() => import("@/pages/builder-page"))} />
+              <Route path="*" component={NotFound} />
             </Switch>
           </Suspense>
         </main>
