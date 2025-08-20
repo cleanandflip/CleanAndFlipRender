@@ -1,7 +1,9 @@
 import session from "express-session";
 import PgSimple from "connect-pg-simple";
 import { universalPool } from "../db/universal-pool";
-import { APP_ENV, SESSION_SECRET, SESSION_COOKIE_DOMAIN } from "../config/universal-env";
+import { APP_ENV } from "../config/env";
+const SESSION_SECRET = process.env.SESSION_SECRET!;
+const SESSION_COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN;
 
 const PgSession = PgSimple(session);
 const isProd = APP_ENV === "production";
