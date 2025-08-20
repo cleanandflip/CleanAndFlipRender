@@ -195,6 +195,10 @@ const allowedOrigins = (() => {
 
 export const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    const appEnv = process.env.APP_ENV || process.env.NODE_ENV || 'development';
+    if (appEnv !== 'production') {
+      return callback(null, true);
+    }
     if (!origin) return callback(null, true); // same-origin or curl
     if (allowedOrigins.some(o => o === origin)) return callback(null, true);
     // Also allow subdomain pattern matches if env uses wildcard (not recommended in prod)
