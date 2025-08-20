@@ -57,12 +57,8 @@ export const uploadLimiter = rateLimit({
 
 // Security headers configuration
 export function setupSecurityHeaders(app: Express) {
-  // Build frame-ancestors from env to allow embedding (e.g., Builder.io preview) when configured
-  const frameAncestorsEnv = (process.env.FRAME_ANCESTORS || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-  const frameAncestors = ["'self'", ...frameAncestorsEnv];
+  // No external embedding by default; simplify
+  const frameAncestors = ["'self'"];
 
   // Disable CSP in development to allow Vite HMR; otherwise apply strict CSP with optional frame ancestors
   const cspConfig = process.env.NODE_ENV === 'development'
@@ -103,7 +99,6 @@ export function setupSecurityHeaders(app: Express) {
           objectSrc: ["'none'"],
           mediaSrc: ["'self'", "https://res.cloudinary.com"],
           manifestSrc: ["'self'"],
-          // Allow embedding in approved origins when FRAME_ANCESTORS is set
           frameAncestors,
         },
       };
