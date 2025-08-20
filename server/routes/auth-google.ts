@@ -85,11 +85,8 @@ router.get('/google/callback',
     const user = req.user as any;
     
     // Determine base URL for redirect
-    const host = req.get('host');
-    const baseUrl = host?.includes('cleanandflip.com') 
-      ? 'https://cleanandflip.com'
-      : host?.includes('cleanflip.replit.app')
-      ? 'https://cleanflip.replit.app'
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? (process.env.FRONTEND_URL || '')
       : '';
     
     const returnUrl = req.session.returnTo || '/dashboard';

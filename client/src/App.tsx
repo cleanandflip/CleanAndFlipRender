@@ -174,22 +174,7 @@ function App() {
   // Initialize singleton WebSocket connection to prevent duplicates
   const { connected } = useWebSocketState();
   useEffect(() => {
-    // Disable Replit's embed warnings globally
-    environment.disableReplitEmbeds();
-    
-    // Override any Replit beforeunload handlers
-    const originalAddEventListener = window.addEventListener;
-    window.addEventListener = function(type: string, listener: any, options?: any) {
-      if (type === 'beforeunload' && listener?.toString().includes('replit')) {
-        return;
-      }
-      return originalAddEventListener.call(this, type, listener, options);
-    };
-
-    // Removed global window focus invalidation - was causing reload loops in Replit environment
-    // Individual components now handle their own focus refreshing as needed
-
-    // Clean up on unmount
+    // Removed Replit-specific overrides
     return () => {
       window.onbeforeunload = null;
     };

@@ -9,8 +9,8 @@ import { Logger } from '../utils/logger';
 const GOOGLE_CONFIG = {
   clientID: process.env.GOOGLE_CLIENT_ID!,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  callbackURL: process.env.NODE_ENV === 'production' 
-    ? "https://cleanandflip.com/api/auth/google/callback"
+  callbackURL: process.env.NODE_ENV === 'production'
+    ? `${process.env.FRONTEND_URL || ''}/api/auth/google/callback`
     : "/api/auth/google/callback",
   scope: ['profile', 'email']
 };
