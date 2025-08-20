@@ -1,19 +1,9 @@
-import type { Address } from "./addresses";
-
-export type Quote = {
-  shippingMethods: Array<{ id: string; label: string; price: number }>;
-  tax: number; 
-  subtotal: number; 
-  total: number;
-};
+import type { Address, Quote } from "@/types";
+import { apiJson } from "@/lib/api";
 
 export async function getQuote(addr: Address): Promise<Quote> {
-  const res = await fetch("/api/checkout/quote", {
+  return apiJson<Quote>("/api/checkout/quote", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ address: addr }),
+    body: JSON.stringify(addr),
   });
-  if (!res.ok) throw new Error("Failed to fetch quote");
-  return res.json();
 }

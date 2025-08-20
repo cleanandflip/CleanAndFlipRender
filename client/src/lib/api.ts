@@ -1,10 +1,12 @@
 // Unified API client with mandatory cookie authentication
 // CRITICAL: This fixes the 403 cart errors by ensuring credentials are sent
+import { apiUrl } from "./universal-api";
 
 export async function apiFetch(path: string, init: RequestInit = {}) {
-  console.log('🔧 API Request:', { method: init.method || 'GET', path, hasBody: !!init.body });
+  const fullUrl = apiUrl(path);
+  console.log('🔧 API Request:', { method: init.method || 'GET', url: fullUrl, hasBody: !!init.body });
   
-  const res = await fetch(path, {
+  const res = await fetch(fullUrl, {
     credentials: 'include',              // <-- CRITICAL: Always send cookies
     headers: { 'Content-Type': 'application/json', ...(init.headers || {}) },
     ...init,

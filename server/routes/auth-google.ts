@@ -86,7 +86,7 @@ router.get('/google/callback',
     
     // Determine base URL for redirect
     const baseUrl = process.env.NODE_ENV === 'production'
-      ? (process.env.FRONTEND_URL || '')
+      ? (process.env.FRONTEND_ORIGIN || '')
       : '';
     
     const returnUrl = req.session.returnTo || '/dashboard';

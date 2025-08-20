@@ -419,8 +419,8 @@ export default function SystemDashboard() {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-white">Environment</h4>
                     <div className="text-xs space-y-1">
-                      <p className="text-gray-400">NODE_ENV: <span className="text-white">{process.env.NODE_ENV}</span></p>
-                      <p className="text-gray-400">Port: <span className="text-white">{process.env.PORT || 5000}</span></p>
+                      <p className="text-gray-400">Mode: <span className="text-white">{import.meta.env.MODE}</span></p>
+                      <p className="text-gray-400">API: <span className="text-white">{import.meta.env.VITE_API_URL}</span></p>
                     </div>
                   </div>
                 </div>

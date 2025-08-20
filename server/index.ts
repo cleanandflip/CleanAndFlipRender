@@ -85,11 +85,12 @@ app.set("trust proxy", 1);
 
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || true,
-  credentials: true,
+	origin: process.env.FRONTEND_ORIGIN,
+	credentials: true,
 }));
 
 // PUBLIC HEALTH ENDPOINT - MUST BE FIRST (no auth required)
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
 app.use(publicHealth);
 
 // Universal Environment System headers
