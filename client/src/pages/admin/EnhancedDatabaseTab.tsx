@@ -204,8 +204,8 @@ export function EnhancedDatabaseTab() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="dev">Development (Lucky-Poem)</SelectItem>
-              <SelectItem value="prod">Production (Muddy-Moon)</SelectItem>
+              <SelectItem value="dev">Development</SelectItem>
+              <SelectItem value="prod">Production</SelectItem>
             </SelectContent>
           </Select>
         </div>
