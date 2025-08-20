@@ -62,5 +62,11 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    port: 5173,
+    strictPort: true,
+    proxy: {
+      '/api':    { target: process.env.VITE_API_URL || 'http://localhost:4000', changeOrigin: true },
+      '/healthz':{ target: process.env.VITE_API_URL || 'http://localhost:4000', changeOrigin: true },
+    }
   },
 });

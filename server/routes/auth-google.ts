@@ -7,6 +7,7 @@ import { requireAuth } from '../auth';
 import { db } from '../db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { ENV } from '../config/env';
 
 // Extend session type to include returnTo
 declare module 'express-session' {
@@ -86,7 +87,7 @@ router.get('/google/callback',
     
     // Determine base URL for redirect
     const baseUrl = process.env.NODE_ENV === 'production'
-      ? (process.env.FRONTEND_ORIGIN || '')
+      ? (ENV.frontendOrigin || '')
       : '';
     
     const returnUrl = req.session.returnTo || '/dashboard';

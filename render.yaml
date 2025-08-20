@@ -30,7 +30,7 @@ services:
         value: whsec_change_me
       - key: ENABLE_REDIS
         value: "false"
-      - key: FRONTEND_URL
+      - key: FRONTEND_ORIGIN
         value: https://cleanandfliprender.onrender.com
       - key: DATABASE_URL
         fromDatabase:

@@ -24,6 +24,10 @@ if (!DATABASE_URL_ENV) {
   throw new Error("Missing DATABASE_URL");
 }
 
+if (!process.env.FRONTEND_ORIGIN) {
+  throw new Error("Missing FRONTEND_ORIGIN");
+}
+
 export const ENV = {
   nodeEnv: NODE_ENV,
   isDev: NODE_ENV === "development",
@@ -31,6 +35,7 @@ export const ENV = {
   port: PORT,
   devDbUrl: DATABASE_URL_ENV,
   prodDbUrl: DATABASE_URL_ENV,
+  frontendOrigin: process.env.FRONTEND_ORIGIN,
 } as const;
 
 // Simplified exports
