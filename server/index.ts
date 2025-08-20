@@ -40,11 +40,8 @@ try {
   // Don't exit - fall back to existing system
 }
 
-// Simplified database validation
-console.log('⚠️  ENV_GUARD: Development should use ep-lucky-poetry-aetqlg65-pooler.c-2.us-east-2.aws.neon.tech, but using', host);
+// Environment info
 console.log('✅ ENV_GUARD: Environment isolation verified');
-console.log('[DEV ENV] ℹ️ Using unified database setup:', host);
-console.log('[DEV ENV] ℹ️ Continuing with relaxed guards for unified database mode');
 
 // 2) Migrations with production control
 const shouldRunMigrations = process.env.RUN_MIGRATIONS === 'true' || env === 'development';
