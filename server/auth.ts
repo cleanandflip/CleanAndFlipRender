@@ -120,6 +120,7 @@ export function setupAuth(app: Express) {
   }
   
   const isProd = ENV.isProd;
+  const forceCrossSite = process.env.CROSS_SITE_COOKIES === 'true';
   const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
   
   const sessionSettings: session.SessionOptions = {
@@ -131,9 +132,10 @@ export function setupAuth(app: Express) {
     cookie: {
       path: '/',
       httpOnly: true,
-      secure: isProd,                         // HTTPS only in production
-      sameSite: isProd ? 'none' : 'lax',      // Cross-site in production, lax for development
-      maxAge: SEVEN_DAYS,                     // 7 days instead of 30
+      // Allow forcing cross-site cookies for Builder preview or split-host setups
+      secure: isProd || forceCrossSite,
+      sameSite: (isProd || forceCrossSite) ? 'none' : 'lax',
+      maxAge: SEVEN_DAYS,
       // Only set domain in production if SESSION_COOKIE_DOMAIN is provided
       domain: isProd ? process.env.SESSION_COOKIE_DOMAIN : undefined
     },
