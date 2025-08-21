@@ -159,22 +159,18 @@ export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     try {
-      // Production-safe query using raw SQL to handle missing columns gracefully
+      // Minimal, stable selection to avoid schema drift issues
       const result = await db.execute(sql`
         SELECT
-          id, email, password, first_name, last_name, 
-          COALESCE(phone, '') as phone,
-          stripe_customer_id, stripe_subscription_id, 
-          created_at, updated_at,
-          COALESCE(role, 'user') as role,
-          google_id, 
-          COALESCE(profile_image_url, '') as profile_image_url,
-          COALESCE(auth_provider, 'local') as auth_provider,
-          COALESCE(is_email_verified, false) as is_email_verified,
-          google_email, google_picture,
-          -- REMOVED: profile_address_id - using SSOT address system
-          COALESCE(is_local_customer, false) as is_local_customer,
-          COALESCE(profile_complete, false) as profile_complete
+          id,
+          email,
+          password,
+          first_name,
+          last_name,
+          COALESCE(phone, '') AS phone,
+          COALESCE(role, 'user') AS role,
+          created_at,
+          updated_at
         FROM users
         WHERE id = ${id}
         LIMIT 1
@@ -182,46 +178,6 @@ export class DatabaseStorage implements IStorage {
       return result.rows[0] as User | undefined;
     } catch (error: any) {
       Logger.error('Error getting user by ID:', error.message);
-      
-      // Handle specific schema mismatch errors
-      if (error.code === '42703') {
-        Logger.error('Schema mismatch detected in getUser, trying fallback query');
-        try {
-          // Fallback query with only essential columns
-          const fallbackResult = await db.execute(sql`
-            SELECT
-              id, email, password, first_name, last_name,
-              created_at, updated_at
-            FROM users
-            WHERE id = ${id}
-            LIMIT 1
-          `);
-          
-          const user = fallbackResult.rows[0];
-          if (user) {
-            // Return user with default values for missing fields
-            return {
-              ...user,
-              phone: '',
-              role: 'user',
-              stripeCustomerId: null,
-              stripeSubscriptionId: null,
-              googleId: null,
-              profileImageUrl: null,
-              authProvider: 'local',
-              isEmailVerified: false,
-              googleEmail: null,
-              googlePicture: null,
-              // REMOVED: profileAddressId - using SSOT address system
-              isLocalCustomer: false,
-              profileComplete: false,
-            } as User;
-          }
-        } catch (fallbackError: any) {
-          Logger.error('Fallback getUser query also failed:', fallbackError.message);
-          throw fallbackError;
-        }
-      }
       throw error;
     }
   }
@@ -231,22 +187,18 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const normalizedEmail = normalizeEmail(email);
     try {
-      // Production-safe query - only select columns that definitely exist
+      // Minimal, stable selection to avoid schema drift issues
       const result = await db.execute(sql`
         SELECT
-          id, email, password, first_name, last_name, 
-          COALESCE(phone, '') as phone,
-          stripe_customer_id, stripe_subscription_id, 
-          created_at, updated_at,
-          COALESCE(role, 'user') as role,
-          google_id, 
-          COALESCE(profile_image_url, '') as profile_image_url,
-          COALESCE(auth_provider, 'local') as auth_provider,
-          COALESCE(is_email_verified, false) as is_email_verified,
-          google_email, google_picture,
-          -- REMOVED: profile_address_id - using SSOT address system
-          COALESCE(is_local_customer, false) as is_local_customer,
-          COALESCE(profile_complete, false) as profile_complete
+          id,
+          email,
+          password,
+          first_name,
+          last_name,
+          COALESCE(phone, '') AS phone,
+          COALESCE(role, 'user') AS role,
+          created_at,
+          updated_at
         FROM users
         WHERE LOWER(email) = LOWER(${normalizedEmail})
         LIMIT 1
@@ -254,70 +206,6 @@ export class DatabaseStorage implements IStorage {
       return result.rows[0] as User | undefined;
     } catch (error: any) {
       Logger.error('Error getting user by email:', error.message);
-      
-      // Handle specific schema mismatch errors
-      if (error.code === '42703') {
-        Logger.error('Schema mismatch detected in getUserByEmail, trying fallback query');
-        try {
-          // Fallback query with only essential columns
-          const fallbackResult = await db.execute(sql`
-            SELECT
-              id, email, password, first_name, last_name,
-              created_at, updated_at
-            FROM users
-            WHERE LOWER(email) = LOWER(${normalizedEmail})
-            LIMIT 1
-          `);
-          
-          const user = fallbackResult.rows[0];
-          if (user) {
-            // Return user with default values for missing fields
-            return {
-              ...user,
-              phone: '',
-              role: 'user',
-              stripeCustomerId: null,
-              stripeSubscriptionId: null,
-              googleId: null,
-              profileImageUrl: null,
-              authProvider: 'local',
-              isEmailVerified: false,
-              googleEmail: null,
-              googlePicture: null,
-              // REMOVED: profileAddressId - using SSOT address system
-              isLocalCustomer: false,
-              profileComplete: false,
-            } as User;
-          }
-        } catch (fallbackError: any) {
-          Logger.error('Fallback query also failed:', fallbackError.message);
-          throw fallbackError;
-        }
-      }
-      
-      if (error.code === '57P01') {
-        // Retry once on connection termination
-        const result = await db.execute(sql`
-          SELECT
-            id, email, password, first_name, last_name, 
-            COALESCE(phone, '') as phone,
-            stripe_customer_id, stripe_subscription_id, 
-            created_at, updated_at,
-            COALESCE(role, 'user') as role,
-            google_id, 
-            COALESCE(profile_image_url, '') as profile_image_url,
-            COALESCE(auth_provider, 'local') as auth_provider,
-            COALESCE(is_email_verified, false) as is_email_verified,
-            google_email, google_picture,
-            -- REMOVED: profile_address_id - using SSOT address system
-            COALESCE(is_local_customer, false) as is_local_customer,
-            COALESCE(profile_complete, false) as profile_complete
-          FROM users
-          WHERE LOWER(email) = LOWER(${normalizedEmail})
-          LIMIT 1
-        `);
-        return result.rows[0] as User | undefined;
-      }
       throw error;
     }
   }

@@ -865,19 +865,15 @@ var init_storage = __esm({
         try {
           const result = await db.execute(sql3`
         SELECT
-          id, email, password, first_name, last_name, 
-          COALESCE(phone, '') as phone,
-          stripe_customer_id, stripe_subscription_id, 
-          created_at, updated_at,
-          COALESCE(role, 'user') as role,
-          google_id, 
-          COALESCE(profile_image_url, '') as profile_image_url,
-          COALESCE(auth_provider, 'local') as auth_provider,
-          COALESCE(is_email_verified, false) as is_email_verified,
-          google_email, google_picture,
-          -- REMOVED: profile_address_id - using SSOT address system
-          COALESCE(is_local_customer, false) as is_local_customer,
-          COALESCE(profile_complete, false) as profile_complete
+          id,
+          email,
+          password,
+          first_name,
+          last_name,
+          COALESCE(phone, '') AS phone,
+          COALESCE(role, 'user') AS role,
+          created_at,
+          updated_at
         FROM users
         WHERE id = ${id}
         LIMIT 1
@@ -885,41 +881,6 @@ var init_storage = __esm({
           return result.rows[0];
         } catch (error) {
           Logger.error("Error getting user by ID:", error.message);
-          if (error.code === "42703") {
-            Logger.error("Schema mismatch detected in getUser, trying fallback query");
-            try {
-              const fallbackResult = await db.execute(sql3`
-            SELECT
-              id, email, password, first_name, last_name,
-              created_at, updated_at
-            FROM users
-            WHERE id = ${id}
-            LIMIT 1
-          `);
-              const user = fallbackResult.rows[0];
-              if (user) {
-                return {
-                  ...user,
-                  phone: "",
-                  role: "user",
-                  stripeCustomerId: null,
-                  stripeSubscriptionId: null,
-                  googleId: null,
-                  profileImageUrl: null,
-                  authProvider: "local",
-                  isEmailVerified: false,
-                  googleEmail: null,
-                  googlePicture: null,
-                  // REMOVED: profileAddressId - using SSOT address system
-                  isLocalCustomer: false,
-                  profileComplete: false
-                };
-              }
-            } catch (fallbackError) {
-              Logger.error("Fallback getUser query also failed:", fallbackError.message);
-              throw fallbackError;
-            }
-          }
           throw error;
         }
       }
@@ -928,19 +889,15 @@ var init_storage = __esm({
         try {
           const result = await db.execute(sql3`
         SELECT
-          id, email, password, first_name, last_name, 
-          COALESCE(phone, '') as phone,
-          stripe_customer_id, stripe_subscription_id, 
-          created_at, updated_at,
-          COALESCE(role, 'user') as role,
-          google_id, 
-          COALESCE(profile_image_url, '') as profile_image_url,
-          COALESCE(auth_provider, 'local') as auth_provider,
-          COALESCE(is_email_verified, false) as is_email_verified,
-          google_email, google_picture,
-          -- REMOVED: profile_address_id - using SSOT address system
-          COALESCE(is_local_customer, false) as is_local_customer,
-          COALESCE(profile_complete, false) as profile_complete
+          id,
+          email,
+          password,
+          first_name,
+          last_name,
+          COALESCE(phone, '') AS phone,
+          COALESCE(role, 'user') AS role,
+          created_at,
+          updated_at
         FROM users
         WHERE LOWER(email) = LOWER(${normalizedEmail})
         LIMIT 1
@@ -948,63 +905,6 @@ var init_storage = __esm({
           return result.rows[0];
         } catch (error) {
           Logger.error("Error getting user by email:", error.message);
-          if (error.code === "42703") {
-            Logger.error("Schema mismatch detected in getUserByEmail, trying fallback query");
-            try {
-              const fallbackResult = await db.execute(sql3`
-            SELECT
-              id, email, password, first_name, last_name,
-              created_at, updated_at
-            FROM users
-            WHERE LOWER(email) = LOWER(${normalizedEmail})
-            LIMIT 1
-          `);
-              const user = fallbackResult.rows[0];
-              if (user) {
-                return {
-                  ...user,
-                  phone: "",
-                  role: "user",
-                  stripeCustomerId: null,
-                  stripeSubscriptionId: null,
-                  googleId: null,
-                  profileImageUrl: null,
-                  authProvider: "local",
-                  isEmailVerified: false,
-                  googleEmail: null,
-                  googlePicture: null,
-                  // REMOVED: profileAddressId - using SSOT address system
-                  isLocalCustomer: false,
-                  profileComplete: false
-                };
-              }
-            } catch (fallbackError) {
-              Logger.error("Fallback query also failed:", fallbackError.message);
-              throw fallbackError;
-            }
-          }
-          if (error.code === "57P01") {
-            const result = await db.execute(sql3`
-          SELECT
-            id, email, password, first_name, last_name, 
-            COALESCE(phone, '') as phone,
-            stripe_customer_id, stripe_subscription_id, 
-            created_at, updated_at,
-            COALESCE(role, 'user') as role,
-            google_id, 
-            COALESCE(profile_image_url, '') as profile_image_url,
-            COALESCE(auth_provider, 'local') as auth_provider,
-            COALESCE(is_email_verified, false) as is_email_verified,
-            google_email, google_picture,
-            -- REMOVED: profile_address_id - using SSOT address system
-            COALESCE(is_local_customer, false) as is_local_customer,
-            COALESCE(profile_complete, false) as profile_complete
-          FROM users
-          WHERE LOWER(email) = LOWER(${normalizedEmail})
-          LIMIT 1
-        `);
-            return result.rows[0];
-          }
           throw error;
         }
       }
