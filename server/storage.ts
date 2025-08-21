@@ -221,8 +221,14 @@ export class DatabaseStorage implements IStorage {
       const [user] = await db
         .insert(users)
         .values(userToInsert)
-        .returning();
-      return user;
+        .returning({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+        });
+      return user as any;
     } catch (error: any) {
       Logger.error('Error creating user:', error.message);
       if (error.code === '57P01') {
@@ -230,8 +236,14 @@ export class DatabaseStorage implements IStorage {
         const [user] = await db
           .insert(users)
           .values(userToInsert)
-          .returning();
-        return user;
+          .returning({
+            id: users.id,
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            role: users.role,
+          });
+        return user as any;
       }
       throw error;
     }
@@ -294,8 +306,14 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date(),
       })
       .where(eq(users.id, id))
-      .returning();
-    return user;
+      .returning({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+      });
+    return user as any;
   }
 
   async updateUserStripeInfo(id: string, customerId: string, subscriptionId?: string): Promise<User> {
@@ -307,8 +325,12 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date(),
       })
       .where(eq(users.id, id))
-      .returning();
-    return user;
+      .returning({
+        id: users.id,
+        email: users.email,
+        role: users.role,
+      });
+    return user as any;
   }
 
   async updateUser(id: string, userData: Partial<InsertUser>): Promise<User> {
@@ -319,8 +341,14 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date(),
       })
       .where(eq(users.id, id))
-      .returning();
-    return user;
+      .returning({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+      });
+    return user as any;
   }
 
   // REMOVED: updateUserProfileAddress - using SSOT address system

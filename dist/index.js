@@ -914,12 +914,24 @@ var init_storage = __esm({
           email: normalizeEmail(insertUser.email)
         };
         try {
-          const [user] = await db.insert(users).values(userToInsert).returning();
+          const [user] = await db.insert(users).values(userToInsert).returning({
+            id: users.id,
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            role: users.role
+          });
           return user;
         } catch (error) {
           Logger.error("Error creating user:", error.message);
           if (error.code === "57P01") {
-            const [user] = await db.insert(users).values(userToInsert).returning();
+            const [user] = await db.insert(users).values(userToInsert).returning({
+              id: users.id,
+              email: users.email,
+              firstName: users.firstName,
+              lastName: users.lastName,
+              role: users.role
+            });
             return user;
           }
           throw error;
@@ -958,7 +970,13 @@ var init_storage = __esm({
           isEmailVerified: googleData.isEmailVerified,
           authProvider: googleData.authProvider,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(users.id, id)).returning();
+        }).where(eq(users.id, id)).returning({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role
+        });
         return user;
       }
       async updateUserStripeInfo(id, customerId, subscriptionId) {
@@ -966,14 +984,24 @@ var init_storage = __esm({
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(users.id, id)).returning();
+        }).where(eq(users.id, id)).returning({
+          id: users.id,
+          email: users.email,
+          role: users.role
+        });
         return user;
       }
       async updateUser(id, userData) {
         const [user] = await db.update(users).set({
           ...userData,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq(users.id, id)).returning();
+        }).where(eq(users.id, id)).returning({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role
+        });
         return user;
       }
       // REMOVED: updateUserProfileAddress - using SSOT address system
