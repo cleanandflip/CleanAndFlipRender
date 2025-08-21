@@ -579,17 +579,8 @@ body {
     transition: all 0.3s ease;
   }
 
-  /* Prevent flash of unstyled content */
-  html {
-    visibility: hidden;
-    opacity: 0;
-  }
-
-  html.loaded {
-    visibility: visible;
-    opacity: 1;
-    transition: opacity 0.3s ease-out;
-  }
+  /* Remove global page hide to avoid "black screen" if JS fails early */
+  /* If you want a fade-in, prefer adding a class on body from JS without hiding by default */
 
   /* Form fade-in animation */
   @keyframes fadeInForm {

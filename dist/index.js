@@ -50,9 +50,6 @@ var init_env = __esm({
     if (!DATABASE_URL_ENV) {
       throw new Error("Missing DATABASE_URL");
     }
-    if (!process.env.FRONTEND_ORIGIN) {
-      throw new Error("Missing FRONTEND_ORIGIN");
-    }
     ENV = {
       nodeEnv: NODE_ENV,
       isDev: NODE_ENV === "development",
@@ -60,7 +57,7 @@ var init_env = __esm({
       port: PORT,
       devDbUrl: DATABASE_URL_ENV,
       prodDbUrl: DATABASE_URL_ENV,
-      frontendOrigin: process.env.FRONTEND_ORIGIN
+      frontendOrigin: process.env.APP_ORIGIN || ""
     };
     APP_ENV = (process.env.APP_ENV ?? NODE_ENV).toLowerCase();
     DATABASE_URL2 = DATABASE_URL_ENV;
@@ -2101,7 +2098,7 @@ var init_google_strategy = __esm({
     GOOGLE_CONFIG = {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.NODE_ENV === "production" ? `${process.env.FRONTEND_ORIGIN || ""}/api/auth/google/callback` : "/api/auth/google/callback",
+      callbackURL: "/api/auth/google/callback",
       scope: ["profile", "email"]
     };
   }
@@ -2187,6 +2184,7 @@ function setupAuth(app2) {
     throw new Error(`Session store initialization failed: ${error.message}`);
   }
   const isProd2 = ENV.isProd;
+  const forceCrossSite = process.env.CROSS_SITE_COOKIES === "true";
   const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1e3;
   const sessionSettings = {
     secret: process.env.SESSION_SECRET,
@@ -2199,12 +2197,10 @@ function setupAuth(app2) {
     cookie: {
       path: "/",
       httpOnly: true,
-      secure: isProd2,
-      // HTTPS only in production
-      sameSite: isProd2 ? "none" : "lax",
-      // Cross-site in production, lax for development
+      // Allow forcing cross-site cookies for split-host setups
+      secure: isProd2 || forceCrossSite,
+      sameSite: isProd2 || forceCrossSite ? "none" : "lax",
       maxAge: SEVEN_DAYS,
-      // 7 days instead of 30
       // Only set domain in production if SESSION_COOKIE_DOMAIN is provided
       domain: isProd2 ? process.env.SESSION_COOKIE_DOMAIN : void 0
     },
@@ -2389,7 +2385,7 @@ function setupAuth(app2) {
         });
       }
       let role = "user";
-      if (normalizedEmail.includes("developer") || normalizedEmail.includes("@dev.") || normalizedEmail === "admin@cleanandflip.com") {
+      if (normalizedEmail.includes("developer") || normalizedEmail.includes("@dev.")) {
         role = "developer";
       }
       const normalizedPhone = phone ? normalizePhone(phone) : void 0;
@@ -4360,7 +4356,7 @@ var init_email = __esm({
       async sendOrderConfirmation(order) {
         try {
           const { data, error } = await resend.emails.send({
-            from: process.env.RESEND_FROM || "orders@cleanandflip.com",
+            from: process.env.RESEND_FROM,
             to: order.user.email,
             subject: `Order Confirmed #${order.orderNumber}`,
             html: `
@@ -4419,7 +4415,7 @@ var init_email = __esm({
         }
         try {
           const { data, error } = await resend.emails.send({
-            from: process.env.RESEND_FROM || "shipping@cleanandflip.com",
+            from: process.env.RESEND_FROM,
             to: order.user.email,
             subject: `Your Order Has Shipped! #${order.orderNumber}`,
             html: `
@@ -4472,7 +4468,7 @@ var init_email = __esm({
         }
         try {
           const { data, error } = await resend.emails.send({
-            from: process.env.RESEND_FROM || "offers@cleanandflip.com",
+            from: process.env.RESEND_FROM,
             to: submission.user.email,
             subject: `Equipment Offer for Your ${submission.brand ? submission.brand + " " : ""}${submission.name}`,
             html: `
@@ -4515,11 +4511,11 @@ var init_email = __esm({
       },
       async sendContactEmail(contactData) {
         try {
-          const fromEmail = process.env.RESEND_FROM || "no-reply@cleanandflip.com";
+          const fromEmail = process.env.RESEND_FROM;
           Logger.info(`Sending email from: "${fromEmail}"`);
           const { data, error } = await resend.emails.send({
             from: fromEmail,
-            to: process.env.SUPPORT_TO || "support@cleanandflip.com",
+            to: process.env.SUPPORT_TO,
             replyTo: contactData.email,
             subject: `Contact Form: ${contactData.subject}`,
             html: `
@@ -5582,7 +5578,6 @@ var init_compression = __esm({
 // server/index.ts
 import express6 from "express";
 import cookieParser from "cookie-parser";
-import cors2 from "cors";
 
 // server/db/migrate.ts
 import { neon } from "@neondatabase/serverless";
@@ -5918,6 +5913,7 @@ var uploadLimiter = rateLimit({
   legacyHeaders: false
 });
 function setupSecurityHeaders(app2) {
+  const frameAncestors = ["'self'"];
   const cspConfig = process.env.NODE_ENV === "development" ? false : {
     directives: {
       defaultSrc: ["'self'"],
@@ -5954,7 +5950,8 @@ function setupSecurityHeaders(app2) {
       ],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'", "https://res.cloudinary.com"],
-      manifestSrc: ["'self'"]
+      manifestSrc: ["'self'"],
+      frameAncestors
     }
   };
   app2.use(helmet({
@@ -5974,7 +5971,10 @@ function setupSecurityHeaders(app2) {
     crossOriginResourcePolicy: { policy: "cross-origin" }
   }));
   app2.use((req, res, next) => {
-    res.setHeader("X-Frame-Options", "DENY");
+    if (frameAncestors.length > 1) {
+    } else {
+      res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    }
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader(
       "Permissions-Policy",
@@ -5984,19 +5984,32 @@ function setupSecurityHeaders(app2) {
     next();
   });
 }
+var allowedOrigins = (() => {
+  const list = (process.env.FRONTEND_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (process.env.FRONTEND_ORIGIN) list.push(process.env.FRONTEND_ORIGIN.trim());
+  return Array.from(new Set(list));
+})();
 var corsOptions = {
-  origin: process.env.FRONTEND_ORIGIN,
+  origin: (origin, callback) => {
+    const appEnv = process.env.APP_ENV || process.env.NODE_ENV || "development";
+    if (process.env.CORS_ALLOW_ALL === "true" || appEnv !== "production") {
+      return callback(null, true);
+    }
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.some((o) => o === origin)) return callback(null, true);
+    const ok = allowedOrigins.some((o) => {
+      if (o.startsWith("*.")) {
+        const suffix = o.slice(1);
+        return origin.endsWith(suffix);
+      }
+      return false;
+    });
+    return callback(ok ? null : new Error("CORS: origin not allowed"), ok);
+  },
   credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Origin",
-    "X-Requested-With",
-    "Content-Type",
-    "Accept",
-    "Authorization",
-    "Cookie"
-  ],
+  optionsSuccessStatus: 204,
+  methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  // Let cors echo requested headers instead of fixing a static list to avoid blocking custom headers
   exposedHeaders: ["Set-Cookie"],
   maxAge: 86400
   // 24 hours
@@ -6490,8 +6503,8 @@ import { Pool as Pool2, neonConfig } from "@neondatabase/serverless";
 // server/db/registry.ts
 init_env();
 import { Pool } from "pg";
-console.log("[DB Registry] Dev (Lucky-Poem):", ENV.devDbUrl?.slice(0, 30) + "...");
-console.log("[DB Registry] Prod (Muddy-Moon):", ENV.prodDbUrl?.slice(0, 30) + "...");
+console.log("[DB Registry] Dev host:", new URL(ENV.devDbUrl).host);
+console.log("[DB Registry] Prod host:", new URL(ENV.prodDbUrl).host);
 var devPool = new Pool({ connectionString: ENV.devDbUrl, max: 10 });
 var prodPool = new Pool({ connectionString: ENV.prodDbUrl, max: 10 });
 function getPool(branch) {
@@ -8263,6 +8276,7 @@ async function registerRoutes(app2) {
   } catch (error) {
     Logger.warn("Some enhanced middleware failed to load:", error);
   }
+  app2.options("*", cors(corsOptions));
   app2.use(cors(corsOptions));
   app2.use((req, res, next) => {
     if (req.url.startsWith("/api/")) {
@@ -8357,9 +8371,9 @@ async function registerRoutes(app2) {
         console.log("\u2705 Geocode cache hit:", text2);
         return res.json(cached);
       }
-      const apiKey = process.env.VITE_GEOAPIFY_API_KEY;
+      const apiKey = process.env.GEOAPIFY_API_KEY;
       if (!apiKey) {
-        console.error("VITE_GEOAPIFY_API_KEY missing in server environment");
+        console.error("GEOAPIFY_API_KEY missing in server environment");
         return res.status(500).json({ error: "API key not configured" });
       }
       const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(text2)}&apiKey=${apiKey}&filter=countrycode:us&limit=5&format=json`;
@@ -11329,10 +11343,6 @@ try {
 var app = express6();
 app.set("trust proxy", 1);
 app.use(cookieParser());
-app.use(cors2({
-  origin: process.env.FRONTEND_ORIGIN,
-  credentials: true
-}));
 app.get("/healthz", (_req, res) => res.status(200).send("ok"));
 app.use(publicHealth);
 app.use(universalEnvHeaders);
