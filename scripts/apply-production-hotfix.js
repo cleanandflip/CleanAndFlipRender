@@ -36,12 +36,6 @@ async function applyProductionHotfix() {
     `);
     console.log('  ✅ profile_address_id column added/verified');
     
-    await db.execute(sql`
-      ALTER TABLE "users"
-        ADD COLUMN IF NOT EXISTS "onboarding_completed_at" timestamptz
-    `);
-    console.log('  ✅ onboarding_completed_at column added/verified');
-    
     // Add helpful indexes
     console.log('\n📊 Creating performance indexes...');
     
@@ -50,12 +44,6 @@ async function applyProductionHotfix() {
       ON "users"("profile_address_id")
     `);
     console.log('  ✅ profile_address_id index created');
-    
-    await db.execute(sql`
-      CREATE INDEX IF NOT EXISTS "idx_users_onboarding_completed_at" 
-      ON "users"("onboarding_completed_at")
-    `);
-    console.log('  ✅ onboarding_completed_at index created');
     
     // Cart de-duplication safety - functional index for ownership
     console.log('\n🛒 Ensuring cart uniqueness...');
@@ -85,7 +73,7 @@ async function applyProductionHotfix() {
       SELECT column_name, data_type, is_nullable
       FROM information_schema.columns 
       WHERE table_name='users'
-        AND column_name IN ('profile_address_id','onboarding_completed_at')
+        AND column_name IN ('profile_address_id')
       ORDER BY column_name
     `);
     
@@ -94,7 +82,7 @@ async function applyProductionHotfix() {
     });
     
     console.log('\n🎯 Production Hotfix Complete!');
-    console.log('✅ All missing columns added');
+    console.log('✅ Missing columns added');
     console.log('✅ Indexes created for performance');
     console.log('✅ Zero downtime migration successful');
     console.log('\n💡 Next: Update code schema and clean rebuild');

@@ -3463,10 +3463,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       //   conditions.push(eq(equipmentSubmissions.isLocal, isLocal === 'true'));
       // }
       
-      // Main query with joins
+      // Main query with joins (explicit columns to avoid schema drift)
       const query = db
         .select({
-          submission: equipmentSubmissions,
+          submission: {
+            id: equipmentSubmissions.id,
+            referenceNumber: equipmentSubmissions.referenceNumber,
+            name: equipmentSubmissions.name,
+            brand: equipmentSubmissions.brand,
+            category: equipmentSubmissions.category,
+            condition: equipmentSubmissions.condition,
+            description: equipmentSubmissions.description,
+            images: equipmentSubmissions.images,
+            askingPrice: equipmentSubmissions.askingPrice,
+            weight: equipmentSubmissions.weight,
+            status: equipmentSubmissions.status,
+            adminNotes: equipmentSubmissions.adminNotes,
+            createdAt: equipmentSubmissions.createdAt,
+            updatedAt: equipmentSubmissions.updatedAt,
+          },
           user: {
             name: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
             email: users.email
@@ -3545,9 +3560,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]); // Return empty array for non-authenticated users
       }
 
-      // Direct database query for user's submissions
+      // Direct database query for user's submissions with explicit columns (production-safe)
       const submissions = await db
-        .select()
+        .select({
+          id: equipmentSubmissions.id,
+          referenceNumber: equipmentSubmissions.referenceNumber,
+          name: equipmentSubmissions.name,
+          brand: equipmentSubmissions.brand,
+          category: equipmentSubmissions.category,
+          condition: equipmentSubmissions.condition,
+          description: equipmentSubmissions.description,
+          images: equipmentSubmissions.images,
+          askingPrice: equipmentSubmissions.askingPrice,
+          weight: equipmentSubmissions.weight,
+          status: equipmentSubmissions.status,
+          adminNotes: equipmentSubmissions.adminNotes,
+          createdAt: equipmentSubmissions.createdAt,
+          updatedAt: equipmentSubmissions.updatedAt,
+        })
         .from(equipmentSubmissions)
         .where(eq(equipmentSubmissions.userId, userId))
         .orderBy(desc(equipmentSubmissions.createdAt));
@@ -3711,7 +3741,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all matching submissions for export
       let query = db
         .select({
-          submission: equipmentSubmissions,
+          submission: {
+            id: equipmentSubmissions.id,
+            referenceNumber: equipmentSubmissions.referenceNumber,
+            name: equipmentSubmissions.name,
+            brand: equipmentSubmissions.brand,
+            category: equipmentSubmissions.category,
+            condition: equipmentSubmissions.condition,
+            description: equipmentSubmissions.description,
+            images: equipmentSubmissions.images,
+            askingPrice: equipmentSubmissions.askingPrice,
+            weight: equipmentSubmissions.weight,
+            status: equipmentSubmissions.status,
+            adminNotes: equipmentSubmissions.adminNotes,
+            createdAt: equipmentSubmissions.createdAt,
+            updatedAt: equipmentSubmissions.updatedAt,
+          },
           user: {
             name: sql<string>`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
             email: users.email

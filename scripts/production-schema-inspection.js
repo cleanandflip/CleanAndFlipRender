@@ -3,7 +3,7 @@
 /**
  * Production Schema Inspection - Step B from user instructions
  * This inspects the live production database to identify missing columns
- */
+ * */
 
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
@@ -42,12 +42,12 @@ async function inspectProductionSchema() {
       SELECT column_name, data_type 
       FROM information_schema.columns 
       WHERE table_name='users'
-        AND column_name IN ('profile_address_id','onboarding_completed_at')
+        AND column_name IN ('profile_address_id')
       ORDER BY column_name
     `);
     
     const foundColumns = columnCheck.rows.map(row => row.column_name);
-    const expectedColumns = ['profile_address_id', 'onboarding_completed_at'];
+    const expectedColumns = ['profile_address_id'];
     
     expectedColumns.forEach(col => {
       if (foundColumns.includes(col)) {

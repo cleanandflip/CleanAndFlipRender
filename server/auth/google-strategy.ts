@@ -99,7 +99,6 @@ export function initializeGoogleAuth() {
             lastName,
             authProvider: 'google',
             isEmailVerified: true,
-            profileComplete: true, // Google users are immediately active
             role: 'user' // All new users start as regular users
           })
           .returning();
