@@ -80,14 +80,15 @@ const EQUIPMENT_BRANDS = [
 export default function SellToUs() {
   // ALL HOOKS MUST BE AT THE TOP - React Rules of Hooks
   const { toast } = useToast();
-  const { user, isLoading: authLoading } = useAuth();
+  const { data: authData, isLoading: authLoading } = useAuth();
+  const user = authData?.user;
   const queryClient = useQueryClient();
   const { data: locality } = useLocality(); // SSOT single source of truth
   
   // CRITICAL FIX: Force fresh auth check when accessing sell-to-us
   useEffect(() => {
     // Force immediate auth validation on page load
-    queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+    queryClient.invalidateQueries({ queryKey: ["auth"] });
   }, [queryClient]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submissionData, setSubmissionData] = useState<{referenceNumber: string} | null>(null);

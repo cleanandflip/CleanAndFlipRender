@@ -1714,18 +1714,63 @@ var init_storage = __esm({
         return submission;
       }
       async getSubmissions(userId) {
-        const query = db.select().from(equipmentSubmissions).$dynamic();
+        const baseSelect = db.select({
+          id: equipmentSubmissions.id,
+          referenceNumber: equipmentSubmissions.referenceNumber,
+          name: equipmentSubmissions.name,
+          brand: equipmentSubmissions.brand,
+          category: equipmentSubmissions.category,
+          condition: equipmentSubmissions.condition,
+          description: equipmentSubmissions.description,
+          images: equipmentSubmissions.images,
+          askingPrice: equipmentSubmissions.askingPrice,
+          weight: equipmentSubmissions.weight,
+          status: equipmentSubmissions.status,
+          adminNotes: equipmentSubmissions.adminNotes,
+          createdAt: equipmentSubmissions.createdAt,
+          updatedAt: equipmentSubmissions.updatedAt
+        }).from(equipmentSubmissions);
         if (userId) {
-          return await query.where(eq(equipmentSubmissions.userId, userId)).orderBy(desc(equipmentSubmissions.createdAt));
+          return await baseSelect.where(eq(equipmentSubmissions.userId, userId)).orderBy(desc(equipmentSubmissions.createdAt));
         }
-        return await query.orderBy(desc(equipmentSubmissions.createdAt));
+        return await baseSelect.orderBy(desc(equipmentSubmissions.createdAt));
       }
       async getSubmission(id) {
-        const [submission] = await db.select().from(equipmentSubmissions).where(eq(equipmentSubmissions.id, id));
+        const [submission] = await db.select({
+          id: equipmentSubmissions.id,
+          referenceNumber: equipmentSubmissions.referenceNumber,
+          name: equipmentSubmissions.name,
+          brand: equipmentSubmissions.brand,
+          category: equipmentSubmissions.category,
+          condition: equipmentSubmissions.condition,
+          description: equipmentSubmissions.description,
+          images: equipmentSubmissions.images,
+          askingPrice: equipmentSubmissions.askingPrice,
+          weight: equipmentSubmissions.weight,
+          status: equipmentSubmissions.status,
+          adminNotes: equipmentSubmissions.adminNotes,
+          createdAt: equipmentSubmissions.createdAt,
+          updatedAt: equipmentSubmissions.updatedAt
+        }).from(equipmentSubmissions).where(eq(equipmentSubmissions.id, id));
         return submission || null;
       }
       async getSubmissionByReference(referenceNumber) {
-        const [submission] = await db.select().from(equipmentSubmissions).where(eq(equipmentSubmissions.referenceNumber, referenceNumber));
+        const [submission] = await db.select({
+          id: equipmentSubmissions.id,
+          referenceNumber: equipmentSubmissions.referenceNumber,
+          name: equipmentSubmissions.name,
+          brand: equipmentSubmissions.brand,
+          category: equipmentSubmissions.category,
+          condition: equipmentSubmissions.condition,
+          description: equipmentSubmissions.description,
+          images: equipmentSubmissions.images,
+          askingPrice: equipmentSubmissions.askingPrice,
+          weight: equipmentSubmissions.weight,
+          status: equipmentSubmissions.status,
+          adminNotes: equipmentSubmissions.adminNotes,
+          createdAt: equipmentSubmissions.createdAt,
+          updatedAt: equipmentSubmissions.updatedAt
+        }).from(equipmentSubmissions).where(eq(equipmentSubmissions.referenceNumber, referenceNumber));
         return submission || null;
       }
       async updateSubmission(id, updates) {
@@ -10533,7 +10578,22 @@ async function registerRoutes(app2) {
         );
       }
       const query = db.select({
-        submission: equipmentSubmissions,
+        submission: {
+          id: equipmentSubmissions.id,
+          referenceNumber: equipmentSubmissions.referenceNumber,
+          name: equipmentSubmissions.name,
+          brand: equipmentSubmissions.brand,
+          category: equipmentSubmissions.category,
+          condition: equipmentSubmissions.condition,
+          description: equipmentSubmissions.description,
+          images: equipmentSubmissions.images,
+          askingPrice: equipmentSubmissions.askingPrice,
+          weight: equipmentSubmissions.weight,
+          status: equipmentSubmissions.status,
+          adminNotes: equipmentSubmissions.adminNotes,
+          createdAt: equipmentSubmissions.createdAt,
+          updatedAt: equipmentSubmissions.updatedAt
+        },
         user: {
           name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email
@@ -10584,7 +10644,22 @@ async function registerRoutes(app2) {
         Logger.error("No userId found in authentication sources");
         return res.json([]);
       }
-      const submissions = await db.select().from(equipmentSubmissions).where(eq9(equipmentSubmissions.userId, userId)).orderBy(desc3(equipmentSubmissions.createdAt));
+      const submissions = await db.select({
+        id: equipmentSubmissions.id,
+        referenceNumber: equipmentSubmissions.referenceNumber,
+        name: equipmentSubmissions.name,
+        brand: equipmentSubmissions.brand,
+        category: equipmentSubmissions.category,
+        condition: equipmentSubmissions.condition,
+        description: equipmentSubmissions.description,
+        images: equipmentSubmissions.images,
+        askingPrice: equipmentSubmissions.askingPrice,
+        weight: equipmentSubmissions.weight,
+        status: equipmentSubmissions.status,
+        adminNotes: equipmentSubmissions.adminNotes,
+        createdAt: equipmentSubmissions.createdAt,
+        updatedAt: equipmentSubmissions.updatedAt
+      }).from(equipmentSubmissions).where(eq9(equipmentSubmissions.userId, userId)).orderBy(desc3(equipmentSubmissions.createdAt));
       res.json(submissions || []);
     } catch (error) {
       Logger.error("Error fetching user submissions:", error);
@@ -10696,7 +10771,22 @@ async function registerRoutes(app2) {
         );
       }
       let query = db.select({
-        submission: equipmentSubmissions,
+        submission: {
+          id: equipmentSubmissions.id,
+          referenceNumber: equipmentSubmissions.referenceNumber,
+          name: equipmentSubmissions.name,
+          brand: equipmentSubmissions.brand,
+          category: equipmentSubmissions.category,
+          condition: equipmentSubmissions.condition,
+          description: equipmentSubmissions.description,
+          images: equipmentSubmissions.images,
+          askingPrice: equipmentSubmissions.askingPrice,
+          weight: equipmentSubmissions.weight,
+          status: equipmentSubmissions.status,
+          adminNotes: equipmentSubmissions.adminNotes,
+          createdAt: equipmentSubmissions.createdAt,
+          updatedAt: equipmentSubmissions.updatedAt
+        },
         user: {
           name: sql8`COALESCE(${users.firstName} || ' ' || ${users.lastName}, ${users.email})`,
           email: users.email

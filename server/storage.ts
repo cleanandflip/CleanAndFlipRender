@@ -1483,23 +1483,52 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSubmissions(userId?: string): Promise<EquipmentSubmission[]> {
-    const query = db
-      .select()
-      .from(equipmentSubmissions)
-      .$dynamic();
-    
+    const baseSelect = db
+      .select({
+        id: equipmentSubmissions.id,
+        referenceNumber: equipmentSubmissions.referenceNumber,
+        name: equipmentSubmissions.name,
+        brand: equipmentSubmissions.brand,
+        category: equipmentSubmissions.category,
+        condition: equipmentSubmissions.condition,
+        description: equipmentSubmissions.description,
+        images: equipmentSubmissions.images,
+        askingPrice: equipmentSubmissions.askingPrice,
+        weight: equipmentSubmissions.weight,
+        status: equipmentSubmissions.status,
+        adminNotes: equipmentSubmissions.adminNotes,
+        createdAt: equipmentSubmissions.createdAt,
+        updatedAt: equipmentSubmissions.updatedAt,
+      })
+      .from(equipmentSubmissions);
+
     if (userId) {
-      return await query
+      return await baseSelect
         .where(eq(equipmentSubmissions.userId, userId))
         .orderBy(desc(equipmentSubmissions.createdAt));
     }
-    
-    return await query.orderBy(desc(equipmentSubmissions.createdAt));
+
+    return await baseSelect.orderBy(desc(equipmentSubmissions.createdAt));
   }
 
   async getSubmission(id: string): Promise<EquipmentSubmission | null> {
     const [submission] = await db
-      .select()
+      .select({
+        id: equipmentSubmissions.id,
+        referenceNumber: equipmentSubmissions.referenceNumber,
+        name: equipmentSubmissions.name,
+        brand: equipmentSubmissions.brand,
+        category: equipmentSubmissions.category,
+        condition: equipmentSubmissions.condition,
+        description: equipmentSubmissions.description,
+        images: equipmentSubmissions.images,
+        askingPrice: equipmentSubmissions.askingPrice,
+        weight: equipmentSubmissions.weight,
+        status: equipmentSubmissions.status,
+        adminNotes: equipmentSubmissions.adminNotes,
+        createdAt: equipmentSubmissions.createdAt,
+        updatedAt: equipmentSubmissions.updatedAt,
+      })
       .from(equipmentSubmissions)
       .where(eq(equipmentSubmissions.id, id));
     
@@ -1508,7 +1537,22 @@ export class DatabaseStorage implements IStorage {
 
   async getSubmissionByReference(referenceNumber: string): Promise<EquipmentSubmission | null> {
     const [submission] = await db
-      .select()
+      .select({
+        id: equipmentSubmissions.id,
+        referenceNumber: equipmentSubmissions.referenceNumber,
+        name: equipmentSubmissions.name,
+        brand: equipmentSubmissions.brand,
+        category: equipmentSubmissions.category,
+        condition: equipmentSubmissions.condition,
+        description: equipmentSubmissions.description,
+        images: equipmentSubmissions.images,
+        askingPrice: equipmentSubmissions.askingPrice,
+        weight: equipmentSubmissions.weight,
+        status: equipmentSubmissions.status,
+        adminNotes: equipmentSubmissions.adminNotes,
+        createdAt: equipmentSubmissions.createdAt,
+        updatedAt: equipmentSubmissions.updatedAt,
+      })
       .from(equipmentSubmissions)
       .where(eq(equipmentSubmissions.referenceNumber, referenceNumber));
     
