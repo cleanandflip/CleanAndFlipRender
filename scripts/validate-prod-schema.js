@@ -35,7 +35,7 @@ async function validateProductionSchema() {
     const requiredTables = [
       'users', 'addresses', 'products', 'categories', 
       'orders', 'cart_items', 'sessions', 'error_logs',
-      'user_onboarding', 'order_items', 'password_reset_tokens'
+      'order_items', 'password_reset_tokens'
     ];
     
     console.log('\n📊 Table Validation:');

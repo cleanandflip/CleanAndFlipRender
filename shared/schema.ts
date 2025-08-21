@@ -74,7 +74,6 @@ export const users = pgTable("users", {
   profileImageUrl: text("profile_image_url"),
   authProvider: varchar("auth_provider").default("local"), // 'local', 'google'
   isEmailVerified: boolean("is_email_verified").default(false),
-  profileComplete: boolean("profile_complete").default(false),
   // SSOT Profile address reference - nullable FK to addresses (VARCHAR to match existing DB)
   // REMOVED: profileAddressId - using SSOT address system
   createdAt: timestamp("created_at").defaultNow(),

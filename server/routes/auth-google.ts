@@ -45,7 +45,6 @@ passport.use(new GoogleStrategy({
         profileImageUrl: profile.photos?.[0]?.value || '',
         isEmailVerified: true,
         authProvider: 'google',
-        profileComplete: true, // Google users are immediately active
         // No password field for Google users
       } as any);
     } else if (!user.googleId) {

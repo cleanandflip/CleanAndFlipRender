@@ -35,8 +35,7 @@ async function checkMissingColumns() {
       'id', 'email', 'password', 'first_name', 'last_name', 'phone',
       'stripe_customer_id', 'stripe_subscription_id', 'created_at', 'updated_at',
       'role', 'google_id', 'profile_image_url', 'auth_provider', 'is_email_verified',
-      'google_email', 'google_picture', 'profile_address_id', 'is_local_customer',
-      'profile_complete', 'onboarding_step', 'onboarding_completed_at'
+      'google_email', 'google_picture', 'profile_address_id', 'is_local_customer'
     ];
     
     console.log('\n🔍 Column Status Check:');

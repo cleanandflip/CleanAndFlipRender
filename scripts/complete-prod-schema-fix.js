@@ -32,10 +32,7 @@ async function completeProductionSchemaFix() {
       { table: 'users', column: 'is_email_verified', type: 'BOOLEAN DEFAULT false' },
       { table: 'users', column: 'google_email', type: 'VARCHAR(255)' },
       { table: 'users', column: 'google_picture', type: 'TEXT' },
-      { table: 'users', column: 'is_local_customer', type: 'BOOLEAN DEFAULT false' },
-      { table: 'users', column: 'profile_complete', type: 'BOOLEAN DEFAULT false' },
-      { table: 'users', column: 'onboarding_step', type: 'INTEGER DEFAULT 0' },
-      { table: 'users', column: 'onboarding_completed_at', type: 'TIMESTAMP' }
+      { table: 'users', column: 'is_local_customer', type: 'BOOLEAN DEFAULT false' }
     ];
     
     console.log('🔍 Adding missing columns to production...');
@@ -86,10 +83,7 @@ async function completeProductionSchemaFix() {
           COALESCE(is_email_verified, false) as is_email_verified,
           google_email, google_picture,
           profile_address_id,
-          COALESCE(is_local_customer, false) as is_local_customer,
-          COALESCE(profile_complete, false) as profile_complete,
-          COALESCE(onboarding_step, 0) as onboarding_step,
-          onboarding_completed_at
+          COALESCE(is_local_customer, false) as is_local_customer
         FROM users
         WHERE LOWER(email) = LOWER('test@example.com')
         LIMIT 1

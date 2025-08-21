@@ -219,7 +219,6 @@ var init_schema = __esm({
       authProvider: varchar("auth_provider").default("local"),
       // 'local', 'google'
       isEmailVerified: boolean("is_email_verified").default(false),
-      profileComplete: boolean("profile_complete").default(false),
       // SSOT Profile address reference - nullable FK to addresses (VARCHAR to match existing DB)
       // REMOVED: profileAddressId - using SSOT address system
       createdAt: timestamp("created_at").defaultNow(),
@@ -2044,8 +2043,6 @@ function initializeGoogleAuth() {
           lastName,
           authProvider: "google",
           isEmailVerified: true,
-          profileComplete: true,
-          // Google users are immediately active
           role: "user"
           // All new users start as regular users
         }).returning();
@@ -7306,9 +7303,7 @@ passport3.use(new GoogleStrategy3({
         lastName: profile2.name?.familyName || "",
         profileImageUrl: profile2.photos?.[0]?.value || "",
         isEmailVerified: true,
-        authProvider: "google",
-        profileComplete: true
-        // Google users are immediately active
+        authProvider: "google"
         // No password field for Google users
       });
     } else if (!user.googleId) {

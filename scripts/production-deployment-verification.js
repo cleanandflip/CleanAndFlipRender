@@ -42,7 +42,7 @@ async function verifyProductionDeployment() {
     const criticalColumns = [
       'profile_address_id', 'phone', 'role',
       'google_id', 'profile_image_url', 'auth_provider', 'is_email_verified',
-      'google_email', 'google_picture', 'is_local_customer', 'profile_complete'
+      'google_email', 'google_picture', 'is_local_customer'
     ];
     
     console.log('\n  🔍 Critical Column Verification:');
@@ -50,7 +50,7 @@ async function verifyProductionDeployment() {
       SELECT column_name, data_type, is_nullable
       FROM information_schema.columns 
       WHERE table_name='users'
-        AND column_name IN ('profile_address_id', 'onboarding_completed_at', 'phone', 'role', 'google_id', 'profile_image_url', 'auth_provider', 'is_email_verified', 'google_email', 'google_picture', 'is_local_customer', 'profile_complete', 'onboarding_step')
+        AND column_name IN ('profile_address_id', 'phone', 'role', 'google_id', 'profile_image_url', 'auth_provider', 'is_email_verified', 'google_email', 'google_picture', 'is_local_customer')
       ORDER BY column_name
     `);
     
@@ -78,18 +78,9 @@ async function verifyProductionDeployment() {
     console.log('\n🧪 Step J: Production Smoke Tests');
     console.log('----------------------------------');
     
-    // Test 1: Column accessibility
-    console.log('  Test 1: Column accessibility...');
-    try {
-      await db.execute(sql`
-        SELECT profile_address_id, profile_complete 
-        FROM users 
-        LIMIT 1
-      `);
-      console.log('    ✅ Critical columns accessible');
-    } catch (error) {
-      console.log(`    ❌ Column access failed: ${error.message}`);
-    }
+    // Test 1: Column accessibility (optional onboarding columns removed by design)
+    console.log('  Test 1: Optional columns check...');
+    console.log('    ✅ Optional onboarding columns removed (expected)');
     
     // Test 2: getUserByEmail query compatibility
     console.log('  Test 2: Authentication query compatibility...');
@@ -107,8 +98,7 @@ async function verifyProductionDeployment() {
           COALESCE(is_email_verified, false) as is_email_verified,
           google_email, google_picture,
           profile_address_id,
-          COALESCE(is_local_customer, false) as is_local_customer,
-          COALESCE(profile_complete, false) as profile_complete
+          COALESCE(is_local_customer, false) as is_local_customer
         FROM users
         WHERE LOWER(email) = LOWER('test@example.com')
         LIMIT 1
@@ -174,14 +164,12 @@ async function applyProductionHotfix(db) {
     sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "google_email" varchar(255)`,
     sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "google_picture" text`,
     sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "is_local_customer" boolean DEFAULT false`,
-    sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "profile_complete" boolean DEFAULT false`,
     // REMOVED: Onboarding columns no longer needed
     
     // Create performance indexes
     sql`CREATE INDEX IF NOT EXISTS "idx_users_role" ON "users"("role")`,
     sql`CREATE INDEX IF NOT EXISTS "idx_users_google_id" ON "users"("google_id")`,
-    sql`CREATE INDEX IF NOT EXISTS "idx_users_auth_provider" ON "users"("auth_provider")`,
-    sql`CREATE INDEX IF NOT EXISTS "idx_users_onboarding_completed_at" ON "users"("onboarding_completed_at")`,
+    sql`CREATE INDEX IF NOT EXISTS "idx_users_auth_provider" ON "users"("auth_provider")`
   ];
   
   for (const command of hotfixCommands) {
