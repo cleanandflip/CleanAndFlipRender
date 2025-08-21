@@ -216,8 +216,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // CORS configuration
-  app.options('*', cors(corsOptions));
-  app.use(cors(corsOptions));
+  // Limit CORS to API and WebSocket upgrade paths; do NOT apply on static assets
+  app.options('/api/*', cors(corsOptions));
+  app.use('/api', cors(corsOptions));
+  app.options('/ws', cors(corsOptions));
 
   // Google OAuth handled via Passport in auth.ts
 

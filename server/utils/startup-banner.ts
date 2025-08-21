@@ -11,7 +11,7 @@ export function displayStartupBanner(config: any) {
   Logger.info(chalk.cyan('================================================\n'));
   
   const status = [
-    { name: 'Environment', value: 'development', status: 'info' },
+    { name: 'Environment', value: ENV.nodeEnv, status: 'info' },
     { name: 'Port', value: config.port, status: 'info' },
     { name: 'Database', value: config.db ? 'Connected' : 'Failed', status: config.db ? 'success' : 'error' },
     { name: 'Redis Cache', value: config.redis ? 'Connected' : 'Disabled', status: config.redis ? 'success' : 'warning' },

@@ -5985,8 +5985,14 @@ function setupSecurityHeaders(app2) {
   });
 }
 var allowedOrigins = (() => {
-  const list = (process.env.FRONTEND_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
+  const list = [];
+  if (process.env.APP_ORIGIN) list.push(process.env.APP_ORIGIN.trim());
   if (process.env.FRONTEND_ORIGIN) list.push(process.env.FRONTEND_ORIGIN.trim());
+  if (process.env.FRONTEND_ORIGINS) {
+    list.push(
+      ...process.env.FRONTEND_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean)
+    );
+  }
   return Array.from(new Set(list));
 })();
 var corsOptions = {
@@ -8000,6 +8006,7 @@ import { eq as eq9, desc as desc3, ilike as ilike2, sql as sql8, and as and5, or
 
 // server/utils/startup-banner.ts
 init_logger();
+init_env();
 import chalk2 from "chalk";
 function displayStartupBanner(config) {
   console.clear();
@@ -8007,7 +8014,7 @@ function displayStartupBanner(config) {
   Logger.info(chalk2.cyan.bold("        \u{1F3CB}\uFE0F  CLEAN & FLIP - SERVER READY \u{1F3CB}\uFE0F        "));
   Logger.info(chalk2.cyan("================================================\n"));
   const status = [
-    { name: "Environment", value: "development", status: "info" },
+    { name: "Environment", value: ENV.nodeEnv, status: "info" },
     { name: "Port", value: config.port, status: "info" },
     { name: "Database", value: config.db ? "Connected" : "Failed", status: config.db ? "success" : "error" },
     { name: "Redis Cache", value: config.redis ? "Connected" : "Disabled", status: config.redis ? "success" : "warning" },
@@ -8276,8 +8283,9 @@ async function registerRoutes(app2) {
   } catch (error) {
     Logger.warn("Some enhanced middleware failed to load:", error);
   }
-  app2.options("*", cors(corsOptions));
-  app2.use(cors(corsOptions));
+  app2.options("/api/*", cors(corsOptions));
+  app2.use("/api", cors(corsOptions));
+  app2.options("/ws", cors(corsOptions));
   app2.use((req, res, next) => {
     if (req.url.startsWith("/api/")) {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");

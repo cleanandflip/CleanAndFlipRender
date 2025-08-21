@@ -178,13 +178,19 @@ export function sanitizeInput(req: any, res: any, next: any) {
 }
 
 // CORS configuration for production security
-// Build an allowlist from FRONTEND_ORIGINS (comma-separated) or FRONTEND_ORIGIN
+// Build an allowlist from APP_ORIGIN (preferred), FRONTEND_ORIGIN, and FRONTEND_ORIGINS (comma-separated)
 const allowedOrigins = (() => {
-  const list = (process.env.FRONTEND_ORIGINS || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
+  const list: string[] = [];
+  if (process.env.APP_ORIGIN) list.push(process.env.APP_ORIGIN.trim());
   if (process.env.FRONTEND_ORIGIN) list.push(process.env.FRONTEND_ORIGIN.trim());
+  if (process.env.FRONTEND_ORIGINS) {
+    list.push(
+      ...process.env.FRONTEND_ORIGINS
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+    );
+  }
   return Array.from(new Set(list));
 })();
 
