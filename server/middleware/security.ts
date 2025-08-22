@@ -57,8 +57,12 @@ export const uploadLimiter = rateLimit({
 
 // Security headers configuration
 export function setupSecurityHeaders(app: Express) {
-  // No external embedding by default; simplify
-  const frameAncestors = ["'self'"];
+  // Build frame-ancestors from env to allow preview embedding (e.g., fly.dev)
+  const extraAncestors = (process.env.PREVIEW_FRAME_ANCESTORS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  const frameAncestors = ["'self'", ...extraAncestors];
 
   // Disable CSP in development to allow Vite HMR; otherwise apply strict CSP with optional frame ancestors
   const cspConfig = process.env.NODE_ENV === 'development'
@@ -94,7 +98,8 @@ export function setupSecurityHeaders(app: Express) {
           ],
           frameSrc: [
             "https://js.stripe.com",
-            "https://hooks.stripe.com"
+            "https://hooks.stripe.com",
+            ...extraAncestors
           ],
           objectSrc: ["'none'"],
           mediaSrc: ["'self'", "https://res.cloudinary.com"],
@@ -120,25 +125,16 @@ export function setupSecurityHeaders(app: Express) {
 
   // Additional security headers
   app.use((req, res, next) => {
-    // Prefer CSP frame-ancestors over X-Frame-Options. If no extra ancestors are set, fall back to SAMEORIGIN.
+    // Prefer CSP frame-ancestors over X-Frame-Options. If extra ancestors are set, omit X-Frame-Options.
     if (frameAncestors.length > 1) {
-      // Do not set X-Frame-Options when we explicitly allow external ancestors via CSP
-      // Browsers will honor frame-ancestors from CSP
+      // omit X-Frame-Options; browsers will honor CSP frame-ancestors
     } else {
       res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     }
-    
-    // Prevent MIME type sniffing
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    
-    // Enable XSS protection
-    // X-XSS-Protection removed - deprecated and ineffective in modern browsers
     res.setHeader('Permissions-Policy', 
       'geolocation=(), microphone=(), camera=(), interest-cohort=(), payment=()');
-    
-    // Remove server header for security
     res.removeHeader('X-Powered-By');
-    
     next();
   });
 }
