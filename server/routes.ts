@@ -188,12 +188,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { PerformanceMonitor, performanceMiddleware } = await import('./services/performanceMonitor.js');
     
     // Apply enhanced middleware
-    app.use(securityHeaders());
+
     app.use(performanceMiddleware());
     app.use(requestLogger());
     
     // API-specific middleware
-    app.use('/api/', apiSecurityHeaders());
+
     app.use('/api/', apiRequestLogger());
     // Enable sanitization with auth route exclusion
     app.use('/api/', (req, res, next) => {
