@@ -1,16 +1,25 @@
-import { Pool } from "pg";
-import { ENV } from "../config/env";
+import { Pool } from 'pg';
+import { ENV } from '../config/env';
 
 export type Branch = "dev" | "prod";
 
-console.log("[DB Registry] Dev host:", new URL(ENV.devDbUrl).host);
-console.log("[DB Registry] Prod host:", new URL(ENV.prodDbUrl).host);
+try { console.log("[DB Registry] Dev host:", ENV.devDbUrl ? new URL(ENV.devDbUrl).host : 'unconfigured'); } catch {}
+try { console.log("[DB Registry] Prod host:", ENV.prodDbUrl ? new URL(ENV.prodDbUrl).host : 'unconfigured'); } catch {}
 
-const devPool = new Pool({ connectionString: ENV.devDbUrl, max: 10 });
-const prodPool = new Pool({ connectionString: ENV.prodDbUrl, max: 10 });
+const devPool = ENV.devDbUrl ? new Pool({ connectionString: ENV.devDbUrl, max: 10 }) : undefined as any;
+const prodPool = ENV.prodDbUrl ? new Pool({ connectionString: ENV.prodDbUrl, max: 10 }) : undefined as any;
 
-export function getPool(branch: Branch): Pool {
-  return branch === "prod" ? prodPool : devPool;
+export type BranchPool = ReturnType<typeof createPoolForBranch>;
+
+function createPoolForBranch(branch: Branch) {
+	if (branch === 'dev') return devPool;
+	return prodPool;
+}
+
+export function getPool(branch: Branch) {
+	const pool = createPoolForBranch(branch);
+	if (!pool) throw new Error(`Database URL not configured for ${branch}`);
+	return pool;
 }
 
 // Health check function

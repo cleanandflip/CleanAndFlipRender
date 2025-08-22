@@ -4,9 +4,11 @@ import { products, categories } from '../../shared/schema';
 import { eq, isNull, or } from 'drizzle-orm';
 import { Logger } from '../utils/logger';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil',
-});
+function getStripe(): Stripe {
+	const key = process.env.STRIPE_SECRET_KEY;
+	if (!key) throw new Error('Stripe not configured');
+	return new Stripe(key, { apiVersion: '2025-07-30.basil' as any });
+}
 
 interface ProductSyncData {
   id: string;
@@ -30,6 +32,7 @@ export class StripeProductSync {
   static async syncProduct(productId: string): Promise<void> {
     try {
       Logger.info(`Starting sync for product ${productId}`);
+      const stripe = getStripe();
       
       // Get complete product data
       const [product] = await db
@@ -87,10 +90,10 @@ export class StripeProductSync {
           weight: product.weight || 1000, // Default 1kg
           width: parseFloat(String(product.dimensions.width)) || 1
         } : undefined
-      };
+      } as const;
 
-      let stripeProduct;
-      let stripePrice;
+      let stripeProduct: any;
+      let stripePrice: any;
 
       // Create or update Stripe product
       if (product.stripeProductId) {
@@ -196,6 +199,7 @@ export class StripeProductSync {
   // Sync all products with cleanup of deleted products
   static async syncAllProducts(): Promise<void> {
     Logger.info('Starting comprehensive product sync to Stripe...');
+    const stripe = getStripe();
     
     // Get ALL products with complete data
     const allProducts = await db
@@ -239,13 +243,13 @@ export class StripeProductSync {
     }
 
     // Clean up orphaned products in Stripe
-    await this.cleanupOrphanedStripeProducts(allProducts);
+    await this.cleanupOrphanedStripeProducts(allProducts, stripe);
     
     Logger.info(`Sync complete: ${successCount} succeeded, ${failCount} failed`);
   }
 
   // Clean up products in Stripe that no longer exist in database
-  static async cleanupOrphanedStripeProducts(databaseProducts: any[]): Promise<void> {
+  static async cleanupOrphanedStripeProducts(databaseProducts: any[], stripe: Stripe): Promise<void> {
     try {
       Logger.info('🧹 Cleaning up orphaned Stripe products...');
       
@@ -297,6 +301,7 @@ export class StripeProductSync {
 
   // Delete product from Stripe
   static async deleteFromStripe(productId: string): Promise<void> {
+    const stripe = getStripe();
     const [product] = await db
       .select({ stripeProductId: products.stripeProductId })
       .from(products)
@@ -311,6 +316,7 @@ export class StripeProductSync {
 
   // Sync product from Stripe webhook
   static async syncFromStripeWebhook(stripeProductId: string): Promise<void> {
+    const stripe = getStripe();
     const stripeProduct = await stripe.products.retrieve(stripeProductId);
     
     // Update local database with Stripe data

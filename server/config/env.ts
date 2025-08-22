@@ -16,13 +16,14 @@ const NODE_ENV = (process.env.NODE_ENV ?? "development") as
   | "production"
   | "test";
 
-const PORT = Number(process.env.PORT ?? 5000);
+const PORT = Number(process.env.PORT ?? 3000);
 
 const DATABASE_URL_ENV = process.env.DEV_DATABASE_URL || process.env.DATABASE_URL;
 
-if (!DATABASE_URL_ENV) {
-  throw new Error("Missing DATABASE_URL");
-}
+// Do not throw if missing; allow app to boot without DB in slate mode
+// if (!DATABASE_URL_ENV) {
+//   throw new Error("Missing DATABASE_URL");
+// }
 
 // FRONTEND_ORIGIN no longer mandatory; default to same-origin usage
 

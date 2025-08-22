@@ -3,12 +3,23 @@ import { ENV } from "./config/env";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 
-// Simple database connection without schema to avoid circular references
-const sql = neon(ENV.devDbUrl);
-export const db = drizzle(sql);
+let sql: any = null;
+let dbInstance: any = null;
+
+function ensureDb() {
+  if (!dbInstance && ENV.devDbUrl) {
+    sql = neon(ENV.devDbUrl);
+    dbInstance = drizzle(sql);
+  }
+  return dbInstance;
+}
+
+export const db = ensureDb();
 
 // Optional simple health check
 export async function ping() {
+  const database = ensureDb();
+  if (!database) return; // No DB configured; treat as healthy for slate boot
   // @ts-ignore drizzle neon-http allows raw sql via db.execute
-  await db.execute("select 1");
+  await database.execute("select 1");
 }

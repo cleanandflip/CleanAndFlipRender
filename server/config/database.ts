@@ -7,4 +7,6 @@ export function getDatabaseUrl() {
 
 // Export existing functions for compatibility
 export const DATABASE_URL = process.env.DATABASE_URL!;
-export const getDbHost = () => new URL(process.env.DATABASE_URL!).host;
+export const getDbHost = () => {
+	try { return new URL(process.env.DATABASE_URL!).host; } catch { return 'unconfigured'; }
+};

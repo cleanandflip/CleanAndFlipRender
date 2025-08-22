@@ -28,7 +28,7 @@ export function validateEnvironmentVariables(): EnvironmentConfig {
   
   const config: Partial<EnvironmentConfig> = {
     NODE_ENV: env.NODE_ENV || 'development',
-    PORT: env.PORT || '5000'
+    PORT: env.PORT || '3000'
   };
 
   const missing: string[] = [];

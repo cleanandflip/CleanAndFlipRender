@@ -23,7 +23,7 @@ import { verifyProductSchema } from "./utils/verify-product-schema";
 import { ENV } from "./config/env";
 
 const env = ENV.nodeEnv;
-const host = ENV.devDbUrl ? new URL(ENV.devDbUrl).host : 'unknown';
+const host = ENV.devDbUrl ? (()=>{ try { return new URL(ENV.devDbUrl!).host } catch { return 'unknown' } })() : 'unknown';
 
 // 1) Boot logs that must appear once
 // Environment banner is handled in env.ts - no duplicate logging
@@ -44,7 +44,7 @@ try {
 console.log('✅ ENV_GUARD: Environment isolation verified');
 
 // 2) Migrations with production control
-const shouldRunMigrations = process.env.RUN_MIGRATIONS === 'true' || env === 'development';
+const shouldRunMigrations = process.env.RUN_MIGRATIONS === 'true';
 
 if (shouldRunMigrations) {
   console.log("[MIGRATIONS] Running migrations...");

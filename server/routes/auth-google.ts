@@ -18,84 +18,63 @@ declare module 'express-session' {
 
 const router = Router();
 
-// Configure Google OAuth Strategy
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID!,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  callbackURL: '/api/auth/google/callback', // Use relative URL
-  proxy: true, // CRITICAL: Trust proxy headers
-  passReqToCallback: true
-}, async (req, accessToken, refreshToken, profile, done) => {
-  try {
-    // Check if user exists by email
-    const email = profile.emails?.[0]?.value;
-    if (!email) {
-      return done(new Error('No email from Google profile'), undefined);
-    }
-    
-    let user = await storage.getUserByEmail(email);
-    
-    if (!user) {
-      // Create new Google user
-      user = await storage.createUser({
-        googleId: profile.id,
-        email: email,
-        firstName: profile.name?.givenName || '',
-        lastName: profile.name?.familyName || '',
-        profileImageUrl: profile.photos?.[0]?.value || '',
-        isEmailVerified: true,
-        authProvider: 'google',
-        profileComplete: true, // Google users are immediately active
-        // No password field for Google users
-      } as any);
-    } else if (!user.googleId) {
-      // Link existing account with Google
-      await storage.updateUserGoogleInfo(user.id, {
-        googleId: profile.id,
-        profileImageUrl: profile.photos?.[0]?.value || '',
-        isEmailVerified: true,
-        authProvider: 'google' // Update provider
-      });
-    }
-    
-    return done(null, user as any);
-  } catch (error) {
-    return done(error as any, undefined);
-  }
-}));
+const hasGoogle = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
-// Initiate Google OAuth
-router.get('/google', (req, res, next) => {
-  // Store return URL for after auth
-  req.session.returnTo = (req.query.returnTo as string) || req.headers.referer || '/dashboard';
-  
-  // Save session before redirect
-  req.session.save((err) => {
-    if (err) console.error('Session save error:', err);
-    
-    passport.authenticate('google', {
-      scope: ['profile', 'email']
-    })(req, res, next);
-  });
-});
-
-// Handle Google OAuth callback
-router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: '/auth?error=google_auth_failed' }),
-  async (req, res) => {
-    const user = req.user as any;
-    
-    // Determine base URL for redirect
-    const baseUrl = process.env.NODE_ENV === 'production'
-      ? (ENV.frontendOrigin || '')
-      : '';
-    
-    const returnUrl = req.session.returnTo || '/dashboard';
-    delete req.session.returnTo;
-    res.redirect(`${baseUrl}${returnUrl}`);
-  }
-);
-
-// REMOVED: Onboarding endpoints - no longer needed per user instructions
+if (hasGoogle) {
+	// Configure Google OAuth Strategy
+	passport.use(new GoogleStrategy({
+		clientID: process.env.GOOGLE_CLIENT_ID!,
+		clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+		callbackURL: '/api/auth/google/callback', // Use relative URL
+		proxy: true, // CRITICAL: Trust proxy headers
+		passReqToCallback: true
+	}, async (req: any, accessToken: string, refreshToken: string, profile: any, done: any) => {
+		try {
+			const email = profile.emails?.[0]?.value?.toLowerCase() || '';
+			let user = await storage.findUserByEmail(email);
+			
+			if (!user) {
+				// Create new Google user
+				user = await storage.createUser({
+					googleId: profile.id,
+					email: email,
+					firstName: profile.name?.givenName || '',
+					lastName: profile.name?.familyName || '',
+					profileImageUrl: profile.photos?.[0]?.value || '',
+					isEmailVerified: true,
+					authProvider: 'google',
+					profileComplete: true, // Google users are immediately active
+				} as any);
+			} else if (!user.googleId) {
+				// Link existing account with Google
+				await storage.updateUserGoogleInfo(user.id, {
+					googleId: profile.id,
+					profileImageUrl: profile.photos?.[0]?.value || '',
+					isEmailVerified: true,
+					authProvider: 'google'
+				});
+			}
+			
+			return done(null, user);
+		} catch (error) {
+			return done(error);
+		}
+	}));
+	
+	// Routes
+	router.get('/google/start', passport.authenticate('google', {
+		scope: ['profile', 'email']
+	}));
+	
+	router.get('/google/callback', passport.authenticate('google', {
+		failureRedirect: '/auth?error=google'
+	}), (_req, res) => {
+		res.redirect('/');
+	});
+} else {
+	// No-op routes when Google OAuth is not configured
+	router.get('/google/start', (_req, res) => res.status(503).json({ error: 'Google OAuth not configured' }));
+	router.get('/google/callback', (_req, res) => res.status(503).json({ error: 'Google OAuth not configured' }));
+}
 
 export default router;

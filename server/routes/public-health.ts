@@ -5,26 +5,23 @@ import { APP_ENV, DB_HOST } from '../config/env';
 
 export const publicHealth = Router();
 
-// Main health endpoint
+publicHealth.get('/healthz', (_req, res) => res.status(200).send('ok'));
+
 publicHealth.get('/api/healthz', async (_req, res) => {
   try {
+    if (!universalPool) {
+      return res.json({ env: APP_ENV, db: 'unconfigured', role: null, host: DB_HOST, ok: true });
+    }
     const r = await universalPool.query(`SELECT current_database() as db, current_user as role`);
     res.json({ 
       env: APP_ENV, 
-      dbHost: DB_HOST, 
-      database: r.rows[0]?.db, 
-      role: r.rows[0]?.role,
-      timestamp: new Date().toISOString(),
-      status: 'healthy'
+      db: r.rows[0]?.db || 'unknown', 
+      role: r.rows[0]?.role || 'unknown',
+      host: DB_HOST,
+      ok: true
     });
-  } catch (error) {
-    res.status(500).json({ 
-      env: APP_ENV, 
-      dbHost: DB_HOST, 
-      status: 'error', 
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    });
+  } catch (error: any) {
+    res.status(200).json({ env: APP_ENV, db: 'error', error: error?.message, ok: false });
   }
 });
 

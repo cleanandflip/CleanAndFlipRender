@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import Stripe from "stripe";
+import Stripe from "stripe"; // Conditionally used when STRIPE_SECRET_KEY is set
 import { LRUCache } from 'lru-cache';
 import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
@@ -77,7 +77,8 @@ function broadcastCartUpdate(userId: string, action: string = 'update', data?: a
   }
 }
 import googleAuthRoutes from "./routes/auth-google";
-import stripeWebhookRoutes from './routes/stripe-webhooks';
+// Stripe webhooks: lazy-imported when configured
+// import stripeWebhookRoutes from './routes/stripe-webhooks';
 import adminMetricsRoutes from './routes/admin-metrics';
 import adminSetupRoutes from './routes/admin-setup';
 // ERROR MANAGEMENT COMPLETELY REMOVED
@@ -136,13 +137,9 @@ import {
 } from "@shared/schema";
 // Auth routes moved to main server file for simple password reset implementation
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-06-30.basil" as any,
-});
+}) : null as any;
 
 // Create API cache for hot endpoints
 const apiCache = new LRUCache<string, any>({ max: 500, ttl: 5 * 60 * 1000 }); // 5m TTL
@@ -265,7 +262,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/auth', googleAuthRoutes);
   
   // Critical: Stripe webhook routes (must use raw body parser)
-  app.use('/api/stripe', stripeWebhookRoutes);
+  if (process.env.STRIPE_SECRET_KEY) {
+    const stripeWebhookRoutes = (await import('./routes/stripe-webhooks')).default;
+    app.use('/api/stripe', stripeWebhookRoutes);
+  }
   // Import and use SSOT address routes
   const addressRoutes = await import('./routes/addresses');
   app.use('/api/addresses', addressRoutes.default);
@@ -1429,6 +1429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { amount, currency = "usd", metadata } = req.body;
       
+      if (!stripe) return res.status(503).json({ error: 'Stripe is not configured' });
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency,
@@ -2566,14 +2567,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const memoryUsage = process.memoryUsage();
       
       // Test database connection using Universal Pool
-      let dbStatus = 'Connected';
+      let dbStatus = universalPool ? 'Connected' : 'Unconfigured';
       let dbLatency = 0;
       let dbInfo = { database: 'unknown', role: 'unknown' };
       try {
-        const start = Date.now();
-        const result = await universalPool.query(`select current_database() as db, current_user as role`);
-        dbLatency = Date.now() - start;
-        dbInfo = { database: result.rows[0]?.db || 'unknown', role: result.rows[0]?.role || 'unknown' };
+        if (universalPool) {
+          const start = Date.now();
+          const result = await universalPool.query(`select current_database() as db, current_user as role`);
+          dbLatency = Date.now() - start;
+          dbInfo = { database: result.rows[0]?.db || 'unknown', role: result.rows[0]?.role || 'unknown' };
+        } else {
+          dbStatus = 'Unconfigured';
+        }
       } catch (error) {
         dbStatus = 'Disconnected';
       }
@@ -2589,39 +2594,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         uptime: Math.floor(startTime),
         database: {
           status: dbStatus,
-          latency: dbLatency,
-          provider: 'Neon PostgreSQL',
-          name: databaseName,
+          latencyMs: dbLatency,
+          info: dbInfo,
           host: DB_HOST,
-          current_database: dbInfo.database,
-          current_role: dbInfo.role
+          name: databaseName,
         },
         memory: {
-          used: Math.round(memoryUsage.heapUsed / 1024 / 1024),
-          total: Math.round(memoryUsage.heapTotal / 1024 / 1024),
-          external: Math.round(memoryUsage.external / 1024 / 1024)
+          rss: memoryUsage.rss,
+          heapTotal: memoryUsage.heapTotal,
+          heapUsed: memoryUsage.heapUsed,
+          external: memoryUsage.external,
         },
-        storage: {
-          status: 'Connected',
-          provider: 'Cloudinary'
+        environment: {
+          mode: APP_ENV,
+          nodeVersion: process.version,
+          pid: process.pid,
         },
-        cache: {
-          status: process.env.REDIS_URL ? 'Connected' : 'Disabled',
-          provider: 'Redis'
-        },
-        environment: APP_ENV, // Use Universal Environment System
-        version: '1.0.0'
       };
-
+      
       res.json(systemHealth);
-    } catch (error) {
-      Logger.error("Error fetching system health", error);
-      res.status(500).json({ 
-        status: 'unhealthy',
-        error: "Failed to fetch system health",
-        timestamp: new Date().toISOString()
-      });
-    }  
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to compute system health' });
+    }
   });
 
   app.get("/api/admin/system/info", requireRole('developer'), async (req, res) => {
@@ -3861,6 +3855,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe transactions endpoint - fetch recent payment intents
   app.get("/api/stripe/transactions", requireRole('developer'), async (req, res) => {
     try {
+      if (!process.env.STRIPE_SECRET_KEY) return res.status(503).json({ error: 'Stripe not configured' });
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
         apiVersion: '2025-06-30.basil' as any,
       });
@@ -3901,6 +3896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/stripe/sync-all', requireRole('developer'), async (req, res) => {
     try {
+      if (!process.env.STRIPE_SECRET_KEY) return res.status(503).json({ error: 'Stripe not configured' });
       const { StripeProductSync } = await import('./services/stripe-sync.js');
       await StripeProductSync.syncAllProducts();
       res.json({ success: true, message: 'All products synced to Stripe' });
@@ -3912,6 +3908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/stripe/sync/:productId', requireRole('developer'), async (req, res) => {
     try {
+      if (!process.env.STRIPE_SECRET_KEY) return res.status(503).json({ error: 'Stripe not configured' });
       const { StripeProductSync } = await import('./services/stripe-sync.js');
       const { productId } = req.params;
       await StripeProductSync.syncProduct(productId);
@@ -3998,7 +3995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Display professional startup banner with connection info
   const endTime = Date.now() - startupTime;
   displayStartupBanner({
-    port: process.env.PORT || 5000,
+    port: process.env.PORT || 3000,
     db: true, // Database is connected at this point
     redis: redisConnected,
     ws: true, // WebSocket initialized
@@ -4017,7 +4014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Start the HTTP server with enhanced startup logging
-  const port = Number(process.env.PORT) || 5000;
+  const port = Number(process.env.PORT) || 3000;
   const host = '0.0.0.0'; // Required for Cloud Run deployments
   
   Logger.info(`[STARTUP] Attempting to start server on ${host}:${port}`);

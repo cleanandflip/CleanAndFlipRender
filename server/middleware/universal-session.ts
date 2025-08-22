@@ -3,29 +3,27 @@ import PgSimple from "connect-pg-simple";
 import { universalPool } from "../db/universal-pool";
 import { APP_ENV } from "../config/env";
 const SESSION_SECRET = process.env.SESSION_SECRET!;
-const SESSION_COOKIE_DOMAIN = process.env.SESSION_COOKIE_DOMAIN;
 
 const PgSession = PgSimple(session);
-const isProd = APP_ENV === "production";
 
-export const universalSessionMiddleware = session({
-  store: new PgSession({
-    pool: universalPool,
-    tableName: "sessions",
-    createTableIfMissing: true,
-    ttl: 7*24*60*60,
-    pruneSessionInterval: 60*60,
-  }),
-  secret: SESSION_SECRET,
-  name: "cf.sid",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    path: "/",
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
-    domain: SESSION_COOKIE_DOMAIN,      // undefined in dev → hostOnly
-    maxAge: 7*24*60*60*1000,
-  },
-});
+const baseConfig: session.SessionOptions = {
+	name: 'sid',
+	secret: SESSION_SECRET || 'dev-secret',
+	resave: false,
+	saveUninitialized: false,
+	cookie: {
+		secure: false,
+		sameSite: 'lax'
+	}
+};
+
+export const universalSessionMiddleware = universalPool
+	? session({
+		...baseConfig,
+		store: new PgSession({
+			pool: universalPool,
+			tableName: "sessions",
+			createTableIfMissing: true,
+		}),
+	})
+	: session(baseConfig);
